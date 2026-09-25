@@ -20,7 +20,10 @@ const ACTIVITY_EVENTS = ["keydown", "pointerdown", "focusin"];
  * check the lock, so a forgotten tab lets it expire for someone else.
  */
 export default function EditLockGuard({ canEdit, editor, children }) {
-    const queue = useAutosaveQueue();
+    // Take the stable control callbacks, not the whole context value: that
+    // changes on every save status update, and depending on it would re-run
+    // the pause/clear effect below (which publishes a new status) forever.
+    const { pause, resume, clear } = useAutosaveQueue() ?? {};
     const { errors } = usePage().props;
     const couldEdit = useRef(canEdit);
 
@@ -60,22 +63,22 @@ export default function EditLockGuard({ canEdit, editor, children }) {
 
     // Stop autosaving while read-only. Pending edits can no longer be saved.
     useEffect(() => {
-        if (!queue) {
+        if (!pause) {
             return;
         }
 
         if (canEdit) {
-            queue.resume();
+            resume();
         } else {
-            queue.pause();
-            queue.clear();
+            pause();
+            clear();
         }
-    }, [canEdit, queue]);
+    }, [canEdit, pause, resume, clear]);
 
     // The lock was lost mid-edit: drop queued saves and check the lock now.
     useEffect(() => {
         if (errors?.edit_lock) {
-            queue?.clear();
+            clear?.();
             router.reload({ only: ["canEdit", "editor"] });
         }
     }, [errors?.edit_lock]);

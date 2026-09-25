@@ -8,6 +8,7 @@ import {
     OptionSelect,
     buttonClassName,
     controlClassName,
+    linkClassName,
 } from "@/Components/FormControls";
 import { useFormAutosave } from "@/Hooks/useAutosave";
 
@@ -200,7 +201,7 @@ export default function GameVersionForm({ form, options, onSubmit, submitLabel, 
                     </Button>
                     <Link
                         href={route("management.game-versions.index")}
-                        className="text-secondary-300 focus-visible:outline-ink-400 rounded px-2 py-2 text-sm underline hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+                        className={linkClassName}
                     >
                         Cancel
                     </Link>

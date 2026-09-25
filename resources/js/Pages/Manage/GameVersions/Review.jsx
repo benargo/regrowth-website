@@ -1,13 +1,11 @@
 import { Link } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
+import { linkClassName } from "@/Components/FormControls";
 import SetupSteps from "@/Components/GameVersions/SetupSteps";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
 import formatDate from "@/Helpers/FormatDate";
 import Master from "@/Layouts/Master";
-
-const linkClassName =
-    "text-secondary-300 focus-visible:outline-ink-400 rounded px-2 py-2 text-sm underline hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2";
 
 const buttonClassName =
     "bg-ink-800 hover:bg-ink-900 focus-visible:outline-ink-400 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2";

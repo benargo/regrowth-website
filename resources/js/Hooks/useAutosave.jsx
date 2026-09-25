@@ -231,7 +231,9 @@ export function useAutosaveStatus() {
  * that resolves to { ok: false } marks the save as failed.
  */
 export default function useAutosave({ key, isDirty, save, delay = 1000, trigger = "change", enabled = true }) {
-    const queue = useAutosaveQueue();
+    // Only the stable callbacks: the context value itself changes on every
+    // save status update, which would rebuild flush and re-register each time.
+    const { enqueue, register } = useAutosaveQueue() ?? {};
     const timer = useRef(null);
     const latest = useRef({ isDirty, save });
     latest.current = { isDirty, save };
@@ -250,12 +252,12 @@ export default function useAutosave({ key, isDirty, save, delay = 1000, trigger 
 
         const run = () => (latest.current.isDirty() ? latest.current.save() : undefined);
 
-        if (queue) {
-            queue.enqueue(key, run);
+        if (enqueue) {
+            enqueue(key, run);
         } else {
             run();
         }
-    }, [cancel, enabled, key, queue]);
+    }, [cancel, enabled, key, enqueue]);
 
     const schedule = useCallback(() => {
         if (!enabled) {
@@ -273,12 +275,12 @@ export default function useAutosave({ key, isDirty, save, delay = 1000, trigger 
     }, [cancel, delay, enabled, flush]);
 
     useEffect(() => {
-        if (!queue) {
+        if (!register) {
             return undefined;
         }
 
-        return queue.register({ flush, cancel, isScheduled: () => timer.current !== null });
-    }, [queue, flush, cancel]);
+        return register({ flush, cancel, isScheduled: () => timer.current !== null });
+    }, [register, flush, cancel]);
 
     useEffect(() => cancel, [cancel]);
 

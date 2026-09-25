@@ -1,13 +1,11 @@
 import { Link, router } from "@inertiajs/react";
+import { linkClassName } from "@/Components/FormControls";
 import EditLockGuard from "@/Components/GameVersions/EditLockGuard";
 import RelationshipStep from "@/Components/GameVersions/RelationshipStep";
 import SetupSteps from "@/Components/GameVersions/SetupSteps";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
 import Master from "@/Layouts/Master";
-
-const linkClassName =
-    "text-secondary-300 focus-visible:outline-ink-400 rounded px-2 py-2 text-sm underline hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2";
 
 /**
  * The submit label and skip link text: back to the review page when the step

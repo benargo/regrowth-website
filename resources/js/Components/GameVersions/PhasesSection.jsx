@@ -53,8 +53,6 @@ export default function PhasesSection({
     const form = useForm({ phase_ids: phases.selected_ids });
     useSyncedSelection(form, "phase_ids", phases.selected_ids);
 
-    const linkedPhases = phases.options.filter((phase) => phases.selected_ids.includes(phase.id));
-
     const url = route("management.game-versions.update", gameVersion.id);
     const { schedule, containerProps } = useFormAutosave({
         form,
