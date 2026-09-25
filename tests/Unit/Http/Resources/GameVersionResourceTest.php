@@ -143,7 +143,7 @@ class GameVersionResourceTest extends TestCase
         $array = GameVersionResource::forManagement($gameVersion)->resolve(new Request);
 
         $this->assertSame(2, $array['phases_count']);
-        $this->assertSame(3, $array['guild_tags_count']);
+        $this->assertArrayNotHasKey('guild_tags_count', $array);
         $this->assertArrayNotHasKey('zones_count', $array);
         $this->assertArrayNotHasKey('characters_count', $array);
     }

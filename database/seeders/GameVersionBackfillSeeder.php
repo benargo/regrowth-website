@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\GameVersion;
-use App\Models\GuildTag;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
@@ -31,7 +30,7 @@ class GameVersionBackfillSeeder extends Seeder
      */
     protected function backfillModels(): array
     {
-        return [Phase::class, GuildTag::class, Zone::class];
+        return [Phase::class, Zone::class];
     }
 
     public function run(): void

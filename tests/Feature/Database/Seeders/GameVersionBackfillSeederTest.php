@@ -3,7 +3,6 @@
 namespace Tests\Feature\Database\Seeders;
 
 use App\Models\GameVersion;
-use App\Models\GuildTag;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
@@ -26,7 +25,6 @@ class GameVersionBackfillSeederTest extends TestCase
         $gameVersion = GameVersion::factory()->create();
 
         $phase = Phase::factory()->create(['game_version_id' => null]);
-        $guildTag = GuildTag::factory()->create(['game_version_id' => null]);
         $zone = Zone::factory()->create(['game_version_id' => null]);
 
         $race = PlayableRace::factory()->create();
@@ -35,7 +33,6 @@ class GameVersionBackfillSeederTest extends TestCase
         $this->runSeeder($gameVersion->id);
 
         $this->assertSame($gameVersion->id, $phase->fresh()->game_version_id);
-        $this->assertSame($gameVersion->id, $guildTag->fresh()->game_version_id);
         $this->assertSame($gameVersion->id, $zone->fresh()->game_version_id);
 
         $this->assertDatabaseHas('pivot_game_versions_playable_races', [
@@ -54,7 +51,6 @@ class GameVersionBackfillSeederTest extends TestCase
         $gameVersion = GameVersion::factory()->create();
 
         Phase::factory()->create(['game_version_id' => null]);
-        GuildTag::factory()->create(['game_version_id' => null]);
         Zone::factory()->create(['game_version_id' => null]);
         PlayableRace::factory()->create();
         PlayableClass::factory()->create();
@@ -62,7 +58,6 @@ class GameVersionBackfillSeederTest extends TestCase
         $this->runSeeder($gameVersion->id);
 
         $phaseCount = Phase::count();
-        $guildTagCount = GuildTag::count();
         $zoneCount = Zone::count();
         $racePivotCount = $gameVersion->playableRaces()->count();
         $classPivotCount = $gameVersion->playableClasses()->count();
@@ -70,7 +65,6 @@ class GameVersionBackfillSeederTest extends TestCase
         $this->runSeeder($gameVersion->id);
 
         $this->assertSame($phaseCount, Phase::count());
-        $this->assertSame($guildTagCount, GuildTag::count());
         $this->assertSame($zoneCount, Zone::count());
         $this->assertSame($racePivotCount, $gameVersion->playableRaces()->count());
         $this->assertSame($classPivotCount, $gameVersion->playableClasses()->count());

@@ -244,6 +244,21 @@ class GameVersionTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_has_many_guild_tags_through_phases(): void
+    {
+        $gameVersion = $this->create();
+        $phase = Phase::factory()->for($gameVersion)->create();
+        $guildTag = GuildTag::factory()->withPhase($phase)->create();
+        $otherVersionsTag = GuildTag::factory()->withPhase(Phase::factory()->for(GameVersion::factory())->create())->create();
+        $phaselessTag = GuildTag::factory()->withoutPhase()->create();
+
+        $this->assertRelation($gameVersion, 'guildTags', HasManyThrough::class);
+        $this->assertTrue($gameVersion->guildTags->contains($guildTag));
+        $this->assertFalse($gameVersion->guildTags->contains($otherVersionsTag));
+        $this->assertFalse($gameVersion->guildTags->contains($phaselessTag));
+    }
+
+    #[Test]
     public function it_belongs_to_many_playable_races(): void
     {
         $gameVersion = $this->create();
@@ -327,7 +342,6 @@ class GameVersionTest extends ModelTestCase
     {
         return [
             'phases' => ['phases', Phase::class],
-            'guildTags' => ['guildTags', GuildTag::class],
             'zones' => ['zones', Zone::class],
             'items' => ['items', Item::class],
             'characters' => ['characters', Character::class],
