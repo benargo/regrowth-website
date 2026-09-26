@@ -3,18 +3,50 @@
 namespace App\Models;
 
 use App\Casts\AsTheme;
+use App\Contracts\Models\DatasetModel;
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Policies\DatasetPolicy;
 use Database\Factories\GameVersionFactory;
+use Illuminate\Contracts\Cache\Lock;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Support\Facades\Cache;
 
-class GameVersion extends Model
+#[Fillable([
+    'title',
+    'realm',
+    'faction',
+    'release_date',
+    'theme',
+    'blizzard_namespace',
+    'warcraftlogs_guild',
+    'warcraftlogs_expansion',
+])]
+#[UsePolicy(DatasetPolicy::class)]
+class GameVersion extends Model implements DatasetModel
 {
     /** @use HasFactory<GameVersionFactory> */
     use HasFactory;
+
+    /**
+     * Relationships whose rows reference this game version by a nullable
+     * foreign key. Deleting the game version would silently orphan them,
+     * so any existing row marks the version as in use.
+     *
+     * @var list<string>
+     */
+    public const array USAGE_RELATIONS = ['phases', 'zones', 'items', 'characters'];
+
+    /**
+     * How long an officer keeps the edit lock after their last active visit or poll.
+     */
+    public const int EDIT_LOCK_SECONDS = 300;
 
     /**
      * Get the attributes that should be cast.
@@ -33,17 +65,69 @@ class GameVersion extends Model
         ];
     }
 
-    // ============ Relationships ===========
+    /**
+     * Determine whether any dataset record still references this game version.
+     */
+    public function isInUse(): bool
+    {
+        return collect(self::USAGE_RELATIONS)
+            ->contains(fn (string $relation): bool => $this->{$relation}()->exists());
+    }
 
     /**
-     * Get the bosses for this game version.
-     *
-     * @return HasMany<Boss, $this>
+     * The atomic lock that gives one officer at a time the right to edit this
+     * game version. The user's id is the owner, so their own requests can
+     * refresh it and other officers' requests see it as taken.
      */
-    public function bosses(): HasMany
+    public function editLock(User $user): Lock
     {
-        return $this->hasMany(Boss::class);
+        return Cache::lock($this->editLockKey('editing'), self::EDIT_LOCK_SECONDS, (string) $user->id);
     }
+
+    /**
+     * Take or extend the edit lock for the user. Returns whether they hold it.
+     * The holder's id is kept alongside it, because a Lock can't report who owns it.
+     */
+    public function acquireEditLock(User $user): bool
+    {
+        $lock = $this->editLock($user);
+
+        if (! $lock->get() && ! $lock->refresh()) {
+            return false;
+        }
+
+        Cache::put($this->editLockKey('editor'), $user->id, self::EDIT_LOCK_SECONDS);
+
+        return true;
+    }
+
+    /**
+     * Determine whether an officer other than the given user holds the edit lock.
+     */
+    public function isLockedForEditingBy(User $user): bool
+    {
+        $lock = $this->editLock($user);
+
+        return $lock->isLocked() && ! $lock->isOwnedByCurrentProcess();
+    }
+
+    /**
+     * The officer who last took or refreshed the edit lock, for display only.
+     */
+    public function editor(): ?User
+    {
+        return User::find(Cache::get($this->editLockKey('editor')));
+    }
+
+    /**
+     * Build a cache key scoped to this game version's edit lock.
+     */
+    private function editLockKey(string $suffix): string
+    {
+        return "game-versions.{$this->id}.{$suffix}";
+    }
+
+    // ============ Relationships ===========
 
     /**
      * Get the phases for this game version.
@@ -56,23 +140,23 @@ class GameVersion extends Model
     }
 
     /**
-     * Get the raids for this game version.
+     * Get the raids for this game version, through their phase.
      *
-     * @return HasMany<Raid, $this>
+     * @return HasManyThrough<Raid, Phase, $this>
      */
-    public function raids(): HasMany
+    public function raids(): HasManyThrough
     {
-        return $this->hasMany(Raid::class);
+        return $this->hasManyThrough(Raid::class, Phase::class);
     }
 
     /**
-     * Get the guild tags for this game version.
+     * Get the guild tags for this game version, through their phase.
      *
-     * @return HasMany<GuildTag, $this>
+     * @return HasManyThrough<GuildTag, Phase, $this>
      */
-    public function guildTags(): HasMany
+    public function guildTags(): HasManyThrough
     {
-        return $this->hasMany(GuildTag::class);
+        return $this->hasManyThrough(GuildTag::class, Phase::class, 'game_version_id', 'tbc_phase_id');
     }
 
     /**
@@ -83,6 +167,26 @@ class GameVersion extends Model
     public function zones(): HasMany
     {
         return $this->hasMany(Zone::class);
+    }
+
+    /**
+     * Get the items for this game version.
+     *
+     * @return HasMany<Item, $this>
+     */
+    public function items(): HasMany
+    {
+        return $this->hasMany(Item::class);
+    }
+
+    /**
+     * Get the characters for this game version.
+     *
+     * @return HasMany<Character, $this>
+     */
+    public function characters(): HasMany
+    {
+        return $this->hasMany(Character::class);
     }
 
     /**

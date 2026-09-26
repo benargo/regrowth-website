@@ -18,6 +18,7 @@ use App\Http\Controllers\Dashboard\PermissionController;
 use App\Http\Controllers\Dashboard\PhaseController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTemplateController;
+use App\Http\Controllers\GameVersionController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LootBiasToolController;
@@ -138,6 +139,18 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::get('/event-templates/{template}/edit', [EventTemplateController::class, 'edit'])->name('event-templates.edit');
     Route::patch('/event-templates/{template}', [EventTemplateController::class, 'update'])->name('event-templates.update');
     Route::delete('/event-templates/{template}', [EventTemplateController::class, 'destroy'])->name('event-templates.destroy');
+
+    /**
+     * Game versions management
+     */
+    Route::get('/game-versions', [GameVersionController::class, 'index'])->name('game-versions.index');
+    Route::get('/game-versions/create', [GameVersionController::class, 'create'])->name('game-versions.create');
+    Route::post('/game-versions', [GameVersionController::class, 'store'])->name('game-versions.store');
+    Route::get('/game-versions/{gameVersion}/edit', [GameVersionController::class, 'edit'])->name('game-versions.edit');
+    Route::get('/game-versions/{gameVersion}/setup/{step}', [GameVersionController::class, 'setup'])->name('game-versions.setup');
+    Route::get('/game-versions/{gameVersion}/review', [GameVersionController::class, 'review'])->name('game-versions.review');
+    Route::patch('/game-versions/{gameVersion}', [GameVersionController::class, 'update'])->name('game-versions.update');
+    Route::delete('/game-versions/{gameVersion}', [GameVersionController::class, 'destroy'])->name('game-versions.destroy');
 
     /**
      * GRM data upload

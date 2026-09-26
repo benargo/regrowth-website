@@ -17,7 +17,7 @@ return new class extends Migration
     private const ITEMS_FULLTEXT_INDEX = 'items_name_fulltext';
 
     /** @var array<int, string> */
-    private array $gameVersionDatasetTables = ['bosses', 'phases', 'raids', 'wcl_guild_tags', 'wcl_zones'];
+    private array $gameVersionDatasetTables = ['phases', 'wcl_zones'];
 
     /**
      * Tables with an inbound `item_id` foreign key to `items.id`.

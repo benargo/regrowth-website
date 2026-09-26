@@ -15,3 +15,13 @@ In read-only Inertia pages that call `router.reload()` in response to broadcast 
 Never define `broadcastAs()` on a Laravel notification class (extends `Illuminate\Notifications\Notification`, implements `ShouldBroadcast`). Doing so renames the wire event, but `useEchoNotification` from `@laravel/echo-react` hardcodes listening for `.Illuminate\Notifications\Events\BroadcastNotificationCreated` and will never match — the frontend callback never fires.
 
 To filter notifications on the frontend, use `broadcastType()` instead — it sets the `type` field that `useEchoNotification`'s third argument matches. `broadcastAs()` is fine on genuine broadcast **Event** classes (e.g. `BossKilled`, `EventAssignment`).
+
+## Naming conventions
+
+- **Components**: PascalCase (`LoginForm`).
+- **Component files**: PascalCase (`LoginForm.jsx`). Non-component files (hooks, helpers, utils): camelCase (`useSyncedSelection.jsx`, `formatDate.js`). Folders: camelCase.
+- **Hooks**: camelCase, prefixed with `use` (`useSyncedSelection`).
+- **Functions**: camelCase (`getUsers`).
+- **Variables**: camelCase. Prefer descriptive names over vague ones (`data`, `value`); spell out abbreviations (`imageButton`, not `imgBtn`) except well-known acronyms (`baseURL`, `userAPI`).
+- **Constants**: SCREAMING_SNAKE_CASE only for values fixed before any component runs — module-level literals such as config, enum-like maps, or regexes (`const DATE_FORMAT = "YYYY-MM-DD"`). A `const` declared inside a component or function body — even if it never changes — is a runtime value, not a compile-time constant, and takes camelCase (`const userList = []`, `const segmentShape = "..."`).
+- **Booleans**: prefix with `is`/`has`/`should` (`isLoading`, `hasError`).

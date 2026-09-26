@@ -8,7 +8,6 @@ use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\Event;
 use App\Models\EventRaid;
-use App\Models\GameVersion;
 use App\Models\Item;
 use App\Models\Phase;
 use App\Models\Raid;
@@ -58,7 +57,6 @@ class RaidTest extends ModelTestCase
             'phase_id',
             'max_players',
             'max_loot_councillors',
-            'game_version_id',
         ]);
     }
 
@@ -75,7 +73,6 @@ class RaidTest extends ModelTestCase
             'phase_id',
             'max_players',
             'max_loot_councillors',
-            'game_version_id',
         ]);
     }
 
@@ -344,24 +341,6 @@ class RaidTest extends ModelTestCase
         $this->assertCount(2, $raid->comments);
     }
 
-    #[Test]
-    public function factory_for_game_version_state_sets_game_version_id(): void
-    {
-        $gameVersion = GameVersion::factory()->create();
-
-        $raid = $this->factory()->forGameVersion($gameVersion)->create();
-
-        $this->assertSame($gameVersion->id, $raid->game_version_id);
-    }
-
-    #[Test]
-    public function factory_default_game_version_id_is_null(): void
-    {
-        $raid = $this->create();
-
-        $this->assertNull($raid->game_version_id);
-    }
-
     // ==================== phase ====================
 
     #[Test]
@@ -372,18 +351,6 @@ class RaidTest extends ModelTestCase
 
         $this->assertRelation($raid, 'phase', BelongsTo::class);
         $this->assertTrue($raid->phase->is($phase));
-    }
-
-    // ==================== game version ====================
-
-    #[Test]
-    public function it_belongs_to_a_game_version(): void
-    {
-        $gameVersion = GameVersion::factory()->create();
-        $raid = $this->create(['game_version_id' => $gameVersion->id]);
-
-        $this->assertRelation($raid, 'gameVersion', BelongsTo::class);
-        $this->assertTrue($raid->gameVersion->is($gameVersion));
     }
 
     // ==================== bosses ====================

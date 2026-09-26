@@ -22,7 +22,7 @@ use Spatie\EloquentSortable\SortableTrait;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-#[Fillable(['name', 'raid_id', 'sort_order', 'notes', 'game_version_id'])]
+#[Fillable(['name', 'raid_id', 'sort_order', 'notes'])]
 #[Hidden(['created_at', 'updated_at'])]
 class Boss extends Model implements HasMedia, Sortable
 {
@@ -103,16 +103,6 @@ class Boss extends Model implements HasMedia, Sortable
     public function raid(): BelongsTo
     {
         return $this->belongsTo(Raid::class);
-    }
-
-    /**
-     * Get the game version that this boss belongs to.
-     *
-     * @return BelongsTo<GameVersion, $this>
-     */
-    public function gameVersion(): BelongsTo
-    {
-        return $this->belongsTo(GameVersion::class);
     }
 
     /**

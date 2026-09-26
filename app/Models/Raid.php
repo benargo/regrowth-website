@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Str;
 
 #[Appends(['slug'])]
-#[Fillable(['name', 'difficulty', 'background_css_class', 'color', 'phase_id', 'max_players', 'max_loot_councillors', 'game_version_id'])]
+#[Fillable(['name', 'difficulty', 'background_css_class', 'color', 'phase_id', 'max_players', 'max_loot_councillors'])]
 #[Hidden(['created_at', 'updated_at'])]
 class Raid extends Model
 {
@@ -84,16 +84,6 @@ class Raid extends Model
     public function phase(): BelongsTo
     {
         return $this->belongsTo(Phase::class);
-    }
-
-    /**
-     * Get the game version that this raid belongs to.
-     *
-     * @return BelongsTo<GameVersion, $this>
-     */
-    public function gameVersion(): BelongsTo
-    {
-        return $this->belongsTo(GameVersion::class);
     }
 
     // ============ Event relationships ============

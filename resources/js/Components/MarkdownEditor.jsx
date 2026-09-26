@@ -395,18 +395,18 @@ export default function MarkdownEditor({
         }
     }
 
-    const BUTTON_GROUPS = [
+    const buttonGroups = [
         ["heading2", "heading3"],
         ["bold", "italic", "underline"],
         ["bulletList", "numberedList"],
         ["quote", "link", "wowheadLink"],
     ];
 
-    const groupedButtons = BUTTON_GROUPS.map((keys) =>
+    const groupedButtons = buttonGroups.map((keys) =>
         keys.map((key) => formatButtons.find((f) => f.key === key)).filter(Boolean),
     ).filter((group) => group.length > 0);
 
-    const ungroupedButtons = formatButtons.filter((f) => !BUTTON_GROUPS.flat().includes(f.key));
+    const ungroupedButtons = formatButtons.filter((f) => !buttonGroups.flat().includes(f.key));
 
     return (
         <div className={className}>

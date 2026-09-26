@@ -1,7 +1,22 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/Components/FontAwesome/Icon";
+import { useAutosaveStatus } from "@/Hooks/useAutosave";
 
-export default function AutoSaveLabel({ processing, savedDuration = 2000 }) {
+/**
+ * "Saving…" while a save runs, then "Saved" briefly. Pass `processing` (or its
+ * alias `saving`), or pass neither inside an AutosaveProvider to follow the
+ * page's autosave queue, which also shows `errorMessage` when a save fails.
+ */
+export default function AutoSaveLabel({
+    processing: processingProp,
+    saving,
+    savedDuration = 2000,
+    errorMessage = "Couldn't save",
+}) {
+    const autosave = useAutosaveStatus();
+    const fromProvider = processingProp === undefined && saving === undefined && autosave !== null;
+    const processing = fromProvider ? autosave.status === "saving" : Boolean(processingProp ?? saving);
+    const failed = fromProvider && autosave.status === "error";
     const [showSaved, setShowSaved] = useState(false);
     const prevProcessing = useRef(processing);
     const timer = useRef(null);
@@ -19,9 +34,18 @@ export default function AutoSaveLabel({ processing, savedDuration = 2000 }) {
 
     if (processing) {
         return (
-            <div className="inline-flex items-center gap-2 text-sm text-ink-400">
+            <div className="text-ink-400 inline-flex items-center gap-2 text-sm">
                 <Icon icon="spinner" style="solid" className="fa-spin" />
                 <p>Saving...</p>
+            </div>
+        );
+    }
+
+    if (failed) {
+        return (
+            <div className="inline-flex items-center gap-2 text-sm text-red-300">
+                <Icon icon="exclamation-triangle" style="solid" />
+                <p>{errorMessage}</p>
             </div>
         );
     }
@@ -40,7 +64,7 @@ export default function AutoSaveLabel({ processing, savedDuration = 2000 }) {
 
 export function AutoSaving() {
     return (
-        <div className="inline-flex items-center gap-2 text-sm text-ink-400">
+        <div className="text-ink-400 inline-flex items-center gap-2 text-sm">
             <Icon icon="spinner" style="solid" className="fa-spin" />
             <p>Saving...</p>
         </div>
