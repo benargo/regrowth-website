@@ -77,7 +77,6 @@ class GameVersionResource extends JsonResource
             'warcraftlogs_guild' => $this->warcraftlogs_guild,
             'warcraftlogs_expansion' => $this->warcraftlogs_expansion,
             'phases_count' => $this->whenCounted('phases'),
-            'zones_count' => $this->whenCounted('zones'),
             'items_count' => $this->whenCounted('items'),
             'characters_count' => $this->whenCounted('characters'),
         ];

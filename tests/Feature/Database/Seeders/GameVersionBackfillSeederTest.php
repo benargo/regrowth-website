@@ -6,7 +6,6 @@ use App\Models\GameVersion;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
-use App\Models\Zone;
 use Database\Seeders\GameVersionBackfillSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
@@ -25,7 +24,6 @@ class GameVersionBackfillSeederTest extends TestCase
         $gameVersion = GameVersion::factory()->create();
 
         $phase = Phase::factory()->create(['game_version_id' => null]);
-        $zone = Zone::factory()->create(['game_version_id' => null]);
 
         $race = PlayableRace::factory()->create();
         $class = PlayableClass::factory()->create();
@@ -33,7 +31,6 @@ class GameVersionBackfillSeederTest extends TestCase
         $this->runSeeder($gameVersion->id);
 
         $this->assertSame($gameVersion->id, $phase->fresh()->game_version_id);
-        $this->assertSame($gameVersion->id, $zone->fresh()->game_version_id);
 
         $this->assertDatabaseHas('pivot_game_versions_playable_races', [
             'game_version_id' => $gameVersion->id,
@@ -51,21 +48,18 @@ class GameVersionBackfillSeederTest extends TestCase
         $gameVersion = GameVersion::factory()->create();
 
         Phase::factory()->create(['game_version_id' => null]);
-        Zone::factory()->create(['game_version_id' => null]);
         PlayableRace::factory()->create();
         PlayableClass::factory()->create();
 
         $this->runSeeder($gameVersion->id);
 
         $phaseCount = Phase::count();
-        $zoneCount = Zone::count();
         $racePivotCount = $gameVersion->playableRaces()->count();
         $classPivotCount = $gameVersion->playableClasses()->count();
 
         $this->runSeeder($gameVersion->id);
 
         $this->assertSame($phaseCount, Phase::count());
-        $this->assertSame($zoneCount, Zone::count());
         $this->assertSame($racePivotCount, $gameVersion->playableRaces()->count());
         $this->assertSame($classPivotCount, $gameVersion->playableClasses()->count());
     }

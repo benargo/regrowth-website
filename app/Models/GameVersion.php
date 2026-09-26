@@ -41,7 +41,7 @@ class GameVersion extends Model implements DatasetModel
      *
      * @var list<string>
      */
-    public const array USAGE_RELATIONS = ['phases', 'zones', 'items', 'characters'];
+    public const array USAGE_RELATIONS = ['phases', 'items', 'characters'];
 
     /**
      * How long an officer keeps the edit lock after their last active visit or poll.
@@ -157,16 +157,6 @@ class GameVersion extends Model implements DatasetModel
     public function guildTags(): HasManyThrough
     {
         return $this->hasManyThrough(GuildTag::class, Phase::class, 'game_version_id', 'tbc_phase_id');
-    }
-
-    /**
-     * Get the zones for this game version.
-     *
-     * @return HasMany<Zone, $this>
-     */
-    public function zones(): HasMany
-    {
-        return $this->hasMany(Zone::class);
     }
 
     /**

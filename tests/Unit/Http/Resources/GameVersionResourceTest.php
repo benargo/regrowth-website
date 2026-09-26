@@ -144,7 +144,6 @@ class GameVersionResourceTest extends TestCase
 
         $this->assertSame(2, $array['phases_count']);
         $this->assertArrayNotHasKey('guild_tags_count', $array);
-        $this->assertArrayNotHasKey('zones_count', $array);
         $this->assertArrayNotHasKey('characters_count', $array);
     }
 }
