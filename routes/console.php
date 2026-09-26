@@ -30,9 +30,9 @@ Schedule::job(new FetchGuildRoster)->everySixHours()->name('fetch-guild-roster')
  *
  * The twiceDailyAt arguments indicate this job will run at 16:30 and 23:30 every day.
  */
-Schedule::command('app:refresh-warcraft-logs-reports --latest')
+Schedule::command('fetch:warcraft-logs --latest')
     ->twiceDailyAt(16, 23, 30)
-    ->name('refresh-warcraft-logs-reports');
+    ->name('fetch-warcraft-logs-latest');
 
 /**
  * Reset daily quests at 3:00 AM server time.

@@ -8,27 +8,17 @@ use App\Jobs\WarcraftLogs\FetchReportsByGuildTag;
 use App\Models\Report;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Bus\Batch;
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class RefreshWarcraftLogsReports extends Command
+#[Signature('fetch:warcraft-logs {--latest} {--all}')]
+#[Description('Runs a batch of jobs to refresh Warcraft Logs reports for all guild tags that count towards attendance.')]
+class FetchWarcraftLogs extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'app:refresh-warcraft-logs-reports {--latest} {--all}';
-
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Runs a batch of jobs to refresh Warcraft Logs reports for all guild tags that count towards attendance.';
-
     /**
      * Execute the console command.
      */
