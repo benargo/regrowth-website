@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dashboard\UpdatePhaseGuildTagsRequest;
 use App\Http\Requests\Dashboard\UpdatePhaseStartDateRequest;
-use App\Http\Resources\GuildTagResource;
 use App\Http\Resources\PhaseResource;
-use App\Models\GuildTag;
+use App\Http\Resources\WarcraftLogs\GuildTagResource;
 use App\Models\Phase;
+use App\Models\WarcraftLogs\GuildTag;
 use App\Services\WarcraftLogs\GuildTags as WarcraftLogsGuildTagsService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -75,11 +75,11 @@ class PhaseController extends Controller
         $guildTagIds = $request->validated('guild_tag_ids');
 
         // Remove this phase from all currently associated tags
-        GuildTag::query()->where('tbc_phase_id', $phase->id)->update(['tbc_phase_id' => null]);
+        GuildTag::query()->where('phase_id', $phase->id)->update(['phase_id' => null]);
 
         // Associate the selected tags with this phase
         if (! empty($guildTagIds)) {
-            GuildTag::query()->whereIn('id', $guildTagIds)->update(['tbc_phase_id' => $phase->id]);
+            GuildTag::query()->whereIn('id', $guildTagIds)->update(['phase_id' => $phase->id]);
         }
 
         return back();

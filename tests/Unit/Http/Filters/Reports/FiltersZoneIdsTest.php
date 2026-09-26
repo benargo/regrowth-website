@@ -4,7 +4,7 @@ namespace Tests\Unit\Http\Filters\Reports;
 
 use App\Http\Filters\Reports\FiltersZoneIds;
 use App\Models\Report;
-use App\Models\Zone;
+use App\Models\WarcraftLogs\Zone;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;

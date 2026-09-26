@@ -1,15 +1,13 @@
 <?php
 
-namespace Tests\Unit\Models;
+namespace Tests\Unit\Models\WarcraftLogs;
 
 use App\Casts\AsDifficultyCollection;
 use App\Casts\AsExpansion;
-use App\Models\GameVersion;
 use App\Models\Report;
-use App\Models\Zone;
+use App\Models\WarcraftLogs\Zone;
 use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
 use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 use PHPUnit\Framework\Attributes\Group;
@@ -25,11 +23,11 @@ class ZoneTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_uses_wcl_zones_table(): void
+    public function it_uses_warcraft_logs_zones_table(): void
     {
         $model = new Zone;
 
-        $this->assertSame('wcl_zones', $model->getTable());
+        $this->assertSame('warcraft_logs_zones', $model->getTable());
     }
 
     #[Test]
@@ -53,7 +51,6 @@ class ZoneTest extends ModelTestCase
             'difficulties',
             'expansion',
             'is_frozen',
-            'game_version_id',
         ]);
     }
 
@@ -68,7 +65,6 @@ class ZoneTest extends ModelTestCase
             'difficulties',
             'expansion',
             'is_frozen',
-            'game_version_id',
         ]);
     }
 
@@ -185,18 +181,6 @@ class ZoneTest extends ModelTestCase
         $this->assertCount(0, $zone->reports);
     }
 
-    // ==================== game version relationship ====================
-
-    #[Test]
-    public function it_belongs_to_a_game_version(): void
-    {
-        $gameVersion = GameVersion::factory()->create();
-        $zone = $this->create(['game_version_id' => $gameVersion->id]);
-
-        $this->assertRelation($zone, 'gameVersion', BelongsTo::class);
-        $this->assertTrue($zone->gameVersion->is($gameVersion));
-    }
-
     // ==================== factory states ====================
 
     #[Test]
@@ -247,23 +231,5 @@ class ZoneTest extends ModelTestCase
         $this->assertCount(1, $zone->difficulties);
         $this->assertSame('Mythic', $zone->difficulties->first()->name);
         $this->assertSame([20], $zone->difficulties->first()->sizes);
-    }
-
-    #[Test]
-    public function factory_for_game_version_state_sets_game_version_id(): void
-    {
-        $gameVersion = GameVersion::factory()->create();
-
-        $zone = $this->factory()->forGameVersion($gameVersion)->create();
-
-        $this->assertSame($gameVersion->id, $zone->game_version_id);
-    }
-
-    #[Test]
-    public function factory_default_game_version_id_is_null(): void
-    {
-        $zone = $this->create();
-
-        $this->assertNull($zone->game_version_id);
     }
 }

@@ -16,7 +16,7 @@ class UpdatePhaseGuildTagsRequest extends FormRequest
     {
         return [
             'guild_tag_ids' => ['present', 'array'],
-            'guild_tag_ids.*' => ['integer', 'exists:wcl_guild_tags,id'],
+            'guild_tag_ids.*' => ['integer', 'exists:warcraft_logs_guild_tags,id'],
         ];
     }
 

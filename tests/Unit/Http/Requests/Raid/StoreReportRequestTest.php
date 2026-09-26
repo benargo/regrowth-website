@@ -59,7 +59,7 @@ class StoreReportRequestTest extends TestCase
         $this->assertArrayHasKey('guild_tag_id', $rules);
         $this->assertContains('required', $rules['guild_tag_id']);
         $this->assertContains('integer', $rules['guild_tag_id']);
-        $this->assertContains('exists:wcl_guild_tags,id', $rules['guild_tag_id']);
+        $this->assertContains('exists:warcraft_logs_guild_tags,id', $rules['guild_tag_id']);
     }
 
     #[Test]
@@ -70,7 +70,7 @@ class StoreReportRequestTest extends TestCase
         $this->assertArrayHasKey('zone_id', $rules);
         $this->assertContains('required', $rules['zone_id']);
         $this->assertContains('integer', $rules['zone_id']);
-        $this->assertContains('exists:wcl_zones,id', $rules['zone_id']);
+        $this->assertContains('exists:warcraft_logs_zones,id', $rules['zone_id']);
     }
 
     #[Test]

@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Services\WarcraftLogs;
 
-use App\Models\GuildTag;
+use App\Models\WarcraftLogs\GuildTag;
 use App\Services\WarcraftLogs\AuthenticationHandler;
 use App\Services\WarcraftLogs\Reports;
 use App\Services\WarcraftLogs\ValueObjects\ReportData;

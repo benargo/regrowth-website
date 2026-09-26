@@ -3,7 +3,7 @@
 namespace Tests\Unit\Services\WarcraftLogs;
 
 use App\Events\AddonSettingsProcessed;
-use App\Models\GuildTag;
+use App\Models\WarcraftLogs\GuildTag;
 use App\Services\WarcraftLogs\AuthenticationHandler;
 use App\Services\WarcraftLogs\GuildTags;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -134,9 +134,9 @@ class GuildTagsTest extends TestCase
     {
         $this->makeGuildTags();
 
-        $this->assertDatabaseHas('wcl_guild_tags', ['id' => 1, 'name' => 'Main Raider']);
-        $this->assertDatabaseHas('wcl_guild_tags', ['id' => 2, 'name' => 'Alt']);
-        $this->assertDatabaseHas('wcl_guild_tags', ['id' => 3, 'name' => 'Trial']);
+        $this->assertDatabaseHas('warcraft_logs_guild_tags', ['id' => 1, 'name' => 'Main Raider']);
+        $this->assertDatabaseHas('warcraft_logs_guild_tags', ['id' => 2, 'name' => 'Alt']);
+        $this->assertDatabaseHas('warcraft_logs_guild_tags', ['id' => 3, 'name' => 'Trial']);
     }
 
     #[Test]
@@ -146,8 +146,8 @@ class GuildTagsTest extends TestCase
 
         $this->makeGuildTags();
 
-        $this->assertDatabaseHas('wcl_guild_tags', ['id' => 1, 'name' => 'Main Raider']);
-        $this->assertDatabaseMissing('wcl_guild_tags', ['id' => 1, 'name' => 'Old Name']);
+        $this->assertDatabaseHas('warcraft_logs_guild_tags', ['id' => 1, 'name' => 'Main Raider']);
+        $this->assertDatabaseMissing('warcraft_logs_guild_tags', ['id' => 1, 'name' => 'Old Name']);
     }
 
     #[Test]

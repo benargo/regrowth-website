@@ -3,7 +3,6 @@
 namespace Tests\Feature\Database\Migrations;
 
 use App\Models\Phase;
-use App\Models\Zone;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Group;
@@ -19,8 +18,9 @@ class AddGameVersionIdToDatasetTablesMigrationTest extends TestCase
     #[Test]
     #[TestWith(['bosses'])]
     #[TestWith(['raids'])]
-    #[TestWith(['wcl_guild_tags'])]
-    public function up_does_not_add_a_game_version_id_column_to_tables_that_inherit_it_through_their_phase(string $table): void
+    #[TestWith(['warcraft_logs_guild_tags'])]
+    #[TestWith(['warcraft_logs_zones'])]
+    public function up_does_not_add_a_game_version_id_column_to_tables_without_a_direct_version(string $table): void
     {
         $this->assertFalse(Schema::hasColumn($table, 'game_version_id'));
     }
@@ -33,15 +33,5 @@ class AddGameVersionIdToDatasetTablesMigrationTest extends TestCase
         $phase = Phase::factory()->create();
 
         $this->assertNull($phase->game_version_id);
-    }
-
-    #[Test]
-    public function up_adds_a_nullable_game_version_id_column_to_wcl_zones(): void
-    {
-        $this->assertTrue(Schema::hasColumn('wcl_zones', 'game_version_id'));
-
-        $zone = Zone::factory()->create();
-
-        $this->assertNull($zone->game_version_id);
     }
 }

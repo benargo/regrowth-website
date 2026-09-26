@@ -1,9 +1,8 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\WarcraftLogs;
 
-use App\Models\GameVersion;
-use App\Models\Zone;
+use App\Models\WarcraftLogs\Zone;
 use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
 use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -79,16 +78,6 @@ class ZoneFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'difficulties' => $difficulties,
-        ]);
-    }
-
-    /**
-     * Associate the model with a specific game version.
-     */
-    public function forGameVersion(GameVersion $gameVersion): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'game_version_id' => $gameVersion->id,
         ]);
     }
 }

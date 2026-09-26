@@ -6,7 +6,6 @@ use App\Models\GameVersion;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
-use App\Models\Zone;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use RuntimeException;
@@ -30,7 +29,7 @@ class GameVersionBackfillSeeder extends Seeder
      */
     protected function backfillModels(): array
     {
-        return [Phase::class, Zone::class];
+        return [Phase::class];
     }
 
     public function run(): void

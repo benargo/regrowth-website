@@ -4,12 +4,12 @@ namespace Tests\Feature\Reports;
 
 use App\Models\Character;
 use App\Models\DiscordRole;
-use App\Models\GuildTag;
 use App\Models\Permission;
 use App\Models\PlayableClass;
 use App\Models\Report;
 use App\Models\User;
-use App\Models\Zone;
+use App\Models\WarcraftLogs\GuildTag;
+use App\Models\WarcraftLogs\Zone;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;

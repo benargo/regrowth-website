@@ -1,9 +1,9 @@
 <?php
 
-namespace Tests\Unit\Observers;
+namespace Tests\Unit\Observers\WarcraftLogs;
 
-use App\Models\GuildTag;
-use App\Observers\GuildTagObserver;
+use App\Models\WarcraftLogs\GuildTag;
+use App\Observers\WarcraftLogs\GuildTagObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;

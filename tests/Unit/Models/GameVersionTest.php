@@ -9,13 +9,12 @@ use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Models\Character;
 use App\Models\GameVersion;
-use App\Models\GuildTag;
 use App\Models\Item;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\Raid;
-use App\Models\Zone;
+use App\Models\WarcraftLogs\GuildTag;
 use App\Policies\DatasetPolicy;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Model;
@@ -342,7 +341,6 @@ class GameVersionTest extends ModelTestCase
     {
         return [
             'phases' => ['phases', Phase::class],
-            'zones' => ['zones', Zone::class],
             'items' => ['items', Item::class],
             'characters' => ['characters', Character::class],
         ];

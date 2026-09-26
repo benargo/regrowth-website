@@ -11,7 +11,6 @@ import Master from "@/Layouts/Master";
 
 const USAGE_LABELS = [
     ["phases_count", "phase", "phases"],
-    ["zones_count", "zone", "zones"],
     ["items_count", "item", "items"],
     ["characters_count", "character", "characters"],
 ];

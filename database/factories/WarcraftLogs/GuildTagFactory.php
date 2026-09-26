@@ -1,9 +1,9 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\WarcraftLogs;
 
-use App\Models\GuildTag;
 use App\Models\Phase;
+use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -29,7 +29,7 @@ class GuildTagFactory extends Factory
         return [
             'name' => fake()->word(),
             'count_attendance' => fake()->boolean(30),
-            'tbc_phase_id' => fake()->optional(0.5)->randomElement(
+            'phase_id' => fake()->optional(0.5)->randomElement(
                 Phase::pluck('id')->toArray() ?: [null]
             ),
         ];
@@ -61,7 +61,7 @@ class GuildTagFactory extends Factory
     public function withPhase(?Phase $phase = null): static
     {
         return $this->state(fn (array $attributes) => [
-            'tbc_phase_id' => $phase?->id ?? Phase::factory(),
+            'phase_id' => $phase?->id ?? Phase::factory(),
         ]);
     }
 
@@ -71,7 +71,7 @@ class GuildTagFactory extends Factory
     public function withoutPhase(): static
     {
         return $this->state(fn (array $attributes) => [
-            'tbc_phase_id' => null,
+            'phase_id' => null,
         ]);
     }
 }

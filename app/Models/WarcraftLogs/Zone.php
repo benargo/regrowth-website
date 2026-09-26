@@ -1,20 +1,20 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\WarcraftLogs;
 
 use App\Casts\AsDifficultyCollection;
 use App\Casts\AsExpansion;
+use App\Models\Report;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['id', 'name', 'difficulties', 'expansion', 'is_frozen', 'game_version_id'])]
+#[Fillable(['id', 'name', 'difficulties', 'expansion', 'is_frozen'])]
 #[Hidden(['created_at', 'updated_at'])]
-#[Table(name: 'wcl_zones', keyType: 'int', incrementing: false)]
+#[Table(name: 'warcraft_logs_zones', keyType: 'int', incrementing: false)]
 class Zone extends Model
 {
     use HasFactory;
@@ -50,15 +50,5 @@ class Zone extends Model
     public function reports(): HasMany
     {
         return $this->hasMany(Report::class);
-    }
-
-    /**
-     * Get the game version that this zone belongs to.
-     *
-     * @return BelongsTo<GameVersion>
-     */
-    public function gameVersion(): BelongsTo
-    {
-        return $this->belongsTo(GameVersion::class);
     }
 }

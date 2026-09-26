@@ -2,7 +2,7 @@
 
 namespace App\Services\WarcraftLogs;
 
-use App\Models\GuildTag;
+use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 

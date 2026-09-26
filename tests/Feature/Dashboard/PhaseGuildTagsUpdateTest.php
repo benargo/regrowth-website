@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Dashboard;
 
-use App\Models\GuildTag;
 use App\Models\Phase;
 use App\Models\User;
+use App\Models\WarcraftLogs\GuildTag;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
@@ -94,8 +94,8 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $tag1->refresh();
         $tag2->refresh();
 
-        $this->assertEquals($phase->id, $tag1->tbc_phase_id);
-        $this->assertEquals($phase->id, $tag2->tbc_phase_id);
+        $this->assertEquals($phase->id, $tag1->phase_id);
+        $this->assertEquals($phase->id, $tag2->phase_id);
     }
 
     #[Test]
@@ -112,8 +112,8 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $existingTag->refresh();
         $newTag->refresh();
 
-        $this->assertNull($existingTag->tbc_phase_id);
-        $this->assertEquals($phase->id, $newTag->tbc_phase_id);
+        $this->assertNull($existingTag->phase_id);
+        $this->assertEquals($phase->id, $newTag->phase_id);
     }
 
     #[Test]
@@ -130,8 +130,8 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $tag1->refresh();
         $tag2->refresh();
 
-        $this->assertNull($tag1->tbc_phase_id);
-        $this->assertNull($tag2->tbc_phase_id);
+        $this->assertNull($tag1->phase_id);
+        $this->assertNull($tag2->phase_id);
     }
 
     // ==================== update-guild-tags — validation ====================
@@ -190,7 +190,7 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $tagForPhase1->refresh();
         $tagForPhase2->refresh();
 
-        $this->assertNull($tagForPhase1->tbc_phase_id);
-        $this->assertEquals($phase2->id, $tagForPhase2->tbc_phase_id);
+        $this->assertNull($tagForPhase1->phase_id);
+        $this->assertEquals($phase2->id, $tagForPhase2->phase_id);
     }
 }

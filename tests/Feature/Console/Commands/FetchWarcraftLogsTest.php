@@ -4,8 +4,8 @@ namespace Tests\Feature\Console\Commands;
 
 use App\Jobs\WarcraftLogs\FetchGuildTags;
 use App\Jobs\WarcraftLogs\FetchReportsByGuildTag;
-use App\Models\GuildTag;
 use App\Models\Report;
+use App\Models\WarcraftLogs\GuildTag;
 use Carbon\Carbon;
 use Illuminate\Bus\PendingBatch;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,7 +16,7 @@ use Tests\TestCase;
 
 #[Group('raiding')]
 #[Group('warcraftlogs-integration')]
-class RefreshWarcraftLogsReportsTest extends TestCase
+class FetchWarcraftLogsTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -30,7 +30,7 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         $tag1 = GuildTag::factory()->countsAttendance()->create();
         $tag2 = GuildTag::factory()->countsAttendance()->create();
 
-        $this->artisan('app:refresh-warcraft-logs-reports')
+        $this->artisan('fetch:warcraft-logs')
             ->assertSuccessful();
 
         Bus::assertDispatchedSync(FetchGuildTags::class);
@@ -48,7 +48,7 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         $attendanceTag = GuildTag::factory()->countsAttendance()->create();
         GuildTag::factory()->doesNotCountAttendance()->create();
 
-        $this->artisan('app:refresh-warcraft-logs-reports')
+        $this->artisan('fetch:warcraft-logs')
             ->assertSuccessful();
 
         Bus::assertDispatchedSync(FetchGuildTags::class);
@@ -72,7 +72,7 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         GuildTag::factory()->countsAttendance()->create();
         Report::factory()->create(['end_time' => now()->subHour()]);
 
-        $this->artisan('app:refresh-warcraft-logs-reports')
+        $this->artisan('fetch:warcraft-logs')
             ->assertSuccessful();
 
         Bus::assertDispatchedSync(FetchGuildTags::class);
@@ -95,7 +95,7 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         $endTime = Carbon::parse('2025-06-01 20:00:00');
         Report::factory()->create(['end_time' => $endTime]);
 
-        $this->artisan('app:refresh-warcraft-logs-reports', ['--latest' => true])
+        $this->artisan('fetch:warcraft-logs', ['--latest' => true])
             ->assertSuccessful();
 
         Bus::assertDispatchedSync(FetchGuildTags::class);
@@ -118,7 +118,7 @@ class RefreshWarcraftLogsReportsTest extends TestCase
 
         GuildTag::factory()->countsAttendance()->create();
 
-        $this->artisan('app:refresh-warcraft-logs-reports', ['--latest' => true])
+        $this->artisan('fetch:warcraft-logs', ['--latest' => true])
             ->assertSuccessful();
 
         Bus::assertDispatchedSync(FetchGuildTags::class);
@@ -144,7 +144,7 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         Report::factory()->create(['end_time' => $olderEndTime, 'created_at' => now()->subMinute()]);
         Report::factory()->create(['end_time' => $newerEndTime, 'created_at' => now()]);
 
-        $this->artisan('app:refresh-warcraft-logs-reports', ['--latest' => true])
+        $this->artisan('fetch:warcraft-logs', ['--latest' => true])
             ->assertSuccessful();
 
         Bus::assertDispatchedSync(FetchGuildTags::class);
@@ -170,7 +170,7 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         $attendanceTag = GuildTag::factory()->countsAttendance()->create();
         $nonAttendanceTag = GuildTag::factory()->doesNotCountAttendance()->create();
 
-        $this->artisan('app:refresh-warcraft-logs-reports', ['--all' => true])
+        $this->artisan('fetch:warcraft-logs', ['--all' => true])
             ->assertSuccessful();
 
         Bus::assertDispatchedSync(FetchGuildTags::class);
@@ -193,7 +193,7 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         $attendanceTag = GuildTag::factory()->countsAttendance()->create();
         $nonAttendanceTag = GuildTag::factory()->doesNotCountAttendance()->create();
 
-        $this->artisan('app:refresh-warcraft-logs-reports')
+        $this->artisan('fetch:warcraft-logs')
             ->assertSuccessful();
 
         Bus::assertDispatchedSync(FetchGuildTags::class);
@@ -217,7 +217,7 @@ class RefreshWarcraftLogsReportsTest extends TestCase
 
         GuildTag::factory()->countsAttendance()->count(3)->create();
 
-        $this->artisan('app:refresh-warcraft-logs-reports')
+        $this->artisan('fetch:warcraft-logs')
             ->assertSuccessful();
 
         Bus::assertDispatchedSync(FetchGuildTags::class);
@@ -231,7 +231,7 @@ class RefreshWarcraftLogsReportsTest extends TestCase
 
         GuildTag::factory()->countsAttendance()->count(3)->create();
 
-        $this->artisan('app:refresh-warcraft-logs-reports')
+        $this->artisan('fetch:warcraft-logs')
             ->assertSuccessful();
 
         Bus::assertDispatchedSync(FetchGuildTags::class);
@@ -248,7 +248,7 @@ class RefreshWarcraftLogsReportsTest extends TestCase
 
         GuildTag::factory()->countsAttendance()->create();
 
-        $this->artisan('app:refresh-warcraft-logs-reports')
+        $this->artisan('fetch:warcraft-logs')
             ->assertSuccessful();
 
         Bus::assertDispatchedSync(FetchGuildTags::class);

@@ -3,9 +3,9 @@
 namespace Tests\Feature\Jobs\WarcraftLogs;
 
 use App\Jobs\WarcraftLogs\FetchReportsByGuildTag;
-use App\Models\GuildTag;
 use App\Models\Report;
 use App\Models\User;
+use App\Models\WarcraftLogs\GuildTag;
 use App\Services\WarcraftLogs\Reports;
 use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
 use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
@@ -85,7 +85,7 @@ class FetchReportsByGuildTagTest extends TestCase
         $job = new FetchReportsByGuildTag($guildTag);
         $job->handle($reportsService);
 
-        $this->assertDatabaseHas('wcl_zones', ['id' => 2000, 'name' => 'Karazhan']);
+        $this->assertDatabaseHas('warcraft_logs_zones', ['id' => 2000, 'name' => 'Karazhan']);
         $this->assertDatabaseHas('reports', ['code' => 'ZONE01', 'zone_id' => 2000]);
     }
 

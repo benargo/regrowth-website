@@ -5,9 +5,9 @@ namespace Tests\Unit\Models;
 use App\Helpers\Database\Eloquent\Relations\HasManyKeyBy;
 use App\Models\Boss;
 use App\Models\GameVersion;
-use App\Models\GuildTag;
 use App\Models\Phase;
 use App\Models\Raid;
+use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -263,7 +263,7 @@ class PhaseTest extends ModelTestCase
     public function it_has_many_guild_tags(): void
     {
         $phase = $this->create();
-        GuildTag::factory()->count(3)->create(['tbc_phase_id' => $phase->id]);
+        GuildTag::factory()->count(3)->create(['phase_id' => $phase->id]);
 
         $this->assertRelation($phase, 'guildTags', HasMany::class);
         $this->assertCount(3, $phase->guildTags);
