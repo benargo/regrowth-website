@@ -75,11 +75,11 @@ class PhaseController extends Controller
         $guildTagIds = $request->validated('guild_tag_ids');
 
         // Remove this phase from all currently associated tags
-        GuildTag::query()->where('tbc_phase_id', $phase->id)->update(['tbc_phase_id' => null]);
+        GuildTag::query()->where('phase_id', $phase->id)->update(['phase_id' => null]);
 
         // Associate the selected tags with this phase
         if (! empty($guildTagIds)) {
-            GuildTag::query()->whereIn('id', $guildTagIds)->update(['tbc_phase_id' => $phase->id]);
+            GuildTag::query()->whereIn('id', $guildTagIds)->update(['phase_id' => $phase->id]);
         }
 
         return back();

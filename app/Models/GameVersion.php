@@ -157,7 +157,7 @@ class GameVersion extends Model implements DatasetModel
      */
     public function guildTags(): HasManyThrough
     {
-        return $this->hasManyThrough(GuildTag::class, Phase::class, 'game_version_id', 'tbc_phase_id');
+        return $this->hasManyThrough(GuildTag::class, Phase::class);
     }
 
     /**

@@ -263,7 +263,7 @@ class PhaseTest extends ModelTestCase
     public function it_has_many_guild_tags(): void
     {
         $phase = $this->create();
-        GuildTag::factory()->count(3)->create(['tbc_phase_id' => $phase->id]);
+        GuildTag::factory()->count(3)->create(['phase_id' => $phase->id]);
 
         $this->assertRelation($phase, 'guildTags', HasMany::class);
         $this->assertCount(3, $phase->guildTags);

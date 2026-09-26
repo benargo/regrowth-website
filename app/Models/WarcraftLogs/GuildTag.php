@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[ObservedBy([GuildTagObserver::class])]
 #[UsePolicy(DatasetPolicy::class)]
-#[Fillable(['id', 'name', 'count_attendance', 'tbc_phase_id'])]
+#[Fillable(['id', 'name', 'count_attendance', 'phase_id'])]
 #[Table('warcraft_logs_guild_tags')]
 class GuildTag extends Model implements DatasetModel
 {
@@ -46,13 +46,13 @@ class GuildTag extends Model implements DatasetModel
     }
 
     /**
-     * Get the TBC phase associated with the guild tag.
+     * Get the phase associated with the guild tag.
      *
      * @return BelongsTo<Phase>
      */
     public function phase(): BelongsTo
     {
-        return $this->belongsTo(Phase::class, 'tbc_phase_id');
+        return $this->belongsTo(Phase::class);
     }
 
     /**

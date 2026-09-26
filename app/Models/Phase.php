@@ -91,7 +91,7 @@ class Phase extends Model implements DatasetModel
      */
     public function guildTags(): HasMany
     {
-        return $this->hasMany(GuildTag::class, 'tbc_phase_id');
+        return $this->hasMany(GuildTag::class);
     }
 
     /**
