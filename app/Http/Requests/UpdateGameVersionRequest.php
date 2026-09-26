@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Enums\Faction;
 use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
@@ -39,7 +40,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             'theme' => ['sometimes', 'nullable', Rule::enum(Theme::class)],
             'blizzard_namespace' => ['sometimes', 'nullable', Rule::enum(BlizzardNamespace::class)],
             'warcraftlogs_guild' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:2147483647'],
-            'warcraftlogs_expansion' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:2147483647'],
+            'warcraftlogs_namespace' => ['sometimes', 'nullable', Rule::enum(WarcraftLogsNamespace::class)],
             'playable_race_ids' => ['sometimes', 'array'],
             'playable_race_ids.*' => ['integer', 'distinct', Rule::exists(PlayableRace::class, 'id')],
             'playable_class_ids' => ['sometimes', 'array'],

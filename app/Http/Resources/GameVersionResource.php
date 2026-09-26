@@ -73,9 +73,14 @@ class GameVersionResource extends JsonResource
             'realm' => $this->realm,
             'faction' => $this->faction,
             'release_date' => $this->release_date?->toDateString(),
-            'blizzard_namespace' => $this->blizzard_namespace,
-            'warcraftlogs_guild' => $this->warcraftlogs_guild,
-            'warcraftlogs_expansion' => $this->warcraftlogs_expansion,
+            'blizzard' => ['namespace' => $this->blizzard_namespace],
+            'warcraftlogs' => [
+                'guild' => $this->warcraftlogs_guild,
+                'namespace' => [
+                    'value' => $this->warcraftlogs_namespace,
+                    'label' => $this->warcraftlogs_namespace?->label(),
+                ],
+            ],
             'phases_count' => $this->whenCounted('phases'),
             'items_count' => $this->whenCounted('items'),
             'characters_count' => $this->whenCounted('characters'),

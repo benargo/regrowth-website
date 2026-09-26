@@ -6,6 +6,7 @@ use App\Casts\AsTheme;
 use App\Contracts\Models\DatasetModel;
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Policies\DatasetPolicy;
 use Database\Factories\GameVersionFactory;
@@ -27,7 +28,7 @@ use Illuminate\Support\Facades\Cache;
     'theme',
     'blizzard_namespace',
     'warcraftlogs_guild',
-    'warcraftlogs_expansion',
+    'warcraftlogs_namespace',
 ])]
 #[UsePolicy(DatasetPolicy::class)]
 class GameVersion extends Model implements DatasetModel
@@ -62,7 +63,7 @@ class GameVersion extends Model implements DatasetModel
             'theme' => AsTheme::class,
             'blizzard_namespace' => BlizzardNamespace::class,
             'warcraftlogs_guild' => 'integer',
-            'warcraftlogs_expansion' => 'integer',
+            'warcraftlogs_namespace' => WarcraftLogsNamespace::class,
         ];
     }
 

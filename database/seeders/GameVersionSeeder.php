@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Enums\Faction;
 use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\GameVersion;
 use Carbon\Carbon;
 use Carbon\CarbonTimeZone;
@@ -24,7 +25,7 @@ class GameVersionSeeder extends Seeder
                 'theme' => Theme::CLASSIC->value,
                 'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY->value,
                 'warcraftlogs_guild' => 774848,
-                'warcraftlogs_expansion' => 1001,
+                'warcraftlogs_namespace' => WarcraftLogsNamespace::ANNIVERSARY->value,
             ],
         ];
     }

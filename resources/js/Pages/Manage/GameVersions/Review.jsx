@@ -63,9 +63,9 @@ function gameVersionDetails(gameVersion) {
         ["Theme", capitalise(gameVersion.theme)],
         ["Realm", gameVersion.realm],
         ["Faction", capitalise(gameVersion.faction)],
-        ["Blizzard API namespace", capitalise(gameVersion.blizzard_namespace)],
-        ["Warcraft Logs guild ID", gameVersion.warcraftlogs_guild],
-        ["Warcraft Logs expansion ID", gameVersion.warcraftlogs_expansion],
+        ["Blizzard API namespace", capitalise(gameVersion.blizzard.namespace)],
+        ["Warcraft Logs guild ID", gameVersion.warcraftlogs.guild],
+        ["Warcraft Logs namespace", gameVersion.warcraftlogs.namespace.label],
     ];
 }
 

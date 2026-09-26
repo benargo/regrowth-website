@@ -58,9 +58,9 @@ function GameVersionCard({ gameVersion, onDeleteClick }) {
                     <Detail label="Realm" value={gameVersion.realm} />
                     <Detail label="Faction" value={gameVersion.faction} />
                     <Detail label="Theme" value={gameVersion.theme} />
-                    <Detail label="Blizzard API namespace" value={gameVersion.blizzard_namespace} />
-                    <Detail label="Warcraft Logs guild ID" value={gameVersion.warcraftlogs_guild} />
-                    <Detail label="Warcraft Logs expansion ID" value={gameVersion.warcraftlogs_expansion} />
+                    <Detail label="Blizzard API namespace" value={gameVersion.blizzard.namespace} />
+                    <Detail label="Warcraft Logs guild ID" value={gameVersion.warcraftlogs.guild} />
+                    <Detail label="Warcraft Logs namespace" value={gameVersion.warcraftlogs.namespace.label} />
                 </dl>
 
                 <p id={usageId} className="text-secondary-300 text-sm">

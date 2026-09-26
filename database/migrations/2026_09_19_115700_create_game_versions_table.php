@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('theme')->nullable();
             $table->string('blizzard_namespace')->nullable();
             $table->integer('warcraftlogs_guild')->nullable();
-            $table->integer('warcraftlogs_expansion')->nullable();
+            $table->string('warcraftlogs_namespace')->nullable();
             $table->timestamps();
         });
     }

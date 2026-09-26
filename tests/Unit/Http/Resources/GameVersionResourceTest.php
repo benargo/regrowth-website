@@ -5,6 +5,7 @@ namespace Tests\Unit\Http\Resources;
 use App\Enums\Faction;
 use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Http\Resources\GameVersionResource;
 use App\Models\GameVersion;
 use Carbon\Carbon;
@@ -94,7 +95,7 @@ class GameVersionResourceTest extends TestCase
             'theme' => Theme::CLASSIC,
             'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
             'warcraftlogs_guild' => 774848,
-            'warcraftlogs_expansion' => 1001,
+            'warcraftlogs_namespace' => WarcraftLogsNamespace::ANNIVERSARY,
         ]);
 
         $array = GameVersionResource::forManagement($gameVersion)->resolve(new Request);
@@ -107,9 +108,14 @@ class GameVersionResourceTest extends TestCase
             'realm' => 'Thunderstrike',
             'faction' => Faction::ALLIANCE,
             'release_date' => '2026-02-06',
-            'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
-            'warcraftlogs_guild' => 774848,
-            'warcraftlogs_expansion' => 1001,
+            'blizzard' => ['namespace' => BlizzardNamespace::ANNIVERSARY],
+            'warcraftlogs' => [
+                'guild' => 774848,
+                'namespace' => [
+                    'value' => WarcraftLogsNamespace::ANNIVERSARY,
+                    'label' => 'The Burning Crusade Classic Anniversary',
+                ],
+            ],
         ], $array);
     }
 
@@ -121,16 +127,16 @@ class GameVersionResourceTest extends TestCase
             'faction' => null,
             'blizzard_namespace' => null,
             'warcraftlogs_guild' => null,
-            'warcraftlogs_expansion' => null,
+            'warcraftlogs_namespace' => null,
         ]);
 
         $array = GameVersionResource::forManagement($gameVersion)->resolve(new Request);
 
         $this->assertNull($array['realm']);
         $this->assertNull($array['faction']);
-        $this->assertNull($array['blizzard_namespace']);
-        $this->assertNull($array['warcraftlogs_guild']);
-        $this->assertNull($array['warcraftlogs_expansion']);
+        $this->assertNull($array['blizzard']['namespace']);
+        $this->assertNull($array['warcraftlogs']['guild']);
+        $this->assertSame(['value' => null, 'label' => null], $array['warcraftlogs']['namespace']);
     }
 
     #[Test]

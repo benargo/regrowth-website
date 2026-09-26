@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Enums\Faction;
 use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -27,7 +28,7 @@ class StoreGameVersionRequest extends FormRequest
             'theme' => ['required', Rule::enum(Theme::class)],
             'blizzard_namespace' => ['nullable', Rule::enum(BlizzardNamespace::class)],
             'warcraftlogs_guild' => ['nullable', 'integer', 'min:1', 'max:2147483647'],
-            'warcraftlogs_expansion' => ['nullable', 'integer', 'min:1', 'max:2147483647'],
+            'warcraftlogs_namespace' => ['nullable', Rule::enum(WarcraftLogsNamespace::class)],
         ];
     }
 
@@ -58,7 +59,7 @@ class StoreGameVersionRequest extends FormRequest
             'release_date' => 'release date',
             'blizzard_namespace' => 'Blizzard API namespace',
             'warcraftlogs_guild' => 'Warcraft Logs guild ID',
-            'warcraftlogs_expansion' => 'Warcraft Logs expansion ID',
+            'warcraftlogs_namespace' => 'Warcraft Logs namespace',
         ];
     }
 

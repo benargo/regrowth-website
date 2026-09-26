@@ -7,6 +7,7 @@ use App\Contracts\Models\DatasetModel;
 use App\Enums\Faction;
 use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\Item;
@@ -66,7 +67,7 @@ class GameVersionTest extends ModelTestCase
             'theme',
             'blizzard_namespace',
             'warcraftlogs_guild',
-            'warcraftlogs_expansion',
+            'warcraftlogs_namespace',
         ]);
     }
 
@@ -81,7 +82,7 @@ class GameVersionTest extends ModelTestCase
             'theme' => AsTheme::class,
             'blizzard_namespace' => BlizzardNamespace::class,
             'warcraftlogs_guild' => 'integer',
-            'warcraftlogs_expansion' => 'integer',
+            'warcraftlogs_namespace' => WarcraftLogsNamespace::class,
         ]);
     }
 
@@ -114,14 +115,14 @@ class GameVersionTest extends ModelTestCase
             'faction' => null,
             'blizzard_namespace' => null,
             'warcraftlogs_guild' => null,
-            'warcraftlogs_expansion' => null,
+            'warcraftlogs_namespace' => null,
         ])->fresh();
 
         $this->assertNull($gameVersion->realm);
         $this->assertNull($gameVersion->faction);
         $this->assertNull($gameVersion->blizzard_namespace);
         $this->assertNull($gameVersion->warcraftlogs_guild);
-        $this->assertNull($gameVersion->warcraftlogs_expansion);
+        $this->assertNull($gameVersion->warcraftlogs_namespace);
     }
 
     // ==================== casts ====================
@@ -193,15 +194,38 @@ class GameVersionTest extends ModelTestCase
     }
 
     #[Test]
-    public function warcraftlogs_ids_are_cast_to_integers(): void
+    public function warcraftlogs_guild_is_cast_to_an_integer(): void
     {
-        $gameVersion = $this->create([
-            'warcraftlogs_guild' => '774848',
-            'warcraftlogs_expansion' => '1001',
-        ])->fresh();
+        $gameVersion = $this->create(['warcraftlogs_guild' => '774848'])->fresh();
 
         $this->assertSame(774848, $gameVersion->warcraftlogs_guild);
-        $this->assertSame(1001, $gameVersion->warcraftlogs_expansion);
+    }
+
+    #[Test]
+    public function warcraftlogs_namespace_is_cast_to_warcraftlogs_namespace_enum(): void
+    {
+        $gameVersion = $this->create(['warcraftlogs_namespace' => WarcraftLogsNamespace::SEASON_OF_DISCOVERY]);
+
+        $this->assertSame(WarcraftLogsNamespace::SEASON_OF_DISCOVERY, $gameVersion->fresh()->warcraftlogs_namespace);
+        $this->assertTableHas([
+            'id' => $gameVersion->id,
+            'warcraftlogs_namespace' => 'season_of_discovery',
+        ]);
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function warcraftlogs_namespace_throws_for_a_value_outside_the_enum(): void
+    {
+        $gameVersion = $this->create();
+
+        DB::table('game_versions')
+            ->where('id', $gameVersion->id)
+            ->update(['warcraftlogs_namespace' => 'ANNIVERSARY']);
+
+        $this->expectException(\ValueError::class);
+
+        $gameVersion->fresh()->warcraftlogs_namespace;
     }
 
     #[Test]

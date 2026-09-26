@@ -22,7 +22,7 @@ const FIELD_LABELS = {
     faction: "Faction",
     blizzard_namespace: "Blizzard API namespace",
     warcraftlogs_guild: "Warcraft Logs guild ID",
-    warcraftlogs_expansion: "Warcraft Logs expansion ID",
+    warcraftlogs_namespace: "Warcraft Logs namespace",
 };
 
 /**
@@ -36,9 +36,9 @@ export function gameVersionFormData(gameVersion = null) {
         faction: gameVersion?.faction ?? "",
         release_date: gameVersion?.release_date ?? "",
         theme: gameVersion?.theme ?? "",
-        blizzard_namespace: gameVersion?.blizzard_namespace ?? "",
-        warcraftlogs_guild: gameVersion?.warcraftlogs_guild ?? "",
-        warcraftlogs_expansion: gameVersion?.warcraftlogs_expansion ?? "",
+        blizzard_namespace: gameVersion?.blizzard?.namespace ?? "",
+        warcraftlogs_guild: gameVersion?.warcraftlogs?.guild ?? "",
+        warcraftlogs_namespace: gameVersion?.warcraftlogs?.namespace?.value ?? "",
     };
 }
 
@@ -178,12 +178,19 @@ export default function GameVersionForm({ form, options, onSubmit, submitLabel, 
                     {text("warcraftlogs_guild", { type: "number", min: 1, inputMode: "numeric" })}
                 </FormRow>
                 <FormRow
-                    htmlFor="warcraftlogs_expansion"
-                    label={FIELD_LABELS.warcraftlogs_expansion}
-                    hint="The expansion ID Warcraft Logs uses for this version's zones."
-                    error={errors.warcraftlogs_expansion}
+                    htmlFor="warcraftlogs_namespace"
+                    label={FIELD_LABELS.warcraftlogs_namespace}
+                    hint="Which Warcraft Logs site this version's reports come from."
+                    error={errors.warcraftlogs_namespace}
                 >
-                    {text("warcraftlogs_expansion", { type: "number", min: 1, inputMode: "numeric" })}
+                    <OptionSelect
+                        name="warcraftlogs_namespace"
+                        value={data.warcraftlogs_namespace}
+                        onChange={(value) => select("warcraftlogs_namespace", value)}
+                        options={options.warcraftlogs_namespaces}
+                        placeholder="Not set"
+                        invalid={!!errors.warcraftlogs_namespace}
+                    />
                 </FormRow>
             </FormSection>
 

@@ -8,6 +8,7 @@ use App\Enums\Faction;
 use App\Enums\GameVersionSetupStep;
 use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\GameVersion;
 use App\Models\Phase;
 use App\Models\PlayableClass;
@@ -83,6 +84,8 @@ class GameVersionControllerTest extends DashboardTestCase
             ->where('options.factions.0', ['value' => 'Alliance', 'label' => 'Alliance'])
             ->where('options.themes.0', ['value' => 'classic', 'label' => 'Classic'])
             ->where('options.blizzard_namespaces.0', ['value' => 'anniversary', 'label' => 'Anniversary'])
+            ->where('options.warcraftlogs_namespaces.0', ['value' => 'anniversary', 'label' => 'The Burning Crusade Classic Anniversary'])
+            ->has('options.warcraftlogs_namespaces', count(WarcraftLogsNamespace::cases()))
             ->where('steps', GameVersionSetupStep::options())
         );
     }
@@ -105,7 +108,7 @@ class GameVersionControllerTest extends DashboardTestCase
         $this->assertSame(Theme::FOREVER, $gameVersion->theme);
         $this->assertSame(BlizzardNamespace::CLASSIC, $gameVersion->blizzard_namespace);
         $this->assertSame(123456, $gameVersion->warcraftlogs_guild);
-        $this->assertSame(1002, $gameVersion->warcraftlogs_expansion);
+        $this->assertSame(WarcraftLogsNamespace::CLASSIC, $gameVersion->warcraftlogs_namespace);
     }
 
     #[Test]
@@ -154,28 +157,28 @@ class GameVersionControllerTest extends DashboardTestCase
             'faction' => 'Scourge',
             'theme' => 'neon',
             'blizzard_namespace' => 'forever',
+            'warcraftlogs_namespace' => 'ANNIVERSARY',
         ]));
 
         $response->assertInvalid([
             'faction' => 'The selected faction is invalid.',
             'theme' => 'The selected theme is invalid.',
             'blizzard_namespace' => 'The selected Blizzard API namespace is invalid.',
+            'warcraftlogs_namespace' => 'The selected Warcraft Logs namespace is invalid.',
         ]);
         $this->assertDatabaseCount('game_versions', 0);
     }
 
     #[Group('validation')]
     #[Test]
-    public function it_rejects_invalid_warcraftlogs_ids(): void
+    public function it_rejects_an_invalid_warcraftlogs_guild_id(): void
     {
         $response = $this->actingAs($this->officer)->post(route('management.game-versions.store'), $this->validPayload([
             'warcraftlogs_guild' => 0,
-            'warcraftlogs_expansion' => 'abc',
         ]));
 
         $response->assertInvalid([
             'warcraftlogs_guild' => 'The Warcraft Logs guild ID field must be at least 1.',
-            'warcraftlogs_expansion' => 'The Warcraft Logs expansion ID field must be an integer.',
         ]);
         $this->assertDatabaseCount('game_versions', 0);
     }
@@ -604,7 +607,7 @@ class GameVersionControllerTest extends DashboardTestCase
             'faction' => null,
             'blizzard_namespace' => null,
             'warcraftlogs_guild' => null,
-            'warcraftlogs_expansion' => null,
+            'warcraftlogs_namespace' => null,
         ]));
 
         $response = $this->actingAs($this->officer)->patch(route('management.game-versions.update', $gameVersion), $this->validPayload([
@@ -613,8 +616,23 @@ class GameVersionControllerTest extends DashboardTestCase
             'faction' => '',
             'blizzard_namespace' => '',
             'warcraftlogs_guild' => '',
-            'warcraftlogs_expansion' => '',
+            'warcraftlogs_namespace' => '',
         ]));
+
+        $response->assertValid();
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_ignores_the_retired_warcraftlogs_expansion_field(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $this->expectUpdate($gameVersion, ['realm' => 'Gehennas']);
+
+        $response = $this->actingAs($this->officer)->patch(route('management.game-versions.update', $gameVersion), [
+            'realm' => 'Gehennas',
+            'warcraftlogs_expansion' => 1001,
+        ]);
 
         $response->assertValid();
     }
@@ -1068,7 +1086,7 @@ class GameVersionControllerTest extends DashboardTestCase
             'theme' => Theme::FOREVER->value,
             'blizzard_namespace' => BlizzardNamespace::CLASSIC->value,
             'warcraftlogs_guild' => 123456,
-            'warcraftlogs_expansion' => 1002,
+            'warcraftlogs_namespace' => WarcraftLogsNamespace::CLASSIC->value,
             ...$overrides,
         ];
     }
