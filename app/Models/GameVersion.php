@@ -6,6 +6,7 @@ use App\Casts\AsTheme;
 use App\Contracts\Models\DatasetModel;
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Models\WarcraftLogs\GuildTag;
 use App\Policies\DatasetPolicy;
 use Database\Factories\GameVersionFactory;
 use Illuminate\Contracts\Cache\Lock;

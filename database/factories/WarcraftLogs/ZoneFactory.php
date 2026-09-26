@@ -1,8 +1,8 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\WarcraftLogs;
 
-use App\Models\Zone;
+use App\Models\WarcraftLogs\Zone;
 use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
 use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
 use Illuminate\Database\Eloquent\Factories\Factory;

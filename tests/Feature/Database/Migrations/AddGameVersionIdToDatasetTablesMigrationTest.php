@@ -18,8 +18,8 @@ class AddGameVersionIdToDatasetTablesMigrationTest extends TestCase
     #[Test]
     #[TestWith(['bosses'])]
     #[TestWith(['raids'])]
-    #[TestWith(['wcl_guild_tags'])]
-    #[TestWith(['wcl_zones'])]
+    #[TestWith(['warcraft_logs_guild_tags'])]
+    #[TestWith(['warcraft_logs_zones'])]
     public function up_does_not_add_a_game_version_id_column_to_tables_without_a_direct_version(string $table): void
     {
         $this->assertFalse(Schema::hasColumn($table, 'game_version_id'));

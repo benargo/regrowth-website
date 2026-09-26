@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Events\ReportCreated;
 use App\Events\ReportUpdated;
 use App\Http\Resources\ReportCollection;
+use App\Models\WarcraftLogs\GuildTag;
+use App\Models\WarcraftLogs\Zone;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Table;

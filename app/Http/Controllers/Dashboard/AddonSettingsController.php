@@ -7,7 +7,7 @@ use App\Http\Resources\CharacterSummaryResource;
 use App\Http\Resources\LootCouncillorCollection;
 use App\Models\Character;
 use App\Models\GuildRank;
-use App\Models\GuildTag;
+use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;

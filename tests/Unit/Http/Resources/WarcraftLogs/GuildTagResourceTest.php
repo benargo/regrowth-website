@@ -1,9 +1,9 @@
 <?php
 
-namespace Tests\Unit\Http\Resources;
+namespace Tests\Unit\Http\Resources\WarcraftLogs;
 
-use App\Http\Resources\GuildTagResource;
-use App\Models\GuildTag;
+use App\Http\Resources\WarcraftLogs\GuildTagResource;
+use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\Group;

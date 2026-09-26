@@ -1,9 +1,9 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\WarcraftLogs;
 
-use App\Models\GuildTag;
 use App\Models\Phase;
+use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 

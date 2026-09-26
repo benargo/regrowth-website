@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Reports;
 
-use App\Models\GuildTag;
 use App\Models\Report;
 use App\Models\User;
-use App\Models\Zone;
+use App\Models\WarcraftLogs\GuildTag;
+use App\Models\WarcraftLogs\Zone;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;

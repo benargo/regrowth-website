@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Contracts\Models\DatasetModel;
 use App\Events\AddonSettingsProcessed;
 use App\Helpers\Database\Eloquent\Traits\HasManyKeyBy;
+use App\Models\WarcraftLogs\GuildTag;
 use App\Policies\DatasetPolicy;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;

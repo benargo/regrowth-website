@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\WarcraftLogs;
 
 use App\Casts\AsDifficultyCollection;
 use App\Casts\AsExpansion;
+use App\Models\Report;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['id', 'name', 'difficulties', 'expansion', 'is_frozen'])]
 #[Hidden(['created_at', 'updated_at'])]
-#[Table(name: 'wcl_zones', keyType: 'int', incrementing: false)]
+#[Table(name: 'warcraft_logs_zones', keyType: 'int', incrementing: false)]
 class Zone extends Model
 {
     use HasFactory;

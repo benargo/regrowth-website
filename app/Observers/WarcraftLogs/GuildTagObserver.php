@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Observers;
+namespace App\Observers\WarcraftLogs;
 
-use App\Models\GuildTag;
+use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Support\Facades\Cache;
 
 class GuildTagObserver

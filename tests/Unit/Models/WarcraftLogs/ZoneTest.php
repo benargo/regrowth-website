@@ -1,11 +1,11 @@
 <?php
 
-namespace Tests\Unit\Models;
+namespace Tests\Unit\Models\WarcraftLogs;
 
 use App\Casts\AsDifficultyCollection;
 use App\Casts\AsExpansion;
 use App\Models\Report;
-use App\Models\Zone;
+use App\Models\WarcraftLogs\Zone;
 use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
 use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -23,11 +23,11 @@ class ZoneTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_uses_wcl_zones_table(): void
+    public function it_uses_warcraft_logs_zones_table(): void
     {
         $model = new Zone;
 
-        $this->assertSame('wcl_zones', $model->getTable());
+        $this->assertSame('warcraft_logs_zones', $model->getTable());
     }
 
     #[Test]

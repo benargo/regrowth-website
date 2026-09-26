@@ -1,9 +1,11 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\WarcraftLogs;
 
 use App\Contracts\Models\DatasetModel;
-use App\Observers\GuildTagObserver;
+use App\Models\Phase;
+use App\Models\Report;
+use App\Observers\WarcraftLogs\GuildTagObserver;
 use App\Policies\DatasetPolicy;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -17,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[ObservedBy([GuildTagObserver::class])]
 #[UsePolicy(DatasetPolicy::class)]
 #[Fillable(['id', 'name', 'count_attendance', 'tbc_phase_id'])]
-#[Table('wcl_guild_tags')]
+#[Table('warcraft_logs_guild_tags')]
 class GuildTag extends Model implements DatasetModel
 {
     use HasFactory;

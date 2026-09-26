@@ -1,11 +1,11 @@
 <?php
 
-namespace Tests\Unit\Models;
+namespace Tests\Unit\Models\WarcraftLogs;
 
-use App\Models\GuildTag;
 use App\Models\Phase;
 use App\Models\Report;
-use App\Observers\GuildTagObserver;
+use App\Models\WarcraftLogs\GuildTag;
+use App\Observers\WarcraftLogs\GuildTagObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -34,11 +34,11 @@ class GuildTagTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_uses_wcl_guild_tags_table(): void
+    public function it_uses_warcraft_logs_guild_tags_table(): void
     {
         $model = new GuildTag;
 
-        $this->assertSame('wcl_guild_tags', $model->getTable());
+        $this->assertSame('warcraft_logs_guild_tags', $model->getTable());
     }
 
     #[Test]
