@@ -13,10 +13,8 @@ use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Support\MirrorPaths;
 use App\Support\MediaLibrary\BlizzardIconPathGenerator;
 use App\Support\MediaLibrary\CharacterMediaPathGenerator;
-use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Filesystem\FilesystemManager;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use RuntimeException;
 use Spatie\MediaLibrary\Support\PathGenerator\PathGeneratorFactory;
@@ -85,11 +83,6 @@ class BlizzardServiceProvider extends ServiceProvider
             HasCharacterMedia::class,
             CharacterMediaPathGenerator::class,
         );
-
-        // Define a rate limiter for the FetchGuildRoster job to prevent it from being dispatched too frequently.
-        RateLimiter::for('fetch-guild-roster-job', function (object $job) {
-            return Limit::perHour(1);
-        });
     }
 
     /**

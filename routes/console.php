@@ -2,7 +2,7 @@
 
 use App\Jobs\BuildAddonExportFile;
 use App\Jobs\DeleteStaleDailyQuestsMessage;
-use App\Jobs\FetchGuildRoster;
+use App\Jobs\FetchGuildRosters;
 use App\Jobs\RaidHelper\FetchEvents as FetchRaidHelperEvents;
 use App\Jobs\SyncDiscordRoles;
 use Illuminate\Support\Facades\Schedule;
@@ -21,9 +21,9 @@ Schedule::job(new SyncDiscordRoles)->hourly()->name('sync-discord-roles');
 Schedule::job(new FetchRaidHelperEvents)->everySixHours()->name('fetch-raid-helper-events')->withoutOverlapping();
 
 /**
- * Fetch the guild roster every 6 hours to ensure we have the latest member information.
+ * Fetch the guild roster for each game version every 6 hours to ensure we have the latest member information.
  */
-Schedule::job(new FetchGuildRoster)->everySixHours()->name('fetch-guild-roster')->withoutOverlapping();
+Schedule::job(new FetchGuildRosters)->everySixHours()->name('fetch-guild-rosters')->withoutOverlapping();
 
 /**
  * Refresh Warcraft Logs reports every evening to keep the data up to date.

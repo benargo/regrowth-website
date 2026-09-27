@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Providers;
 
+use App\Jobs\FetchGuildRoster;
 use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\Report;
@@ -9,6 +10,7 @@ use App\Models\User;
 use App\Services\LootPriorities\HighestPriorityStats;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
@@ -86,5 +88,18 @@ class AppServiceProviderTest extends TestCase
         $user = User::factory()->member()->create();
 
         $this->assertFalse(Gate::forUser($user)->allows('view-priorities-page'));
+    }
+
+    // ==================== rate limiting ====================
+
+    #[Test]
+    public function it_rate_limits_fetch_guild_roster_per_game_version(): void
+    {
+        $limiter = RateLimiter::limiter('fetch-guild-roster-job');
+
+        $this->assertNotSame(
+            $limiter(new FetchGuildRoster(1))->key,
+            $limiter(new FetchGuildRoster(2))->key,
+        );
     }
 }
