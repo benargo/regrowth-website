@@ -23,6 +23,11 @@ class FetchGuildRoster implements ShouldQueue
 {
     use Batchable, Queueable;
 
+    /**
+     * The minimum character level the Blizzard profile API returns data for.
+     */
+    private const MIN_LEVEL = 10;
+
     public function __construct(
         public int $gameVersionId,
     ) {}
@@ -80,6 +85,10 @@ class FetchGuildRoster implements ShouldQueue
      */
     private function syncCharacter(BlizzardConnector $blizzard, GameVersion $gameVersion, GuildRosterMemberData $member): void
     {
+        if ($member->character->level < self::MIN_LEVEL) {
+            return;
+        }
+
         $characterDto = $blizzard->send(new GetCharacterProfileRequest(
             $gameVersion->realm,
             $member->character->name,

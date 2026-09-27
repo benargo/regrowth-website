@@ -76,7 +76,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('fetch-guild-roster-job', function (FetchGuildRoster $job) {
-            return Limit::perHour(1)->by((string) $job->gameVersionId); // Prevent each game version's roster from being fetched too frequently.
+            return Limit::perHour(1)->by((string) $job->gameVersionId);
         });
     }
 }

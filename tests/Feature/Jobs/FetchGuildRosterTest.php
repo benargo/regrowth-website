@@ -249,6 +249,22 @@ class FetchGuildRosterTest extends TestCase
         $this->assertDatabaseHas('characters', ['id' => 55, 'level' => 59]);
     }
 
+    #[Test]
+    public function it_skips_members_below_level_10(): void
+    {
+        GuildRank::factory()->create(['sort_order' => 0]);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(56, 'Fresh', 9, 0),
+        ]]);
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
+
+        $this->assertDatabaseMissing('characters', ['id' => 56]);
+        Saloon::assertNotSent(GetCharacterProfileRequest::class);
+    }
+
     #[Group('happy-path')]
     #[Test]
     public function it_stores_playable_race_from_profile_data(): void

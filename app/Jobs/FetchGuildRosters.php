@@ -23,12 +23,14 @@ class FetchGuildRosters implements ShouldQueue
     /**
      * Dispatch a roster fetch for each Blizzard namespace, using the most
      * recently released game version where several share a namespace.
+     * Versions with a future release date are ignored until they launch.
      */
     public function handle(): void
     {
         $gameVersions = GameVersion::query()
             ->whereNotNull('blizzard_namespace')
             ->whereNotNull('realm')
+            ->where('release_date', '<=', now())
             ->orderByDesc('release_date')
             ->get()
             ->unique('blizzard_namespace');

@@ -39,8 +39,14 @@ class FetchGuildRostersTest extends TestCase
     {
         Bus::fake();
 
-        $anniversary = GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::ANNIVERSARY]);
-        $era = GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::ERA]);
+        $anniversary = GameVersion::factory()->create([
+            'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
+            'release_date' => '2024-11-21',
+        ]);
+        $era = GameVersion::factory()->create([
+            'blizzard_namespace' => BlizzardNamespace::ERA,
+            'release_date' => '2019-08-26',
+        ]);
 
         (new FetchGuildRosters)->handle();
 
@@ -69,6 +75,26 @@ class FetchGuildRostersTest extends TestCase
         Bus::assertDispatchedTimes(FetchGuildRoster::class, 1);
         Bus::assertDispatched(FetchGuildRoster::class, fn (FetchGuildRoster $job) => $job->gameVersionId === $newer->id);
         Bus::assertNotDispatched(FetchGuildRoster::class, fn (FetchGuildRoster $job) => $job->gameVersionId === $older->id);
+    }
+
+    #[Test]
+    public function it_ignores_versions_that_have_not_been_released_yet(): void
+    {
+        Bus::fake();
+
+        $released = GameVersion::factory()->create([
+            'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
+            'release_date' => now()->subMonth(),
+        ]);
+        GameVersion::factory()->create([
+            'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
+            'release_date' => now()->addMonth(),
+        ]);
+
+        (new FetchGuildRosters)->handle();
+
+        Bus::assertDispatchedTimes(FetchGuildRoster::class, 1);
+        Bus::assertDispatched(FetchGuildRoster::class, fn (FetchGuildRoster $job) => $job->gameVersionId === $released->id);
     }
 
     #[Test]
