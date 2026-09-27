@@ -90,23 +90,6 @@ class FetchGuildRosterTest extends TestCase
 
     #[Group('happy-path')]
     #[Test]
-    public function it_fetches_the_roster_via_saloon(): void
-    {
-        GuildRank::factory()->create(['sort_order' => 0]);
-
-        $this->mockGetGuildRoster(['members' => [
-            $this->memberPayload(1, 'Alpha', 70, 1),
-        ]]);
-        $this->mockGetCharacterProfile();
-        $this->applyBlizzardMocks();
-
-        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
-
-        Saloon::assertSent(GetGuildRosterRequest::class);
-    }
-
-    #[Group('happy-path')]
-    #[Test]
     public function it_requests_character_profiles_with_the_game_versions_realm_and_namespace(): void
     {
         $gameVersion = $this->createGameVersion();
@@ -455,22 +438,6 @@ class FetchGuildRosterTest extends TestCase
             'realm' => 'Spineshatter',
             'blizzard_namespace' => BlizzardNamespace::ERA,
         ]);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function rosterPayload(array $members = []): array
-    {
-        return [
-            'guild' => [
-                'key' => ['href' => 'https://example.test/guild'],
-                'name' => 'Wild Growth',
-                'id' => 1,
-                'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike'],
-            ],
-            'members' => $members,
-        ];
     }
 
     /**

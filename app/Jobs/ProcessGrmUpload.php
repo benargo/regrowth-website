@@ -35,6 +35,11 @@ class ProcessGrmUpload implements ShouldQueue
     use Queueable;
 
     /**
+     * The minimum character level accepted from an upload.
+     */
+    private const MIN_LEVEL = 10;
+
+    /**
      * The timestamp of the last progress broadcast, used to throttle updates.
      */
     private ?float $lastBroadcastAt = null;
@@ -125,7 +130,7 @@ class ProcessGrmUpload implements ShouldQueue
         $characterName = $row['Name'] ?? 'Unknown';
 
         try {
-            $this->processRow($row, $this->altDelimiter(), $blizzard, $gameVersion);
+            $this->processRow($row, $blizzard, $gameVersion);
             $this->processedCount++;
         } catch (CharacterTooLowLevelException $e) {
             // Below level 10 — skip silently, not an error.
@@ -252,7 +257,7 @@ class ProcessGrmUpload implements ShouldQueue
      *
      * @param  array<string, string>  $row
      */
-    private function processRow(array $row, string $altDelimiter, BlizzardConnector $blizzard, GameVersion $gameVersion): void
+    private function processRow(array $row, BlizzardConnector $blizzard, GameVersion $gameVersion): void
     {
         $name = trim($row['Name']);
         $rankName = trim($row['Rank']);
@@ -303,7 +308,7 @@ class ProcessGrmUpload implements ShouldQueue
 
         // Process alts if this is a main character
         if ($character->is_main && ! empty($playerAlts)) {
-            $this->processAlts($character, $playerAlts, $altDelimiter, $blizzard, $gameVersion);
+            $this->processAlts($character, $playerAlts, $blizzard, $gameVersion);
         }
     }
 
@@ -313,11 +318,10 @@ class ProcessGrmUpload implements ShouldQueue
     private function processAlts(
         Character $mainCharacter,
         string $playerAlts,
-        string $altDelimiter,
         BlizzardConnector $blizzard,
         GameVersion $gameVersion,
     ): void {
-        $altNames = explode($altDelimiter, $playerAlts);
+        $altNames = explode($this->altDelimiter(), $playerAlts);
 
         foreach ($altNames as $altName) {
             $altName = trim($altName);
@@ -383,10 +387,10 @@ class ProcessGrmUpload implements ShouldQueue
      *
      * @throws CharacterTooLowLevelException
      */
-    private function checkCharacterLevel(string $name, int $level, int $minLevel = 10): void
+    private function checkCharacterLevel(string $name, int $level): void
     {
-        if ($level < $minLevel) {
-            throw new CharacterTooLowLevelException("Character {$name} is below the minimum required level of {$minLevel}.");
+        if ($level < self::MIN_LEVEL) {
+            throw new CharacterTooLowLevelException("Character {$name} is below the minimum required level of ".self::MIN_LEVEL.'.');
         }
     }
 
