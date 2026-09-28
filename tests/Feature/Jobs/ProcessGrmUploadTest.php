@@ -6,20 +6,23 @@ use App\Events\Broadcasts\GrmUploadCompleted as GrmUploadCompletedBroadcast;
 use App\Events\Broadcasts\GrmUploadFailed as GrmUploadFailedBroadcast;
 use App\Events\Broadcasts\GrmUploadProgressed;
 use App\Events\Broadcasts\GrmUploadStarted;
-use App\Events\GrmUploadProcessed;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterStatusRequest;
+use App\Jobs\FetchGuildRoster;
 use App\Jobs\ProcessGrmUpload;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\User;
+use App\Notifications\GrmUploadCompleted;
+use App\Notifications\GrmUploadFailed;
 use App\Services\Discord\Discord;
-use App\Services\Discord\Exceptions\RateLimitedException;
-use App\Services\Discord\Resources\Channel as ChannelResource;
+use App\Services\Discord\Notifications\NotifiableChannel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Assert as PHPUnit;
@@ -38,8 +41,6 @@ class ProcessGrmUploadTest extends TestCase
     use MocksDiscordService;
     use RefreshDatabase;
 
-    private Discord $discord;
-
     private User $user;
 
     private GameVersion $gameVersion;
@@ -48,6 +49,8 @@ class ProcessGrmUploadTest extends TestCase
     {
         parent::setUp();
 
+        Bus::fake([FetchGuildRoster::class]);
+
         config([
             'services.discord.channels.officer' => '1407688195386114119',
         ]);
@@ -55,10 +58,9 @@ class ProcessGrmUploadTest extends TestCase
         $this->user = User::factory()->create();
         $this->gameVersion = GameVersion::factory()->create();
 
-        $channel = ChannelResource::from(['id' => '1407688195386114119', 'type' => 0]);
-
-        $this->discord = $this->mock(Discord::class, function (MockInterface $mock) use ($channel) {
-            $mock->shouldReceive('getChannel')->andReturn($channel);
+        // The test queue is sync, so the queued officer notification is delivered
+        // inline; stand in for Discord so it never leaves the process.
+        $this->mock(Discord::class, function (MockInterface $mock) {
             $mock->shouldReceive('createMessage')->andReturn($this->makeDiscordMessage(id: '9999999999999999999', channelId: '1407688195386114119'));
         });
     }
@@ -78,7 +80,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseHas('characters', [
             'id' => 12345,
@@ -101,7 +103,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         $character = Character::find(12345);
         $this->assertEquals($rank->id, $character->rank_id);
@@ -119,7 +121,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseHas('characters', [
             'id' => 67890,
@@ -145,7 +147,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseHas('character_links', [
             'character_id' => 11111,
@@ -173,7 +175,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseHas('characters', [
             'id' => 22222,
@@ -196,7 +198,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseHas('characters', [
             'id' => 22222,
@@ -222,7 +224,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseCount('character_links', 4);
     }
@@ -243,29 +245,18 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseHas('characters', ['id' => 99999]);
         $this->assertDatabaseMissing('characters', ['name' => 'FailChar']);
     }
 
     #[Test]
-    public function it_sends_failed_notification_when_no_characters_are_processed(): void
+    public function it_sends_completed_notification_with_warnings_when_characters_are_not_found(): void
     {
         $this->fakeCharacters([], notFound: ['FailChar']);
 
-        $discordMock = $this->mock(Discord::class, function (MockInterface $mock) {
-            $channel = ChannelResource::from(['id' => '1407688195386114119', 'type' => 0]);
-            $message = $this->makeDiscordMessage(id: '9999999999999999999', channelId: '1407688195386114119');
-
-            $mock->shouldReceive('getChannel')->andReturn($channel);
-            $mock->shouldReceive('createMessage')
-                ->withArgs(fn ($ch, $payload) => $payload->embeds[0]->title === 'GRM Upload Processing Failed'
-                    || $payload->embeds[0]->title === 'GRM Upload Processing Completed with Errors'
-                    || $payload->embeds[0]->title === 'GRM Upload Processing Completed')
-                ->once()
-                ->andReturn($message);
-        });
+        Notification::fake();
 
         $job = new ProcessGrmUpload([
             'delimiter' => ',',
@@ -275,38 +266,67 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $discordMock);
+        $job->handle(app(BlizzardConnector::class));
+
+        Notification::assertSentTo(
+            NotifiableChannel::stubFromConfig('officer'),
+            GrmUploadCompleted::class,
+            fn (GrmUploadCompleted $notification) => $notification->processedCount === 0
+                && $notification->warningCount === 1,
+        );
     }
 
     #[Test]
-    public function it_sends_completed_notification_when_all_characters_are_skipped(): void
+    public function it_sends_failed_notification_when_rows_have_errors(): void
     {
-        Event::fake([GrmUploadProcessed::class]);
+        $version = GameVersion::factory()->create(['realm' => null]);
 
-        $this->fakeCharacters(['LowChar' => 99999]);
-
-        $discordMock = $this->mock(Discord::class, function (MockInterface $mock) {
-            $channel = ChannelResource::from(['id' => '1407688195386114119', 'type' => 0]);
-            $message = $this->makeDiscordMessage(id: '9999999999999999999', channelId: '1407688195386114119');
-
-            $mock->shouldReceive('getChannel')->andReturn($channel);
-            $mock->shouldReceive('createMessage')
-                ->withArgs(fn ($ch, $payload) => $payload->embeds[0]->title === 'GRM Upload Processing Completed')
-                ->once()
-                ->andReturn($message);
-        });
+        Notification::fake();
 
         $job = new ProcessGrmUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
-                ['Name' => 'LowChar', 'Rank' => 'Raider', 'Level' => '10', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+                ['Name' => 'TestChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+            ],
+        ], $this->user->id, $version->id);
+
+        $job->handle(app(BlizzardConnector::class));
+
+        Notification::assertSentTo(
+            NotifiableChannel::stubFromConfig('officer'),
+            GrmUploadFailed::class,
+            fn (GrmUploadFailed $notification) => $notification->processedCount === 0
+                && $notification->errorCount === 1
+                && str_starts_with($notification->errors[0], 'TestChar: '),
+        );
+        Notification::assertNotSentTo(NotifiableChannel::stubFromConfig('officer'), GrmUploadCompleted::class);
+    }
+
+    #[Test]
+    public function it_sends_completed_notification_when_all_characters_are_skipped(): void
+    {
+        $this->fakeCharacters(['LowChar' => 99999]);
+
+        Notification::fake();
+
+        $job = new ProcessGrmUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'LowChar', 'Rank' => 'Raider', 'Level' => '9', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $discordMock);
+        $job->handle(app(BlizzardConnector::class));
 
-        Event::assertNotDispatched(GrmUploadProcessed::class);
+        Notification::assertSentTo(
+            NotifiableChannel::stubFromConfig('officer'),
+            GrmUploadCompleted::class,
+            fn (GrmUploadCompleted $notification) => $notification->processedCount === 0
+                && $notification->skippedCount === 1,
+        );
+        Bus::assertNotDispatched(FetchGuildRoster::class);
     }
 
     #[Test]
@@ -314,16 +334,7 @@ class ProcessGrmUploadTest extends TestCase
     {
         $this->fakeCharacters(['TestChar' => 12345]);
 
-        $discordMock = $this->mock(Discord::class, function (MockInterface $mock) {
-            $channel = ChannelResource::from(['id' => '1407688195386114119', 'type' => 0]);
-            $message = $this->makeDiscordMessage(id: '9999999999999999999', channelId: '1407688195386114119');
-
-            $mock->shouldReceive('getChannel')->andReturn($channel);
-            $mock->shouldReceive('createMessage')
-                ->withArgs(fn ($ch, $payload) => $payload->embeds[0]->title === 'GRM Upload Processing Completed')
-                ->once()
-                ->andReturn($message);
-        });
+        Notification::fake();
 
         $job = new ProcessGrmUpload([
             'delimiter' => ',',
@@ -333,7 +344,13 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $discordMock);
+        $job->handle(app(BlizzardConnector::class));
+
+        Notification::assertSentTo(
+            NotifiableChannel::stubFromConfig('officer'),
+            GrmUploadCompleted::class,
+            fn (GrmUploadCompleted $notification) => $notification->processedCount === 1,
+        );
     }
 
     // ==================== data integrity ====================
@@ -359,7 +376,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         // One link per direction; no duplicates created
         $this->assertDatabaseCount('character_links', 2);
@@ -381,7 +398,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         // Should be updated to main
         $this->assertDatabaseHas('characters', [
@@ -390,13 +407,11 @@ class ProcessGrmUploadTest extends TestCase
         ]);
     }
 
-    // ==================== grm upload processed event ====================
+    // ==================== guild roster fetch ====================
 
     #[Test]
-    public function it_dispatches_grm_upload_processed_event_once_after_successful_batch(): void
+    public function it_dispatches_the_guild_roster_job_once_after_a_successful_batch(): void
     {
-        Event::fake([GrmUploadProcessed::class]);
-
         $this->fakeCharacters([
             'CharOne' => 11111,
             'CharTwo' => 22222,
@@ -411,43 +426,35 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
-        Event::assertDispatchedTimes(GrmUploadProcessed::class, 1);
+        Bus::assertDispatchedTimes(FetchGuildRoster::class, 1);
     }
 
     #[Test]
-    public function grm_upload_processed_event_carries_correct_metrics(): void
+    public function it_dispatches_the_guild_roster_job_for_the_uploads_game_version(): void
     {
-        Event::fake([GrmUploadProcessed::class]);
-
-        $this->fakeCharacters(['GoodChar' => 11111], notFound: ['FailChar']);
+        $this->fakeCharacters(['GoodChar' => 11111]);
 
         $job = new ProcessGrmUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
                 ['Name' => 'GoodChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
-                ['Name' => 'FailChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
-        Event::assertDispatched(GrmUploadProcessed::class, function (GrmUploadProcessed $event) {
-            return $event->processedCount === 1
-                && $event->warningCount === 1
-                && $event->skippedCount === 0
-                && $event->errorCount === 0
-                && count($event->errors) === 0;
-        });
+        Bus::assertDispatched(
+            FetchGuildRoster::class,
+            fn (FetchGuildRoster $job) => $job->gameVersionId === $this->gameVersion->id && $job->bypassRateLimit,
+        );
     }
 
     #[Test]
-    public function it_does_not_dispatch_grm_upload_processed_event_when_no_characters_are_processed(): void
+    public function it_does_not_dispatch_the_guild_roster_job_when_no_characters_are_processed(): void
     {
-        Event::fake([GrmUploadProcessed::class]);
-
         $this->fakeCharacters([], notFound: ['FailChar']);
 
         $job = new ProcessGrmUpload([
@@ -458,9 +465,9 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
-        Event::assertNotDispatched(GrmUploadProcessed::class);
+        Bus::assertNotDispatched(FetchGuildRoster::class);
     }
 
     #[Test]
@@ -476,36 +483,9 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseCount('characters', 0);
-    }
-
-    // ==================== rate limiting ====================
-
-    #[Test]
-    public function it_releases_itself_when_discord_is_rate_limited_sending_notification(): void
-    {
-        $this->fakeCharacters(['TestChar' => 12345]);
-
-        $rateLimitedDiscord = $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getChannel')
-                ->once()
-                ->andThrow(new RateLimitedException('channels/1407688195386114119', 5.0, 'user'));
-        });
-
-        $job = new ProcessGrmUpload([
-            'delimiter' => ',',
-            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
-            'rows' => [
-                ['Name' => 'TestChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
-            ],
-        ], $this->user->id, $this->gameVersion->id);
-        $job->withFakeQueueInteractions();
-        $job->handle(app(BlizzardConnector::class), $rateLimitedDiscord);
-
-        $job->assertReleased(5.0);
-        $this->assertDatabaseHas('characters', ['id' => 12345]);
     }
 
     // ==================== progress broadcasts ====================
@@ -526,7 +506,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         Event::assertDispatched(GrmUploadStarted::class, function (GrmUploadStarted $event) {
             return $event->userId === $this->user->id && $event->total === 2;
@@ -549,7 +529,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         Event::assertDispatched(GrmUploadProgressed::class, function (GrmUploadProgressed $event) {
             return $event->userId === $this->user->id
@@ -573,7 +553,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         Event::assertDispatched(GrmUploadCompletedBroadcast::class, function (GrmUploadCompletedBroadcast $event) {
             return $event->userId === $this->user->id
@@ -598,7 +578,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         Event::assertDispatched(GrmUploadCompletedBroadcast::class);
         Event::assertNotDispatched(GrmUploadFailedBroadcast::class);
@@ -622,6 +602,28 @@ class ProcessGrmUploadTest extends TestCase
         Event::assertDispatched(GrmUploadFailedBroadcast::class, function (GrmUploadFailedBroadcast $event) {
             return $event->userId === $this->user->id && $event->message === 'boom';
         });
+    }
+
+    #[Test]
+    public function it_notifies_officers_when_the_job_fails(): void
+    {
+        Notification::fake();
+
+        $job = new ProcessGrmUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'TestChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+            ],
+        ], $this->user->id, $this->gameVersion->id);
+
+        $job->failed(new \RuntimeException('boom'));
+
+        Notification::assertSentTo(
+            NotifiableChannel::stubFromConfig('officer'),
+            GrmUploadFailed::class,
+            fn (GrmUploadFailed $notification) => $notification->exceptionMessage === 'boom',
+        );
     }
 
     // ==================== timestamp integrity ====================
@@ -661,7 +663,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         $rank->refresh();
         $altOne->refresh();
@@ -687,7 +689,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseHas('characters', [
             'id' => 12345,
@@ -708,7 +710,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $this->gameVersion->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseHas('characters', [
             'id' => 22222,
@@ -730,7 +732,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $version->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseHas('characters', ['id' => 12345]);
     }
@@ -740,8 +742,6 @@ class ProcessGrmUploadTest extends TestCase
     #[Test]
     public function it_records_an_error_when_the_game_version_has_no_realm(): void
     {
-        Event::fake([GrmUploadProcessed::class]);
-
         $version = GameVersion::factory()->create(['realm' => null]);
 
         $job = new ProcessGrmUpload([
@@ -752,11 +752,11 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $version->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseCount('characters', 0);
 
-        Event::assertNotDispatched(GrmUploadProcessed::class);
+        Bus::assertNotDispatched(FetchGuildRoster::class);
     }
 
     #[Test]
@@ -767,8 +767,6 @@ class ProcessGrmUploadTest extends TestCase
         // the same $gameVersion->realm, so if the main lookup succeeds, the alt
         // lookup has a realm too. This asserts the alt is never touched when the
         // row fails for lack of a realm.
-        Event::fake([GrmUploadProcessed::class]);
-
         $version = GameVersion::factory()->create(['realm' => null]);
 
         $job = new ProcessGrmUpload([
@@ -779,7 +777,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ], $this->user->id, $version->id);
 
-        $job->handle(app(BlizzardConnector::class), $this->discord);
+        $job->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseMissing('characters', ['name' => 'MainChar']);
         $this->assertDatabaseMissing('characters', ['name' => 'AltChar']);
@@ -795,9 +793,7 @@ class ProcessGrmUploadTest extends TestCase
         $versionA = GameVersion::factory()->create();
         $versionB = GameVersion::factory()->create();
 
-        $channel = ChannelResource::from(['id' => '1407688195386114119', 'type' => 0]);
-        $discord = $this->mock(Discord::class, function (MockInterface $mock) use ($channel) {
-            $mock->shouldReceive('getChannel')->andReturn($channel);
+        $this->mock(Discord::class, function (MockInterface $mock) {
             $mock->shouldReceive('createMessage')
                 ->andReturnUsing(fn () => $this->makeDiscordMessage(id: (string) fake()->unique()->numerify('99999999999999#####'), channelId: '1407688195386114119'));
         });
@@ -809,7 +805,7 @@ class ProcessGrmUploadTest extends TestCase
                 ['Name' => 'TestChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
             ],
         ], $this->user->id, $versionA->id);
-        $firstRun->handle(app(BlizzardConnector::class), $discord);
+        $firstRun->handle(app(BlizzardConnector::class));
 
         $secondRun = new ProcessGrmUpload([
             'delimiter' => ',',
@@ -818,7 +814,7 @@ class ProcessGrmUploadTest extends TestCase
                 ['Name' => 'TestChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
             ],
         ], $this->user->id, $versionB->id);
-        $secondRun->handle(app(BlizzardConnector::class), $discord);
+        $secondRun->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseHas('characters', [
             'id' => 12345,

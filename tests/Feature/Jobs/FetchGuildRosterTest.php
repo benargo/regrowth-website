@@ -5,14 +5,18 @@ namespace Tests\Feature\Jobs;
 use App\Enums\Gender;
 use App\Events\CharacterUpdated;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Jobs\FetchGuildRoster;
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Middleware\RateLimitedWithRedis;
 use Illuminate\Support\Facades\Event;
@@ -36,14 +40,14 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_has_the_correct_tags(): void
     {
-        $this->assertSame(['blizzard'], (new FetchGuildRoster)->tags());
+        $this->assertSame(['blizzard', 'game-version:7'], (new FetchGuildRoster(7))->tags());
     }
 
     #[Group('contract')]
     #[Test]
     public function it_applies_rate_limited_with_redis_middleware(): void
     {
-        $middleware = (new FetchGuildRoster)->middleware();
+        $middleware = (new FetchGuildRoster(1))->middleware();
 
         $this->assertCount(1, $middleware);
         $this->assertInstanceOf(RateLimitedWithRedis::class, $middleware[0]);
@@ -51,9 +55,16 @@ class FetchGuildRosterTest extends TestCase
 
     #[Group('contract')]
     #[Test]
+    public function it_skips_the_rate_limiter_when_bypassing(): void
+    {
+        $this->assertSame([], (new FetchGuildRoster(1, bypassRateLimit: true))->middleware());
+    }
+
+    #[Group('contract')]
+    #[Test]
     public function it_implements_should_queue(): void
     {
-        $this->assertInstanceOf(ShouldQueue::class, new FetchGuildRoster);
+        $this->assertInstanceOf(ShouldQueue::class, new FetchGuildRoster(1));
     }
 
     #[Group('contract')]
@@ -67,19 +78,45 @@ class FetchGuildRosterTest extends TestCase
 
     #[Group('happy-path')]
     #[Test]
-    public function it_fetches_the_roster_via_saloon(): void
+    public function it_requests_the_roster_for_the_game_versions_realm_namespace_and_guild(): void
     {
+        $gameVersion = $this->createGameVersion();
+        $gameVersion->update(['guild_name' => 'Sister Guild']);
+
+        $this->mockGetGuildRoster();
+        $this->applyBlizzardMocks();
+
+        $blizzard = app(BlizzardConnector::class);
+        (new FetchGuildRoster($gameVersion->id))->handle($blizzard);
+
+        $expectedNamespace = BlizzardNamespace::ERA->forProfileRequests($blizzard->getRegion());
+
+        Saloon::assertSent(fn ($request, $response) => $request instanceof GetGuildRosterRequest
+            && $request->resolveEndpoint() === '/data/wow/guild/spineshatter/sister-guild/roster'
+            && $response->getPendingRequest()->headers()->get('Battlenet-Namespace') === $expectedNamespace);
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_requests_character_profiles_with_the_game_versions_realm_and_namespace(): void
+    {
+        $gameVersion = $this->createGameVersion();
         GuildRank::factory()->create(['sort_order' => 0]);
 
         $this->mockGetGuildRoster(['members' => [
-            $this->memberPayload(1, 'Alpha', 70, 1),
+            $this->memberPayload(1, 'Alpha', 70, 0),
         ]]);
         $this->mockGetCharacterProfile();
         $this->applyBlizzardMocks();
 
-        (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
+        $blizzard = app(BlizzardConnector::class);
+        (new FetchGuildRoster($gameVersion->id))->handle($blizzard);
 
-        Saloon::assertSent(GetGuildRosterRequest::class);
+        $expectedNamespace = BlizzardNamespace::ERA->forProfileRequests($blizzard->getRegion());
+
+        Saloon::assertSent(fn ($request, $response) => $request instanceof GetCharacterProfileRequest
+            && str_starts_with($request->resolveEndpoint(), '/profile/wow/character/spineshatter/')
+            && $response->getPendingRequest()->headers()->get('Battlenet-Namespace') === $expectedNamespace);
     }
 
     #[Group('happy-path')]
@@ -99,12 +136,33 @@ class FetchGuildRosterTest extends TestCase
         ]);
         $this->applyBlizzardMocks();
 
-        (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseHas('characters', [
             'id' => 999,
             'name' => 'Thrall',
             'level' => 80,
+        ]);
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_sets_the_game_version_on_synced_characters(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->create(['sort_order' => 0]);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(999, 'Thrall', 80, 0),
+        ]]);
+        $this->mockGetCharacterProfile();
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        $this->assertDatabaseHas('characters', [
+            'id' => 999,
+            'game_version_id' => $gameVersion->id,
         ]);
     }
 
@@ -126,7 +184,7 @@ class FetchGuildRosterTest extends TestCase
         ]);
         $this->applyBlizzardMocks();
 
-        (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseHas('characters', [
             'id' => 999,
@@ -152,7 +210,7 @@ class FetchGuildRosterTest extends TestCase
         ]);
         $this->applyBlizzardMocks();
 
-        (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
 
         $this->assertSame(5, Character::find(1)->playableClass->id);
     }
@@ -175,7 +233,7 @@ class FetchGuildRosterTest extends TestCase
 
         $this->assertDatabaseMissing('playable_classes', ['id' => 5]);
 
-        (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
 
         $character = Character::find(1);
         $this->assertNotNull($character);
@@ -184,18 +242,35 @@ class FetchGuildRosterTest extends TestCase
 
     #[Group('happy-path')]
     #[Test]
-    public function it_skips_members_below_level_60(): void
+    public function it_syncs_members_below_level_60(): void
     {
         GuildRank::factory()->create(['sort_order' => 0]);
 
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(55, 'Lowbie', 59, 0),
         ]]);
+        $this->mockGetCharacterProfile();
         $this->applyBlizzardMocks();
 
-        (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
 
-        $this->assertDatabaseMissing('characters', ['id' => 55]);
+        $this->assertDatabaseHas('characters', ['id' => 55, 'level' => 59]);
+    }
+
+    #[Test]
+    public function it_skips_members_below_level_10(): void
+    {
+        GuildRank::factory()->create(['sort_order' => 0]);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(56, 'Fresh', 9, 0),
+        ]]);
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
+
+        $this->assertDatabaseMissing('characters', ['id' => 56]);
+        Saloon::assertNotSent(GetCharacterProfileRequest::class);
     }
 
     #[Group('happy-path')]
@@ -215,7 +290,7 @@ class FetchGuildRosterTest extends TestCase
         ]);
         $this->applyBlizzardMocks();
 
-        (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
 
         $character = Character::find(1);
         $this->assertNotNull($character);
@@ -252,7 +327,7 @@ class FetchGuildRosterTest extends TestCase
         $beforeMember = $rosterMember->updated_at;
         $beforeAbsent = $absent->updated_at;
 
-        (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
 
         $this->assertTrue(
             $rosterMember->fresh()->updated_at->greaterThan($beforeMember),
@@ -279,7 +354,7 @@ class FetchGuildRosterTest extends TestCase
         $this->mockGetCharacterProfile();
         $this->applyBlizzardMocks();
 
-        (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
 
         Event::assertNotDispatched(CharacterUpdated::class);
     }
@@ -296,7 +371,7 @@ class FetchGuildRosterTest extends TestCase
         $this->mockGetCharacterProfile(gender: 'Male');
         $this->applyBlizzardMocks();
 
-        (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
 
         $this->assertSame(Gender::MALE, Character::find(1)->gender);
     }
@@ -313,12 +388,23 @@ class FetchGuildRosterTest extends TestCase
         $this->mockGetCharacterProfile(gender: 'Female');
         $this->applyBlizzardMocks();
 
-        (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
 
         $this->assertSame(Gender::FEMALE, Character::find(2)->gender);
     }
 
     // ==================== error handling ====================
+
+    #[Group('error-handling')]
+    #[Test]
+    public function it_fails_when_the_game_version_does_not_exist(): void
+    {
+        $this->applyBlizzardMocks();
+
+        $this->expectException(ModelNotFoundException::class);
+
+        (new FetchGuildRoster(999))->handle(app(BlizzardConnector::class));
+    }
 
     #[Group('error-handling')]
     #[Test]
@@ -342,7 +428,7 @@ class FetchGuildRosterTest extends TestCase
                 && $context['character_id'] === 1;
         });
 
-        (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseMissing('characters', ['id' => 1]);
         $this->assertDatabaseHas('characters', ['id' => 2, 'name' => 'GoodChar']);
@@ -363,25 +449,19 @@ class FetchGuildRosterTest extends TestCase
                 && $context['character_id'] === 1;
         });
 
-        (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseMissing('characters', ['id' => 1]);
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function rosterPayload(array $members = []): array
+    // ==================== helpers ====================
+
+    private function createGameVersion(): GameVersion
     {
-        return [
-            'guild' => [
-                'key' => ['href' => 'https://example.test/guild'],
-                'name' => 'Wild Growth',
-                'id' => 1,
-                'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike'],
-            ],
-            'members' => $members,
-        ];
+        return GameVersion::factory()->create([
+            'realm' => 'Spineshatter',
+            'blizzard_namespace' => BlizzardNamespace::ERA,
+        ]);
     }
 
     /**

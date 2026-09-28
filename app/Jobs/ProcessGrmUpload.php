@@ -6,7 +6,6 @@ use App\Events\Broadcasts\GrmUploadCompleted as GrmUploadCompletedBroadcast;
 use App\Events\Broadcasts\GrmUploadFailed as GrmUploadFailedBroadcast;
 use App\Events\Broadcasts\GrmUploadProgressed;
 use App\Events\Broadcasts\GrmUploadStarted;
-use App\Events\GrmUploadProcessed;
 use App\Exceptions\CharacterTooLowLevelException;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
@@ -19,39 +18,46 @@ use App\Models\GuildRank;
 use App\Models\User;
 use App\Notifications\GrmUploadCompleted;
 use App\Notifications\GrmUploadFailed;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Exceptions\RateLimitedException;
 use App\Services\Discord\Notifications\NotifiableChannel;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Attributes\Backoff;
+use Illuminate\Queue\Attributes\Timeout;
+use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Queue\Middleware\Skip;
 use Illuminate\Support\Facades\Log;
 
+#[Tries(3)]
+#[Backoff(60)]
+#[Timeout(900)]
 class ProcessGrmUpload implements ShouldQueue
 {
     use Queueable;
 
     /**
-     * The number of times the job may be attempted.
+     * The minimum character level accepted from an upload.
      */
-    public int $tries = 3;
-
-    /**
-     * The number of seconds to wait before retrying the job.
-     */
-    public int $backoff = 60;
-
-    /**
-     * The number of seconds the job can run before timing out.
-     *
-     * @var int
-     */
-    public $timeout = 900; // 15 minutes
+    private const MIN_LEVEL = 10;
 
     /**
      * The timestamp of the last progress broadcast, used to throttle updates.
      */
     private ?float $lastBroadcastAt = null;
+
+    private int $processedCount = 0;
+
+    private int $skippedCount = 0;
+
+    private int $warningCount = 0;
+
+    private int $errorCount = 0;
+
+    /**
+     * Per-character error messages, sent to Discord in the summary notification.
+     *
+     * @var array<int, string>
+     */
+    private array $errors = [];
 
     /**
      * Create a new job instance.
@@ -72,159 +78,150 @@ class ProcessGrmUpload implements ShouldQueue
     }
 
     /**
-     * Execute the job.
-     *
-     * Flow:
-     *   1. Guard the uploading user, then broadcast GrmUploadStarted so the UI
-     *      can flip from "queued" to "processing".
-     *   2. Iterate every CSV row, delegating each to processRow(). Errors are
-     *      bucketed into skipped (level too low), warnings (character not found
-     *      in the Blizzard API), and hard errors (unexpected failures). After
-     *      each row a throttled GrmUploadProgressed broadcast carries the live
-     *      tallies. Model events are suppressed for the loop to avoid
-     *      N+1 side-effects.
-     *   3. Broadcast the final tally, send a Discord notification to the officer
-     *      channel, broadcast GrmUploadCompleted, and — when at least one row
-     *      succeeded — fire the GrmUploadProcessed event for downstream listeners.
+     * Processes an uploaded GRM roster, keeping the UI updated as it goes,
+     * then queues the officer notification and refreshes the guild roster.
      */
-    public function handle(BlizzardConnector $blizzard, Discord $discord): void
+    public function handle(BlizzardConnector $blizzard): void
     {
         // Guard against a stale/deleted uploader; fail the job loudly if gone.
         User::findOrFail($this->userId);
 
         $gameVersion = GameVersion::findOrFail($this->gameVersionId);
 
-        $delimiter = $this->grmData['delimiter'];
-        // GRM exports use one delimiter for columns and the opposite for alt lists.
-        $altDelimiter = $delimiter === ',' ? ';' : ',';
-        $rows = $this->grmData['rows'];
-        $total = count($rows);
+        GrmUploadStarted::dispatch($this->userId, $this->total());
 
-        GrmUploadStarted::dispatch($this->userId, $total);
-
-        $processedCount = 0;
-        $errorCount = 0;
-        $errors = [];
-        $warningCount = 0;
-        $skippedCount = 0;
-
-        // --- Step 2: process each row, suppressing model events and timestamp touches ---
-        // withoutTouching prevents touchOwners() from recursing into the self-referential
-        // linkedCharacters BelongsToMany at scale, which overflows the PHP call stack via
-        // Onceable::hashFromTrace() → debug_backtrace() at extreme depth.
-        Character::withoutTouching(function () use (
-            $rows,
-            $total,
-            $altDelimiter,
-            $blizzard,
-            $gameVersion,
-            &$processedCount,
-            &$errorCount,
-            &$errors,
-            &$warningCount,
-            &$skippedCount,
-        ) {
-            Character::withoutEvents(function () use (
-                $rows,
-                $total,
-                $altDelimiter,
-                $blizzard,
-                $gameVersion,
-                &$processedCount,
-                &$errorCount,
-                &$errors,
-                &$warningCount,
-                &$skippedCount,
-            ) {
-                foreach ($rows as $row) {
-                    $characterName = $row['Name'] ?? 'Unknown';
-
-                    try {
-                        $this->processRow($row, $altDelimiter, $blizzard, $gameVersion);
-                        $processedCount++;
-                    } catch (CharacterTooLowLevelException $e) {
-                        // Below level 60 — skip silently, not an error.
-                        $skippedCount++;
-                        Log::debug("GRM Upload: Character too low level {$characterName}", [
-                            'error' => $e->getMessage(),
-                            'row' => $row,
-                        ]);
-                    } catch (CharacterNotFoundException $e) {
-                        // Blizzard API returned no match — warn but continue.
-                        $warningCount++;
-                        Log::debug("GRM Upload: Character not found via Blizzard API for {$characterName}", [
-                            'error' => $e->getMessage(),
-                            'row' => $row,
-                        ]);
-                    } catch (\Exception $e) {
-                        // Unexpected failure — record for the summary notification.
-                        $errorCount++;
-                        $errors[] = "{$characterName}: {$e->getMessage()}";
-                        Log::debug("GRM Upload: Failed to process character {$characterName}", [
-                            'error' => $e->getMessage(),
-                            'row' => $row,
-                        ]);
-                    }
-
-                    $this->broadcastProgress(
-                        $processedCount,
-                        $skippedCount,
-                        $warningCount,
-                        $errorCount,
-                        $total,
-                        $characterName,
-                    );
-                }
-            });
-        });
+        // Suppress model events and timestamp touches while processing rows,
+        // since the self-referential alt-character links would otherwise
+        // overflow the call stack on a large roster.
+        Character::withoutTouching(fn () => Character::withoutEvents(
+            fn () => $this->processRows($blizzard, $gameVersion),
+        ));
 
         // Force a final tick so the UI lands on the exact totals.
-        $this->broadcastProgress($processedCount, $skippedCount, $warningCount, $errorCount, $total, '', force: true);
+        $this->broadcastProgress(currentCharacter: '', force: true);
 
-        Log::debug('GRM Upload completed', [
-            'processed' => $processedCount,
-            'errors' => $errorCount,
-            'skipped' => $skippedCount,
-            'total' => $total,
-        ]);
+        $this->logSummary();
 
-        // --- Step 3: notify Discord, broadcast completion, dispatch event ---
+        $this->notifyOfficers();
+        $this->broadcastCompletion();
+        $this->refreshRosterIfChanged($gameVersion);
+    }
+
+    /**
+     * Process every uploaded row, broadcasting progress after each one.
+     */
+    private function processRows(BlizzardConnector $blizzard, GameVersion $gameVersion): void
+    {
+        foreach ($this->grmData['rows'] as $row) {
+            $this->processRowSafely($row, $blizzard, $gameVersion);
+
+            $this->broadcastProgress($row['Name'] ?? 'Unknown');
+        }
+    }
+
+    /**
+     * Process a single row, tallying the outcome rather than letting a
+     * per-character failure abort the whole upload.
+     *
+     * @param  array<string, string>  $row
+     */
+    private function processRowSafely(array $row, BlizzardConnector $blizzard, GameVersion $gameVersion): void
+    {
+        $characterName = $row['Name'] ?? 'Unknown';
+
         try {
-            $channel = NotifiableChannel::fromConfig('officer', $discord);
-
-            if ($errorCount > 0) {
-                $channel->notify(new GrmUploadFailed($processedCount, $errorCount, $errors));
-            } else {
-                $channel->notify(new GrmUploadCompleted($processedCount, $skippedCount, $warningCount));
-            }
-
-            // Row-level errors do not fail the run — the bar stays green. Only the
-            // counts are broadcast; the full $errors detail goes to Discord above
-            // (Reverb caps messages at 10 KB, which a large error list can exceed).
-            GrmUploadCompletedBroadcast::dispatch(
-                $this->userId,
-                $processedCount,
-                $skippedCount,
-                $warningCount,
-                $errorCount,
-            );
-
-            // Only dispatch the event when something was actually written; avoids
-            // triggering downstream listeners (e.g. Discord embeds) on no-op runs.
-            if ($processedCount > 0) {
-                GrmUploadProcessed::dispatch($processedCount, $skippedCount, $warningCount, $errorCount, $errors);
-            }
-        } catch (RateLimitedException $e) {
-            $this->release($e->retryAfter);
-
-            Log::debug('ProcessGrmUpload: Discord rate limited sending notification, releasing job.', [
-                'endpoint' => $e->endpoint,
-                'retry_after' => $e->retryAfter,
-                'scope' => $e->scope,
+            $this->processRow($row, $blizzard, $gameVersion);
+            $this->processedCount++;
+        } catch (CharacterTooLowLevelException $e) {
+            // Below level 10 — skip silently, not an error.
+            $this->skippedCount++;
+            Log::debug("GRM Upload: Character too low level {$characterName}", [
+                'error' => $e->getMessage(),
+                'row' => $row,
             ]);
+        } catch (CharacterNotFoundException $e) {
+            // Blizzard API returned no match — warn but continue.
+            $this->warningCount++;
+            Log::debug("GRM Upload: Character not found via Blizzard API for {$characterName}", [
+                'error' => $e->getMessage(),
+                'row' => $row,
+            ]);
+        } catch (\Exception $e) {
+            // Unexpected failure — record for the summary notification.
+            $this->errorCount++;
+            $this->errors[] = "{$characterName}: {$e->getMessage()}";
+            Log::debug("GRM Upload: Failed to process character {$characterName}", [
+                'error' => $e->getMessage(),
+                'row' => $row,
+            ]);
+        }
+    }
+
+    /**
+     * Queue the upload summary for the officer Discord channel.
+     */
+    private function notifyOfficers(): void
+    {
+        $channel = NotifiableChannel::stubFromConfig('officer');
+
+        if ($this->errorCount > 0) {
+            $channel->notify(new GrmUploadFailed($this->processedCount, $this->errorCount, $this->errors));
 
             return;
         }
+
+        $channel->notify(new GrmUploadCompleted($this->processedCount, $this->skippedCount, $this->warningCount));
+    }
+
+    /**
+     * Only broadcast the counts to the UI; the full error detail is sent to
+     * Discord instead, since it can be too large to broadcast.
+     */
+    private function broadcastCompletion(): void
+    {
+        GrmUploadCompletedBroadcast::dispatch(
+            $this->userId,
+            $this->processedCount,
+            $this->skippedCount,
+            $this->warningCount,
+            $this->errorCount,
+        );
+    }
+
+    /**
+     * Only refresh the roster when something was actually written; avoids
+     * a pointless Blizzard sync on no-op runs.
+     */
+    private function refreshRosterIfChanged(GameVersion $gameVersion): void
+    {
+        if ($this->processedCount === 0) {
+            return;
+        }
+
+        FetchGuildRoster::dispatch($gameVersion->id, bypassRateLimit: true);
+    }
+
+    private function logSummary(): void
+    {
+        Log::debug('GRM Upload completed', [
+            'processed' => $this->processedCount,
+            'errors' => $this->errorCount,
+            'skipped' => $this->skippedCount,
+            'total' => $this->total(),
+        ]);
+    }
+
+    private function total(): int
+    {
+        return count($this->grmData['rows']);
+    }
+
+    /**
+     * GRM exports use one delimiter for columns and the opposite for alt lists.
+     */
+    private function altDelimiter(): string
+    {
+        return $this->grmData['delimiter'] === ',' ? ';' : ',';
     }
 
     /**
@@ -234,15 +231,8 @@ class ProcessGrmUpload implements ShouldQueue
      * frontend animates between ticks. Pass force: true for the final tick so
      * the UI lands on the exact totals regardless of timing.
      */
-    private function broadcastProgress(
-        int $processedCount,
-        int $skippedCount,
-        int $warningCount,
-        int $errorCount,
-        int $total,
-        string $currentCharacter,
-        bool $force = false,
-    ): void {
+    private function broadcastProgress(string $currentCharacter, bool $force = false): void
+    {
         $now = microtime(true);
 
         if (! $force && $this->lastBroadcastAt !== null && ($now - $this->lastBroadcastAt) < 0.25) {
@@ -253,11 +243,11 @@ class ProcessGrmUpload implements ShouldQueue
 
         GrmUploadProgressed::dispatch(
             $this->userId,
-            $processedCount,
-            $skippedCount,
-            $warningCount,
-            $errorCount,
-            $total,
+            $this->processedCount,
+            $this->skippedCount,
+            $this->warningCount,
+            $this->errorCount,
+            $this->total(),
             $currentCharacter,
         );
     }
@@ -267,7 +257,7 @@ class ProcessGrmUpload implements ShouldQueue
      *
      * @param  array<string, string>  $row
      */
-    protected function processRow(array $row, string $altDelimiter, BlizzardConnector $blizzard, GameVersion $gameVersion): void
+    private function processRow(array $row, BlizzardConnector $blizzard, GameVersion $gameVersion): void
     {
         $name = trim($row['Name']);
         $rankName = trim($row['Rank']);
@@ -286,7 +276,7 @@ class ProcessGrmUpload implements ShouldQueue
         // Get character ID from Blizzard API
         try {
             $status = $blizzard->send(new GetCharacterStatusRequest(
-                $gameVersion->realm,
+                $gameVersion->realm_slug,
                 $name,
                 $gameVersion->blizzard_namespace,
             ))->dto();
@@ -318,21 +308,20 @@ class ProcessGrmUpload implements ShouldQueue
 
         // Process alts if this is a main character
         if ($character->is_main && ! empty($playerAlts)) {
-            $this->processAlts($character, $playerAlts, $altDelimiter, $blizzard, $gameVersion);
+            $this->processAlts($character, $playerAlts, $blizzard, $gameVersion);
         }
     }
 
     /**
      * Process alt characters and create links.
      */
-    protected function processAlts(
+    private function processAlts(
         Character $mainCharacter,
         string $playerAlts,
-        string $altDelimiter,
         BlizzardConnector $blizzard,
         GameVersion $gameVersion,
     ): void {
-        $altNames = explode($altDelimiter, $playerAlts);
+        $altNames = explode($this->altDelimiter(), $playerAlts);
 
         foreach ($altNames as $altName) {
             $altName = trim($altName);
@@ -350,7 +339,7 @@ class ProcessGrmUpload implements ShouldQueue
 
             try {
                 $altStatus = $blizzard->send(new GetCharacterProfileRequest(
-                    $gameVersion->realm,
+                    $gameVersion->realm_slug,
                     $altName,
                     $gameVersion->blizzard_namespace,
                 ))->dto();
@@ -398,10 +387,10 @@ class ProcessGrmUpload implements ShouldQueue
      *
      * @throws CharacterTooLowLevelException
      */
-    protected function checkCharacterLevel(string $name, int $level, int $minLevel = 60): void
+    private function checkCharacterLevel(string $name, int $level): void
     {
-        if ($level < $minLevel) {
-            throw new CharacterTooLowLevelException("Character {$name} is below the minimum required level of {$minLevel}.");
+        if ($level < self::MIN_LEVEL) {
+            throw new CharacterTooLowLevelException("Character {$name} is below the minimum required level of ".self::MIN_LEVEL.'.');
         }
     }
 
@@ -418,7 +407,7 @@ class ProcessGrmUpload implements ShouldQueue
         GrmUploadFailedBroadcast::dispatch($this->userId, $exception->getMessage());
 
         try {
-            NotifiableChannel::fromConfig('officer', app(Discord::class))->notifyNow(
+            NotifiableChannel::stubFromConfig('officer')->notify(
                 new GrmUploadFailed(0, 1, [], $exception->getMessage())
             );
         } catch (\Exception $e) {

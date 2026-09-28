@@ -81,12 +81,12 @@ class GameVersion extends Model implements DatasetModel
     }
 
     /**
-     * @return Attribute<string>
+     * @return Attribute<string|null>
      */
     protected function realmSlug(): Attribute
     {
         return Attribute::make(
-            get: fn (): string => $this->realm === null ? '' : Str::slug($this->realm),
+            get: fn (): ?string => $this->realm === null ? null : Str::slug($this->realm),
         );
     }
 

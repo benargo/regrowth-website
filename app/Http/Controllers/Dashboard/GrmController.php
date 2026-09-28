@@ -47,7 +47,7 @@ class GrmController extends Controller
 
         $gameVersionId = $request->integer('game_version_id') ?: null;
 
-        $gameVersions = GameVersion::whereNotNull('blizzard_namespace')->orderBy('release_date')->get(['id', 'title', 'theme', 'realm', 'blizzard_namespace']);
+        $gameVersions = GameVersion::whereNotNull('blizzard_namespace')->orderBy('release_date')->get(['id', 'title', 'theme', 'realm', 'guild_name', 'blizzard_namespace']);
 
         return Inertia::render('Manage/GrmUpload/Form', [
             'lastUploadTimestamp' => $lastModified,
@@ -73,8 +73,8 @@ class GrmController extends Controller
 
         try {
             return count($this->blizzardConnector->send(new GetGuildRosterRequest(
-                $gameVersion->realm,
-                $this->blizzardConnector->defaultGuildSlug(),
+                $gameVersion->realm_slug,
+                $gameVersion->guild_slug,
                 $gameVersion->blizzard_namespace,
             ))->dto()->members);
         } catch (RealmRequiredException) {
