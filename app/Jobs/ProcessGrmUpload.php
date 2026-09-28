@@ -198,7 +198,7 @@ class ProcessGrmUpload implements ShouldQueue
             return;
         }
 
-        FetchGuildRoster::dispatch($gameVersion->id);
+        FetchGuildRoster::dispatch($gameVersion->id, bypassRateLimit: true);
     }
 
     private function logSummary(): void

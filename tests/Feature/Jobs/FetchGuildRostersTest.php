@@ -53,6 +53,28 @@ class FetchGuildRostersTest extends TestCase
         Bus::assertDispatchedTimes(FetchGuildRoster::class, 2);
         Bus::assertDispatched(FetchGuildRoster::class, fn (FetchGuildRoster $job) => $job->gameVersionId === $anniversary->id);
         Bus::assertDispatched(FetchGuildRoster::class, fn (FetchGuildRoster $job) => $job->gameVersionId === $era->id);
+        Bus::assertNotDispatched(FetchGuildRoster::class, fn (FetchGuildRoster $job) => $job->bypassRateLimit);
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_passes_the_rate_limit_bypass_to_each_roster_job(): void
+    {
+        Bus::fake();
+
+        GameVersion::factory()->create([
+            'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
+            'release_date' => '2024-11-21',
+        ]);
+        GameVersion::factory()->create([
+            'blizzard_namespace' => BlizzardNamespace::ERA,
+            'release_date' => '2019-08-26',
+        ]);
+
+        (new FetchGuildRosters(bypassRateLimit: true))->handle();
+
+        Bus::assertDispatchedTimes(FetchGuildRoster::class, 2);
+        Bus::assertNotDispatched(FetchGuildRoster::class, fn (FetchGuildRoster $job) => ! $job->bypassRateLimit);
     }
 
     #[Group('happy-path')]

@@ -448,7 +448,7 @@ class ProcessGrmUploadTest extends TestCase
 
         Bus::assertDispatched(
             FetchGuildRoster::class,
-            fn (FetchGuildRoster $job) => $job->gameVersionId === $this->gameVersion->id,
+            fn (FetchGuildRoster $job) => $job->gameVersionId === $this->gameVersion->id && $job->bypassRateLimit,
         );
     }
 

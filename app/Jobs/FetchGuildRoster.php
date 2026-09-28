@@ -30,15 +30,21 @@ class FetchGuildRoster implements ShouldQueue
 
     public function __construct(
         public int $gameVersionId,
+        public bool $bypassRateLimit = false,
     ) {}
 
     /**
-     * Get the middleware the job should pass through.
+     * Get the middleware the job should pass through. Deliberate refreshes
+     * bypass the hourly limit so they are never silently dropped.
      *
      * @return array<int, object>
      */
     public function middleware(): array
     {
+        if ($this->bypassRateLimit) {
+            return [];
+        }
+
         return [
             (new RateLimitedWithRedis('fetch-guild-roster-job'))->dontRelease(),
         ];

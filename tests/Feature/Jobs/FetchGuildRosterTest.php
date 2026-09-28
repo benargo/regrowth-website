@@ -55,6 +55,13 @@ class FetchGuildRosterTest extends TestCase
 
     #[Group('contract')]
     #[Test]
+    public function it_skips_the_rate_limiter_when_bypassing(): void
+    {
+        $this->assertSame([], (new FetchGuildRoster(1, bypassRateLimit: true))->middleware());
+    }
+
+    #[Group('contract')]
+    #[Test]
     public function it_implements_should_queue(): void
     {
         $this->assertInstanceOf(ShouldQueue::class, new FetchGuildRoster(1));

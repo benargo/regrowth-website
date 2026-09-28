@@ -10,6 +10,10 @@ class FetchGuildRosters implements ShouldQueue
 {
     use Queueable;
 
+    public function __construct(
+        public bool $bypassRateLimit = false,
+    ) {}
+
     /**
      * Get the tags that should be assigned to the job.
      *
@@ -36,7 +40,7 @@ class FetchGuildRosters implements ShouldQueue
             ->unique('blizzard_namespace');
 
         foreach ($gameVersions as $gameVersion) {
-            FetchGuildRoster::dispatch($gameVersion->id);
+            FetchGuildRoster::dispatch($gameVersion->id, $this->bypassRateLimit);
         }
     }
 }
