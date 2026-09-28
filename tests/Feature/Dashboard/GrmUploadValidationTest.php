@@ -2,12 +2,14 @@
 
 namespace Tests\Feature\Dashboard;
 
+use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Jobs\ProcessGrmUpload;
 use App\Models\GameVersion;
 use App\Models\User;
 use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\Support\DashboardTestCase;
 
@@ -181,8 +183,8 @@ class GrmUploadValidationTest extends DashboardTestCase
     #[Test]
     public function upload_form_member_count_uses_the_selected_game_version(): void
     {
-        GameVersion::factory()->create(['title' => 'Alpha Version', 'realm' => 'thunderstrike']);
-        $selected = GameVersion::factory()->create(['title' => 'Beta Version', 'realm' => 'proudmoore']);
+        GameVersion::factory()->create(['title' => 'Alpha Version', 'realm' => 'thunderstrike', 'guild_name' => 'Regrowth']);
+        $selected = GameVersion::factory()->create(['title' => 'Beta Version', 'realm' => 'proudmoore', 'guild_name' => 'Sister Guild']);
 
         $this->mockGetGuildRoster(['members' => [
             [
@@ -211,6 +213,11 @@ class GrmUploadValidationTest extends DashboardTestCase
 
         $partialResponse->assertOk();
         $partialResponse->assertJsonPath('props.memberCount', 1);
+
+        Saloon::assertSent(fn ($request) => $request instanceof GetGuildRosterRequest
+            && $request->resolveEndpoint() === '/data/wow/guild/proudmoore/sister-guild/roster');
+        Saloon::assertNotSent(fn ($request) => $request instanceof GetGuildRosterRequest
+            && str_contains($request->resolveEndpoint(), '/regrowth/'));
     }
 
     #[Test]

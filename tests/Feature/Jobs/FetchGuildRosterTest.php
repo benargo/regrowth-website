@@ -78,9 +78,10 @@ class FetchGuildRosterTest extends TestCase
 
     #[Group('happy-path')]
     #[Test]
-    public function it_requests_the_roster_for_the_game_versions_realm_and_namespace(): void
+    public function it_requests_the_roster_for_the_game_versions_realm_namespace_and_guild(): void
     {
         $gameVersion = $this->createGameVersion();
+        $gameVersion->update(['guild_name' => 'Sister Guild']);
 
         $this->mockGetGuildRoster();
         $this->applyBlizzardMocks();
@@ -91,7 +92,7 @@ class FetchGuildRosterTest extends TestCase
         $expectedNamespace = BlizzardNamespace::ERA->forProfileRequests($blizzard->getRegion());
 
         Saloon::assertSent(fn ($request, $response) => $request instanceof GetGuildRosterRequest
-            && str_starts_with($request->resolveEndpoint(), '/data/wow/guild/spineshatter/')
+            && $request->resolveEndpoint() === '/data/wow/guild/spineshatter/sister-guild/roster'
             && $response->getPendingRequest()->headers()->get('Battlenet-Namespace') === $expectedNamespace);
     }
 

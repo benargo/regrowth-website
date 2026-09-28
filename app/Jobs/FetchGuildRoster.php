@@ -68,8 +68,8 @@ class FetchGuildRoster implements ShouldQueue
         $gameVersion = GameVersion::findOrFail($this->gameVersionId);
 
         $roster = $blizzard->send(new GetGuildRosterRequest(
-            $gameVersion->realm,
-            $blizzard->defaultGuildSlug(),
+            $gameVersion->realm_slug,
+            $gameVersion->guild_slug,
             $gameVersion->blizzard_namespace,
         ))->dto();
 
@@ -96,7 +96,7 @@ class FetchGuildRoster implements ShouldQueue
         }
 
         $characterDto = $blizzard->send(new GetCharacterProfileRequest(
-            $gameVersion->realm,
+            $gameVersion->realm_slug,
             $member->character->name,
             $gameVersion->blizzard_namespace,
         ))->dto();

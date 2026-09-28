@@ -39,8 +39,14 @@ class FetchGuildRoster extends Command
             return self::FAILURE;
         }
 
-        if ($gameVersion->realm === null || $gameVersion->blizzard_namespace === null) {
-            $this->error("Game version {$gameVersion->id} has no realm or Blizzard namespace configured.");
+        if ($gameVersion->blizzard_namespace === null) {
+            $this->error("Game version {$gameVersion->id} has no Blizzard namespace configured.");
+
+            return self::FAILURE;
+        }
+
+        if ($gameVersion->realm === null && $gameVersion->blizzard_namespace->requiresRealm()) {
+            $this->error("Game version {$gameVersion->id} has no realm configured.");
 
             return self::FAILURE;
         }

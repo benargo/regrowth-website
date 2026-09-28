@@ -276,7 +276,7 @@ class ProcessGrmUpload implements ShouldQueue
         // Get character ID from Blizzard API
         try {
             $status = $blizzard->send(new GetCharacterStatusRequest(
-                $gameVersion->realm,
+                $gameVersion->realm_slug,
                 $name,
                 $gameVersion->blizzard_namespace,
             ))->dto();
@@ -339,7 +339,7 @@ class ProcessGrmUpload implements ShouldQueue
 
             try {
                 $altStatus = $blizzard->send(new GetCharacterProfileRequest(
-                    $gameVersion->realm,
+                    $gameVersion->realm_slug,
                     $altName,
                     $gameVersion->blizzard_namespace,
                 ))->dto();

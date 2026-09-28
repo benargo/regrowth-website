@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Console\Commands;
 
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Jobs\FetchGuildRoster;
 use App\Jobs\FetchGuildRosters;
 use App\Models\GameVersion;
@@ -76,16 +77,37 @@ class FetchGuildRosterTest extends TestCase
 
     #[Group('validation')]
     #[Test]
-    #[TestWith(['realm'])]
-    #[TestWith(['blizzard_namespace'])]
-    public function it_rejects_a_game_version_without_a_realm_or_blizzard_namespace(string $attribute): void
+    #[TestWith(['Thunderstrike'])]
+    #[TestWith([null])]
+    public function it_rejects_a_game_version_without_a_blizzard_namespace(?string $realm): void
     {
         Bus::fake([FetchGuildRoster::class, FetchGuildRosters::class]);
 
-        $gameVersion = GameVersion::factory()->create([$attribute => null]);
+        $gameVersion = GameVersion::factory()->create([
+            'blizzard_namespace' => null,
+            'realm' => $realm,
+        ]);
 
         $this->artisan('fetch:blizzard-roster', ['--game-version' => $gameVersion->id])
-            ->expectsOutput("Game version {$gameVersion->id} has no realm or Blizzard namespace configured.")
+            ->expectsOutput("Game version {$gameVersion->id} has no Blizzard namespace configured.")
+            ->assertFailed();
+
+        Bus::assertNothingDispatched();
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_rejects_a_game_version_without_a_realm_when_its_namespace_requires_one(): void
+    {
+        Bus::fake([FetchGuildRoster::class, FetchGuildRosters::class]);
+
+        $gameVersion = GameVersion::factory()->create([
+            'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
+            'realm' => null,
+        ]);
+
+        $this->artisan('fetch:blizzard-roster', ['--game-version' => $gameVersion->id])
+            ->expectsOutput("Game version {$gameVersion->id} has no realm configured.")
             ->assertFailed();
 
         Bus::assertNothingDispatched();

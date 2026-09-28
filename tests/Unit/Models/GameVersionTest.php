@@ -260,11 +260,11 @@ class GameVersionTest extends ModelTestCase
 
     #[Test]
     #[Group('edge-case')]
-    public function it_returns_an_empty_realm_slug_when_realm_is_null(): void
+    public function it_returns_a_null_realm_slug_when_realm_is_null(): void
     {
         $gameVersion = $this->make(['realm' => null]);
 
-        $this->assertSame('', $gameVersion->realm_slug);
+        $this->assertNull($gameVersion->realm_slug);
     }
 
     // ==================== relationships ====================
