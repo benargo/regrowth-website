@@ -146,19 +146,7 @@ class DashboardPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    // ==================== ranks and phases pages ====================
-
-    #[Group('happy-path')]
-    #[Test]
-    public function manage_ranks_page_loads(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('management.ranks.view'));
-
-        $response->assertOk();
-        $response->assertSee('Regrowth');
-    }
+    // ==================== phases pages ====================
 
     #[Group('happy-path')]
     #[Test]

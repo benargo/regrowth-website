@@ -134,10 +134,6 @@ export default function Dashboard({ discordRoles }) {
                                         </p>
                                     </DashboardCard>
                                 </Can>
-                                <DashboardCard href={route("management.ranks.view")} icon="chevron-double-up">
-                                    <h3 className="text-md">Manage guild ranks</h3>
-                                    <p className="mb-1 text-sm">Match the in-game ranks to the site.</p>
-                                </DashboardCard>
                                 <DashboardCard href={route("management.phases.view")} icon="hourglass-start">
                                     <h3 className="text-md">Manage TBC phases</h3>
                                     <p className="mb-1 text-sm">
