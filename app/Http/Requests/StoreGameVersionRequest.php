@@ -23,6 +23,7 @@ class StoreGameVersionRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255', $this->uniqueTitleRule()],
             'realm' => ['nullable', 'string', 'max:255'],
+            'guild_name' => ['required', 'string', 'max:24'],
             'faction' => ['nullable', Rule::enum(Faction::class)],
             'release_date' => ['required', 'date'],
             'theme' => ['required', Rule::enum(Theme::class)],
@@ -42,6 +43,7 @@ class StoreGameVersionRequest extends FormRequest
         return [
             'title.required' => 'The game version title is required.',
             'title.unique' => 'A game version with this title already exists.',
+            'guild_name.required' => 'The guild name is required.',
             'release_date.required' => 'The release date is required.',
             'theme.required' => 'Please choose a theme.',
         ];
@@ -56,6 +58,7 @@ class StoreGameVersionRequest extends FormRequest
     public function attributes(): array
     {
         return [
+            'guild_name' => 'guild name',
             'release_date' => 'release date',
             'blizzard_namespace' => 'Blizzard API namespace',
             'warcraftlogs_guild' => 'Warcraft Logs guild ID',

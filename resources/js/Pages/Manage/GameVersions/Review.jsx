@@ -9,10 +9,7 @@ import SharedHeader from "@/Components/SharedHeader";
 import formatDate from "@/Helpers/FormatDate";
 import Master from "@/Layouts/Master";
 
-/**
- * For each setup step, the lists of linked records to summarise. Each item is
- * a key plus a primary and optional secondary line, and an optional icon URL.
- */
+/** Per-step summary builders for the linked records lists. */
 const STEP_SUMMARIES = {
     "races-and-classes": (relationships) => [
         {
@@ -53,15 +50,14 @@ function capitalise(value) {
     return value ? value.charAt(0).toUpperCase() + value.slice(1) : null;
 }
 
-/**
- * The details step's [label, value] pairs.
- */
+/** The details step's [label, value] pairs. */
 function gameVersionDetails(gameVersion) {
     return [
         ["Title", gameVersion.title],
         ["Release date", gameVersion.release_date ? formatDate(gameVersion.release_date).long : null],
         ["Theme", capitalise(gameVersion.theme)],
         ["Realm", gameVersion.realm],
+        ["Guild name", gameVersion.guild_name],
         ["Faction", capitalise(gameVersion.faction)],
         ["Blizzard API namespace", capitalise(gameVersion.blizzard.namespace)],
         ["Warcraft Logs guild ID", gameVersion.warcraftlogs.guild],

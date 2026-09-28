@@ -19,20 +19,19 @@ const FIELD_LABELS = {
     release_date: "Release date",
     theme: "Theme",
     realm: "Realm",
+    guild_name: "Guild name",
     faction: "Faction",
     blizzard_namespace: "Blizzard API namespace",
     warcraftlogs_guild: "Warcraft Logs guild ID",
     warcraftlogs_namespace: "Warcraft Logs namespace",
 };
 
-/**
- * Build the initial useForm state for a game version. Blank values are
- * empty strings so inputs stay controlled; Laravel converts them to null.
- */
+/** Build the initial useForm state for a game version. */
 export function gameVersionFormData(gameVersion = null) {
     return {
         title: gameVersion?.title ?? "",
         realm: gameVersion?.realm ?? "",
+        guild_name: gameVersion?.guild_name ?? "",
         faction: gameVersion?.faction ?? "",
         release_date: gameVersion?.release_date ?? "",
         theme: gameVersion?.theme ?? "",
@@ -42,11 +41,7 @@ export function gameVersionFormData(gameVersion = null) {
     };
 }
 
-/**
- * The game version details form. With `autosave` ({ url, saved }) it saves
- * the changed fields once focus leaves the form, and has no submit button.
- * Without it, it submits through `onSubmit`, as on the Create page.
- */
+/** The game version details form. */
 export default function GameVersionForm({ form, options, onSubmit, submitLabel, processingLabel, autosave }) {
     const { data, setData, processing, errors } = form;
     const summaryRef = useRef(null);
@@ -71,8 +66,7 @@ export default function GameVersionForm({ form, options, onSubmit, submitLabel, 
     function handleSubmit(e) {
         e.preventDefault();
 
-        // Pressing Enter saves straight away. Autosave failures don't move
-        // focus to the summary: the page's status line announces them.
+        // Pressing Enter saves straight away.
         if (autosave) {
             flush();
             return;
@@ -139,6 +133,9 @@ export default function GameVersionForm({ form, options, onSubmit, submitLabel, 
             <FormSection legend="Where the guild plays">
                 <FormRow htmlFor="realm" label={FIELD_LABELS.realm} error={errors.realm}>
                     {text("realm", { autoComplete: "off" })}
+                </FormRow>
+                <FormRow htmlFor="guild_name" label={FIELD_LABELS.guild_name} required error={errors.guild_name}>
+                    {text("guild_name", { required: true, maxLength: 24, autoComplete: "off" })}
                 </FormRow>
                 <FormRow htmlFor="faction" label={FIELD_LABELS.faction} error={errors.faction}>
                     <OptionSelect

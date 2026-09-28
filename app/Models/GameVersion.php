@@ -10,19 +10,22 @@ use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Policies\DatasetPolicy;
 use Database\Factories\GameVersionFactory;
-use Illuminate\Contracts\Cache\Lock;
+use Illuminate\Cache\Lock;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 #[Fillable([
     'title',
     'realm',
+    'guild_name',
     'faction',
     'release_date',
     'theme',
@@ -37,9 +40,7 @@ class GameVersion extends Model implements DatasetModel
     use HasFactory;
 
     /**
-     * Relationships whose rows reference this game version by a nullable
-     * foreign key. Deleting the game version would silently orphan them,
-     * so any existing row marks the version as in use.
+     * Relationships whose existing rows mark this game version as in use.
      *
      * @var list<string>
      */
@@ -49,6 +50,8 @@ class GameVersion extends Model implements DatasetModel
      * How long an officer keeps the edit lock after their last active visit or poll.
      */
     public const int EDIT_LOCK_SECONDS = 300;
+
+    // ============ Custom attributes and casts ===========
 
     /**
      * Get the attributes that should be cast.
@@ -68,6 +71,28 @@ class GameVersion extends Model implements DatasetModel
     }
 
     /**
+     * @return Attribute<string>
+     */
+    protected function guildSlug(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): string => Str::slug($this->guild_name),
+        );
+    }
+
+    /**
+     * @return Attribute<string>
+     */
+    protected function realmSlug(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): string => $this->realm === null ? '' : Str::slug($this->realm),
+        );
+    }
+
+    // ============ Editing lock ===========
+
+    /**
      * Determine whether any dataset record still references this game version.
      */
     public function isInUse(): bool
@@ -77,9 +102,7 @@ class GameVersion extends Model implements DatasetModel
     }
 
     /**
-     * The atomic lock that gives one officer at a time the right to edit this
-     * game version. The user's id is the owner, so their own requests can
-     * refresh it and other officers' requests see it as taken.
+     * The atomic lock that gives one officer at a time the right to edit this game version.
      */
     public function editLock(User $user): Lock
     {
@@ -87,8 +110,7 @@ class GameVersion extends Model implements DatasetModel
     }
 
     /**
-     * Take or extend the edit lock for the user. Returns whether they hold it.
-     * The holder's id is kept alongside it, because a Lock can't report who owns it.
+     * Take or extend the edit lock for the user, returning whether they hold it.
      */
     public function acquireEditLock(User $user): bool
     {
@@ -132,8 +154,6 @@ class GameVersion extends Model implements DatasetModel
     // ============ Relationships ===========
 
     /**
-     * Get the phases for this game version.
-     *
      * @return HasMany<Phase, $this>
      */
     public function phases(): HasMany
@@ -142,8 +162,6 @@ class GameVersion extends Model implements DatasetModel
     }
 
     /**
-     * Get the raids for this game version, through their phase.
-     *
      * @return HasManyThrough<Raid, Phase, $this>
      */
     public function raids(): HasManyThrough
@@ -152,8 +170,6 @@ class GameVersion extends Model implements DatasetModel
     }
 
     /**
-     * Get the guild tags for this game version, through their phase.
-     *
      * @return HasManyThrough<GuildTag, Phase, $this>
      */
     public function guildTags(): HasManyThrough
@@ -162,8 +178,6 @@ class GameVersion extends Model implements DatasetModel
     }
 
     /**
-     * Get the items for this game version.
-     *
      * @return HasMany<Item, $this>
      */
     public function items(): HasMany
@@ -172,8 +186,6 @@ class GameVersion extends Model implements DatasetModel
     }
 
     /**
-     * Get the characters for this game version.
-     *
      * @return HasMany<Character, $this>
      */
     public function characters(): HasMany

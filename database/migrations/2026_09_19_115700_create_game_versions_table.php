@@ -17,6 +17,7 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->string('realm')->nullable();
+            $table->string('guild_name', 24);
             $table->enum('faction', Faction::cases())->nullable();
             $table->dateTime('release_date')->default(Carbon::now());
             $table->string('theme')->nullable();

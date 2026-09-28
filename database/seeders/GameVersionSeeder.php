@@ -20,6 +20,7 @@ class GameVersionSeeder extends Seeder
             [
                 'title' => 'Burning Crusade Classic (Anniversary)',
                 'realm' => 'Thunderstrike',
+                'guild_name' => config('services.blizzard.guild.name'),
                 'faction' => Faction::ALLIANCE->value,
                 'release_date' => Carbon::create(2026, 2, 6, 0, 0, 0, CarbonTimeZone::create('Europe/Paris')),
                 'theme' => Theme::CLASSIC->value,

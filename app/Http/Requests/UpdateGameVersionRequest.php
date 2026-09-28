@@ -14,15 +14,6 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 use Illuminate\Validation\Validator;
 
-/**
- * A partial update. Every key is "sometimes": it is validated, and later
- * written, only when the request contains it. A key sent as null clears its
- * column, so only the NOT NULL columns (title, release date) stay required.
- *
- * new_phase and new_raid each add one record to this game version. The
- * phase number must fit the decimal(2,1) column and be unique within the
- * version, and a new raid's phase must already belong to the version.
- */
 class UpdateGameVersionRequest extends StoreGameVersionRequest
 {
     /**
@@ -35,6 +26,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
         return [
             'title' => ['sometimes', 'required', 'string', 'max:255', $this->uniqueTitleRule()],
             'realm' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'guild_name' => ['sometimes', 'required', 'string', 'max:24'],
             'faction' => ['sometimes', 'nullable', Rule::enum(Faction::class)],
             'release_date' => ['sometimes', 'required', 'date'],
             'theme' => ['sometimes', 'nullable', Rule::enum(Theme::class)],

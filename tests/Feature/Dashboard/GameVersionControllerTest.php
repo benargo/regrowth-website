@@ -16,6 +16,7 @@ use App\Models\PlayableRace;
 use App\Models\Raid;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Arr;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
 use Mockery\Matcher\MatcherInterface;
@@ -104,6 +105,7 @@ class GameVersionControllerTest extends DashboardTestCase
 
         $this->assertSame('Wrath Classic', $gameVersion->title);
         $this->assertSame('Gehennas', $gameVersion->realm);
+        $this->assertSame('the Old Guard', $gameVersion->guild_name);
         $this->assertSame(Faction::HORDE, $gameVersion->faction);
         $this->assertSame(Theme::FOREVER, $gameVersion->theme);
         $this->assertSame(BlizzardNamespace::CLASSIC, $gameVersion->blizzard_namespace);
@@ -193,6 +195,44 @@ class GameVersionControllerTest extends DashboardTestCase
 
         $response->assertInvalid(['title' => 'A game version with this title already exists.']);
         $this->assertDatabaseCount('game_versions', 1);
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_requires_a_guild_name(): void
+    {
+        $response = $this->actingAs($this->officer)->post(
+            route('management.game-versions.store'),
+            Arr::except($this->validPayload(), 'guild_name')
+        );
+
+        $response->assertInvalid(['guild_name' => 'The guild name is required.']);
+        $this->assertDatabaseCount('game_versions', 0);
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_rejects_a_guild_name_longer_than_twenty_four_characters(): void
+    {
+        $response = $this->actingAs($this->officer)->post(route('management.game-versions.store'), $this->validPayload([
+            'guild_name' => str_repeat('a', 25),
+        ]));
+
+        $response->assertInvalid(['guild_name' => 'The guild name field must not be greater than 24 characters.']);
+        $this->assertDatabaseCount('game_versions', 0);
+    }
+
+    #[Test]
+    public function it_stores_a_guild_name_of_twenty_four_accented_characters(): void
+    {
+        $guildName = str_repeat('é', 24);
+
+        $response = $this->actingAs($this->officer)->post(route('management.game-versions.store'), $this->validPayload([
+            'guild_name' => $guildName,
+        ]));
+
+        $response->assertValid();
+        $this->assertSame($guildName, GameVersion::sole()->guild_name);
     }
 
     // ==================== edit ====================
@@ -698,6 +738,51 @@ class GameVersionControllerTest extends DashboardTestCase
         ]);
     }
 
+    #[Test]
+    public function it_accepts_an_update_that_changes_only_the_guild_name(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $this->expectUpdate($gameVersion, ['guild_name' => 'Sister Guild']);
+
+        $response = $this->actingAs($this->officer)
+            ->from($this->editUrl($gameVersion))
+            ->patch(route('management.game-versions.update', $gameVersion), ['guild_name' => 'Sister Guild']);
+
+        $response->assertValid();
+        $response->assertRedirect($this->editUrl($gameVersion));
+    }
+
+    #[Group('validation')]
+    #[TestWith([null])]
+    #[TestWith([''])]
+    #[TestWith(['   '])]
+    #[Test]
+    public function it_rejects_a_guild_name_cleared_on_update(?string $guildName): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        UpdateGameVersion::shouldNotRun();
+
+        $response = $this->actingAs($this->officer)
+            ->from($this->editUrl($gameVersion))
+            ->patch(route('management.game-versions.update', $gameVersion), ['guild_name' => $guildName]);
+
+        $response->assertInvalid(['guild_name' => 'The guild name is required.']);
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_rejects_a_guild_name_longer_than_twenty_four_characters_on_update(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        UpdateGameVersion::shouldNotRun();
+
+        $response = $this->actingAs($this->officer)
+            ->from($this->editUrl($gameVersion))
+            ->patch(route('management.game-versions.update', $gameVersion), ['guild_name' => str_repeat('a', 25)]);
+
+        $response->assertInvalid(['guild_name' => 'The guild name field must not be greater than 24 characters.']);
+    }
+
     // ==================== update: races and classes ====================
 
     #[Group('happy-path')]
@@ -1081,6 +1166,7 @@ class GameVersionControllerTest extends DashboardTestCase
         return [
             'title' => 'Wrath Classic',
             'realm' => 'Gehennas',
+            'guild_name' => 'the Old Guard',
             'faction' => Faction::HORDE->value,
             'release_date' => '2022-09-26',
             'theme' => Theme::FOREVER->value,

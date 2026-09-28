@@ -62,6 +62,7 @@ class GameVersionTest extends ModelTestCase
         $this->assertFillableAttribute($model, [
             'title',
             'realm',
+            'guild_name',
             'faction',
             'release_date',
             'theme',
@@ -237,6 +238,33 @@ class GameVersionTest extends ModelTestCase
 
         $this->assertInstanceOf(Carbon::class, $gameVersion->release_date);
         $this->assertTrue($releaseDate->eq($gameVersion->release_date));
+    }
+
+    // ==================== accessors ====================
+
+    #[Test]
+    public function it_computes_guild_slug_from_guild_name(): void
+    {
+        $gameVersion = $this->make(['guild_name' => 'the Old Guard']);
+
+        $this->assertSame('the-old-guard', $gameVersion->guild_slug);
+    }
+
+    #[Test]
+    public function it_computes_realm_slug_from_realm(): void
+    {
+        $gameVersion = $this->make(['realm' => 'Gehennas']);
+
+        $this->assertSame('gehennas', $gameVersion->realm_slug);
+    }
+
+    #[Test]
+    #[Group('edge-case')]
+    public function it_returns_an_empty_realm_slug_when_realm_is_null(): void
+    {
+        $gameVersion = $this->make(['realm' => null]);
+
+        $this->assertSame('', $gameVersion->realm_slug);
     }
 
     // ==================== relationships ====================

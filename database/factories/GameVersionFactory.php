@@ -24,6 +24,7 @@ class GameVersionFactory extends Factory
         return [
             'title' => fake()->words(3, true),
             'realm' => fake()->city(),
+            'guild_name' => fake()->unique()->lexify('Guild ??????'),
             'faction' => fake()->randomElement(Faction::cases()),
             'release_date' => fake()->dateTimeBetween('-1 year', '+1 year'),
             'theme' => fake()->randomElement(Theme::cases()),
