@@ -25,29 +25,12 @@ class FetchGuildRosters implements ShouldQueue
     }
 
     /**
-     * Dispatch one roster fetch per Blizzard namespace, realm and guild.
+     * Dispatch one roster fetch per current Blizzard roster.
      */
     public function handle(): void
     {
-        $gameVersions = GameVersion::query()
-            ->whereNotNull('blizzard_namespace')
-            ->where('release_date', '<=', now())
-            ->orderByDesc('release_date')
-            ->get()
-            ->reject(fn (GameVersion $gameVersion): bool => $gameVersion->realm === null
-                && $gameVersion->blizzard_namespace->requiresRealm())
-            ->unique(fn (GameVersion $gameVersion): string => $this->rosterKey($gameVersion));
-
-        foreach ($gameVersions as $gameVersion) {
+        foreach (GameVersion::currentRosters() as $gameVersion) {
             FetchGuildRoster::dispatch($gameVersion->id, $this->bypassRateLimit);
         }
-    }
-
-    /**
-     * Build the key that identifies a guild roster on Blizzard's side.
-     */
-    private function rosterKey(GameVersion $gameVersion): string
-    {
-        return "{$gameVersion->blizzard_namespace->value}|{$gameVersion->realm_slug}|{$gameVersion->guild_slug}";
     }
 }

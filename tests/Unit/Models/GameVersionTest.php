@@ -10,11 +10,13 @@ use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\Character;
 use App\Models\GameVersion;
+use App\Models\GuildRank;
 use App\Models\Item;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\Raid;
+use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Policies\DatasetPolicy;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
@@ -384,6 +386,74 @@ class GameVersionTest extends ModelTestCase
         $this->assertFalse($gameVersion->isInUse());
     }
 
+    // ==================== isBeingEdited ====================
+
+    #[Test]
+    public function it_is_not_being_edited_when_nobody_holds_the_edit_lock(): void
+    {
+        $this->assertFalse($this->create()->isBeingEdited());
+    }
+
+    #[Test]
+    public function it_is_being_edited_while_an_officer_holds_the_edit_lock(): void
+    {
+        $gameVersion = $this->create();
+        $gameVersion->acquireEditLock(User::factory()->officer()->create());
+
+        $this->assertTrue($gameVersion->isBeingEdited());
+    }
+
+    #[Test]
+    public function it_is_no_longer_being_edited_once_the_edit_lock_expires(): void
+    {
+        $gameVersion = $this->create();
+        $gameVersion->acquireEditLock(User::factory()->officer()->create());
+
+        $this->travel(GameVersion::EDIT_LOCK_SECONDS + 1)->seconds();
+
+        $this->assertFalse($gameVersion->isBeingEdited());
+    }
+
+    // ==================== current rosters ====================
+
+    #[Test]
+    public function it_owns_its_roster_when_it_is_the_latest_release_sharing_it(): void
+    {
+        $this->createFetchable(['release_date' => now()->subYear()]);
+        $latest = $this->createFetchable(['release_date' => now()->subMonth()]);
+
+        $this->assertTrue($latest->ownsCurrentRoster());
+    }
+
+    #[Test]
+    public function it_does_not_own_a_roster_superseded_by_a_later_release(): void
+    {
+        $older = $this->createFetchable(['release_date' => now()->subYear()]);
+        $this->createFetchable(['release_date' => now()->subMonth()]);
+
+        $this->assertFalse($older->ownsCurrentRoster());
+    }
+
+    #[Test]
+    public function it_owns_its_roster_when_a_later_release_is_another_guild(): void
+    {
+        $older = $this->createFetchable(['release_date' => now()->subYear()]);
+        $this->createFetchable(['release_date' => now()->subMonth(), 'guild_name' => 'Another Guild']);
+
+        $this->assertTrue($older->ownsCurrentRoster());
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    #[DataProvider('unfetchableRosterAttributes')]
+    #[Group('edge-case')]
+    #[Test]
+    public function it_does_not_own_a_roster_it_cannot_fetch(array $attributes): void
+    {
+        $this->assertFalse($this->createFetchable($attributes)->ownsCurrentRoster());
+    }
+
     // ==================== helpers ====================
 
     /**
@@ -395,6 +465,33 @@ class GameVersionTest extends ModelTestCase
             'phases' => ['phases', Phase::class],
             'items' => ['items', Item::class],
             'characters' => ['characters', Character::class],
+            'guildRanks' => ['guildRanks', GuildRank::class],
         ];
+    }
+
+    /**
+     * @return array<string, array{array<string, mixed>}>
+     */
+    public static function unfetchableRosterAttributes(): array
+    {
+        return [
+            'no Blizzard namespace' => [['blizzard_namespace' => null]],
+            'not released yet' => [['release_date' => '2999-01-01']],
+            'no realm' => [['realm' => null]],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     */
+    private function createFetchable(array $overrides = []): GameVersion
+    {
+        return $this->create([
+            'realm' => 'Thunderstrike',
+            'guild_name' => 'Regrowth',
+            'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
+            'release_date' => now()->subMonth(),
+            ...$overrides,
+        ]);
     }
 }

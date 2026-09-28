@@ -44,6 +44,15 @@ const STEP_SUMMARIES = {
             ),
         },
     ],
+    "guild-ranks": (relationships) => [
+        {
+            items: relationships.guild_ranks.ranks.map((rank) => ({
+                id: rank.id,
+                primary: `${rank.sort_order}. ${rank.name}`,
+                secondary: rank.count_attendance ? "Counts attendance" : "Doesn't count attendance",
+            })),
+        },
+    ],
 };
 
 function capitalise(value) {

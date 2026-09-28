@@ -3,6 +3,7 @@
 namespace Tests\Feature\Database\Seeders;
 
 use App\Models\GameVersion;
+use App\Models\GuildRank;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
@@ -24,6 +25,7 @@ class GameVersionBackfillSeederTest extends TestCase
         $gameVersion = GameVersion::factory()->create();
 
         $phase = Phase::factory()->create(['game_version_id' => null]);
+        $guildRank = GuildRank::factory()->create(['game_version_id' => null]);
 
         $race = PlayableRace::factory()->create();
         $class = PlayableClass::factory()->create();
@@ -31,6 +33,7 @@ class GameVersionBackfillSeederTest extends TestCase
         $this->runSeeder($gameVersion->id);
 
         $this->assertSame($gameVersion->id, $phase->fresh()->game_version_id);
+        $this->assertSame($gameVersion->id, $guildRank->fresh()->game_version_id);
 
         $this->assertDatabaseHas('pivot_game_versions_playable_races', [
             'game_version_id' => $gameVersion->id,

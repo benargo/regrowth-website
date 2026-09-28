@@ -9,7 +9,6 @@ use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Models\Character;
 use App\Models\GameVersion;
-use App\Models\GuildRank;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use Illuminate\Bus\Batchable;
@@ -67,6 +66,14 @@ class FetchGuildRoster implements ShouldQueue
     {
         $gameVersion = GameVersion::findOrFail($this->gameVersionId);
 
+        if (! $gameVersion->guildRanks()->exists()) {
+            Log::warning('Skipped guild roster sync: the game version has no guild ranks.', [
+                'game_version_id' => $gameVersion->id,
+            ]);
+
+            return;
+        }
+
         $roster = $blizzard->send(new GetGuildRosterRequest(
             $gameVersion->realm_slug,
             $gameVersion->guild_slug,
@@ -95,13 +102,13 @@ class FetchGuildRoster implements ShouldQueue
             return;
         }
 
+        $guildRank = $gameVersion->guildRanks()->where('sort_order', $member->rank)->firstOrFail();
+
         $characterDto = $blizzard->send(new GetCharacterProfileRequest(
             $gameVersion->realm_slug,
             $member->character->name,
             $gameVersion->blizzard_namespace,
         ))->dto();
-
-        $guildRank = GuildRank::where('sort_order', $member->rank)->firstOrFail();
 
         $character = Character::firstOrNew(['id' => $member->character->id]);
         $character->fill([

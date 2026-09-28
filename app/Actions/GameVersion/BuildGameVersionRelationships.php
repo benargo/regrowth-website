@@ -5,6 +5,7 @@ namespace App\Actions\GameVersion;
 use App\Http\Resources\PlayableClassResource;
 use App\Http\Resources\PlayableRaceResource;
 use App\Models\GameVersion;
+use App\Models\GuildRank;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
@@ -19,6 +20,9 @@ use Lorisleiva\Actions\Concerns\AsAction;
  * Raids have no game_version_id of their own, so they are nested read-only
  * under the phase option that owns them rather than returned as their own
  * selectable list.
+ *
+ * Guild ranks belong to one version only, so they are returned as that
+ * version's ordered list rather than a checklist.
  */
 class BuildGameVersionRelationships
 {
@@ -28,7 +32,8 @@ class BuildGameVersionRelationships
      * @return array{
      *     playable_races: array{options: list<array<string, mixed>>, selected_ids: list<int>},
      *     playable_classes: array{options: list<array<string, mixed>>, selected_ids: list<int>},
-     *     phases: array{options: list<array{id: int, label: string, description: string, game_version: array{id: int, title: string}|null, raids: list<array{id: int, name: string, difficulty: string, color: string|null}>}>, selected_ids: list<int>}
+     *     phases: array{options: list<array{id: int, label: string, description: string, game_version: array{id: int, title: string}|null, raids: list<array{id: int, name: string, difficulty: string, color: string|null}>}>, selected_ids: list<int>},
+     *     guild_ranks: array{ranks: list<array{id: int, name: string, sort_order: int, count_attendance: bool, characters_count: int}>}
      * }
      */
     public function handle(GameVersion $gameVersion): array
@@ -60,6 +65,16 @@ class BuildGameVersionRelationships
                     ])->values()->all(),
                 ])->all(),
                 'selected_ids' => $phases->where('game_version_id', $gameVersion->id)->pluck('id')->all(),
+            ],
+            'guild_ranks' => [
+                'ranks' => $gameVersion->guildRanks()->withCount('characters')->ordered()->get()
+                    ->map(fn (GuildRank $rank): array => [
+                        'id' => $rank->id,
+                        'name' => $rank->name,
+                        'sort_order' => $rank->sort_order,
+                        'count_attendance' => $rank->count_attendance,
+                        'characters_count' => $rank->characters_count,
+                    ])->all(),
             ],
         ];
     }

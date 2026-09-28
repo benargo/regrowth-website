@@ -19,6 +19,8 @@ use Lorisleiva\Actions\Concerns\AsAction;
  * Phases are saved one model at a time rather than with a bulk query update
  * so Phase still dispatches AddonSettingsProcessed. There are only tens of
  * phases, so the per-row cost doesn't matter.
+ *
+ * Guild ranks are replaced as a whole ordered list; see SyncGuildRanks.
  */
 class UpdateGameVersion
 {
@@ -35,6 +37,7 @@ class UpdateGameVersion
         'phase_ids',
         'new_phase',
         'new_raid',
+        'guild_ranks',
     ];
 
     /**
@@ -63,6 +66,10 @@ class UpdateGameVersion
 
             if (Arr::exists($data, 'new_raid')) {
                 Raid::create($data['new_raid']);
+            }
+
+            if (Arr::exists($data, 'guild_ranks')) {
+                SyncGuildRanks::run($gameVersion, $data['guild_ranks']);
             }
         });
     }

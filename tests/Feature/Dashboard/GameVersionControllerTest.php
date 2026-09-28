@@ -10,6 +10,7 @@ use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\GameVersion;
+use App\Models\GuildRank;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
@@ -17,6 +18,7 @@ use App\Models\Raid;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Queue;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
 use Mockery\Matcher\MatcherInterface;
@@ -498,7 +500,7 @@ class GameVersionControllerTest extends DashboardTestCase
             ->where('gameVersion.title', 'Era')
             ->where('step', GameVersionSetupStep::PHASES->toOption())
             ->where('previousStep', GameVersionSetupStep::RACES_AND_CLASSES->toOption())
-            ->where('nextStep', null)
+            ->where('nextStep', GameVersionSetupStep::GUILD_RANKS->toOption())
             ->where('steps', GameVersionSetupStep::options())
             ->where('relationships', $relationships)
             ->where('returnToReview', false)
@@ -524,7 +526,7 @@ class GameVersionControllerTest extends DashboardTestCase
         $gameVersion = GameVersion::factory()->create();
         $this->fakeRelationships($gameVersion);
 
-        $response = $this->actingAs($this->officer)->get(route('management.game-versions.setup', [$gameVersion, 'phases']));
+        $response = $this->actingAs($this->officer)->get(route('management.game-versions.setup', [$gameVersion, 'guild-ranks']));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('nextStep', null)
@@ -702,6 +704,70 @@ class GameVersionControllerTest extends DashboardTestCase
             ->patch(route('management.game-versions.update', $gameVersion), ['realm' => 'Firemaw']);
 
         $response->assertValid();
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_saves_the_guild_ranks_in_the_order_given(): void
+    {
+        Queue::fake();
+        $gameVersion = GameVersion::factory()->create();
+
+        $response = $this->actingAs($this->officer)
+            ->from(route('management.game-versions.edit', $gameVersion))
+            ->patch(route('management.game-versions.update', $gameVersion), [
+                'guild_ranks' => [
+                    ['id' => null, 'name' => 'Guild Master', 'count_attendance' => false],
+                    ['id' => null, 'name' => 'Raider', 'count_attendance' => true],
+                ],
+            ]);
+
+        $response->assertRedirect(route('management.game-versions.edit', $gameVersion));
+        $this->assertSame(['Guild Master', 'Raider'], $gameVersion->guildRanks()->ordered()->pluck('name')->all());
+    }
+
+    #[Test]
+    public function it_rejects_a_guild_rank_from_another_game_version(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $ownRank = GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        $otherRank = GuildRank::factory()->for(GameVersion::factory())->create(['name' => 'Officer']);
+
+        $response = $this->actingAs($this->officer)
+            ->patch(route('management.game-versions.update', $gameVersion), [
+                'guild_ranks' => [['id' => $otherRank->id, 'name' => 'Stolen', 'count_attendance' => true]],
+            ]);
+
+        $response->assertSessionHasErrors(['guild_ranks.0.id']);
+        $this->assertModelExists($ownRank);
+        $this->assertSame('Officer', $otherRank->fresh()->name);
+        $this->assertNotSame($gameVersion->id, $otherRank->fresh()->game_version_id);
+    }
+
+    #[Test]
+    public function it_rejects_more_than_ten_guild_ranks(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $ranks = collect(range(1, 11))->map(fn (int $number): array => ['id' => null, 'name' => "Rank {$number}", 'count_attendance' => true])->all();
+
+        $response = $this->actingAs($this->officer)
+            ->patch(route('management.game-versions.update', $gameVersion), ['guild_ranks' => $ranks]);
+
+        $response->assertSessionHasErrors(['guild_ranks' => 'A guild can have up to 10 ranks.']);
+        $this->assertSame(0, $gameVersion->guildRanks()->count());
+    }
+
+    #[Test]
+    public function it_rejects_a_guild_rank_without_a_name(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        $response = $this->actingAs($this->officer)
+            ->patch(route('management.game-versions.update', $gameVersion), [
+                'guild_ranks' => [['id' => null, 'name' => '', 'count_attendance' => true]],
+            ]);
+
+        $response->assertSessionHasErrors(['guild_ranks.0.name' => 'Enter a name for every rank.']);
     }
 
     #[Test]

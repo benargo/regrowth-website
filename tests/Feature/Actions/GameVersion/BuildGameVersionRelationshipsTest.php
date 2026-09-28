@@ -3,7 +3,9 @@
 namespace Tests\Feature\Actions\GameVersion;
 
 use App\Actions\GameVersion\BuildGameVersionRelationships;
+use App\Models\Character;
 use App\Models\GameVersion;
+use App\Models\GuildRank;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
@@ -52,7 +54,7 @@ class BuildGameVersionRelationshipsTest extends TestCase
         $this->assertSame('Phase 1', $relationships['phases']['options'][0]['label']);
         $this->assertSame(['id' => $otherGameVersion->id, 'title' => 'Era'], $relationships['phases']['options'][1]['game_version']);
         $this->assertNull($relationships['phases']['options'][2]['game_version']);
-        $this->assertSame(['playable_races', 'playable_classes', 'phases'], array_keys($relationships));
+        $this->assertSame(['playable_races', 'playable_classes', 'phases', 'guild_ranks'], array_keys($relationships));
     }
 
     #[Test]
@@ -84,6 +86,25 @@ class BuildGameVersionRelationshipsTest extends TestCase
 
         $option = collect($relationships['phases']['options'])->firstWhere('id', $phase->id);
         $this->assertSame([], $option['raids']);
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_lists_the_game_versions_own_guild_ranks_in_rank_order_with_character_counts(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $raider = GuildRank::factory()->for($gameVersion)->create(['sort_order' => 1, 'name' => 'Raider']);
+        GuildRank::factory()->for($gameVersion)->doesNotCountAttendance()->create(['sort_order' => 0, 'name' => 'Guild Master']);
+        GuildRank::factory()->for(GameVersion::factory())->create(['sort_order' => 0, 'name' => 'Elsewhere']);
+        Character::factory()->count(2)->create(['rank_id' => $raider->id]);
+
+        $ranks = $this->build($gameVersion)['guild_ranks']['ranks'];
+
+        $this->assertSame(['Guild Master', 'Raider'], array_column($ranks, 'name'));
+        $this->assertSame([0, 1], array_column($ranks, 'sort_order'));
+        $this->assertSame([false, true], array_column($ranks, 'count_attendance'));
+        $this->assertSame([0, 2], array_column($ranks, 'characters_count'));
+        $this->assertSame($raider->id, $ranks[1]['id']);
     }
 
     /**

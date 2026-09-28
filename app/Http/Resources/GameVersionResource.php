@@ -85,6 +85,7 @@ class GameVersionResource extends JsonResource
             'phases_count' => $this->whenCounted('phases'),
             'items_count' => $this->whenCounted('items'),
             'characters_count' => $this->whenCounted('characters'),
+            'guild_ranks_count' => $this->whenCounted('guildRanks'),
         ];
     }
 }
