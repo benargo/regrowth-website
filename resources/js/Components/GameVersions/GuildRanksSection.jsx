@@ -75,13 +75,13 @@ function splitErrors(visitErrors, sent) {
 }
 
 export default function GuildRanksSection({
-    gameVersion,
     relationships,
+    routes,
     submitLabel = "Save guild ranks",
     onSaved,
     autosave = false,
 }) {
-    const url = route("management.game-versions.update", gameVersion.id);
+    const url = routes.update;
     const [rows, setRows] = useState(() => relationships.guild_ranks.data.map(toRow));
     const [errors, setErrors] = useState({ rows: {} });
     const [processing, setProcessing] = useState(false);

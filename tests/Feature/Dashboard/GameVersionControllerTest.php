@@ -71,6 +71,11 @@ class GameVersionControllerTest extends DashboardTestCase
             ->where('gameVersions.1.title', 'Later')
             ->where('gameVersions.1.phases_count', 1)
             ->has('gameVersions.1.characters_count')
+            ->where('gameVersions.1.links', [
+                'edit' => route('management.game-versions.edit', $later),
+                'destroy' => route('management.game-versions.destroy', $later),
+            ])
+            ->where('routes', ['create' => route('management.game-versions.create')])
         );
     }
 
@@ -90,6 +95,10 @@ class GameVersionControllerTest extends DashboardTestCase
             ->where('options.warcraftlogs_namespaces.0', ['value' => 'anniversary', 'label' => 'The Burning Crusade Classic Anniversary'])
             ->has('options.warcraftlogs_namespaces', count(WarcraftLogsNamespace::cases()))
             ->where('steps', GameVersionSetupStep::options())
+            ->where('routes', [
+                'index' => route('management.game-versions.index'),
+                'store' => route('management.game-versions.store'),
+            ])
         );
     }
 
@@ -277,7 +286,7 @@ class GameVersionControllerTest extends DashboardTestCase
     }
 
     #[Test]
-    public function it_shares_the_setup_steps_on_the_edit_page(): void
+    public function it_shares_the_linked_setup_steps_and_page_urls_on_the_edit_page(): void
     {
         $gameVersion = GameVersion::factory()->create();
         $this->fakeRelationships($gameVersion);
@@ -285,7 +294,13 @@ class GameVersionControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->get(route('management.game-versions.edit', $gameVersion));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('steps', GameVersionSetupStep::options())
+            ->has('steps', count(GameVersionSetupStep::cases()))
+            ->where('steps.0.href', route('management.game-versions.setup', [$gameVersion, 'races-and-classes']))
+            ->where('routes', [
+                'index' => route('management.game-versions.index'),
+                'update' => route('management.game-versions.update', $gameVersion),
+                'review' => route('management.game-versions.review', $gameVersion),
+            ])
         );
     }
 
@@ -501,9 +516,17 @@ class GameVersionControllerTest extends DashboardTestCase
             ->where('step', GameVersionSetupStep::PHASES->toOption())
             ->where('previousStep', GameVersionSetupStep::RACES_AND_CLASSES->toOption())
             ->where('nextStep', GameVersionSetupStep::GUILD_RANKS->toOption())
-            ->where('steps', GameVersionSetupStep::options())
+            ->has('steps', count(GameVersionSetupStep::cases()))
+            ->where('steps.1.href', route('management.game-versions.setup', [$gameVersion, 'phases']))
             ->where('relationships', $relationships)
             ->where('returnToReview', false)
+            ->where('routes', [
+                'update' => route('management.game-versions.update', $gameVersion),
+                'edit' => route('management.game-versions.edit', $gameVersion),
+                'review' => route('management.game-versions.review', $gameVersion),
+                'previous' => route('management.game-versions.setup', [$gameVersion, 'races-and-classes']),
+                'next' => route('management.game-versions.setup', [$gameVersion, 'guild-ranks']),
+            ])
         );
     }
 
@@ -517,6 +540,7 @@ class GameVersionControllerTest extends DashboardTestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('returnToReview', true)
+            ->where('routes.next', route('management.game-versions.review', $gameVersion))
         );
     }
 
@@ -572,8 +596,14 @@ class GameVersionControllerTest extends DashboardTestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Manage/GameVersions/Review')
             ->where('gameVersion.title', 'Era')
-            ->where('steps', GameVersionSetupStep::options())
+            ->has('steps', count(GameVersionSetupStep::cases()))
+            ->where('steps.2.href', route('management.game-versions.setup', [$gameVersion, 'guild-ranks']))
             ->where('relationships', $relationships)
+            ->where('routes', [
+                'index' => route('management.game-versions.index'),
+                'edit' => route('management.game-versions.edit', $gameVersion),
+                'review' => route('management.game-versions.review', $gameVersion),
+            ])
         );
     }
 

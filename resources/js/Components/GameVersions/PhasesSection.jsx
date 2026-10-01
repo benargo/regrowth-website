@@ -50,13 +50,14 @@ function PhaseLabel({ phase }) {
 export default function PhasesSection({
     gameVersion,
     relationships,
+    routes,
     submitLabel = "Save phases",
     onSaved,
     autosave = false,
 }) {
     const { phases } = relationships;
     const { form, setIds, handleSubmit, containerProps } = useRelationshipForm({
-        url: route("management.game-versions.update", gameVersion.id),
+        url: routes.update,
         key: "phases",
         selected: { phase_ids: phases.selected_ids },
         autosave,
@@ -85,7 +86,7 @@ export default function PhasesSection({
                 {!autosave && <SaveButton processing={form.processing} label={submitLabel} />}
             </form>
             <Relationships.AddRecord label="Add a new phase">
-                <NewPhaseForm gameVersion={gameVersion} />
+                <NewPhaseForm url={routes.update} />
             </Relationships.AddRecord>
         </Relationships>
     );

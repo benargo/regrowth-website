@@ -1,34 +1,14 @@
 import { Input } from "@headlessui/react";
-import { useForm } from "@inertiajs/react";
 import { FormRow, SaveButton, controlClassName } from "@/Components/FormControls";
-import { autosaveVisit, useAutosaveQueue } from "@/Hooks/useAutosave";
+import useNewRecordForm from "@/Hooks/useNewRecordForm";
 
-export default function NewPhaseForm({ gameVersion }) {
-    const form = useForm({ number: "", description: "", start_date: "" });
-    const error = (field) => form.errors[`new_phase.${field}`];
-
-    const queue = useAutosaveQueue();
-
-    /**
-     * On an autosaving page, the add waits its turn in the save queue, so its
-     * visit neither cancels nor is cancelled by an autosave. It is sent
-     * without the autosave header, so the flash message still confirms it.
-     */
-    function handleSubmit(e) {
-        e.preventDefault();
-        form.transform((data) => ({ new_phase: data }));
-        const url = route("management.game-versions.update", gameVersion.id);
-
-        if (queue) {
-            queue.enqueue("new-phase", () => autosaveVisit(form, "patch", url, { onSuccess: () => form.reset() }));
-            return;
-        }
-
-        form.patch(url, {
-            preserveScroll: true,
-            onSuccess: () => form.reset(),
-        });
-    }
+export default function NewPhaseForm({ url }) {
+    const { form, error, handleSubmit } = useNewRecordForm({
+        url,
+        key: "new-phase",
+        field: "new_phase",
+        initial: { number: "", description: "", start_date: "" },
+    });
 
     return (
         <form onSubmit={handleSubmit} noValidate className="grid grid-cols-1 gap-4 md:grid-cols-4">

@@ -1,9 +1,5 @@
-import { Link, router } from "@inertiajs/react";
-import EditLockGuard from "@/Components/Datasets/EditLockGuard";
-import Relationships from "@/Components/Datasets/Relationships";
-import SetupNavigation, { setupNavigationLabels } from "@/Components/Datasets/SetupNavigation";
-import { linkClassName } from "@/Components/FormControls";
-import SetupSteps from "@/Components/GameVersions/SetupSteps";
+import SetupSteps from "@/Components/Datasets/SetupSteps";
+import SetupWizardStep from "@/Components/Datasets/SetupWizardStep";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
 import Master from "@/Layouts/Master";
@@ -25,48 +21,29 @@ export default function Setup({
     steps,
     relationships,
     returnToReview,
+    routes,
     canEdit,
     editor,
 }) {
-    const editUrl = route("management.game-versions.edit", gameVersion.id);
-    const reviewUrl = route("management.game-versions.review", gameVersion.id);
-    const previousUrl = previousStep
-        ? route("management.game-versions.setup", [gameVersion.id, previousStep.value])
-        : editUrl;
-    const nextUrl =
-        nextStep && !returnToReview
-            ? route("management.game-versions.setup", [gameVersion.id, nextStep.value])
-            : reviewUrl;
-    const labels = setupNavigationLabels(nextStep, returnToReview);
-
     return (
         <Master title={`Set up ${gameVersion.title}`}>
             <SharedHeader backgroundClass={gameVersion.banner_class} title={`Set up ${gameVersion.title}`} />
 
-            <SetupSteps gameVersion={gameVersion} steps={steps} currentStep={step.value} />
+            <SetupSteps steps={steps} currentStep={step.value} routes={routes} />
 
             <PageContainer>
-                <div className="mx-auto flex max-w-5xl flex-col gap-8">
-                    <EditLockGuard canEdit={canEdit} editor={editor} recordName="game version">
-                        <Relationships.Step
-                            step={step}
-                            sections={sections}
-                            gameVersion={gameVersion}
-                            relationships={relationships}
-                            submitLabel={labels.submit}
-                            onSaved={() => router.visit(nextUrl)}
-                        />
-                    </EditLockGuard>
-
-                    <SetupNavigation
-                        backHref={previousUrl}
-                        backLabel={previousStep ? `Back to ${previousStep.label.toLowerCase()}` : "Back to details"}
-                    >
-                        <Link href={nextUrl} className={linkClassName}>
-                            {labels.skip}
-                        </Link>
-                    </SetupNavigation>
-                </div>
+                <SetupWizardStep
+                    routes={routes}
+                    step={step}
+                    previousStep={previousStep}
+                    nextStep={nextStep}
+                    returnToReview={returnToReview}
+                    canEdit={canEdit}
+                    editor={editor}
+                    recordName="game version"
+                    sections={sections}
+                    sectionProps={{ gameVersion, relationships }}
+                />
             </PageContainer>
         </Master>
     );

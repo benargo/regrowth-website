@@ -1,9 +1,6 @@
-import { Link } from "@inertiajs/react";
-import ReviewSection, { selectedOptions } from "@/Components/Datasets/ReviewSection";
-import SetupNavigation from "@/Components/Datasets/SetupNavigation";
-import Icon from "@/Components/FontAwesome/Icon";
-import { linkButtonClassName } from "@/Components/FormControls";
-import SetupSteps from "@/Components/GameVersions/SetupSteps";
+import { selectedOptions } from "@/Components/Datasets/ReviewSection";
+import ReviewSummary from "@/Components/Datasets/ReviewSummary";
+import SetupSteps from "@/Components/Datasets/SetupSteps";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
 import formatDate from "@/Helpers/FormatDate";
@@ -74,71 +71,21 @@ function gameVersionDetails(gameVersion) {
     ];
 }
 
-export default function Review({ gameVersion, steps, relationships }) {
-    const lastStep = steps[steps.length - 1];
-
+export default function Review({ gameVersion, steps, relationships, routes }) {
     return (
         <Master title={`Review ${gameVersion.title}`}>
             <SharedHeader backgroundClass={gameVersion.banner_class} title={`Review ${gameVersion.title}`} />
 
-            <SetupSteps gameVersion={gameVersion} steps={steps} currentStep="review" />
+            <SetupSteps steps={steps} currentStep="review" routes={routes} />
 
             <PageContainer>
-                <div className="mx-auto flex max-w-5xl flex-col gap-8">
-                    <p className="text-secondary-300 max-w-prose">
-                        Check the details and linked records below. Use Edit to go back to a step; saving it brings you
-                        back here.
-                    </p>
-
-                    <ReviewSection
-                        id="details"
-                        title="Details"
-                        editHref={`${route("management.game-versions.edit", { gameVersion: gameVersion.id, review: 1 })}#details`}
-                        editLabel="Edit details"
-                    >
-                        <ReviewSection.Details details={gameVersionDetails(gameVersion)} />
-                    </ReviewSection>
-
-                    {steps.map((step) => {
-                        const summarise = STEP_SUMMARIES[step.value];
-
-                        if (!summarise) {
-                            throw new Error(`The "${step.value}" step has no summary on the review page.`);
-                        }
-
-                        return (
-                            <ReviewSection
-                                key={step.value}
-                                id={step.value}
-                                title={step.label}
-                                editHref={route("management.game-versions.setup", {
-                                    gameVersion: gameVersion.id,
-                                    step: step.value,
-                                    review: 1,
-                                })}
-                                editLabel={`Edit ${step.label.toLowerCase()}`}
-                            >
-                                {summarise(relationships).map((list, index) => (
-                                    <ReviewSection.Records
-                                        key={list.heading ?? index}
-                                        heading={list.heading}
-                                        items={list.items}
-                                    />
-                                ))}
-                            </ReviewSection>
-                        );
-                    })}
-
-                    <SetupNavigation
-                        backHref={route("management.game-versions.setup", [gameVersion.id, lastStep.value])}
-                        backLabel={`Back to ${lastStep.label.toLowerCase()}`}
-                    >
-                        <Link href={route("management.game-versions.index")} className={linkButtonClassName}>
-                            <Icon icon="check" />
-                            Finish
-                        </Link>
-                    </SetupNavigation>
-                </div>
+                <ReviewSummary
+                    routes={routes}
+                    steps={steps}
+                    details={gameVersionDetails(gameVersion)}
+                    summaries={STEP_SUMMARIES}
+                    relationships={relationships}
+                />
             </PageContainer>
         </Master>
     );

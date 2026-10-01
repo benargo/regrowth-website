@@ -125,7 +125,7 @@ function SortableRankRow({ row, index, error, onRename, onCommitName, onToggleAt
                         onChange={() => onToggleAttendance(row.key)}
                     />
                     <label htmlFor={attendanceId} className="text-secondary-300 text-sm whitespace-nowrap">
-                        Counts attendance
+                        Attendance tracked
                     </label>
                 </span>
                 <button

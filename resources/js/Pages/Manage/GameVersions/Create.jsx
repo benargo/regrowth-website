@@ -1,11 +1,11 @@
 import { useForm } from "@inertiajs/react";
-import PageContainer from "@/Components/PageContainer";
+import SetupSteps from "@/Components/Datasets/SetupSteps";
 import GameVersionForm, { gameVersionFormData } from "@/Components/GameVersions/GameVersionForm";
-import SetupSteps from "@/Components/GameVersions/SetupSteps";
+import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
 import Master from "@/Layouts/Master";
 
-export default function Create({ options, steps }) {
+export default function Create({ options, steps, routes }) {
     const form = useForm(gameVersionFormData());
 
     return (
@@ -19,9 +19,10 @@ export default function Create({ options, steps }) {
                     <GameVersionForm
                         form={form}
                         options={options}
-                        onSubmit={(visitOptions) => form.post(route("management.game-versions.store"), visitOptions)}
+                        onSubmit={(visitOptions) => form.post(routes.store, visitOptions)}
                         submitLabel="Save and continue"
                         processingLabel="Saving…"
+                        cancelHref={routes.index}
                     />
                 </div>
             </PageContainer>

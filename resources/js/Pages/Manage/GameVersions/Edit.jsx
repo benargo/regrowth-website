@@ -1,7 +1,6 @@
 import { useForm } from "@inertiajs/react";
-import EditLayout, { useOpenedFromReview } from "@/Components/Datasets/EditLayout";
+import EditLayout from "@/Components/Datasets/EditLayout";
 import EditLockGuard from "@/Components/Datasets/EditLockGuard";
-import Relationships from "@/Components/Datasets/Relationships";
 import Icon from "@/Components/FontAwesome/Icon";
 import GameVersionForm, { gameVersionFormData } from "@/Components/GameVersions/GameVersionForm";
 import PageContainer from "@/Components/PageContainer";
@@ -18,9 +17,8 @@ const sections = import.meta.glob("/resources/js/Components/GameVersions/*Sectio
     import: "default",
 });
 
-export default function Edit({ gameVersion, options, relationships, steps, canEdit, editor }) {
+export default function Edit({ gameVersion, options, relationships, steps, routes, canEdit, editor }) {
     const form = useForm(gameVersionFormData(gameVersion));
-    const openedFromReview = useOpenedFromReview();
 
     return (
         <Master title={`Edit ${gameVersion.title}`}>
@@ -28,7 +26,7 @@ export default function Edit({ gameVersion, options, relationships, steps, canEd
 
             <ToolNav>
                 <div className="flex-initial space-x-4">
-                    <ToolNavLink href={route("management.game-versions.index")}>
+                    <ToolNavLink href={routes.index}>
                         <Icon icon="arrow-left" style="solid" className="mr-1 text-xs" />
                         Back to game versions
                     </ToolNavLink>
@@ -36,32 +34,23 @@ export default function Edit({ gameVersion, options, relationships, steps, canEd
             </ToolNav>
 
             <PageContainer>
-                <EditLayout
-                    steps={steps}
-                    reviewHref={openedFromReview ? route("management.game-versions.review", gameVersion.id) : null}
-                >
+                <EditLayout steps={steps} routes={routes}>
                     <EditLockGuard canEdit={canEdit} editor={editor} recordName="game version">
                         <EditLayout.Details>
                             <GameVersionForm
                                 form={form}
                                 options={options}
-                                autosave={{
-                                    url: route("management.game-versions.update", gameVersion.id),
-                                    saved: gameVersionFormData(gameVersion),
-                                }}
+                                autosave={{ url: routes.update, saved: gameVersionFormData(gameVersion) }}
                             />
                         </EditLayout.Details>
 
-                        {steps.map((step) => (
-                            <Relationships.Step
-                                key={step.value}
-                                step={step}
-                                sections={sections}
-                                gameVersion={gameVersion}
-                                relationships={relationships}
-                                autosave
-                            />
-                        ))}
+                        <EditLayout.Steps
+                            steps={steps}
+                            sections={sections}
+                            gameVersion={gameVersion}
+                            relationships={relationships}
+                            routes={routes}
+                        />
                     </EditLockGuard>
                 </EditLayout>
             </PageContainer>

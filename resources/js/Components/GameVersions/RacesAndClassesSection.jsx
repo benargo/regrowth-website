@@ -13,15 +13,15 @@ function ClassLabel({ playableClass }) {
 }
 
 export default function RacesAndClassesSection({
-    gameVersion,
     relationships,
+    routes,
     submitLabel = "Save races and classes",
     onSaved,
     autosave = false,
 }) {
     const { playable_races: races, playable_classes: classes } = relationships;
     const { form, setIds, handleSubmit, containerProps } = useRelationshipForm({
-        url: route("management.game-versions.update", gameVersion.id),
+        url: routes.update,
         key: "races-and-classes",
         selected: {
             playable_race_ids: races.selected_ids,

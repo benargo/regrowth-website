@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\GameVersion\BuildGameVersionRelationships;
+use App\Actions\GameVersion\BuildGameVersionRoutes;
 use App\Actions\GameVersion\UpdateGameVersion;
 use App\Enums\Faction;
 use App\Enums\GameVersionSetupStep;
@@ -29,7 +30,7 @@ class GameVersionController extends Controller
      * Display a listing of game versions.
      */
     #[Authorize('viewAny', GameVersion::class)]
-    public function index(Request $request): Response
+    public function index(Request $request, BuildGameVersionRoutes $routes): Response
     {
         $gameVersions = GameVersion::query()
             ->withCount(GameVersion::USAGE_RELATIONS)
@@ -37,7 +38,13 @@ class GameVersionController extends Controller
             ->get();
 
         return Inertia::render('Manage/GameVersions/Index', [
-            'gameVersions' => GameVersionResource::collectionForManagement($gameVersions)->map->resolve($request)->all(),
+            'gameVersions' => GameVersionResource::collectionForManagement($gameVersions)
+                ->map(fn (GameVersionResource $resource): array => [
+                    ...$resource->resolve($request),
+                    'links' => $routes->links($resource->resource),
+                ])
+                ->all(),
+            'routes' => $routes->forIndex(),
         ]);
     }
 
@@ -45,11 +52,12 @@ class GameVersionController extends Controller
      * Show the form for creating a new game version.
      */
     #[Authorize('create', GameVersion::class)]
-    public function create(): Response
+    public function create(BuildGameVersionRoutes $routes): Response
     {
         return Inertia::render('Manage/GameVersions/Create', [
             'options' => $this->formOptions(),
-            'steps' => GameVersionSetupStep::options(),
+            'steps' => $routes->steps(),
+            'routes' => $routes->forCreate(),
         ]);
     }
 
@@ -69,7 +77,7 @@ class GameVersionController extends Controller
      * Show the form for editing the specified game version and its relationships.
      */
     #[Authorize('update', 'gameVersion')]
-    public function edit(Request $request, GameVersion $gameVersion): Response
+    public function edit(Request $request, GameVersion $gameVersion, BuildGameVersionRoutes $routes): Response
     {
         $canEdit = $this->resolveEditLock($request, $gameVersion);
 
@@ -77,7 +85,8 @@ class GameVersionController extends Controller
             'gameVersion' => fn (): array => GameVersionResource::forManagement($gameVersion)->resolve($request),
             'options' => fn (): array => $this->formOptions(),
             'relationships' => fn (): array => BuildGameVersionRelationships::run($gameVersion),
-            'steps' => fn (): array => GameVersionSetupStep::options(),
+            'steps' => fn (): array => $routes->steps($gameVersion),
+            'routes' => fn (): array => $routes->forEdit($gameVersion),
             ...$this->editLockProps($gameVersion, $canEdit),
         ]);
     }
@@ -89,8 +98,12 @@ class GameVersionController extends Controller
      * (?review=1) returns there once saved instead of continuing onwards.
      */
     #[Authorize('update', 'gameVersion')]
-    public function setup(Request $request, GameVersion $gameVersion, GameVersionSetupStep $step): Response
-    {
+    public function setup(
+        Request $request,
+        GameVersion $gameVersion,
+        GameVersionSetupStep $step,
+        BuildGameVersionRoutes $routes,
+    ): Response {
         $canEdit = $this->resolveEditLock($request, $gameVersion);
 
         return Inertia::render('Manage/GameVersions/Setup', [
@@ -98,9 +111,10 @@ class GameVersionController extends Controller
             'step' => $step->toOption(),
             'previousStep' => $step->previous()?->toOption(),
             'nextStep' => $step->next()?->toOption(),
-            'steps' => fn (): array => GameVersionSetupStep::options(),
+            'steps' => fn (): array => $routes->steps($gameVersion),
             'relationships' => fn (): array => BuildGameVersionRelationships::run($gameVersion),
             'returnToReview' => $request->boolean('review'),
+            'routes' => fn (): array => $routes->forSetup($gameVersion, $step, $request->boolean('review')),
             ...$this->editLockProps($gameVersion, $canEdit),
         ]);
     }
@@ -110,12 +124,13 @@ class GameVersionController extends Controller
      * details and linked records, with a link back to each step to edit it.
      */
     #[Authorize('update', 'gameVersion')]
-    public function review(Request $request, GameVersion $gameVersion): Response
+    public function review(Request $request, GameVersion $gameVersion, BuildGameVersionRoutes $routes): Response
     {
         return Inertia::render('Manage/GameVersions/Review', [
             'gameVersion' => GameVersionResource::forManagement($gameVersion)->resolve($request),
-            'steps' => GameVersionSetupStep::options(),
+            'steps' => $routes->steps($gameVersion),
             'relationships' => BuildGameVersionRelationships::run($gameVersion),
+            'routes' => $routes->forReview($gameVersion),
         ]);
     }
 
