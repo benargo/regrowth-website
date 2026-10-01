@@ -47,11 +47,13 @@ class CharacterController extends Controller
      */
     public function index(Request $request, GameVersion $gameVersion): Response
     {
-        abort_unless($gameVersion->ownsCurrentRoster(), 404);
+        $rosters = GameVersion::currentRosters();
+
+        abort_unless($rosters->contains($gameVersion), 404);
 
         return Inertia::render('Roster/Index', [
             'gameVersion' => (new GameVersionResource($gameVersion))->resolve($request),
-            'gameVersions' => GameVersionResource::collection(GameVersion::currentRosters())->resolve($request),
+            'gameVersions' => GameVersionResource::collection($rosters)->resolve($request),
             'classes' => PlayableClassResource::collection($gameVersion->playableClasses()->orderBy('name')->get())->resolve($request),
             'ranks' => $gameVersion->guildRanks()->select('name')->ordered()->pluck('name')->unique()->values(),
             'races' => PlayableRaceResource::collection($gameVersion->playableRaces()->orderBy('name')->get())->resolve($request),
@@ -81,14 +83,15 @@ class CharacterController extends Controller
 
         $character->load(['gameVersion', 'playableClass', 'playableRace', 'rank', 'specializations', 'linkedCharacters.playableClass', 'linkedCharacters.rank']);
 
-        $realmSlug = $character->gameVersion?->realm_slug;
+        $gameVersion = $character->gameVersion;
+        $realmSlug = $gameVersion?->realm_slug;
 
         if ($realmSlug !== null && ! $character->hasMedia(HasCharacterMedia::MEDIA_COLLECTION)) {
             try {
                 $dto = $this->blizzard->send(new GetCharacterMediaRequest(
                     $realmSlug,
                     $character->name,
-                    $character->gameVersion->blizzard_namespace,
+                    $gameVersion->blizzard_namespace,
                 ))->dto();
 
                 $avatarAsset = collect($dto->assets)->first(fn ($asset) => $asset->key === 'avatar');

@@ -134,11 +134,15 @@ class GameVersion extends Model implements DatasetModel, EditLockable
 
     /**
      * Get the version whose roster is shown by default: the most recently
-     * released of the current rosters.
+     * released of the current rosters. The newest version always survives the
+     * dedupe, so it is read straight from the query.
      */
     public static function defaultRoster(): ?static
     {
-        return static::currentRosters()->first();
+        return static::query()
+            ->withFetchableRoster()
+            ->orderByDesc('release_date')
+            ->first();
     }
 
     /**

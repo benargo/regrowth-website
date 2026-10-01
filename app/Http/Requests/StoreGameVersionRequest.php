@@ -15,9 +15,9 @@ use Illuminate\Validation\Rules\Unique;
 class StoreGameVersionRequest extends FormRequest
 {
     /**
-     * Convert the slug to a slug before validating, so the length and
-     * uniqueness rules check the value that will be stored. Str::slug also
-     * trims dashes from the start and end.
+     * Normalise the slug before validating, so the length and uniqueness
+     * rules check the value that will be stored. Str::slug also trims dashes
+     * from the start and end.
      */
     protected function prepareForValidation(): void
     {

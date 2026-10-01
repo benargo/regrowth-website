@@ -85,7 +85,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
     {
         return [
             ...parent::messages(),
-            'slug.prohibited' => 'The slug can\'t be changed once the game version is created.',
+            'slug.prohibited' => "The slug can't be changed once the game version is created.",
             'playable_race_ids.*.exists' => 'One of the selected races no longer exists. Reload the page and try again.',
             'playable_class_ids.*.exists' => 'One of the selected classes no longer exists. Reload the page and try again.',
             'phase_ids.*.exists' => 'One of the selected phases no longer exists. Reload the page and try again.',
