@@ -6,6 +6,7 @@ use App\Enums\Faction;
 use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
+use App\Models\GuildRank;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
@@ -58,6 +59,16 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
                 Rule::exists(Phase::class, 'id')->where('game_version_id', $this->route('gameVersion')->getKey()),
             ],
             'new_raid.max_players' => ['nullable', 'integer', 'between:1,40'],
+            'guild_ranks' => ['sometimes', 'array', 'max:10'],
+            'guild_ranks.*' => ['required', 'array:id,name,count_attendance'],
+            'guild_ranks.*.id' => [
+                'nullable',
+                'integer',
+                'distinct',
+                Rule::exists(GuildRank::class, 'id')->where('game_version_id', $this->route('gameVersion')->getKey()),
+            ],
+            'guild_ranks.*.name' => ['required', 'string', 'max:255'],
+            'guild_ranks.*.count_attendance' => ['required', 'boolean'],
         ];
     }
 
@@ -80,6 +91,9 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             'new_raid.difficulty.required_with' => 'Enter the raid difficulty, for example Normal.',
             'new_raid.phase_id.required_with' => 'Choose which phase the raid belongs to.',
             'new_raid.phase_id.exists' => "Choose one of this game version's phases.",
+            'guild_ranks.max' => 'A guild can have up to 10 ranks.',
+            'guild_ranks.*.id.exists' => 'One of these ranks no longer exists. Reload the page and try again.',
+            'guild_ranks.*.name.required' => 'Enter a name for every rank.',
         ];
     }
 
@@ -95,6 +109,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             'new_phase.number' => 'phase number',
             'new_phase.start_date' => 'start date',
             'new_raid.max_players' => 'maximum players',
+            'guild_ranks.*.name' => 'rank name',
         ];
     }
 

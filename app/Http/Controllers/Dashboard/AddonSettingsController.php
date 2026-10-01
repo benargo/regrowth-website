@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CharacterSummaryResource;
 use App\Http\Resources\LootCouncillorCollection;
 use App\Models\Character;
-use App\Models\GuildRank;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
@@ -28,7 +27,6 @@ class AddonSettingsController extends Controller
 
         return Inertia::render('Manage/Addon/Settings', [
             'councillors' => new LootCouncillorCollection($councillors),
-            'ranks' => GuildRank::ordered()->get()->toResourceCollection(),
             'tags' => GuildTag::orderBy('name')->get()->toResourceCollection(),
             'characters' => Inertia::defer(function () {
                 return CharacterSummaryResource::collection(

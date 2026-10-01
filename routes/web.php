@@ -13,7 +13,6 @@ use App\Http\Controllers\Dashboard\AddonSchemaController;
 use App\Http\Controllers\Dashboard\AddonSettingsController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\GrmController;
-use App\Http\Controllers\Dashboard\GuildRankController;
 use App\Http\Controllers\Dashboard\PermissionController;
 use App\Http\Controllers\Dashboard\PhaseController;
 use App\Http\Controllers\EventController;
@@ -171,16 +170,6 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
     Route::get('/permissions/{group}', [PermissionController::class, 'showGroup'])->name('permissions.group.show');
     Route::patch('/permissions/{group}/{permission}', [PermissionController::class, 'update'])->name('permissions.permission.update');
-
-    /**
-     * Ranks management
-     */
-    Route::get('/ranks', [GuildRankController::class, 'list'])->name('ranks.view');
-    Route::post('/ranks/new', [GuildRankController::class, 'store'])->name('ranks.store');
-    Route::post('/ranks/update-positions', [GuildRankController::class, 'updatePositions'])->name('ranks.update-positions');
-    Route::put('/ranks/{guildRank}', [GuildRankController::class, 'update'])->name('ranks.update');
-    Route::patch('/ranks/{guildRank}/count-attendance', [GuildRankController::class, 'toggleCountAttendance'])->name('ranks.toggle-attendance');
-    Route::delete('/ranks/{guildRank}', [GuildRankController::class, 'destroy'])->name('ranks.destroy');
 });
 
 /**

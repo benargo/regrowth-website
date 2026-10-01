@@ -14,7 +14,6 @@ use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterStatusRequest;
 use App\Models\Character;
 use App\Models\GameVersion;
-use App\Models\GuildRank;
 use App\Models\User;
 use App\Notifications\GrmUploadCompleted;
 use App\Notifications\GrmUploadFailed;
@@ -300,7 +299,7 @@ class ProcessGrmUpload implements ShouldQueue
         );
 
         // Update rank relationship
-        $rank = GuildRank::query()->where('name', $rankName)->first();
+        $rank = $gameVersion->guildRanks()->where('name', $rankName)->first();
         if ($rank) {
             $character->rank()->associate($rank);
             $character->save();

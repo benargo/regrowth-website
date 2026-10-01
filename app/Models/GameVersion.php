@@ -12,13 +12,17 @@ use App\Policies\DatasetPolicy;
 use Database\Factories\GameVersionFactory;
 use Illuminate\Cache\Lock;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
@@ -44,7 +48,7 @@ class GameVersion extends Model implements DatasetModel
      *
      * @var list<string>
      */
-    public const array USAGE_RELATIONS = ['phases', 'items', 'characters'];
+    public const array USAGE_RELATIONS = ['phases', 'items', 'characters', 'guildRanks'];
 
     /**
      * How long an officer keeps the edit lock after their last active visit or poll.
@@ -136,6 +140,19 @@ class GameVersion extends Model implements DatasetModel
     }
 
     /**
+     * Determine whether any officer holds the edit lock, for background work
+     * that has to wait until nobody is editing this game version. The editor
+     * key is written with the lock's TTL on every take or refresh, so it stands
+     * in for the lock, whose isLocked() ignores expiry on the array store. The
+     * two can sit on different Redis connections, so clearing one cache
+     * without the other makes this answer differ from the lock's.
+     */
+    public function isBeingEdited(): bool
+    {
+        return Cache::has($this->editLockKey('editor'));
+    }
+
+    /**
      * The officer who last took or refreshed the edit lock, for display only.
      */
     public function editor(): ?User
@@ -149,6 +166,57 @@ class GameVersion extends Model implements DatasetModel
     private function editLockKey(string $suffix): string
     {
         return "game-versions.{$this->id}.{$suffix}";
+    }
+
+    // ============ Guild roster ===========
+
+    /**
+     * Scope to versions whose guild roster Blizzard can return: released, with
+     * a namespace, and with a realm where the namespace needs one.
+     */
+    #[Scope]
+    protected function withFetchableRoster(Builder $query): void
+    {
+        $realmlessNamespaces = collect(BlizzardNamespace::cases())
+            ->reject(fn (BlizzardNamespace $namespace): bool => $namespace->requiresRealm())
+            ->all();
+
+        $query->whereNotNull('blizzard_namespace')
+            ->where('release_date', '<=', Carbon::now())
+            ->where(fn (Builder $query) => $query->whereNotNull('realm')
+                ->orWhereIn('blizzard_namespace', $realmlessNamespaces));
+    }
+
+    /**
+     * Get the versions that own a guild roster. Versions sharing a namespace,
+     * realm and guild with a later release are deprecated and left out. The
+     * dedupe runs in PHP because rosters are matched on slugs.
+     *
+     * @return Collection<int, static>
+     */
+    public static function currentRosters(): Collection
+    {
+        return static::query()
+            ->withFetchableRoster()
+            ->orderByDesc('release_date')
+            ->get()
+            ->unique(fn (GameVersion $gameVersion): string => $gameVersion->rosterKey());
+    }
+
+    /**
+     * Determine whether this version owns a current guild roster.
+     */
+    public function ownsCurrentRoster(): bool
+    {
+        return static::currentRosters()->contains($this);
+    }
+
+    /**
+     * Build the key that identifies this version's guild roster on Blizzard's side.
+     */
+    public function rosterKey(): string
+    {
+        return "{$this->blizzard_namespace?->value}|{$this->realm_slug}|{$this->guild_slug}";
     }
 
     // ============ Relationships ===========
@@ -191,6 +259,14 @@ class GameVersion extends Model implements DatasetModel
     public function characters(): HasMany
     {
         return $this->hasMany(Character::class);
+    }
+
+    /**
+     * @return HasMany<GuildRank, $this>
+     */
+    public function guildRanks(): HasMany
+    {
+        return $this->hasMany(GuildRank::class);
     }
 
     /**

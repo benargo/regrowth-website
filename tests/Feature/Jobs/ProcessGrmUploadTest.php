@@ -93,7 +93,7 @@ class ProcessGrmUploadTest extends TestCase
     public function it_associates_character_with_rank(): void
     {
         $this->fakeCharacters(['TestChar' => 12345]);
-        $rank = GuildRank::factory()->create(['name' => 'Officer']);
+        $rank = GuildRank::factory()->for($this->gameVersion)->create(['name' => 'Officer']);
 
         $job = new ProcessGrmUpload([
             'delimiter' => ',',
@@ -107,6 +107,25 @@ class ProcessGrmUploadTest extends TestCase
 
         $character = Character::find(12345);
         $this->assertEquals($rank->id, $character->rank_id);
+    }
+
+    #[Test]
+    public function it_ignores_a_rank_with_the_same_name_from_another_game_version(): void
+    {
+        $this->fakeCharacters(['TestChar' => 12345]);
+        GuildRank::factory()->for(GameVersion::factory())->create(['name' => 'Officer']);
+
+        $job = new ProcessGrmUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'TestChar', 'Rank' => 'Officer', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Alt', 'Player Alts' => ''],
+            ],
+        ], $this->user->id, $this->gameVersion->id);
+
+        $job->handle(app(BlizzardConnector::class));
+
+        $this->assertNull(Character::find(12345)->rank_id);
     }
 
     #[Test]

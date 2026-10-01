@@ -7,11 +7,13 @@ use App\Enums\Faction;
 use App\Enums\Theme;
 use App\Models\Boss;
 use App\Models\GameVersion;
+use App\Models\GuildRank;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\Raid;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -270,6 +272,32 @@ class UpdateGameVersionTest extends TestCase
         $this->assertSame('Karazhan', $raid->name);
         $this->assertSame('Normal', $raid->difficulty);
         $this->assertSame(10, $raid->max_players);
+    }
+
+    // ==================== guild ranks ====================
+
+    #[Test]
+    public function it_syncs_the_guild_ranks_it_is_given(): void
+    {
+        Queue::fake();
+        $gameVersion = GameVersion::factory()->create();
+
+        $this->updateGameVersion($gameVersion, [
+            'guild_ranks' => [['id' => null, 'name' => 'Guild Master', 'count_attendance' => true]],
+        ]);
+
+        $this->assertSame(['Guild Master'], $gameVersion->guildRanks()->pluck('name')->all());
+    }
+
+    #[Test]
+    public function it_leaves_guild_ranks_alone_when_the_key_is_not_given(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $rank = GuildRank::factory()->for($gameVersion)->create();
+
+        $this->updateGameVersion($gameVersion, ['realm' => 'Firemaw']);
+
+        $this->assertModelExists($rank);
     }
 
     // ==================== helpers ====================

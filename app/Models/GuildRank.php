@@ -6,9 +6,11 @@ use App\Contracts\Models\DatasetModel;
 use App\Policies\DatasetPolicy;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Spatie\EloquentSortable\Sortable;
@@ -57,6 +59,15 @@ class GuildRank extends Model implements DatasetModel, Sortable
         return $this->sort_order === null;
     }
 
+    /**
+     * Each game version numbers its own ranks from 0, because sort_order is
+     * that version's guild's Blizzard rank index.
+     */
+    public function buildSortQuery(): Builder
+    {
+        return static::query()->where('game_version_id', $this->game_version_id);
+    }
+
     // ============ Casting ============
 
     /**
@@ -85,6 +96,16 @@ class GuildRank extends Model implements DatasetModel, Sortable
     }
 
     // ============ Relationships ============
+
+    /**
+     * Get the game version whose guild has this rank.
+     *
+     * @return BelongsTo<GameVersion, $this>
+     */
+    public function gameVersion(): BelongsTo
+    {
+        return $this->belongsTo(GameVersion::class);
+    }
 
     /**
      * Get the characters for the guild rank.

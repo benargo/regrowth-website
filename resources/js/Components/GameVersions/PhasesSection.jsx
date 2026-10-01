@@ -74,7 +74,7 @@ export default function PhasesSection({
                     legend="Phases"
                     hideLegend
                     name="phase_ids"
-                    options={phases.options}
+                    options={phases.data}
                     selectedIds={form.data.phase_ids}
                     onChange={(ids) => setIds("phase_ids", ids)}
                     ownerOf={(phase) => otherOwner(phase, gameVersion)}

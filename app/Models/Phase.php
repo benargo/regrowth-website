@@ -15,7 +15,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 #[Fillable(['number', 'description', 'start_date', 'game_version_id'])]
 #[Hidden(['created_at', 'updated_at'])]
@@ -76,14 +75,6 @@ class Phase extends Model implements DatasetModel
     public function raids(): HasMany
     {
         return $this->hasManyKeyBy('id', Raid::class);
-    }
-
-    /**
-     * Get the bosses that belong to this phase through its raids.
-     */
-    public function bosses(): HasManyThrough
-    {
-        return $this->hasManyThrough(Boss::class, Raid::class);
     }
 
     /**

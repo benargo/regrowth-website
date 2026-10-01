@@ -41,7 +41,7 @@ export default function RacesAndClassesSection({
                 <RecordChecklist
                     legend="Races"
                     name="playable_race_ids"
-                    options={races.options}
+                    options={races.data}
                     selectedIds={form.data.playable_race_ids}
                     onChange={(ids) => setIds("playable_race_ids", ids)}
                     groupBy={(race) => race.faction}
@@ -52,7 +52,7 @@ export default function RacesAndClassesSection({
                 <RecordChecklist
                     legend="Classes"
                     name="playable_class_ids"
-                    options={classes.options}
+                    options={classes.data}
                     selectedIds={form.data.playable_class_ids}
                     onChange={(ids) => setIds("playable_class_ids", ids)}
                     renderLabel={(playableClass) => <ClassLabel playableClass={playableClass} />}

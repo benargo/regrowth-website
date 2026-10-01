@@ -3,11 +3,11 @@ import Icon from "@/Components/FontAwesome/Icon";
 import { linkButtonClassName } from "@/Components/FormControls";
 
 /**
- * The options a relationship group ({ options, selected_ids }) links to the
+ * The options a relationship group ({ data, selected_ids }) links to the
  * record, in option order.
  */
 export function selectedOptions(group) {
-    return group.options.filter((option) => group.selected_ids.includes(option.id));
+    return group.data.filter((option) => group.selected_ids.includes(option.id));
 }
 
 /**

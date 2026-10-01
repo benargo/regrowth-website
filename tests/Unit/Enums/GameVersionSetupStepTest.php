@@ -21,6 +21,7 @@ class GameVersionSetupStepTest extends TestCase
             [
                 ['value' => 'races-and-classes', 'label' => 'Races and classes', 'component' => 'RacesAndClassesSection'],
                 ['value' => 'phases', 'label' => 'Phases and raids', 'component' => 'PhasesSection'],
+                ['value' => 'guild-ranks', 'label' => 'Guild ranks', 'component' => 'GuildRanksSection'],
             ],
             GameVersionSetupStep::options(),
         );
@@ -38,6 +39,7 @@ class GameVersionSetupStepTest extends TestCase
 
     #[Test]
     #[TestWith(['races-and-classes', 'phases'])]
+    #[TestWith(['phases', 'guild-ranks'])]
     public function it_returns_the_step_after_the_given_step(string $step, string $expected): void
     {
         $this->assertSame(GameVersionSetupStep::from($expected), GameVersionSetupStep::from($step)->next());
@@ -46,13 +48,14 @@ class GameVersionSetupStepTest extends TestCase
     #[Test]
     public function it_returns_no_step_after_the_last_step(): void
     {
-        $this->assertNull(GameVersionSetupStep::PHASES->next());
+        $this->assertNull(GameVersionSetupStep::GUILD_RANKS->next());
     }
 
     // ==================== previous() ====================
 
     #[Test]
     #[TestWith(['phases', 'races-and-classes'])]
+    #[TestWith(['guild-ranks', 'phases'])]
     public function it_returns_the_step_before_the_given_step(string $step, string $expected): void
     {
         $this->assertSame(GameVersionSetupStep::from($expected), GameVersionSetupStep::from($step)->previous());

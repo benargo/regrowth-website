@@ -82,6 +82,7 @@ class FetchGuildRosterTest extends TestCase
     {
         $gameVersion = $this->createGameVersion();
         $gameVersion->update(['guild_name' => 'Sister Guild']);
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
 
         $this->mockGetGuildRoster();
         $this->applyBlizzardMocks();
@@ -101,7 +102,7 @@ class FetchGuildRosterTest extends TestCase
     public function it_requests_character_profiles_with_the_game_versions_realm_and_namespace(): void
     {
         $gameVersion = $this->createGameVersion();
-        GuildRank::factory()->create(['sort_order' => 0]);
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
 
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(1, 'Alpha', 70, 0),
@@ -123,7 +124,8 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_creates_a_new_character_from_roster_member(): void
     {
-        GuildRank::factory()->create(['sort_order' => 0]);
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
         PlayableClass::factory()->create(['id' => 2, 'name' => 'Shaman']);
         PlayableRace::factory()->create(['id' => 3, 'name' => 'Orc']);
 
@@ -136,7 +138,7 @@ class FetchGuildRosterTest extends TestCase
         ]);
         $this->applyBlizzardMocks();
 
-        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseHas('characters', [
             'id' => 999,
@@ -150,7 +152,7 @@ class FetchGuildRosterTest extends TestCase
     public function it_sets_the_game_version_on_synced_characters(): void
     {
         $gameVersion = $this->createGameVersion();
-        GuildRank::factory()->create(['sort_order' => 0]);
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
 
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(999, 'Thrall', 80, 0),
@@ -170,7 +172,8 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_updates_an_existing_character_from_roster_member(): void
     {
-        $rank = GuildRank::factory()->create(['sort_order' => 0]);
+        $gameVersion = $this->createGameVersion();
+        $rank = GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
         PlayableClass::factory()->create(['id' => 2, 'name' => 'Shaman']);
         PlayableRace::factory()->create(['id' => 3, 'name' => 'Orc']);
         Character::factory()->create(['id' => 999, 'name' => 'OldName', 'level' => 70, 'rank_id' => $rank->id]);
@@ -184,7 +187,7 @@ class FetchGuildRosterTest extends TestCase
         ]);
         $this->applyBlizzardMocks();
 
-        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseHas('characters', [
             'id' => 999,
@@ -197,7 +200,8 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_associates_an_existing_local_playable_class(): void
     {
-        GuildRank::factory()->create(['sort_order' => 0]);
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
         PlayableClass::factory()->create(['id' => 5, 'name' => 'Priest']);
         PlayableRace::factory()->create(['id' => 1, 'name' => 'Human']);
 
@@ -210,7 +214,7 @@ class FetchGuildRosterTest extends TestCase
         ]);
         $this->applyBlizzardMocks();
 
-        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
 
         $this->assertSame(5, Character::find(1)->playableClass->id);
     }
@@ -219,7 +223,8 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_saves_the_character_without_a_class_when_not_in_the_local_table(): void
     {
-        GuildRank::factory()->create(['sort_order' => 0]);
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
         PlayableRace::factory()->create(['id' => 1, 'name' => 'Human']);
 
         $this->mockGetGuildRoster(['members' => [
@@ -233,7 +238,7 @@ class FetchGuildRosterTest extends TestCase
 
         $this->assertDatabaseMissing('playable_classes', ['id' => 5]);
 
-        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
 
         $character = Character::find(1);
         $this->assertNotNull($character);
@@ -244,7 +249,8 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_syncs_members_below_level_60(): void
     {
-        GuildRank::factory()->create(['sort_order' => 0]);
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
 
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(55, 'Lowbie', 59, 0),
@@ -252,7 +258,7 @@ class FetchGuildRosterTest extends TestCase
         $this->mockGetCharacterProfile();
         $this->applyBlizzardMocks();
 
-        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseHas('characters', ['id' => 55, 'level' => 59]);
     }
@@ -260,14 +266,15 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_skips_members_below_level_10(): void
     {
-        GuildRank::factory()->create(['sort_order' => 0]);
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
 
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(56, 'Fresh', 9, 0),
         ]]);
         $this->applyBlizzardMocks();
 
-        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseMissing('characters', ['id' => 56]);
         Saloon::assertNotSent(GetCharacterProfileRequest::class);
@@ -277,7 +284,8 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_stores_playable_race_from_profile_data(): void
     {
-        GuildRank::factory()->create(['sort_order' => 0]);
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
         PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
         PlayableRace::factory()->create(['id' => 7, 'name' => 'Gnome']);
 
@@ -290,12 +298,30 @@ class FetchGuildRosterTest extends TestCase
         ]);
         $this->applyBlizzardMocks();
 
-        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
 
         $character = Character::find(1);
         $this->assertNotNull($character);
         $this->assertSame(7, $character->playable_race_id);
         $this->assertSame('Gnome', $character->playableRace->name);
+    }
+
+    #[Test]
+    public function it_assigns_the_rank_at_that_index_within_the_game_version(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for(GameVersion::factory())->create(['sort_order' => 0, 'name' => 'Elsewhere']);
+        $rank = GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(1, 'Alpha', 70, 0),
+        ]]);
+        $this->mockGetCharacterProfile();
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        $this->assertSame($rank->id, Character::find(1)->rank_id);
     }
 
     // ==================== updating existing characters ====================
@@ -304,7 +330,8 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_touches_every_character_present_in_the_roster(): void
     {
-        $rank = GuildRank::factory()->create(['sort_order' => 0]);
+        $gameVersion = $this->createGameVersion();
+        $rank = GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
         PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
         PlayableRace::factory()->create(['id' => 1, 'name' => 'Human']);
         $rosterMember = Character::factory()->create([
@@ -327,7 +354,7 @@ class FetchGuildRosterTest extends TestCase
         $beforeMember = $rosterMember->updated_at;
         $beforeAbsent = $absent->updated_at;
 
-        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
 
         $this->assertTrue(
             $rosterMember->fresh()->updated_at->greaterThan($beforeMember),
@@ -344,9 +371,10 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_does_not_dispatch_character_updated_when_syncing(): void
     {
+        $gameVersion = $this->createGameVersion();
         Event::fake([CharacterUpdated::class]);
 
-        GuildRank::factory()->create(['sort_order' => 0]);
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
 
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(1, 'Alpha', 70, 0),
@@ -354,7 +382,7 @@ class FetchGuildRosterTest extends TestCase
         $this->mockGetCharacterProfile();
         $this->applyBlizzardMocks();
 
-        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
 
         Event::assertNotDispatched(CharacterUpdated::class);
     }
@@ -363,7 +391,8 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_stores_male_gender_from_the_character_profile(): void
     {
-        GuildRank::factory()->create(['sort_order' => 0]);
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
 
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(1, 'Thrall', 70, 0),
@@ -371,7 +400,7 @@ class FetchGuildRosterTest extends TestCase
         $this->mockGetCharacterProfile(gender: 'Male');
         $this->applyBlizzardMocks();
 
-        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
 
         $this->assertSame(Gender::MALE, Character::find(1)->gender);
     }
@@ -380,7 +409,8 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_stores_female_gender_from_the_character_profile(): void
     {
-        GuildRank::factory()->create(['sort_order' => 0]);
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
 
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(2, 'Sylvanas', 70, 0),
@@ -388,7 +418,7 @@ class FetchGuildRosterTest extends TestCase
         $this->mockGetCharacterProfile(gender: 'Female');
         $this->applyBlizzardMocks();
 
-        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
 
         $this->assertSame(Gender::FEMALE, Character::find(2)->gender);
     }
@@ -410,7 +440,8 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_logs_and_continues_to_the_next_member_when_one_fails(): void
     {
-        GuildRank::factory()->create(['sort_order' => 0]);
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
         PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
         PlayableRace::factory()->create(['id' => 1, 'name' => 'Human']);
 
@@ -428,7 +459,7 @@ class FetchGuildRosterTest extends TestCase
                 && $context['character_id'] === 1;
         });
 
-        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseMissing('characters', ['id' => 1]);
         $this->assertDatabaseHas('characters', ['id' => 2, 'name' => 'GoodChar']);
@@ -438,6 +469,9 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_logs_and_continues_when_guild_rank_is_missing(): void
     {
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(1, 'NoRankChar', 70, 99),
         ]]);
@@ -449,9 +483,36 @@ class FetchGuildRosterTest extends TestCase
                 && $context['character_id'] === 1;
         });
 
-        (new FetchGuildRoster($this->createGameVersion()->id))->handle(app(BlizzardConnector::class));
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseMissing('characters', ['id' => 1]);
+        Saloon::assertNotSent(GetCharacterProfileRequest::class);
+    }
+
+    #[Group('error-handling')]
+    #[Test]
+    public function it_logs_once_and_skips_the_roster_when_the_game_version_has_no_guild_ranks(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for(GameVersion::factory())->create(['sort_order' => 0]);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(1, 'Alpha', 70, 0),
+            $this->memberPayload(2, 'Bravo', 70, 0),
+        ]]);
+        $this->mockGetCharacterProfile();
+        $this->applyBlizzardMocks();
+
+        Log::shouldReceive('warning')->once()->withArgs(function ($message, $context) use ($gameVersion) {
+            return $message === 'Skipped guild roster sync: the game version has no guild ranks.'
+                && $context['game_version_id'] === $gameVersion->id;
+        });
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        Saloon::assertNotSent(GetGuildRosterRequest::class);
+        Saloon::assertNotSent(GetCharacterProfileRequest::class);
+        $this->assertDatabaseCount('characters', 0);
     }
 
     // ==================== helpers ====================

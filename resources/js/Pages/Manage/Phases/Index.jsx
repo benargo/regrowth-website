@@ -236,9 +236,9 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
                             {/* Bosses */}
                             <div className="text-md my-4 md:mr-8">
                                 <h3 className="text-lg font-bold">Bosses in this phase</h3>
-                                {phase.bosses.length > 0 ? (
+                                {phase.raids.some((raid) => raid.bosses?.length > 0) ? (
                                     <ul>
-                                        {phase.bosses.map((boss) => (
+                                        {phase.raids.flatMap((raid) => raid.bosses ?? []).map((boss) => (
                                             <li key={boss.id}>{boss.name}</li>
                                         ))}
                                     </ul>

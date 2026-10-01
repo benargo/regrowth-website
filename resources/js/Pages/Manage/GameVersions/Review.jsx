@@ -29,7 +29,7 @@ const STEP_SUMMARIES = {
         {
             items: selectedOptions(relationships.phases).map((phase) => ({
                 id: phase.id,
-                primary: phase.label,
+                primary: phase.name,
                 secondary: phase.description,
             })),
         },
@@ -39,9 +39,18 @@ const STEP_SUMMARIES = {
                 phase.raids.map((raid) => ({
                     id: raid.id,
                     primary: raid.name,
-                    secondary: [raid.difficulty, phase.label].filter(Boolean).join(" · "),
+                    secondary: [raid.difficulty, phase.name].filter(Boolean).join(" · "),
                 })),
             ),
+        },
+    ],
+    "guild-ranks": (relationships) => [
+        {
+            items: relationships.guild_ranks.data.map((rank) => ({
+                id: rank.id,
+                primary: `${rank.sort_order}. ${rank.name}`,
+                secondary: rank.count_attendance ? "Counts attendance" : "Doesn't count attendance",
+            })),
         },
     ],
 };

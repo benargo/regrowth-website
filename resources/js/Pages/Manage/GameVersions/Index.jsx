@@ -13,6 +13,7 @@ const USAGE_LABELS = [
     ["phases_count", "phase", "phases"],
     ["items_count", "item", "items"],
     ["characters_count", "character", "characters"],
+    ["guild_ranks_count", "guild rank", "guild ranks"],
 ];
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-400";
