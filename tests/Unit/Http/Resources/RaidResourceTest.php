@@ -44,13 +44,13 @@ class RaidResourceTest extends TestCase
     // ==================== difficulty and player count ====================
 
     #[Test]
-    public function it_does_not_return_difficulty(): void
+    public function it_returns_difficulty(): void
     {
         $raid = Raid::factory()->heroic()->create();
 
         $array = (new RaidResource($raid))->toArray(new Request);
 
-        $this->assertArrayNotHasKey('difficulty', $array);
+        $this->assertSame('Heroic', $array['difficulty']);
     }
 
     #[Test]

@@ -3,14 +3,12 @@
 namespace Tests\Unit\Models;
 
 use App\Helpers\Database\Eloquent\Relations\HasManyKeyBy;
-use App\Models\Boss;
 use App\Models\GameVersion;
 use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Carbon;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -216,19 +214,6 @@ class PhaseTest extends ModelTestCase
 
         $raidIds = $raids->pluck('id');
         $this->assertEquals($raidIds->sort()->values(), $phase->raids->keys()->sort()->values());
-    }
-
-    #[Test]
-    public function it_has_many_bosses_through_raids(): void
-    {
-        $phase = $this->create();
-        $raid1 = Raid::factory()->create(['phase_id' => $phase->id]);
-        $raid2 = Raid::factory()->create(['phase_id' => $phase->id]);
-        Boss::factory()->count(2)->create(['raid_id' => $raid1->id]);
-        Boss::factory()->count(3)->create(['raid_id' => $raid2->id]);
-
-        $this->assertRelation($phase, 'bosses', HasManyThrough::class);
-        $this->assertCount(5, $phase->bosses);
     }
 
     // ==================== has started ====================
