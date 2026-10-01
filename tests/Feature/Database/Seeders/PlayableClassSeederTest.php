@@ -2,10 +2,12 @@
 
 namespace Tests\Feature\Database\Seeders;
 
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassIndexRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
+use App\Models\GameVersion;
 use App\Models\PlayableClass;
 use Database\Seeders\PlayableClassSeeder;
 use Illuminate\Database\Eloquent\Model;
@@ -36,6 +38,7 @@ class PlayableClassSeederTest extends TestCase
     public function seeder_creates_playable_classes_from_api(): void
     {
         $this->fakeSaloon();
+        $gameVersion = GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::ANNIVERSARY]);
 
         $this->runSeeder();
 
@@ -44,11 +47,31 @@ class PlayableClassSeederTest extends TestCase
         $this->assertDatabaseHas('playable_classes', ['id' => 11, 'name' => 'Druid']);
         $this->assertDatabaseCount('media', 2);
         $this->assertDatabaseHas('media', ['model_type' => PlayableClass::class, 'collection_name' => 'blizzard_icons']);
+        $this->assertDatabaseHas('pivot_game_versions_playable_classes', [
+            'game_version_id' => $gameVersion->id,
+            'playable_class_id' => 7,
+        ]);
+        $this->assertDatabaseHas('pivot_game_versions_playable_classes', [
+            'game_version_id' => $gameVersion->id,
+            'playable_class_id' => 11,
+        ]);
+    }
+
+    #[Test]
+    public function seeder_does_nothing_when_no_game_version_has_a_blizzard_namespace(): void
+    {
+        $this->fakeSaloon();
+
+        $this->runSeeder();
+
+        $this->assertDatabaseCount('playable_classes', 0);
     }
 
     #[Test]
     public function seeder_attaches_media_to_blizzard_icons_collection(): void
     {
+        GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::ANNIVERSARY]);
+
         Saloon::fake([
             'eu.battle.net/oauth/token' => MockResponse::make(
                 body: ['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600],
@@ -88,6 +111,7 @@ class PlayableClassSeederTest extends TestCase
     public function seeder_updates_existing_playable_class_without_duplicating(): void
     {
         $this->fakeSaloon();
+        GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::ANNIVERSARY]);
 
         PlayableClass::factory()->create(['id' => 7, 'name' => 'Old Name']);
 
@@ -100,6 +124,8 @@ class PlayableClassSeederTest extends TestCase
     #[Test]
     public function seeder_uses_default_icon_when_assets_are_empty(): void
     {
+        GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::ANNIVERSARY]);
+
         Saloon::fake([
             'eu.battle.net/oauth/token' => MockResponse::make(
                 body: ['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600],
@@ -123,6 +149,8 @@ class PlayableClassSeederTest extends TestCase
     #[Test]
     public function seeder_does_nothing_when_classes_list_is_empty(): void
     {
+        GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::ANNIVERSARY]);
+
         Saloon::fake([
             'eu.battle.net/oauth/token' => MockResponse::make(
                 body: ['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600],
@@ -143,6 +171,7 @@ class PlayableClassSeederTest extends TestCase
     public function seeder_does_not_reattach_icons_on_rerun(): void
     {
         $this->fakeSaloon();
+        GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::ANNIVERSARY]);
 
         $this->runSeeder();
         $mediaCountAfterFirstRun = Media::count();
@@ -156,6 +185,7 @@ class PlayableClassSeederTest extends TestCase
     public function seeder_dispatches_retry_job_when_icon_fetch_returns_403(): void
     {
         Queue::fake();
+        GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::ANNIVERSARY]);
 
         Saloon::fake([
             'eu.battle.net/oauth/token' => MockResponse::make(

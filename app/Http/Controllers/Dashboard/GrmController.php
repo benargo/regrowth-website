@@ -4,11 +4,15 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Exceptions\RealmRequiredException;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Http\Requests\Dashboard\UploadGrmDataRequest;
+use App\Http\Resources\GameVersionResource;
 use App\Jobs\ProcessGrmUpload;
+use App\Models\GameVersion;
 use Carbon\Carbon;
 use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -31,7 +35,7 @@ class GrmController extends Controller
     /**
      * Show the GRM data upload form.
      */
-    public function showUploadForm()
+    public function showUploadForm(Request $request)
     {
         if ($this->storage->exists('grm/uploads/latest.csv')) {
             $lastModified = Carbon::createFromTimestamp(
@@ -41,15 +45,41 @@ class GrmController extends Controller
             $lastModified = null;
         }
 
+        $gameVersionId = $request->integer('game_version_id') ?: null;
+
+        $gameVersions = GameVersion::whereNotNull('blizzard_namespace')->orderBy('release_date')->get(['id', 'title', 'theme', 'realm', 'guild_name', 'blizzard_namespace']);
+
         return Inertia::render('Manage/GrmUpload/Form', [
             'lastUploadTimestamp' => $lastModified,
-            'memberCount' => Inertia::defer(fn () => count(
-                $this->blizzardConnector->send(new GetGuildRosterRequest(
-                    $this->blizzardConnector->defaultRealmSlug(),
-                    $this->blizzardConnector->defaultGuildSlug(),
-                ))->dto()->members,
-            )),
+            'gameVersions' => GameVersionResource::collection($gameVersions)->resolve($request),
+            'memberCount' => Inertia::defer(function () use ($gameVersions, $gameVersionId) {
+                $gameVersion = $gameVersionId
+                    ? $gameVersions->firstWhere('id', $gameVersionId)
+                    : $gameVersions->first();
+
+                return $this->resolveMemberCount($gameVersion);
+            }),
         ]);
+    }
+
+    /**
+     * Resolve the guild member count for the given game version.
+     */
+    protected function resolveMemberCount(?GameVersion $gameVersion): ?int
+    {
+        if ($gameVersion === null) {
+            return null;
+        }
+
+        try {
+            return count($this->blizzardConnector->send(new GetGuildRosterRequest(
+                $gameVersion->realm_slug,
+                $gameVersion->guild_slug,
+                $gameVersion->blizzard_namespace,
+            ))->dto()->members);
+        } catch (RealmRequiredException) {
+            return null;
+        }
     }
 
     #[Authorize('edit-datasets')]
@@ -64,7 +94,7 @@ class GrmController extends Controller
 
         // Dispatch the processing job; progress is delivered live over the
         // uploading user's private broadcast channel.
-        ProcessGrmUpload::dispatch($parsedData, $request->user()->id)->withoutDelay();
+        ProcessGrmUpload::dispatch($parsedData, $request->user()->id, $request->integer('game_version_id'))->withoutDelay();
 
         return redirect()->route('management.grm-upload.form')->with('success', 'GRM data uploaded successfully. Processing will continue in the background.');
     }

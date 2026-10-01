@@ -1,0 +1,257 @@
+<?php
+
+namespace Tests\Feature\Console\Commands;
+
+use App\Jobs\WarcraftLogs\FetchGuildTags;
+use App\Jobs\WarcraftLogs\FetchReportsByGuildTag;
+use App\Models\Report;
+use App\Models\WarcraftLogs\GuildTag;
+use Carbon\Carbon;
+use Illuminate\Bus\PendingBatch;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
+
+#[Group('raiding')]
+#[Group('warcraftlogs-integration')]
+class FetchWarcraftLogsTest extends TestCase
+{
+    use RefreshDatabase;
+
+    // ==================== happy path ====================
+
+    #[Test]
+    public function it_dispatches_a_batch_with_a_fetch_reports_job_per_guild_tag(): void
+    {
+        Bus::fake();
+
+        $tag1 = GuildTag::factory()->countsAttendance()->create();
+        $tag2 = GuildTag::factory()->countsAttendance()->create();
+
+        $this->artisan('fetch:warcraft-logs')
+            ->assertSuccessful();
+
+        Bus::assertDispatchedSync(FetchGuildTags::class);
+        Bus::assertBatched(function (PendingBatch $batch) use ($tag1, $tag2) {
+            return $batch->jobs->contains(fn ($job) => $job instanceof FetchReportsByGuildTag && $job->guildTag->is($tag1) && $job->since === null)
+                && $batch->jobs->contains(fn ($job) => $job instanceof FetchReportsByGuildTag && $job->guildTag->is($tag2) && $job->since === null);
+        });
+    }
+
+    #[Test]
+    public function it_only_includes_guild_tags_that_count_attendance(): void
+    {
+        Bus::fake();
+
+        $attendanceTag = GuildTag::factory()->countsAttendance()->create();
+        GuildTag::factory()->doesNotCountAttendance()->create();
+
+        $this->artisan('fetch:warcraft-logs')
+            ->assertSuccessful();
+
+        Bus::assertDispatchedSync(FetchGuildTags::class);
+        Bus::assertBatched(function (PendingBatch $batch) use ($attendanceTag) {
+            $fetchReportJobs = $batch->jobs->filter(
+                fn ($job) => $job instanceof FetchReportsByGuildTag
+            );
+
+            return $fetchReportJobs->count() === 1
+                && $fetchReportJobs->first()->guildTag->is($attendanceTag);
+        });
+    }
+
+    // ==================== latest option ====================
+
+    #[Test]
+    public function it_passes_null_since_when_latest_flag_is_absent(): void
+    {
+        Bus::fake();
+
+        GuildTag::factory()->countsAttendance()->create();
+        Report::factory()->create(['end_time' => now()->subHour()]);
+
+        $this->artisan('fetch:warcraft-logs')
+            ->assertSuccessful();
+
+        Bus::assertDispatchedSync(FetchGuildTags::class);
+        Bus::assertBatched(function (PendingBatch $batch) {
+            $fetchReportJob = $batch->jobs->first(
+                fn ($job) => $job instanceof FetchReportsByGuildTag
+            );
+
+            return $fetchReportJob->since === null;
+        });
+    }
+
+    #[Test]
+    public function it_uses_the_latest_report_end_time_plus_one_second_as_since(): void
+    {
+        Bus::fake();
+
+        GuildTag::factory()->countsAttendance()->create();
+
+        $endTime = Carbon::parse('2025-06-01 20:00:00');
+        Report::factory()->create(['end_time' => $endTime]);
+
+        $this->artisan('fetch:warcraft-logs', ['--latest' => true])
+            ->assertSuccessful();
+
+        Bus::assertDispatchedSync(FetchGuildTags::class);
+
+        $expectedSince = $endTime->copy()->addSecond();
+
+        Bus::assertBatched(function (PendingBatch $batch) use ($expectedSince) {
+            $fetchReportJob = $batch->jobs->first(
+                fn ($job) => $job instanceof FetchReportsByGuildTag
+            );
+
+            return $fetchReportJob->since->eq($expectedSince);
+        });
+    }
+
+    #[Test]
+    public function it_passes_null_since_when_latest_flag_is_set_but_no_reports_exist(): void
+    {
+        Bus::fake();
+
+        GuildTag::factory()->countsAttendance()->create();
+
+        $this->artisan('fetch:warcraft-logs', ['--latest' => true])
+            ->assertSuccessful();
+
+        Bus::assertDispatchedSync(FetchGuildTags::class);
+        Bus::assertBatched(function (PendingBatch $batch) {
+            $fetchReportJob = $batch->jobs->first(
+                fn ($job) => $job instanceof FetchReportsByGuildTag
+            );
+
+            return $fetchReportJob->since === null;
+        });
+    }
+
+    #[Test]
+    public function it_uses_the_most_recently_created_report_when_multiple_reports_exist(): void
+    {
+        Bus::fake();
+
+        GuildTag::factory()->countsAttendance()->create();
+
+        $olderEndTime = Carbon::parse('2025-05-01 18:00:00');
+        $newerEndTime = Carbon::parse('2025-06-15 22:00:00');
+
+        Report::factory()->create(['end_time' => $olderEndTime, 'created_at' => now()->subMinute()]);
+        Report::factory()->create(['end_time' => $newerEndTime, 'created_at' => now()]);
+
+        $this->artisan('fetch:warcraft-logs', ['--latest' => true])
+            ->assertSuccessful();
+
+        Bus::assertDispatchedSync(FetchGuildTags::class);
+
+        $expectedSince = $newerEndTime->copy()->addSecond();
+
+        Bus::assertBatched(function (PendingBatch $batch) use ($expectedSince) {
+            $fetchReportJob = $batch->jobs->first(
+                fn ($job) => $job instanceof FetchReportsByGuildTag
+            );
+
+            return $fetchReportJob->since->eq($expectedSince);
+        });
+    }
+
+    // ==================== all option ====================
+
+    #[Test]
+    public function it_includes_all_guild_tags_when_all_flag_is_set(): void
+    {
+        Bus::fake();
+
+        $attendanceTag = GuildTag::factory()->countsAttendance()->create();
+        $nonAttendanceTag = GuildTag::factory()->doesNotCountAttendance()->create();
+
+        $this->artisan('fetch:warcraft-logs', ['--all' => true])
+            ->assertSuccessful();
+
+        Bus::assertDispatchedSync(FetchGuildTags::class);
+        Bus::assertBatched(function (PendingBatch $batch) use ($attendanceTag, $nonAttendanceTag) {
+            $fetchReportJobs = $batch->jobs->filter(
+                fn ($job) => $job instanceof FetchReportsByGuildTag
+            );
+
+            return $fetchReportJobs->count() === 2
+                && $fetchReportJobs->contains(fn ($job) => $job->guildTag->is($attendanceTag))
+                && $fetchReportJobs->contains(fn ($job) => $job->guildTag->is($nonAttendanceTag));
+        });
+    }
+
+    #[Test]
+    public function it_only_includes_attendance_guild_tags_when_all_flag_is_absent(): void
+    {
+        Bus::fake();
+
+        $attendanceTag = GuildTag::factory()->countsAttendance()->create();
+        $nonAttendanceTag = GuildTag::factory()->doesNotCountAttendance()->create();
+
+        $this->artisan('fetch:warcraft-logs')
+            ->assertSuccessful();
+
+        Bus::assertDispatchedSync(FetchGuildTags::class);
+        Bus::assertBatched(function (PendingBatch $batch) use ($attendanceTag, $nonAttendanceTag) {
+            $fetchReportJobs = $batch->jobs->filter(
+                fn ($job) => $job instanceof FetchReportsByGuildTag
+            );
+
+            return $fetchReportJobs->count() === 1
+                && $fetchReportJobs->contains(fn ($job) => $job->guildTag->is($attendanceTag))
+                && ! $fetchReportJobs->contains(fn ($job) => $job->guildTag->is($nonAttendanceTag));
+        });
+    }
+
+    // ==================== batch count ====================
+
+    #[Test]
+    public function it_dispatches_exactly_one_batch(): void
+    {
+        Bus::fake();
+
+        GuildTag::factory()->countsAttendance()->count(3)->create();
+
+        $this->artisan('fetch:warcraft-logs')
+            ->assertSuccessful();
+
+        Bus::assertDispatchedSync(FetchGuildTags::class);
+        Bus::assertBatchCount(1);
+    }
+
+    #[Test]
+    public function it_dispatches_the_correct_total_number_of_jobs(): void
+    {
+        Bus::fake();
+
+        GuildTag::factory()->countsAttendance()->count(3)->create();
+
+        $this->artisan('fetch:warcraft-logs')
+            ->assertSuccessful();
+
+        Bus::assertDispatchedSync(FetchGuildTags::class);
+        // 3 FetchReportsByGuildTag jobs (one per guild tag)
+        Bus::assertBatched(fn (PendingBatch $batch) => $batch->jobs->count() === 3);
+    }
+
+    // ==================== fetchguildtags sync dispatch ====================
+
+    #[Test]
+    public function it_dispatches_fetch_guild_tags_synchronously_before_the_batch(): void
+    {
+        Bus::fake();
+
+        GuildTag::factory()->countsAttendance()->create();
+
+        $this->artisan('fetch:warcraft-logs')
+            ->assertSuccessful();
+
+        Bus::assertDispatchedSync(FetchGuildTags::class);
+        Bus::assertBatchCount(1);
+    }
+}

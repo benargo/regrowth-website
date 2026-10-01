@@ -21,9 +21,9 @@ class PhaseResource extends JsonResource
             'description' => $this->description,
             'start_date' => $this->start_date?->toIso8601String(),
             'has_started' => $this->hasStarted(),
-            'raids' => $this->whenLoaded('raids'),
-            'bosses' => $this->whenLoaded('bosses'),
-            'guild_tags' => $this->whenLoaded('guildTags'),
+            'game_version' => $this->whenLoaded('gameVersion', fn () => $this->gameVersion?->toResource()->resolve($request)),
+            'raids' => $this->whenLoaded('raids', fn () => $this->raids->toResourceCollection(RaidResource::class)->resolve($request)),
+            'guild_tags' => $this->whenLoaded('guildTags', fn () => $this->guildTags->toResourceCollection()->resolve($request)),
         ];
     }
 }

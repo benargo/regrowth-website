@@ -13,11 +13,11 @@ use App\Http\Controllers\Dashboard\AddonSchemaController;
 use App\Http\Controllers\Dashboard\AddonSettingsController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\GrmController;
-use App\Http\Controllers\Dashboard\GuildRankController;
 use App\Http\Controllers\Dashboard\PermissionController;
 use App\Http\Controllers\Dashboard\PhaseController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTemplateController;
+use App\Http\Controllers\GameVersionController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LootBiasToolController;
@@ -36,7 +36,7 @@ Route::get('/search', SearchController::class)->name('search');
 /**
  * Guild Roster
  */
-Route::get('/roster', [CharacterController::class, 'index'])
+Route::get('/roster', [CharacterController::class, 'redirectToDefaultRoster'])
     ->name('characters.index');
 Route::get('/roster/characters', fn () => redirect()->route('characters.index', status: 303));
 Route::get('/roster/characters/{character}/{slug?}', [CharacterController::class, 'show'])
@@ -140,6 +140,18 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::delete('/event-templates/{template}', [EventTemplateController::class, 'destroy'])->name('event-templates.destroy');
 
     /**
+     * Game versions management
+     */
+    Route::get('/game-versions', [GameVersionController::class, 'index'])->name('game-versions.index');
+    Route::get('/game-versions/create', [GameVersionController::class, 'create'])->name('game-versions.create');
+    Route::post('/game-versions', [GameVersionController::class, 'store'])->name('game-versions.store');
+    Route::get('/game-versions/{gameVersion}/edit', [GameVersionController::class, 'edit'])->name('game-versions.edit');
+    Route::get('/game-versions/{gameVersion}/setup/{step}', [GameVersionController::class, 'setup'])->name('game-versions.setup');
+    Route::get('/game-versions/{gameVersion}/review', [GameVersionController::class, 'review'])->name('game-versions.review');
+    Route::patch('/game-versions/{gameVersion}', [GameVersionController::class, 'update'])->name('game-versions.update');
+    Route::delete('/game-versions/{gameVersion}', [GameVersionController::class, 'destroy'])->name('game-versions.destroy');
+
+    /**
      * GRM data upload
      */
     Route::get('/grm-upload', [GrmController::class, 'showUploadForm'])->name('grm-upload.form');
@@ -158,16 +170,6 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
     Route::get('/permissions/{group}', [PermissionController::class, 'showGroup'])->name('permissions.group.show');
     Route::patch('/permissions/{group}/{permission}', [PermissionController::class, 'update'])->name('permissions.permission.update');
-
-    /**
-     * Ranks management
-     */
-    Route::get('/ranks', [GuildRankController::class, 'list'])->name('ranks.view');
-    Route::post('/ranks/new', [GuildRankController::class, 'store'])->name('ranks.store');
-    Route::post('/ranks/update-positions', [GuildRankController::class, 'updatePositions'])->name('ranks.update-positions');
-    Route::put('/ranks/{guildRank}', [GuildRankController::class, 'update'])->name('ranks.update');
-    Route::patch('/ranks/{guildRank}/count-attendance', [GuildRankController::class, 'toggleCountAttendance'])->name('ranks.toggle-attendance');
-    Route::delete('/ranks/{guildRank}', [GuildRankController::class, 'destroy'])->name('ranks.destroy');
 });
 
 /**
@@ -203,3 +205,10 @@ require __DIR__.'/assets.php';
 require __DIR__.'/auth.php';
 require __DIR__.'/deprecated.php';
 require __DIR__.'/testing.php';
+
+/**
+ * Game version rosters. Registered last so that every fixed URL, including
+ * those in the files above, is matched before the slug wildcard.
+ */
+Route::get('/{gameVersion:slug}/roster', [CharacterController::class, 'index'])
+    ->name('roster.index');

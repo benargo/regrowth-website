@@ -10,6 +10,7 @@ use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassIndexR
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
+use App\Models\GameVersion;
 use App\Models\PlayableClass;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
@@ -25,38 +26,44 @@ class PlayableClassSeeder extends Seeder
 
     public function run(): void
     {
-        /** @var array<int, LinkData> $classes */
-        $classes = $this->blizzard->send(new GetPlayableClassIndexRequest)->dto();
+        $gameVersions = GameVersion::whereNotNull('blizzard_namespace')->get();
 
-        foreach ($classes as $class) {
-            $model = PlayableClass::updateOrCreate(
-                ['id' => $class->id],
-                ['name' => $class->name],
-            );
+        foreach ($gameVersions as $gameVersion) {
+            /** @var array<int, LinkData> $classes */
+            $classes = $this->blizzard->send(new GetPlayableClassIndexRequest($gameVersion->blizzard_namespace))->dto();
 
-            $mediaDto = $this->blizzard->send(new GetPlayableClassMediaRequest($class->id))->dto();
+            foreach ($classes as $class) {
+                $model = PlayableClass::updateOrCreate(
+                    ['id' => $class->id],
+                    ['name' => $class->name],
+                );
 
-            $existingFileNames = $model->getMedia('blizzard_icons')->pluck('file_name')->all();
+                $model->gameVersions()->syncWithoutDetaching([$gameVersion->id]);
 
-            foreach ($mediaDto->assets as $asset) {
-                $fileName = (string) Str::of($asset->value)->afterLast('/')->before('?');
+                $mediaDto = $this->blizzard->send(new GetPlayableClassMediaRequest($class->id, $gameVersion->blizzard_namespace))->dto();
 
-                if (in_array($fileName, $existingFileNames, true)) {
-                    continue;
-                }
+                $existingFileNames = $model->getMedia('blizzard_icons')->pluck('file_name')->all();
 
-                try {
-                    $body = $this->renderConnector->send(new FetchIconRequest($asset->value))->body();
+                foreach ($mediaDto->assets as $asset) {
+                    $fileName = (string) Str::of($asset->value)->afterLast('/')->before('?');
 
-                    $model->addMediaFromString($body)
-                        ->usingFileName($fileName)
-                        ->withCustomProperties(['size' => 56])
-                        ->toMediaCollection('blizzard_icons');
-                } catch (ForbiddenException $e) {
-                    AttachBlizzardIconToModel::dispatch(PlayableClass::class, $model->id, $asset->value)
-                        ->delay(now()->addMinutes(5));
-                } catch (MediaNotFoundException|RequestException $e) {
-                    report($e);
+                    if (in_array($fileName, $existingFileNames, true)) {
+                        continue;
+                    }
+
+                    try {
+                        $body = $this->renderConnector->send(new FetchIconRequest($asset->value))->body();
+
+                        $model->addMediaFromString($body)
+                            ->usingFileName($fileName)
+                            ->withCustomProperties(['size' => 56])
+                            ->toMediaCollection('blizzard_icons');
+                    } catch (ForbiddenException $e) {
+                        AttachBlizzardIconToModel::dispatch(PlayableClass::class, $model->id, $asset->value)
+                            ->delay(now()->addMinutes(5));
+                    } catch (MediaNotFoundException|RequestException $e) {
+                        report($e);
+                    }
                 }
             }
         }

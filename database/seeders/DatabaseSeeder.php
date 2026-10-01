@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
 
             // Then seed the core Blizzard data.
+            GameVersionSeeder::class,
             GuildRankSeeder::class,
 
             // Then seed the datasets

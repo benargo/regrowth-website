@@ -7,6 +7,7 @@ use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\DiscordRole;
+use App\Models\GameVersion;
 use App\Models\Permission;
 use App\Models\PlayableClass;
 use App\Models\Raid;
@@ -146,19 +147,7 @@ class DashboardPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    // ==================== ranks and phases pages ====================
-
-    #[Group('happy-path')]
-    #[Test]
-    public function manage_ranks_page_loads(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('management.ranks.view'));
-
-        $response->assertOk();
-        $response->assertSee('Regrowth');
-    }
+    // ==================== phases pages ====================
 
     #[Group('happy-path')]
     #[Test]
@@ -284,8 +273,9 @@ class DashboardPagesTest extends TestCase
     public function characters_index_page_loads(): void
     {
         $user = User::factory()->officer()->create();
+        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
 
-        $response = $this->actingAs($user)->get(route('characters.index'));
+        $response = $this->actingAs($user)->get(route('roster.index', $gameVersion));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page->component('Roster/Index'));

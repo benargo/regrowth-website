@@ -37,11 +37,21 @@ class DailyQuestRewardResourceTest extends TestCase
     #[Test]
     public function it_returns_the_item_id_as_id(): void
     {
-        $item = Item::factory()->create(['id' => 33844]);
+        $item = Item::factory()->create();
 
         $array = (new DailyQuestRewardResource($this->rewardFor($item)))->toArray(new Request);
 
-        $this->assertSame(33844, $array['id']);
+        $this->assertSame($item->id, $array['id']);
+    }
+
+    #[Test]
+    public function it_returns_the_blizzard_id(): void
+    {
+        $item = Item::factory()->create(['blizzard_id' => 33844]);
+
+        $array = (new DailyQuestRewardResource($this->rewardFor($item)))->toArray(new Request);
+
+        $this->assertSame(33844, $array['blizzard_id']);
     }
 
     #[Test]
@@ -115,7 +125,7 @@ class DailyQuestRewardResourceTest extends TestCase
     #[Test]
     public function it_returns_the_wowhead_url(): void
     {
-        $item = Item::factory()->create(['id' => 33844]);
+        $item = Item::factory()->create(['blizzard_id' => 33844]);
 
         $array = (new DailyQuestRewardResource($this->rewardFor($item)))->toArray(new Request);
 

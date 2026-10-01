@@ -29,6 +29,7 @@ class GuildRankResource extends JsonResource
             'name' => $this->name,
             'slug' => Str::slug($this->name),
             'count_attendance' => $this->count_attendance,
+            'characters_count' => $this->whenCounted('characters'),
         ];
     }
 }

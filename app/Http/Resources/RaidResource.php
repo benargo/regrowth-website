@@ -18,6 +18,7 @@ class RaidResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
+            'difficulty' => $this->difficulty,
             'color' => $this->color,
             'background' => $this->background_css_class?->value,
             'max_players' => $this->max_players,
@@ -25,7 +26,7 @@ class RaidResource extends JsonResource
             'phase_number' => $this->whenLoaded('phase', fn () => data_get($this, 'phase.number')),
             'has_trash_items' => $this->whenExistsLoaded('trashItems'),
             'trash_comments_count' => $this->whenCounted('trash_comments_count'),
-            'bosses' => $this->whenLoaded('bosses', fn () => BossResource::collection($this->bosses)),
+            'bosses' => $this->whenLoaded('bosses', fn () => $this->bosses->toResourceCollection()->resolve($request)),
         ];
     }
 }

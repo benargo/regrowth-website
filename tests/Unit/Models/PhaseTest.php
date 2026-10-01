@@ -3,12 +3,12 @@
 namespace Tests\Unit\Models;
 
 use App\Helpers\Database\Eloquent\Relations\HasManyKeyBy;
-use App\Models\Boss;
-use App\Models\GuildTag;
+use App\Models\GameVersion;
 use App\Models\Phase;
 use App\Models\Raid;
+use App\Models\WarcraftLogs\GuildTag;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Carbon;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -48,6 +48,7 @@ class PhaseTest extends ModelTestCase
             'number',
             'description',
             'start_date',
+            'game_version_id',
         ]);
     }
 
@@ -155,6 +156,24 @@ class PhaseTest extends ModelTestCase
         $this->assertNull($phase->start_date);
     }
 
+    #[Test]
+    public function factory_for_game_version_state_sets_game_version_id(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        $phase = $this->factory()->forGameVersion($gameVersion)->create();
+
+        $this->assertSame($gameVersion->id, $phase->game_version_id);
+    }
+
+    #[Test]
+    public function factory_default_game_version_id_is_null(): void
+    {
+        $phase = $this->create();
+
+        $this->assertNull($phase->game_version_id);
+    }
+
     // ==================== number accessor ====================
 
     #[Test]
@@ -197,19 +216,6 @@ class PhaseTest extends ModelTestCase
         $this->assertEquals($raidIds->sort()->values(), $phase->raids->keys()->sort()->values());
     }
 
-    #[Test]
-    public function it_has_many_bosses_through_raids(): void
-    {
-        $phase = $this->create();
-        $raid1 = Raid::factory()->create(['phase_id' => $phase->id]);
-        $raid2 = Raid::factory()->create(['phase_id' => $phase->id]);
-        Boss::factory()->count(2)->create(['raid_id' => $raid1->id]);
-        Boss::factory()->count(3)->create(['raid_id' => $raid2->id]);
-
-        $this->assertRelation($phase, 'bosses', HasManyThrough::class);
-        $this->assertCount(5, $phase->bosses);
-    }
-
     // ==================== has started ====================
 
     #[Test]
@@ -242,9 +248,21 @@ class PhaseTest extends ModelTestCase
     public function it_has_many_guild_tags(): void
     {
         $phase = $this->create();
-        GuildTag::factory()->count(3)->create(['tbc_phase_id' => $phase->id]);
+        GuildTag::factory()->count(3)->create(['phase_id' => $phase->id]);
 
         $this->assertRelation($phase, 'guildTags', HasMany::class);
         $this->assertCount(3, $phase->guildTags);
+    }
+
+    // ==================== game version ====================
+
+    #[Test]
+    public function it_belongs_to_a_game_version(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $phase = $this->create(['game_version_id' => $gameVersion->id]);
+
+        $this->assertRelation($phase, 'gameVersion', BelongsTo::class);
+        $this->assertTrue($phase->gameVersion->is($gameVersion));
     }
 }

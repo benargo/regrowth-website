@@ -53,6 +53,7 @@ export default function FlashMessage({ type = "error", message, onDismiss }) {
 
     return (
         <div
+            role={type === "error" ? "alert" : "status"}
             className={`fixed left-1/2 top-16 z-50 mx-auto w-full max-w-lg -translate-x-1/2 px-4 transition-all duration-300 ease-in-out ${isLeaving ? "-translate-y-2 opacity-0" : "translate-y-0 opacity-100"} `}
         >
             <div

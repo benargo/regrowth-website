@@ -42,7 +42,7 @@ export default function ItemRow({ item, weightThreshold }) {
             {item.icon && (
                 <div className="absolute top-1/2 left-2 -translate-y-1/2">
                     <ItemIcon
-                        itemId={item.id}
+                        itemId={item.blizzard_id}
                         itemName={item.name}
                         itemQuality={item.quality_border_class}
                         iconUrl={item.icon}

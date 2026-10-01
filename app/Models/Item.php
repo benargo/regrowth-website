@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,11 +25,12 @@ use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-#[Fillable(['boss_id', 'name', 'quality', 'group', 'notes'])]
+#[Fillable(['boss_id', 'name', 'quality', 'group', 'notes', 'blizzard_id', 'game_version_id'])]
 #[Hidden(['wowhead_url', 'created_at', 'updated_at'])]
 class Item extends Model implements Commentable, HasBlizzardIcons, HasMedia
 {
     use HasFactory;
+    use HasUuids;
     use InteractsWithMedia;
 
     /**
@@ -65,7 +67,8 @@ class Item extends Model implements Commentable, HasBlizzardIcons, HasMedia
     {
         return Attribute::make(
             get: function () {
-                $base = "https://www.wowhead.com/tbc/item={$this->id}";
+                $expansionSegment = $this->gameVersion?->blizzard_namespace?->expansionUrlSegment() ?? 'tbc';
+                $base = "https://www.wowhead.com/{$expansionSegment}/item={$this->blizzard_id}";
 
                 return $this->name ? "{$base}/{$this->slug}" : $base;
             },
@@ -114,6 +117,16 @@ class Item extends Model implements Commentable, HasBlizzardIcons, HasMedia
     }
 
     /**
+     * Get the game version this item's blizzard_id belongs to.
+     *
+     * @return BelongsTo<GameVersion, $this>
+     */
+    public function gameVersion(): BelongsTo
+    {
+        return $this->belongsTo(GameVersion::class);
+    }
+
+    /**
      * Get the channel that comments on this item broadcast on.
      */
     public function commentChannel(): Channel
@@ -136,22 +149,11 @@ class Item extends Model implements Commentable, HasBlizzardIcons, HasMedia
     }
 
     /**
-     * Get the phases that this item's raids belong to.
-     *
-     * An item can drop in multiple raids (via pivot_items_raids), and each raid
-     * belongs to one phase, so an item can span multiple phases. A pivot hop
-     * followed by a belongsTo hop can't be expressed by HasManyThrough (which
-     * only supports FK chains, not a pivot table) — see Raid::comments() for
-     * the same limitation. Relation::noConstraints() avoids hasMany() adding
-     * its own `phases.id = items.id`-style constraint, which would be
-     * meaningless here; the whereIn() subquery over the item's raids is the
-     * only constraint that should apply.
-     *
      * @return HasMany<Phase, $this>
      */
     public function phases(): HasMany
     {
-        return Relation::noConstraints(fn () => $this->hasMany(Phase::class, 'id')
+        return Relation::noConstraints(fn () => $this->hasMany(Phase::class)
             ->whereIn('id', $this->raids()->select('raids.phase_id')->distinct()));
     }
 

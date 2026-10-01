@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Actions\EventBossResolver;
 use App\Http\Resources\PermissionGroupsResource;
+use App\Jobs\FetchGuildRoster;
 use App\Models\User;
 use App\Services\LootPriorities\HighestPriorityStats;
 use Database\Seeders\PermissionSeeder;
@@ -72,6 +73,10 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('icons', function (Request $request) {
             return Limit::perMinute(120)->by($request->ip());
+        });
+
+        RateLimiter::for('fetch-guild-roster-job', function (FetchGuildRoster $job) {
+            return Limit::perHour(1)->by((string) $job->gameVersionId);
         });
     }
 }

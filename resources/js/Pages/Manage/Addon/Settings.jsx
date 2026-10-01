@@ -1,18 +1,18 @@
 import { useState } from "react";
-import { router } from "@inertiajs/react";
+import { Link, router } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import Alert from "@/Components/Alert";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Autocomplete from "@/Components/Autocomplete";
 import Checkbox from "@/Components/Checkbox";
 import Icon from "@/Components/FontAwesome/Icon";
+import { linkClassName } from "@/Components/FormControls";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
 import TabNav from "@/Components/TabNav";
 import parseAutocompleteSelection from "@/Helpers/ParseAutocompleteSelection";
 
-export default function AddonSettings({ councillors: councillorsProp, ranks: ranksProp, tags: tagsProp, characters }) {
-    const [ranks, setRanks] = useState(ranksProp?.data ?? []);
+export default function AddonSettings({ councillors: councillorsProp, tags: tagsProp, characters }) {
     const [tags, setTags] = useState(tagsProp?.data ?? []);
     const [characterSearch, setCharacterSearch] = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
@@ -54,21 +54,6 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
         } else {
             setCharacterSearch(value);
         }
-    };
-
-    const handleToggleRankAttendance = (rankId, currentValue) => {
-        router.patch(
-            route("management.ranks.toggle-attendance", rankId),
-            {
-                count_attendance: !currentValue,
-            },
-            {
-                preserveScroll: true,
-                onSuccess: (page) => {
-                    setRanks(page.props.ranks.data);
-                },
-            },
-        );
     };
 
     const handleToggleTagAttendance = (tagId, currentValue) => {
@@ -178,34 +163,18 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
                             <span className="text-2xl font-semibold">Ranks to track attendance</span>
                         </h2>
                         <p className="text-mb text-grey-200 mb-1">
-                            Select which guild ranks should be tracked for attendance.
+                            Guild ranks that count towards attendance are tracked by the addon.
                         </p>
                         <p className="mb-1 text-sm text-blue-400">
-                            The fewer ranks you select, the more responsive the addon will be.
+                            The fewer ranks count towards attendance, the more responsive the addon will be.
                         </p>
-                        {ranks.length > 0 ? (
-                            <div className="border-ink-600 mt-4 rounded-md border">
-                                {ranks.map((rank) => (
-                                    <div
-                                        key={rank.id}
-                                        className="border-b-line flex flex-row items-center border-b first:rounded-t-md last:rounded-b-md"
-                                    >
-                                        <div className="border-ink-600 bg-ground-800/50 mr-2 flex h-12 w-12 items-center justify-center border p-2">
-                                            <Checkbox
-                                                checked={rank.count_attendance}
-                                                onChange={() =>
-                                                    handleToggleRankAttendance(rank.id, rank.count_attendance)
-                                                }
-                                                id={`rank-${rank.id}`}
-                                            />
-                                        </div>
-                                        <label htmlFor={`rank-${rank.id}`}>{rank.name}</label>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="mt-2 text-sm text-secondary-400">No ranks available.</p>
-                        )}
+                        <p className="text-grey-200 mt-2 text-sm">
+                            Choose which ranks count towards attendance on each{" "}
+                            <Link href={route("management.game-versions.index")} className={linkClassName}>
+                                game version&rsquo;s page
+                            </Link>
+                            .
+                        </p>
                     </div>
                     <div className="mb-4 rounded-lg border border-ink-600 p-4">
                         <h2 className="mb-2 flex flex-row items-center">

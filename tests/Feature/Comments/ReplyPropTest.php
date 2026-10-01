@@ -272,7 +272,7 @@ class ReplyPropTest extends TestCase
     {
         return route('loot.items.show', [
             'item' => $item->id,
-            'slug' => $item->slug ?: "item-{$item->id}",
+            'slug' => $item->slug ?: "item-{$item->blizzard_id}",
         ]);
     }
 

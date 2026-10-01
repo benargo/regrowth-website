@@ -3,26 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Contracts\HasCharacterMedia;
-use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Http\Requests\UpdateCharacterRequest;
 use App\Http\Resources\CharacterResource;
+use App\Http\Resources\GameVersionResource;
 use App\Http\Resources\GuildRosterMemberCollection;
 use App\Http\Resources\PlayableClassResource;
 use App\Http\Resources\PlayableRaceResource;
 use App\Http\Resources\PlayableSpecializationResource;
 use App\Jobs\AttachPortraitToCharacter;
 use App\Models\Character;
-use App\Models\GuildRank;
-use App\Models\PlayableClass;
-use App\Models\PlayableRace;
+use App\Models\GameVersion;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -33,21 +33,40 @@ class CharacterController extends Controller
     ) {}
 
     /**
-     * Display the guild roster.
+     * Redirect the legacy roster URL to the default game version's roster.
      */
-    public function index(Request $request): Response
+    public function redirectToDefaultRoster(): RedirectResponse
     {
+        $gameVersion = GameVersion::defaultRoster();
+
+        abort_if($gameVersion === null, 404);
+
+        return Redirect::route('roster.index', $gameVersion, 303);
+    }
+
+    /**
+     * Display a game version's guild roster.
+     */
+    public function index(Request $request, GameVersion $gameVersion): Response
+    {
+        $rosters = GameVersion::currentRosters();
+
+        abort_unless($rosters->contains($gameVersion), 404);
+
         return Inertia::render('Roster/Index', [
-            'classes' => PlayableClassResource::collection(PlayableClass::orderBy('name')->get())->resolve($request),
-            'ranks' => GuildRank::select('name')->ordered()->get()->pluck('name')->unique()->values(),
-            'races' => PlayableRaceResource::collection(PlayableRace::where('faction', Faction::ALLIANCE)->orderBy('name')->get())->resolve($request),
-            'characters' => Inertia::defer(function () use ($request) {
+            'gameVersion' => (new GameVersionResource($gameVersion))->resolve($request),
+            'gameVersions' => GameVersionResource::collection($rosters)->resolve($request),
+            'classes' => PlayableClassResource::collection($gameVersion->playableClasses()->orderBy('name')->get())->resolve($request),
+            'ranks' => $gameVersion->guildRanks()->select('name')->ordered()->pluck('name')->unique()->values(),
+            'races' => PlayableRaceResource::collection($gameVersion->playableRaces()->orderBy('name')->get())->resolve($request),
+            'characters' => Inertia::defer(function () use ($request, $gameVersion) {
                 $members = $this->blizzard->send(new GetGuildRosterRequest(
-                    $this->blizzard->defaultRealmSlug(),
-                    $this->blizzard->defaultGuildSlug(),
+                    $gameVersion->realm_slug,
+                    $gameVersion->guild_slug,
+                    $gameVersion->blizzard_namespace,
                 ))->dto()->members ?? [];
 
-                return (new GuildRosterMemberCollection($members))->resolve($request);
+                return (new GuildRosterMemberCollection($members, $gameVersion))->resolve($request);
             }),
         ]);
     }
@@ -64,13 +83,17 @@ class CharacterController extends Controller
             ], 303);
         }
 
-        $character->load(['playableClass', 'playableRace', 'rank', 'specializations', 'linkedCharacters.playableClass', 'linkedCharacters.rank']);
+        $character->load(['gameVersion', 'playableClass', 'playableRace', 'rank', 'specializations', 'linkedCharacters.playableClass', 'linkedCharacters.rank']);
 
-        if (! $character->hasMedia(HasCharacterMedia::MEDIA_COLLECTION)) {
+        $gameVersion = $character->gameVersion;
+        $realmSlug = $gameVersion?->realm_slug;
+
+        if ($realmSlug !== null && ! $character->hasMedia(HasCharacterMedia::MEDIA_COLLECTION)) {
             try {
                 $dto = $this->blizzard->send(new GetCharacterMediaRequest(
-                    $this->blizzard->defaultRealmSlug(),
+                    $realmSlug,
                     $character->name,
+                    $gameVersion->blizzard_namespace,
                 ))->dto();
 
                 $avatarAsset = collect($dto->assets)->first(fn ($asset) => $asset->key === 'avatar');
@@ -85,6 +108,9 @@ class CharacterController extends Controller
 
         return Inertia::render('Roster/Characters/Show', [
             'character' => (new CharacterResource($character))->resolve($request),
+            'roster_url' => $gameVersion?->ownsCurrentRoster()
+                ? URL::route('roster.index', $gameVersion)
+                : URL::route('characters.index'),
             'recent_reports' => Inertia::defer(fn () => $character->warcraftLogsReports()
                 ->orderByDesc('start_time')
                 ->limit(10)

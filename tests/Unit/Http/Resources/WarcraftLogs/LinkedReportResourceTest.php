@@ -6,7 +6,7 @@ use App\Http\Resources\UserResource;
 use App\Http\Resources\WarcraftLogs\LinkedReportResource;
 use App\Models\Report;
 use App\Models\User;
-use App\Models\Zone;
+use App\Models\WarcraftLogs\Zone;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;

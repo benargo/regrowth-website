@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\GameVersion;
 use App\Models\Phase;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
@@ -59,6 +60,16 @@ class PhaseFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'start_date' => null,
+        ]);
+    }
+
+    /**
+     * Associate the model with a specific game version.
+     */
+    public function forGameVersion(GameVersion $gameVersion): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'game_version_id' => $gameVersion->id,
         ]);
     }
 }

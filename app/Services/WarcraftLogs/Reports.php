@@ -2,7 +2,7 @@
 
 namespace App\Services\WarcraftLogs;
 
-use App\Models\GuildTag;
+use App\Models\WarcraftLogs\GuildTag;
 use App\Services\WarcraftLogs\Traits\Paginates;
 use App\Services\WarcraftLogs\ValueObjects\ReportData;
 use Carbon\Carbon;

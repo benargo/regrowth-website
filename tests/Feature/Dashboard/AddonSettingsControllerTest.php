@@ -3,9 +3,8 @@
 namespace Tests\Feature\Dashboard;
 
 use App\Models\Character;
-use App\Models\GuildRank;
-use App\Models\GuildTag;
 use App\Models\User;
+use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
@@ -151,24 +150,6 @@ class AddonSettingsControllerTest extends DashboardTestCase
         );
     }
 
-    // ==================== guild ranks ====================
-
-    #[Test]
-    public function settings_includes_guild_ranks_in_settings(): void
-    {
-        // Clear any existing ranks and create our test rank
-        GuildRank::query()->delete();
-        GuildRank::factory()->create(['name' => 'Test Rank', 'sort_order' => 1]);
-
-        $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
-
-        // Note: GuildRank model transforms names to title case
-        $response->assertInertia(fn (Assert $page) => $page
-            ->has('ranks.data', 1)
-            ->where('ranks.data.0.name', 'Test Rank')
-        );
-    }
-
     // ==================== guild tags ====================
 
     #[Test]
@@ -239,26 +220,6 @@ class AddonSettingsControllerTest extends DashboardTestCase
 
                 return $names === ['Alice', 'Mike', 'Zoe'];
             })
-        );
-    }
-
-    #[Test]
-    public function settings_ranks_are_ordered_by_sort_order(): void
-    {
-        // Clear any existing ranks and create our test ranks
-        GuildRank::query()->delete();
-        GuildRank::factory()->create(['name' => 'Officer', 'sort_order' => 2]);
-        GuildRank::factory()->create(['name' => 'Guild Master', 'sort_order' => 1]);
-        GuildRank::factory()->create(['name' => 'Member', 'sort_order' => 3]);
-
-        $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
-
-        // Note: GuildRank model transforms names to title case
-        $response->assertInertia(fn (Assert $page) => $page
-            ->has('ranks.data', 3)
-            ->where('ranks.data.0.name', 'Guild Master')
-            ->where('ranks.data.1.name', 'Officer')
-            ->where('ranks.data.2.name', 'Member')
         );
     }
 }

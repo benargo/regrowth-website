@@ -5,7 +5,7 @@ export default function ItemDetailsCard({ item }) {
     return (
         <div className="flex flex-col items-start gap-2 md:flex-row md:gap-6">
             <ItemIcon
-                itemId={item.id}
+                itemId={item.blizzard_id}
                 itemName={item.name}
                 iconUrl={item.icon}
                 itemQuality={item.quality_border_class}
@@ -20,9 +20,9 @@ export default function ItemDetailsCard({ item }) {
                 <div className="mb-4 flex flex-col gap-2 md:flex-row">
                     {/* Item Details */}
                     <div className="flex-auto">
-                        {item.id && (
+                        {item.blizzard_id && (
                             <p className="mb-2">
-                                <strong>Item ID:</strong> {item.id}
+                                <strong>Item ID:</strong> {item.blizzard_id}
                             </p>
                         )}
                         {item.item_class && (
@@ -53,7 +53,7 @@ export default function ItemDetailsCard({ item }) {
             <div className="flex-initial">
                 <a
                     href={item.wowhead?.url}
-                    data-wowhead={`item=${item.id}&domain=tbc`}
+                    data-wowhead={`item=${item.blizzard_id}&domain=tbc`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="bg-wowhead inline-block rounded-md px-4 py-2 font-medium text-white transition-opacity hover:opacity-90"

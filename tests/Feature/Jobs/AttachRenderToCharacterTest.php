@@ -5,12 +5,15 @@ namespace Tests\Feature\Jobs;
 use App\Contracts\HasCharacterMedia;
 use App\Events\Broadcasts\CharacterRenderAttached;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchCharacterMediaRequest;
 use App\Jobs\AttachRenderToCharacter;
 use App\Models\Character;
+use App\Models\GameVersion;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -33,9 +36,12 @@ class AttachRenderToCharacterTest extends TestCase
     use MocksBlizzardServices;
     use RefreshDatabase;
 
+    private GameVersion $gameVersion;
+
     protected function setUp(): void
     {
         parent::setUp();
+        $this->gameVersion = GameVersion::factory()->create(['realm' => 'Thunderstrike', 'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY]);
         Storage::fake('public');
     }
 
@@ -88,7 +94,7 @@ class AttachRenderToCharacterTest extends TestCase
     #[Test]
     public function it_fetches_the_render_and_attaches_it_to_the_render_collection(): void
     {
-        $character = Character::factory()->create();
+        $character = Character::factory()->for($this->gameVersion)->create();
         $this->mockGetCharacterMedia();
         $this->mockFetchCharacterMedia();
         $this->applyBlizzardMocks();
@@ -105,7 +111,7 @@ class AttachRenderToCharacterTest extends TestCase
     #[Test]
     public function it_does_not_touch_the_portrait_collection(): void
     {
-        $character = Character::factory()->create();
+        $character = Character::factory()->for($this->gameVersion)->create();
         $character->addMediaFromString('AVATAR')
             ->usingFileName('avatar.jpg')
             ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION);
@@ -125,7 +131,7 @@ class AttachRenderToCharacterTest extends TestCase
     {
         Event::fake([CharacterRenderAttached::class]);
 
-        $character = Character::factory()->create();
+        $character = Character::factory()->for($this->gameVersion)->create();
         $this->mockGetCharacterMedia();
         $this->mockFetchCharacterMedia();
         $this->applyBlizzardMocks();
@@ -139,7 +145,7 @@ class AttachRenderToCharacterTest extends TestCase
     #[Test]
     public function it_returns_early_when_a_render_already_exists(): void
     {
-        $character = Character::factory()->create();
+        $character = Character::factory()->for($this->gameVersion)->create();
         $character->addMediaFromString('EXISTING')
             ->usingFileName('existing.png')
             ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION_RENDER);
@@ -159,7 +165,7 @@ class AttachRenderToCharacterTest extends TestCase
     #[Test]
     public function it_never_calls_the_character_profile_endpoint(): void
     {
-        $character = Character::factory()->create(['gender' => null]);
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => null]);
         $this->mockGetCharacterMedia();
         $this->mockFetchCharacterMedia();
         $this->applyBlizzardMocks();
@@ -174,7 +180,7 @@ class AttachRenderToCharacterTest extends TestCase
     #[Test]
     public function it_stores_the_opaque_vertical_bounds_as_custom_properties(): void
     {
-        $character = Character::factory()->create();
+        $character = Character::factory()->for($this->gameVersion)->create();
         $this->mockGetCharacterMedia();
         $this->mockFetchCharacterMedia(body: $this->pngWithOpaqueBand(width: 10, height: 100, opaqueFrom: 20, opaqueTo: 79));
         $this->applyBlizzardMocks();
@@ -191,7 +197,7 @@ class AttachRenderToCharacterTest extends TestCase
     #[Test]
     public function it_leaves_the_visible_bounds_unset_when_the_render_is_not_a_decodable_image(): void
     {
-        $character = Character::factory()->create();
+        $character = Character::factory()->for($this->gameVersion)->create();
         $this->mockGetCharacterMedia();
         $this->mockFetchCharacterMedia();
         $this->applyBlizzardMocks();
@@ -208,7 +214,7 @@ class AttachRenderToCharacterTest extends TestCase
     #[Test]
     public function it_requests_the_render_url_unresized(): void
     {
-        $character = Character::factory()->create();
+        $character = Character::factory()->for($this->gameVersion)->create();
         $this->mockGetCharacterMedia();
         $this->mockFetchCharacterMedia();
         $this->applyBlizzardMocks();
@@ -219,6 +225,37 @@ class AttachRenderToCharacterTest extends TestCase
     }
 
     // ==================== failure paths ====================
+
+    #[Test]
+    public function it_looks_up_the_render_on_the_characters_game_version_realm_and_namespace(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['realm' => 'Living Flame', 'blizzard_namespace' => BlizzardNamespace::ERA]);
+        $character = Character::factory()->create(['game_version_id' => $gameVersion->id]);
+        $this->mockGetCharacterMedia();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        (new AttachRenderToCharacter($character->id))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
+
+        Saloon::assertSent(fn ($request, $response) => $request instanceof GetCharacterMediaRequest
+            && str_contains($request->resolveEndpoint(), '/living-flame/')
+            && $response->getPendingRequest()->headers()->get('Battlenet-Namespace') === BlizzardNamespace::ERA->forProfileRequests(Region::from(config('services.blizzard.region'))));
+    }
+
+    #[Group('edge-case')]
+    #[Test]
+    public function it_sends_no_media_request_when_the_character_has_no_realm(): void
+    {
+        $character = Character::factory()->create(['game_version_id' => null]);
+        $this->mockGetCharacterMedia();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        (new AttachRenderToCharacter($character->id))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
+
+        Saloon::assertNotSent(GetCharacterMediaRequest::class);
+        $this->assertFalse($character->fresh()->hasMedia(HasCharacterMedia::MEDIA_COLLECTION_RENDER));
+    }
 
     #[Group('failure-path')]
     #[Test]
@@ -233,7 +270,7 @@ class AttachRenderToCharacterTest extends TestCase
     #[Test]
     public function it_throws_when_the_render_cdn_returns_an_error(): void
     {
-        $character = Character::factory()->create();
+        $character = Character::factory()->for($this->gameVersion)->create();
         $this->mockGetCharacterMedia();
         $this->mockFetchCharacterMedia(status: 404);
         $this->applyBlizzardMocks();
@@ -249,7 +286,7 @@ class AttachRenderToCharacterTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        $character = Character::factory()->create();
+        $character = Character::factory()->for($this->gameVersion)->create();
         $this->mockGetCharacterMedia(responseData: [
             'assets' => [
                 ['key' => 'avatar', 'value' => 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg'],
@@ -268,7 +305,7 @@ class AttachRenderToCharacterTest extends TestCase
     {
         Event::fake([CharacterRenderAttached::class]);
 
-        $character = Character::factory()->create();
+        $character = Character::factory()->for($this->gameVersion)->create();
         Saloon::fake([
             self::TOKEN_MOCK_KEY => MockResponse::make(body: self::TOKEN_MOCK_RESPONSE, status: 200),
             GetCharacterMediaRequest::class => MockResponse::make(status: 503),
@@ -286,7 +323,7 @@ class AttachRenderToCharacterTest extends TestCase
     {
         Event::fake([CharacterRenderAttached::class]);
 
-        $character = Character::factory()->create();
+        $character = Character::factory()->for($this->gameVersion)->create();
         $this->mockGetCharacterMedia(responseData: [
             'assets' => [
                 ['key' => 'avatar', 'value' => 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg'],

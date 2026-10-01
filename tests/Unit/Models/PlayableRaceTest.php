@@ -3,7 +3,9 @@
 namespace Tests\Unit\Models;
 
 use App\Enums\Faction;
+use App\Models\GameVersion;
 use App\Models\PlayableRace;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -118,5 +120,26 @@ class PlayableRaceTest extends ModelTestCase
         $playableRace = $this->create();
 
         $this->assertCount(0, $playableRace->characters);
+    }
+
+    // ==================== gameVersions ====================
+
+    #[Test]
+    public function game_versions_returns_belongs_to_many_relationship(): void
+    {
+        $playableRace = new PlayableRace;
+
+        $this->assertInstanceOf(BelongsToMany::class, $playableRace->gameVersions());
+    }
+
+    #[Test]
+    public function game_versions_includes_attached_game_version(): void
+    {
+        $playableRace = $this->create();
+        $gameVersion = GameVersion::factory()->create();
+
+        $playableRace->gameVersions()->attach($gameVersion);
+
+        $this->assertTrue($playableRace->fresh()->gameVersions->contains($gameVersion));
     }
 }

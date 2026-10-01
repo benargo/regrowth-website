@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Phases;
 
-use App\Models\GuildTag;
 use App\Models\Phase;
+use App\Models\WarcraftLogs\GuildTag;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;

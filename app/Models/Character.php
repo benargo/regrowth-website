@@ -20,7 +20,7 @@ use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-#[Fillable(['id', 'name', 'level', 'rank_id', 'playable_class_id', 'playable_race_id', 'gender', 'is_main', 'is_loot_councillor'])]
+#[Fillable(['id', 'game_version_id', 'name', 'level', 'rank_id', 'playable_class_id', 'playable_race_id', 'gender', 'is_main', 'is_loot_councillor'])]
 #[Hidden(['created_at', 'updated_at'])]
 class Character extends Model implements HasCharacterMedia, HasMedia
 {
@@ -97,6 +97,14 @@ class Character extends Model implements HasCharacterMedia, HasMedia
     public function rank(): BelongsTo
     {
         return $this->belongsTo(GuildRank::class, 'rank_id');
+    }
+
+    /**
+     * Get the game version this character belongs to.
+     */
+    public function gameVersion(): BelongsTo
+    {
+        return $this->belongsTo(GameVersion::class);
     }
 
     /**

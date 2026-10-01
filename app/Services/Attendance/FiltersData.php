@@ -4,8 +4,8 @@ namespace App\Services\Attendance;
 
 use App\Models\Character;
 use App\Models\GuildRank;
-use App\Models\GuildTag;
 use App\Models\Report;
+use App\Models\WarcraftLogs\GuildTag;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;

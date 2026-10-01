@@ -126,10 +126,14 @@ export default function Dashboard({ discordRoles }) {
                                 Manage core datasets that power the site&rsquo;s features.
                             </p>
                             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                                <DashboardCard href={route("management.ranks.view")} icon="chevron-double-up">
-                                    <h3 className="text-md">Manage guild ranks</h3>
-                                    <p className="mb-1 text-sm">Match the in-game ranks to the site.</p>
-                                </DashboardCard>
+                                <Can permission="edit-datasets">
+                                    <DashboardCard href={route("management.game-versions.index")} icon="gamepad">
+                                        <h3 className="text-md">Manage game versions</h3>
+                                        <p className="mb-1 text-sm">
+                                            Set up the game versions the guild plays, with their realms and API IDs.
+                                        </p>
+                                    </DashboardCard>
+                                </Can>
                                 <DashboardCard href={route("management.phases.view")} icon="hourglass-start">
                                     <h3 className="text-md">Manage TBC phases</h3>
                                     <p className="mb-1 text-sm">

@@ -33,6 +33,16 @@ class ItemResourceTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_blizzard_id(): void
+    {
+        $item = Item::factory()->create(['blizzard_id' => 19019]);
+
+        $array = (new ItemResource($item))->toArray(new Request);
+
+        $this->assertSame(19019, $array['blizzard_id']);
+    }
+
+    #[Test]
     public function it_returns_name_from_model(): void
     {
         $item = Item::factory()->create(['name' => 'Thunderfury, Blessed Blade of the Windseeker']);
@@ -59,7 +69,7 @@ class ItemResourceTest extends TestCase
     #[Test]
     public function it_returns_wowhead_url_with_item_name(): void
     {
-        $item = Item::factory()->create(['id' => 19019, 'name' => 'Thunderfury, Blessed Blade of the Windseeker']);
+        $item = Item::factory()->create(['blizzard_id' => 19019, 'name' => 'Thunderfury, Blessed Blade of the Windseeker']);
 
         $array = (new ItemResource($item))->toArray(new Request);
 
@@ -72,7 +82,7 @@ class ItemResourceTest extends TestCase
     #[Test]
     public function it_returns_wowhead_url_without_slug_when_name_is_null(): void
     {
-        $item = Item::factory()->create(['id' => 19019, 'name' => null]);
+        $item = Item::factory()->create(['blizzard_id' => 19019, 'name' => null]);
 
         $array = (new ItemResource($item))->toArray(new Request);
 
@@ -400,6 +410,7 @@ class ItemResourceTest extends TestCase
         $array = (new ItemResource($item))->toArray(new Request);
 
         $this->assertArrayHasKey('id', $array);
+        $this->assertArrayHasKey('blizzard_id', $array);
         $this->assertArrayHasKey('name', $array);
         $this->assertArrayHasKey('slug', $array);
         $this->assertArrayHasKey('group', $array);

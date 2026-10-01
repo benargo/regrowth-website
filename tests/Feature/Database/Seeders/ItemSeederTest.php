@@ -7,6 +7,7 @@ use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
+use App\Models\GameVersion;
 use App\Models\Item;
 use Database\Seeders\BossSeeder;
 use Database\Seeders\ItemSeeder;
@@ -30,11 +31,15 @@ class ItemSeederTest extends TestCase
     use LimitsItemSeederFixtures;
     use RefreshDatabase;
 
+    private GameVersion $gameVersion;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->seed([PhaseSeeder::class, RaidSeeder::class, BossSeeder::class]);
+
+        $this->gameVersion = GameVersion::factory()->tbc()->create();
 
         Storage::fake('public');
     }
@@ -117,13 +122,35 @@ class ItemSeederTest extends TestCase
     // ==================== seeder behaviour ====================
 
     #[Test]
+    public function seeder_scopes_items_to_the_resolved_game_version(): void
+    {
+        $this->fakeSaloon();
+
+        $this->seedWithLimitedItems();
+
+        $this->assertDatabaseHas('items', ['blizzard_id' => 28453, 'game_version_id' => $this->gameVersion->id]);
+    }
+
+    #[Test]
+    public function seeder_scopes_items_to_the_tbc_game_version_when_others_exist(): void
+    {
+        $this->fakeSaloon();
+        $otherGameVersion = GameVersion::factory()->create();
+
+        $this->seedWithLimitedItems();
+
+        $this->assertDatabaseHas('items', ['blizzard_id' => 28453, 'game_version_id' => $this->gameVersion->id]);
+        $this->assertDatabaseMissing('items', ['game_version_id' => $otherGameVersion->id]);
+    }
+
+    #[Test]
     public function seeder_creates_items_with_name_and_icon_from_api(): void
     {
         $this->fakeSaloon();
 
         $this->seedWithLimitedItems();
 
-        $item = Item::find(28453);
+        $item = Item::where('blizzard_id', 28453)->first();
 
         $this->assertNotNull($item);
         $this->assertSame('Item 28453', $item->name);
@@ -160,7 +187,8 @@ class ItemSeederTest extends TestCase
         $this->fakeSaloon();
 
         Item::forceCreate([
-            'id' => 28453,
+            'blizzard_id' => 28453,
+            'game_version_id' => $this->gameVersion->id,
             'boss_id' => 1,
             'group' => null,
             'name' => 'Old Name',
@@ -170,10 +198,10 @@ class ItemSeederTest extends TestCase
         $this->seedWithLimitedItems();
 
         $this->assertDatabaseHas('items', [
-            'id' => 28453,
+            'blizzard_id' => 28453,
             'name' => 'Item 28453',
         ]);
-        $this->assertTrue(Item::find(28453)->hasMedia('blizzard_icons'));
+        $this->assertTrue(Item::where('blizzard_id', 28453)->first()->hasMedia('blizzard_icons'));
     }
 
     #[Test]
@@ -184,11 +212,11 @@ class ItemSeederTest extends TestCase
         $this->seedWithLimitedItems();
 
         $this->assertDatabaseHas('items', [
-            'id' => 28453,
+            'blizzard_id' => 28453,
             'boss_id' => 1,
         ]);
         $this->assertDatabaseHas('pivot_items_raids', [
-            'item_id' => 28453,
+            'item_id' => Item::where('blizzard_id', 28453)->first()->id,
             'raid_id' => 1,
         ]);
     }
@@ -203,7 +231,7 @@ class ItemSeederTest extends TestCase
         foreach ([32589, 32590, 32591, 32592, 32609, 34009] as $itemId) {
             $this->assertEqualsCanonicalizing(
                 [6, 7],
-                Item::find($itemId)->raids->pluck('id')->all(),
+                Item::where('blizzard_id', $itemId)->first()->raids->pluck('id')->all(),
                 "Item {$itemId} is not attached to both Hyjal Summit and Black Temple",
             );
         }
@@ -217,7 +245,7 @@ class ItemSeederTest extends TestCase
         $this->seedSpecificItems([32589]);
         $this->seedSpecificItems([32589]);
 
-        $this->assertSame(2, Item::find(32589)->raids()->count());
+        $this->assertSame(2, Item::where('blizzard_id', 32589)->first()->raids()->count());
     }
 
     #[Test]
@@ -263,9 +291,9 @@ class ItemSeederTest extends TestCase
         $seeder = $this->seedWithLimitedItems();
 
         // The failed item is not created — both API requests must succeed before the model is persisted
-        $this->assertDatabaseMissing('items', ['id' => 28453]);
+        $this->assertDatabaseMissing('items', ['blizzard_id' => 28453]);
         // Other items still get name and icon
-        $this->assertDatabaseHas('items', ['id' => 28454, 'name' => 'Item 28454']);
+        $this->assertDatabaseHas('items', ['blizzard_id' => 28454, 'name' => 'Item 28454']);
         $this->assertSame([28453], $seeder->skippedItemIds());
     }
 
@@ -295,14 +323,14 @@ class ItemSeederTest extends TestCase
         $this->seedWithLimitedItems();
 
         // Item 28453 should have its name set (name update happens before icon fetch)
-        $item28453 = Item::find(28453);
+        $item28453 = Item::where('blizzard_id', 28453)->first();
         $this->assertNotNull($item28453);
         $this->assertSame('Item 28453', $item28453->name);
         // But no icon — the MediaNotFoundException was caught and the seeder continued
         $this->assertFalse($item28453->hasMedia('blizzard_icons'));
 
         // The seeder continued processing subsequent items
-        $item28454 = Item::find(28454);
+        $item28454 = Item::where('blizzard_id', 28454)->first();
         $this->assertNotNull($item28454);
         $this->assertSame('Item 28454', $item28454->name);
         $this->assertTrue($item28454->hasMedia('blizzard_icons'));
@@ -349,19 +377,19 @@ class ItemSeederTest extends TestCase
         $this->seedWithLimitedItems();
 
         // Item 28453 should be persisted with its name set before the icon fetch fails
-        $item28453 = Item::find(28453);
+        $item28453 = Item::where('blizzard_id', 28453)->first();
         $this->assertNotNull($item28453);
         $this->assertSame('Item 28453', $item28453->name);
         // No icon yet — job is deferred
         $this->assertFalse($item28453->hasMedia('blizzard_icons'));
 
         // The retry job should have been dispatched
-        Queue::assertPushed(AttachBlizzardIconToModel::class, function (AttachBlizzardIconToModel $job) {
-            return $job->modelClass === Item::class && $job->modelKey === 28453;
+        Queue::assertPushed(AttachBlizzardIconToModel::class, function (AttachBlizzardIconToModel $job) use ($item28453) {
+            return $job->modelClass === Item::class && $job->modelKey === $item28453->id;
         });
 
         // Other items should still get their icons immediately
-        $item28454 = Item::find(28454);
+        $item28454 = Item::where('blizzard_id', 28454)->first();
         $this->assertNotNull($item28454);
         $this->assertSame('Item 28454', $item28454->name);
         $this->assertTrue($item28454->hasMedia('blizzard_icons'));

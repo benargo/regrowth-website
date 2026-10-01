@@ -10,7 +10,6 @@ use App\Http\Integrations\Blizzard\Exceptions\InvalidClassException;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidRaceException;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\Exceptions\XmlException;
-use App\Http\Integrations\Blizzard\GameVersion;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
@@ -41,40 +40,6 @@ class BlizzardConnectorTest extends TestCase
         $this->assertSame('https://tw.api.blizzard.com', $this->makeConnector(Region::TW)->resolveBaseUrl());
     }
 
-    // ==================== namespace lookup ====================
-
-    #[Test]
-    #[Group('happy-path')]
-    public function namespace_returns_derived_value_for_anniversary(): void
-    {
-        $connector = $this->makeConnector(Region::EU, GameVersion::Anniversary);
-
-        $this->assertSame('profile-classicann-eu', $connector->namespace('profile'));
-        $this->assertSame('static-classicann-eu', $connector->namespace('static'));
-        $this->assertSame('dynamic-classicann-eu', $connector->namespace('dynamic'));
-    }
-
-    #[Test]
-    #[Group('happy-path')]
-    public function namespace_returns_derived_value_for_retail(): void
-    {
-        $connector = $this->makeConnector(Region::EU, GameVersion::Retail);
-
-        $this->assertSame('profile-eu', $connector->namespace('profile'));
-        $this->assertSame('static-eu', $connector->namespace('static'));
-        $this->assertSame('dynamic-eu', $connector->namespace('dynamic'));
-    }
-
-    #[Test]
-    #[Group('happy-path')]
-    public function namespace_throws_for_unknown_kind(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unknown Blizzard namespace kind: bogus');
-
-        $this->makeConnector()->namespace('bogus');
-    }
-
     // ==================== locale validation ====================
 
     #[Test]
@@ -87,7 +52,6 @@ class BlizzardConnectorTest extends TestCase
         new BlizzardConnector(
             clientId: 'test_id',
             clientSecret: 'test_secret',
-            gameVersion: GameVersion::Anniversary,
             region: Region::EU,
             locale: 'ko_KR',
             defaultRealmSlug: 'thunderstrike',
@@ -127,7 +91,7 @@ class BlizzardConnectorTest extends TestCase
             'eu.api.blizzard.com/data/wow/item/19019' => MockResponse::make(['id' => 19019, 'name' => 'Thunderfury']),
         ]);
 
-        $request = Mockery::mock(GetItemRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/19019')->getMock();
+        $request = Mockery::mock(new GetItemRequest(19019))->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/19019')->getMock();
 
         $connector = $this->makeConnector();
         $response = $connector->send($request);
@@ -149,8 +113,8 @@ class BlizzardConnectorTest extends TestCase
         ]);
 
         $connector = $this->makeConnector();
-        $connector->send(Mockery::mock(GetItemRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/1')->getMock());
-        $connector->send(Mockery::mock(GetItemRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/2')->getMock());
+        $connector->send(Mockery::mock(new GetItemRequest(1))->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/1')->getMock());
+        $connector->send(Mockery::mock(new GetItemRequest(2))->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/2')->getMock());
 
         // The token endpoint should only be hit once.
         Saloon::assertSentCount(3); // token + 2 api requests
@@ -177,7 +141,7 @@ class BlizzardConnectorTest extends TestCase
 
         $this->expectException(CharacterNotFoundException::class);
 
-        $request = Mockery::mock(GetCharacterProfileRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/profile/wow/character/thunderstrike/ghost')->getMock();
+        $request = Mockery::mock(new GetCharacterProfileRequest('thunderstrike', 'ghost'))->makePartial()->allows('resolveEndpoint')->andReturn('/profile/wow/character/thunderstrike/ghost')->getMock();
 
         $this->makeConnector()->send($request);
     }
@@ -196,7 +160,7 @@ class BlizzardConnectorTest extends TestCase
 
         $this->expectException(InvalidRaceException::class);
 
-        $request = Mockery::mock(GetPlayableRaceRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/playable-race/999')->getMock();
+        $request = Mockery::mock(new GetPlayableRaceRequest(999))->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/playable-race/999')->getMock();
 
         $this->makeConnector()->send($request);
     }
@@ -215,7 +179,7 @@ class BlizzardConnectorTest extends TestCase
 
         $this->expectException(InvalidClassException::class);
 
-        $request = Mockery::mock(GetPlayableClassRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/playable-class/999')->getMock();
+        $request = Mockery::mock(new GetPlayableClassRequest(999))->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/playable-class/999')->getMock();
 
         $this->makeConnector()->send($request);
     }
@@ -392,7 +356,6 @@ class BlizzardConnectorTest extends TestCase
 
     private function makeConnector(
         ?Region $region = null,
-        GameVersion $gameVersion = GameVersion::Anniversary,
         string $defaultRealmSlug = 'thunderstrike',
         string $defaultGuildSlug = 'regrowth',
     ): BlizzardConnector {
@@ -403,7 +366,6 @@ class BlizzardConnectorTest extends TestCase
             clientSecret: 'test_secret',
             region: $region,
             locale: $region->defaultLocale(),
-            gameVersion: $gameVersion,
             defaultRealmSlug: $defaultRealmSlug,
             defaultGuildSlug: $defaultGuildSlug,
             eagerlyMirrorAssets: $this->createStub(EagerlyMirrorAssets::class),

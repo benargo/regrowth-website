@@ -34,7 +34,7 @@ abstract class FullTextTestCase extends TestCase
     /**
      * @var array<int, string>
      */
-    protected array $tablesToTruncate = ['pivot_items_raids', 'items', 'bosses', 'raids', 'phases'];
+    protected array $tablesToTruncate = ['pivot_items_raids', 'items', 'bosses', 'raids', 'phases', 'game_versions'];
 
     /**
      * @param  callable(): mixed  $create

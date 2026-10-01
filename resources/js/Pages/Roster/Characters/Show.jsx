@@ -26,16 +26,12 @@ const RANK_COLORS = {
     "inactive":     { bg: "bg-secondary-800/50", text: "text-secondary-400", border: "border-secondary-600/40" },
 };
 
-function rankSlug(name) {
-    return name?.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") ?? "";
-}
-
 function RankPill({ rank }) {
     if (!rank?.name) {
         return null;
     }
-    const slug = rankSlug(rank.name);
-    const colors = RANK_COLORS[slug] ?? { bg: "bg-secondary-800/50", text: "text-secondary-400", border: "border-secondary-600/40" };
+
+    const colors = RANK_COLORS[rank.slug] ?? RANK_COLORS.inactive;
 
     return (
         <span className={`inline-flex items-center rounded border px-2.5 py-0.5 text-xs font-semibold tracking-wide ${colors.bg} ${colors.text} ${colors.border}`}>
@@ -84,7 +80,7 @@ function SectionHeading({ children }) {
     );
 }
 
-export default function Show({ character, recent_reports }) {
+export default function Show({ character, roster_url, recent_reports }) {
     const spec = raidSpec(character);
     const isLoading = recent_reports === undefined;
 
@@ -99,7 +95,7 @@ export default function Show({ character, recent_reports }) {
             <ToolNav>
                 <div className="flex-initial space-x-4">
                     <Link
-                        href={route("characters.index")}
+                        href={roster_url}
                         className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-ground-800 active:border-primary"
                     >
                         <Icon icon="arrow-left" style="solid" className="mr-2" />

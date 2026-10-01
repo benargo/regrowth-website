@@ -18,10 +18,10 @@ class EnsureItemSlugIsValid
         $item = $request->route('item');
         $slug = $request->route('slug');
 
-        $correctSlug = $item->slug ?: "item-{$item->id}";
+        $correctSlug = $item->slug ?: "item-{$item->blizzard_id}";
 
         if ($correctSlug !== $slug) {
-            return redirect()->route($request->route()->getName(), ['item' => $item->id, 'slug' => $correctSlug], 303);
+            return redirect()->route($request->route()->getName(), ['item' => $item->getRouteKey(), 'slug' => $correctSlug], 303);
         }
 
         return $next($request);

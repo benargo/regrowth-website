@@ -3,9 +3,14 @@
 namespace Tests\Feature\Characters;
 
 use App\Contracts\HasCharacterMedia;
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Http\Integrations\Blizzard\Region;
+use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterMediaRequest;
 use App\Jobs\AttachPortraitToCharacter;
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
@@ -13,6 +18,8 @@ use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
+use Saloon\Laravel\Facades\Saloon;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
@@ -24,11 +31,15 @@ class ShowCharacterTest extends TestCase
     use MocksBlizzardServices;
     use RefreshDatabase;
 
+    private GameVersion $gameVersion;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $this->gameVersion = GameVersion::factory()->create(['realm' => 'Thunderstrike', 'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY]);
     }
 
     #[Test]
@@ -130,7 +141,7 @@ class ShowCharacterTest extends TestCase
     {
         Bus::fake([AttachPortraitToCharacter::class]);
 
-        $character = Character::factory()->withPlayableClass()->withRank()->create();
+        $character = Character::factory()->for($this->gameVersion)->withPlayableClass()->withRank()->create();
 
         $this->mockGetCharacterMedia();
         $this->applyBlizzardMocks();
@@ -168,7 +179,7 @@ class ShowCharacterTest extends TestCase
     {
         Bus::fake([AttachPortraitToCharacter::class]);
 
-        $character = Character::factory()->withPlayableClass()->withRank()->create();
+        $character = Character::factory()->for($this->gameVersion)->withPlayableClass()->withRank()->create();
 
         $this->mockGetCharacterMedia(['type' => 'BLZWEBAPI00000404'], 404);
         $this->applyBlizzardMocks();
@@ -179,6 +190,75 @@ class ShowCharacterTest extends TestCase
         ]))->assertOk();
 
         Bus::assertNotDispatched(AttachPortraitToCharacter::class);
+    }
+
+    #[Test]
+    public function show_looks_up_the_portrait_on_the_characters_game_version_realm_and_namespace(): void
+    {
+        Bus::fake([AttachPortraitToCharacter::class]);
+        $gameVersion = GameVersion::factory()->create(['realm' => 'Living Flame', 'blizzard_namespace' => BlizzardNamespace::ERA]);
+        $character = Character::factory()->withPlayableClass()->withRank()->create(['game_version_id' => $gameVersion->id]);
+        $this->mockGetCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        $this->actingAs($this->member())->get(route('characters.show', [$character, $character->slug]))->assertOk();
+
+        Saloon::assertSent(fn ($request, $response) => $request instanceof GetCharacterMediaRequest
+            && str_contains($request->resolveEndpoint(), '/living-flame/')
+            && $response->getPendingRequest()->headers()->get('Battlenet-Namespace') === BlizzardNamespace::ERA->forProfileRequests(Region::from(config('services.blizzard.region'))));
+    }
+
+    #[Group('edge-case')]
+    #[Test]
+    public function show_sends_no_media_request_when_the_character_has_no_realm(): void
+    {
+        Bus::fake([AttachPortraitToCharacter::class]);
+        $character = Character::factory()->withPlayableClass()->withRank()->create(['game_version_id' => null]);
+        $this->mockGetCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        $this->actingAs($this->member())->get(route('characters.show', [$character, $character->slug]))->assertOk();
+
+        Saloon::assertNotSent(GetCharacterMediaRequest::class);
+        Bus::assertNotDispatched(AttachPortraitToCharacter::class);
+    }
+
+    // ==================== show — roster link ====================
+
+    #[Test]
+    public function show_links_back_to_the_characters_own_game_version_roster(): void
+    {
+        $forever = GameVersion::factory()->fetchableRoster()->create(['slug' => 'forever', 'realm' => 'Dreamscythe']);
+        GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'realm' => 'Nightslayer', 'release_date' => Carbon::now()->subDay()]);
+        $character = Character::factory()->for($forever)->withPlayableClass()->withRank()->create();
+        $this->mockGetCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        $response = $this->get(route('characters.show', [$character, $character->slug]));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('roster_url', route('roster.index', $forever))
+        );
+    }
+
+    #[Group('edge-case')]
+    #[Test]
+    #[TestWith([false])]
+    #[TestWith([true])]
+    public function show_links_back_to_the_default_roster_when_the_characters_version_has_no_current_roster(bool $hasGameVersion): void
+    {
+        $character = Character::factory()->withPlayableClass()->withRank()->create([
+            'game_version_id' => $hasGameVersion ? $this->gameVersion->id : null,
+        ]);
+        $this->gameVersion->update(['release_date' => Carbon::now()->addMonth()]);
+        $this->mockGetCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        $response = $this->get(route('characters.show', [$character, $character->slug]));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('roster_url', route('characters.index'))
+        );
     }
 
     // ==================== helpers ====================

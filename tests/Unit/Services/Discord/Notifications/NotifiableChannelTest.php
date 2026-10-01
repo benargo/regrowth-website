@@ -6,6 +6,7 @@ use App\Services\Discord\Discord;
 use App\Services\Discord\Enums\ChannelType;
 use App\Services\Discord\Notifications\NotifiableChannel;
 use App\Services\Discord\Resources\Channel;
+use App\Services\Discord\Stubs\ChannelStub;
 use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
@@ -114,5 +115,32 @@ class NotifiableChannelTest extends TestCase
         $this->expectExceptionMessageMatches('/nonexistent/');
 
         NotifiableChannel::fromConfig('nonexistent', $this->discord);
+    }
+
+    // -------------------------------------------------------------------------
+    // stubFromConfig
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_builds_a_channel_stub_from_a_config_key(): void
+    {
+        config()->set('services.discord.channels.officer', '777888999000111222');
+
+        $notifiable = NotifiableChannel::stubFromConfig('officer');
+
+        $this->assertInstanceOf(ChannelStub::class, $notifiable->channel());
+        $this->assertSame('777888999000111222', $notifiable->getKey());
+    }
+
+    #[Group('error-handling')]
+    #[Test]
+    public function it_throws_a_runtime_exception_when_stubbing_a_config_key_with_no_channel_id(): void
+    {
+        config()->set('services.discord.channels.missing_key', null);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessageMatches('/missing_key/');
+
+        NotifiableChannel::stubFromConfig('missing_key');
     }
 }

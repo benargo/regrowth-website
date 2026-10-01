@@ -4,6 +4,7 @@ namespace App\Services\Discord\Notifications;
 
 use App\Services\Discord\Contracts\Resources\Channel;
 use App\Services\Discord\Discord;
+use App\Services\Discord\Stubs\ChannelStub;
 use Illuminate\Notifications\Notifiable;
 use RuntimeException;
 
@@ -50,12 +51,32 @@ class NotifiableChannel
      */
     public static function fromConfig(string $key, Discord $discord): self
     {
+        return new self($discord->getChannel(self::channelIdFromConfig($key)));
+    }
+
+    /**
+     * Create a NotifiableChannel instance from a configuration key without calling the Discord API, using a stub that carries only the channel ID.
+     *
+     * @param  string  $key  The configuration key for the channel (e.g., 'announcements', 'officer')
+     */
+    public static function stubFromConfig(string $key): self
+    {
+        return new self(new ChannelStub(self::channelIdFromConfig($key)));
+    }
+
+    /**
+     * Look up the Discord channel ID configured for the given key.
+     *
+     * @throws RuntimeException
+     */
+    private static function channelIdFromConfig(string $key): string
+    {
         $channelId = config("services.discord.channels.{$key}");
 
         if (! $channelId) {
             throw new RuntimeException("No Discord channel configured for key: {$key}");
         }
 
-        return new self($discord->getChannel($channelId));
+        return $channelId;
     }
 }

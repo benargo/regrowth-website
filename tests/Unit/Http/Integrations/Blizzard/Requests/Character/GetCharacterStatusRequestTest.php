@@ -2,7 +2,9 @@
 
 namespace Tests\Unit\Http\Integrations\Blizzard\Requests\Character;
 
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Data\Characters\CharacterStatusData;
+use App\Http\Integrations\Blizzard\Exceptions\RealmRequiredException;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterStatusRequest;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -42,5 +44,20 @@ class GetCharacterStatusRequestTest extends BlizzardTestCase
         $request = new GetCharacterStatusRequest('Wild Growth', 'Ben Argo');
 
         $this->assertSame('/profile/wow/character/wild-growth/ben-argo/status', $request->resolveEndpoint());
+    }
+
+    #[Test]
+    #[Group('validation')]
+    public function it_throws_when_realm_is_null_for_a_namespace_that_requires_one(): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => $this->tokenMock(),
+        ]);
+
+        $this->expectException(RealmRequiredException::class);
+
+        $this->makeConnector()->send(
+            new GetCharacterStatusRequest(null, 'foo', BlizzardNamespace::RETAIL),
+        );
     }
 }

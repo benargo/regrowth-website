@@ -3,7 +3,6 @@
 namespace Tests\Unit\Http\Integrations\Blizzard;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
-use App\Http\Integrations\Blizzard\GameVersion;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
@@ -15,7 +14,6 @@ abstract class BlizzardTestCase extends TestCase
 {
     protected function makeConnector(
         ?Region $region = null,
-        GameVersion $gameVersion = GameVersion::Anniversary,
         string $defaultRealmSlug = 'thunderstrike',
         string $defaultGuildSlug = 'regrowth',
     ): BlizzardConnector {
@@ -28,7 +26,6 @@ abstract class BlizzardTestCase extends TestCase
             clientSecret: 'test_secret',
             region: $region,
             locale: $region->defaultLocale(),
-            gameVersion: $gameVersion,
             defaultRealmSlug: $defaultRealmSlug,
             defaultGuildSlug: $defaultGuildSlug,
             eagerlyMirrorAssets: new EagerlyMirrorAssets($renderConnector),

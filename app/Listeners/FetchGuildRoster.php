@@ -3,18 +3,17 @@
 namespace App\Listeners;
 
 use App\Events\AddonSettingsProcessed;
-use App\Events\GrmUploadProcessed;
-use App\Jobs\FetchGuildRoster as FetchGuildRosterJob;
+use App\Jobs\FetchGuildRosters;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 class FetchGuildRoster implements ShouldQueue
 {
     /**
-     * Handle the event.
+     * Fetch the roster for every game version when addon settings change.
      */
-    public function handle(GrmUploadProcessed|AddonSettingsProcessed $event): void
+    public function handle(AddonSettingsProcessed $event): void
     {
-        dispatch(new FetchGuildRosterJob);
+        FetchGuildRosters::dispatch();
     }
 
     /**
