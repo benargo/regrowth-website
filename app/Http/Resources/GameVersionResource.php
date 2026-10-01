@@ -7,16 +7,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
 
-/**
- * A scoped view of a game version.
- *
- * The default scope is the lean shape used wherever a version is only being
- * labelled (e.g. the GRM upload page, which selects just these columns), so
- * it must not grow. forManagement() adds every editable field plus any usage
- * counts loaded with withCount(GameVersion::USAGE_RELATIONS).
- *
- * @mixin GameVersion
- */
 class GameVersionResource extends JsonResource
 {
     protected const SCOPE_DEFAULT = 'default';

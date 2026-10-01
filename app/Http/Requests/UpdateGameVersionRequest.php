@@ -6,6 +6,7 @@ use App\Enums\Faction;
 use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
+use App\Http\Requests\Concerns\ChecksEditLock;
 use App\Models\GuildRank;
 use App\Models\Phase;
 use App\Models\PlayableClass;
@@ -17,6 +18,8 @@ use Illuminate\Validation\Validator;
 
 class UpdateGameVersionRequest extends StoreGameVersionRequest
 {
+    use ChecksEditLock;
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -121,11 +124,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
     public function after(): array
     {
         return [
-            function (Validator $validator): void {
-                if ($this->route('gameVersion')->isLockedForEditingBy($this->user())) {
-                    $validator->errors()->add('edit_lock', 'Someone else is editing this game version. Your change was not saved.');
-                }
-            },
+            $this->editLockCheck('gameVersion', 'game version'),
         ];
     }
 

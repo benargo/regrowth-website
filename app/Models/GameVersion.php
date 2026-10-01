@@ -4,13 +4,15 @@ namespace App\Models;
 
 use App\Casts\AsTheme;
 use App\Contracts\Models\DatasetModel;
+use App\Contracts\Models\EditLockable;
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
+use App\Models\Concerns\HasEditLock;
+use App\Models\Concerns\TracksUsage;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Policies\DatasetPolicy;
 use Database\Factories\GameVersionFactory;
-use Illuminate\Cache\Lock;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
@@ -23,7 +25,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 #[Fillable([
@@ -38,10 +39,14 @@ use Illuminate\Support\Str;
     'warcraftlogs_namespace',
 ])]
 #[UsePolicy(DatasetPolicy::class)]
-class GameVersion extends Model implements DatasetModel
+class GameVersion extends Model implements DatasetModel, EditLockable
 {
+    use HasEditLock;
+
     /** @use HasFactory<GameVersionFactory> */
     use HasFactory;
+
+    use TracksUsage;
 
     /**
      * Relationships whose existing rows mark this game version as in use.
@@ -49,11 +54,6 @@ class GameVersion extends Model implements DatasetModel
      * @var list<string>
      */
     public const array USAGE_RELATIONS = ['phases', 'items', 'characters', 'guildRanks'];
-
-    /**
-     * How long an officer keeps the edit lock after their last active visit or poll.
-     */
-    public const int EDIT_LOCK_SECONDS = 300;
 
     // ============ Custom attributes and casts ===========
 
@@ -92,80 +92,6 @@ class GameVersion extends Model implements DatasetModel
         return Attribute::make(
             get: fn (): ?string => $this->realm === null ? null : Str::slug($this->realm),
         );
-    }
-
-    // ============ Editing lock ===========
-
-    /**
-     * Determine whether any dataset record still references this game version.
-     */
-    public function isInUse(): bool
-    {
-        return collect(self::USAGE_RELATIONS)
-            ->contains(fn (string $relation): bool => $this->{$relation}()->exists());
-    }
-
-    /**
-     * The atomic lock that gives one officer at a time the right to edit this game version.
-     */
-    public function editLock(User $user): Lock
-    {
-        return Cache::lock($this->editLockKey('editing'), self::EDIT_LOCK_SECONDS, (string) $user->id);
-    }
-
-    /**
-     * Take or extend the edit lock for the user, returning whether they hold it.
-     */
-    public function acquireEditLock(User $user): bool
-    {
-        $lock = $this->editLock($user);
-
-        if (! $lock->get() && ! $lock->refresh()) {
-            return false;
-        }
-
-        Cache::put($this->editLockKey('editor'), $user->id, self::EDIT_LOCK_SECONDS);
-
-        return true;
-    }
-
-    /**
-     * Determine whether an officer other than the given user holds the edit lock.
-     */
-    public function isLockedForEditingBy(User $user): bool
-    {
-        $lock = $this->editLock($user);
-
-        return $lock->isLocked() && ! $lock->isOwnedByCurrentProcess();
-    }
-
-    /**
-     * Determine whether any officer holds the edit lock, for background work
-     * that has to wait until nobody is editing this game version. The editor
-     * key is written with the lock's TTL on every take or refresh, so it stands
-     * in for the lock, whose isLocked() ignores expiry on the array store. The
-     * two can sit on different Redis connections, so clearing one cache
-     * without the other makes this answer differ from the lock's.
-     */
-    public function isBeingEdited(): bool
-    {
-        return Cache::has($this->editLockKey('editor'));
-    }
-
-    /**
-     * The officer who last took or refreshed the edit lock, for display only.
-     */
-    public function editor(): ?User
-    {
-        return User::find(Cache::get($this->editLockKey('editor')));
-    }
-
-    /**
-     * Build a cache key scoped to this game version's edit lock.
-     */
-    private function editLockKey(string $suffix): string
-    {
-        return "game-versions.{$this->id}.{$suffix}";
     }
 
     // ============ Guild roster ===========

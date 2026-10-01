@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
@@ -386,6 +387,20 @@ class GameVersionTest extends ModelTestCase
         $this->assertFalse($gameVersion->isInUse());
     }
 
+    #[Test]
+    public function with_usage_counts_loads_a_count_for_every_usage_relation(): void
+    {
+        $gameVersion = $this->create();
+        Phase::factory()->for($gameVersion)->count(2)->create();
+
+        $counted = GameVersion::query()->withUsageCounts()->findOrFail($gameVersion->id);
+
+        $this->assertSame(2, $counted->phases_count);
+        $this->assertSame(0, $counted->items_count);
+        $this->assertSame(0, $counted->characters_count);
+        $this->assertSame(0, $counted->guild_ranks_count);
+    }
+
     // ==================== isBeingEdited ====================
 
     #[Test]
@@ -412,6 +427,18 @@ class GameVersionTest extends ModelTestCase
         $this->travel(GameVersion::EDIT_LOCK_SECONDS + 1)->seconds();
 
         $this->assertFalse($gameVersion->isBeingEdited());
+    }
+
+    #[Test]
+    public function it_keys_the_edit_lock_cache_entries_under_the_game_versions_prefix(): void
+    {
+        $gameVersion = $this->create();
+        $officer = User::factory()->officer()->create();
+
+        $gameVersion->acquireEditLock($officer);
+
+        $this->assertSame($officer->id, Cache::get("game-versions.{$gameVersion->id}.editor"));
+        $this->assertTrue(Cache::lock("game-versions.{$gameVersion->id}.editing")->isLocked());
     }
 
     // ==================== current rosters ====================

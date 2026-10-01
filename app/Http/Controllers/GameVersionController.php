@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Datasets\ResolveEditLock;
 use App\Actions\GameVersion\BuildGameVersionRelationships;
 use App\Actions\GameVersion\BuildGameVersionRoutes;
 use App\Actions\GameVersion\UpdateGameVersion;
@@ -33,7 +34,7 @@ class GameVersionController extends Controller
     public function index(Request $request, BuildGameVersionRoutes $routes): Response
     {
         $gameVersions = GameVersion::query()
-            ->withCount(GameVersion::USAGE_RELATIONS)
+            ->withUsageCounts()
             ->orderBy('release_date')
             ->get();
 
@@ -79,7 +80,7 @@ class GameVersionController extends Controller
     #[Authorize('update', 'gameVersion')]
     public function edit(Request $request, GameVersion $gameVersion, BuildGameVersionRoutes $routes): Response
     {
-        $canEdit = $this->resolveEditLock($request, $gameVersion);
+        $editLock = ResolveEditLock::run($request, $gameVersion);
 
         return Inertia::render('Manage/GameVersions/Edit', [
             'gameVersion' => fn (): array => GameVersionResource::forManagement($gameVersion)->resolve($request),
@@ -87,7 +88,7 @@ class GameVersionController extends Controller
             'relationships' => fn (): array => BuildGameVersionRelationships::run($gameVersion),
             'steps' => fn (): array => $routes->steps($gameVersion),
             'routes' => fn (): array => $routes->forEdit($gameVersion),
-            ...$this->editLockProps($gameVersion, $canEdit),
+            ...$editLock,
         ]);
     }
 
@@ -104,7 +105,7 @@ class GameVersionController extends Controller
         GameVersionSetupStep $step,
         BuildGameVersionRoutes $routes,
     ): Response {
-        $canEdit = $this->resolveEditLock($request, $gameVersion);
+        $editLock = ResolveEditLock::run($request, $gameVersion);
 
         return Inertia::render('Manage/GameVersions/Setup', [
             'gameVersion' => fn (): array => GameVersionResource::forManagement($gameVersion)->resolve($request),
@@ -115,7 +116,7 @@ class GameVersionController extends Controller
             'relationships' => fn (): array => BuildGameVersionRelationships::run($gameVersion),
             'returnToReview' => $request->boolean('review'),
             'routes' => fn (): array => $routes->forSetup($gameVersion, $step, $request->boolean('review')),
-            ...$this->editLockProps($gameVersion, $canEdit),
+            ...$editLock,
         ]);
     }
 
@@ -173,34 +174,6 @@ class GameVersionController extends Controller
 
         return Redirect::route('management.game-versions.index')
             ->with('success', "Deleted {$gameVersion->title}.");
-    }
-
-    /**
-     * Take or renew the edit lock for an active officer. A poll from an idle
-     * page (X-Edit-Idle) only reports whether the officer could edit, so an
-     * unattended tab lets the lock expire instead of holding it for ever.
-     */
-    private function resolveEditLock(Request $request, GameVersion $gameVersion): bool
-    {
-        if ($request->hasHeader('X-Edit-Idle')) {
-            return ! $gameVersion->isLockedForEditingBy($request->user());
-        }
-
-        return $gameVersion->acquireEditLock($request->user());
-    }
-
-    /**
-     * The edit lock props shared by the edit page and the setup wizard. The
-     * page polls for these alone, which is also what keeps the lock alive.
-     *
-     * @return array{canEdit: bool, editor: callable(): ?string}
-     */
-    private function editLockProps(GameVersion $gameVersion, bool $canEdit): array
-    {
-        return [
-            'canEdit' => $canEdit,
-            'editor' => fn (): ?string => $canEdit ? null : $gameVersion->editor()?->display_name,
-        ];
     }
 
     /**
