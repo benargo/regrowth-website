@@ -47,6 +47,7 @@ function reconcileRanks(rows, sent, saved) {
         return {
             ...row,
             id: savedRank.id,
+            slug: savedRank.slug,
             characters_count: savedRank.characters_count,
             ...(untouched ? { name: savedRank.name } : {}),
         };
@@ -81,7 +82,7 @@ export default function GuildRanksSection({
     autosave = false,
 }) {
     const url = route("management.game-versions.update", gameVersion.id);
-    const [rows, setRows] = useState(() => relationships.guild_ranks.ranks.map(toRow));
+    const [rows, setRows] = useState(() => relationships.guild_ranks.data.map(toRow));
     const [errors, setErrors] = useState({ rows: {} });
     const [processing, setProcessing] = useState(false);
     const latestRows = useRef(rows);
@@ -101,7 +102,7 @@ export default function GuildRanksSection({
             data: { guild_ranks: payload(sent) },
             headers,
             onSuccess: (page) => {
-                const saved = page.props.relationships.guild_ranks.ranks;
+                const saved = page.props.relationships.guild_ranks.data;
                 savedPayload.current = JSON.stringify(payload(saved));
                 update(reconcileRanks(latestRows.current, sent, saved));
                 setErrors({ rows: {} });

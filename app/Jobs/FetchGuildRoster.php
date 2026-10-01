@@ -4,17 +4,21 @@ namespace App\Jobs;
 
 use App\Enums\Gender;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterData;
 use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterMemberData;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Models\Character;
 use App\Models\GameVersion;
+use App\Models\GuildRank;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\RateLimitedWithRedis;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -66,7 +70,9 @@ class FetchGuildRoster implements ShouldQueue
     {
         $gameVersion = GameVersion::findOrFail($this->gameVersionId);
 
-        if (! $gameVersion->guildRanks()->exists()) {
+        $guildRanks = $gameVersion->guildRanks()->get()->keyBy('sort_order');
+
+        if ($guildRanks->isEmpty()) {
             Log::warning('Skipped guild roster sync: the game version has no guild ranks.', [
                 'game_version_id' => $gameVersion->id,
             ]);
@@ -74,15 +80,11 @@ class FetchGuildRoster implements ShouldQueue
             return;
         }
 
-        $roster = $blizzard->send(new GetGuildRosterRequest(
-            $gameVersion->realm_slug,
-            $gameVersion->guild_slug,
-            $gameVersion->blizzard_namespace,
-        ))->dto();
+        $roster = $this->fetchRoster($blizzard, $gameVersion);
 
         foreach ($roster->members as $member) {
             try {
-                $this->syncCharacter($blizzard, $gameVersion, $member);
+                $this->syncCharacter($blizzard, $gameVersion, $guildRanks, $member);
             } catch (Throwable $e) {
                 Log::warning('Failed to sync character from guild roster.', [
                     'character_id' => $member->character->id,
@@ -94,15 +96,30 @@ class FetchGuildRoster implements ShouldQueue
     }
 
     /**
-     * Sync a single character from the guild roster data.
+     * Fetch the game version's guild roster from the Blizzard API.
      */
-    private function syncCharacter(BlizzardConnector $blizzard, GameVersion $gameVersion, GuildRosterMemberData $member): void
+    private function fetchRoster(BlizzardConnector $blizzard, GameVersion $gameVersion): GuildRosterData
+    {
+        return $blizzard->send(new GetGuildRosterRequest(
+            $gameVersion->realm_slug,
+            $gameVersion->guild_slug,
+            $gameVersion->blizzard_namespace,
+        ))->dto();
+    }
+
+    /**
+     * Sync a single character from the guild roster data.
+     *
+     * @param  Collection<int, GuildRank>  $guildRanks  The game version's ranks, keyed by sort order.
+     */
+    private function syncCharacter(BlizzardConnector $blizzard, GameVersion $gameVersion, Collection $guildRanks, GuildRosterMemberData $member): void
     {
         if ($member->character->level < self::MIN_LEVEL) {
             return;
         }
 
-        $guildRank = $gameVersion->guildRanks()->where('sort_order', $member->rank)->firstOrFail();
+        $guildRank = $guildRanks->get($member->rank)
+            ?? throw (new ModelNotFoundException)->setModel(GuildRank::class, [$member->rank]);
 
         $characterDto = $blizzard->send(new GetCharacterProfileRequest(
             $gameVersion->realm_slug,

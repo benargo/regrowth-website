@@ -22,14 +22,9 @@ import { buttonClassName, controlClassName } from "@/Components/FormControls";
 
 /**
  * The rank's in-game colour, from the --color-guild-rank-{slug} theme
- * variables, falling back to the default rank colour for names without one.
+ * variables, falling back to the default rank colour for ranks without one.
  */
-function rankColour(name) {
-    const slug = name
-        .toLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/[^a-z0-9-]/g, "");
-
+function rankColour(slug) {
     return `var(--color-guild-rank-${slug}, var(--color-guild-rank, #1f8b4c))`;
 }
 
@@ -51,7 +46,7 @@ function RankRowContent({ row, index, dragHandle, children }) {
             <span
                 aria-hidden="true"
                 className="h-8 w-1 shrink-0 rounded-full"
-                style={{ backgroundColor: rankColour(row.name) }}
+                style={{ backgroundColor: rankColour(row.slug) }}
             />
             {children}
         </div>
@@ -155,11 +150,13 @@ function AddRankRow({ onAdd }) {
     const [name, setName] = useState("");
 
     function add() {
-        if (name.trim() === "") {
+        const trimmedName = name.trim();
+
+        if (trimmedName === "") {
             return;
         }
 
-        onAdd(name.trim());
+        onAdd(trimmedName);
         setName("");
     }
 

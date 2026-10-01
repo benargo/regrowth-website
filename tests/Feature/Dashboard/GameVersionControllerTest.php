@@ -1279,7 +1279,7 @@ class GameVersionControllerTest extends DashboardTestCase
      */
     private function fakeRelationships(GameVersion $gameVersion): array
     {
-        $relationships = ['phases' => ['options' => [], 'selected_ids' => [7]]];
+        $relationships = ['phases' => ['data' => [], 'selected_ids' => [7]]];
 
         BuildGameVersionRelationships::shouldRun()
             ->once()

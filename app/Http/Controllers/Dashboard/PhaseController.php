@@ -26,7 +26,7 @@ class PhaseController extends Controller
      */
     public function index(Request $request): Response
     {
-        $phases = Phase::with(['raids', 'bosses', 'guildTags'])->orderBy('number')->get();
+        $phases = Phase::with(['raids.bosses.media', 'guildTags'])->orderBy('number')->get();
 
         $currentPhase = $phases->firstWhere('start_date', '<=', now());
 

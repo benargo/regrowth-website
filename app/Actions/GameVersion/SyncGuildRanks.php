@@ -10,9 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 /**
- * Replaces a game version's guild ranks with the given ordered list. The
- * attendance cache flush and the roster refresh both wait for the outermost
- * transaction to commit, so a rolled-back save leaves neither behind.
+ * Replaces a game version's guild ranks with the given ordered list.
  */
 class SyncGuildRanks
 {
@@ -36,7 +34,7 @@ class SyncGuildRanks
         $removed = $gameVersion->guildRanks()->whereKeyNot($keptIds)->get();
         $removed->each->delete();
 
-        $reordered = false;
+        $reordered = $removed->isNotEmpty();
         $changed = $removed->isNotEmpty();
 
         foreach (array_values($ranks) as $index => $attributes) {
@@ -52,7 +50,7 @@ class SyncGuildRanks
             $changed = $changed || $rank->wasRecentlyCreated || $rank->wasChanged();
         }
 
-        if ($removed->isNotEmpty() || $reordered) {
+        if ($reordered) {
             RefreshGuildRosterAfterEditing::schedule($gameVersion);
         }
 

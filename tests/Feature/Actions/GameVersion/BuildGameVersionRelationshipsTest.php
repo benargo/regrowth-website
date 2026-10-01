@@ -11,6 +11,7 @@ use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\Raid;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -32,9 +33,9 @@ class BuildGameVersionRelationshipsTest extends TestCase
 
         $relationships = $this->build($gameVersion);
 
-        $this->assertCount(2, $relationships['playable_races']['options']);
+        $this->assertCount(2, $relationships['playable_races']['data']);
         $this->assertSame([$linkedRace->id], $relationships['playable_races']['selected_ids']);
-        $this->assertCount(1, $relationships['playable_classes']['options']);
+        $this->assertCount(1, $relationships['playable_classes']['data']);
         $this->assertSame([$linkedClass->id], $relationships['playable_classes']['selected_ids']);
     }
 
@@ -51,9 +52,10 @@ class BuildGameVersionRelationshipsTest extends TestCase
         $relationships = $this->build($gameVersion);
 
         $this->assertSame([$linked->id], $relationships['phases']['selected_ids']);
-        $this->assertSame('Phase 1', $relationships['phases']['options'][0]['label']);
-        $this->assertSame(['id' => $otherGameVersion->id, 'title' => 'Era'], $relationships['phases']['options'][1]['game_version']);
-        $this->assertNull($relationships['phases']['options'][2]['game_version']);
+        $this->assertSame('Phase 1', $relationships['phases']['data'][0]['name']);
+        $this->assertSame($otherGameVersion->id, $relationships['phases']['data'][1]['game_version']['id']);
+        $this->assertSame('Era', $relationships['phases']['data'][1]['game_version']['title']);
+        $this->assertNull($relationships['phases']['data'][2]['game_version']);
         $this->assertSame(['playable_races', 'playable_classes', 'phases', 'guild_ranks'], array_keys($relationships));
     }
 
@@ -63,17 +65,18 @@ class BuildGameVersionRelationshipsTest extends TestCase
         $gameVersion = GameVersion::factory()->create();
         $phaseTwo = Phase::factory()->create(['number' => '2.0']);
         $phaseOne = Phase::factory()->create(['number' => '1.0']);
-        Raid::factory()->for($phaseTwo)->create(['name' => 'Serpentshrine Cavern']);
+        Raid::factory()->for($phaseTwo)->heroic()->create(['name' => 'Serpentshrine Cavern']);
         Raid::factory()->for($phaseOne)->create(['name' => "Magtheridon's Lair"]);
         Raid::factory()->for($phaseOne)->create(['name' => "Gruul's Lair"]);
 
         $relationships = $this->build($gameVersion);
 
-        $phaseOneOption = collect($relationships['phases']['options'])->firstWhere('id', $phaseOne->id);
-        $phaseTwoOption = collect($relationships['phases']['options'])->firstWhere('id', $phaseTwo->id);
+        $phaseOneOption = collect($relationships['phases']['data'])->firstWhere('id', $phaseOne->id);
+        $phaseTwoOption = collect($relationships['phases']['data'])->firstWhere('id', $phaseTwo->id);
 
         $this->assertSame(["Gruul's Lair", "Magtheridon's Lair"], array_column($phaseOneOption['raids'], 'name'));
         $this->assertSame(['Serpentshrine Cavern'], array_column($phaseTwoOption['raids'], 'name'));
+        $this->assertSame('Heroic', $phaseTwoOption['raids'][0]['difficulty']);
     }
 
     #[Test]
@@ -84,7 +87,7 @@ class BuildGameVersionRelationshipsTest extends TestCase
 
         $relationships = $this->build($gameVersion);
 
-        $option = collect($relationships['phases']['options'])->firstWhere('id', $phase->id);
+        $option = collect($relationships['phases']['data'])->firstWhere('id', $phase->id);
         $this->assertSame([], $option['raids']);
     }
 
@@ -98,7 +101,7 @@ class BuildGameVersionRelationshipsTest extends TestCase
         GuildRank::factory()->for(GameVersion::factory())->create(['sort_order' => 0, 'name' => 'Elsewhere']);
         Character::factory()->count(2)->create(['rank_id' => $raider->id]);
 
-        $ranks = $this->build($gameVersion)['guild_ranks']['ranks'];
+        $ranks = $this->build($gameVersion)['guild_ranks']['data'];
 
         $this->assertSame(['Guild Master', 'Raider'], array_column($ranks, 'name'));
         $this->assertSame([0, 1], array_column($ranks, 'sort_order'));
@@ -108,10 +111,15 @@ class BuildGameVersionRelationshipsTest extends TestCase
     }
 
     /**
-     * @return array<string, array{options: list<array<string, mixed>>, selected_ids: list<int>}>
+     * Serialise each resource collection the way Inertia does, so the
+     * additional selected_ids sit alongside the wrapped data.
+     *
+     * @return array<string, array{data: list<array<string, mixed>>, selected_ids?: list<int>}>
      */
     private function build(GameVersion $gameVersion): array
     {
-        return BuildGameVersionRelationships::run($gameVersion);
+        return collect(BuildGameVersionRelationships::run($gameVersion))
+            ->map(fn (ResourceCollection $collection): array => $collection->response()->getData(true))
+            ->all();
     }
 }
