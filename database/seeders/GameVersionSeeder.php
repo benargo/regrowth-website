@@ -29,6 +29,18 @@ class GameVersionSeeder extends Seeder
                 'warcraftlogs_guild' => 774848,
                 'warcraftlogs_namespace' => WarcraftLogsNamespace::ANNIVERSARY->value,
             ],
+            [
+                'title' => 'World of Warcraft: Forever',
+                'slug' => 'forever',
+                'realm' => null,
+                'guild_name' => config('services.blizzard.guild.name'),
+                'faction' => Faction::HORDE->value,
+                'release_date' => Carbon::create(2026, 11, 5, 0, 0, 0, CarbonTimeZone::create('Europe/Paris')),
+                'theme' => Theme::FOREVER->value,
+                'blizzard_namespace' => null,
+                'warcraftlogs_guild' => null,
+                'warcraftlogs_namespace' => null,
+            ],
         ];
     }
 
