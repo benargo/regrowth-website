@@ -19,6 +19,7 @@ class GameVersionSeeder extends Seeder
         return [
             [
                 'title' => 'Burning Crusade Classic (Anniversary)',
+                'slug' => 'tbc',
                 'realm' => 'Thunderstrike',
                 'guild_name' => config('services.blizzard.guild.name'),
                 'faction' => Faction::ALLIANCE->value,
@@ -27,6 +28,18 @@ class GameVersionSeeder extends Seeder
                 'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY->value,
                 'warcraftlogs_guild' => 774848,
                 'warcraftlogs_namespace' => WarcraftLogsNamespace::ANNIVERSARY->value,
+            ],
+            [
+                'title' => 'World of Warcraft: Forever',
+                'slug' => 'forever',
+                'realm' => null,
+                'guild_name' => config('services.blizzard.guild.name'),
+                'faction' => Faction::HORDE->value,
+                'release_date' => Carbon::create(2026, 11, 5, 0, 0, 0, CarbonTimeZone::create('Europe/Paris')),
+                'theme' => Theme::FOREVER->value,
+                'blizzard_namespace' => null,
+                'warcraftlogs_guild' => null,
+                'warcraftlogs_namespace' => null,
             ],
         ];
     }
@@ -37,7 +50,7 @@ class GameVersionSeeder extends Seeder
     public function run(): void
     {
         foreach ($this->definitions() as $game_version) {
-            GameVersion::updateOrCreate(['title' => $game_version['title']], $game_version);
+            GameVersion::updateOrCreate(['slug' => $game_version['slug']], $game_version);
         }
     }
 }

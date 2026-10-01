@@ -16,6 +16,7 @@ return new class extends Migration
         Schema::create('game_versions', function (Blueprint $table) {
             $table->id();
             $table->string('title');
+            $table->string('slug')->unique();
             $table->string('realm')->nullable();
             $table->string('guild_name', 24);
             $table->enum('faction', Faction::cases())->nullable();

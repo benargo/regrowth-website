@@ -1,4 +1,6 @@
-import { Button, Description, Field, Fieldset, Label, Legend, Select } from "@headlessui/react";
+import { useState } from "react";
+import { Button, Description, Field, Fieldset, Input, Label, Legend, Select } from "@headlessui/react";
+import slugify from "@/Helpers/Slugify";
 
 export const controlClassName =
     "block w-full rounded border border-ink-600 bg-ground-800 px-4 py-2 text-white placeholder-secondary-400 " +
@@ -72,6 +74,66 @@ export function OptionSelect({ name, id = name, value, onChange, options, placeh
                 </option>
             ))}
         </Select>
+    );
+}
+
+/**
+ * A text input that only ever holds a slug: "tHe Burning CruSade" shows as
+ * "the-burning-crusade" as it's typed. The DOM value and caret are rewritten
+ * in the change handler, before React renders, so the raw text never appears
+ * and the caret stays put when editing mid-word.
+ *
+ * The value passed to onChange never starts or ends with a dash. The field
+ * itself shows a trailing dash while typing, so the space before the next
+ * word doesn't vanish, and drops it on blur.
+ *
+ * maxLength (optional) applies to the converted slug, not the native
+ * attribute, which would cut the raw text short before it was converted.
+ */
+export function SlugInput({ name, id = name, value, onChange, onBlur, maxLength, invalid, ...props }) {
+    const [draft, setDraft] = useState(value ?? "");
+    const [previousValue, setPreviousValue] = useState(value);
+
+    // Follow a value changed from outside, such as a form reset.
+    if (value !== previousValue) {
+        setPreviousValue(value);
+
+        if (value !== slugify(draft, { trim: true })) {
+            setDraft(value ?? "");
+        }
+    }
+
+    function handleChange(e) {
+        const input = e.target;
+        const caret = input.selectionStart ?? input.value.length;
+        const slug = slugify(input.value).slice(0, maxLength);
+        const slugCaret = Math.min(slugify(input.value.slice(0, caret)).length, slug.length);
+
+        input.value = slug;
+        input.setSelectionRange(slugCaret, slugCaret);
+        setDraft(slug);
+        onChange(slugify(slug, { trim: true }));
+    }
+
+    function handleBlur(e) {
+        setDraft(slugify(draft, { trim: true }));
+        onBlur?.(e);
+    }
+
+    return (
+        <Input
+            id={id}
+            name={name}
+            value={draft}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            invalid={invalid}
+            autoComplete="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            className={controlClassName}
+            {...props}
+        />
     );
 }
 

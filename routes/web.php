@@ -36,7 +36,7 @@ Route::get('/search', SearchController::class)->name('search');
 /**
  * Guild Roster
  */
-Route::get('/roster', [CharacterController::class, 'index'])
+Route::get('/roster', [CharacterController::class, 'redirectToDefaultRoster'])
     ->name('characters.index');
 Route::get('/roster/characters', fn () => redirect()->route('characters.index', status: 303));
 Route::get('/roster/characters/{character}/{slug?}', [CharacterController::class, 'show'])
@@ -205,3 +205,10 @@ require __DIR__.'/assets.php';
 require __DIR__.'/auth.php';
 require __DIR__.'/deprecated.php';
 require __DIR__.'/testing.php';
+
+/**
+ * Game version rosters. Registered last so that every fixed URL, including
+ * those in the files above, is matched before the slug wildcard.
+ */
+Route::get('/{gameVersion:slug}/roster', [CharacterController::class, 'index'])
+    ->name('roster.index');

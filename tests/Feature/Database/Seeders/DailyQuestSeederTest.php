@@ -11,7 +11,6 @@ use App\Models\DailyQuest;
 use App\Models\GameVersion;
 use App\Models\Item;
 use Database\Seeders\DailyQuestSeeder;
-use Database\Seeders\GameVersionSeeder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -30,11 +29,13 @@ class DailyQuestSeederTest extends TestCase
 {
     use RefreshDatabase;
 
+    private GameVersion $gameVersion;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->seed(GameVersionSeeder::class);
+        $this->gameVersion = GameVersion::factory()->tbc()->create();
 
         Storage::fake('public');
 
@@ -93,11 +94,20 @@ class DailyQuestSeederTest extends TestCase
     #[Test]
     public function seeder_scopes_reward_items_to_the_resolved_game_version(): void
     {
-        $gameVersion = GameVersion::sole();
+        $this->runSeeder();
+
+        $this->assertDatabaseHas('items', ['blizzard_id' => 33844, 'game_version_id' => $this->gameVersion->id]);
+    }
+
+    #[Test]
+    public function seeder_scopes_reward_items_to_the_tbc_game_version_when_others_exist(): void
+    {
+        $otherGameVersion = GameVersion::factory()->create();
 
         $this->runSeeder();
 
-        $this->assertDatabaseHas('items', ['blizzard_id' => 33844, 'game_version_id' => $gameVersion->id]);
+        $this->assertDatabaseHas('items', ['blizzard_id' => 33844, 'game_version_id' => $this->gameVersion->id]);
+        $this->assertDatabaseMissing('items', ['game_version_id' => $otherGameVersion->id]);
     }
 
     #[Test]
@@ -115,11 +125,9 @@ class DailyQuestSeederTest extends TestCase
     #[Test]
     public function seeder_does_not_refetch_reward_items_that_already_exist(): void
     {
-        $gameVersion = GameVersion::sole();
-
         Item::withoutEvents(fn () => Item::forceCreate([
             'blizzard_id' => 33844,
-            'game_version_id' => $gameVersion->id,
+            'game_version_id' => $this->gameVersion->id,
             'name' => 'Existing Barrel',
             'quality' => ItemQuality::COMMON->value,
         ]));

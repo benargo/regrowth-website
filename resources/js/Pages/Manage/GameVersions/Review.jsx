@@ -60,6 +60,7 @@ function capitalise(value) {
 function gameVersionDetails(gameVersion) {
     return [
         ["Title", gameVersion.title],
+        ["Slug", gameVersion.slug],
         ["Release date", gameVersion.release_date ? formatDate(gameVersion.release_date).long : null],
         ["Theme", capitalise(gameVersion.theme)],
         ["Realm", gameVersion.realm],

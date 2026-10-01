@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Models;
 
+use App\Casts\AsSlug;
 use App\Casts\AsTheme;
 use App\Contracts\Models\DatasetModel;
 use App\Enums\Faction;
@@ -64,6 +65,7 @@ class GameVersionTest extends ModelTestCase
 
         $this->assertFillableAttribute($model, [
             'title',
+            'slug',
             'realm',
             'guild_name',
             'faction',
@@ -81,6 +83,7 @@ class GameVersionTest extends ModelTestCase
         $model = new GameVersion;
 
         $this->assertCasts($model, [
+            'slug' => AsSlug::class,
             'faction' => Faction::class,
             'release_date' => 'datetime',
             'theme' => AsTheme::class,
@@ -130,6 +133,14 @@ class GameVersionTest extends ModelTestCase
     }
 
     // ==================== casts ====================
+
+    #[Test]
+    public function slug_is_stored_as_a_slug(): void
+    {
+        $gameVersion = $this->create(['slug' => 'TBC Anniversary']);
+
+        $this->assertSame('tbc-anniversary', $gameVersion->fresh()->slug);
+    }
 
     #[Test]
     public function faction_is_cast_to_faction_enum(): void
@@ -479,6 +490,29 @@ class GameVersionTest extends ModelTestCase
     public function it_does_not_own_a_roster_it_cannot_fetch(array $attributes): void
     {
         $this->assertFalse($this->createFetchable($attributes)->ownsCurrentRoster());
+    }
+
+    #[Test]
+    public function default_roster_is_the_most_recently_released_current_roster(): void
+    {
+        GameVersion::factory()->fetchableRoster()->create(['release_date' => Carbon::now()->subYear(), 'guild_name' => 'Older Guild']);
+        $latest = GameVersion::factory()->fetchableRoster()->create(['release_date' => Carbon::now()->subDay(), 'guild_name' => 'Latest Guild']);
+
+        $this->assertTrue($latest->is(GameVersion::defaultRoster()));
+    }
+
+    #[Test]
+    public function default_roster_ignores_unreleased_versions(): void
+    {
+        GameVersion::factory()->fetchableRoster()->create(['release_date' => Carbon::now()->addMonth()]);
+
+        $this->assertNull(GameVersion::defaultRoster());
+    }
+
+    #[Test]
+    public function default_roster_is_null_when_no_versions_exist(): void
+    {
+        $this->assertNull(GameVersion::defaultRoster());
     }
 
     // ==================== helpers ====================

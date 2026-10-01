@@ -50,6 +50,7 @@ class GameVersionResource extends JsonResource
         $data = [
             'id' => $this->id,
             'title' => $this->title,
+            'slug' => $this->slug,
             'theme' => $this->theme,
             'banner_class' => $this->theme->bannerCssClass(),
         ];

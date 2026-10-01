@@ -5,6 +5,7 @@ namespace Tests\SmokeTest;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceIndexRequest;
 use App\Models\Character;
+use App\Models\GameVersion;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -40,7 +41,9 @@ class PublicPagesTest extends TestCase
             ], status: 200),
         ]);
 
-        $response = $this->get(route('characters.index'));
+        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
+
+        $response = $this->get(route('roster.index', $gameVersion));
 
         $response->assertOk();
         $response->assertSee('Regrowth');

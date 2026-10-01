@@ -8,6 +8,7 @@ use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\GameVersion;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Carbon;
 
 /**
  * @extends Factory<GameVersion>
@@ -23,6 +24,7 @@ class GameVersionFactory extends Factory
     {
         return [
             'title' => fake()->words(3, true),
+            'slug' => fake()->unique()->lexify('version-????'),
             'realm' => fake()->city(),
             'guild_name' => fake()->unique()->lexify('Guild ??????'),
             'faction' => fake()->randomElement(Faction::cases()),
@@ -32,5 +34,29 @@ class GameVersionFactory extends Factory
             'warcraftlogs_guild' => fake()->numberBetween(1, 999999),
             'warcraftlogs_namespace' => fake()->randomElement(WarcraftLogsNamespace::cases()),
         ];
+    }
+
+    /**
+     * Indicate that this is the Burning Crusade Classic (Anniversary) version
+     * that the item and daily quest seeders resolve by slug.
+     */
+    public function tbc(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'slug' => 'tbc',
+            'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
+        ]);
+    }
+
+    /**
+     * Indicate that Blizzard can return this version's guild roster.
+     */
+    public function fetchableRoster(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'realm' => 'Thunderstrike',
+            'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
+            'release_date' => Carbon::now()->subMonth(),
+        ]);
     }
 }

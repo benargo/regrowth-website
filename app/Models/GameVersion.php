@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\AsSlug;
 use App\Casts\AsTheme;
 use App\Contracts\Models\DatasetModel;
 use App\Contracts\Models\EditLockable;
@@ -29,6 +30,7 @@ use Illuminate\Support\Str;
 
 #[Fillable([
     'title',
+    'slug',
     'realm',
     'guild_name',
     'faction',
@@ -65,6 +67,7 @@ class GameVersion extends Model implements DatasetModel, EditLockable
     protected function casts(): array
     {
         return [
+            'slug' => AsSlug::class,
             'faction' => Faction::class,
             'release_date' => 'datetime',
             'theme' => AsTheme::class,
@@ -127,6 +130,19 @@ class GameVersion extends Model implements DatasetModel, EditLockable
             ->orderByDesc('release_date')
             ->get()
             ->unique(fn (GameVersion $gameVersion): string => $gameVersion->rosterKey());
+    }
+
+    /**
+     * Get the version whose roster is shown by default: the most recently
+     * released of the current rosters. The newest version always survives the
+     * dedupe, so it is read straight from the query.
+     */
+    public static function defaultRoster(): ?static
+    {
+        return static::query()
+            ->withFetchableRoster()
+            ->orderByDesc('release_date')
+            ->first();
     }
 
     /**

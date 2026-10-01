@@ -5,6 +5,7 @@ import {
     ErrorSummary,
     OptionSelect,
     RequiredFieldsNote,
+    SlugInput,
     buttonClassName,
     controlClassName,
     linkClassName,
@@ -13,13 +14,11 @@ import { useFormAutosave } from "@/Hooks/useAutosave";
 import { AUTOSAVE_DELAY } from "@/Hooks/useRelationshipForm";
 
 /**
- * A dataset's details form. With `autosave` ({ url, saved }) it saves each
- * field as focus leaves it, and Enter saves straight away; otherwise it
- * submits through onSubmit(visitOptions), with a submit button and a Cancel
- * link to `cancelHref`. After a failed submit, the error summary takes focus.
+ * A dataset's details form, either autosaving (`autosave`) or submitted
+ * through `onSubmit`.
  *
- * `children` renders the fields, given two helpers: text(name, props) for an
- * input and select(name, props) for an OptionSelect, both bound to `form`.
+ * `children` renders the fields, given text, slug and select helpers bound to
+ * `form`.
  */
 export default function DetailsForm({ form, autosave, onSubmit, submitLabel, processingLabel, cancelHref, children }) {
     const { data, setData, processing, errors } = form;
@@ -66,6 +65,16 @@ export default function DetailsForm({ form, autosave, onSubmit, submitLabel, pro
         />
     );
 
+    const slug = (name, props = {}) => (
+        <SlugInput
+            name={name}
+            value={data[name]}
+            onChange={(value) => setData(name, value)}
+            invalid={!!errors[name]}
+            {...props}
+        />
+    );
+
     const select = (name, props = {}) => (
         <OptionSelect
             name={name}
@@ -85,7 +94,7 @@ export default function DetailsForm({ form, autosave, onSubmit, submitLabel, pro
 
             <RequiredFieldsNote />
 
-            {children({ text, select })}
+            {children({ text, slug, select })}
 
             {!autosave && (
                 <div className="flex flex-wrap items-center gap-4">

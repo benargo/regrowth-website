@@ -751,7 +751,7 @@ class ItemSeeder extends Seeder
 
     public function run(): void
     {
-        $gameVersion = GameVersion::sole();
+        $gameVersion = GameVersion::where('slug', 'tbc')->sole();
 
         foreach ($this->items as $item) {
             try {
