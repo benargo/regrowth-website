@@ -133,6 +133,15 @@ class GameVersion extends Model implements DatasetModel, EditLockable
     }
 
     /**
+     * Get the version whose roster is shown by default: the most recently
+     * released of the current rosters.
+     */
+    public static function defaultRoster(): ?static
+    {
+        return static::currentRosters()->first();
+    }
+
+    /**
      * Determine whether this version owns a current guild roster.
      */
     public function ownsCurrentRoster(): bool

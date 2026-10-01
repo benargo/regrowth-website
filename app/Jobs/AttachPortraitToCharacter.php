@@ -7,6 +7,7 @@ use App\Enums\Gender;
 use App\Events\Broadcasts\CharacterPortraitAttached;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
+use App\Http\Integrations\Blizzard\Exceptions\RealmRequiredException;
 use App\Http\Integrations\Blizzard\Middleware\MergeUriQuery;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
@@ -95,19 +96,20 @@ class AttachPortraitToCharacter implements HasCharacterMedia, ShouldQueue
      */
     private function syncGender(Character $character, BlizzardConnector $blizzardConnector): void
     {
-        if ($character->gender !== null) {
+        if ($character->gender !== null || $character->gameVersion === null) {
             return;
         }
 
         try {
             $profile = $blizzardConnector->send(new GetCharacterProfileRequest(
-                $blizzardConnector->defaultRealmSlug(),
+                $character->gameVersion->realm_slug,
                 Str::lower($character->name),
+                $character->gameVersion->blizzard_namespace,
             ))->dto();
 
             $character->gender = Gender::from(data_get($profile, 'gender.name'));
             $character->saveQuietly();
-        } catch (BlizzardRequestException|\ValueError) {
+        } catch (BlizzardRequestException|RealmRequiredException|\ValueError) {
             // Gender sync is best-effort; portrait attachment can still proceed.
         }
     }

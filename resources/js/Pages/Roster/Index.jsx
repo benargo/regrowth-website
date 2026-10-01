@@ -12,6 +12,7 @@ import SpecIcon from "@/Components/Characters/SpecIcon";
 import SearchInput from "@/Components/Search/SearchInput";
 import { Can } from "@/Components/Authorizable";
 import SortableTable from "@/Components/SortableTable";
+import TabNav from "@/Components/TabNav";
 import useLocalStorage from "@/Hooks/useLocalStorage";
 import raidSpec from "@/Helpers/RaidSpec";
 
@@ -153,7 +154,11 @@ function IndexSkeleton() {
     );
 }
 
-export default function Index({ characters, classes, ranks, races }) {
+export default function Index(props) {
+    return <RosterContent key={props.gameVersion.slug} {...props} />;
+}
+
+function RosterContent({ gameVersion, gameVersions, characters, classes, ranks, races }) {
     const isLoading = characters === undefined;
 
     // Filters persist client-side in localStorage so the user's last selection
@@ -162,13 +167,14 @@ export default function Index({ characters, classes, ranks, races }) {
     const [sortColumn, setSortColumn] = useLocalStorage("roster.sort_column", "rank");
     const [sortDirection, setSortDirection] = useLocalStorage("roster.sort_direction", "asc");
     const [searchQuery, setSearchQuery] = useLocalStorage("roster.search", "");
-    const [storedClasses, setSelectedClasses] = useLocalStorage("roster.class_ids", null);
-    const [storedRaces, setSelectedRaces] = useLocalStorage("roster.race_ids", null);
-    const [storedRanks, setSelectedRanks] = useLocalStorage("roster.rank_names", null);
+    const storageKey = (name) => `roster.${gameVersion.slug}.${name}`;
+    const [storedClasses, setSelectedClasses] = useLocalStorage(storageKey("class_ids"), null);
+    const [storedRaces, setSelectedRaces] = useLocalStorage(storageKey("race_ids"), null);
+    const [storedRanks, setSelectedRanks] = useLocalStorage(storageKey("rank_names"), null);
     const [showKnownOnly, setShowKnownOnly] = useLocalStorage("roster.known_only", false);
     const [showMainOnly, setShowMainOnly] = useLocalStorage("roster.main_only", false);
-    const [levelMin, setLevelMin] = useLocalStorage("roster.level_min", null);
-    const [levelMax, setLevelMax] = useLocalStorage("roster.level_max", null);
+    const [levelMin, setLevelMin] = useLocalStorage(storageKey("level_min"), null);
+    const [levelMax, setLevelMax] = useLocalStorage(storageKey("level_max"), null);
 
     const selectedClasses = useMemo(() => storedClasses ?? (classes ?? []).map((c) => c.id), [storedClasses, classes]);
     const selectedRaces = useMemo(() => storedRaces ?? (races ?? []).map((r) => r.id), [storedRaces, races]);
@@ -198,13 +204,13 @@ export default function Index({ characters, classes, ranks, races }) {
                 if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase())) {
                     return false;
                 }
-                if (selectedClasses && !selectedClasses.includes(c.playable_class?.id)) {
+                if (storedClasses !== null && !storedClasses.includes(c.playable_class?.id)) {
                     return false;
                 }
-                if (selectedRaces && !selectedRaces.includes(c.playable_race?.id)) {
+                if (storedRaces !== null && !storedRaces.includes(c.playable_race?.id)) {
                     return false;
                 }
-                if (selectedRanks && !selectedRanks.includes(c.rank)) {
+                if (storedRanks !== null && !storedRanks.includes(c.rank)) {
                     return false;
                 }
                 if (levelMin !== null && c.level < levelMin) {
@@ -259,9 +265,9 @@ export default function Index({ characters, classes, ranks, races }) {
         raceById,
         rankOrder,
         searchQuery,
-        selectedClasses,
-        selectedRaces,
-        selectedRanks,
+        storedClasses,
+        storedRaces,
+        storedRanks,
         levelMin,
         levelMax,
         showKnownOnly,
@@ -272,8 +278,18 @@ export default function Index({ characters, classes, ranks, races }) {
 
     return (
         <Master title="Guild Roster">
-            <SharedHeader title="Guild Roster" backgroundClass="bg-stormwind" />
+            <SharedHeader title="Guild Roster" backgroundClass={gameVersion.banner_class} />
             <PageContainer>
+                {gameVersions.length > 1 && (
+                    <TabNav
+                        currentTab={gameVersion.slug}
+                        tabs={gameVersions.map((version) => ({
+                            name: version.slug,
+                            label: version.title,
+                            href: route("roster.index", version.slug),
+                        }))}
+                    />
+                )}
                 {isLoading ? (
                     <IndexSkeleton />
                 ) : (

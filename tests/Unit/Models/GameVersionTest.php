@@ -492,6 +492,29 @@ class GameVersionTest extends ModelTestCase
         $this->assertFalse($this->createFetchable($attributes)->ownsCurrentRoster());
     }
 
+    #[Test]
+    public function default_roster_is_the_most_recently_released_current_roster(): void
+    {
+        GameVersion::factory()->fetchableRoster()->create(['release_date' => Carbon::now()->subYear(), 'guild_name' => 'Older Guild']);
+        $latest = GameVersion::factory()->fetchableRoster()->create(['release_date' => Carbon::now()->subDay(), 'guild_name' => 'Latest Guild']);
+
+        $this->assertTrue($latest->is(GameVersion::defaultRoster()));
+    }
+
+    #[Test]
+    public function default_roster_ignores_unreleased_versions(): void
+    {
+        GameVersion::factory()->fetchableRoster()->create(['release_date' => Carbon::now()->addMonth()]);
+
+        $this->assertNull(GameVersion::defaultRoster());
+    }
+
+    #[Test]
+    public function default_roster_is_null_when_no_versions_exist(): void
+    {
+        $this->assertNull(GameVersion::defaultRoster());
+    }
+
     // ==================== helpers ====================
 
     /**

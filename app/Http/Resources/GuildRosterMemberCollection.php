@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterMemberData;
 use App\Models\Character;
-use App\Models\GuildRank;
+use App\Models\GameVersion;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Support\Collection;
@@ -22,7 +22,7 @@ class GuildRosterMemberCollection extends ResourceCollection
     private array $rankNames;
 
     /** @param  list<GuildRosterMemberData>  $resource */
-    public function __construct(array $resource)
+    public function __construct(array $resource, GameVersion $gameVersion)
     {
         parent::__construct(collect($resource));
 
@@ -33,7 +33,8 @@ class GuildRosterMemberCollection extends ResourceCollection
             ->get()
             ->keyBy('id');
 
-        $this->rankNames = GuildRank::select('sort_order', 'name')
+        $this->rankNames = $gameVersion->guildRanks()
+            ->select('sort_order', 'name')
             ->ordered()
             ->get()
             ->pluck('name', 'sort_order')

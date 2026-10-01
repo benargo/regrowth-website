@@ -8,6 +8,7 @@ use App\Http\Integrations\Blizzard\Data\Shared\HrefData;
 use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
 use App\Http\Resources\GuildRosterMemberCollection;
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\PlayableSpecialization;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,11 +24,20 @@ class GuildRosterMemberCollectionTest extends TestCase
 {
     use RefreshDatabase;
 
+    private GameVersion $gameVersion;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->gameVersion = GameVersion::factory()->create();
+    }
+
     #[Group('contract')]
     #[Test]
     public function it_returns_expected_keys(): void
     {
-        $result = (new GuildRosterMemberCollection([$this->makeMember()]))->toArray(new Request);
+        $result = (new GuildRosterMemberCollection([$this->makeMember()], $this->gameVersion))->toArray(new Request);
 
         $this->assertArrayHasKey('character', $result[0]);
         $this->assertArrayHasKey('rank', $result[0]);
@@ -45,7 +55,7 @@ class GuildRosterMemberCollectionTest extends TestCase
     #[Test]
     public function it_returns_correct_scalar_values(): void
     {
-        GuildRank::factory()->create(['sort_order' => 9, 'name' => 'Warden']);
+        GuildRank::factory()->create(['game_version_id' => $this->gameVersion->id, 'sort_order' => 9, 'name' => 'Warden']);
 
         $result = (new GuildRosterMemberCollection([$this->makeMember(
             id: 52461508,
@@ -54,7 +64,7 @@ class GuildRosterMemberCollectionTest extends TestCase
             classId: 8,
             raceId: 7,
             rank: 9,
-        )]))->toArray(new Request);
+        )], $this->gameVersion))->toArray(new Request);
 
         $this->assertSame(52461508, $result[0]['character']['id']);
         $this->assertSame('Ozona', $result[0]['character']['name']);
@@ -70,9 +80,21 @@ class GuildRosterMemberCollectionTest extends TestCase
     #[Test]
     public function it_returns_null_rank_name_when_no_matching_guild_rank_exists(): void
     {
-        $result = (new GuildRosterMemberCollection([$this->makeMember(rank: 9)]))->toArray(new Request);
+        $result = (new GuildRosterMemberCollection([$this->makeMember(rank: 9)], $this->gameVersion))->toArray(new Request);
 
         $this->assertNull($result[0]['rank']);
+    }
+
+    #[Test]
+    public function it_resolves_rank_names_from_the_given_game_version_only(): void
+    {
+        $otherVersion = GameVersion::factory()->create();
+        GuildRank::factory()->create(['game_version_id' => $this->gameVersion->id, 'sort_order' => 3, 'name' => 'Raider']);
+        GuildRank::factory()->create(['game_version_id' => $otherVersion->id, 'sort_order' => 3, 'name' => 'Recruit']);
+
+        $result = (new GuildRosterMemberCollection([$this->makeMember(rank: 3)], $this->gameVersion))->toArray(new Request);
+
+        $this->assertSame('Raider', $result[0]['rank']);
     }
 
     // ==================== excluded keys ====================
@@ -81,7 +103,7 @@ class GuildRosterMemberCollectionTest extends TestCase
     #[Test]
     public function it_excludes_realm(): void
     {
-        $result = (new GuildRosterMemberCollection([$this->makeMember()]))->toArray(new Request);
+        $result = (new GuildRosterMemberCollection([$this->makeMember()], $this->gameVersion))->toArray(new Request);
 
         $this->assertArrayNotHasKey('realm', $result[0]['character']);
     }
@@ -90,7 +112,7 @@ class GuildRosterMemberCollectionTest extends TestCase
     #[Test]
     public function it_excludes_nested_key_hrefs(): void
     {
-        $result = (new GuildRosterMemberCollection([$this->makeMember()]))->toArray(new Request);
+        $result = (new GuildRosterMemberCollection([$this->makeMember()], $this->gameVersion))->toArray(new Request);
 
         $this->assertArrayNotHasKey('playable_class', $result[0]['character']);
         $this->assertArrayNotHasKey('playable_race', $result[0]['character']);
@@ -104,7 +126,7 @@ class GuildRosterMemberCollectionTest extends TestCase
     {
         Character::factory()->create(['id' => 52461508]);
 
-        $result = (new GuildRosterMemberCollection([$this->makeMember(id: 52461508)]))->toArray(new Request);
+        $result = (new GuildRosterMemberCollection([$this->makeMember(id: 52461508)], $this->gameVersion))->toArray(new Request);
 
         $this->assertTrue($result[0]['character']['is_known']);
     }
@@ -115,7 +137,7 @@ class GuildRosterMemberCollectionTest extends TestCase
     {
         Character::factory()->create(['id' => 52461508, 'is_main' => true]);
 
-        $result = (new GuildRosterMemberCollection([$this->makeMember(id: 52461508)]))->toArray(new Request);
+        $result = (new GuildRosterMemberCollection([$this->makeMember(id: 52461508)], $this->gameVersion))->toArray(new Request);
 
         $this->assertTrue($result[0]['character']['is_main']);
     }
@@ -126,7 +148,7 @@ class GuildRosterMemberCollectionTest extends TestCase
     {
         Character::factory()->create(['id' => 52461508, 'is_main' => false]);
 
-        $result = (new GuildRosterMemberCollection([$this->makeMember(id: 52461508)]))->toArray(new Request);
+        $result = (new GuildRosterMemberCollection([$this->makeMember(id: 52461508)], $this->gameVersion))->toArray(new Request);
 
         $this->assertFalse($result[0]['character']['is_main']);
     }
@@ -135,7 +157,7 @@ class GuildRosterMemberCollectionTest extends TestCase
     #[Test]
     public function it_returns_is_main_false_for_unknown_character(): void
     {
-        $result = (new GuildRosterMemberCollection([$this->makeMember(id: 99999999)]))->toArray(new Request);
+        $result = (new GuildRosterMemberCollection([$this->makeMember(id: 99999999)], $this->gameVersion))->toArray(new Request);
 
         $this->assertFalse($result[0]['character']['is_main']);
     }
@@ -144,7 +166,7 @@ class GuildRosterMemberCollectionTest extends TestCase
     #[Test]
     public function it_returns_is_known_false_when_character_does_not_exist_in_database(): void
     {
-        $result = (new GuildRosterMemberCollection([$this->makeMember(id: 99999999)]))->toArray(new Request);
+        $result = (new GuildRosterMemberCollection([$this->makeMember(id: 99999999)], $this->gameVersion))->toArray(new Request);
 
         $this->assertFalse($result[0]['character']['is_known']);
     }
@@ -155,7 +177,7 @@ class GuildRosterMemberCollectionTest extends TestCase
     #[Test]
     public function it_returns_empty_specializations_for_unknown_character(): void
     {
-        $result = (new GuildRosterMemberCollection([$this->makeMember(id: 99999999)]))->toArray(new Request);
+        $result = (new GuildRosterMemberCollection([$this->makeMember(id: 99999999)], $this->gameVersion))->toArray(new Request);
 
         $this->assertSame([], $result[0]['character']['specializations']);
     }
@@ -168,7 +190,7 @@ class GuildRosterMemberCollectionTest extends TestCase
         $spec = PlayableSpecialization::factory()->create();
         $character->specializations()->attach($spec, ['is_raid_spec' => true]);
 
-        $result = (new GuildRosterMemberCollection([$this->makeMember(id: 52461508)]))->toArray(new Request);
+        $result = (new GuildRosterMemberCollection([$this->makeMember(id: 52461508)], $this->gameVersion))->toArray(new Request);
 
         $this->assertCount(1, $result[0]['character']['specializations']);
         $this->assertSame($spec->id, $result[0]['character']['specializations'][0]['id']);
@@ -183,7 +205,7 @@ class GuildRosterMemberCollectionTest extends TestCase
     {
         Character::factory()->create(['id' => 52461508]);
 
-        $result = (new GuildRosterMemberCollection([$this->makeMember(id: 52461508)]))->toArray(new Request);
+        $result = (new GuildRosterMemberCollection([$this->makeMember(id: 52461508)], $this->gameVersion))->toArray(new Request);
 
         $this->assertSame([], $result[0]['character']['specializations']);
     }
@@ -194,8 +216,8 @@ class GuildRosterMemberCollectionTest extends TestCase
     #[Test]
     public function it_sorts_by_rank_then_level_descending_then_name(): void
     {
-        GuildRank::factory()->create(['sort_order' => 1, 'name' => 'Officer']);
-        GuildRank::factory()->create(['sort_order' => 2, 'name' => 'Raider']);
+        GuildRank::factory()->create(['game_version_id' => $this->gameVersion->id, 'sort_order' => 1, 'name' => 'Officer']);
+        GuildRank::factory()->create(['game_version_id' => $this->gameVersion->id, 'sort_order' => 2, 'name' => 'Raider']);
 
         $members = [
             $this->makeMember(id: 1, name: 'Zara', level: 70, rank: 2),
@@ -205,7 +227,7 @@ class GuildRosterMemberCollectionTest extends TestCase
             $this->makeMember(id: 5, name: 'Carl', level: 60, rank: 2),
         ];
 
-        $result = (new GuildRosterMemberCollection($members))->toArray(new Request);
+        $result = (new GuildRosterMemberCollection($members, $this->gameVersion))->toArray(new Request);
 
         $this->assertSame([
             ['name' => 'Aaron', 'rank' => 'Officer'],

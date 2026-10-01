@@ -50,6 +50,7 @@ class GameVersionResource extends JsonResource
         $data = [
             'id' => $this->id,
             'title' => $this->title,
+            'slug' => $this->slug,
             'theme' => $this->theme,
             'banner_class' => $this->theme->bannerCssClass(),
         ];
@@ -60,7 +61,6 @@ class GameVersionResource extends JsonResource
 
         return [
             ...$data,
-            'slug' => $this->slug,
             'realm' => $this->realm,
             'guild_name' => $this->guild_name,
             'faction' => $this->faction,

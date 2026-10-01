@@ -29,8 +29,19 @@ class GameVersionResourceTest extends TestCase
 
         $this->assertArrayHasKey('id', $array);
         $this->assertArrayHasKey('title', $array);
+        $this->assertArrayHasKey('slug', $array);
         $this->assertArrayHasKey('theme', $array);
         $this->assertArrayHasKey('banner_class', $array);
+    }
+
+    #[Test]
+    public function it_returns_the_slug_in_the_default_shape(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['slug' => 'tbc']);
+
+        $array = (new GameVersionResource($gameVersion))->resolve(new Request);
+
+        $this->assertSame('tbc', $array['slug']);
     }
 
     #[Test]
@@ -80,7 +91,7 @@ class GameVersionResourceTest extends TestCase
 
         $array = (new GameVersionResource($gameVersion))->resolve(new Request);
 
-        $this->assertSame(['id', 'title', 'theme', 'banner_class'], array_keys($array));
+        $this->assertSame(['id', 'title', 'slug', 'theme', 'banner_class'], array_keys($array));
     }
 
     #[Test]
@@ -105,9 +116,9 @@ class GameVersionResourceTest extends TestCase
         $this->assertSame([
             'id' => 7,
             'title' => 'Burning Crusade Classic (Anniversary)',
+            'slug' => 'tbc',
             'theme' => Theme::CLASSIC,
             'banner_class' => 'bg-raid-black-temple',
-            'slug' => 'tbc',
             'realm' => 'Thunderstrike',
             'guild_name' => 'Regrowth',
             'faction' => Faction::ALLIANCE,
