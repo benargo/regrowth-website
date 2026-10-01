@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use Illuminate\Database\Seeder;
 
@@ -12,6 +13,8 @@ class GuildRankSeeder extends Seeder
      */
     public function run(): void
     {
+        $gameVersion = GameVersion::where('slug', 'tbc')->sole();
+
         $ranks = [
             ['sort_order' => 0, 'name' => 'Officer'],
             ['sort_order' => 1, 'name' => 'Officer'],
@@ -27,7 +30,7 @@ class GuildRankSeeder extends Seeder
 
         foreach ($ranks as $rank) {
             GuildRank::updateOrCreate(
-                ['sort_order' => $rank['sort_order']],
+                ['game_version_id' => $gameVersion->id, 'sort_order' => $rank['sort_order']],
                 $rank
             );
         }

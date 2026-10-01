@@ -283,6 +283,22 @@ class GameVersionControllerTest extends DashboardTestCase
 
     #[Group('validation')]
     #[Test]
+    #[TestWith(['manage'])]
+    #[TestWith(['Loot'])]
+    #[TestWith(['roster'])]
+    #[TestWith(['up'])]
+    public function it_rejects_a_slug_that_is_already_the_start_of_a_site_url(string $slug): void
+    {
+        $response = $this->actingAs($this->officer)->post(route('management.game-versions.store'), $this->validPayload([
+            'slug' => $slug,
+        ]));
+
+        $response->assertInvalid(['slug' => 'This slug is already used by another part of the site.']);
+        $this->assertDatabaseCount('game_versions', 0);
+    }
+
+    #[Group('validation')]
+    #[Test]
     public function it_requires_a_guild_name(): void
     {
         $response = $this->actingAs($this->officer)->post(
@@ -954,14 +970,18 @@ class GameVersionControllerTest extends DashboardTestCase
 
     #[Group('validation')]
     #[Test]
-    public function it_rejects_a_slug_on_update(): void
+    #[TestWith(['wrath'])]
+    #[TestWith([''])]
+    #[TestWith(['!!!'])]
+    #[TestWith([null])]
+    public function it_rejects_a_slug_on_update(?string $slug): void
     {
         $gameVersion = GameVersion::factory()->create(['slug' => 'tbc']);
         UpdateGameVersion::shouldNotRun();
 
         $response = $this->actingAs($this->officer)
             ->from($this->editUrl($gameVersion))
-            ->patch(route('management.game-versions.update', $gameVersion), ['slug' => 'wrath']);
+            ->patch(route('management.game-versions.update', $gameVersion), ['slug' => $slug]);
 
         $response->assertInvalid(['slug' => 'The slug can\'t be changed once the game version is created.']);
         $this->assertSame('tbc', $gameVersion->fresh()->slug);

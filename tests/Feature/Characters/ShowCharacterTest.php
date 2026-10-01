@@ -10,6 +10,7 @@ use App\Jobs\AttachPortraitToCharacter;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
@@ -17,6 +18,7 @@ use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use Saloon\Laravel\Facades\Saloon;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\Blizzard\MocksBlizzardServices;
@@ -219,6 +221,44 @@ class ShowCharacterTest extends TestCase
 
         Saloon::assertNotSent(GetCharacterMediaRequest::class);
         Bus::assertNotDispatched(AttachPortraitToCharacter::class);
+    }
+
+    // ==================== show — roster link ====================
+
+    #[Test]
+    public function show_links_back_to_the_characters_own_game_version_roster(): void
+    {
+        $forever = GameVersion::factory()->fetchableRoster()->create(['slug' => 'forever', 'realm' => 'Dreamscythe']);
+        GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'realm' => 'Nightslayer', 'release_date' => Carbon::now()->subDay()]);
+        $character = Character::factory()->for($forever)->withPlayableClass()->withRank()->create();
+        $this->mockGetCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        $response = $this->get(route('characters.show', [$character, $character->slug]));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('roster_url', route('roster.index', $forever))
+        );
+    }
+
+    #[Group('edge-case')]
+    #[Test]
+    #[TestWith([false])]
+    #[TestWith([true])]
+    public function show_links_back_to_the_default_roster_when_the_characters_version_has_no_current_roster(bool $hasGameVersion): void
+    {
+        $character = Character::factory()->withPlayableClass()->withRank()->create([
+            'game_version_id' => $hasGameVersion ? $this->gameVersion->id : null,
+        ]);
+        $this->gameVersion->update(['release_date' => Carbon::now()->addMonth()]);
+        $this->mockGetCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        $response = $this->get(route('characters.show', [$character, $character->slug]));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('roster_url', route('characters.index'))
+        );
     }
 
     // ==================== helpers ====================

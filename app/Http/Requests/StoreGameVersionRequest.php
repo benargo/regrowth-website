@@ -8,6 +8,8 @@ use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Routing\Route as RouteDefinition;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
@@ -35,7 +37,7 @@ class StoreGameVersionRequest extends FormRequest
     {
         return [
             'title' => ['required', 'string', 'max:255', $this->uniqueTitleRule()],
-            'slug' => ['required', 'string', 'max:255', Rule::unique('game_versions', 'slug')],
+            'slug' => ['required', 'string', 'max:255', Rule::notIn($this->reservedSlugs()), Rule::unique('game_versions', 'slug')],
             'realm' => ['nullable', 'string', 'max:255'],
             'guild_name' => ['required', 'string', 'max:24'],
             'faction' => ['nullable', Rule::enum(Faction::class)],
@@ -58,6 +60,7 @@ class StoreGameVersionRequest extends FormRequest
             'title.required' => 'The game version title is required.',
             'title.unique' => 'A game version with this title already exists.',
             'slug.required' => 'The slug is required.',
+            'slug.not_in' => 'This slug is already used by another part of the site.',
             'slug.unique' => 'A game version with this slug already exists.',
             'guild_name.required' => 'The guild name is required.',
             'release_date.required' => 'The release date is required.',
@@ -80,6 +83,23 @@ class StoreGameVersionRequest extends FormRequest
             'warcraftlogs_guild' => 'Warcraft Logs guild ID',
             'warcraftlogs_namespace' => 'Warcraft Logs namespace',
         ];
+    }
+
+    /**
+     * Get the first segment of every registered URL, such as "manage" or
+     * "loot". The slug becomes the first segment of the version's roster URL,
+     * so it can't be one of these.
+     *
+     * @return list<string>
+     */
+    protected function reservedSlugs(): array
+    {
+        return collect(Route::getRoutes()->getRoutes())
+            ->map(fn (RouteDefinition $route): string => Str::before($route->uri(), '/'))
+            ->reject(fn (string $segment): bool => $segment === '' || Str::startsWith($segment, '{'))
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**

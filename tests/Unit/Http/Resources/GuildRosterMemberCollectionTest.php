@@ -124,7 +124,7 @@ class GuildRosterMemberCollectionTest extends TestCase
     #[Test]
     public function it_returns_is_known_true_when_character_exists_in_database(): void
     {
-        Character::factory()->create(['id' => 52461508]);
+        Character::factory()->for($this->gameVersion)->create(['id' => 52461508]);
 
         $result = (new GuildRosterMemberCollection([$this->makeMember(id: 52461508)], $this->gameVersion))->toArray(new Request);
 
@@ -135,7 +135,7 @@ class GuildRosterMemberCollectionTest extends TestCase
     #[Test]
     public function it_returns_is_main_true_when_character_is_flagged_as_main(): void
     {
-        Character::factory()->create(['id' => 52461508, 'is_main' => true]);
+        Character::factory()->for($this->gameVersion)->create(['id' => 52461508, 'is_main' => true]);
 
         $result = (new GuildRosterMemberCollection([$this->makeMember(id: 52461508)], $this->gameVersion))->toArray(new Request);
 
@@ -146,7 +146,7 @@ class GuildRosterMemberCollectionTest extends TestCase
     #[Test]
     public function it_returns_is_main_false_when_character_is_not_flagged_as_main(): void
     {
-        Character::factory()->create(['id' => 52461508, 'is_main' => false]);
+        Character::factory()->for($this->gameVersion)->create(['id' => 52461508, 'is_main' => false]);
 
         $result = (new GuildRosterMemberCollection([$this->makeMember(id: 52461508)], $this->gameVersion))->toArray(new Request);
 
@@ -171,6 +171,20 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertFalse($result[0]['character']['is_known']);
     }
 
+    #[Test]
+    public function it_ignores_a_character_from_another_game_version(): void
+    {
+        Character::factory()->main()->create([
+            'id' => 52461508,
+            'game_version_id' => GameVersion::factory()->create()->id,
+        ]);
+
+        $result = (new GuildRosterMemberCollection([$this->makeMember(id: 52461508)], $this->gameVersion))->toArray(new Request);
+
+        $this->assertFalse($result[0]['character']['is_known']);
+        $this->assertFalse($result[0]['character']['is_main']);
+    }
+
     // ==================== specializations ====================
 
     #[Group('contract')]
@@ -186,7 +200,7 @@ class GuildRosterMemberCollectionTest extends TestCase
     #[Test]
     public function it_returns_specializations_for_known_character(): void
     {
-        $character = Character::factory()->create(['id' => 52461508]);
+        $character = Character::factory()->for($this->gameVersion)->create(['id' => 52461508]);
         $spec = PlayableSpecialization::factory()->create();
         $character->specializations()->attach($spec, ['is_raid_spec' => true]);
 
@@ -203,7 +217,7 @@ class GuildRosterMemberCollectionTest extends TestCase
     #[Test]
     public function it_returns_empty_specializations_for_known_character_with_no_specs(): void
     {
-        Character::factory()->create(['id' => 52461508]);
+        Character::factory()->for($this->gameVersion)->create(['id' => 52461508]);
 
         $result = (new GuildRosterMemberCollection([$this->makeMember(id: 52461508)], $this->gameVersion))->toArray(new Request);
 

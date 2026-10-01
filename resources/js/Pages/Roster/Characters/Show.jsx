@@ -80,7 +80,7 @@ function SectionHeading({ children }) {
     );
 }
 
-export default function Show({ character, recent_reports }) {
+export default function Show({ character, roster_url, recent_reports }) {
     const spec = raidSpec(character);
     const isLoading = recent_reports === undefined;
 
@@ -95,7 +95,7 @@ export default function Show({ character, recent_reports }) {
             <ToolNav>
                 <div className="flex-initial space-x-4">
                     <Link
-                        href={route("characters.index")}
+                        href={roster_url}
                         className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-ground-800 active:border-primary"
                     >
                         <Icon icon="arrow-left" style="solid" className="mr-2" />

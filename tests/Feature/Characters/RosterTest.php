@@ -98,7 +98,7 @@ class RosterTest extends TestCase
     #[Test]
     public function index_characters_deferred_prop_sets_is_known_based_on_database(): void
     {
-        Character::factory()->create(['id' => 52461508, 'is_main' => true]);
+        Character::factory()->for($this->gameVersion)->create(['id' => 52461508, 'is_main' => true]);
 
         $this->fakeRosterWithMembers([
             [

@@ -28,7 +28,8 @@ class GuildRosterMemberCollection extends ResourceCollection
 
         $ids = $this->collection->pluck('character.id');
 
-        $this->knownCharacters = Character::whereIn('id', $ids)
+        $this->knownCharacters = $gameVersion->characters()
+            ->whereIn('id', $ids)
             ->with('specializations')
             ->get()
             ->keyBy('id');
