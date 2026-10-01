@@ -23,6 +23,7 @@ class GameVersionFactory extends Factory
     {
         return [
             'title' => fake()->words(3, true),
+            'slug' => fake()->unique()->lexify('version-????'),
             'realm' => fake()->city(),
             'guild_name' => fake()->unique()->lexify('Guild ??????'),
             'faction' => fake()->randomElement(Faction::cases()),

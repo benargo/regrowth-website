@@ -89,6 +89,7 @@ class GameVersionResourceTest extends TestCase
         $gameVersion = GameVersion::factory()->make([
             'id' => 7,
             'title' => 'Burning Crusade Classic (Anniversary)',
+            'slug' => 'tbc',
             'realm' => 'Thunderstrike',
             'guild_name' => 'Regrowth',
             'faction' => Faction::ALLIANCE,
@@ -106,6 +107,7 @@ class GameVersionResourceTest extends TestCase
             'title' => 'Burning Crusade Classic (Anniversary)',
             'theme' => Theme::CLASSIC,
             'banner_class' => 'bg-raid-black-temple',
+            'slug' => 'tbc',
             'realm' => 'Thunderstrike',
             'guild_name' => 'Regrowth',
             'faction' => Faction::ALLIANCE,

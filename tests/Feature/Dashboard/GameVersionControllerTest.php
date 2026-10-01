@@ -115,6 +115,7 @@ class GameVersionControllerTest extends DashboardTestCase
         $response->assertSessionHas('success', 'Added Wrath Classic.');
 
         $this->assertSame('Wrath Classic', $gameVersion->title);
+        $this->assertSame('wrath', $gameVersion->slug);
         $this->assertSame('Gehennas', $gameVersion->realm);
         $this->assertSame('the Old Guard', $gameVersion->guild_name);
         $this->assertSame(Faction::HORDE, $gameVersion->faction);
@@ -205,6 +206,78 @@ class GameVersionControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->post(route('management.game-versions.store'), $this->validPayload());
 
         $response->assertInvalid(['title' => 'A game version with this title already exists.']);
+        $this->assertDatabaseCount('game_versions', 1);
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_requires_a_slug(): void
+    {
+        $response = $this->actingAs($this->officer)->post(
+            route('management.game-versions.store'),
+            Arr::except($this->validPayload(), 'slug')
+        );
+
+        $response->assertInvalid(['slug' => 'The slug is required.']);
+        $this->assertDatabaseCount('game_versions', 0);
+    }
+
+    #[Test]
+    public function it_converts_the_slug_to_a_slug_before_storing_it(): void
+    {
+        $response = $this->actingAs($this->officer)->post(route('management.game-versions.store'), $this->validPayload([
+            'slug' => 'tHe CruSade',
+        ]));
+
+        $response->assertValid();
+        $this->assertSame('the-crusade', GameVersion::sole()->slug);
+    }
+
+    #[Test]
+    public function it_trims_dashes_from_the_start_and_end_of_the_slug(): void
+    {
+        $response = $this->actingAs($this->officer)->post(route('management.game-versions.store'), $this->validPayload([
+            'slug' => '--tbc anniversary-',
+        ]));
+
+        $response->assertValid();
+        $this->assertSame('tbc-anniversary', GameVersion::sole()->slug);
+    }
+
+    #[Test]
+    public function it_accepts_a_slug_longer_than_the_recommended_sixteen_characters(): void
+    {
+        $response = $this->actingAs($this->officer)->post(route('management.game-versions.store'), $this->validPayload([
+            'slug' => 'the burning crusade anniversary',
+        ]));
+
+        $response->assertValid();
+        $this->assertSame('the-burning-crusade-anniversary', GameVersion::sole()->slug);
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_rejects_a_slug_that_is_only_too_long_once_converted(): void
+    {
+        $response = $this->actingAs($this->officer)->post(route('management.game-versions.store'), $this->validPayload([
+            'slug' => str_repeat('a', 252).'@b',
+        ]));
+
+        $response->assertInvalid(['slug' => 'The slug field must not be greater than 255 characters.']);
+        $this->assertDatabaseCount('game_versions', 0);
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_rejects_a_slug_that_duplicates_an_existing_one_once_converted(): void
+    {
+        GameVersion::factory()->create(['slug' => 'tbc']);
+
+        $response = $this->actingAs($this->officer)->post(route('management.game-versions.store'), $this->validPayload([
+            'slug' => 'TBC',
+        ]));
+
+        $response->assertInvalid(['slug' => 'A game version with this slug already exists.']);
         $this->assertDatabaseCount('game_versions', 1);
     }
 
@@ -643,11 +716,11 @@ class GameVersionControllerTest extends DashboardTestCase
     public function it_allows_an_update_that_keeps_the_same_title(): void
     {
         $gameVersion = GameVersion::factory()->create(['title' => 'Wrath Classic']);
-        $this->expectUpdate($gameVersion, $this->validPayload());
+        $this->expectUpdate($gameVersion, $this->validUpdatePayload());
 
         $response = $this->actingAs($this->officer)->patch(
             route('management.game-versions.update', $gameVersion),
-            $this->validPayload()
+            $this->validUpdatePayload()
         );
 
         $response->assertValid();
@@ -663,7 +736,7 @@ class GameVersionControllerTest extends DashboardTestCase
 
         $response = $this->actingAs($this->officer)->patch(
             route('management.game-versions.update', $gameVersion),
-            $this->validPayload(['title' => 'Taken'])
+            $this->validUpdatePayload(['title' => 'Taken'])
         );
 
         $response->assertInvalid(['title' => 'A game version with this title already exists.']);
@@ -673,7 +746,7 @@ class GameVersionControllerTest extends DashboardTestCase
     public function it_passes_optional_fields_submitted_blank_as_null(): void
     {
         $gameVersion = GameVersion::factory()->create();
-        $this->expectUpdate($gameVersion, $this->validPayload([
+        $this->expectUpdate($gameVersion, $this->validUpdatePayload([
             'title' => $gameVersion->title,
             'realm' => null,
             'faction' => null,
@@ -682,7 +755,7 @@ class GameVersionControllerTest extends DashboardTestCase
             'warcraftlogs_namespace' => null,
         ]));
 
-        $response = $this->actingAs($this->officer)->patch(route('management.game-versions.update', $gameVersion), $this->validPayload([
+        $response = $this->actingAs($this->officer)->patch(route('management.game-versions.update', $gameVersion), $this->validUpdatePayload([
             'title' => $gameVersion->title,
             'realm' => '',
             'faction' => '',
@@ -877,6 +950,21 @@ class GameVersionControllerTest extends DashboardTestCase
             ->patch(route('management.game-versions.update', $gameVersion), ['guild_name' => str_repeat('a', 25)]);
 
         $response->assertInvalid(['guild_name' => 'The guild name field must not be greater than 24 characters.']);
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_rejects_a_slug_on_update(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['slug' => 'tbc']);
+        UpdateGameVersion::shouldNotRun();
+
+        $response = $this->actingAs($this->officer)
+            ->from($this->editUrl($gameVersion))
+            ->patch(route('management.game-versions.update', $gameVersion), ['slug' => 'wrath']);
+
+        $response->assertInvalid(['slug' => 'The slug can\'t be changed once the game version is created.']);
+        $this->assertSame('tbc', $gameVersion->fresh()->slug);
     }
 
     // ==================== update: races and classes ====================
@@ -1252,7 +1340,7 @@ class GameVersionControllerTest extends DashboardTestCase
     // ==================== helpers ====================
 
     /**
-     * Build a valid create/update payload.
+     * Build a valid create payload.
      *
      * @param  array<string, mixed>  $overrides
      * @return array<string, mixed>
@@ -1261,6 +1349,7 @@ class GameVersionControllerTest extends DashboardTestCase
     {
         return [
             'title' => 'Wrath Classic',
+            'slug' => 'wrath',
             'realm' => 'Gehennas',
             'guild_name' => 'the Old Guard',
             'faction' => Faction::HORDE->value,
@@ -1271,6 +1360,18 @@ class GameVersionControllerTest extends DashboardTestCase
             'warcraftlogs_namespace' => WarcraftLogsNamespace::CLASSIC->value,
             ...$overrides,
         ];
+    }
+
+    /**
+     * Build a valid update payload: the create payload without the slug,
+     * which can't be changed once the game version is created.
+     *
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    private function validUpdatePayload(array $overrides = []): array
+    {
+        return Arr::except($this->validPayload($overrides), 'slug');
     }
 
     private function editUrl(GameVersion $gameVersion): string

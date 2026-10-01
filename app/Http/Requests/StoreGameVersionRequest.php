@@ -8,11 +8,24 @@ use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 
 class StoreGameVersionRequest extends FormRequest
 {
+    /**
+     * Convert the slug to a slug before validating, so the length and
+     * uniqueness rules check the value that will be stored. Str::slug also
+     * trims dashes from the start and end.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->input('slug'))) {
+            $this->merge(['slug' => Str::slug($this->input('slug'))]);
+        }
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -22,6 +35,7 @@ class StoreGameVersionRequest extends FormRequest
     {
         return [
             'title' => ['required', 'string', 'max:255', $this->uniqueTitleRule()],
+            'slug' => ['required', 'string', 'max:255', Rule::unique('game_versions', 'slug')],
             'realm' => ['nullable', 'string', 'max:255'],
             'guild_name' => ['required', 'string', 'max:24'],
             'faction' => ['nullable', Rule::enum(Faction::class)],
@@ -43,6 +57,8 @@ class StoreGameVersionRequest extends FormRequest
         return [
             'title.required' => 'The game version title is required.',
             'title.unique' => 'A game version with this title already exists.',
+            'slug.required' => 'The slug is required.',
+            'slug.unique' => 'A game version with this slug already exists.',
             'guild_name.required' => 'The guild name is required.',
             'release_date.required' => 'The release date is required.',
             'theme.required' => 'Please choose a theme.',

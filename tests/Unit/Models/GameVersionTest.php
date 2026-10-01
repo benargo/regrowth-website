@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Models;
 
+use App\Casts\AsSlug;
 use App\Casts\AsTheme;
 use App\Contracts\Models\DatasetModel;
 use App\Enums\Faction;
@@ -64,6 +65,7 @@ class GameVersionTest extends ModelTestCase
 
         $this->assertFillableAttribute($model, [
             'title',
+            'slug',
             'realm',
             'guild_name',
             'faction',
@@ -81,6 +83,7 @@ class GameVersionTest extends ModelTestCase
         $model = new GameVersion;
 
         $this->assertCasts($model, [
+            'slug' => AsSlug::class,
             'faction' => Faction::class,
             'release_date' => 'datetime',
             'theme' => AsTheme::class,
@@ -130,6 +133,14 @@ class GameVersionTest extends ModelTestCase
     }
 
     // ==================== casts ====================
+
+    #[Test]
+    public function slug_is_stored_as_a_slug(): void
+    {
+        $gameVersion = $this->create(['slug' => 'TBC Anniversary']);
+
+        $this->assertSame('tbc-anniversary', $gameVersion->fresh()->slug);
+    }
 
     #[Test]
     public function faction_is_cast_to_faction_enum(): void

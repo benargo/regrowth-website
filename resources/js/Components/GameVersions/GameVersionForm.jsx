@@ -1,8 +1,10 @@
+import { Input } from "@headlessui/react";
 import DetailsForm from "@/Components/Datasets/DetailsForm";
-import { FormRow, FormSection } from "@/Components/FormControls";
+import { FormRow, FormSection, controlClassName } from "@/Components/FormControls";
 
 const FIELD_LABELS = {
     title: "Title",
+    slug: "Slug",
     release_date: "Release date",
     theme: "Theme",
     realm: "Realm",
@@ -13,10 +15,13 @@ const FIELD_LABELS = {
     warcraftlogs_namespace: "Warcraft Logs namespace",
 };
 
-/** Build the initial useForm state for a game version. */
+/**
+ * Build the initial useForm state for a game version.
+ */
 export function gameVersionFormData(gameVersion = null) {
     return {
         title: gameVersion?.title ?? "",
+        ...(gameVersion === null && { slug: "" }),
         realm: gameVersion?.realm ?? "",
         guild_name: gameVersion?.guild_name ?? "",
         faction: gameVersion?.faction ?? "",
@@ -28,13 +33,16 @@ export function gameVersionFormData(gameVersion = null) {
     };
 }
 
-/** The game version details form. Every prop but `options` goes to DetailsForm. */
-export default function GameVersionForm({ form, options, ...detailsFormProps }) {
+/**
+ * The game version details form, for creating or editing (`gameVersion`).
+ * Props other than `options` pass through to DetailsForm.
+ */
+export default function GameVersionForm({ form, options, gameVersion = null, ...detailsFormProps }) {
     const { errors } = form;
 
     return (
         <DetailsForm form={form} {...detailsFormProps}>
-            {({ text, select }) => (
+            {({ text, slug, select }) => (
                 <>
                     <FormSection legend="The version">
                         <FormRow
@@ -46,6 +54,25 @@ export default function GameVersionForm({ form, options, ...detailsFormProps }) 
                         >
                             {text("title", { required: true, autoComplete: "off" })}
                         </FormRow>
+                        {gameVersion === null ? (
+                            <FormRow
+                                htmlFor="slug"
+                                label={FIELD_LABELS.slug}
+                                required
+                                hint="A short name for links, such as tbc. Aim for 16 characters or fewer. It can't be changed later."
+                                error={errors.slug}
+                            >
+                                {slug("slug", { required: true, maxLength: 255 })}
+                            </FormRow>
+                        ) : (
+                            <FormRow
+                                htmlFor="slug"
+                                label={FIELD_LABELS.slug}
+                                hint="Set when the game version was created. It can't be changed."
+                            >
+                                <Input id="slug" value={gameVersion.slug} disabled className={controlClassName} />
+                            </FormRow>
+                        )}
                         <FormRow
                             htmlFor="release_date"
                             label={FIELD_LABELS.release_date}

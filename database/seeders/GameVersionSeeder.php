@@ -19,6 +19,7 @@ class GameVersionSeeder extends Seeder
         return [
             [
                 'title' => 'Burning Crusade Classic (Anniversary)',
+                'slug' => 'tbc',
                 'realm' => 'Thunderstrike',
                 'guild_name' => config('services.blizzard.guild.name'),
                 'faction' => Faction::ALLIANCE->value,
@@ -37,7 +38,7 @@ class GameVersionSeeder extends Seeder
     public function run(): void
     {
         foreach ($this->definitions() as $game_version) {
-            GameVersion::updateOrCreate(['title' => $game_version['title']], $game_version);
+            GameVersion::updateOrCreate(['slug' => $game_version['slug']], $game_version);
         }
     }
 }

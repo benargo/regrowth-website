@@ -9,8 +9,7 @@ import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import Master from "@/Layouts/Master";
 
 /**
- * Every {Name}Section.jsx game version section, which Relationships.Step picks
- * from by the step's component name (GameVersionSetupStep::component()).
+ * Every {Name}Section.jsx game version section.
  */
 const sections = import.meta.glob("/resources/js/Components/GameVersions/*Section.jsx", {
     eager: true,
@@ -40,6 +39,7 @@ export default function Edit({ gameVersion, options, relationships, steps, route
                             <GameVersionForm
                                 form={form}
                                 options={options}
+                                gameVersion={gameVersion}
                                 autosave={{ url: routes.update, saved: gameVersionFormData(gameVersion) }}
                             />
                         </EditLayout.Details>

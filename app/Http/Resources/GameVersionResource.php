@@ -60,6 +60,7 @@ class GameVersionResource extends JsonResource
 
         return [
             ...$data,
+            'slug' => $this->slug,
             'realm' => $this->realm,
             'guild_name' => $this->guild_name,
             'faction' => $this->faction,
