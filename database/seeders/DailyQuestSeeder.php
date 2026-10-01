@@ -94,7 +94,7 @@ class DailyQuestSeeder extends Seeder implements HasBlizzardIcons
      */
     public function run(): void
     {
-        $gameVersion = GameVersion::sole();
+        $gameVersion = GameVersion::where('slug', 'tbc')->sole();
         $dailyQuests = $this->dailyQuests;
 
         foreach ($dailyQuests as $quest) {

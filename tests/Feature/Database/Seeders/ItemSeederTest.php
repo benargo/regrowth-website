@@ -10,7 +10,6 @@ use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\GameVersion;
 use App\Models\Item;
 use Database\Seeders\BossSeeder;
-use Database\Seeders\GameVersionSeeder;
 use Database\Seeders\ItemSeeder;
 use Database\Seeders\PhaseSeeder;
 use Database\Seeders\RaidSeeder;
@@ -32,11 +31,15 @@ class ItemSeederTest extends TestCase
     use LimitsItemSeederFixtures;
     use RefreshDatabase;
 
+    private GameVersion $gameVersion;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->seed([PhaseSeeder::class, RaidSeeder::class, BossSeeder::class, GameVersionSeeder::class]);
+        $this->seed([PhaseSeeder::class, RaidSeeder::class, BossSeeder::class]);
+
+        $this->gameVersion = GameVersion::factory()->tbc()->create();
 
         Storage::fake('public');
     }
@@ -122,11 +125,22 @@ class ItemSeederTest extends TestCase
     public function seeder_scopes_items_to_the_resolved_game_version(): void
     {
         $this->fakeSaloon();
-        $gameVersion = GameVersion::sole();
 
         $this->seedWithLimitedItems();
 
-        $this->assertDatabaseHas('items', ['blizzard_id' => 28453, 'game_version_id' => $gameVersion->id]);
+        $this->assertDatabaseHas('items', ['blizzard_id' => 28453, 'game_version_id' => $this->gameVersion->id]);
+    }
+
+    #[Test]
+    public function seeder_scopes_items_to_the_tbc_game_version_when_others_exist(): void
+    {
+        $this->fakeSaloon();
+        $otherGameVersion = GameVersion::factory()->create();
+
+        $this->seedWithLimitedItems();
+
+        $this->assertDatabaseHas('items', ['blizzard_id' => 28453, 'game_version_id' => $this->gameVersion->id]);
+        $this->assertDatabaseMissing('items', ['game_version_id' => $otherGameVersion->id]);
     }
 
     #[Test]
@@ -171,11 +185,10 @@ class ItemSeederTest extends TestCase
     public function seeder_updates_name_and_icon_on_existing_items(): void
     {
         $this->fakeSaloon();
-        $gameVersion = GameVersion::sole();
 
         Item::forceCreate([
             'blizzard_id' => 28453,
-            'game_version_id' => $gameVersion->id,
+            'game_version_id' => $this->gameVersion->id,
             'boss_id' => 1,
             'group' => null,
             'name' => 'Old Name',
