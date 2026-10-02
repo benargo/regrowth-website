@@ -116,7 +116,9 @@ class WriteMirrorToDiskTest extends TestCase
         // Build a real PendingRequest so the middleware can resolve the URL
         $connector = new RenderConnector(Region::EU, $disk);
         $fetchRequest = new FetchIconRequest('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg');
-        $pendingRequest = new PendingRequest($connector, $fetchRequest);
+        $pendingRequest = new PendingRequest($connector, $fetchRequest, new MockClient([
+            FetchIconRequest::class => MockResponse::make(body: 'NEW', status: 200),
+        ]));
 
         $factory = new HttpFactory;
         $psrResponse = MockResponse::make(body: 'NEW', status: 200)->createPsrResponse($factory, $factory);

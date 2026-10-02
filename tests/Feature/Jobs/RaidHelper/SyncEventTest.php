@@ -33,6 +33,8 @@ class SyncEventTest extends TestCase
         parent::setUp();
 
         config()->set('services.raidhelper.channel_ids', ['100000000000000001']);
+
+        Queue::fake([FetchComposition::class]);
     }
 
     // ==================== event upsert ====================
