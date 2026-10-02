@@ -36,7 +36,7 @@ class CheckUploadFreshness
 
     /**
      * @return array{
-     *     gameVersion: array{id: int, title: string},
+     *     gameVersion: array{id: int, title: string, slug: string},
      *     lastModified: Carbon|null,
      *     dataIsStale: bool,
      *     blzRaiderCount: int|null,
@@ -53,7 +53,7 @@ class CheckUploadFreshness
         $blzRaiderCount = $this->countRosterRaiders($gameVersion);
 
         return [
-            'gameVersion' => ['id' => $gameVersion->id, 'title' => $gameVersion->title],
+            'gameVersion' => ['id' => $gameVersion->id, 'title' => $gameVersion->title, 'slug' => $gameVersion->slug],
             'lastModified' => $hasUpload ? Carbon::createFromTimestamp($disk->lastModified($path)) : null,
             'dataIsStale' => $blzRaiderCount !== null
                 && abs($blzRaiderCount - $grmRaiderCount) >= self::STALE_THRESHOLD,

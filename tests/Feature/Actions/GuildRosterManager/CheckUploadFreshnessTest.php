@@ -52,7 +52,7 @@ class CheckUploadFreshnessTest extends TestCase
 
         $result = CheckUploadFreshness::run($this->gameVersion);
 
-        $this->assertSame(['id' => $this->gameVersion->id, 'title' => 'Burning Crusade Anniversary'], $result['gameVersion']);
+        $this->assertSame(['id' => $this->gameVersion->id, 'title' => 'Burning Crusade Anniversary', 'slug' => 'tbc'], $result['gameVersion']);
     }
 
     #[Test]

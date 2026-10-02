@@ -2,7 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\ProcessGrmUpload;
 use App\Models\Character;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
@@ -32,5 +35,31 @@ class DeprecatedRoutesTest extends DashboardTestCase
             ->delete("/manage/addon/settings/councillors/{$character->id}");
 
         $response->assertGone();
+    }
+
+    #[Test]
+    #[Group('deprecated')]
+    public function grm_upload_form_redirects_to_the_grm_import_form(): void
+    {
+        $response = $this->actingAs($this->officer)->get('/manage/grm-upload');
+
+        $response->assertMovedPermanently();
+        $response->assertRedirect(route('management.grm.create'));
+    }
+
+    #[Test]
+    #[Group('deprecated')]
+    public function grm_upload_post_endpoint_is_gone(): void
+    {
+        Queue::fake([ProcessGrmUpload::class]);
+        Storage::fake('local');
+
+        $response = $this->actingAs($this->officer)->post('/manage/grm-upload', [
+            'grm_data' => 'ignored',
+        ]);
+
+        $response->assertGone();
+        Queue::assertNothingPushed();
+        $this->assertSame([], Storage::disk('local')->allFiles());
     }
 }

@@ -12,12 +12,12 @@ use App\Http\Controllers\Dashboard\AddonController;
 use App\Http\Controllers\Dashboard\AddonSchemaController;
 use App\Http\Controllers\Dashboard\AddonSettingsController;
 use App\Http\Controllers\Dashboard\DashboardController;
-use App\Http\Controllers\Dashboard\GrmController;
 use App\Http\Controllers\Dashboard\PermissionController;
 use App\Http\Controllers\Dashboard\PhaseController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTemplateController;
 use App\Http\Controllers\GameVersionController;
+use App\Http\Controllers\GuildRosterManager\ImportController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LootBiasToolController;
@@ -154,8 +154,8 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     /**
      * GRM data upload
      */
-    Route::get('/grm-upload', [GrmController::class, 'showUploadForm'])->name('grm-upload.form');
-    Route::post('/grm-upload', [GrmController::class, 'handleUpload'])->name('grm-upload.upload');
+    Route::get('/grm', [ImportController::class, 'create'])->name('grm.create');
+    Route::post('/grm', [ImportController::class, 'store'])->name('grm.store');
 
     /**
      * Phases management

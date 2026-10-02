@@ -1,18 +1,18 @@
 <?php
 
-namespace Tests\Unit\Http\Requests\Dashboard;
+namespace Tests\Unit\Http\Requests\GuildRosterManager;
 
-use App\Http\Requests\Dashboard\UploadGrmDataRequest;
+use App\Http\Requests\GuildRosterManager\StoreImportRequest;
 use App\Models\GameVersion;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rules\Exists;
+use Illuminate\Validation\Rules\In;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 #[Group('grm-upload')]
-class UploadGrmDataRequestTest extends TestCase
+class StoreImportRequestTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -29,32 +29,41 @@ class UploadGrmDataRequestTest extends TestCase
     }
 
     #[Test]
-    public function rules_game_version_id_is_required_integer_and_must_exist(): void
+    public function rules_game_version_is_a_required_slug_of_a_current_roster(): void
     {
         $rules = $this->makeRequest()->rules();
 
-        $this->assertArrayHasKey('game_version_id', $rules);
-        $this->assertContains('required', $rules['game_version_id']);
-        $this->assertContains('integer', $rules['game_version_id']);
-        $this->assertTrue(collect($rules['game_version_id'])->contains(fn ($rule) => $rule instanceof Exists));
+        $this->assertArrayHasKey('game_version', $rules);
+        $this->assertContains('required', $rules['game_version']);
+        $this->assertContains('string', $rules['game_version']);
+        $this->assertTrue(collect($rules['game_version'])->contains(fn ($rule) => $rule instanceof In));
     }
 
     #[Test]
     #[Group('validation')]
-    public function with_validator_fails_when_game_version_has_no_blizzard_namespace(): void
+    public function rules_reject_a_game_version_without_a_current_roster(): void
     {
-        $gameVersion = GameVersion::factory()->create(['blizzard_namespace' => null]);
+        GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'guild_name' => 'Regrowth', 'release_date' => now()->subWeek()]);
+        GameVersion::factory()->fetchableRoster()->create(['slug' => 'older', 'guild_name' => 'Regrowth', 'release_date' => now()->subYear()]);
 
         $validator = $this->validate([
             'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nBob,Officer,80,0,Main,",
-            'game_version_id' => $gameVersion->id,
+            'game_version' => 'older',
         ]);
 
         $this->assertTrue($validator->fails());
-        $this->assertStringContainsString(
-            'does not exist or is not available for GRM upload',
-            implode(' ', $validator->errors()->get('game_version_id'))
+        $this->assertSame(
+            ['The selected game version is not available for GRM upload.'],
+            $validator->errors()->get('game_version'),
         );
+    }
+
+    #[Test]
+    public function game_version_returns_the_model_named_by_the_slug(): void
+    {
+        $gameVersion = GameVersion::factory()->fetchableRoster()->create(['slug' => 'tbc']);
+
+        $this->assertTrue($this->makeRequest(['game_version' => 'tbc'])->gameVersion()->is($gameVersion));
     }
 
     // ==================== messages ====================
@@ -66,9 +75,9 @@ class UploadGrmDataRequestTest extends TestCase
 
         $this->assertSame('GRM data is required.', $messages['grm_data.required']);
         $this->assertSame('GRM data must be a string.', $messages['grm_data.string']);
-        $this->assertSame('A game version is required.', $messages['game_version_id.required']);
-        $this->assertSame('The selected game version is invalid.', $messages['game_version_id.integer']);
-        $this->assertSame('The selected game version does not exist or is not available for GRM upload.', $messages['game_version_id.exists']);
+        $this->assertSame('A game version is required.', $messages['game_version.required']);
+        $this->assertSame('The selected game version is invalid.', $messages['game_version.string']);
+        $this->assertSame('The selected game version is not available for GRM upload.', $messages['game_version.in']);
     }
 
     // ==================== withValidator ====================
@@ -137,7 +146,7 @@ class UploadGrmDataRequestTest extends TestCase
     {
         $validator = $this->validate([
             'grm_data' => '',
-            'game_version_id' => GameVersion::factory()->create()->id,
+            'game_version' => GameVersion::factory()->fetchableRoster()->create()->slug,
         ]);
 
         $this->assertTrue($validator->fails());
@@ -219,13 +228,13 @@ class UploadGrmDataRequestTest extends TestCase
     {
         return [
             'grm_data' => $grmData,
-            'game_version_id' => GameVersion::factory()->create()->id,
+            'game_version' => GameVersion::factory()->fetchableRoster()->create()->slug,
         ];
     }
 
-    private function makeRequest(?array $params = null): UploadGrmDataRequest
+    private function makeRequest(?array $params = null): StoreImportRequest
     {
-        return UploadGrmDataRequest::create('/', 'POST', $params ?? []);
+        return StoreImportRequest::create('/', 'POST', $params ?? []);
     }
 
     private function validate(array $data): \Illuminate\Validation\Validator

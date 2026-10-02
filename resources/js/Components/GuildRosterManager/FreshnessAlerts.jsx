@@ -8,10 +8,10 @@ function daysSince(timestamp) {
     return (new Date() - new Date(timestamp)) / (1000 * 60 * 60 * 24);
 }
 
-function UploadLink({ className }) {
+function UploadLink({ gameVersion, className }) {
     return (
         <Link
-            href={route("management.grm-upload.form")}
+            href={route("management.grm.create", { game_version: gameVersion.slug })}
             className={`inline-flex items-center rounded-md border border-transparent p-4 text-sm font-semibold text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:opacity-25 ${className}`}
         >
             <Icon icon="file-upload" style="solid" className="mr-2" />
@@ -20,7 +20,7 @@ function UploadLink({ className }) {
     );
 }
 
-function FreshnessAlert({ type, title, linkClassName, children }) {
+function FreshnessAlert({ gameVersion, type, title, linkClassName, children }) {
     return (
         <div className="mb-6 md:mx-20">
             <Alert type={type}>
@@ -30,7 +30,7 @@ function FreshnessAlert({ type, title, linkClassName, children }) {
                         <p>{children}</p>
                     </div>
                     <div className="flex-initial">
-                        <UploadLink className={linkClassName} />
+                        <UploadLink gameVersion={gameVersion} className={linkClassName} />
                     </div>
                 </div>
             </Alert>
@@ -48,6 +48,7 @@ export default function FreshnessAlerts({ freshness = [] }) {
             return (
                 <FreshnessAlert
                     key={gameVersion.id}
+                    gameVersion={gameVersion}
                     type="error"
                     title={`GRM data out of date for ${gameVersion.title}`}
                     linkClassName="bg-red-600 hover:bg-red-800 focus:ring-red-500"
@@ -62,6 +63,7 @@ export default function FreshnessAlerts({ freshness = [] }) {
             return (
                 <FreshnessAlert
                     key={gameVersion.id}
+                    gameVersion={gameVersion}
                     type="warning"
                     title={`No GRM data for ${gameVersion.title}`}
                     linkClassName="bg-yellow-600 hover:bg-yellow-800 focus:ring-yellow-500"
@@ -76,6 +78,7 @@ export default function FreshnessAlerts({ freshness = [] }) {
             return (
                 <FreshnessAlert
                     key={gameVersion.id}
+                    gameVersion={gameVersion}
                     type="warning"
                     title={`Old GRM data detected for ${gameVersion.title}`}
                     linkClassName="bg-yellow-600 hover:bg-yellow-800 focus:ring-yellow-500"
