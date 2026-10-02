@@ -5,24 +5,22 @@ paths:
 
 # App
 
-## Use UPPERCASE case names in enums
+## Use PascalCase case names in enums
 
-Backed enum cases should use UPPERCASE names (e.g. `case RETAIL = 'retail';`), not lowercase or StudlyCase. This applies to the case identifier only — the backing string value's casing is unaffected and should match whatever the external system/API expects.
+Name enum cases in PascalCase (e.g. `case GuildRanks = 'guild_ranks';`), not UPPERCASE or snake_case. The backing value keeps whatever format the external system or storage expects. Some existing enums still use UPPERCASE cases; leave them alone unless you are doing a coordinated rename of the whole enum and its callers.
 
-## Prefer constructor/method injection over app()/resolve() service location
+## Inject dependencies; use app() only where injection is impossible
 
-Acquire dependencies via constructor property promotion (or method-injected handle() parameters for jobs) everywhere DI is possible. Reach for app(Class::class) only where constructor injection is structurally unavailable — Eloquent Model accessors and Job failed()/other non-handle() callbacks — and nowhere else.
+Use constructor property promotion for dependencies an object needs throughout its lifetime, and method injection (e.g. a job's `handle()`) for dependencies one container-invoked method needs. Use `app(Class::class)` only where injection is structurally unavailable, such as Eloquent model accessors and job `failed()` callbacks. Never use `resolve()`.
 
 ## Use DB::transaction() closures, not manual begin/commit/rollback
 
-Wrap multi-write operations in DB::transaction(function () { ... }). Never call DB::beginTransaction()/commit()/rollBack() manually.
+Wrap multi-write operations in `DB::transaction(function () { ... })`. Never call `DB::beginTransaction()`, `commit()` or `rollBack()` by hand.
 
-## foreach for side effects, collect() pipelines for transforms
+## foreach for side effects, collection pipelines for transforms
 
-Use foreach for imperative/side-effecting iteration (DB writes, building up state across iterations). Use collect()->map()/filter()/... pipelines for data transformation. Avoid raw array_map/array_filter where either idiom above fits.
+Use `foreach` for side-effecting iteration (DB writes, building up state across iterations); a higher-order `$models->each->method()` is fine for a single call on each item of an existing collection. Use `collect()->map()/filter()/...` pipelines to transform data, in preference to raw `array_map`/`array_filter` when the pipeline reads more clearly.
 
-## Prefer Carbon:: over now() for the current instant
+## Use now() for the current instant
 
-Use Carbon::now() (not the now() global helper) to get the current instant, for consistency with other Carbon:: static calls used elsewhere (parsing, constructing from other values, e.g. Carbon::parse(), Carbon::yesterday()/tomorrow()).
-
-This is a deliberate forward-looking convention: most existing code still uses now(), but new work should default to Carbon::now().
+Use the `now()` and `today()` helpers rather than `Carbon::now()`/`Carbon::today()`. Keep `Carbon::` for constructing other instants (`Carbon::parse()`, `Carbon::createFromTimestamp()`).
