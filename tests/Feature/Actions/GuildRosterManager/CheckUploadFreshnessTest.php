@@ -3,6 +3,7 @@
 namespace Tests\Feature\Actions\GuildRosterManager;
 
 use App\Actions\GuildRosterManager\CheckUploadFreshness;
+use App\Contracts\Actions\GuildRosterManager\AssessesUploadFreshness;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Models\GameVersion;
@@ -67,6 +68,32 @@ class CheckUploadFreshnessTest extends TestCase
             Carbon::createFromTimestamp(Storage::disk('local')->lastModified('grm/uploads/tbc/latest.csv')),
             $result['lastModified'],
         );
+    }
+
+    // ==================== upload age ====================
+
+    #[Test]
+    public function it_is_not_outdated_at_exactly_the_outdated_threshold(): void
+    {
+        $this->putAgedUpload(seconds: AssessesUploadFreshness::OUTDATED_AFTER_DAYS * 24 * 60 * 60);
+
+        $this->assertFalse(CheckUploadFreshness::run($this->gameVersion)['dataIsOutdated']);
+    }
+
+    #[Test]
+    public function it_is_outdated_once_the_upload_is_older_than_the_outdated_threshold(): void
+    {
+        $this->putAgedUpload(seconds: AssessesUploadFreshness::OUTDATED_AFTER_DAYS * 24 * 60 * 60 + 1);
+
+        $this->assertTrue(CheckUploadFreshness::run($this->gameVersion)['dataIsOutdated']);
+    }
+
+    #[Test]
+    public function it_is_not_outdated_when_no_upload_exists(): void
+    {
+        $this->fakeRosters([self::ROSTER_ENDPOINT => []]);
+
+        $this->assertFalse(CheckUploadFreshness::run($this->gameVersion)['dataIsOutdated']);
     }
 
     // ==================== raider counts ====================
@@ -275,6 +302,20 @@ class CheckUploadFreshnessTest extends TestCase
     private function putUpload(string $slug, array $rows, string $header = self::CSV_HEADER): void
     {
         Storage::disk('local')->put("grm/uploads/{$slug}/latest.csv", $header.implode("\n", $rows));
+    }
+
+    /**
+     * Store an upload stamped at a fixed time, then travel to the given number
+     * of seconds after it.
+     */
+    private function putAgedUpload(int $seconds): void
+    {
+        $uploadedAt = 1790000000;
+
+        $this->putUpload('tbc', ['Player1,Member,80,1,Main,']);
+        touch(Storage::disk('local')->path('grm/uploads/tbc/latest.csv'), $uploadedAt);
+        $this->fakeRosters([self::ROSTER_ENDPOINT => []]);
+        $this->travelTo(Carbon::createFromTimestamp($uploadedAt + $seconds));
     }
 
     private function rank(int $sortOrder, string $name): GuildRank

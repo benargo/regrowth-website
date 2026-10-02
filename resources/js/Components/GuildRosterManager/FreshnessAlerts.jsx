@@ -2,16 +2,10 @@ import { Link } from "@inertiajs/react";
 import Alert from "@/Components/Alert";
 import Icon from "@/Components/FontAwesome/Icon";
 
-const OUTDATED_AFTER_DAYS = 7;
-
 const LINK_CLASSES = {
     error: "bg-red-600 hover:bg-red-800 focus:ring-red-500",
     warning: "bg-yellow-600 hover:bg-yellow-800 focus:ring-yellow-500",
 };
-
-function daysSince(timestamp) {
-    return (new Date() - new Date(timestamp)) / (1000 * 60 * 60 * 24);
-}
 
 function UploadLink({ gameVersion, className }) {
     return (
@@ -45,24 +39,12 @@ function FreshnessAlert({ gameVersion, type, title, children }) {
 
 /**
  * One alert per game version whose GRM upload is missing raiders, missing entirely,
- * or older than a week. Versions with fresh uploads render nothing.
+ * or outdated. Versions with fresh uploads render nothing.
  */
 export default function FreshnessAlerts({ freshness = [] }) {
-    return freshness.map(({ gameVersion, lastModified, dataIsStale }) => {
-        if (dataIsStale) {
-            return (
-                <FreshnessAlert
-                    key={gameVersion.id}
-                    gameVersion={gameVersion}
-                    type="error"
-                    title={`GRM data out of date for ${gameVersion.title}`}
-                >
-                    The {gameVersion.title} GRM data used to generate this addon data is missing raiders. Please
-                    consider uploading a fresh GRM export to ensure your addon data is up to date.
-                </FreshnessAlert>
-            );
-        }
-
+    return freshness.map(({ gameVersion, lastModified, dataIsStale, dataIsOutdated }) => {
+        // Checked before staleness: a missing upload counts zero raiders, so it is
+        // also flagged stale whenever the live roster has a few raiders.
         if (lastModified === null) {
             return (
                 <FreshnessAlert
@@ -77,7 +59,21 @@ export default function FreshnessAlerts({ freshness = [] }) {
             );
         }
 
-        if (daysSince(lastModified) > OUTDATED_AFTER_DAYS) {
+        if (dataIsStale) {
+            return (
+                <FreshnessAlert
+                    key={gameVersion.id}
+                    gameVersion={gameVersion}
+                    type="error"
+                    title={`GRM data out of date for ${gameVersion.title}`}
+                >
+                    The {gameVersion.title} GRM data used to generate this addon data is missing raiders. Please
+                    consider uploading a fresh GRM export to ensure your addon data is up to date.
+                </FreshnessAlert>
+            );
+        }
+
+        if (dataIsOutdated) {
             return (
                 <FreshnessAlert
                     key={gameVersion.id}
@@ -85,9 +81,9 @@ export default function FreshnessAlerts({ freshness = [] }) {
                     type="warning"
                     title={`Old GRM data detected for ${gameVersion.title}`}
                 >
-                    The {gameVersion.title} GRM data used to generate this addon data is over {OUTDATED_AFTER_DAYS} days
-                    old (last updated on {new Date(lastModified).toLocaleDateString()}). Please consider uploading a
-                    fresh GRM export to ensure your addon data is up to date.
+                    The {gameVersion.title} GRM data used to generate this addon data was last updated on{" "}
+                    {new Date(lastModified).toLocaleDateString()}. Please consider uploading a fresh GRM export to
+                    ensure your addon data is up to date.
                 </FreshnessAlert>
             );
         }

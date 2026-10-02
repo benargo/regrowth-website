@@ -2,6 +2,7 @@
 
 namespace App\Actions\GuildRosterManager;
 
+use App\Contracts\Actions\GuildRosterManager\AssessesUploadFreshness;
 use App\Data\GuildRosterManager\LatestUploadData;
 use App\Enums\GuildRosterManager\UploadStatus;
 use App\Models\GameVersion;
@@ -11,19 +12,9 @@ use Lorisleiva\Actions\Concerns\AsAction;
  * Summarises how trustworthy a game version's latest GRM upload is by
  * comparing its member rows with Blizzard's live guild member count.
  */
-class CheckUploadStatus
+class CheckUploadStatus implements AssessesUploadFreshness
 {
     use AsAction;
-
-    /**
-     * The member-count difference at which an upload counts as stale.
-     */
-    public const int STALE_THRESHOLD = CheckUploadFreshness::STALE_THRESHOLD;
-
-    /**
-     * The age at which an upload counts as outdated.
-     */
-    public const int OUTDATED_AFTER_DAYS = 7;
 
     public function __construct(
         protected FindLatestUpload $findLatestUpload,

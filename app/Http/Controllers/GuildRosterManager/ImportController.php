@@ -36,7 +36,7 @@ class ImportController extends Controller
         return Inertia::render('Manage/GRM/Create', [
             'gameVersion' => $gameVersion ? (new GameVersionResource($gameVersion))->resolve($request) : null,
             'gameVersions' => GameVersionResource::collection($gameVersions)->resolve($request),
-            'lastUploadTimestamp' => $gameVersion
+            'lastUploadTimestamp' => fn (): ?string => $gameVersion
                 ? $findLatestUpload->handle($gameVersion)?->lastModified->format('l, j F Y \a\t H:i')
                 : null,
             'memberCount' => Inertia::defer(fn (): ?int => $gameVersion ? $countGuildMembers->handle($gameVersion) : null),

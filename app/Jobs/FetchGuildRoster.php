@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Contracts\Http\Integrations\Blizzard\RequiresMinimumCharacterLevel;
 use App\Enums\Gender;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterData;
@@ -22,14 +23,9 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class FetchGuildRoster implements ShouldQueue
+class FetchGuildRoster implements RequiresMinimumCharacterLevel, ShouldQueue
 {
     use Batchable, Queueable;
-
-    /**
-     * The minimum character level the Blizzard profile API returns data for.
-     */
-    private const MIN_LEVEL = 10;
 
     public function __construct(
         public int $gameVersionId,

@@ -2,6 +2,7 @@
 
 namespace App\Actions\GuildRosterManager;
 
+use App\Contracts\Actions\GuildRosterManager\AssessesUploadFreshness;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterMemberData;
 use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
@@ -16,18 +17,12 @@ use Lorisleiva\Actions\Concerns\AsAction;
 use Saloon\Exceptions\SaloonException;
 
 /**
- * Compares a game version's latest GRM upload with its live Blizzard guild
- * roster, flagging the upload as stale once their raider counts drift apart.
+ * Compares a game version's latest GRM upload with its live Blizzard guild roster.
  */
-class CheckUploadFreshness
+class CheckUploadFreshness implements AssessesUploadFreshness
 {
     use AsAction;
     use ResolvesUploadPath;
-
-    /**
-     * The raider-count difference at which an upload counts as stale.
-     */
-    public const int STALE_THRESHOLD = 3;
 
     public function __construct(
         protected BlizzardConnector $blizzardConnector,
@@ -39,6 +34,7 @@ class CheckUploadFreshness
      *     gameVersion: array{id: int, title: string, slug: string},
      *     lastModified: Carbon|null,
      *     dataIsStale: bool,
+     *     dataIsOutdated: bool,
      *     blzRaiderCount: int|null,
      *     grmRaiderCount: int,
      * }
@@ -51,12 +47,14 @@ class CheckUploadFreshness
 
         $grmRaiderCount = $hasUpload ? $this->countUploadRaiders($disk->get($path)) : 0;
         $blzRaiderCount = $this->countRosterRaiders($gameVersion);
+        $lastModified = $hasUpload ? Carbon::createFromTimestamp($disk->lastModified($path)) : null;
 
         return [
             'gameVersion' => ['id' => $gameVersion->id, 'title' => $gameVersion->title, 'slug' => $gameVersion->slug],
-            'lastModified' => $hasUpload ? Carbon::createFromTimestamp($disk->lastModified($path)) : null,
+            'lastModified' => $lastModified,
             'dataIsStale' => $blzRaiderCount !== null
                 && abs($blzRaiderCount - $grmRaiderCount) >= self::STALE_THRESHOLD,
+            'dataIsOutdated' => $lastModified?->lt(now()->subDays(self::OUTDATED_AFTER_DAYS)) ?? false,
             'blzRaiderCount' => $blzRaiderCount,
             'grmRaiderCount' => $grmRaiderCount,
         ];
@@ -97,7 +95,7 @@ class CheckUploadFreshness
      */
     protected function countUploadRaiders(string $csv): int
     {
-        $lines = explode("\n", $csv);
+        $lines = preg_split('/\r\n|\r|\n/', $csv);
         $header = str_getcsv(array_shift($lines));
 
         $rankColumnIndex = collect($header)

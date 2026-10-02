@@ -359,6 +359,7 @@ class AddonControllerTest extends DashboardTestCase
                 ->has('grmFreshness.0.gameVersion')
                 ->has('grmFreshness.0.lastModified')
                 ->has('grmFreshness.0.dataIsStale')
+                ->has('grmFreshness.0.dataIsOutdated')
             )
         );
     }
@@ -380,6 +381,7 @@ class AddonControllerTest extends DashboardTestCase
                 ->has('grmFreshness.0.gameVersion')
                 ->has('grmFreshness.0.lastModified')
                 ->has('grmFreshness.0.dataIsStale')
+                ->has('grmFreshness.0.dataIsOutdated')
             )
         );
     }

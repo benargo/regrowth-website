@@ -47,7 +47,7 @@ export default function Create({ gameVersion, gameVersions, lastUploadTimestamp,
         <Master title="GRM Data Upload">
             <SharedHeader title="GRM Data Upload" backgroundClass={gameVersion?.banner_class ?? "bg-officer-meeting"} />
             <ToolNav>
-                <ToolNavLink href={route("management.index")}>
+                <ToolNavLink href={route("management.dashboard")}>
                     <Icon icon="arrow-left" style="solid" className="mr-1 text-xs" />
                     Back to officers' dashboard
                 </ToolNavLink>
