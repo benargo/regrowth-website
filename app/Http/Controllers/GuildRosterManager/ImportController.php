@@ -40,9 +40,12 @@ class ImportController extends Controller
                 ? $findLatestUpload->handle($gameVersion)?->lastModified->format('l, j F Y \a\t H:i')
                 : null,
             'memberCount' => Inertia::defer(fn (): ?int => $gameVersion ? $countGuildMembers->handle($gameVersion) : null),
-            'uploadStatuses' => Inertia::defer(fn (): array => $gameVersions
-                ->mapWithKeys(fn (GameVersion $version): array => [$version->slug => $checkUploadStatus->handle($version)])
-                ->all(), 'statuses'),
+            'uploadStatuses' => Inertia::defer(
+                fn (): array => $gameVersions
+                    ->mapWithKeys(fn (GameVersion $version): array => [$version->slug => $checkUploadStatus->handle($version)])
+                    ->all(),
+                'statuses',
+            ),
         ]);
     }
 

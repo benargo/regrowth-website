@@ -4,6 +4,11 @@ import Icon from "@/Components/FontAwesome/Icon";
 
 const OUTDATED_AFTER_DAYS = 7;
 
+const LINK_CLASSES = {
+    error: "bg-red-600 hover:bg-red-800 focus:ring-red-500",
+    warning: "bg-yellow-600 hover:bg-yellow-800 focus:ring-yellow-500",
+};
+
 function daysSince(timestamp) {
     return (new Date() - new Date(timestamp)) / (1000 * 60 * 60 * 24);
 }
@@ -20,7 +25,7 @@ function UploadLink({ gameVersion, className }) {
     );
 }
 
-function FreshnessAlert({ gameVersion, type, title, linkClassName, children }) {
+function FreshnessAlert({ gameVersion, type, title, children }) {
     return (
         <div className="mb-6 md:mx-20">
             <Alert type={type}>
@@ -30,7 +35,7 @@ function FreshnessAlert({ gameVersion, type, title, linkClassName, children }) {
                         <p>{children}</p>
                     </div>
                     <div className="flex-initial">
-                        <UploadLink gameVersion={gameVersion} className={linkClassName} />
+                        <UploadLink gameVersion={gameVersion} className={LINK_CLASSES[type]} />
                     </div>
                 </div>
             </Alert>
@@ -51,7 +56,6 @@ export default function FreshnessAlerts({ freshness = [] }) {
                     gameVersion={gameVersion}
                     type="error"
                     title={`GRM data out of date for ${gameVersion.title}`}
-                    linkClassName="bg-red-600 hover:bg-red-800 focus:ring-red-500"
                 >
                     The {gameVersion.title} GRM data used to generate this addon data is missing raiders. Please
                     consider uploading a fresh GRM export to ensure your addon data is up to date.
@@ -66,7 +70,6 @@ export default function FreshnessAlerts({ freshness = [] }) {
                     gameVersion={gameVersion}
                     type="warning"
                     title={`No GRM data for ${gameVersion.title}`}
-                    linkClassName="bg-yellow-600 hover:bg-yellow-800 focus:ring-yellow-500"
                 >
                     No GRM data has been uploaded for {gameVersion.title} yet. Please upload a GRM export to ensure your
                     addon data is up to date.
@@ -81,7 +84,6 @@ export default function FreshnessAlerts({ freshness = [] }) {
                     gameVersion={gameVersion}
                     type="warning"
                     title={`Old GRM data detected for ${gameVersion.title}`}
-                    linkClassName="bg-yellow-600 hover:bg-yellow-800 focus:ring-yellow-500"
                 >
                     The {gameVersion.title} GRM data used to generate this addon data is over {OUTDATED_AFTER_DAYS} days
                     old (last updated on {new Date(lastModified).toLocaleDateString()}). Please consider uploading a

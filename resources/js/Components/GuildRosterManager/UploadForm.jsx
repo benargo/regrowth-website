@@ -52,30 +52,18 @@ export default function UploadForm({ gameVersion, memberCount, onUploaded }) {
         });
     };
 
-    const handleDragOver = (e) => {
+    // Take over drag events so the browser doesn't open a dropped file itself.
+    const handleDragEvent = (e, dragging) => {
         e.preventDefault();
         e.stopPropagation();
-        setIsDragging(true);
-    };
-
-    const handleDragLeave = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
+        setIsDragging(dragging);
     };
 
     const handleDrop = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
+        handleDragEvent(e, false);
 
-        const files = e.dataTransfer.files;
-        if (files.length === 0) {
-            return;
-        }
-
-        const file = files[0];
-        if (file.type !== "text/csv" && !file.name.endsWith(".csv")) {
+        const file = e.dataTransfer.files[0];
+        if (!file || (file.type !== "text/csv" && !file.name.endsWith(".csv"))) {
             return;
         }
 
@@ -127,8 +115,8 @@ export default function UploadForm({ gameVersion, memberCount, onUploaded }) {
                         spellCheck={false}
                         value={data.grm_data}
                         onChange={(e) => setData("grm_data", e.target.value)}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
+                        onDragOver={(e) => handleDragEvent(e, true)}
+                        onDragLeave={(e) => handleDragEvent(e, false)}
                         onDrop={handleDrop}
                         invalid={!!formErrors.grm_data}
                         data-dragging={isDragging || undefined}
