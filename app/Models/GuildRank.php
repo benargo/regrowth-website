@@ -34,13 +34,7 @@ class GuildRank extends Model implements DatasetModel, Sortable
     // ============ Sorting ============
 
     /**
-     * GuildRank sort_order is 0-based, unlike the other sortable models in this app.
-     *
-     * The value doubles as Blizzard's numeric guild-rank index (see FetchGuildRoster,
-     * AddonController, GuildRosterMemberCollection), which the WoW API defines as
-     * 0-based. Keeping them identical avoids an offset translation at every call site,
-     * so the first rank in an empty table must be assigned 0 rather than the package
-     * default of 1.
+     * Assign the next sort_order, starting from 0 when no ranks exist.
      */
     public function setHighestOrderNumber(): void
     {
@@ -50,9 +44,7 @@ class GuildRank extends Model implements DatasetModel, Sortable
     }
 
     /**
-     * Only auto-assign sort_order when the caller hasn't set one — GuildRankSeeder
-     * relies on an explicitly provided sort_order surviving create() so it can
-     * seed ranks with their Blizzard-defined index via updateOrCreate().
+     * Determine whether sort_order should be auto-assigned on create.
      */
     public function shouldSortWhenCreating(): bool
     {
@@ -60,8 +52,7 @@ class GuildRank extends Model implements DatasetModel, Sortable
     }
 
     /**
-     * Each game version numbers its own ranks from 0, because sort_order is
-     * that version's guild's Blizzard rank index.
+     * Scope sorting to ranks within the same game version.
      */
     public function buildSortQuery(): Builder
     {
