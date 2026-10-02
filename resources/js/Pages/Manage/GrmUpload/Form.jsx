@@ -378,7 +378,7 @@ const GrmUploadProgressModal = forwardRef(function GrmUploadProgressModal(_props
  * Manages its own form state and posts to the upload endpoint, notifying the
  * parent via `onUploaded` so it can start the progress modal.
  */
-function GrmUploadForm({ memberCount, onUploaded }) {
+function GrmUploadForm({ gameVersionId, memberCount, onUploaded }) {
     const [isDragging, setIsDragging] = useState(false);
 
     const {
@@ -389,6 +389,7 @@ function GrmUploadForm({ memberCount, onUploaded }) {
         errors: formErrors,
     } = useForm({
         grm_data: "",
+        game_version_id: gameVersionId,
     });
 
     const handleSubmit = (e) => {
@@ -547,6 +548,9 @@ export default function Page({ lastUploadTimestamp, memberCount, gameVersions })
     const progressModalRef = useRef(null);
 
     const [gameVersionId, setGameVersionId] = useState(gameVersions.length === 1 ? gameVersions[0].id : "");
+    const [lastUploadTimestampFor, setLastUploadTimestampFor] = useState(
+        gameVersions.length === 1 ? gameVersions[0].id : null,
+    );
 
     const selectedGameVersion = gameVersions.find((v) => v.id === gameVersionId);
     const hasMultipleGameVersions = gameVersions.length > 1;
@@ -554,8 +558,9 @@ export default function Page({ lastUploadTimestamp, memberCount, gameVersions })
     const handleGameVersionSelect = (id) => {
         setGameVersionId(id);
         router.reload({
-            only: ["memberCount"],
+            only: ["memberCount", "lastUploadTimestamp"],
             data: { game_version_id: id },
+            onSuccess: () => setLastUploadTimestampFor(id),
         });
     };
 
@@ -584,7 +589,9 @@ export default function Page({ lastUploadTimestamp, memberCount, gameVersions })
                         <p className="mb-6 text-xl font-bold">
                             Upload your GRM data for <span className="text-heading">{selectedGameVersion.title}</span>.
                         </p>
-                        {lastUploadTimestamp ? (
+                        {lastUploadTimestampFor !== gameVersionId ? (
+                            <p className="text-md text-secondary-400 mb-6 animate-pulse">Checking previous uploads…</p>
+                        ) : lastUploadTimestamp ? (
                             <p className="text-md text-secondary-400 mb-6">
                                 The last GRM data upload was made on {lastUploadTimestamp}
                             </p>
@@ -593,7 +600,11 @@ export default function Page({ lastUploadTimestamp, memberCount, gameVersions })
                         )}
                         <p className="mb-6 text-lg">To export your GRM data, follow these steps:</p>
 
-                        <GrmUploadForm memberCount={memberCount} onUploaded={() => progressModalRef.current?.start()} />
+                        <GrmUploadForm
+                            gameVersionId={gameVersionId}
+                            memberCount={memberCount}
+                            onUploaded={() => progressModalRef.current?.start()}
+                        />
                     </div>
                 )}
             </PageContainer>

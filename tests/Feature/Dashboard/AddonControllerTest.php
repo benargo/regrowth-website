@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Dashboard;
 
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\User;
 use App\Services\WarcraftLogs\GuildTags;
@@ -11,6 +12,8 @@ use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockClient;
+use Saloon\Http\Faking\MockResponse;
 use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\Support\DashboardTestCase;
 
@@ -344,9 +347,7 @@ class AddonControllerTest extends DashboardTestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-
-        $this->mockGetGuildRoster();
-        $this->applyBlizzardMocks();
+        GameVersion::factory()->fetchableRoster()->create();
 
         $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
@@ -354,9 +355,10 @@ class AddonControllerTest extends DashboardTestCase
             ->component('Manage/Addon/Export')
             ->missing('grmFreshness')
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('grmFreshness')
-                ->has('grmFreshness.lastModified')
-                ->has('grmFreshness.dataIsStale')
+                ->has('grmFreshness', 1)
+                ->has('grmFreshness.0.gameVersion')
+                ->has('grmFreshness.0.lastModified')
+                ->has('grmFreshness.0.dataIsStale')
             )
         );
     }
@@ -366,9 +368,7 @@ class AddonControllerTest extends DashboardTestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-
-        $this->mockGetGuildRoster();
-        $this->applyBlizzardMocks();
+        GameVersion::factory()->fetchableRoster()->create();
 
         $response = $this->actingAs($this->officer)->get(route('management.addon.export.json'));
 
@@ -376,295 +376,85 @@ class AddonControllerTest extends DashboardTestCase
             ->component('Manage/Addon/ExportJson')
             ->missing('grmFreshness')
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('grmFreshness')
-                ->has('grmFreshness.lastModified')
-                ->has('grmFreshness.dataIsStale')
+                ->has('grmFreshness', 1)
+                ->has('grmFreshness.0.gameVersion')
+                ->has('grmFreshness.0.lastModified')
+                ->has('grmFreshness.0.dataIsStale')
             )
         );
     }
 
     #[Test]
-    public function grm_freshness_returns_epoch_timestamp_when_no_file_exists(): void
+    public function grm_freshness_lists_one_entry_per_current_roster_newest_first(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
-
-        $this->mockGetGuildRoster();
-        $this->applyBlizzardMocks();
+        GameVersion::factory()->fetchableRoster()->create(['title' => 'Older', 'release_date' => Carbon::now()->subYear()]);
+        GameVersion::factory()->fetchableRoster()->create(['title' => 'Newer', 'release_date' => Carbon::now()->subWeek()]);
+        GameVersion::factory()->fetchableRoster()->create(['title' => 'Unreleased', 'release_date' => Carbon::now()->addMonth()]);
+        GameVersion::factory()->create(['title' => 'No namespace', 'blizzard_namespace' => null]);
 
         $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->missing('grmFreshness')
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('grmFreshness.lastModified', fn ($value) => Carbon::parse($value)->timestamp === 0)
+                ->has('grmFreshness', 2)
+                ->where('grmFreshness.0.gameVersion.title', 'Newer')
+                ->where('grmFreshness.1.gameVersion.title', 'Older')
             )
         );
     }
 
     #[Test]
-    public function grm_freshness_is_not_stale_when_no_file_exists_and_no_raiders(): void
+    public function grm_freshness_is_empty_when_no_game_version_has_a_roster(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
 
-        $this->mockGetGuildRoster();
-        $this->applyBlizzardMocks();
-
         $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->missing('grmFreshness')
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('grmFreshness.dataIsStale', false)
+                ->has('grmFreshness', 0)
             )
         );
     }
 
+    #[Group('error-handling')]
     #[Test]
-    public function grm_freshness_is_stale_when_no_file_exists_but_guild_has_raiders(): void
+    public function grm_freshness_keeps_other_versions_when_one_roster_fails(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
+        $healthy = GameVersion::factory()->fetchableRoster()->create(['guild_name' => 'Regrowth', 'release_date' => Carbon::now()->subWeek()]);
+        GameVersion::factory()->fetchableRoster()->create(['guild_name' => 'Missing Guild', 'release_date' => Carbon::now()->subYear()]);
+        $raider = GuildRank::factory()->doesNotCountAttendance()->create(['game_version_id' => $healthy->id, 'sort_order' => 0, 'name' => 'Raider']);
 
-        // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
-        $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
-
-        // Fake Saloon to return 5 raiders
-        $this->mockGetGuildRoster(['members' => $this->raiderMemberPayloads(5, $raiderRank->sort_order)]);
-        $this->applyBlizzardMocks();
-
-        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
-
-        // 5 raiders in guild, 0 in GRM file = difference of 5 >= 3 = stale
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('grmFreshness')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('grmFreshness.dataIsStale', true)
-            )
-        );
-    }
-
-    #[Test]
-    public function grm_freshness_is_not_stale_when_raider_counts_match(): void
-    {
-        Storage::fake('local');
-        $this->seedExportFile();
-
-        // Create CSV with 3 raiders
-        $csvContent = "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\n";
-        $csvContent .= "Player1,Raider,80,1,Main,\n";
-        $csvContent .= "Player2,Raider,80,2,Main,\n";
-        $csvContent .= "Player3,Raider,80,3,Main,\n";
-        Storage::disk('local')->put('grm/uploads/latest.csv', $csvContent);
-
-        // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
-        $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
-
-        // Fake Saloon to return 3 raiders (same as CSV)
-        $this->mockGetGuildRoster(['members' => $this->raiderMemberPayloads(3, $raiderRank->sort_order)]);
-        $this->applyBlizzardMocks();
-
-        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
-
-        // 3 raiders in both = difference of 0 < 3 = not stale
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('grmFreshness')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('grmFreshness.dataIsStale', false)
-            )
-        );
-    }
-
-    #[Test]
-    public function grm_freshness_is_not_stale_when_raider_count_difference_is_less_than_three(): void
-    {
-        Storage::fake('local');
-        $this->seedExportFile();
-
-        // Create CSV with 5 raiders
-        $csvContent = "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\n";
-        $csvContent .= "Player1,Raider,80,1,Main,\n";
-        $csvContent .= "Player2,Raider,80,2,Main,\n";
-        $csvContent .= "Player3,Raider,80,3,Main,\n";
-        $csvContent .= "Player4,Raider,80,4,Main,\n";
-        $csvContent .= "Player5,Raider,80,5,Main,\n";
-        Storage::disk('local')->put('grm/uploads/latest.csv', $csvContent);
-
-        // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
-        $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
-
-        // Fake Saloon to return 3 raiders (difference of 2)
-        $this->mockGetGuildRoster(['members' => $this->raiderMemberPayloads(3, $raiderRank->sort_order)]);
-        $this->applyBlizzardMocks();
-
-        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
-
-        // 5 in CSV, 3 in guild = difference of 2 < 3 = not stale
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('grmFreshness')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('grmFreshness.dataIsStale', false)
-            )
-        );
-    }
-
-    #[Test]
-    public function grm_freshness_is_stale_when_raider_count_difference_is_three_or_more(): void
-    {
-        Storage::fake('local');
-        $this->seedExportFile();
-
-        // Create CSV with 2 raiders
-        $csvContent = "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\n";
-        $csvContent .= "Player1,Raider,80,1,Main,\n";
-        $csvContent .= "Player2,Raider,80,2,Main,\n";
-        Storage::disk('local')->put('grm/uploads/latest.csv', $csvContent);
-
-        // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
-        $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
-
-        // Fake Saloon to return 5 raiders (difference of 3)
-        $this->mockGetGuildRoster(['members' => $this->raiderMemberPayloads(5, $raiderRank->sort_order)]);
-        $this->applyBlizzardMocks();
-
-        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
-
-        // 2 in CSV, 5 in guild = difference of 3 >= 3 = stale
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('grmFreshness')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('grmFreshness.dataIsStale', true)
-            )
-        );
-    }
-
-    #[Test]
-    public function grm_freshness_counts_multiple_raider_rank_variants(): void
-    {
-        Storage::fake('local');
-        $this->seedExportFile();
-
-        // Create CSV with different raider rank names
-        $csvContent = "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\n";
-        $csvContent .= "Player1,Raider,80,1,Main,\n";
-        $csvContent .= "Player2,Core Raider,80,2,Main,\n";
-        $csvContent .= "Player3,Trial Raider,80,3,Main,\n";
-        $csvContent .= "Player4,Officer,80,4,Main,\n";
-        Storage::disk('local')->put('grm/uploads/latest.csv', $csvContent);
-
-        // Create multiple raider ranks (doesn't count attendance to avoid triggering attendance calculation)
-        $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
-        $coreRaiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Core Raider']);
-        $trialRaiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Trial Raider']);
-        GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Officer']);
-
-        // Fake Saloon to return 3 raiders across different ranks
-        $this->mockGetGuildRoster(['members' => [
-            $this->raiderMemberPayload(1, $raiderRank->sort_order),
-            $this->raiderMemberPayload(2, $coreRaiderRank->sort_order),
-            $this->raiderMemberPayload(3, $trialRaiderRank->sort_order),
-        ]]);
-        $this->applyBlizzardMocks();
-
-        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
-
-        // 3 raiders in CSV (Player1, Player2, Player3), 3 in guild = difference of 0 < 3 = not stale
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('grmFreshness')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('grmFreshness.dataIsStale', false)
-            )
-        );
-    }
-
-    #[Test]
-    public function grm_freshness_returns_file_last_modified_time(): void
-    {
-        Storage::fake('local');
-        $this->seedExportFile();
-
-        // Create the CSV file
-        $csvContent = "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nPlayer1,Member,80,1,Main,\n";
-        Storage::disk('local')->put('grm/uploads/latest.csv', $csvContent);
-
-        $this->mockGetGuildRoster();
+        // Drop the setUp() class-keyed roster mock: Saloon::fake() only adds to the global
+        // mock client, and class keys win over URL keys.
+        MockClient::destroyGlobal();
+        $this->pendingBlizzardMocks = [
+            self::TOKEN_MOCK_KEY => MockResponse::make(body: self::TOKEN_MOCK_RESPONSE, status: 200),
+            '*/data/wow/guild/thunderstrike/regrowth/roster*' => MockResponse::make(body: [
+                'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Regrowth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
+                'members' => $this->raiderMemberPayloads(5, $raider->sort_order),
+            ], status: 200),
+            '*/data/wow/guild/thunderstrike/missing-guild/roster*' => MockResponse::make(
+                body: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'],
+                status: 404,
+            ),
+        ];
         $this->applyBlizzardMocks();
 
         $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->missing('grmFreshness')
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('grmFreshness.lastModified', function ($lastModified) {
-                    // The lastModified should not be the epoch timestamp
-                    return $lastModified !== Carbon::createFromTimestamp(0)->toIso8601String();
-                })
-            )
-        );
-    }
-
-    #[Test]
-    public function grm_freshness_ignores_non_raider_ranks_in_guild_roster(): void
-    {
-        Storage::fake('local');
-        $this->seedExportFile();
-
-        // Create CSV with 0 raiders
-        $csvContent = "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\n";
-        $csvContent .= "Player1,Officer,80,1,Main,\n";
-        $csvContent .= "Player2,Member,80,2,Main,\n";
-        Storage::disk('local')->put('grm/uploads/latest.csv', $csvContent);
-
-        // Create non-raider ranks only (doesn't count attendance to avoid triggering attendance calculation)
-        $officerRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Officer']);
-        $memberRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Member']);
-
-        // Fake Saloon to return non-raiders
-        $this->mockGetGuildRoster(['members' => [
-            $this->raiderMemberPayload(1, $officerRank->sort_order),
-            $this->raiderMemberPayload(2, $memberRank->sort_order),
-        ]]);
-        $this->applyBlizzardMocks();
-
-        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
-
-        // 0 raiders in both = difference of 0 < 3 = not stale
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('grmFreshness')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('grmFreshness.dataIsStale', false)
-            )
-        );
-    }
-
-    #[Test]
-    public function grm_freshness_handles_semicolon_delimited_csv(): void
-    {
-        Storage::fake('local');
-        $this->seedExportFile();
-
-        // Create CSV with semicolon delimiter
-        $csvContent = "Name;Rank;Level;Last Online (Days);Main/Alt;Player Alts\n";
-        $csvContent .= "Player1;Raider;80;1;Main;\n";
-        $csvContent .= "Player2;Raider;80;2;Main;\n";
-        Storage::disk('local')->put('grm/uploads/latest.csv', $csvContent);
-
-        // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
-        $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
-
-        // Fake Saloon to return 2 raiders
-        $this->mockGetGuildRoster(['members' => $this->raiderMemberPayloads(2, $raiderRank->sort_order)]);
-        $this->applyBlizzardMocks();
-
-        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
-
-        // Note: The current implementation uses str_getcsv which defaults to comma delimiter
-        // This test documents the current behavior - semicolon CSV won't parse correctly
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('grmFreshness')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('grmFreshness.dataIsStale')
+                ->has('grmFreshness', 2)
+                ->where('grmFreshness.0.blzRaiderCount', 5)
+                ->where('grmFreshness.0.dataIsStale', true)
+                ->where('grmFreshness.1.blzRaiderCount', null)
+                ->where('grmFreshness.1.dataIsStale', false)
             )
         );
     }

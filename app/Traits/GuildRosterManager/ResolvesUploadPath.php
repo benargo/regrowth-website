@@ -1,0 +1,17 @@
+<?php
+
+namespace App\Traits\GuildRosterManager;
+
+use App\Models\GameVersion;
+use Illuminate\Support\Facades\Config;
+
+trait ResolvesUploadPath
+{
+    /**
+     * Get the local-disk path of the given game version's latest GRM upload.
+     */
+    protected function grmUploadPath(GameVersion $gameVersion): string
+    {
+        return str_replace('{game_version}', $gameVersion->slug, Config::string('services.guild_roster_manager.upload_path'));
+    }
+}

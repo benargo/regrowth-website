@@ -6,7 +6,9 @@ use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Jobs\ProcessGrmUpload;
 use App\Models\GameVersion;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Laravel\Facades\Saloon;
@@ -102,6 +104,22 @@ class GrmUploadValidationTest extends DashboardTestCase
         ]);
 
         Queue::assertPushed(ProcessGrmUpload::class);
+    }
+
+    #[Test]
+    public function upload_stores_the_csv_under_the_game_versions_slug(): void
+    {
+        Queue::fake();
+        Storage::fake('local');
+        $version = GameVersion::factory()->create(['slug' => 'tbc']);
+
+        $this->actingAs($this->officer)->post(route('management.grm-upload.upload'), [
+            'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nTestChar,Raider,80,1,Main,",
+            'game_version_id' => $version->id,
+        ]);
+
+        Storage::disk('local')->assertExists('grm/uploads/tbc/latest.csv');
+        Storage::disk('local')->assertMissing('grm/uploads/latest.csv');
     }
 
     // ==================== form — member count ====================
@@ -270,6 +288,37 @@ class GrmUploadValidationTest extends DashboardTestCase
 
         $partialResponse->assertOk();
         $partialResponse->assertJsonPath('props.memberCount', null);
+    }
+
+    // ==================== form — last upload ====================
+
+    #[Test]
+    public function upload_form_last_upload_timestamp_uses_the_selected_game_versions_upload(): void
+    {
+        Storage::fake('local');
+        GameVersion::factory()->create(['slug' => 'alpha']);
+        $selected = GameVersion::factory()->create(['slug' => 'beta']);
+        Storage::disk('local')->put('grm/uploads/beta/latest.csv', "Name,Rank\n");
+        $expected = Carbon::createFromTimestamp(Storage::disk('local')->lastModified('grm/uploads/beta/latest.csv'))
+            ->format('l, j F Y \a\t H:i');
+
+        $response = $this->actingAs($this->officer)->get(route('management.grm-upload.form', ['game_version_id' => $selected->id]));
+
+        $response->assertInertia(fn ($page) => $page->where('lastUploadTimestamp', $expected));
+    }
+
+    #[Test]
+    public function upload_form_last_upload_timestamp_ignores_other_game_versions_uploads(): void
+    {
+        Storage::fake('local');
+        GameVersion::factory()->create(['slug' => 'alpha']);
+        $selected = GameVersion::factory()->create(['slug' => 'beta']);
+        Storage::disk('local')->put('grm/uploads/alpha/latest.csv', "Name,Rank\n");
+        Storage::disk('local')->put('grm/uploads/latest.csv', "Name,Rank\n");
+
+        $response = $this->actingAs($this->officer)->get(route('management.grm-upload.form', ['game_version_id' => $selected->id]));
+
+        $response->assertInertia(fn ($page) => $page->where('lastUploadTimestamp', null));
     }
 
     // ==================== upload — validation ====================
