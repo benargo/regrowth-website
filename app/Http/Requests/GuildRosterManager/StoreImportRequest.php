@@ -5,6 +5,7 @@ namespace App\Http\Requests\GuildRosterManager;
 use App\Models\GameVersion;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -21,6 +22,9 @@ class StoreImportRequest extends FormRequest
 
     protected ?string $detectedDelimiter = null;
 
+    /** @var Collection<int, GameVersion>|null */
+    protected ?Collection $currentRosters = null;
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -33,7 +37,7 @@ class StoreImportRequest extends FormRequest
             'game_version' => [
                 'required',
                 'string',
-                Rule::in(GameVersion::currentRosters()->pluck('slug')),
+                Rule::in($this->currentRosters()->pluck('slug')),
             ],
         ];
     }
@@ -147,8 +151,16 @@ class StoreImportRequest extends FormRequest
      */
     public function gameVersion(): GameVersion
     {
-        return GameVersion::query()
-            ->where('slug', $this->string('game_version')->toString())
-            ->firstOrFail();
+        return $this->currentRosters()->firstOrFail('slug', $this->string('game_version')->toString());
+    }
+
+    /**
+     * Get the game versions that own a current guild roster, queried once per request.
+     *
+     * @return Collection<int, GameVersion>
+     */
+    protected function currentRosters(): Collection
+    {
+        return $this->currentRosters ??= GameVersion::currentRosters();
     }
 }

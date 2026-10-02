@@ -47,7 +47,7 @@ class CheckUploadFreshness implements AssessesUploadFreshness
 
         $grmRaiderCount = $hasUpload ? $this->countUploadRaiders($disk->get($path)) : 0;
         $blzRaiderCount = $this->countRosterRaiders($gameVersion);
-        $lastModified = $hasUpload ? Carbon::createFromTimestamp($disk->lastModified($path)) : null;
+        $lastModified = $hasUpload ? Carbon::createFromTimestamp($disk->lastModified($path), config('app.timezone')) : null;
 
         return [
             'gameVersion' => ['id' => $gameVersion->id, 'title' => $gameVersion->title, 'slug' => $gameVersion->slug],

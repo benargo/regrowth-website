@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
-use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
@@ -182,13 +181,8 @@ class CheckUploadStatusTest extends TestCase
 
     private function fakeGuildNotFound(): void
     {
-        $this->pendingBlizzardMocks = [
-            self::TOKEN_MOCK_KEY => MockResponse::make(body: self::TOKEN_MOCK_RESPONSE, status: 200),
-            GetGuildRequest::class => MockResponse::make(
-                body: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'],
-                status: 404,
-            ),
-        ];
+        $this->mockGetGuild();
+        $this->mockNotFoundResponse(GetGuildRequest::class);
         $this->applyBlizzardMocks();
     }
 }

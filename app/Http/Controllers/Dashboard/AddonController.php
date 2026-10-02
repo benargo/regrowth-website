@@ -33,7 +33,7 @@ class AddonController extends Controller
 
                 return base64_encode(json_encode($data));
             }),
-            'grmFreshness' => Inertia::defer(fn () => $this->getGrmFreshness()),
+            'grmFreshness' => Inertia::defer(fn () => $this->getGrmFreshness(), 'freshness'),
         ]);
     }
 
@@ -49,7 +49,7 @@ class AddonController extends Controller
 
                 return json_encode($data, JSON_PRETTY_PRINT);
             }),
-            'grmFreshness' => Inertia::defer(fn () => $this->getGrmFreshness()),
+            'grmFreshness' => Inertia::defer(fn () => $this->getGrmFreshness(), 'freshness'),
         ]);
     }
 

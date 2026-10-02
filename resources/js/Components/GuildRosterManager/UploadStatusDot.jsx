@@ -1,6 +1,6 @@
 import Tooltip from "@/Components/Tooltip";
 
-export const UPLOAD_STATUS_LABELS = {
+const UPLOAD_STATUS_LABELS = {
     current: "Up to date",
     outdated: "Over a week old",
     stale: "Member count has changed",
