@@ -1,13 +1,15 @@
 <?php
 
-namespace App\Http\Requests\Dashboard;
+namespace App\Http\Requests\GuildRosterManager;
 
+use App\Models\GameVersion;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class UploadGrmDataRequest extends FormRequest
+class StoreImportRequest extends FormRequest
 {
     protected const REQUIRED_HEADERS = [
         'Name',
@@ -20,6 +22,9 @@ class UploadGrmDataRequest extends FormRequest
 
     protected ?string $detectedDelimiter = null;
 
+    /** @var Collection<int, GameVersion>|null */
+    protected ?Collection $currentRosters = null;
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -29,10 +34,10 @@ class UploadGrmDataRequest extends FormRequest
     {
         return [
             'grm_data' => ['required', 'string'],
-            'game_version_id' => [
+            'game_version' => [
                 'required',
-                'integer',
-                Rule::exists('game_versions', 'id')->whereNotNull('blizzard_namespace'),
+                'string',
+                Rule::in($this->currentRosters()->pluck('slug')),
             ],
         ];
     }
@@ -47,9 +52,9 @@ class UploadGrmDataRequest extends FormRequest
         return [
             'grm_data.required' => 'GRM data is required.',
             'grm_data.string' => 'GRM data must be a string.',
-            'game_version_id.required' => 'A game version is required.',
-            'game_version_id.integer' => 'The selected game version is invalid.',
-            'game_version_id.exists' => 'The selected game version does not exist or is not available for GRM upload.',
+            'game_version.required' => 'A game version is required.',
+            'game_version.string' => 'The selected game version is invalid.',
+            'game_version.in' => 'The selected game version is not available for GRM upload.',
         ];
     }
 
@@ -139,5 +144,23 @@ class UploadGrmDataRequest extends FormRequest
             'headers' => $headers,
             'rows' => $rows,
         ];
+    }
+
+    /**
+     * Get the game version the upload belongs to.
+     */
+    public function gameVersion(): GameVersion
+    {
+        return $this->currentRosters()->firstOrFail('slug', $this->string('game_version')->toString());
+    }
+
+    /**
+     * Get the game versions that own a current guild roster, queried once per request.
+     *
+     * @return Collection<int, GameVersion>
+     */
+    protected function currentRosters(): Collection
+    {
+        return $this->currentRosters ??= GameVersion::currentRosters();
     }
 }

@@ -356,7 +356,7 @@ class GameVersionTest extends ModelTestCase
     {
         $this->assertEqualsCanonicalizing(
             array_keys(self::usageRelations()),
-            GameVersion::USAGE_RELATIONS,
+            (new GameVersion)->usageRelations(),
         );
     }
 

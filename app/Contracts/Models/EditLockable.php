@@ -12,6 +12,11 @@ use Illuminate\Cache\Lock;
 interface EditLockable
 {
     /**
+     * How long an officer keeps the edit lock after their last active visit or poll.
+     */
+    public const int EDIT_LOCK_SECONDS = 300;
+
+    /**
      * The atomic lock that gives one officer at a time the right to edit this record.
      */
     public function editLock(User $user): Lock;

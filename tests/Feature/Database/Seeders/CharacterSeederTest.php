@@ -3,8 +3,11 @@
 namespace Tests\Feature\Database\Seeders;
 
 use App\Enums\Gender;
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use Database\Seeders\CharacterSeeder;
@@ -13,6 +16,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
+use Saloon\Http\Request;
+use Saloon\Http\Response;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
@@ -20,6 +25,15 @@ use Tests\TestCase;
 class CharacterSeederTest extends TestCase
 {
     use RefreshDatabase;
+
+    private GameVersion $gameVersion;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->gameVersion = GameVersion::factory()->fetchableRoster()->create();
+    }
 
     /**
      * @return array<string, mixed>
@@ -68,7 +82,7 @@ class CharacterSeederTest extends TestCase
 
         $this->fakeSaloon();
 
-        $character = Character::factory()->create(['name' => 'Thrall']);
+        $character = Character::factory()->for($this->gameVersion)->create(['name' => 'Thrall']);
 
         $this->runSeeder();
 
@@ -81,6 +95,36 @@ class CharacterSeederTest extends TestCase
     }
 
     #[Test]
+    public function seeder_requests_the_profile_from_the_characters_game_version_realm_and_namespace(): void
+    {
+        $this->fakeSaloon();
+
+        Character::factory()->for($this->gameVersion)->create(['name' => 'Thrall']);
+
+        $this->runSeeder();
+
+        Saloon::assertSent(function (Request $request, Response $response): bool {
+            return $request instanceof GetCharacterProfileRequest
+                && $request->resolveEndpoint() === '/profile/wow/character/thunderstrike/thrall'
+                && $response->getPendingRequest()->headers()->get('Battlenet-Namespace') === BlizzardNamespace::ANNIVERSARY->forProfileRequests(Region::EU);
+        });
+    }
+
+    #[Test]
+    public function seeder_skips_characters_whose_game_version_has_no_realm(): void
+    {
+        Saloon::fake([]);
+
+        $realmlessGameVersion = GameVersion::factory()->create(['realm' => null]);
+        $character = Character::factory()->for($realmlessGameVersion)->create(['name' => 'Thrall']);
+
+        $this->runSeeder();
+
+        Saloon::assertNothingSent();
+        $this->assertNull($character->fresh()->playable_class_id);
+    }
+
+    #[Test]
     public function seeder_skips_characters_with_both_columns_already_populated(): void
     {
         Saloon::fake([]);
@@ -88,7 +132,7 @@ class CharacterSeederTest extends TestCase
         Character::factory()
             ->withPlayableClass()
             ->withPlayableRace(PlayableRace::factory()->create(['id' => 1, 'name' => 'Human']))
-            ->create(['name' => 'Thrall', 'gender' => Gender::MALE]);
+            ->for($this->gameVersion)->create(['name' => 'Thrall', 'gender' => Gender::MALE]);
 
         $this->runSeeder();
 
@@ -105,7 +149,7 @@ class CharacterSeederTest extends TestCase
 
         $character = Character::factory()
             ->withPlayableClass(PlayableClass::find(7))
-            ->create(['name' => 'Thrall']);
+            ->for($this->gameVersion)->create(['name' => 'Thrall']);
 
         $this->runSeeder();
 
@@ -129,7 +173,7 @@ class CharacterSeederTest extends TestCase
             ),
         ]);
 
-        $character = Character::factory()->create(['name' => 'Thrall']);
+        $character = Character::factory()->for($this->gameVersion)->create(['name' => 'Thrall']);
 
         $this->runSeeder();
 
@@ -147,8 +191,8 @@ class CharacterSeederTest extends TestCase
 
         $this->fakeSaloon();
 
-        $characterA = Character::factory()->create(['name' => 'Thrall']);
-        $characterB = Character::factory()->create(['name' => 'Garrosh']);
+        $characterA = Character::factory()->for($this->gameVersion)->create(['name' => 'Thrall']);
+        $characterB = Character::factory()->for($this->gameVersion)->create(['name' => 'Garrosh']);
 
         // Create a bidirectional link — this is what causes the recursive touch loop.
         \DB::table('character_links')->insert([
@@ -169,7 +213,7 @@ class CharacterSeederTest extends TestCase
 
         $this->fakeSaloon();
 
-        $character = Character::factory()->create(['name' => 'Thrall']);
+        $character = Character::factory()->for($this->gameVersion)->create(['name' => 'Thrall']);
 
         $this->runSeeder();
 
@@ -187,7 +231,7 @@ class CharacterSeederTest extends TestCase
         $character = Character::factory()
             ->withPlayableClass($playableClass)
             ->withPlayableRace(PlayableRace::find(2))
-            ->create(['name' => 'Thrall', 'gender' => null]);
+            ->for($this->gameVersion)->create(['name' => 'Thrall', 'gender' => null]);
 
         $this->runSeeder();
 
@@ -214,7 +258,7 @@ class CharacterSeederTest extends TestCase
         $character = Character::factory()
             ->withPlayableClass($playableClass)
             ->withPlayableRace(PlayableRace::find(2))
-            ->create(['name' => 'Thrall', 'gender' => null]);
+            ->for($this->gameVersion)->create(['name' => 'Thrall', 'gender' => null]);
 
         $this->runSeeder();
 

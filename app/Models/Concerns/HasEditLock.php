@@ -16,11 +16,6 @@ use Illuminate\Support\Str;
  */
 trait HasEditLock
 {
-    /**
-     * How long an officer keeps the edit lock after their last active visit or poll.
-     */
-    public const int EDIT_LOCK_SECONDS = 300;
-
     public function editLock(User $user): Lock
     {
         return Cache::lock($this->editLockKey('editing'), static::EDIT_LOCK_SECONDS, (string) $user->id);

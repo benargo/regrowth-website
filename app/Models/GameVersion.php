@@ -53,9 +53,12 @@ class GameVersion extends Model implements DatasetModel, EditLockable
     /**
      * Relationships whose existing rows mark this game version as in use.
      *
-     * @var list<string>
+     * @return list<string>
      */
-    public const array USAGE_RELATIONS = ['phases', 'items', 'characters', 'guildRanks'];
+    public function usageRelations(): array
+    {
+        return ['phases', 'items', 'characters', 'guildRanks'];
+    }
 
     // ============ Custom attributes and casts ===========
 

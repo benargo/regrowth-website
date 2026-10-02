@@ -31,6 +31,10 @@ return [
         'filesystem' => env('BLIZZARD_FILESYSTEM', 'public'),
     ],
 
+    'guild_roster_manager' => [
+        'upload_path' => 'grm/uploads/{game_version}/latest.csv',
+    ],
+
     'discord' => [
         'client_id' => env('DISCORD_CLIENT_ID'),
         'client_secret' => env('DISCORD_CLIENT_SECRET'),

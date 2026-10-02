@@ -47,8 +47,6 @@ class BlizzardConnector extends Connector
         protected string $clientSecret,
         protected Region $region,
         protected string $locale,
-        protected string $defaultRealmSlug,
-        protected string $defaultGuildSlug,
         EagerlyMirrorAssets $eagerlyMirrorAssets,
     ) {
         if (! $this->region->supportsLocale($this->locale)) {
@@ -88,22 +86,6 @@ class BlizzardConnector extends Connector
     public function getLocale(): string
     {
         return $this->locale;
-    }
-
-    /**
-     * Get the configured default realm slug.
-     */
-    public function defaultRealmSlug(): string
-    {
-        return $this->defaultRealmSlug;
-    }
-
-    /**
-     * Get the configured default guild slug.
-     */
-    public function defaultGuildSlug(): string
-    {
-        return $this->defaultGuildSlug;
     }
 
     /**

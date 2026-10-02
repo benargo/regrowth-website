@@ -1,9 +1,8 @@
 import { useRef } from "react";
-import { Deferred, Link } from "@inertiajs/react";
+import { Deferred } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
-import Alert from "@/Components/Alert";
 import CopyButton from "@/Components/CopyButton";
-import Icon from "@/Components/FontAwesome/Icon";
+import FreshnessAlerts from "@/Components/GuildRosterManager/FreshnessAlerts";
 import SharedHeader from "@/Components/SharedHeader";
 import TabNav from "@/Components/TabNav";
 import PageContainer from "@/Components/PageContainer";
@@ -21,13 +20,6 @@ export default function AddonExportJson({ exportedData, grmFreshness }) {
         }
     }
 
-    function grmDataIsOutdated() {
-        let lastModified = new Date(grmFreshness?.lastModified);
-        let now = new Date();
-        let diffInDays = (now - lastModified) / (1000 * 60 * 60 * 24);
-        return diffInDays > 7;
-    }
-
     return (
         <Master title="Export Addon Data">
             <SharedHeader title="Export Addon Data" backgroundClass="bg-officer-meeting" />
@@ -42,57 +34,7 @@ export default function AddonExportJson({ exportedData, grmFreshness }) {
                     currentTab="json"
                 />
                 <Deferred data="grmFreshness" fallback={<div></div>}>
-                    {grmFreshness?.dataIsStale && (
-                        <div className="mb-6 md:mx-20">
-                            <Alert type="error">
-                                <div className="flex flex-col items-center gap-2 md:flex-row">
-                                    <div className="flex-auto">
-                                        <h2 className="mb-1 text-lg font-bold">GRM data out of date</h2>
-                                        <p>
-                                            The GRM data used to generate this addon data is missing raiders. Please
-                                            consider uploading a fresh GRM export to ensure your addon data is up to
-                                            date.
-                                        </p>
-                                    </div>
-                                    <div className="flex-auto">
-                                        <Link
-                                            href={route("management.grm-upload.form")}
-                                            className="inline-flex items-center rounded-md border border-transparent bg-red-600 p-4 text-sm font-semibold text-white transition duration-150 ease-in-out hover:bg-red-800 focus:outline-hidden focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-25"
-                                        >
-                                            <Icon icon="file-upload" style="solid" className="mr-2" />
-                                            <span className="whitespace-nowrap">Upload GRM Data</span>
-                                        </Link>
-                                    </div>
-                                </div>
-                            </Alert>
-                        </div>
-                    )}
-                    {!grmFreshness?.dataIsStale && grmDataIsOutdated() && (
-                        <div className="mb-6 md:mx-20">
-                            <Alert type="warning">
-                                <div className="flex flex-col items-center gap-2 md:flex-row">
-                                    <div className="flex-auto">
-                                        <h2 className="mb-1 text-lg font-bold">Old GRM data detected</h2>
-                                        <p>
-                                            The GRM data used to generate this addon data is over 7 days old (last
-                                            updated on {new Date(grmFreshness?.lastModified).toLocaleDateString()}).
-                                            Please consider uploading a fresh GRM export to ensure your addon data is up
-                                            to date.
-                                        </p>
-                                    </div>
-                                    <div className="flex-initial">
-                                        <Link
-                                            href={route("management.grm-upload.form")}
-                                            className="inline-flex items-center rounded-md border border-transparent bg-yellow-600 p-4 text-sm font-semibold text-white transition duration-150 ease-in-out hover:bg-yellow-800 focus:outline-hidden focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 disabled:opacity-25"
-                                        >
-                                            <Icon icon="file-upload" style="solid" className="mr-2" />
-                                            <span className="whitespace-nowrap">Upload GRM Data</span>
-                                        </Link>
-                                    </div>
-                                </div>
-                            </Alert>
-                        </div>
-                    )}
+                    <FreshnessAlerts freshness={grmFreshness} />
                 </Deferred>
                 <div className="flex flex-row items-baseline space-x-4">
                     <div className="flex-1">

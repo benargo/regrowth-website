@@ -167,7 +167,7 @@ class DashboardPagesTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('management.grm-upload.form'));
+        $response = $this->actingAs($user)->get(route('management.grm.create'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');

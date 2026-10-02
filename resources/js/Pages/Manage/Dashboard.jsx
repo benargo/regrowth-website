@@ -140,7 +140,7 @@ export default function Dashboard({ discordRoles }) {
                                         Set the start dates of phases of The Burning Crusade content.
                                     </p>
                                 </DashboardCard>
-                                <DashboardCard href={route("management.grm-upload.form")} icon="file-upload">
+                                <DashboardCard href={route("management.grm.create")} icon="file-upload">
                                     <h3 className="text-md">Upload GRM data</h3>
                                     <p className="mb-1 text-sm">
                                         Upload data from GRM to link mains and alts together.

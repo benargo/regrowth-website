@@ -9,10 +9,13 @@ use App\Listeners\FlushPermissionsCache;
 use App\Listeners\FlushReportsCache;
 use App\Listeners\ScheduleAddonExportBuild;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Saloon\Config;
 use Spatie\Permission\PermissionRegistrar;
 
 abstract class TestCase extends BaseTestCase
 {
+    private static bool $strayRequestsPrevented = false;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -25,5 +28,10 @@ abstract class TestCase extends BaseTestCase
         $this->mock(FlushPermissionsCache::class)->shouldReceive('handle');
         $this->mock(FlushReportsCache::class)->shouldReceive('handle');
         $this->mock(ScheduleAddonExportBuild::class)->shouldReceive('handle');
+
+        if (! self::$strayRequestsPrevented) {
+            Config::preventStrayRequests();
+            self::$strayRequestsPrevented = true;
+        }
     }
 }

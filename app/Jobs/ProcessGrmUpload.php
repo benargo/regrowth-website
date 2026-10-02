@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Contracts\Http\Integrations\Blizzard\RequiresMinimumCharacterLevel;
 use App\Events\Broadcasts\GrmUploadCompleted as GrmUploadCompletedBroadcast;
 use App\Events\Broadcasts\GrmUploadFailed as GrmUploadFailedBroadcast;
 use App\Events\Broadcasts\GrmUploadProgressed;
@@ -29,14 +30,9 @@ use Illuminate\Support\Facades\Log;
 #[Tries(3)]
 #[Backoff(60)]
 #[Timeout(900)]
-class ProcessGrmUpload implements ShouldQueue
+class ProcessGrmUpload implements RequiresMinimumCharacterLevel, ShouldQueue
 {
     use Queueable;
-
-    /**
-     * The minimum character level accepted from an upload.
-     */
-    private const MIN_LEVEL = 10;
 
     /**
      * The timestamp of the last progress broadcast, used to throttle updates.

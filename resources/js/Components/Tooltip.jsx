@@ -67,8 +67,11 @@ function computePosition(triggerRect, tooltipRect, position) {
  * trigger the tooltip is anchored to. The tooltip uses `position: fixed`
  * (viewport-relative, not document-relative), so `coords` don't need
  * adjusting for page scroll.
+ *
+ * `as` sets the trigger wrapper's element; pass "span" when the tooltip sits
+ * inside inline content such as a paragraph.
  */
-export default function Tooltip({ children, body, position = "top", className = "", ...props }) {
+export default function Tooltip({ children, body, position = "top", className = "", as: Element = "div", ...props }) {
     const triggerRef = useRef(null);
     const tooltipRef = useRef(null);
     const [isVisible, setIsVisible] = useState(false);
@@ -86,7 +89,7 @@ export default function Tooltip({ children, body, position = "top", className = 
     }, [isVisible, position]);
 
     return (
-        <div
+        <Element
             ref={triggerRef}
             className={`relative inline-block ${className}`}
             onMouseEnter={() => setIsVisible(true)}
@@ -104,13 +107,13 @@ export default function Tooltip({ children, body, position = "top", className = 
                             left: coords?.left ?? -9999,
                             visibility: coords ? "visible" : "hidden",
                         }}
-                        className={`pointer-events-none z-30 max-w-xs rounded bg-secondary-900 px-2 py-1 text-xs text-white ${body ? "" : "w-max"}`}
+                        className={`bg-secondary-900 pointer-events-none z-30 max-w-xs rounded px-2 py-1 text-xs text-white ${body ? "" : "w-max"}`}
                     >
                         {body}
                         <div className={`absolute border-4 border-transparent ${ARROW_CLASSES[position]}`}></div>
                     </div>,
                     document.body,
                 )}
-        </div>
+        </Element>
     );
 }

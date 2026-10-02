@@ -12,11 +12,8 @@ use Tests\TestCase;
 
 abstract class BlizzardTestCase extends TestCase
 {
-    protected function makeConnector(
-        ?Region $region = null,
-        string $defaultRealmSlug = 'thunderstrike',
-        string $defaultGuildSlug = 'regrowth',
-    ): BlizzardConnector {
+    protected function makeConnector(?Region $region = null): BlizzardConnector
+    {
         $region ??= Region::EU;
 
         $renderConnector = new RenderConnector($region, Storage::disk('public'));
@@ -26,8 +23,6 @@ abstract class BlizzardTestCase extends TestCase
             clientSecret: 'test_secret',
             region: $region,
             locale: $region->defaultLocale(),
-            defaultRealmSlug: $defaultRealmSlug,
-            defaultGuildSlug: $defaultGuildSlug,
             eagerlyMirrorAssets: new EagerlyMirrorAssets($renderConnector),
         );
     }

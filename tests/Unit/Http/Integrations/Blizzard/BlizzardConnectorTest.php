@@ -54,30 +54,8 @@ class BlizzardConnectorTest extends TestCase
             clientSecret: 'test_secret',
             region: Region::EU,
             locale: 'ko_KR',
-            defaultRealmSlug: 'thunderstrike',
-            defaultGuildSlug: 'regrowth',
             eagerlyMirrorAssets: $this->createStub(EagerlyMirrorAssets::class),
         );
-    }
-
-    // ==================== default slugs ====================
-
-    #[Test]
-    #[Group('happy-path')]
-    public function it_exposes_the_configured_default_realm_slug(): void
-    {
-        $connector = $this->makeConnector(defaultRealmSlug: 'thunderstrike', defaultGuildSlug: 'regrowth');
-
-        $this->assertSame('thunderstrike', $connector->defaultRealmSlug());
-    }
-
-    #[Test]
-    #[Group('happy-path')]
-    public function it_exposes_the_configured_default_guild_slug(): void
-    {
-        $connector = $this->makeConnector(defaultRealmSlug: 'thunderstrike', defaultGuildSlug: 'regrowth');
-
-        $this->assertSame('regrowth', $connector->defaultGuildSlug());
     }
 
     // ==================== oauth + token caching ====================
@@ -354,11 +332,8 @@ class BlizzardConnectorTest extends TestCase
         $this->fail("No limit found allowing {$allow} requests.");
     }
 
-    private function makeConnector(
-        ?Region $region = null,
-        string $defaultRealmSlug = 'thunderstrike',
-        string $defaultGuildSlug = 'regrowth',
-    ): BlizzardConnector {
+    private function makeConnector(?Region $region = null): BlizzardConnector
+    {
         $region ??= Region::EU;
 
         return new BlizzardConnector(
@@ -366,8 +341,6 @@ class BlizzardConnectorTest extends TestCase
             clientSecret: 'test_secret',
             region: $region,
             locale: $region->defaultLocale(),
-            defaultRealmSlug: $defaultRealmSlug,
-            defaultGuildSlug: $defaultGuildSlug,
             eagerlyMirrorAssets: $this->createStub(EagerlyMirrorAssets::class),
         );
     }
