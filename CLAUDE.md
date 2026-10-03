@@ -68,6 +68,16 @@ Never define `broadcastAs()` on a Laravel notification class (extends `Illuminat
 
 To filter notifications on the frontend, use `broadcastType()` instead — it sets the `type` field that `useEchoNotification`'s third argument matches. `broadcastAs()` is fine on genuine broadcast **Event** classes (e.g. `BossKilled`, `EventAssignment`).
 
+## Naming conventions
+
+- **Components**: PascalCase (`LoginForm`).
+- **Component files**: PascalCase (`LoginForm.jsx`). Non-component files (hooks, helpers, utils): camelCase (`useSyncedSelection.jsx`, `formatDate.js`). Folders: camelCase.
+- **Hooks**: camelCase, prefixed with `use` (`useSyncedSelection`).
+- **Functions**: camelCase (`getUsers`).
+- **Variables**: camelCase. Prefer descriptive names over vague ones (`data`, `value`); spell out abbreviations (`imageButton`, not `imgBtn`) except well-known acronyms (`baseURL`, `userAPI`).
+- **Constants**: SCREAMING_SNAKE_CASE only for values fixed before any component runs — module-level literals such as config, enum-like maps, or regexes (`const DATE_FORMAT = "YYYY-MM-DD"`). A `const` declared inside a component or function body — even if it never changes — is a runtime value, not a compile-time constant, and takes camelCase (`const userList = []`, `const segmentShape = "..."`).
+- **Booleans**: prefix with `is`/`has`/`should` (`isLoading`, `hasError`).
+
 === .ai/php-conventions rules ===
 
 # PHP Conventions
@@ -84,9 +94,11 @@ public function __construct(MockInterface $service = null) {}
 public function __construct(?MockInterface $service = null) {}
 ```
 
-## Value objects / DTOs extend Spatie Data
+## Value objects / DTOs extend `Spatie\LaravelData\Data`
 
-Any new value object or DTO (a `final` class that wraps data rather than a service with behaviour) must extend `Spatie\LaravelData\Data` with readonly constructor properties, anywhere in the app. Override `toArray()` / `jsonSerialize()` only when the output shape must differ from the raw constructor properties. Do not hand-roll `Arrayable` + `JsonSerializable`.
+Any new value object or DTO (a `final class` that wraps data rather than a service with behaviour) extends `Spatie\LaravelData\Data`, as a `final` class with `readonly` constructor-promoted properties. Override `toArray()`/`jsonSerialize()` only when the output shape must differ from the raw constructor properties (computed/renamed fields, nested resolution).
+
+This supersedes the older convention of manually implementing `Illuminate\Contracts\Support\Arrayable` + `JsonSerializable` — that style no longer appears anywhere in the codebase. Applies both to API response data under `app/Http/Integrations/**/Data/**` and to domain VOs/DTOs elsewhere (e.g. `app/Services/Attendance/*Data.php`).
 
 ## Don't call `->value` on enums inside Resource arrays
 
@@ -140,6 +152,15 @@ vendor/bin/sail artisan db:seed --env=testing
 
 A `.env.testing` file at the repo root points to `DB_DATABASE=laravel_testing`. Never call factory `create()` or run seeders without `--env=testing` unless deliberately seeding dev data.
 
+## Use the Manual Login Routes for browser testing
+
+When driving the app through a browser automation tool (Playwright, claude-in-chrome, etc.), authenticate via the Manual Login Routes defined in `routes/auth.php` instead of going through Discord OAuth.
+
+- `GET login/local` (`login.local`) renders the local login form.
+- `POST login/local` (`login.local.store`) logs the user in.
+
+These routes are only registered when `app()->environment(['local', 'testing'])`, guarded by the `env:local,testing` middleware, so they're unavailable in production and never reach Ziggy's route list there.
+
 === .ai/upgrades rules ===
 
 # Dependency Upgrades
@@ -154,14 +175,12 @@ The codemod handles the mechanical bulk (build pipeline, renames, directive swap
 
 # Laravel Boost Guidelines
 
-The Laravel Boost guidelines are specifically curated by Laravel maintainers for this application. These guidelines should be followed closely to ensure the best experience when building Laravel applications.
-
 ## Foundational Context
 
-This application is a Laravel application running on PHP 8.4. You are an expert with the Laravel ecosystem. Always use the APIs that match the installed major version of each package — do not assume a version.
+This application is a Laravel application running on PHP 8.4. Always use the APIs that match the installed major version of each package — do not assume a version.
 
 Before relying on a package's API, confirm its installed version:
-- PHP packages: run `composer show --direct` to list direct dependencies with versions, or `composer show <vendor/package>` for a single package.
+- PHP packages: run `vendor/bin/sail composer show --direct` to list direct dependencies with versions, or `vendor/bin/sail composer show <vendor/package>` for a single package.
 - JS packages: check `package.json` for the installed versions.
 
 ## Skills Activation
@@ -185,15 +204,11 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 ## Frontend Bundling
 
-- If the user doesn't see a frontend change reflected in the UI, it could mean they need to run `vendor/bin/sail npm run build`, `vendor/bin/sail npm run dev`, or `vendor/bin/sail composer run dev`. Ask them.
+- If a frontend change doesn't show in the UI or you get a "Unable to locate file in Vite manifest" error, run `vendor/bin/sail npm run build` or ask the user to run `vendor/bin/sail npm run dev` or `vendor/bin/sail composer run dev`.
 
 ## Documentation Files
 
 - You must only create documentation files if explicitly requested by the user.
-
-## Replies
-
-- Be concise in your explanations - focus on what's important rather than explaining obvious details.
 
 === boost rules ===
 
@@ -223,8 +238,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 ## Project Rules
 
-- This project contains committed, area-grouped rules in `.ai/rules` when that directory exists (settled decisions, non-obvious traps, standing constraints). Framework and package guidelines that only apply to specific paths (testing, frontend, components) also live there, under `.ai/rules/boost` — this is not just recorded decisions, it is load-bearing guidance you have not seen inline. Before you enter plan mode or create/edit any file, you MUST first: open @.ai/rules/index.md (it maps file globs to rule files), read every rule file whose globs cover the path(s) in scope, and run `grep -rin 'keyword' .ai/rules` to catch what a path match alone misses. Do not write code until you have read and are following every matching rule. If `.ai/rules` does not exist, continue without it.
-- Record a rule with `record-rule` only when the user explicitly asks for one. Instructions for the work at hand are not rules, no matter how emphatic: "remove this typo", "use X here" are work to do, not rules to record. Never record a rule on your own initiative, as a byproduct of a change, or to summarize what you just did. When the user does ask, pass a `glob` (e.g. `app/Http/Controllers/**`), a short `title`, and a few-line `note`. Use `record-rule` rather than your native memory or notes tool, because native memory is personal and session-scoped, while only `.ai/rules` is shared with the team and persists in the repo.
+- This project contains committed, area-grouped rules in `.ai/rules` when that directory exists, including path-scoped framework guidelines under `.ai/rules/boost`. Before you enter plan mode or create/edit any file, you MUST first: open @.ai/rules/index.md (it maps file globs to rule files), read every rule file whose globs cover the path(s) in scope, and run `grep -rin 'keyword' .ai/rules` to catch what a path match alone misses. Do not write code until you have read and are following every matching rule. If `.ai/rules` does not exist, continue without it.
 
 ## Artisan
 
@@ -254,7 +268,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 # Deployment
 
 - Laravel can be deployed using [Laravel Cloud](https://cloud.laravel.com/), which is the fastest way to deploy and scale production Laravel applications.
-- Activate the `deploying-to-cloud` skill whenever deploying to Laravel Cloud, configuring Cloud environments or resources, using the Cloud CLI, or troubleshooting Cloud deployments.
 
 === sail rules ===
 
@@ -328,10 +341,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - When creating models for tests, use the factories for the models. Check if the factory has custom states that can be used before manually setting up the model.
 - Faker: Use methods such as `$this->faker->word()` or `fake()->randomDigit()`. Follow existing conventions whether to use `$this->faker` or `fake()`.
 - When creating tests, make use of `vendor/bin/sail artisan make:test [options] {name}` to create a feature test, and pass `--unit` to create a unit test. Most tests should be feature tests.
-
-## Vite Error
-
-- If you receive an "Illuminate\Foundation\ViteException: Unable to locate file in Vite manifest" error, you can run `vendor/bin/sail npm run build` or ask the user to run `vendor/bin/sail npm run dev` or `vendor/bin/sail composer run dev`.
 
 === pint/core rules ===
 
