@@ -2,15 +2,15 @@
 
 namespace Tests\Feature\Jobs\WarcraftLogs;
 
+use App\Http\Integrations\WarcraftLogs\Data\World\DifficultyData;
+use App\Http\Integrations\WarcraftLogs\Data\World\ExpansionData;
+use App\Http\Integrations\WarcraftLogs\Data\World\ZoneData;
 use App\Jobs\WarcraftLogs\FetchReportsByGuildTag;
 use App\Models\Report;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Services\WarcraftLogs\Reports;
-use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
-use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
 use App\Services\WarcraftLogs\ValueObjects\ReportData;
-use App\Services\WarcraftLogs\ValueObjects\ZoneData;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;

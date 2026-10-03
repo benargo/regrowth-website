@@ -515,6 +515,51 @@ class GameVersionTest extends ModelTestCase
         $this->assertNull(GameVersion::defaultRoster());
     }
 
+    // ==================== warcraft logs cache ====================
+
+    #[Test]
+    public function changing_the_warcraftlogs_guild_flushes_the_cached_warcraftlogs_api_responses(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['warcraftlogs_guild' => 774848]);
+        Cache::tags(['warcraftlogs', 'warcraftlogs-api-response'])->put('response_key', 'response', now()->addMinutes(5));
+
+        $gameVersion->update(['warcraftlogs_guild' => 774849]);
+
+        $this->assertFalse(Cache::tags(['warcraftlogs', 'warcraftlogs-api-response'])->has('response_key'));
+    }
+
+    #[Test]
+    public function creating_a_version_with_a_warcraftlogs_guild_flushes_the_cached_warcraftlogs_api_responses(): void
+    {
+        Cache::tags(['warcraftlogs', 'warcraftlogs-api-response'])->put('response_key', 'response', now()->addMinutes(5));
+
+        GameVersion::factory()->create(['warcraftlogs_guild' => 774848]);
+
+        $this->assertFalse(Cache::tags(['warcraftlogs', 'warcraftlogs-api-response'])->has('response_key'));
+    }
+
+    #[Test]
+    public function changing_the_warcraftlogs_guild_leaves_unrelated_cache_tags_alone(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['warcraftlogs_guild' => 774848]);
+        Cache::tags(['attendance'])->put('unrelated_key', 'unrelated', now()->addMinutes(5));
+
+        $gameVersion->update(['warcraftlogs_guild' => 774849]);
+
+        $this->assertTrue(Cache::tags(['attendance'])->has('unrelated_key'));
+    }
+
+    #[Test]
+    public function saving_other_attributes_keeps_the_cached_warcraftlogs_api_responses(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['warcraftlogs_guild' => 774848]);
+        Cache::tags(['warcraftlogs', 'warcraftlogs-api-response'])->put('response_key', 'response', now()->addMinutes(5));
+
+        $gameVersion->update(['title' => 'A new title']);
+
+        $this->assertTrue(Cache::tags(['warcraftlogs', 'warcraftlogs-api-response'])->has('response_key'));
+    }
+
     // ==================== helpers ====================
 
     /**

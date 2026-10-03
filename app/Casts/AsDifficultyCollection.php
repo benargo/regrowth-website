@@ -2,7 +2,7 @@
 
 namespace App\Casts;
 
-use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
+use App\Http\Integrations\WarcraftLogs\Data\World\DifficultyData;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;

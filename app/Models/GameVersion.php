@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 #[Fillable([
@@ -58,6 +59,27 @@ class GameVersion extends Model implements DatasetModel, EditLockable
     public function usageRelations(): array
     {
         return ['phases', 'items', 'characters', 'guildRanks'];
+    }
+
+    // ============ Events ===========
+
+    protected static function booted(): void
+    {
+        static::created(function (GameVersion $gameVersion): void {
+            if ($gameVersion->warcraftlogs_guild === null) {
+                return;
+            }
+
+            Cache::tags(['warcraftlogs-api-response'])->flush();
+        });
+
+        static::saved(function (GameVersion $gameVersion): void {
+            if (! $gameVersion->wasChanged('warcraftlogs_guild')) {
+                return;
+            }
+
+            Cache::tags(['warcraftlogs-api-response'])->flush();
+        });
     }
 
     // ============ Custom attributes and casts ===========

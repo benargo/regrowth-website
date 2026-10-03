@@ -4,10 +4,10 @@ namespace Tests\Unit\Models\WarcraftLogs;
 
 use App\Casts\AsDifficultyCollection;
 use App\Casts\AsExpansion;
+use App\Http\Integrations\WarcraftLogs\Data\World\DifficultyData;
+use App\Http\Integrations\WarcraftLogs\Data\World\ExpansionData;
 use App\Models\Report;
 use App\Models\WarcraftLogs\Zone;
-use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
-use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 use PHPUnit\Framework\Attributes\Group;
