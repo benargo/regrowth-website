@@ -122,7 +122,7 @@ class GameVersionControllerTest extends DashboardTestCase
         $this->assertSame(Theme::FOREVER, $gameVersion->theme);
         $this->assertSame(BlizzardNamespace::CLASSIC, $gameVersion->blizzard_namespace);
         $this->assertSame(123456, $gameVersion->warcraftlogs_guild);
-        $this->assertSame(WarcraftLogsNamespace::CLASSIC, $gameVersion->warcraftlogs_namespace);
+        $this->assertSame(WarcraftLogsNamespace::Classic, $gameVersion->warcraftlogs_namespace);
     }
 
     #[Test]
@@ -1377,7 +1377,7 @@ class GameVersionControllerTest extends DashboardTestCase
             'theme' => Theme::FOREVER->value,
             'blizzard_namespace' => BlizzardNamespace::CLASSIC->value,
             'warcraftlogs_guild' => 123456,
-            'warcraftlogs_namespace' => WarcraftLogsNamespace::CLASSIC->value,
+            'warcraftlogs_namespace' => WarcraftLogsNamespace::Classic->value,
             ...$overrides,
         ];
     }

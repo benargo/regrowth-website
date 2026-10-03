@@ -27,7 +27,7 @@ class GameVersionSeeder extends Seeder
                 'theme' => Theme::CLASSIC->value,
                 'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY->value,
                 'warcraftlogs_guild' => 774848,
-                'warcraftlogs_namespace' => WarcraftLogsNamespace::ANNIVERSARY->value,
+                'warcraftlogs_namespace' => WarcraftLogsNamespace::Anniversary->value,
             ],
             [
                 'title' => 'World of Warcraft: Forever',

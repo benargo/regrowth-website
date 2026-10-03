@@ -108,7 +108,7 @@ class GameVersionResourceTest extends TestCase
             'theme' => Theme::CLASSIC,
             'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
             'warcraftlogs_guild' => 774848,
-            'warcraftlogs_namespace' => WarcraftLogsNamespace::ANNIVERSARY,
+            'warcraftlogs_namespace' => WarcraftLogsNamespace::Anniversary,
         ]);
 
         $array = GameVersionResource::forManagement($gameVersion)->resolve(new Request);
@@ -127,7 +127,7 @@ class GameVersionResourceTest extends TestCase
             'warcraftlogs' => [
                 'guild' => 774848,
                 'namespace' => [
-                    'value' => WarcraftLogsNamespace::ANNIVERSARY,
+                    'value' => WarcraftLogsNamespace::Anniversary,
                     'label' => 'The Burning Crusade Classic Anniversary',
                 ],
             ],

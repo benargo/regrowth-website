@@ -219,9 +219,9 @@ class GameVersionTest extends ModelTestCase
     #[Test]
     public function warcraftlogs_namespace_is_cast_to_warcraftlogs_namespace_enum(): void
     {
-        $gameVersion = $this->create(['warcraftlogs_namespace' => WarcraftLogsNamespace::SEASON_OF_DISCOVERY]);
+        $gameVersion = $this->create(['warcraftlogs_namespace' => WarcraftLogsNamespace::SeasonOfDiscovery]);
 
-        $this->assertSame(WarcraftLogsNamespace::SEASON_OF_DISCOVERY, $gameVersion->fresh()->warcraftlogs_namespace);
+        $this->assertSame(WarcraftLogsNamespace::SeasonOfDiscovery, $gameVersion->fresh()->warcraftlogs_namespace);
         $this->assertTableHas([
             'id' => $gameVersion->id,
             'warcraftlogs_namespace' => 'season_of_discovery',
