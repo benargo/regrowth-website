@@ -6,6 +6,7 @@ use App\Http\Integrations\WarcraftLogs\Exceptions\ApiException;
 use App\Http\Integrations\WarcraftLogs\Exceptions\GraphQLException;
 use App\Http\Integrations\WarcraftLogs\Middleware\MonitorRateLimit;
 use DateTimeImmutable;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Saloon\GraphQL\Traits\HandlesGraphQLErrors;
 use Saloon\Helpers\OAuth2\OAuthConfig;
@@ -13,7 +14,10 @@ use Saloon\Http\Auth\AccessTokenAuthenticator;
 use Saloon\Http\Connector;
 use Saloon\Http\OAuth2\GetClientCredentialsTokenBasicAuthRequest;
 use Saloon\Http\PendingRequest;
+use Saloon\Http\Request;
 use Saloon\Http\Response;
+use Saloon\PaginationPlugin\Contracts\HasPagination;
+use Saloon\PaginationPlugin\PagedPaginator;
 use Saloon\RateLimitPlugin\Contracts\RateLimitStore;
 use Saloon\RateLimitPlugin\Limit;
 use Saloon\RateLimitPlugin\Stores\LaravelCacheStore;
@@ -29,7 +33,7 @@ use Throwable;
  * Authenticates with OAuth2 client credentials against the www host (one token works
  * on every namespace host). Each request supplies its own namespace host as an absolute endpoint.
  */
-class WarcraftLogsConnector extends Connector
+class WarcraftLogsConnector extends Connector implements HasPagination
 {
     use AcceptsJson;
     use AlwaysThrowOnErrors;
@@ -164,5 +168,50 @@ class WarcraftLogsConnector extends Connector
         }
 
         $limit->exceeded(releaseInSeconds: $this->rateLimitReset->secondsUntilReset() ?? 3600);
+    }
+
+    /**
+     * Every paginated WCL query takes a one-based `page` variable and returns a
+     * `has_more_pages` flag on its paginated object, so one paginator serves them all.
+     * Items are the request's DTOs.
+     */
+    public function paginate(Request $request): PagedPaginator
+    {
+        return new class(connector: $this, request: $request) extends PagedPaginator
+        {
+            /**
+             * Each query has one paginated object, so the flag is found wherever it sits
+             * under `data`. A missing flag ends pagination.
+             */
+            protected function isLastPage(Response $response): bool
+            {
+                $flattened = Arr::dot($response->json('data') ?? []);
+
+                return ! Arr::first($flattened, fn (mixed $value, string $key): bool => str_ends_with($key, '.has_more_pages'), false);
+            }
+
+            /**
+             * @return array<int, mixed>
+             */
+            protected function getPageItems(Response $response, Request $request): array
+            {
+                return $response->dto();
+            }
+
+            /**
+             * The page travels in the JSON body's `variables`. The body repository's
+             * merge() is shallow, so the variables are read, updated and written back.
+             * `$currentPage` is zero-based while the first page is built.
+             */
+            protected function applyPagination(Request $request): Request
+            {
+                $variables = (array) $request->body()->get('variables', []);
+                $variables['page'] = $this->currentPage + 1;
+
+                $request->body()->add('variables', $variables);
+
+                return $request;
+            }
+        };
     }
 }

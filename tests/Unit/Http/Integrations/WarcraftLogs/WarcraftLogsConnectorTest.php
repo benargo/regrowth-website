@@ -3,10 +3,12 @@
 namespace Tests\Unit\Http\Integrations\WarcraftLogs;
 
 use App\Http\Integrations\WarcraftLogs\Data\RateLimit\RateLimitData;
+use App\Http\Integrations\WarcraftLogs\Data\Reports\ReportData;
 use App\Http\Integrations\WarcraftLogs\Exceptions\ApiException;
 use App\Http\Integrations\WarcraftLogs\Exceptions\GraphQLException;
 use App\Http\Integrations\WarcraftLogs\Exceptions\GuildNotFoundException;
 use App\Http\Integrations\WarcraftLogs\Exceptions\WarcraftLogsRequestException;
+use App\Http\Integrations\WarcraftLogs\Requests\GetReportsRequest;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Group;
@@ -15,6 +17,7 @@ use Saloon\Enums\Method;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\OAuth2\GetClientCredentialsTokenBasicAuthRequest;
+use Saloon\Http\PendingRequest;
 use Saloon\Http\Request;
 use Saloon\Http\Response;
 use Saloon\Laravel\Facades\Saloon;
@@ -223,6 +226,82 @@ class WarcraftLogsConnectorTest extends WarcraftLogsTestCase
         $this->assertSame(200, $response->status());
     }
 
+    // ==================== paginate ====================
+
+    #[Test]
+    #[Group('happy-path')]
+    public function it_paginates_through_the_dtos_of_every_page_in_order(): void
+    {
+        $mockClient = $this->fakeTwoReportPages();
+
+        $codes = $this->makeConnector()
+            ->paginate(new GetReportsRequest(1234, WarcraftLogsNamespace::Classic))
+            ->collect()
+            ->map(fn (ReportData $report): string => $report->code)
+            ->values()
+            ->all();
+
+        $this->assertSame(['aaa', 'bbb', 'ccc'], $codes);
+        $mockClient->assertSentCount(2, GetReportsRequest::class);
+    }
+
+    #[Test]
+    public function it_stops_paginating_after_one_page_when_there_are_no_more_pages(): void
+    {
+        $mockClient = Saloon::fake([
+            GetClientCredentialsTokenBasicAuthRequest::class => $this->tokenMock(),
+            GetReportsRequest::class => MockResponse::make($this->reportsPage(['aaa'], hasMorePages: false)),
+        ]);
+
+        iterator_to_array($this->makeConnector()->paginate(new GetReportsRequest(1234, WarcraftLogsNamespace::Classic))->items(), false);
+
+        $mockClient->assertSentCount(1, GetReportsRequest::class);
+    }
+
+    #[Test]
+    public function it_treats_a_missing_has_more_pages_flag_as_the_last_page(): void
+    {
+        $mockClient = Saloon::fake([
+            GetClientCredentialsTokenBasicAuthRequest::class => $this->tokenMock(),
+            GetReportsRequest::class => MockResponse::make($this->reportsPage(['aaa'], hasMorePages: null)),
+        ]);
+
+        iterator_to_array($this->makeConnector()->paginate(new GetReportsRequest(1234, WarcraftLogsNamespace::Classic))->items(), false);
+
+        $mockClient->assertSentCount(1, GetReportsRequest::class);
+    }
+
+    #[Test]
+    public function it_sends_one_based_page_numbers_and_keeps_the_other_variables(): void
+    {
+        $this->fakeTwoReportPages();
+
+        $variables = [];
+        foreach ($this->makeConnector()->paginate(new GetReportsRequest(1234, WarcraftLogsNamespace::Classic)) as $response) {
+            $variables[] = $response->getPendingRequest()->body()->all()['variables'];
+        }
+
+        $this->assertSame([
+            ['guildTagID' => 1234, 'page' => 1, 'limit' => 100],
+            ['guildTagID' => 1234, 'page' => 2, 'limit' => 100],
+        ], $variables);
+    }
+
+    #[Test]
+    public function it_sends_the_right_page_even_when_the_body_was_read_first(): void
+    {
+        $this->fakeTwoReportPages();
+        $request = new GetReportsRequest(1234, WarcraftLogsNamespace::Classic);
+        $request->body()->all();
+
+        $pages = [];
+        foreach ($this->makeConnector()->paginate($request) as $response) {
+            $pages[] = $response->getPendingRequest()->body()->all()['variables']['page'];
+        }
+
+        $this->assertSame([1, 2], $pages);
+    }
+
     // ==================== helpers ====================
 
     private function fakeTooManyAttempts(): MockClient
@@ -242,5 +321,39 @@ class WarcraftLogsConnectorTest extends WarcraftLogsTestCase
         }
 
         $this->fail('Expected a RateLimitReachedException.');
+    }
+
+    private function fakeTwoReportPages(): MockClient
+    {
+        return Saloon::fake([
+            GetClientCredentialsTokenBasicAuthRequest::class => $this->tokenMock(),
+            GetReportsRequest::class => fn (PendingRequest $pendingRequest): MockResponse => $pendingRequest->body()->all()['variables']['page'] === 1
+                ? MockResponse::make($this->reportsPage(['aaa', 'bbb'], hasMorePages: true))
+                : MockResponse::make($this->reportsPage(['ccc'], hasMorePages: false)),
+        ]);
+    }
+
+    /**
+     * @param  array<int, string>  $codes
+     * @return array<string, mixed>
+     */
+    private function reportsPage(array $codes, ?bool $hasMorePages): array
+    {
+        $reports = [
+            'data' => array_map(fn (string $code): array => [
+                'code' => $code,
+                'title' => "Report {$code}",
+                'startTime' => 1700000000123.0,
+                'endTime' => 1700003600456.0,
+                'guildTag' => ['id' => 1234, 'name' => 'Main Raid'],
+                'zone' => null,
+            ], $codes),
+        ];
+
+        if ($hasMorePages !== null) {
+            $reports['has_more_pages'] = $hasMorePages;
+        }
+
+        return ['data' => ['reportData' => ['reports' => $reports]]];
     }
 }
