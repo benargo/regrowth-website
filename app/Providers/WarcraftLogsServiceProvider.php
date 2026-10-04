@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Http\Integrations\WarcraftLogs\Middleware\MonitorRateLimit;
 use App\Http\Integrations\WarcraftLogs\RateLimitResetCache;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsConnector;
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\Facades\Cache;
@@ -20,9 +21,7 @@ class WarcraftLogsServiceProvider extends ServiceProvider implements DeferrableP
     public function register(): void
     {
         $this->app->singleton(RateLimitResetCache::class, function (): RateLimitResetCache {
-            return new RateLimitResetCache(
-                Cache::store()->tags(['warcraftlogs', 'warcraftlogs-rate-limit']),
-            );
+            return new RateLimitResetCache($this->rateLimitRepository());
         });
 
         $this->app->singleton(WarcraftLogsConnector::class, function (Application $app): WarcraftLogsConnector {
@@ -33,11 +32,17 @@ class WarcraftLogsServiceProvider extends ServiceProvider implements DeferrableP
                 clientSecret: data_get($config, 'client_secret') ?: throw new RuntimeException('services.warcraftlogs.client_secret is not configured.'),
                 rateLimitReset: $app->make(RateLimitResetCache::class),
                 monitorRateLimit: $app->make(MonitorRateLimit::class),
-                store: new LaravelCacheStore(
-                    Cache::store()->tags(['warcraftlogs', 'warcraftlogs-rate-limit'])
-                ),
+                store: new LaravelCacheStore($this->rateLimitRepository()),
             );
         });
+    }
+
+    /**
+     * The tagged cache repository shared by the rate-limit reset cache and the Saloon rate-limit store.
+     */
+    private function rateLimitRepository(): Repository
+    {
+        return Cache::store()->tags(['warcraftlogs', 'warcraftlogs-rate-limit']);
     }
 
     /**

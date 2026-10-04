@@ -5,10 +5,10 @@ namespace App\Jobs\WarcraftLogs;
 use App\Http\Integrations\WarcraftLogs\Data\Attendance\GuildAttendanceData;
 use App\Http\Integrations\WarcraftLogs\Requests\GetGuildAttendanceRequest;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsConnector;
+use App\Jobs\WarcraftLogs\Concerns\ReleasesOnRateLimit;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\Report;
-use DateTimeInterface;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,7 +25,7 @@ use Saloon\RateLimitPlugin\Exceptions\RateLimitReachedException;
 #[FailOnTimeout]
 class FetchAttendanceData implements ShouldQueue
 {
-    use Batchable, Queueable;
+    use Batchable, Queueable, ReleasesOnRateLimit;
 
     /**
      * The number of seconds the job can run before timing out.
@@ -56,16 +56,6 @@ class FetchAttendanceData implements ShouldQueue
     }
 
     /**
-     * Keep retrying rate-limit releases until the points window has passed.
-     * #[MaxExceptions(3)] and #[FailOnTimeout] still fail the job after three
-     * real exceptions or one timeout.
-     */
-    public function retryUntil(): DateTimeInterface
-    {
-        return now()->addHours(2);
-    }
-
-    /**
      * Execute the job.
      */
     public function handle(WarcraftLogsConnector $warcraftLogs): void
@@ -82,89 +72,58 @@ class FetchAttendanceData implements ShouldQueue
             return;
         }
 
-        $reports = Report::whereNotNull('code')->get()->keyBy('code');
+        $reportIds = Report::whereNotNull('code')->pluck('id', 'code');
 
         $paginator = $warcraftLogs->paginate(new GetGuildAttendanceRequest(
             $this->gameVersion->warcraftlogs_guild,
             $this->gameVersion->warcraftlogs_namespace,
         ));
 
-        $attendanceRecords = $paginator->collect()->whereIn('code', $reports->keys());
+        $attendanceRecords = $paginator->collect()->filter(fn (GuildAttendanceData $guildAttendance) => $reportIds->has($guildAttendance->code));
 
-        $characters = Character::with('rank')
-            ->whereHas('rank', fn (Builder $q) => $q->where('count_attendance', true))
-            ->get()
+        $characters = Character::whereHas('rank', fn (Builder $q) => $q->where('count_attendance', true))
+            ->get(['id', 'name'])
             ->keyBy('name');
 
         try {
-            $attendanceRecords->each(function (GuildAttendanceData $guildAttendance) use ($reports, $characters) {
-                $report = $reports->get($guildAttendance->code);
+            $attendanceRecords->each(function (GuildAttendanceData $guildAttendance) use ($reportIds, $characters) {
+                $reportId = $reportIds->get($guildAttendance->code);
 
-                if ($report === null) {
-                    Log::info("Skipping report code {$guildAttendance->code} as it does not exist in the database.");
+                // Only players in our character list that should be counted for attendance are synced.
+                $syncData = collect($guildAttendance->players)
+                    ->filter(fn ($player) => $characters->has($player->name))
+                    ->map(fn ($player) => [
+                        'character_id' => $characters->get($player->name)->id,
+                        'raid_report_id' => $reportId,
+                        'presence' => $player->presence,
+                    ])
+                    ->values()
+                    ->all();
 
-                    return;
-                }
-
-                // Filter the players to only those that are in our character list and should be counted for attendance.
-                $filteredAttendanceRecord = $guildAttendance->filterPlayers($characters->keys()->toArray());
-
-                if (empty($filteredAttendanceRecord->players)) {
+                if (empty($syncData)) {
                     Log::warning("No valid players found for report code {$guildAttendance->code}. Skipping attendance sync for this report.");
 
                     return;
                 }
 
-                $syncData = [];
+                DB::table('pivot_characters_raid_reports')->upsert(
+                    $syncData,
+                    ['character_id', 'raid_report_id'],
+                    ['presence']
+                );
+                Report::whereKey($reportId)->touch();
 
-                foreach ($filteredAttendanceRecord->players as $player) {
-                    $character = $characters->get($player->name);
+                $syncedCount = count($syncData);
 
-                    if ($character === null) {
-                        Log::warning("Character {$player->name} not found in database. Skipping attendance record for this player in report code {$guildAttendance->code}.");
-
-                        continue;
-                    }
-
-                    $syncData[] = [
-                        'character_id' => $character->id,
-                        'raid_report_id' => $report->id,
-                        'presence' => $player->presence,
-                    ];
-                }
-
-                if (! empty($syncData)) {
-                    DB::table('pivot_characters_raid_reports')->upsert(
-                        $syncData,
-                        ['character_id', 'raid_report_id'],
-                        ['presence']
-                    );
-                    $report->touch();
-
-                    $syncedCount = count($syncData);
-
-                    Log::info("Synced attendance data for report code {$guildAttendance->code} with {$syncedCount} records.");
-                }
+                Log::info("Synced attendance data for report code {$guildAttendance->code} with {$syncedCount} records.");
             });
         } catch (RateLimitReachedException $exception) {
-            $this->releaseUntilPointsReset($exception);
+            $this->releaseUntilPointsReset($exception, "attendance for game version {$this->gameVersion->id}");
 
             return;
         }
 
         Log::info('Completed fetching and syncing attendance data.');
-    }
-
-    private function releaseUntilPointsReset(RateLimitReachedException $exception): void
-    {
-        $limit = $exception->getLimit();
-        $seconds = $limit->getRemainingSeconds();
-
-        Log::warning("Warcraft Logs rate limit reached while fetching attendance for game version {$this->gameVersion->id}; releasing for {$seconds} seconds.", [
-            'limit' => $limit->getName(),
-        ]);
-
-        $this->release($seconds);
     }
 
     /**

@@ -5,11 +5,11 @@ namespace App\Jobs\WarcraftLogs;
 use App\Http\Integrations\WarcraftLogs\Data\Reports\ReportData;
 use App\Http\Integrations\WarcraftLogs\Requests\GetReportsRequest;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsConnector;
+use App\Jobs\WarcraftLogs\Concerns\ReleasesOnRateLimit;
 use App\Models\Report as ReportModel;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
 use Carbon\Carbon;
-use DateTimeInterface;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -25,14 +25,7 @@ use Saloon\RateLimitPlugin\Exceptions\RateLimitReachedException;
 #[FailOnTimeout]
 class FetchReportsByGuildTag implements ShouldQueue
 {
-    use Batchable, Queueable;
-
-    /**
-     * The timezone to use when determining raid day boundaries for auto-linking reports.
-     *
-     * @var string
-     */
-    private $timezone = 'UTC';
+    use Batchable, Queueable, ReleasesOnRateLimit;
 
     /**
      * Get the middleware the job should pass through.
@@ -49,19 +42,7 @@ class FetchReportsByGuildTag implements ShouldQueue
         public GuildTag $guildTag,
         public ?Carbon $since = null,
         public ?Carbon $before = null,
-    ) {
-        $this->timezone = config('app.timezone');
-    }
-
-    /**
-     * Keep retrying rate-limit releases until the points window has passed.
-     * #[MaxExceptions(1)] and #[FailOnTimeout] still fail the job on its first
-     * real exception or timeout.
-     */
-    public function retryUntil(): DateTimeInterface
-    {
-        return now()->addHours(2);
-    }
+    ) {}
 
     /**
      * Execute the job.
@@ -88,7 +69,7 @@ class FetchReportsByGuildTag implements ShouldQueue
                 $this->persistReport($report);
             }
         } catch (RateLimitReachedException $exception) {
-            $this->releaseUntilPointsReset($exception);
+            $this->releaseUntilPointsReset($exception, "reports for guild tag {$this->guildTag->id}");
 
             return;
         }
@@ -146,18 +127,6 @@ class FetchReportsByGuildTag implements ShouldQueue
         return GuildTag::find($report->guildTag->id);
     }
 
-    private function releaseUntilPointsReset(RateLimitReachedException $exception): void
-    {
-        $limit = $exception->getLimit();
-        $seconds = $limit->getRemainingSeconds();
-
-        Log::warning("Warcraft Logs rate limit reached while fetching reports for guild tag {$this->guildTag->id}; releasing for {$seconds} seconds.", [
-            'limit' => $limit->getName(),
-        ]);
-
-        $this->release($seconds);
-    }
-
     /**
      * Synchronise auto-links for all reports belonging to this guild tag.
      *
@@ -181,7 +150,7 @@ class FetchReportsByGuildTag implements ShouldQueue
         $groups = $allReports->groupBy(
             fn (ReportModel $report) => $report->start_time
                 ->copy()
-                ->setTimezone($this->timezone)
+                ->setTimezone(config('app.timezone'))
                 ->subHours(5)
                 ->toDateString()
         );

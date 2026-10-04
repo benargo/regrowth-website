@@ -93,7 +93,7 @@ class FetchWarcraftLogs extends Command
 
     /**
      * With --latest, fetch only reports newer than the newest stored report across all
-     * versions (unchanged behaviour; see spec Review Focus 2).
+     * versions.
      */
     private function resolveSince(): ?Carbon
     {
