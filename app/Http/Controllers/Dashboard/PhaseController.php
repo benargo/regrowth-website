@@ -9,7 +9,6 @@ use App\Http\Resources\PhaseResource;
 use App\Http\Resources\WarcraftLogs\GuildTagResource;
 use App\Models\Phase;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Services\WarcraftLogs\GuildTags as WarcraftLogsGuildTagsService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -57,16 +56,6 @@ class PhaseController extends Controller
     }
 
     /**
-     * Build all guild tags for selection.
-     */
-    public function buildAllGuildTags(): AnonymousResourceCollection
-    {
-        $allGuildTags = app(WarcraftLogsGuildTagsService::class)->toCollection();
-
-        return GuildTagResource::collection($allGuildTags);
-    }
-
-    /**
      * Update the guild tags associated with a phase.
      */
     #[Authorize('update', 'phase')]
@@ -83,5 +72,18 @@ class PhaseController extends Controller
         }
 
         return back();
+    }
+
+    /**
+     * Build all guild tags for selection.
+     */
+    private function buildAllGuildTags(): AnonymousResourceCollection
+    {
+        $allGuildTags = GuildTag::query()
+            ->orderBy('name')
+            ->orderBy('id')
+            ->get();
+
+        return GuildTagResource::collection($allGuildTags);
     }
 }

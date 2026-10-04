@@ -5,11 +5,9 @@ namespace Tests\Feature\Dashboard;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\User;
-use App\Services\WarcraftLogs\GuildTags;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
-use Mockery;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockClient;
@@ -25,15 +23,6 @@ class AddonControllerTest extends DashboardTestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        // Mock GuildTags to return empty tags by default
-        // This prevents API calls during tests that don't specifically test attendance
-        $guildTags = Mockery::mock(GuildTags::class);
-        $guildTags->shouldReceive('toCollection')
-            ->andReturn(collect())
-            ->byDefault();
-
-        $this->app->instance(GuildTags::class, $guildTags);
 
         // Fake Saloon to return empty roster by default
         // This prevents real API calls during tests that don't specifically test GRM freshness

@@ -2,20 +2,27 @@
 
 namespace App\Jobs\WarcraftLogs;
 
+use App\Http\Integrations\WarcraftLogs\Data\Reports\ReportData;
+use App\Http\Integrations\WarcraftLogs\Requests\GetReportsRequest;
+use App\Http\Integrations\WarcraftLogs\WarcraftLogsConnector;
 use App\Models\Report as ReportModel;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
-use App\Services\WarcraftLogs\Reports;
-use App\Services\WarcraftLogs\ValueObjects\ReportData;
 use Carbon\Carbon;
+use DateTimeInterface;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Attributes\FailOnTimeout;
+use Illuminate\Queue\Attributes\MaxExceptions;
 use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Saloon\RateLimitPlugin\Exceptions\RateLimitReachedException;
 
+#[MaxExceptions(1)]
+#[FailOnTimeout]
 class FetchReportsByGuildTag implements ShouldQueue
 {
     use Batchable, Queueable;
@@ -47,53 +54,108 @@ class FetchReportsByGuildTag implements ShouldQueue
     }
 
     /**
+     * Keep retrying rate-limit releases until the points window has passed.
+     * #[MaxExceptions(1)] and #[FailOnTimeout] still fail the job on its first
+     * real exception or timeout.
+     */
+    public function retryUntil(): DateTimeInterface
+    {
+        return now()->addHours(2);
+    }
+
+    /**
      * Execute the job.
      */
-    public function handle(Reports $reportsService): void
+    public function handle(WarcraftLogsConnector $warcraftLogs): void
     {
-        $reports = $reportsService
-            ->byGuildTags(collect([$this->guildTag]))
-            ->startTime($this->since)
-            ->endTime($this->before)
-            ->get();
+        $namespace = $this->guildTag->phase?->gameVersion?->warcraftlogs_namespace;
 
-        $reports->each(function (ReportData $report) {
-            Log::info('Processing report '.$report->code.' ('.$report->title.') for guild tag '.$report->guildTag?->name.'.');
+        if ($namespace === null) {
+            Log::warning("Skipping reports for guild tag {$this->guildTag->id}: no game version with a Warcraft Logs namespace.");
 
-            if ($report->zone !== null) {
-                Zone::updateOrCreate(
-                    ['id' => $report->zone->id],
-                    [
-                        'name' => $report->zone->name,
-                        'difficulties' => $report->zone->difficulties,
-                        'expansion' => $report->zone->expansion,
-                    ]
-                );
+            return;
+        }
+
+        $paginator = $warcraftLogs->paginate(new GetReportsRequest(
+            $this->guildTag->id,
+            $namespace,
+            $this->since,
+            $this->before,
+        ));
+
+        try {
+            foreach ($paginator->items() as $report) {
+                $this->persistReport($report);
             }
+        } catch (RateLimitReachedException $exception) {
+            $this->releaseUntilPointsReset($exception);
 
-            $reportModel = ReportModel::updateOrCreate(
-                ['code' => $report->code],
-                [
-                    'title' => $report->title,
-                    'start_time' => $report->startTime,
-                    'end_time' => $report->endTime,
-                    'zone_id' => $report->zone?->id,
-                ],
-            );
-
-            if ($report->guildTag instanceof GuildTag) {
-                Log::info('Associating report '.$report->code.' with guild tag '.$report->guildTag->name.'.');
-                $reportModel->guildTag()->associate($report->guildTag);
-                $reportModel->save();
-            } else {
-                // If the report doesn't have a guild tag, ensure it's not associated with any
-                Log::info('Dissociating report '.$report->code.' from any guild tag since it has none.');
-                $reportModel->guildTag()->dissociate();
-                $reportModel->save();
-            }
-        });
+            return;
+        }
 
         $this->syncReportLinks();
+    }
+
+    private function persistReport(ReportData $report): void
+    {
+        Log::info("Processing report {$report->code} ({$report->title}) for guild tag {$this->guildTag->name}.");
+
+        if ($report->zone !== null) {
+            Zone::updateOrCreate(
+                ['id' => $report->zone->id],
+                [
+                    'name' => $report->zone->name,
+                    'difficulties' => $report->zone->difficulties,
+                    'expansion' => $report->zone->expansion,
+                ],
+            );
+        }
+
+        $guildTag = $this->resolveGuildTag($report);
+
+        if ($guildTag === null) {
+            Log::info("Report {$report->code} has no stored guild tag; saving it without one.");
+        }
+
+        ReportModel::updateOrCreate(
+            ['code' => $report->code],
+            [
+                'title' => $report->title,
+                'start_time' => $report->startTime,
+                'end_time' => $report->endTime,
+                'zone_id' => $report->zone?->id,
+                'guild_tag_id' => $guildTag?->id,
+            ],
+        );
+    }
+
+    /**
+     * Reuse the job's own tag when the report names it (the usual case, since the
+     * request filters by guildTagID). Only look up a different tag by ID.
+     */
+    private function resolveGuildTag(ReportData $report): ?GuildTag
+    {
+        if ($report->guildTag === null) {
+            return null;
+        }
+
+        if ($report->guildTag->id === $this->guildTag->id) {
+            return $this->guildTag;
+        }
+
+        return GuildTag::find($report->guildTag->id);
+    }
+
+    private function releaseUntilPointsReset(RateLimitReachedException $exception): void
+    {
+        $limit = $exception->getLimit();
+        $seconds = $limit->getRemainingSeconds();
+
+        Log::warning("Warcraft Logs rate limit reached while fetching reports for guild tag {$this->guildTag->id}; releasing for {$seconds} seconds.", [
+            'limit' => $limit->getName(),
+        ]);
+
+        $this->release($seconds);
     }
 
     /**
@@ -200,6 +262,14 @@ class FetchReportsByGuildTag implements ShouldQueue
      */
     public function tags(): array
     {
-        return ['warcraftlogs', 'reports', 'guild-tag:'.$this->guildTag->id];
+        $tags = ['warcraftlogs', 'reports', "guild-tag:{$this->guildTag->id}"];
+
+        $gameVersionId = $this->guildTag->phase?->game_version_id;
+
+        if ($gameVersionId === null) {
+            return $tags;
+        }
+
+        return [...$tags, "game-version:{$gameVersionId}"];
     }
 }

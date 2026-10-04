@@ -4,8 +4,10 @@ namespace Tests\Feature\Phases;
 
 use App\Models\Phase;
 use App\Models\WarcraftLogs\GuildTag;
+use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\DashboardTestCase;
 
 #[Group('phases')]
@@ -162,5 +164,31 @@ class ViewPhasesTest extends DashboardTestCase
             ->has('phases.0.guild_tags', 1)
             ->where('phases.0.guild_tags.0.count_attendance', false)
         );
+    }
+
+    #[Test]
+    #[Group('warcraftlogs-integration')]
+    public function all_guild_tags_lists_every_stored_tag_by_name_without_calling_warcraft_logs(): void
+    {
+        Saloon::fake([]);
+
+        $zulu = GuildTag::factory()->withoutPhase()->create(['name' => 'Zulu']);
+        $firstAlpha = GuildTag::factory()->withoutPhase()->create(['name' => 'Alpha']);
+        $secondAlpha = GuildTag::factory()->withoutPhase()->create(['name' => 'Alpha']);
+
+        $response = $this->actingAs($this->officer)->get(route('management.phases.view'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Manage/Phases/Index')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('all_guild_tags.data', 3)
+                ->where('all_guild_tags.data.0.id', $firstAlpha->id)
+                ->where('all_guild_tags.data.1.id', $secondAlpha->id)
+                ->where('all_guild_tags.data.2.id', $zulu->id)
+                ->where('all_guild_tags.data.2.name', 'Zulu')
+            )
+        );
+
+        Saloon::assertNothingSent();
     }
 }
