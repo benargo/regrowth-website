@@ -46,6 +46,17 @@ class GuildAttendanceDataTest extends TestCase
     }
 
     #[Test]
+    public function it_hydrates_a_missing_zone_as_null(): void
+    {
+        $payload = $this->sampleApiResponse();
+        unset($payload['zone']);
+
+        $attendance = GuildAttendanceData::from($payload);
+
+        $this->assertNull($attendance->zone);
+    }
+
+    #[Test]
     public function it_hydrates_null_players_as_an_empty_list(): void
     {
         $attendance = GuildAttendanceData::from([...$this->sampleApiResponse(), 'players' => null]);
