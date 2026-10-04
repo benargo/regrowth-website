@@ -15,6 +15,8 @@ use Tests\TestCase;
 #[Group('platform')]
 class WarcraftLogsServiceProviderTest extends TestCase
 {
+    private const string INTEGRATION_NAMESPACE = 'App\\Http\\Integrations\\WarcraftLogs\\';
+
     #[Test]
     #[Group('contract')]
     public function it_binds_the_connector_as_a_singleton(): void
@@ -48,5 +50,14 @@ class WarcraftLogsServiceProviderTest extends TestCase
 
         $this->assertContains(WarcraftLogsConnector::class, $provides);
         $this->assertContains(RateLimitResetCache::class, $provides);
+    }
+
+    #[Test]
+    #[Group('contract')]
+    public function it_only_provides_classes_from_the_warcraft_logs_integration(): void
+    {
+        foreach ((new WarcraftLogsServiceProvider($this->app))->provides() as $abstract) {
+            $this->assertStringStartsWith(self::INTEGRATION_NAMESPACE, $abstract);
+        }
     }
 }

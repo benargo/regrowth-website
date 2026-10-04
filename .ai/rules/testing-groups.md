@@ -46,7 +46,7 @@ vendor/bin/sail artisan test --testsuite=Feature --group=authorization --compact
 | `daily-quests`             | Daily quest CRUD, audit, seeders, notifications, stale-message cleanup.                                                                                                  |
 | `blizzard-integration`     | Blizzard Game Data / Render API connectors, requests, responses, data objects, CDN mirror, media/icon endpoints.                                                         |
 | `raidhelper-integration`   | Raid-Helper connector, webhooks, composition/event sync, RH requests.                                                                                                    |
-| `warcraftlogs-integration` | Warcraft Logs service, value objects, report links/fetch jobs, report cache.                                                                                             |
+| `warcraftlogs-integration` | Warcraft Logs connector, requests, DTOs, rate limiting, report links/fetch jobs, report cache.                                                                           |
 | `discord-integration`      | Discord client/resources/payloads, role/user sync, Discord-delivered notifications, Discord auth.                                                                        |
 | `auth`                     | Authentication, accounts/profile, roles/ranks/permissions, view-as-role, policies, channel auth.                                                                         |
 | `dashboard`                | Officer-dashboard page smoke loads (used only where a class is purely dashboard-page-oriented).                                                                          |
