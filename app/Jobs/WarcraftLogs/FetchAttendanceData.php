@@ -111,7 +111,7 @@ class FetchAttendanceData implements ShouldQueue
                     ['character_id', 'raid_report_id'],
                     ['presence']
                 );
-                Report::whereKey($reportId)->touch();
+                Report::whereKey($reportId)->get()->each->touch();
 
                 $syncedCount = count($syncData);
 

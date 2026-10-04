@@ -15,14 +15,4 @@ return new class extends Migration
             $table->dropUnique(['name']);
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::table('playable_races', function (Blueprint $table) {
-            $table->column('name')->unique()->change();
-        });
-    }
 };
