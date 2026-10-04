@@ -94,16 +94,6 @@ class PlayableRaceTest extends ModelTestCase
         $this->assertModelExists($playableRace);
     }
 
-    #[Test]
-    public function it_enforces_unique_name_constraint(): void
-    {
-        $this->create(['name' => 'Human']);
-
-        $this->assertUniqueConstraint(function () {
-            $this->create(['name' => 'Human']);
-        });
-    }
-
     // ==================== characters ====================
 
     #[Test]

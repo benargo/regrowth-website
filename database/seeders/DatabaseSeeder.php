@@ -36,6 +36,9 @@ class DatabaseSeeder extends Seeder
             // Then seed the loot bias data
             PrioritySeeder::class,
             ItemSeeder::class,
+
+            // Finally, fetch live data from external APIs when enabled.
+            ApiDataSeeder::class,
         ]);
 
         if (app()->environment(['local', 'testing'])) {

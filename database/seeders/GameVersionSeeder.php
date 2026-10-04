@@ -18,6 +18,18 @@ class GameVersionSeeder extends Seeder
     {
         return [
             [
+                'title' => 'Mists of Pandaria Classic',
+                'slug' => 'mop',
+                'realm' => 'Mirage Raceway',
+                'guild_name' => config('services.blizzard.guild.name'),
+                'faction' => Faction::ALLIANCE->value,
+                'release_date' => Carbon::create(2021, 9, 4, 0, 0, 0, CarbonTimeZone::create('Europe/Paris')),
+                'theme' => Theme::CLASSIC->value,
+                'blizzard_namespace' => BlizzardNamespace::CLASSIC->value,
+                'warcraftlogs_guild' => 774848,
+                'warcraftlogs_namespace' => WarcraftLogsNamespace::Classic->value,
+            ],
+            [
                 'title' => 'Burning Crusade Classic (Anniversary)',
                 'slug' => 'tbc',
                 'realm' => 'Thunderstrike',

@@ -155,4 +155,17 @@ return [
 
     'theme' => env('APP_THEME', 'classic'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Seed From APIs
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, a full "db:seed" finishes by running the console commands
+    | that fetch data from external APIs (Discord, Blizzard, Warcraft Logs and
+    | Raid Helper). Leave disabled on production and staging.
+    |
+    */
+
+    'seed_from_apis' => (bool) env('SEED_FROM_APIS', false),
+
 ];
