@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\GameVersion;
+use App\Models\Phase;
 use App\Models\Report;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
@@ -66,6 +68,16 @@ class ReportFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'guild_tag_id' => null,
+        ]);
+    }
+
+    /**
+     * Associate the report with a game version through a guild tag in one of its phases.
+     */
+    public function forGameVersion(GameVersion $gameVersion): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'guild_tag_id' => GuildTag::factory()->for(Phase::factory()->forGameVersion($gameVersion)),
         ]);
     }
 

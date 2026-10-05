@@ -2,6 +2,9 @@
 
 namespace Tests\Unit\Observers\WarcraftLogs;
 
+use App\Models\GameVersion;
+use App\Models\Phase;
+use App\Models\Report;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Observers\WarcraftLogs\GuildTagObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -70,5 +73,26 @@ class GuildTagObserverTest extends TestCase
 
         $observerClasses = $attributes[0]->getArguments()[0];
         $this->assertContains(GuildTagObserver::class, $observerClasses);
+    }
+
+    #[Test]
+    public function moving_a_guild_tag_to_another_phase_re_resolves_its_reports_game_version(): void
+    {
+        $report = Report::factory()->forGameVersion(GameVersion::factory()->create())->create();
+        $newVersion = GameVersion::factory()->create();
+
+        $report->guildTag->update(['phase_id' => Phase::factory()->forGameVersion($newVersion)->create()->id]);
+
+        $this->assertSame($newVersion->id, $report->fresh()->game_version_id);
+    }
+
+    #[Test]
+    public function removing_a_guild_tags_phase_clears_its_reports_game_version(): void
+    {
+        $report = Report::factory()->forGameVersion(GameVersion::factory()->create())->create();
+
+        $report->guildTag->update(['phase_id' => null]);
+
+        $this->assertNull($report->fresh()->game_version_id);
     }
 }

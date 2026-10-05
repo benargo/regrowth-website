@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Dashboard;
 
+use App\Models\GameVersion;
 use App\Models\Phase;
+use App\Models\Report;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use PHPUnit\Framework\Attributes\Group;
@@ -192,5 +194,26 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
 
         $this->assertNull($tagForPhase1->phase_id);
         $this->assertEquals($phase2->id, $tagForPhase2->phase_id);
+    }
+
+    // ==================== update-guild-tags — report game versions ====================
+
+    #[Test]
+    public function update_guild_tags_re_resolves_the_game_version_of_reports_on_added_and_removed_tags(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $phase = Phase::factory()->forGameVersion($gameVersion)->create();
+        $removedTag = GuildTag::factory()->withPhase($phase)->create();
+        $addedTag = GuildTag::factory()->withoutPhase()->create();
+        $reportOnRemovedTag = Report::factory()->withGuildTag($removedTag)->create();
+        $reportOnAddedTag = Report::factory()->withGuildTag($addedTag)->create();
+
+        $response = $this->actingAs($this->officer)->put(route('management.phases.guild-tags.update', $phase), [
+            'guild_tag_ids' => [$addedTag->id],
+        ]);
+
+        $response->assertRedirect();
+        $this->assertNull($reportOnRemovedTag->fresh()->game_version_id);
+        $this->assertSame($gameVersion->id, $reportOnAddedTag->fresh()->game_version_id);
     }
 }

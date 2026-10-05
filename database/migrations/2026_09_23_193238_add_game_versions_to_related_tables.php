@@ -20,6 +20,14 @@ return new class extends Migration
     private array $gameVersionDatasetTables = ['phases', 'guild_ranks'];
 
     /**
+     * Tables whose game version is derived from related rows, and filled by
+     * the app:backfill-game-versions command rather than by this migration.
+     *
+     * @var array<int, string>
+     */
+    private array $gameVersionDerivedTables = ['events', 'reports'];
+
+    /**
      * Tables with an inbound `item_id` foreign key to `items.id`.
      *
      * These FKs must be dropped before `items.id` can be converted to a
@@ -40,6 +48,7 @@ return new class extends Migration
         $this->repointItemForeignKeysToUuid();
         $this->widenMediaModelIdForUuidKeys();
         $this->addGameVersionIdToCharactersTable();
+        $this->addGameVersionIdToDerivedTables();
     }
 
     public function down(): void
@@ -57,6 +66,15 @@ return new class extends Migration
     private function addGameVersionIdToDatasetTables(): void
     {
         foreach ($this->gameVersionDatasetTables as $table) {
+            Schema::table($table, function (Blueprint $blueprint): void {
+                $blueprint->foreignIdFor(GameVersion::class)->nullable()->after('id')->constrained()->nullOnDelete();
+            });
+        }
+    }
+
+    private function addGameVersionIdToDerivedTables(): void
+    {
+        foreach ($this->gameVersionDerivedTables as $table) {
             Schema::table($table, function (Blueprint $blueprint): void {
                 $blueprint->foreignIdFor(GameVersion::class)->nullable()->after('id')->constrained()->nullOnDelete();
             });

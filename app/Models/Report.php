@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\UseResourceCollection;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -36,6 +37,20 @@ class Report extends Model
         'created' => ReportCreated::class,
         'updated' => ReportUpdated::class,
     ];
+
+    /**
+     * Derive the game version from the guild tag's phase on every save, so that
+     * re-saving a report re-resolves it after the chain behind it has changed.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Report $report): void {
+            $report->game_version_id = $report->guild_tag_id === null
+                ? null
+                : Phase::whereHas('guildTags', fn (Builder $query) => $query->whereKey($report->guild_tag_id))
+                    ->value('game_version_id');
+        });
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -82,6 +97,16 @@ class Report extends Model
     public function guildTag(): BelongsTo
     {
         return $this->belongsTo(GuildTag::class, 'guild_tag_id', 'id');
+    }
+
+    /**
+     * Get the game version of this report, derived from its guild tag's phase.
+     *
+     * @return BelongsTo<GameVersion, $this>
+     */
+    public function gameVersion(): BelongsTo
+    {
+        return $this->belongsTo(GameVersion::class);
     }
 
     /**

@@ -6,6 +6,8 @@ use App\Events\AddonSettingsProcessed;
 use App\Events\ReportCreated;
 use App\Events\ReportUpdated;
 use App\Models\Character;
+use App\Models\GameVersion;
+use App\Models\Phase;
 use App\Models\Report;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
@@ -400,6 +402,84 @@ class ReportTest extends ModelTestCase
         $report->refresh();
 
         $this->assertNull($report->guild_tag_id);
+    }
+
+    // ==================== gameVersion ====================
+
+    #[Test]
+    public function it_takes_its_game_version_from_its_guild_tags_phase(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $guildTag = GuildTag::factory()->withPhase(Phase::factory()->forGameVersion($gameVersion)->create())->create();
+
+        $report = $this->factory()->withGuildTag($guildTag)->create();
+
+        $this->assertRelation($report, 'gameVersion', BelongsTo::class);
+        $this->assertTrue($report->gameVersion->is($gameVersion));
+    }
+
+    #[Test]
+    public function it_has_no_game_version_without_a_guild_tag(): void
+    {
+        $report = $this->factory()->withoutGuildTag()->create();
+
+        $this->assertNull($report->game_version_id);
+    }
+
+    #[Test]
+    public function it_has_no_game_version_when_its_guild_tag_has_no_phase(): void
+    {
+        $report = $this->factory()->withGuildTag(GuildTag::factory()->withoutPhase()->create())->create();
+
+        $this->assertNull($report->game_version_id);
+    }
+
+    #[Test]
+    public function it_re_resolves_its_game_version_when_its_guild_tag_changes(): void
+    {
+        $report = $this->factory()->forGameVersion(GameVersion::factory()->create())->create();
+        $newVersion = GameVersion::factory()->create();
+        $newGuildTag = GuildTag::factory()->withPhase(Phase::factory()->forGameVersion($newVersion)->create())->create();
+
+        $report->update(['guild_tag_id' => $newGuildTag->id]);
+
+        $this->assertSame($newVersion->id, $report->fresh()->game_version_id);
+    }
+
+    #[Test]
+    public function saving_re_resolves_the_game_version_after_the_guild_tag_moves_phase(): void
+    {
+        $report = $this->factory()->forGameVersion(GameVersion::factory()->create())->create();
+        $newVersion = GameVersion::factory()->create();
+        GuildTag::whereKey($report->guild_tag_id)->update([
+            'phase_id' => Phase::factory()->forGameVersion($newVersion)->create()->id,
+        ]);
+
+        $report->save();
+
+        $this->assertSame($newVersion->id, $report->fresh()->game_version_id);
+    }
+
+    #[Test]
+    public function saving_overwrites_a_directly_assigned_game_version(): void
+    {
+        $report = $this->factory()->withoutGuildTag()->create();
+        $report->game_version_id = GameVersion::factory()->create()->id;
+
+        $report->save();
+
+        $this->assertNull($report->fresh()->game_version_id);
+    }
+
+    #[Test]
+    public function factory_for_game_version_state_links_the_report_through_a_guild_tag(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        $report = $this->factory()->forGameVersion($gameVersion)->create();
+
+        $this->assertSame($gameVersion->id, $report->guildTag->phase->game_version_id);
+        $this->assertSame($gameVersion->id, $report->game_version_id);
     }
 
     // ==================== events ====================

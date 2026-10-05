@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -63,13 +64,16 @@ class PhaseController extends Controller
     {
         $guildTagIds = $request->validated('guild_tag_ids');
 
-        // Remove this phase from all currently associated tags
-        GuildTag::query()->where('phase_id', $phase->id)->update(['phase_id' => null]);
+        // Update tags one at a time so GuildTagObserver re-resolves their reports' game versions.
+        DB::transaction(function () use ($phase, $guildTagIds): void {
+            foreach (GuildTag::whereBelongsTo($phase)->whereKeyNot($guildTagIds)->get() as $guildTag) {
+                $guildTag->update(['phase_id' => null]);
+            }
 
-        // Associate the selected tags with this phase
-        if (! empty($guildTagIds)) {
-            GuildTag::query()->whereIn('id', $guildTagIds)->update(['phase_id' => $phase->id]);
-        }
+            foreach (GuildTag::whereKey($guildTagIds)->get() as $guildTag) {
+                $guildTag->update(['phase_id' => $phase->id]);
+            }
+        });
 
         return back();
     }

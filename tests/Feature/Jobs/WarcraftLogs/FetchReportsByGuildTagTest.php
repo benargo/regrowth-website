@@ -195,6 +195,18 @@ class FetchReportsByGuildTagTest extends TestCase
         $this->assertDatabaseHas('reports', ['code' => 'NOTAG1', 'guild_tag_id' => null]);
     }
 
+    #[Test]
+    public function it_stores_the_game_version_of_the_reports_guild_tag(): void
+    {
+        $guildTag = $this->fetchableGuildTag();
+
+        $this->runJob(new FetchReportsByGuildTag($guildTag), [
+            $this->reportPayload('ABC123', 'Test Report', Carbon::parse('2025-01-01 19:00:00'), Carbon::parse('2025-01-01 22:00:00'), guildTagId: $guildTag->id),
+        ]);
+
+        $this->assertDatabaseHas('reports', ['code' => 'ABC123', 'game_version_id' => $guildTag->phase->game_version_id]);
+    }
+
     // ==================== incomplete game version chain ====================
 
     #[Test]
