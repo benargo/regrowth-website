@@ -10,7 +10,7 @@ class GuildTagResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @return array{id: int, name: string, count_attendance: bool}
+     * @return array{id: int, name: string, count_attendance: bool, guild_id: int|null}
      */
     public function toArray(Request $request): array
     {
@@ -18,6 +18,7 @@ class GuildTagResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'count_attendance' => $this->count_attendance,
+            'guild_id' => $this->warcraft_logs_guild_id,
         ];
     }
 }

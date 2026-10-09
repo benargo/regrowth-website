@@ -37,13 +37,13 @@ class GuildResourceTest extends TestCase
     {
         $guild = $this->guild();
         $guild->setRelation('gameVersions', new Collection([GameVersion::factory()->make(['id' => 7, 'title' => 'TBC Anniversary'])]));
-        $guild->setRelation('guildTags', new Collection([GuildTag::factory()->make(['id' => 101, 'name' => 'Main Raid', 'count_attendance' => true])]));
+        $guild->setRelation('guildTags', new Collection([GuildTag::factory()->make(['id' => 101, 'name' => 'Main Raid', 'count_attendance' => true, 'warcraft_logs_guild_id' => 774848])]));
 
         $array = GuildResource::make($guild)->resolve(new Request);
 
         $this->assertSame(7, $array['game_versions'][0]['id']);
         $this->assertSame('TBC Anniversary', $array['game_versions'][0]['title']);
-        $this->assertSame([['id' => 101, 'name' => 'Main Raid', 'count_attendance' => true]], $array['guild_tags']);
+        $this->assertSame([['id' => 101, 'name' => 'Main Raid', 'count_attendance' => true, 'guild_id' => 774848]], $array['guild_tags']);
     }
 
     #[Test]

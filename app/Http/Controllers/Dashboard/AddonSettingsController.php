@@ -7,7 +7,6 @@ use App\Http\Resources\CharacterSummaryResource;
 use App\Http\Resources\LootCouncillorCollection;
 use App\Models\Character;
 use App\Models\WarcraftLogs\GuildTag;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -18,7 +17,7 @@ class AddonSettingsController extends Controller
     /**
      * Render the addon settings page.
      */
-    public function __invoke(Request $request): Response
+    public function __invoke(): Response
     {
         $councillors = Character::where('is_loot_councillor', true)
             ->with(['rank', 'media'])
@@ -27,15 +26,7 @@ class AddonSettingsController extends Controller
 
         return Inertia::render('Manage/Addon/Settings', [
             'councillors' => new LootCouncillorCollection($councillors),
-            'tags' => [
-                'data' => GuildTag::orderBy('name')
-                    ->get()
-                    ->map(fn (GuildTag $guildTag): array => [
-                        ...$guildTag->toResource()->resolve($request),
-                        'guild_id' => $guildTag->warcraft_logs_guild_id,
-                    ])
-                    ->all(),
-            ],
+            'tags' => GuildTag::orderBy('name')->get()->toResourceCollection(),
             'characters' => Inertia::defer(function () {
                 return CharacterSummaryResource::collection(
                     Character::where('is_main', true)->with('rank')->orderBy('name')->get()
