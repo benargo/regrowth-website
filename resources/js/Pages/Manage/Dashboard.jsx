@@ -134,6 +134,15 @@ export default function Dashboard({ discordRoles }) {
                                         </p>
                                     </DashboardCard>
                                 </Can>
+                                <Can permission="view-warcraft-logs-guilds">
+                                    <DashboardCard href={route("management.warcraftlogs.guilds.index")} icon="flag">
+                                        <h3 className="text-md">Manage Warcraft Logs guilds</h3>
+                                        <p className="mb-1 text-sm">
+                                            Add the guilds reports come from, and choose which of their tags count
+                                            toward attendance.
+                                        </p>
+                                    </DashboardCard>
+                                </Can>
                                 <DashboardCard href={route("management.phases.view")} icon="hourglass-start">
                                     <h3 className="text-md">Manage TBC phases</h3>
                                     <p className="mb-1 text-sm">

@@ -56,11 +56,11 @@ export default function AddonSettings({ councillors: councillorsProp, tags: tags
         }
     };
 
-    const handleToggleTagAttendance = (tagId, currentValue) => {
+    const handleToggleTagAttendance = (tag) => {
         router.patch(
-            route("wcl.guild-tags.toggle-attendance", tagId),
+            route("management.warcraftlogs.guilds.tags.toggle-attendance", { guild: tag.guild_id, guildTag: tag.id }),
             {
-                count_attendance: !currentValue,
+                count_attendance: !tag.count_attendance,
             },
             {
                 preserveScroll: true,
@@ -194,7 +194,9 @@ export default function AddonSettings({ councillors: councillorsProp, tags: tags
                                         <div className="border-ink-600 bg-ground-800/50 mr-2 flex h-12 w-12 items-center justify-center border p-2">
                                             <Checkbox
                                                 checked={tag.count_attendance}
-                                                onChange={() => handleToggleTagAttendance(tag.id, tag.count_attendance)}
+                                                disabled={tag.guild_id === null}
+                                                title={tag.guild_id === null ? "This tag has no Warcraft Logs guild yet" : undefined}
+                                                onChange={() => handleToggleTagAttendance(tag)}
                                                 id={`tag-${tag.id}`}
                                             />
                                         </div>
