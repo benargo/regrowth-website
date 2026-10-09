@@ -1,9 +1,7 @@
 <?php
 
-namespace Tests\Unit\Observers\WarcraftLogs;
+namespace Tests\Feature\Observers\WarcraftLogs;
 
-use App\Models\GameVersion;
-use App\Models\Phase;
 use App\Models\Report;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Observers\WarcraftLogs\GuildTagObserver;
@@ -76,23 +74,59 @@ class GuildTagObserverTest extends TestCase
     }
 
     #[Test]
-    public function moving_a_guild_tag_to_another_phase_re_resolves_its_reports_game_version(): void
+    public function changing_count_attendance_flushes_the_attendance_cache(): void
     {
-        $report = Report::factory()->forGameVersion(GameVersion::factory()->create())->create();
-        $newVersion = GameVersion::factory()->create();
+        $guildTag = GuildTag::factory()->doesNotCountAttendance()->create();
+        Cache::tags(['attendance'])->put('stats', 'cached', 60);
 
-        $report->guildTag->update(['phase_id' => Phase::factory()->forGameVersion($newVersion)->create()->id]);
+        $guildTag->update(['count_attendance' => true]);
 
-        $this->assertSame($newVersion->id, $report->fresh()->game_version_id);
+        $this->assertNull(Cache::tags(['attendance'])->get('stats'));
     }
 
     #[Test]
-    public function removing_a_guild_tags_phase_clears_its_reports_game_version(): void
+    public function changing_only_the_name_keeps_the_attendance_cache(): void
     {
-        $report = Report::factory()->forGameVersion(GameVersion::factory()->create())->create();
+        $guildTag = GuildTag::factory()->create(['name' => 'Old']);
+        Cache::tags(['attendance'])->put('stats', 'cached', 60);
 
-        $report->guildTag->update(['phase_id' => null]);
+        $guildTag->update(['name' => 'New']);
 
-        $this->assertNull($report->fresh()->game_version_id);
+        $this->assertSame('cached', Cache::tags(['attendance'])->get('stats'));
+    }
+
+    #[Test]
+    public function deleting_a_counting_tag_flushes_the_attendance_cache(): void
+    {
+        $guildTag = GuildTag::factory()->countsAttendance()->create();
+        Cache::tags(['attendance'])->put('stats', 'cached', 60);
+
+        $guildTag->delete();
+
+        $this->assertNull(Cache::tags(['attendance'])->get('stats'));
+    }
+
+    #[Test]
+    public function deleting_a_non_counting_tag_keeps_the_attendance_cache(): void
+    {
+        $guildTag = GuildTag::factory()->doesNotCountAttendance()->create();
+        Cache::tags(['attendance'])->put('stats', 'cached', 60);
+
+        $guildTag->delete();
+
+        $this->assertSame('cached', Cache::tags(['attendance'])->get('stats'));
+    }
+
+    #[Test]
+    public function updating_a_tag_does_not_resave_its_reports(): void
+    {
+        $guildTag = GuildTag::factory()->create();
+        $report = Report::factory()->withGuildTag($guildTag)->create();
+        $updatedAt = $report->fresh()->updated_at;
+        $this->travel(1)->minutes();
+
+        $guildTag->update(['count_attendance' => ! $guildTag->count_attendance]);
+
+        $this->assertTrue($report->fresh()->updated_at->equalTo($updatedAt));
     }
 }

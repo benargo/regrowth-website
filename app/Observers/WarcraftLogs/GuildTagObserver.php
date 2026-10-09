@@ -16,15 +16,14 @@ class GuildTagObserver
     }
 
     /**
-     * Handle the GuildTag "updated" event. Re-saving its reports lets each one
-     * re-derive its game version when the tag moves phase.
+     * Handle the GuildTag "updated" event.
      */
     public function updated(GuildTag $guildTag): void
     {
         Cache::tags(['db', 'lootcouncil'])->flush();
 
-        if ($guildTag->wasChanged('phase_id')) {
-            $guildTag->reports()->lazyById()->each->save();
+        if ($guildTag->wasChanged('count_attendance')) {
+            Cache::tags(['attendance'])->flush();
         }
     }
 
@@ -34,5 +33,9 @@ class GuildTagObserver
     public function deleted(GuildTag $guildTag): void
     {
         Cache::tags(['db', 'lootcouncil'])->flush();
+
+        if ($guildTag->count_attendance) {
+            Cache::tags(['attendance'])->flush();
+        }
     }
 }

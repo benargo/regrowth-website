@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Observers;
+namespace Tests\Feature\Observers;
 
 use App\Models\PlannedAbsence;
 use App\Observers\PlannedAbsenceObserver;
