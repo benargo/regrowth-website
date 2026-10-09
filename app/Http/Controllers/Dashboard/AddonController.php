@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Models\GuildRank;
-use App\Services\WarcraftLogs\GuildTags;
 use Carbon\Carbon;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Http\Request;
@@ -19,7 +18,6 @@ class AddonController extends Controller
 {
     public function __construct(
         protected BlizzardConnector $blizzardConnector,
-        protected GuildTags $guildTags,
         protected FilesystemManager $storage,
     ) {}
 

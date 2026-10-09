@@ -76,19 +76,7 @@ abstract class BaseService
                     $payload['variables'] = $variables;
                 }
 
-                try {
-                    $response = $this->http($timeout)->post('', $payload);
-                    $this->trackRateLimitHeaders($response);
-                    $json = $response->throw()->json();
-                } catch (RequestException $e) {
-                    if ($e->response->status() === 429) {
-                        $this->activateRateLimitCooldown();
-
-                        throw new RateLimitedException;
-                    }
-
-                    throw $e;
-                }
+                $json = $this->send($payload, $timeout);
 
                 if (isset($json['errors'])) {
                     throw new GraphQLException($json['errors']);
@@ -97,6 +85,43 @@ abstract class BaseService
                 return $json['data'] ?? [];
             }
         );
+    }
+
+    /**
+     * POST a GraphQL payload and return the decoded JSON body.
+     *
+     * A 401 means the cached client token has been revoked or has otherwise
+     * become invalid, so the token is discarded and the request retried once
+     * with a fresh one. A second 401 is rethrown as a genuine credential failure.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     *
+     * @throws RateLimitedException
+     * @throws RequestException
+     */
+    private function send(array $payload, ?int $timeout, bool $isRetry = false): array
+    {
+        try {
+            $response = $this->http($timeout)->post('', $payload);
+            $this->trackRateLimitHeaders($response);
+
+            return $response->throw()->json() ?? [];
+        } catch (RequestException $e) {
+            if ($e->response->status() === 429) {
+                $this->activateRateLimitCooldown();
+
+                throw new RateLimitedException;
+            }
+
+            if ($e->response->status() === 401 && ! $isRetry) {
+                $this->auth->forgetClientToken();
+
+                return $this->send($payload, $timeout, isRetry: true);
+            }
+
+            throw $e;
+        }
     }
 
     /**
