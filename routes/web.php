@@ -25,6 +25,7 @@ use App\Http\Controllers\PlannedAbsenceController;
 use App\Http\Controllers\RaidingController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\WarcraftLogs\GuildController;
 use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -162,7 +163,6 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
      */
     Route::get('/phases', [PhaseController::class, 'index'])->name('phases.view');
     Route::put('/phases/{phase}', [PhaseController::class, 'update'])->name('phases.update');
-    Route::put('/phases/{phase}/guild-tags', [PhaseController::class, 'updateGuildTags'])->name('phases.guild-tags.update');
 
     /**
      * Permissions management
@@ -170,6 +170,21 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
     Route::get('/permissions/{group}', [PermissionController::class, 'showGroup'])->name('permissions.group.show');
     Route::patch('/permissions/{group}/{permission}', [PermissionController::class, 'update'])->name('permissions.permission.update');
+
+    /**
+     * Warcraft Logs guilds management
+     */
+    Route::group(['prefix' => 'warcraftlogs/guilds', 'as' => 'warcraftlogs.guilds.'], function () {
+        Route::get('/', [GuildController::class, 'index'])->name('index');
+        Route::get('/create', [GuildController::class, 'create'])->name('create');
+        Route::post('/', [GuildController::class, 'store'])->name('store');
+        Route::get('/{guild}', [GuildController::class, 'show'])->name('show');
+        Route::patch('/{guild}', [GuildController::class, 'update'])->name('update');
+        Route::delete('/{guild}', [GuildController::class, 'destroy'])->name('destroy');
+        Route::patch('/{guild}/tags/{guildTag}/count-attendance', [GuildTagController::class, 'toggleCountAttendance'])
+            ->scopeBindings()
+            ->name('tags.toggle-attendance');
+    });
 });
 
 /**
@@ -180,12 +195,6 @@ Route::group(['prefix' => 'daily-quests', 'as' => 'daily-quests.'], function () 
     // Route::get('/edit', [DailyQuestsController::class, 'form'])->name('form')->middleware('auth');
     // Route::post('/store', [DailyQuestsController::class, 'store'])->name('store')->middleware('auth');
 });
-
-/**
- * Warcraft Logs Guild Tags Management
- */
-Route::patch('/datasets/guild-tags/{guildTag}/count-attendance', [GuildTagController::class, 'toggleCountAttendance'])
-    ->name('wcl.guild-tags.toggle-attendance');
 
 /**
  * Static information pages

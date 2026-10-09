@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use App\Enums\Faction;
 use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
-use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
+use App\Models\WarcraftLogs\Guild;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Routing\Route as RouteDefinition;
@@ -17,9 +17,7 @@ use Illuminate\Validation\Rules\Unique;
 class StoreGameVersionRequest extends FormRequest
 {
     /**
-     * Normalise the slug before validating, so the length and uniqueness
-     * rules check the value that will be stored. Str::slug also trims dashes
-     * from the start and end.
+     * Normalise the slug before validating.
      */
     protected function prepareForValidation(): void
     {
@@ -44,8 +42,7 @@ class StoreGameVersionRequest extends FormRequest
             'release_date' => ['required', 'date'],
             'theme' => ['required', Rule::enum(Theme::class)],
             'blizzard_namespace' => ['nullable', Rule::enum(BlizzardNamespace::class)],
-            'warcraftlogs_guild' => ['nullable', 'integer', 'min:1', 'max:2147483647'],
-            'warcraftlogs_namespace' => ['nullable', Rule::enum(WarcraftLogsNamespace::class)],
+            'warcraft_logs_guild_id' => ['nullable', 'integer', Rule::exists(Guild::class, 'id')],
         ];
     }
 
@@ -65,12 +62,12 @@ class StoreGameVersionRequest extends FormRequest
             'guild_name.required' => 'The guild name is required.',
             'release_date.required' => 'The release date is required.',
             'theme.required' => 'Please choose a theme.',
+            'warcraft_logs_guild_id.exists' => 'Choose one of the listed Warcraft Logs guilds.',
         ];
     }
 
     /**
-     * Get the human-readable field names used in default messages. They
-     * match the form's visible labels so errors read naturally.
+     * Get the human-readable field names used in default messages.
      *
      * @return array<string, string>
      */
@@ -80,15 +77,12 @@ class StoreGameVersionRequest extends FormRequest
             'guild_name' => 'guild name',
             'release_date' => 'release date',
             'blizzard_namespace' => 'Blizzard API namespace',
-            'warcraftlogs_guild' => 'Warcraft Logs guild ID',
-            'warcraftlogs_namespace' => 'Warcraft Logs namespace',
+            'warcraft_logs_guild_id' => 'Warcraft Logs guild',
         ];
     }
 
     /**
-     * Get the first segment of every registered URL, such as "manage" or
-     * "loot". The slug becomes the first segment of the version's roster URL,
-     * so it can't be one of these.
+     * Get the first segment of every registered URL, such as "manage" or "loot".
      *
      * @return list<string>
      */
