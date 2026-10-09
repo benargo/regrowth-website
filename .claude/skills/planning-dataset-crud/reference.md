@@ -40,7 +40,7 @@
 | `App\Actions\Datasets\BuildDatasetRoutes` | `Build{Model}Routes` subclass: `routePrefix()`, `setupSteps()` |
 | `App\Actions\Datasets\ResolveEditLock` | `...ResolveEditLock::run($request, $record)` gives `canEdit` + `editor` props (honours `X-Edit-Idle`) |
 | `App\Http\Requests\Concerns\ChecksEditLock` | `after()` returns `[$this->editLockCheck('{param}', '{record name}')]` |
-| `resources/js/Components/Datasets/*` | `IndexLayout`, `RecordCard` + `usageSummary`, `DetailsForm`, `EditLayout` (`.Details`, `.Steps`), `EditLockGuard`, `SetupSteps`, `SetupWizardStep`, `SetupNavigation`, `Relationships` (`.AddRecord`, `.Step`), `RecordChecklist`, `ReviewSummary`, `ReviewSection` + `selectedOptions` |
+| `resources/js/Components/Datasets/*` | `IndexLayout` (`addHref` optional: no Add link without it), `RecordCard` + `usageSummary` (optional `editLabel`/`editIcon`; `usage` and `onDelete` optional, hiding the usage sentence and Delete button), `DetailsForm`, `EditLayout` (`.Details`, `.Steps`), `EditLockGuard`, `SetupSteps`, `SetupWizardStep`, `SetupNavigation`, `Relationships` (`.AddRecord`, `.Step`), `RecordChecklist`, `ReviewSummary`, `ReviewSection` + `selectedOptions` |
 | `resources/js/Hooks/*` | `useRecordDeletion`, `useRelationshipForm` (+ `AUTOSAVE_DELAY`), `useNewRecordForm`, `useSyncedSelection`, `useAutosave` (`useFormAutosave`, `autosaveVisit`, `AutosaveProvider`) |
 | `resources/js/Components/FormControls.jsx` | `FormRow`, `FormSection`, `OptionSelect`, `SaveButton`, `ErrorSummary`, `firstError`, class names |
 
