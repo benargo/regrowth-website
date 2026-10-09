@@ -414,6 +414,79 @@ class WarcraftLogsServiceTest extends TestCase
         $service->publicQuery('query { guild { id } }');
     }
 
+    // ==================== stale token recovery ====================
+
+    #[Group('error-handling')]
+    #[Test]
+    public function a_401_response_forgets_the_token_and_retries_once(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'www.warcraftlogs.com/api/v2/client*' => Http::sequence()
+                ->push(['error' => 'Unauthenticated.'], 401)
+                ->push(['data' => ['guild' => ['id' => 774848]]], 200),
+        ]);
+
+        Cache::shouldReceive('get')
+            ->twice()
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
+            ->andReturn('stale_access_token', 'fresh_access_token');
+
+        Cache::shouldReceive('forget')
+            ->once()
+            ->with('warcraftlogs:client_token');
+
+        $this->fakeNotRateLimited();
+
+        Cache::shouldReceive('remember')
+            ->once()
+            ->andReturnUsing(function ($key, $ttl, $callback) {
+                return $callback();
+            });
+
+        $data = $this->getService()->publicQuery('query { guild { id } }');
+
+        $this->assertEquals(['guild' => ['id' => 774848]], $data);
+        Http::assertSentCount(2);
+        Http::assertSent(fn ($request) => $request->hasHeader('Authorization', 'Bearer fresh_access_token'));
+    }
+
+    #[Group('error-handling')]
+    #[Test]
+    public function a_repeated_401_response_is_rethrown_without_further_retries(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'www.warcraftlogs.com/api/v2/client*' => Http::response(['error' => 'Unauthenticated.'], 401),
+        ]);
+
+        Cache::shouldReceive('get')
+            ->twice()
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
+            ->andReturn('test_access_token');
+
+        Cache::shouldReceive('forget')
+            ->once()
+            ->with('warcraftlogs:client_token');
+
+        $this->fakeNotRateLimited();
+
+        Cache::shouldReceive('remember')
+            ->once()
+            ->andReturnUsing(function ($key, $ttl, $callback) {
+                return $callback();
+            });
+
+        try {
+            $this->getService()->publicQuery('query { guild { id } }');
+            $this->fail('Expected a RequestException for the repeated 401.');
+        } catch (RequestException $e) {
+            $this->assertSame(401, $e->response->status());
+        }
+
+        Http::assertSentCount(2);
+    }
+
     // ==================== custom cache ttl ====================
 
     #[Test]

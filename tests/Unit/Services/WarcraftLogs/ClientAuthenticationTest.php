@@ -73,6 +73,23 @@ class ClientAuthenticationTest extends TestCase
     }
 
     /**
+     * Tests that forgetting the client token removes it from the cache.
+     */
+    #[Test]
+    public function forget_client_token_removes_cached_token(): void
+    {
+        $authenticationHandler = new AuthenticationHandler(
+            'test_client_id',
+            'test_client_secret'
+        );
+
+        Cache::expects('forget')
+            ->with('warcraftlogs:client_token');
+
+        $authenticationHandler->forgetClientToken();
+    }
+
+    /**
      * Tests that the AuthenticationHandler can be resolved from the container.
      */
     #[Test]

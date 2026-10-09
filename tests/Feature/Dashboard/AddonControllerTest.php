@@ -6,9 +6,9 @@ use App\Models\GuildRank;
 use App\Models\User;
 use App\Services\WarcraftLogs\GuildTags;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
-use Mockery;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\Blizzard\MocksBlizzardServices;
@@ -22,15 +22,6 @@ class AddonControllerTest extends DashboardTestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        // Mock GuildTags to return empty tags by default
-        // This prevents API calls during tests that don't specifically test attendance
-        $guildTags = Mockery::mock(GuildTags::class);
-        $guildTags->shouldReceive('toCollection')
-            ->andReturn(collect())
-            ->byDefault();
-
-        $this->app->instance(GuildTags::class, $guildTags);
 
         // Fake Saloon to return empty roster by default
         // This prevents real API calls during tests that don't specifically test GRM freshness
@@ -90,6 +81,27 @@ class AddonControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         $response->assertOk();
+    }
+
+    /**
+     * Regression: the export page must not depend on Warcraft Logs, so a
+     * WCL outage or revoked token cannot take it down.
+     */
+    #[Group('error-handling')]
+    #[Test]
+    public function export_does_not_resolve_warcraft_logs_guild_tags(): void
+    {
+        Http::fake([
+            '*warcraftlogs.com/*' => Http::response(['error' => 'Unauthenticated.'], 401),
+        ]);
+        Storage::fake('local');
+        $this->seedExportFile();
+
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
+
+        $response->assertOk();
+        $this->assertFalse($this->app->resolved(GuildTags::class));
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'warcraftlogs.com'));
     }
 
     #[Test]
