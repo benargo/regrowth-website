@@ -31,6 +31,11 @@ use Saloon\Exceptions\Request\Statuses\ForbiddenException;
 
 class DailyQuestSeeder extends Seeder implements HasBlizzardIcons
 {
+    /**
+     * The slug of the game version this seeder scopes its records to.
+     */
+    public string $gameVersionSlug = 'anniversary';
+
     /** @var array<int, Lock> */
     private array $locks = [];
 
@@ -94,7 +99,14 @@ class DailyQuestSeeder extends Seeder implements HasBlizzardIcons
      */
     public function run(): void
     {
-        $gameVersion = GameVersion::where('slug', 'tbc')->sole();
+        $gameVersion = GameVersion::where('slug', $this->gameVersionSlug)->first();
+
+        if ($gameVersion === null) {
+            $this->command?->error("Game version [{$this->gameVersionSlug}] not found — skipping.");
+
+            return;
+        }
+
         $dailyQuests = $this->dailyQuests;
 
         foreach ($dailyQuests as $quest) {

@@ -11,8 +11,7 @@ const FIELD_LABELS = {
     guild_name: "Guild name",
     faction: "Faction",
     blizzard_namespace: "Blizzard API namespace",
-    warcraftlogs_guild: "Warcraft Logs guild ID",
-    warcraftlogs_namespace: "Warcraft Logs namespace",
+    warcraft_logs_guild_id: "Warcraft Logs guild",
 };
 
 /**
@@ -28,8 +27,7 @@ export function gameVersionFormData(gameVersion = null) {
         release_date: gameVersion?.release_date ?? "",
         theme: gameVersion?.theme ?? "",
         blizzard_namespace: gameVersion?.blizzard?.namespace ?? "",
-        warcraftlogs_guild: gameVersion?.warcraftlogs?.guild ?? "",
-        warcraftlogs_namespace: gameVersion?.warcraftlogs?.namespace?.value ?? "",
+        warcraft_logs_guild_id: gameVersion?.warcraftlogs?.guild ?? "",
     };
 }
 
@@ -127,21 +125,14 @@ export default function GameVersionForm({ form, options, gameVersion = null, ...
                             })}
                         </FormRow>
                         <FormRow
-                            htmlFor="warcraftlogs_guild"
-                            label={FIELD_LABELS.warcraftlogs_guild}
-                            hint="The number at the end of the guild's Warcraft Logs page address."
-                            error={errors.warcraftlogs_guild}
+                            htmlFor="warcraft_logs_guild_id"
+                            label={FIELD_LABELS.warcraft_logs_guild_id}
+                            hint="Reports and attendance for this version come from this guild. Add guilds, or change a guild's Warcraft Logs site, on the Warcraft Logs guilds page."
+                            error={errors.warcraft_logs_guild_id}
+                            className="md:col-span-2"
                         >
-                            {text("warcraftlogs_guild", { type: "number", min: 1, inputMode: "numeric" })}
-                        </FormRow>
-                        <FormRow
-                            htmlFor="warcraftlogs_namespace"
-                            label={FIELD_LABELS.warcraftlogs_namespace}
-                            hint="Which Warcraft Logs site this version's reports come from."
-                            error={errors.warcraftlogs_namespace}
-                        >
-                            {select("warcraftlogs_namespace", {
-                                options: options.warcraftlogs_namespaces,
+                            {select("warcraft_logs_guild_id", {
+                                options: options.warcraft_logs_guilds,
                                 placeholder: "Not set",
                             })}
                         </FormRow>

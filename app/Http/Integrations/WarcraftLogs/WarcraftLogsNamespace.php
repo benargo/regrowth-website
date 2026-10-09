@@ -2,36 +2,40 @@
 
 namespace App\Http\Integrations\WarcraftLogs;
 
+use App\Enums\Concerns\HasSelectOptions;
+
 enum WarcraftLogsNamespace: string
 {
-    case ANNIVERSARY = 'anniversary';
-    case CLASSIC = 'classic'; // Mists of Pandaria Classic
-    case ERA = 'era';
-    case FOREVER = 'forever';
-    case RETAIL = 'retail';
-    case SEASON_OF_DISCOVERY = 'season_of_discovery';
+    use HasSelectOptions;
+
+    case Anniversary = 'anniversary';
+    case Classic = 'classic'; // Mists of Pandaria Classic
+    case Era = 'era';
+    case Forever = 'forever';
+    case Retail = 'retail';
+    case SeasonOfDiscovery = 'season_of_discovery';
 
     public function baseUrl(): string
     {
         return match ($this) {
-            self::ANNIVERSARY => 'https://fresh.warcraftlogs.com/api/v2/client',
-            self::CLASSIC => 'https://classic.warcraftlogs.com/api/v2/client',
-            self::ERA => 'https://vanilla.warcraftlogs.com/api/v2/client',
-            self::FOREVER => 'https://forever.warcraftlogs.com/api/v2/client',
-            self::RETAIL => 'https://www.warcraftlogs.com/api/v2/client',
-            self::SEASON_OF_DISCOVERY => 'https://sod.warcraftlogs.com/api/v2/client',
+            self::Anniversary => 'https://fresh.warcraftlogs.com/api/v2/client',
+            self::Classic => 'https://classic.warcraftlogs.com/api/v2/client',
+            self::Era => 'https://vanilla.warcraftlogs.com/api/v2/client',
+            self::Forever => 'https://forever.warcraftlogs.com/api/v2/client',
+            self::Retail => 'https://www.warcraftlogs.com/api/v2/client',
+            self::SeasonOfDiscovery => 'https://sod.warcraftlogs.com/api/v2/client',
         };
     }
 
     public function label(): string
     {
         return match ($this) {
-            self::ANNIVERSARY => 'The Burning Crusade Classic Anniversary',
-            self::CLASSIC => 'Mists of Pandaria Classic',
-            self::ERA => 'Classic Era',
-            self::FOREVER => 'World of Warcraft: Forever',
-            self::RETAIL => 'World of Warcraft',
-            self::SEASON_OF_DISCOVERY => 'Season of Discovery',
+            self::Anniversary => 'The Burning Crusade Classic Anniversary',
+            self::Classic => 'Mists of Pandaria Classic',
+            self::Era => 'Classic Era',
+            self::Forever => 'World of Warcraft: Forever',
+            self::Retail => 'World of Warcraft',
+            self::SeasonOfDiscovery => 'Season of Discovery',
         };
     }
 }

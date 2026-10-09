@@ -36,11 +36,12 @@ trait LimitsItemSeederFixtures
      *
      * @param  array<int, int>  $itemIds
      */
-    protected function seedSpecificItems(array $itemIds): ItemSeeder
+    protected function seedSpecificItems(array $itemIds, string $gameVersionSlug): ItemSeeder
     {
         $this->limitItemSeederTo($itemIds);
 
         $seeder = app(ItemSeeder::class);
+        $seeder->gameVersionSlug = $gameVersionSlug;
 
         Model::unguarded(fn () => $seeder->run());
 

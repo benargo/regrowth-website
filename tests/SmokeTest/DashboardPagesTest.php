@@ -12,12 +12,10 @@ use App\Models\Permission;
 use App\Models\PlayableClass;
 use App\Models\Raid;
 use App\Models\User;
-use App\Services\WarcraftLogs\GuildTags;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
-use Mockery;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
@@ -46,13 +44,6 @@ class DashboardPagesTest extends TestCase
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'set-daily-quests', 'guard_name' => 'web']));
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'audit-daily-quests', 'guard_name' => 'web']));
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'update-characters', 'guard_name' => 'web']));
-
-        // Mock GuildTags to prevent WarcraftLogs API calls
-        $guildTags = Mockery::mock(GuildTags::class);
-        $guildTags->shouldReceive('toCollection')
-            ->andReturn(collect())
-            ->byDefault();
-        $this->app->instance(GuildTags::class, $guildTags);
 
         Storage::fake('public');
 

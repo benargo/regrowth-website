@@ -57,7 +57,7 @@ class IndexTest extends TestCase
     #[Test]
     public function reports_deferred_prop_returns_paginated_data(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
 
         $user = User::factory()->create();
@@ -79,7 +79,7 @@ class IndexTest extends TestCase
     #[Test]
     public function pagination_links_preserve_filter_query_string(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         Report::factory()->count(30)->withGuildTag($tag)->create([
             'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC'),
         ]);
@@ -122,7 +122,7 @@ class IndexTest extends TestCase
     #[Test]
     public function index_includes_filter_option_props(): void
     {
-        GuildTag::factory()->withoutPhase()->create();
+        GuildTag::factory()->create();
 
         $user = User::factory()->create();
 
@@ -147,7 +147,7 @@ class IndexTest extends TestCase
     #[Test]
     public function reports_data_contains_expected_fields(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         Report::factory()->withGuildTag($tag)->create([
             'title' => 'Test Raid',
             'start_time' => Carbon::parse('2025-01-06 20:00', 'UTC'),
@@ -179,7 +179,7 @@ class IndexTest extends TestCase
     #[Test]
     public function reports_are_ordered_by_start_time_descending(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         Report::factory()->withGuildTag($tag)->create(['title' => 'Old Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
         Report::factory()->withGuildTag($tag)->create(['title' => 'New Raid', 'start_time' => Carbon::parse('2025-03-01 20:00', 'UTC')]);
 
@@ -200,7 +200,7 @@ class IndexTest extends TestCase
     #[Test]
     public function zone_filter_limits_results_to_matching_zone(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         $zoneA = Zone::factory()->create(['id' => 1, 'name' => 'Zone A']);
         $zoneB = Zone::factory()->create(['id' => 2, 'name' => 'Zone B']);
         Report::factory()->withGuildTag($tag)->withZone($zoneA)->create(['title' => 'Zone A Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
@@ -221,8 +221,8 @@ class IndexTest extends TestCase
     #[Test]
     public function guild_tag_filter_limits_results_to_matching_tag(): void
     {
-        $tag1 = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        $tag2 = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag1 = GuildTag::factory()->countsAttendance()->create();
+        $tag2 = GuildTag::factory()->countsAttendance()->create();
         Report::factory()->withGuildTag($tag1)->create(['title' => 'Tag 1 Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
         Report::factory()->withGuildTag($tag2)->create(['title' => 'Tag 2 Raid', 'start_time' => Carbon::parse('2025-01-08 20:00', 'UTC')]);
 
@@ -241,7 +241,7 @@ class IndexTest extends TestCase
     #[Test]
     public function day_filter_limits_results_to_matching_day_of_week(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         // 2025-01-06 is a Monday (Carbon day 1)
         Report::factory()->withGuildTag($tag)->create(['title' => 'Monday Raid', 'start_time' => Carbon::parse('2025-01-06 20:00', 'UTC')]);
         // 2025-01-08 is a Wednesday (Carbon day 3)
@@ -263,7 +263,7 @@ class IndexTest extends TestCase
     #[Test]
     public function since_date_filter_excludes_older_reports(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         Report::factory()->withGuildTag($tag)->create(['title' => 'Old Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
         Report::factory()->withGuildTag($tag)->create(['title' => 'New Raid', 'start_time' => Carbon::parse('2025-02-01 20:00', 'UTC')]);
 
@@ -282,7 +282,7 @@ class IndexTest extends TestCase
     #[Test]
     public function before_date_filter_excludes_newer_reports(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         Report::factory()->withGuildTag($tag)->create(['title' => 'Old Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
         Report::factory()->withGuildTag($tag)->create(['title' => 'New Raid', 'start_time' => Carbon::parse('2025-02-01 20:00', 'UTC')]);
 
@@ -301,7 +301,7 @@ class IndexTest extends TestCase
     #[Test]
     public function no_filters_returns_all_reports(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         Report::factory()->count(3)->withGuildTag($tag)->create();
 
         $user = User::factory()->create();
@@ -444,7 +444,7 @@ class IndexTest extends TestCase
     #[Test]
     public function earliest_date_is_day_before_earliest_report(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-03-10 20:00', 'UTC')]);
         Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'UTC')]);
 

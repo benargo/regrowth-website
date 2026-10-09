@@ -4,8 +4,10 @@ namespace Tests\Unit\Services\Attendance;
 
 use App\Exceptions\EmptyCollectionException;
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\Report;
+use App\Models\WarcraftLogs\Guild;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Services\Attendance\Calculator;
 use App\Services\Attendance\CharacterAttendanceStatsData;
@@ -51,8 +53,8 @@ class CalculatorTest extends TestCase
     protected function makeTag(bool $countsAttendance = true): GuildTag
     {
         return $countsAttendance
-            ? GuildTag::factory()->countsAttendance()->withoutPhase()->create()
-            : GuildTag::factory()->doesNotCountAttendance()->withoutPhase()->create();
+            ? GuildTag::factory()->countsAttendance()->create()
+            : GuildTag::factory()->doesNotCountAttendance()->create();
     }
 
     protected function makeReport(GuildTag $tag, Carbon $startTime): Report
@@ -387,6 +389,40 @@ class CalculatorTest extends TestCase
         $thrall = $this->findStats($this->makeCalculator()->wholeGuild(), 'Thrall');
 
         // Only the one counting report should be included
+        $this->assertEquals(1, $thrall->totalReports);
+    }
+
+    #[Test]
+    public function calculate_counts_a_report_whose_guild_derives_no_game_version(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $guild = Guild::factory()->create();
+        GameVersion::factory()->forGuild($guild)->create(['release_date' => '2030-01-01 00:00:00']);
+        $report = Report::factory()
+            ->forGuild($guild)
+            ->withGuildTag(GuildTag::factory()->forGuild($guild)->countsAttendance()->create())
+            ->create(['start_time' => Carbon::parse('2025-01-15 20:00', 'Europe/Paris')]);
+        $this->attachCharacterToReport($report, $character, 1);
+
+        $thrall = $this->findStats($this->makeCalculator()->wholeGuild(), 'Thrall');
+
+        $this->assertNull($report->fresh()->game_version_id);
+        $this->assertEquals(1, $thrall->totalReports);
+        $this->assertEquals(1, $thrall->reportsAttended);
+    }
+
+    #[Test]
+    public function calculate_counts_a_report_whose_tag_has_no_guild(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $report = $this->makeReport($this->makeTag(true), Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
+        $this->attachCharacterToReport($report, $character, 1);
+
+        $thrall = $this->findStats($this->makeCalculator()->wholeGuild(), 'Thrall');
+
+        $this->assertNull($report->guildTag->warcraft_logs_guild_id);
         $this->assertEquals(1, $thrall->totalReports);
     }
 

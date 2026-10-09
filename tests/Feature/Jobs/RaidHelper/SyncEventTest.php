@@ -11,6 +11,8 @@ use App\Jobs\RaidHelper\SyncEvent;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
+use App\Models\GameVersion;
+use App\Models\Phase;
 use App\Models\Raid;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -77,6 +79,29 @@ class SyncEventTest extends TestCase
 
         $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
         $this->assertTrue($event->raids->contains($raid));
+    }
+
+    #[Test]
+    public function it_stores_the_game_version_of_the_events_raids(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $raid = Raid::factory()->for(Phase::factory()->forGameVersion($gameVersion))->create(['name' => 'Molten Core']);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'description' => $this->zonePayload([['id' => $raid->id, 'name' => $raid->name]]),
+        ])));
+
+        $this->assertDatabaseHas('events', ['raid_helper_event_id' => '111222333444555001', 'game_version_id' => $gameVersion->id]);
+    }
+
+    #[Test]
+    public function it_clears_the_game_version_when_the_event_no_longer_has_raids(): void
+    {
+        $event = Event::factory()->forGameVersion(GameVersion::factory()->create())->create(['raid_helper_event_id' => '111222333444555001']);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload()));
+
+        $this->assertNull($event->fresh()->game_version_id);
     }
 
     // ==================== boss sync ====================

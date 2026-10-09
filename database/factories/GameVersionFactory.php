@@ -5,8 +5,8 @@ namespace Database\Factories;
 use App\Enums\Faction;
 use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
-use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\GameVersion;
+use App\Models\WarcraftLogs\Guild;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
 
@@ -31,8 +31,6 @@ class GameVersionFactory extends Factory
             'release_date' => fake()->dateTimeBetween('-1 year', '+1 year'),
             'theme' => fake()->randomElement(Theme::cases()),
             'blizzard_namespace' => fake()->randomElement(BlizzardNamespace::cases()),
-            'warcraftlogs_guild' => fake()->numberBetween(1, 999999),
-            'warcraftlogs_namespace' => fake()->randomElement(WarcraftLogsNamespace::cases()),
         ];
     }
 
@@ -57,6 +55,17 @@ class GameVersionFactory extends Factory
             'realm' => 'Thunderstrike',
             'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
             'release_date' => Carbon::now()->subMonth(),
+        ]);
+    }
+
+    /**
+     * Indicate that the version belongs to a Warcraft Logs guild, a new one
+     * when none is given.
+     */
+    public function forGuild(?Guild $guild = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'warcraft_logs_guild_id' => $guild?->id ?? Guild::factory(),
         ]);
     }
 }

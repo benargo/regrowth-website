@@ -35,7 +35,7 @@ class DailyQuestSeederTest extends TestCase
     {
         parent::setUp();
 
-        $this->gameVersion = GameVersion::factory()->tbc()->create();
+        $this->gameVersion = GameVersion::factory()->create();
 
         Storage::fake('public');
 
@@ -100,7 +100,7 @@ class DailyQuestSeederTest extends TestCase
     }
 
     #[Test]
-    public function seeder_scopes_reward_items_to_the_tbc_game_version_when_others_exist(): void
+    public function seeder_scopes_reward_items_to_the_resolved_game_version_when_others_exist(): void
     {
         $otherGameVersion = GameVersion::factory()->create();
 
@@ -332,8 +332,22 @@ class DailyQuestSeederTest extends TestCase
         ]);
     }
 
+    #[Test]
+    public function it_skips_seeding_when_the_game_version_does_not_exist(): void
+    {
+        $seeder = app(DailyQuestSeeder::class);
+        $seeder->gameVersionSlug = 'missing-version';
+
+        Model::unguarded(fn (): mixed => $seeder->run());
+
+        $this->assertDatabaseEmpty(DailyQuest::class);
+    }
+
     private function runSeeder(): void
     {
-        Model::unguarded(fn (): mixed => app(DailyQuestSeeder::class)->run());
+        $seeder = app(DailyQuestSeeder::class);
+        $seeder->gameVersionSlug = $this->gameVersion->slug;
+
+        Model::unguarded(fn (): mixed => $seeder->run());
     }
 }

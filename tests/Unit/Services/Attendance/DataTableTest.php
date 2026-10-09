@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Services\Attendance;
 
+use App\Jobs\BuildAddonExportFile;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
@@ -13,6 +14,7 @@ use App\Services\Attendance\DataTable;
 use App\Services\Attendance\FiltersData;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -26,6 +28,7 @@ class DataTableTest extends TestCase
     {
         parent::setUp();
 
+        Bus::fake([BuildAddonExportFile::class]);
         config(['app.timezone' => 'Europe/Paris']);
     }
 
@@ -44,8 +47,8 @@ class DataTableTest extends TestCase
     protected function makeTag(bool $countsAttendance = true): GuildTag
     {
         return $countsAttendance
-            ? GuildTag::factory()->countsAttendance()->withoutPhase()->create()
-            : GuildTag::factory()->doesNotCountAttendance()->withoutPhase()->create();
+            ? GuildTag::factory()->countsAttendance()->create()
+            : GuildTag::factory()->doesNotCountAttendance()->create();
     }
 
     protected function makeReport(GuildTag $tag, Carbon $startTime): Report

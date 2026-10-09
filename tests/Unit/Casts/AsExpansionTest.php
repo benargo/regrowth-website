@@ -3,8 +3,8 @@
 namespace Tests\Unit\Casts;
 
 use App\Casts\AsExpansion;
-use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
-use App\Services\WarcraftLogs\ValueObjects\ZoneData;
+use App\Http\Integrations\WarcraftLogs\Data\World\ExpansionData;
+use App\Http\Integrations\WarcraftLogs\Data\World\ZoneData;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Group;
@@ -108,6 +108,31 @@ class AsExpansionTest extends TestCase
         $result = $cast->set($model, 'expansion', $expansion, []);
 
         $this->assertSame(json_encode(['id' => 9, 'name' => 'The War Within', 'zones' => []]), $result);
+    }
+
+    #[Test]
+    public function it_round_trips_stored_json_without_changing_its_shape(): void
+    {
+        $cast = new AsExpansion;
+        $model = $this->createStub(Model::class);
+        $stored = json_encode([
+            'id' => 1001,
+            'name' => 'The Burning Crusade',
+            'zones' => [
+                [
+                    'id' => 1047,
+                    'name' => 'Karazhan',
+                    'difficulties' => [['id' => 3, 'name' => 'Normal', 'sizes' => [10]]],
+                    'frozen' => true,
+                    'expansion' => null,
+                ],
+            ],
+        ]);
+
+        $hydrated = $cast->get($model, 'expansion', $stored, []);
+
+        $this->assertInstanceOf(ExpansionData::class, $hydrated);
+        $this->assertSame($stored, $cast->set($model, 'expansion', $hydrated, []));
     }
 
     #[Test]

@@ -23,7 +23,6 @@ class PhaseResource extends JsonResource
             'has_started' => $this->hasStarted(),
             'game_version' => $this->whenLoaded('gameVersion', fn () => $this->gameVersion?->toResource()->resolve($request)),
             'raids' => $this->whenLoaded('raids', fn () => $this->raids->toResourceCollection(RaidResource::class)->resolve($request)),
-            'guild_tags' => $this->whenLoaded('guildTags', fn () => $this->guildTags->toResourceCollection()->resolve($request)),
         ];
     }
 }

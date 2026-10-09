@@ -2,30 +2,32 @@
 
 namespace App\Jobs\WarcraftLogs;
 
+use App\Http\Integrations\WarcraftLogs\Data\Reports\ReportData;
+use App\Http\Integrations\WarcraftLogs\Requests\GetReportsRequest;
+use App\Http\Integrations\WarcraftLogs\WarcraftLogsConnector;
+use App\Jobs\WarcraftLogs\Concerns\ReleasesOnRateLimit;
 use App\Models\Report as ReportModel;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
-use App\Services\WarcraftLogs\Reports;
-use App\Services\WarcraftLogs\ValueObjects\ReportData;
 use Carbon\Carbon;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Attributes\DeleteWhenMissingModels;
+use Illuminate\Queue\Attributes\FailOnTimeout;
+use Illuminate\Queue\Attributes\MaxExceptions;
 use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Saloon\RateLimitPlugin\Exceptions\RateLimitReachedException;
 
+#[DeleteWhenMissingModels]
+#[MaxExceptions(1)]
+#[FailOnTimeout]
 class FetchReportsByGuildTag implements ShouldQueue
 {
-    use Batchable, Queueable;
-
-    /**
-     * The timezone to use when determining raid day boundaries for auto-linking reports.
-     *
-     * @var string
-     */
-    private $timezone = 'UTC';
+    use Batchable, Queueable, ReleasesOnRateLimit;
 
     /**
      * Get the middleware the job should pass through.
@@ -42,58 +44,90 @@ class FetchReportsByGuildTag implements ShouldQueue
         public GuildTag $guildTag,
         public ?Carbon $since = null,
         public ?Carbon $before = null,
-    ) {
-        $this->timezone = config('app.timezone');
-    }
+    ) {}
 
     /**
      * Execute the job.
      */
-    public function handle(Reports $reportsService): void
+    public function handle(WarcraftLogsConnector $warcraftLogs): void
     {
-        $reports = $reportsService
-            ->byGuildTags(collect([$this->guildTag]))
-            ->startTime($this->since)
-            ->endTime($this->before)
-            ->get();
+        $guild = $this->guildTag->guild;
 
-        $reports->each(function (ReportData $report) {
-            Log::info('Processing report '.$report->code.' ('.$report->title.') for guild tag '.$report->guildTag?->name.'.');
+        if ($guild === null) {
+            Log::warning("Skipping reports for guild tag {$this->guildTag->id}: it has no Warcraft Logs guild.");
 
-            if ($report->zone !== null) {
-                Zone::updateOrCreate(
-                    ['id' => $report->zone->id],
-                    [
-                        'name' => $report->zone->name,
-                        'difficulties' => $report->zone->difficulties,
-                        'expansion' => $report->zone->expansion,
-                    ]
-                );
+            return;
+        }
+
+        $paginator = $warcraftLogs->paginate(new GetReportsRequest(
+            $this->guildTag->id,
+            $guild->namespace,
+            $this->since,
+            $this->before,
+        ));
+
+        try {
+            foreach ($paginator->items() as $report) {
+                $this->persistReport($report);
             }
+        } catch (RateLimitReachedException $exception) {
+            $this->releaseUntilPointsReset($exception, "reports for guild tag {$this->guildTag->id}");
 
-            $reportModel = ReportModel::updateOrCreate(
-                ['code' => $report->code],
-                [
-                    'title' => $report->title,
-                    'start_time' => $report->startTime,
-                    'end_time' => $report->endTime,
-                    'zone_id' => $report->zone?->id,
-                ],
-            );
-
-            if ($report->guildTag instanceof GuildTag) {
-                Log::info('Associating report '.$report->code.' with guild tag '.$report->guildTag->name.'.');
-                $reportModel->guildTag()->associate($report->guildTag);
-                $reportModel->save();
-            } else {
-                // If the report doesn't have a guild tag, ensure it's not associated with any
-                Log::info('Dissociating report '.$report->code.' from any guild tag since it has none.');
-                $reportModel->guildTag()->dissociate();
-                $reportModel->save();
-            }
-        });
+            return;
+        }
 
         $this->syncReportLinks();
+    }
+
+    private function persistReport(ReportData $report): void
+    {
+        Log::info("Processing report {$report->code} ({$report->title}) for guild tag {$this->guildTag->name}.");
+
+        if ($report->zone !== null) {
+            Zone::updateOrCreate(
+                ['id' => $report->zone->id],
+                [
+                    'name' => $report->zone->name,
+                    'difficulties' => $report->zone->difficulties,
+                    'expansion' => $report->zone->expansion,
+                ],
+            );
+        }
+
+        $guildTag = $this->resolveGuildTag($report);
+
+        if ($guildTag === null) {
+            Log::info("Report {$report->code} has no stored guild tag; saving it without one.");
+        }
+
+        ReportModel::updateOrCreate(
+            ['code' => $report->code],
+            [
+                'title' => $report->title,
+                'start_time' => $report->startTime,
+                'end_time' => $report->endTime,
+                'zone_id' => $report->zone?->id,
+                'guild_tag_id' => $guildTag?->id,
+                'warcraft_logs_guild_id' => $this->guildTag->warcraft_logs_guild_id,
+            ],
+        );
+    }
+
+    /**
+     * Reuse the job's own tag when the report names it (the usual case, since the
+     * request filters by guildTagID). Only look up a different tag by ID.
+     */
+    private function resolveGuildTag(ReportData $report): ?GuildTag
+    {
+        if ($report->guildTag === null) {
+            return null;
+        }
+
+        if ($report->guildTag->id === $this->guildTag->id) {
+            return $this->guildTag;
+        }
+
+        return GuildTag::find($report->guildTag->id);
     }
 
     /**
@@ -119,7 +153,7 @@ class FetchReportsByGuildTag implements ShouldQueue
         $groups = $allReports->groupBy(
             fn (ReportModel $report) => $report->start_time
                 ->copy()
-                ->setTimezone($this->timezone)
+                ->setTimezone(config('app.timezone'))
                 ->subHours(5)
                 ->toDateString()
         );
@@ -200,6 +234,12 @@ class FetchReportsByGuildTag implements ShouldQueue
      */
     public function tags(): array
     {
-        return ['warcraftlogs', 'reports', 'guild-tag:'.$this->guildTag->id];
+        $tags = ['warcraftlogs', 'reports', "guild-tag:{$this->guildTag->id}"];
+
+        if ($this->guildTag->warcraft_logs_guild_id === null) {
+            return $tags;
+        }
+
+        return [...$tags, "warcraft-logs-guild:{$this->guildTag->warcraft_logs_guild_id}"];
     }
 }

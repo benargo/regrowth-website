@@ -23,12 +23,12 @@ class WarcraftLogsNamespaceTest extends TestCase
     #[Group('happy-path')]
     public function each_case_is_backed_by_its_snake_case_name(): void
     {
-        $this->assertSame('anniversary', WarcraftLogsNamespace::ANNIVERSARY->value);
-        $this->assertSame('classic', WarcraftLogsNamespace::CLASSIC->value);
-        $this->assertSame('era', WarcraftLogsNamespace::ERA->value);
-        $this->assertSame('forever', WarcraftLogsNamespace::FOREVER->value);
-        $this->assertSame('retail', WarcraftLogsNamespace::RETAIL->value);
-        $this->assertSame('season_of_discovery', WarcraftLogsNamespace::SEASON_OF_DISCOVERY->value);
+        $this->assertSame('anniversary', WarcraftLogsNamespace::Anniversary->value);
+        $this->assertSame('classic', WarcraftLogsNamespace::Classic->value);
+        $this->assertSame('era', WarcraftLogsNamespace::Era->value);
+        $this->assertSame('forever', WarcraftLogsNamespace::Forever->value);
+        $this->assertSame('retail', WarcraftLogsNamespace::Retail->value);
+        $this->assertSame('season_of_discovery', WarcraftLogsNamespace::SeasonOfDiscovery->value);
     }
 
     // ==================== baseUrl ====================
@@ -39,27 +39,27 @@ class WarcraftLogsNamespaceTest extends TestCase
     {
         $this->assertSame(
             'https://fresh.warcraftlogs.com/api/v2/client',
-            WarcraftLogsNamespace::ANNIVERSARY->baseUrl(),
+            WarcraftLogsNamespace::Anniversary->baseUrl(),
         );
         $this->assertSame(
             'https://classic.warcraftlogs.com/api/v2/client',
-            WarcraftLogsNamespace::CLASSIC->baseUrl(),
+            WarcraftLogsNamespace::Classic->baseUrl(),
         );
         $this->assertSame(
             'https://vanilla.warcraftlogs.com/api/v2/client',
-            WarcraftLogsNamespace::ERA->baseUrl(),
+            WarcraftLogsNamespace::Era->baseUrl(),
         );
         $this->assertSame(
             'https://forever.warcraftlogs.com/api/v2/client',
-            WarcraftLogsNamespace::FOREVER->baseUrl(),
+            WarcraftLogsNamespace::Forever->baseUrl(),
         );
         $this->assertSame(
             'https://www.warcraftlogs.com/api/v2/client',
-            WarcraftLogsNamespace::RETAIL->baseUrl(),
+            WarcraftLogsNamespace::Retail->baseUrl(),
         );
         $this->assertSame(
             'https://sod.warcraftlogs.com/api/v2/client',
-            WarcraftLogsNamespace::SEASON_OF_DISCOVERY->baseUrl(),
+            WarcraftLogsNamespace::SeasonOfDiscovery->baseUrl(),
         );
     }
 
@@ -83,27 +83,27 @@ class WarcraftLogsNamespaceTest extends TestCase
     {
         $this->assertSame(
             'The Burning Crusade Classic Anniversary',
-            WarcraftLogsNamespace::ANNIVERSARY->label(),
+            WarcraftLogsNamespace::Anniversary->label(),
         );
         $this->assertSame(
             'Mists of Pandaria Classic',
-            WarcraftLogsNamespace::CLASSIC->label(),
+            WarcraftLogsNamespace::Classic->label(),
         );
         $this->assertSame(
             'Classic Era',
-            WarcraftLogsNamespace::ERA->label(),
+            WarcraftLogsNamespace::Era->label(),
         );
         $this->assertSame(
             'World of Warcraft: Forever',
-            WarcraftLogsNamespace::FOREVER->label(),
+            WarcraftLogsNamespace::Forever->label(),
         );
         $this->assertSame(
             'World of Warcraft',
-            WarcraftLogsNamespace::RETAIL->label(),
+            WarcraftLogsNamespace::Retail->label(),
         );
         $this->assertSame(
             'Season of Discovery',
-            WarcraftLogsNamespace::SEASON_OF_DISCOVERY->label(),
+            WarcraftLogsNamespace::SeasonOfDiscovery->label(),
         );
     }
 

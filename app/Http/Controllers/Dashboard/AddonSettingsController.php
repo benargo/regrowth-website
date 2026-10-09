@@ -7,7 +7,6 @@ use App\Http\Resources\CharacterSummaryResource;
 use App\Http\Resources\LootCouncillorCollection;
 use App\Models\Character;
 use App\Models\WarcraftLogs\GuildTag;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -18,7 +17,7 @@ class AddonSettingsController extends Controller
     /**
      * Render the addon settings page.
      */
-    public function __invoke(Request $request): Response
+    public function __invoke(): Response
     {
         $councillors = Character::where('is_loot_councillor', true)
             ->with(['rank', 'media'])

@@ -20,6 +20,10 @@ class GameVersionResource extends JsonResource
      */
     public static function forManagement(mixed $resource): static
     {
+        if ($resource instanceof GameVersion) {
+            $resource->loadMissing('warcraftLogsGuild');
+        }
+
         return static::withScope($resource, self::SCOPE_MANAGEMENT);
     }
 
@@ -67,10 +71,10 @@ class GameVersionResource extends JsonResource
             'release_date' => $this->release_date?->toDateString(),
             'blizzard' => ['namespace' => $this->blizzard_namespace],
             'warcraftlogs' => [
-                'guild' => $this->warcraftlogs_guild,
+                'guild' => $this->warcraft_logs_guild_id,
                 'namespace' => [
-                    'value' => $this->warcraftlogs_namespace,
-                    'label' => $this->warcraftlogs_namespace?->label(),
+                    'value' => $this->warcraftLogsGuild?->namespace,
+                    'label' => $this->warcraftLogsGuild?->namespace->label(),
                 ],
             ],
             'phases_count' => $this->whenCounted('phases'),

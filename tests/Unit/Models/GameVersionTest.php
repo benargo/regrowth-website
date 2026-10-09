@@ -8,7 +8,6 @@ use App\Contracts\Models\DatasetModel;
 use App\Enums\Faction;
 use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
-use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
@@ -18,10 +17,11 @@ use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\Raid;
 use App\Models\User;
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\WarcraftLogs\Guild;
 use App\Policies\DatasetPolicy;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -72,8 +72,7 @@ class GameVersionTest extends ModelTestCase
             'release_date',
             'theme',
             'blizzard_namespace',
-            'warcraftlogs_guild',
-            'warcraftlogs_namespace',
+            'warcraft_logs_guild_id',
         ]);
     }
 
@@ -88,9 +87,10 @@ class GameVersionTest extends ModelTestCase
             'release_date' => 'datetime',
             'theme' => AsTheme::class,
             'blizzard_namespace' => BlizzardNamespace::class,
-            'warcraftlogs_guild' => 'integer',
-            'warcraftlogs_namespace' => WarcraftLogsNamespace::class,
         ]);
+
+        $this->assertArrayNotHasKey('warcraftlogs_guild', (new GameVersion)->getCasts());
+        $this->assertArrayNotHasKey('warcraftlogs_namespace', (new GameVersion)->getCasts());
     }
 
     #[Test]
@@ -121,15 +121,13 @@ class GameVersionTest extends ModelTestCase
             'realm' => null,
             'faction' => null,
             'blizzard_namespace' => null,
-            'warcraftlogs_guild' => null,
-            'warcraftlogs_namespace' => null,
+            'warcraft_logs_guild_id' => null,
         ])->fresh();
 
         $this->assertNull($gameVersion->realm);
         $this->assertNull($gameVersion->faction);
         $this->assertNull($gameVersion->blizzard_namespace);
-        $this->assertNull($gameVersion->warcraftlogs_guild);
-        $this->assertNull($gameVersion->warcraftlogs_namespace);
+        $this->assertNull($gameVersion->warcraft_logs_guild_id);
     }
 
     // ==================== casts ====================
@@ -209,41 +207,6 @@ class GameVersionTest extends ModelTestCase
     }
 
     #[Test]
-    public function warcraftlogs_guild_is_cast_to_an_integer(): void
-    {
-        $gameVersion = $this->create(['warcraftlogs_guild' => '774848'])->fresh();
-
-        $this->assertSame(774848, $gameVersion->warcraftlogs_guild);
-    }
-
-    #[Test]
-    public function warcraftlogs_namespace_is_cast_to_warcraftlogs_namespace_enum(): void
-    {
-        $gameVersion = $this->create(['warcraftlogs_namespace' => WarcraftLogsNamespace::SEASON_OF_DISCOVERY]);
-
-        $this->assertSame(WarcraftLogsNamespace::SEASON_OF_DISCOVERY, $gameVersion->fresh()->warcraftlogs_namespace);
-        $this->assertTableHas([
-            'id' => $gameVersion->id,
-            'warcraftlogs_namespace' => 'season_of_discovery',
-        ]);
-    }
-
-    #[Test]
-    #[Group('error-handling')]
-    public function warcraftlogs_namespace_throws_for_a_value_outside_the_enum(): void
-    {
-        $gameVersion = $this->create();
-
-        DB::table('game_versions')
-            ->where('id', $gameVersion->id)
-            ->update(['warcraftlogs_namespace' => 'ANNIVERSARY']);
-
-        $this->expectException(\ValueError::class);
-
-        $gameVersion->fresh()->warcraftlogs_namespace;
-    }
-
-    #[Test]
     public function release_date_round_trips_without_a_timezone_shift(): void
     {
         $releaseDate = Carbon::create(2026, 2, 6, 0, 0, 0, config('app.timezone'));
@@ -283,6 +246,22 @@ class GameVersionTest extends ModelTestCase
 
     // ==================== relationships ====================
 
+    #[Test]
+    public function it_belongs_to_a_warcraft_logs_guild(): void
+    {
+        $guild = Guild::factory()->create();
+        $gameVersion = $this->factory()->forGuild($guild)->create();
+
+        $this->assertRelation($gameVersion, 'warcraftLogsGuild', BelongsTo::class);
+        $this->assertTrue($gameVersion->warcraftLogsGuild->is($guild));
+    }
+
+    #[Test]
+    public function it_has_no_warcraft_logs_guild_by_default(): void
+    {
+        $this->assertNull($this->create()->warcraftLogsGuild);
+    }
+
     /**
      * @param  class-string<Model>  $relatedModel
      */
@@ -306,21 +285,6 @@ class GameVersionTest extends ModelTestCase
 
         $this->assertRelation($gameVersion, 'raids', HasManyThrough::class);
         $this->assertTrue($gameVersion->raids->contains($raid));
-    }
-
-    #[Test]
-    public function it_has_many_guild_tags_through_phases(): void
-    {
-        $gameVersion = $this->create();
-        $phase = Phase::factory()->for($gameVersion)->create();
-        $guildTag = GuildTag::factory()->withPhase($phase)->create();
-        $otherVersionsTag = GuildTag::factory()->withPhase(Phase::factory()->for(GameVersion::factory())->create())->create();
-        $phaselessTag = GuildTag::factory()->withoutPhase()->create();
-
-        $this->assertRelation($gameVersion, 'guildTags', HasManyThrough::class);
-        $this->assertTrue($gameVersion->guildTags->contains($guildTag));
-        $this->assertFalse($gameVersion->guildTags->contains($otherVersionsTag));
-        $this->assertFalse($gameVersion->guildTags->contains($phaselessTag));
     }
 
     #[Test]
@@ -452,6 +416,26 @@ class GameVersionTest extends ModelTestCase
         $this->assertTrue(Cache::lock("game-versions.{$gameVersion->id}.editing")->isLocked());
     }
 
+    // ==================== released scope ====================
+
+    #[Test]
+    public function released_includes_past_versions_and_excludes_future_ones(): void
+    {
+        $past = $this->create(['release_date' => Carbon::now()->subDay()]);
+        $this->create(['release_date' => Carbon::now()->addDay()]);
+
+        $this->assertEquals([$past->id], GameVersion::released()->pluck('id')->all());
+    }
+
+    #[Test]
+    public function released_filters_by_the_given_date(): void
+    {
+        $older = $this->create(['release_date' => Carbon::now()->subYear()]);
+        $this->create(['release_date' => Carbon::now()->subMonth()]);
+
+        $this->assertEquals([$older->id], GameVersion::released(Carbon::now()->subMonths(6))->pluck('id')->all());
+    }
+
     // ==================== current rosters ====================
 
     #[Test]
@@ -513,6 +497,20 @@ class GameVersionTest extends ModelTestCase
     public function default_roster_is_null_when_no_versions_exist(): void
     {
         $this->assertNull(GameVersion::defaultRoster());
+    }
+
+    // ==================== warcraft logs cache ====================
+
+    #[Test]
+    public function saving_a_version_leaves_the_warcraft_logs_cache_to_its_guild(): void
+    {
+        $guild = Guild::factory()->create();
+        Cache::tags(['warcraftlogs', 'warcraftlogs-api-response'])->put('response_key', 'response', now()->addMinutes(5));
+
+        $gameVersion = GameVersion::factory()->forGuild($guild)->create();
+        $gameVersion->update(['warcraft_logs_guild_id' => null]);
+
+        $this->assertTrue(Cache::tags(['warcraftlogs', 'warcraftlogs-api-response'])->has('response_key'));
     }
 
     // ==================== helpers ====================

@@ -3,11 +3,12 @@
 namespace Tests\Unit\Models;
 
 use App\Events\AddonSettingsProcessed;
-use App\Events\ReportCreated;
-use App\Events\ReportUpdated;
 use App\Models\Character;
+use App\Models\GameVersion;
+use App\Models\Phase;
 use App\Models\Report;
 use App\Models\User;
+use App\Models\WarcraftLogs\Guild;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
 use Carbon\Carbon;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use LogicException;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
@@ -58,6 +60,7 @@ class ReportTest extends ModelTestCase
             'end_time',
             'guild_tag_id',
             'zone_id',
+            'warcraft_logs_guild_id',
         ]);
     }
 
@@ -73,6 +76,7 @@ class ReportTest extends ModelTestCase
             'end_time',
             'guild_tag_id',
             'zone_id',
+            'warcraft_logs_guild_id',
         ]);
     }
 
@@ -402,28 +406,237 @@ class ReportTest extends ModelTestCase
         $this->assertNull($report->guild_tag_id);
     }
 
-    // ==================== events ====================
+    // ==================== warcraftLogsGuild and phase ====================
 
     #[Test]
-    public function it_dispatches_report_created_event_on_create(): void
+    public function it_belongs_to_a_warcraft_logs_guild(): void
     {
-        Event::fake([ReportCreated::class]);
+        $guild = Guild::factory()->create();
+        $report = $this->factory()->forGuild($guild)->create();
 
-        $report = $this->create();
-
-        Event::assertDispatched(ReportCreated::class, fn ($e) => $e->report->is($report));
+        $this->assertRelation($report, 'warcraftLogsGuild', BelongsTo::class);
+        $this->assertTrue($report->warcraftLogsGuild->is($guild));
     }
 
     #[Test]
-    public function it_dispatches_report_updated_event_on_update(): void
+    public function it_belongs_to_a_phase(): void
     {
-        $report = $this->create();
+        $phase = Phase::factory()->create();
+        $report = $this->factory()->create();
+        Report::whereKey($report->id)->update(['phase_id' => $phase->id]);
 
-        Event::fake([ReportUpdated::class]);
+        $report->refresh();
 
-        $report->update(['title' => 'Updated Title']);
+        $this->assertRelation($report, 'phase', BelongsTo::class);
+        $this->assertTrue($report->phase->is($phase));
+    }
 
-        Event::assertDispatched(ReportUpdated::class, fn ($e) => $e->report->is($report));
+    #[Test]
+    public function deleting_its_phase_clears_the_reports_phase(): void
+    {
+        $phase = Phase::factory()->create();
+        $report = $this->factory()->create();
+        Report::whereKey($report->id)->update(['phase_id' => $phase->id]);
+
+        $phase->delete();
+
+        $this->assertNull($report->fresh()->phase_id);
+    }
+
+    // ==================== derived game version and phase ====================
+
+    #[Test]
+    public function it_takes_the_latest_version_of_its_guild_released_by_its_start_time(): void
+    {
+        $guild = Guild::factory()->create();
+        GameVersion::factory()->forGuild($guild)->create(['release_date' => '2021-09-04 00:00:00']);
+        $latest = GameVersion::factory()->forGuild($guild)->create(['release_date' => '2024-11-22 00:00:00']);
+
+        $report = $this->factory()->forGuild($guild)->create(['start_time' => '2025-03-14 19:30:00']);
+
+        $this->assertRelation($report, 'gameVersion', BelongsTo::class);
+        $this->assertTrue($report->gameVersion->is($latest));
+    }
+
+    #[Test]
+    #[Group('edge-case')]
+    public function it_takes_a_version_released_at_the_reports_start_time(): void
+    {
+        $guild = Guild::factory()->create();
+        $gameVersion = GameVersion::factory()->forGuild($guild)->create(['release_date' => '2024-11-22 00:00:00']);
+
+        $report = $this->factory()->forGuild($guild)->create(['start_time' => '2024-11-22 00:00:00']);
+
+        $this->assertSame($gameVersion->id, $report->game_version_id);
+    }
+
+    #[Test]
+    public function it_ignores_versions_released_after_its_start_time(): void
+    {
+        $guild = Guild::factory()->create();
+        $released = GameVersion::factory()->forGuild($guild)->create(['release_date' => '2024-11-22 00:00:00']);
+        GameVersion::factory()->forGuild($guild)->create(['release_date' => '2026-02-06 00:00:00']);
+
+        $report = $this->factory()->forGuild($guild)->create(['start_time' => '2025-03-14 19:30:00']);
+
+        $this->assertSame($released->id, $report->game_version_id);
+    }
+
+    #[Test]
+    public function it_ignores_another_guilds_versions(): void
+    {
+        $guild = Guild::factory()->create();
+        $own = GameVersion::factory()->forGuild($guild)->create(['release_date' => '2024-11-22 00:00:00']);
+        GameVersion::factory()->forGuild()->create(['release_date' => '2025-01-01 00:00:00']);
+
+        $report = $this->factory()->forGuild($guild)->create(['start_time' => '2025-03-14 19:30:00']);
+
+        $this->assertSame($own->id, $report->game_version_id);
+    }
+
+    #[Test]
+    public function it_has_no_version_or_phase_when_it_predates_every_version_of_its_guild(): void
+    {
+        $guild = Guild::factory()->create();
+        GameVersion::factory()->forGuild($guild)->create(['release_date' => '2024-11-22 00:00:00']);
+
+        $report = $this->factory()->forGuild($guild)->create(['start_time' => '2024-10-01 19:30:00']);
+
+        $this->assertNull($report->game_version_id);
+        $this->assertNull($report->phase_id);
+    }
+
+    #[Test]
+    public function it_has_no_version_or_phase_without_a_guild(): void
+    {
+        GameVersion::factory()->forGuild()->create(['release_date' => '2024-11-22 00:00:00']);
+
+        $report = $this->factory()->create(['start_time' => '2025-03-14 19:30:00']);
+
+        $this->assertNull($report->game_version_id);
+        $this->assertNull($report->phase_id);
+    }
+
+    #[Test]
+    public function it_takes_the_latest_started_phase_of_its_version(): void
+    {
+        $guild = Guild::factory()->create();
+        $gameVersion = GameVersion::factory()->forGuild($guild)->create(['release_date' => '2024-11-22 00:00:00']);
+        Phase::factory()->forGameVersion($gameVersion)->create(['start_date' => '2025-06-01 00:00:00']);
+        $latest = Phase::factory()->forGameVersion($gameVersion)->create(['start_date' => '2026-01-01 00:00:00']);
+        Phase::factory()->forGameVersion($gameVersion)->create(['start_date' => '2026-06-01 00:00:00']);
+
+        $report = $this->factory()->forGuild($guild)->create(['start_time' => '2026-02-12 19:30:00']);
+
+        $this->assertTrue($report->phase->is($latest));
+    }
+
+    #[Test]
+    public function it_ignores_phases_without_a_start_date(): void
+    {
+        $guild = Guild::factory()->create();
+        $gameVersion = GameVersion::factory()->forGuild($guild)->create(['release_date' => '2024-11-22 00:00:00']);
+        $started = Phase::factory()->forGameVersion($gameVersion)->create(['start_date' => '2026-01-01 00:00:00']);
+        Phase::factory()->forGameVersion($gameVersion)->create(['start_date' => null]);
+
+        $report = $this->factory()->forGuild($guild)->create(['start_time' => '2026-02-12 19:30:00']);
+
+        $this->assertSame($started->id, $report->phase_id);
+    }
+
+    #[Test]
+    public function it_ignores_phases_of_another_version_of_its_guild(): void
+    {
+        $guild = Guild::factory()->create();
+        $olderVersion = GameVersion::factory()->forGuild($guild)->create(['release_date' => '2021-09-04 00:00:00']);
+        $gameVersion = GameVersion::factory()->forGuild($guild)->create(['release_date' => '2024-11-22 00:00:00']);
+        Phase::factory()->forGameVersion($olderVersion)->create(['start_date' => '2025-01-01 00:00:00']);
+
+        $report = $this->factory()->forGuild($guild)->create(['start_time' => '2025-03-14 19:30:00']);
+
+        $this->assertSame($gameVersion->id, $report->game_version_id);
+        $this->assertNull($report->phase_id);
+    }
+
+    #[Test]
+    public function it_has_a_version_but_no_phase_when_it_predates_every_phase(): void
+    {
+        $guild = Guild::factory()->create();
+        $gameVersion = GameVersion::factory()->forGuild($guild)->create(['release_date' => '2024-11-22 00:00:00']);
+        Phase::factory()->forGameVersion($gameVersion)->create(['start_date' => '2026-01-01 00:00:00']);
+
+        $report = $this->factory()->forGuild($guild)->create(['start_time' => '2025-03-14 19:30:00']);
+
+        $this->assertSame($gameVersion->id, $report->game_version_id);
+        $this->assertNull($report->phase_id);
+    }
+
+    #[Test]
+    public function saving_rederives_after_its_guild_changes(): void
+    {
+        $oldVersion = GameVersion::factory()->forGuild()->create(['release_date' => '2024-11-22 00:00:00']);
+        $newVersion = GameVersion::factory()->forGuild()->create(['release_date' => '2024-11-22 00:00:00']);
+        $report = $this->factory()->forGuild($oldVersion->warcraftLogsGuild)->create(['start_time' => '2025-03-14 19:30:00']);
+
+        $report->update(['warcraft_logs_guild_id' => $newVersion->warcraft_logs_guild_id]);
+
+        $this->assertSame($newVersion->id, $report->fresh()->game_version_id);
+    }
+
+    #[Test]
+    public function saving_overwrites_a_directly_assigned_game_version_and_phase(): void
+    {
+        $report = $this->factory()->create();
+        $report->game_version_id = GameVersion::factory()->create()->id;
+        $report->phase_id = Phase::factory()->create()->id;
+
+        $report->save();
+
+        $fresh = $report->fresh();
+        $this->assertNull($fresh->game_version_id);
+        $this->assertNull($fresh->phase_id);
+    }
+
+    #[Test]
+    public function saving_keeps_its_guild_tag_and_attendance_rows(): void
+    {
+        $guild = Guild::factory()->create();
+        GameVersion::factory()->forGuild($guild)->create(['release_date' => '2024-11-22 00:00:00']);
+        $guildTag = GuildTag::factory()->forGuild($guild)->create();
+        $report = $this->factory()->forGuild($guild)->withGuildTag($guildTag)->create(['start_time' => '2025-03-14 19:30:00']);
+        $character = Character::factory()->create();
+        $report->characters()->attach($character->id, ['presence' => 1]);
+
+        $report->save();
+
+        $this->assertSame($guildTag->id, $report->fresh()->guild_tag_id);
+        $this->assertDatabaseHas('pivot_characters_raid_reports', [
+            'character_id' => $character->id,
+            'raid_report_id' => $report->id,
+            'presence' => 1,
+        ]);
+    }
+
+    #[Test]
+    public function factory_for_game_version_state_gives_the_report_that_version_through_its_guild(): void
+    {
+        $gameVersion = GameVersion::factory()->forGuild()->create();
+
+        $report = $this->factory()->forGameVersion($gameVersion)->create();
+
+        $this->assertSame($gameVersion->id, $report->game_version_id);
+        $this->assertSame($gameVersion->warcraft_logs_guild_id, $report->warcraft_logs_guild_id);
+        $this->assertSame($gameVersion->warcraft_logs_guild_id, $report->guildTag->warcraft_logs_guild_id);
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function factory_for_game_version_state_needs_a_version_with_a_guild(): void
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('forGameVersion() needs a game version with a Warcraft Logs guild.');
+
+        $this->factory()->forGameVersion(GameVersion::factory()->create());
     }
 
     // ==================== linkedReports ====================

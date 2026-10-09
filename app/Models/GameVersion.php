@@ -8,13 +8,15 @@ use App\Contracts\Models\DatasetModel;
 use App\Contracts\Models\EditLockable;
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
-use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\Concerns\HasEditLock;
 use App\Models\Concerns\TracksUsage;
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\WarcraftLogs\Guild;
+use App\Observers\GameVersionObserver;
 use App\Policies\DatasetPolicy;
+use Carbon\CarbonInterface;
 use Database\Factories\GameVersionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,12 +24,13 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
+#[ObservedBy([GameVersionObserver::class])]
 #[Fillable([
     'title',
     'slug',
@@ -37,8 +40,7 @@ use Illuminate\Support\Str;
     'release_date',
     'theme',
     'blizzard_namespace',
-    'warcraftlogs_guild',
-    'warcraftlogs_namespace',
+    'warcraft_logs_guild_id',
 ])]
 #[UsePolicy(DatasetPolicy::class)]
 class GameVersion extends Model implements DatasetModel, EditLockable
@@ -75,8 +77,6 @@ class GameVersion extends Model implements DatasetModel, EditLockable
             'release_date' => 'datetime',
             'theme' => AsTheme::class,
             'blizzard_namespace' => BlizzardNamespace::class,
-            'warcraftlogs_guild' => 'integer',
-            'warcraftlogs_namespace' => WarcraftLogsNamespace::class,
         ];
     }
 
@@ -100,6 +100,15 @@ class GameVersion extends Model implements DatasetModel, EditLockable
         );
     }
 
+    /**
+     * Scope to versions released on or before the given moment (default: now).
+     */
+    #[Scope]
+    protected function released(Builder $query, ?CarbonInterface $at = null): void
+    {
+        $query->where('release_date', '<=', $at ?? now());
+    }
+
     // ============ Guild roster ===========
 
     /**
@@ -114,7 +123,7 @@ class GameVersion extends Model implements DatasetModel, EditLockable
             ->all();
 
         $query->whereNotNull('blizzard_namespace')
-            ->where('release_date', '<=', Carbon::now())
+            ->released()
             ->where(fn (Builder $query) => $query->whereNotNull('realm')
                 ->orWhereIn('blizzard_namespace', $realmlessNamespaces));
     }
@@ -167,6 +176,14 @@ class GameVersion extends Model implements DatasetModel, EditLockable
     // ============ Relationships ===========
 
     /**
+     * @return BelongsTo<Guild, $this>
+     */
+    public function warcraftLogsGuild(): BelongsTo
+    {
+        return $this->belongsTo(Guild::class, 'warcraft_logs_guild_id');
+    }
+
+    /**
      * @return HasMany<Phase, $this>
      */
     public function phases(): HasMany
@@ -180,14 +197,6 @@ class GameVersion extends Model implements DatasetModel, EditLockable
     public function raids(): HasManyThrough
     {
         return $this->hasManyThrough(Raid::class, Phase::class);
-    }
-
-    /**
-     * @return HasManyThrough<GuildTag, Phase, $this>
-     */
-    public function guildTags(): HasManyThrough
-    {
-        return $this->hasManyThrough(GuildTag::class, Phase::class);
     }
 
     /**
