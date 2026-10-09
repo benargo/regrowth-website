@@ -2,7 +2,7 @@
 
 namespace App\Observers;
 
-use App\Actions\WarcraftLogs\RefreshGuildReports;
+use App\Jobs\WarcraftLogs\RefreshGuildReports;
 use App\Models\GameVersion;
 use App\Models\WarcraftLogs\Guild;
 
@@ -45,7 +45,7 @@ class GameVersionObserver
     private function refreshReportsOfGuilds(array $guildIds): void
     {
         foreach (Guild::whereKey(array_unique(array_filter($guildIds)))->get() as $guild) {
-            RefreshGuildReports::run($guild);
+            RefreshGuildReports::schedule($guild);
         }
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Observers;
 
-use App\Actions\WarcraftLogs\RefreshGuildReports;
+use App\Jobs\WarcraftLogs\RefreshGuildReports;
 use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\Phase;
@@ -63,7 +63,7 @@ class PhaseObserver
             ->unique();
 
         foreach (Guild::whereKey($guildIds)->get() as $guild) {
-            RefreshGuildReports::run($guild);
+            RefreshGuildReports::schedule($guild);
         }
     }
 }
