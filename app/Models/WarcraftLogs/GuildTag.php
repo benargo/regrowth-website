@@ -40,6 +40,7 @@ class GuildTag extends Model
     {
         return [
             'count_attendance' => 'boolean',
+            'warcraft_logs_guild_id' => 'integer',
         ];
     }
 

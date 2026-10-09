@@ -35,22 +35,4 @@ final class GuildAttendanceData extends Data
 
         return $properties;
     }
-
-    /**
-     * @param  array<int, string>  $playerNames
-     */
-    public function filterPlayers(array $playerNames): self
-    {
-        $players = collect($this->players)
-            ->filter(fn (PlayerAttendanceData $player): bool => in_array($player->name, $playerNames, strict: true))
-            ->values()
-            ->all();
-
-        return new self(
-            code: $this->code,
-            players: $players,
-            startTime: $this->startTime,
-            zone: $this->zone,
-        );
-    }
 }

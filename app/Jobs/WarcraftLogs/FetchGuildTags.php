@@ -10,12 +10,16 @@ use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Attributes\Backoff;
 use Illuminate\Queue\Attributes\DeleteWhenMissingModels;
+use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 #[DeleteWhenMissingModels]
+#[Tries(3)]
+#[Backoff(60)]
 class FetchGuildTags implements ShouldQueue
 {
     use Batchable, Queueable;
@@ -37,7 +41,8 @@ class FetchGuildTags implements ShouldQueue
      *
      * Request exceptions and rate-limit exceptions propagate: the
      * fetch:warcraft-logs command handles them when it runs the job
-     * synchronously, and the queue retries the job when an officer adds a guild.
+     * synchronously. Queued when an officer adds a guild, the job is retried
+     * up to three times, since Horizon's default allows a single attempt.
      */
     public function handle(WarcraftLogsConnector $warcraftLogs): void
     {

@@ -30,15 +30,19 @@ final class RateLimitResetCache
         );
     }
 
+    /**
+     * Redis stores numbers unserialised and hands them back as strings, so any
+     * numeric value is accepted, not only an int.
+     */
     public function resetsAt(): ?CarbonImmutable
     {
         $timestamp = $this->cache->get(self::KEY);
 
-        if (! is_int($timestamp)) {
+        if (! is_numeric($timestamp)) {
             return null;
         }
 
-        return CarbonImmutable::createFromTimestamp($timestamp);
+        return CarbonImmutable::createFromTimestamp((int) $timestamp);
     }
 
     /**

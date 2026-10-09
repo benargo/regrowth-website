@@ -32,6 +32,20 @@ class RateLimitResetCacheTest extends TestCase
     }
 
     #[Test]
+    #[Group('edge-case')]
+    public function it_reads_a_timestamp_the_store_returns_as_a_numeric_string(): void
+    {
+        $this->freezeTime();
+        $resetsAt = now()->addSeconds(1200)->getTimestamp();
+
+        Cache::tags(['warcraftlogs', 'warcraftlogs-rate-limit'])
+            ->put('warcraftlogs:rate-limit-reset', (string) $resetsAt, 1200);
+
+        $this->assertSame($resetsAt, $this->resetCache()->resetsAt()?->getTimestamp());
+        $this->assertSame(1200, $this->resetCache()->secondsUntilReset());
+    }
+
+    #[Test]
     public function it_counts_down_to_one_second_before_the_reset(): void
     {
         $this->freezeTime();

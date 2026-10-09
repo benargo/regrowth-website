@@ -211,15 +211,15 @@ class FetchWarcraftLogsTest extends TestCase
     }
 
     #[Test]
-    public function it_uses_the_most_recently_created_report_when_multiple_reports_exist(): void
+    public function it_uses_the_report_that_ended_last_rather_than_the_one_created_last(): void
     {
         Bus::fake();
 
         $guild = $this->guild(111);
         $this->guildTagFor($guild);
         $newerEndTime = Carbon::parse('2025-06-15 22:00:00');
-        Report::factory()->forGuild($guild)->create(['end_time' => Carbon::parse('2025-05-01 18:00:00'), 'created_at' => now()->subMinute()]);
-        Report::factory()->forGuild($guild)->create(['end_time' => $newerEndTime, 'created_at' => now()]);
+        Report::factory()->forGuild($guild)->create(['end_time' => $newerEndTime, 'created_at' => now()->subMinute()]);
+        Report::factory()->forGuild($guild)->create(['end_time' => Carbon::parse('2025-05-01 18:00:00'), 'created_at' => now()]);
 
         $this->artisan('fetch:warcraft-logs', ['--latest' => true])->assertSuccessful();
 

@@ -75,37 +75,6 @@ class GuildAttendanceDataTest extends TestCase
         $this->assertSame([], $attendance->players);
     }
 
-    #[Test]
-    public function filter_players_keeps_only_the_named_players_in_order(): void
-    {
-        $filtered = GuildAttendanceData::from($this->sampleApiResponse())->filterPlayers(['Sylvanas', 'Thrall']);
-
-        $this->assertSame(['Thrall', 'Sylvanas'], array_map(fn (PlayerAttendanceData $player): string => $player->name, $filtered->players));
-        $this->assertSame([0, 1], array_keys($filtered->players));
-    }
-
-    #[Test]
-    public function filter_players_returns_no_players_when_none_match(): void
-    {
-        $filtered = GuildAttendanceData::from($this->sampleApiResponse())->filterPlayers(['Arthas']);
-
-        $this->assertSame([], $filtered->players);
-    }
-
-    #[Test]
-    public function filter_players_returns_a_new_instance_with_the_other_fields_unchanged(): void
-    {
-        $original = GuildAttendanceData::from($this->sampleApiResponse());
-
-        $filtered = $original->filterPlayers(['Thrall']);
-
-        $this->assertNotSame($original, $filtered);
-        $this->assertCount(3, $original->players);
-        $this->assertSame($original->code, $filtered->code);
-        $this->assertTrue($original->startTime->equalTo($filtered->startTime));
-        $this->assertSame($original->zone, $filtered->zone);
-    }
-
     /**
      * @return array<string, mixed>
      */

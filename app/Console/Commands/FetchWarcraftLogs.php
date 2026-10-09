@@ -94,7 +94,7 @@ class FetchWarcraftLogs extends Command
             return null;
         }
 
-        return $guild->reports()->latest()->first()?->end_time?->addSecond();
+        return $guild->reports()->latest('end_time')->first()?->end_time?->addSecond();
     }
 
     /**
