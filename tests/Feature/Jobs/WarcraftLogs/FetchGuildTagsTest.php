@@ -9,10 +9,12 @@ use App\Jobs\WarcraftLogs\FetchGuildTags;
 use App\Models\WarcraftLogs\Guild;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Queue\Attributes\DeleteWhenMissingModels;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use ReflectionClass;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\OAuth2\GetClientCredentialsTokenBasicAuthRequest;
 use Saloon\Http\Request;
@@ -164,6 +166,15 @@ class FetchGuildTagsTest extends TestCase
     }
 
     // ==================== helpers ====================
+
+    #[Test]
+    #[Group('contract')]
+    public function it_is_deleted_when_its_guild_no_longer_exists(): void
+    {
+        $class = new ReflectionClass(FetchGuildTags::class);
+
+        $this->assertCount(1, $class->getAttributes(DeleteWhenMissingModels::class));
+    }
 
     private function guild(int $id = 774848, WarcraftLogsNamespace $namespace = WarcraftLogsNamespace::Anniversary): Guild
     {

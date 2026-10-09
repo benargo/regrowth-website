@@ -207,8 +207,8 @@ class GuildControllerTest extends DashboardTestCase
             ->where('guild.id', 774848)
             ->where('guild.namespace.value', 'anniversary')
             ->where('guild.guild_tags', [
-                ['id' => $alpha->id, 'name' => 'Alpha', 'count_attendance' => false],
-                ['id' => $zulu->id, 'name' => 'Zulu', 'count_attendance' => true],
+                ['id' => $alpha->id, 'name' => 'Alpha', 'count_attendance' => false, 'guild_id' => 774848],
+                ['id' => $zulu->id, 'name' => 'Zulu', 'count_attendance' => true, 'guild_id' => 774848],
             ])
             ->has('guild.game_versions', 1)
             ->where('guild.game_versions_count', 1)

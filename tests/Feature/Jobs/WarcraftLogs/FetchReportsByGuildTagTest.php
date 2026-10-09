@@ -14,6 +14,7 @@ use App\Models\WarcraftLogs\Guild;
 use App\Models\WarcraftLogs\GuildTag;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Queue\Attributes\DeleteWhenMissingModels;
 use Illuminate\Queue\Attributes\FailOnTimeout;
 use Illuminate\Queue\Attributes\MaxExceptions;
 use Illuminate\Support\Facades\Bus;
@@ -586,6 +587,15 @@ class FetchReportsByGuildTagTest extends TestCase
     }
 
     // ==================== helpers ====================
+
+    #[Test]
+    #[Group('contract')]
+    public function it_is_deleted_when_its_guild_tag_no_longer_exists(): void
+    {
+        $class = new ReflectionClass(FetchReportsByGuildTag::class);
+
+        $this->assertCount(1, $class->getAttributes(DeleteWhenMissingModels::class));
+    }
 
     private function fetchableGuildTag(WarcraftLogsNamespace $namespace = WarcraftLogsNamespace::Anniversary): GuildTag
     {

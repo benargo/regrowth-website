@@ -13,6 +13,7 @@ use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Attributes\DeleteWhenMissingModels;
 use Illuminate\Queue\Attributes\FailOnTimeout;
 use Illuminate\Queue\Attributes\MaxExceptions;
 use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
@@ -21,6 +22,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Saloon\RateLimitPlugin\Exceptions\RateLimitReachedException;
 
+#[DeleteWhenMissingModels]
 #[MaxExceptions(3)]
 #[FailOnTimeout]
 class FetchAttendanceData implements ShouldQueue

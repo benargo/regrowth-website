@@ -10,10 +10,12 @@ use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Attributes\DeleteWhenMissingModels;
 use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+#[DeleteWhenMissingModels]
 class FetchGuildTags implements ShouldQueue
 {
     use Batchable, Queueable;

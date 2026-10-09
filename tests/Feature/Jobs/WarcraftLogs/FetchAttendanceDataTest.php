@@ -13,6 +13,7 @@ use App\Models\Report;
 use App\Models\WarcraftLogs\Guild;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Queue\Attributes\DeleteWhenMissingModels;
 use Illuminate\Queue\Attributes\FailOnTimeout;
 use Illuminate\Queue\Attributes\MaxExceptions;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
@@ -395,6 +396,15 @@ class FetchAttendanceDataTest extends TestCase
     }
 
     // ==================== helpers ====================
+
+    #[Test]
+    #[Group('contract')]
+    public function it_is_deleted_when_its_guild_no_longer_exists(): void
+    {
+        $class = new ReflectionClass(FetchAttendanceData::class);
+
+        $this->assertCount(1, $class->getAttributes(DeleteWhenMissingModels::class));
+    }
 
     private function runJob(FetchAttendanceData $job): void
     {
