@@ -4,6 +4,7 @@ namespace Tests\Feature\Raiding;
 
 use App\Models\Character;
 use App\Models\DiscordRole;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\Permission;
 use App\Models\Phase;
@@ -469,6 +470,31 @@ class AttendanceDashboardControllerTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->where('stats.phaseAttendance', 50)
+            )
+        );
+    }
+
+    #[Test]
+    public function invoke_phase_attendance_counts_reports_without_a_game_version(): void
+    {
+        $rank = GuildRank::factory()->create();
+        $character = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+
+        Phase::factory()->for(GameVersion::factory())->create(['start_date' => now()->subDays(14)]);
+
+        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(10)]);
+        $report->characters()->attach($character->id, ['presence' => 1]);
+
+        $this->assertNull($report->game_version_id);
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('stats.phaseAttendance', 100)
             )
         );
     }
