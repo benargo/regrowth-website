@@ -34,4 +34,17 @@ enum WarcraftLogsNamespace: string
             self::SeasonOfDiscovery => 'Season of Discovery',
         };
     }
+
+    /**
+     * Every namespace as a value/label pair for a select input.
+     *
+     * @return list<array{value: string, label: string}>
+     */
+    public static function options(): array
+    {
+        return array_map(
+            fn (self $namespace): array => ['value' => $namespace->value, 'label' => $namespace->label()],
+            self::cases(),
+        );
+    }
 }

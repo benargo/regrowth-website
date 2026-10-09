@@ -80,6 +80,80 @@ class WarcraftLogsConnectorTest extends WarcraftLogsTestCase
         $this->assertFalse(Cache::has('warcraftlogs:client_token'), 'The legacy token key must stay untouched.');
     }
 
+    // ==================== revoked tokens ====================
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_discards_a_revoked_cached_token_and_retries_once_with_a_fresh_one(): void
+    {
+        $this->cacheToken('revoked_token');
+        $mockClient = Saloon::fake([
+            GetClientCredentialsTokenBasicAuthRequest::class => $this->tokenMock(),
+            ProbeRequest::class => fn (PendingRequest $pendingRequest): MockResponse => $pendingRequest->headers()->get('Authorization') === 'Bearer revoked_token'
+                ? MockResponse::make(['error' => 'Unauthenticated.'], 401)
+                : MockResponse::make(['data' => ['probe' => true]]),
+        ]);
+
+        $response = $this->makeConnector()->send(new ProbeRequest(WarcraftLogsNamespace::Classic));
+
+        $this->assertSame(200, $response->status());
+        $this->assertSame('Bearer test_token', $response->getPendingRequest()->headers()->get('Authorization'));
+        $mockClient->assertSentCount(1, GetClientCredentialsTokenBasicAuthRequest::class);
+        $mockClient->assertSentCount(2, ProbeRequest::class);
+        $this->assertSame('test_token', Cache::tags(['warcraftlogs', 'api-auth'])->get('warcraftlogs:access_token')['token']);
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_rethrows_a_second_401_as_a_credential_failure_without_looping(): void
+    {
+        $this->cacheToken('revoked_token');
+        $mockClient = Saloon::fake([
+            GetClientCredentialsTokenBasicAuthRequest::class => $this->tokenMock(),
+            ProbeRequest::class => MockResponse::make(['error' => 'Unauthenticated.'], 401),
+        ]);
+
+        try {
+            $this->makeConnector()->send(new ProbeRequest(WarcraftLogsNamespace::Classic));
+            $this->fail('Expected an ApiException.');
+        } catch (ApiException $exception) {
+            $this->assertSame(401, $exception->getStatus());
+        }
+
+        $mockClient->assertSentCount(2, ProbeRequest::class);
+        $mockClient->assertSentCount(1, GetClientCredentialsTokenBasicAuthRequest::class);
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_does_not_retry_or_discard_the_token_for_other_failures(): void
+    {
+        $this->cacheToken('valid_token');
+        $mockClient = Saloon::fake([
+            GetClientCredentialsTokenBasicAuthRequest::class => $this->tokenMock(),
+            ProbeRequest::class => MockResponse::make(['message' => 'boom'], 500),
+        ]);
+
+        $this->assertThrows(fn () => $this->makeConnector()->send(new ProbeRequest(WarcraftLogsNamespace::Classic)), ApiException::class);
+
+        $mockClient->assertSentCount(1, ProbeRequest::class);
+        $mockClient->assertNotSent(GetClientCredentialsTokenBasicAuthRequest::class);
+        $this->assertSame('valid_token', Cache::tags(['warcraftlogs', 'api-auth'])->get('warcraftlogs:access_token')['token']);
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_does_not_retry_a_401_from_the_token_endpoint(): void
+    {
+        $mockClient = Saloon::fake([
+            GetClientCredentialsTokenBasicAuthRequest::class => MockResponse::make(['error' => 'invalid_client'], 401),
+        ]);
+
+        $this->assertThrows(fn () => $this->makeConnector()->send(new ProbeRequest(WarcraftLogsNamespace::Classic)), ApiException::class);
+
+        $mockClient->assertSentCount(1, GetClientCredentialsTokenBasicAuthRequest::class);
+    }
+
     // ==================== getRequestException ====================
 
     #[Test]
@@ -303,6 +377,15 @@ class WarcraftLogsConnectorTest extends WarcraftLogsTestCase
     }
 
     // ==================== helpers ====================
+
+    private function cacheToken(string $token): void
+    {
+        Cache::tags(['warcraftlogs', 'api-auth'])->put(
+            'warcraftlogs:access_token',
+            ['token' => $token, 'expires_at' => now()->addYear()->getTimestamp()],
+            now()->addYear(),
+        );
+    }
 
     private function fakeTooManyAttempts(): MockClient
     {

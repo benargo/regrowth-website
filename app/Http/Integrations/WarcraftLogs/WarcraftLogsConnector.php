@@ -8,6 +8,8 @@ use App\Http\Integrations\WarcraftLogs\Middleware\MonitorRateLimit;
 use DateTimeImmutable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
+use Saloon\Exceptions\Request\FatalRequestException;
+use Saloon\Exceptions\Request\RequestException;
 use Saloon\GraphQL\Traits\HandlesGraphQLErrors;
 use Saloon\Helpers\OAuth2\OAuthConfig;
 use Saloon\Http\Auth\AccessTokenAuthenticator;
@@ -44,6 +46,11 @@ class WarcraftLogsConnector extends Connector implements HasPagination
     use HasRateLimits;
 
     private const string TOKEN_CACHE_KEY = 'warcraftlogs:access_token';
+
+    /**
+     * A second attempt is allowed only for a revoked token; see handleRetry().
+     */
+    public ?int $tries = 2;
 
     /**
      * The store is named $store because HasRateLimits already declares $rateLimitStore.
@@ -117,6 +124,28 @@ class WarcraftLogsConnector extends Connector implements HasPagination
         );
 
         return $authenticator;
+    }
+
+    /**
+     * The cached token lives for its full expires_in (about a year), so WCL may revoke it
+     * first. On a 401 the token is discarded and the request retried once, which boot()
+     * re-authenticates with a fresh token. Every other failure, and a 401 from the token
+     * endpoint itself, is thrown immediately. The token request is checked on the exception
+     * because boot() sends it while the outer request is built, so its 401 surfaces here
+     * with the outer request as $request. With $tries at 2, a second 401 is rethrown
+     * as a genuine credential failure.
+     */
+    public function handleRetry(FatalRequestException|RequestException $exception, Request $request): bool
+    {
+        if (! $exception instanceof RequestException
+            || $exception->getStatus() !== 401
+            || $exception->getPendingRequest()->getRequest() instanceof GetClientCredentialsTokenBasicAuthRequest) {
+            return false;
+        }
+
+        Cache::tags(['warcraftlogs', 'api-auth'])->forget(self::TOKEN_CACHE_KEY);
+
+        return true;
     }
 
     /**
