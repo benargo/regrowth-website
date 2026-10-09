@@ -8,6 +8,7 @@ use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Http\Resources\GameVersionResource;
 use App\Models\GameVersion;
+use App\Models\WarcraftLogs\Guild;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -107,9 +108,12 @@ class GameVersionResourceTest extends TestCase
             'release_date' => Carbon::create(2026, 2, 6, 0, 0, 0, 'Europe/Paris'),
             'theme' => Theme::CLASSIC,
             'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
-            'warcraftlogs_guild' => 774848,
-            'warcraftlogs_namespace' => WarcraftLogsNamespace::Anniversary,
+            'warcraft_logs_guild_id' => 774848,
         ]);
+        $gameVersion->setRelation('warcraftLogsGuild', Guild::factory()->make([
+            'id' => 774848,
+            'namespace' => WarcraftLogsNamespace::Anniversary,
+        ]));
 
         $array = GameVersionResource::forManagement($gameVersion)->resolve(new Request);
 
@@ -141,8 +145,7 @@ class GameVersionResourceTest extends TestCase
             'realm' => null,
             'faction' => null,
             'blizzard_namespace' => null,
-            'warcraftlogs_guild' => null,
-            'warcraftlogs_namespace' => null,
+            'warcraft_logs_guild_id' => null,
         ]);
 
         $array = GameVersionResource::forManagement($gameVersion)->resolve(new Request);

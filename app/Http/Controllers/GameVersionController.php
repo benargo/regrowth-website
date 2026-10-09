@@ -10,11 +10,11 @@ use App\Enums\Faction;
 use App\Enums\GameVersionSetupStep;
 use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
-use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Http\Requests\StoreGameVersionRequest;
 use App\Http\Requests\UpdateGameVersionRequest;
 use App\Http\Resources\GameVersionResource;
 use App\Models\GameVersion;
+use App\Models\WarcraftLogs\Guild;
 use BackedEnum;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,7 +33,7 @@ class GameVersionController extends Controller
     #[Authorize('viewAny', GameVersion::class)]
     public function index(Request $request, BuildGameVersionRoutes $routes): Response
     {
-        $gameVersions = GameVersion::query()
+        $gameVersions = GameVersion::with('warcraftLogsGuild')
             ->withUsageCounts()
             ->orderBy('release_date')
             ->get();
@@ -83,7 +83,7 @@ class GameVersionController extends Controller
         $editLock = ResolveEditLock::run($request, $gameVersion);
 
         return Inertia::render('Manage/GameVersions/Edit', [
-            'gameVersion' => fn (): array => GameVersionResource::forManagement($gameVersion)->resolve($request),
+            'gameVersion' => fn (): array => GameVersionResource::forManagement($gameVersion->loadMissing('warcraftLogsGuild'))->resolve($request),
             'options' => fn (): array => $this->formOptions(),
             'relationships' => fn (): array => BuildGameVersionRelationships::run($gameVersion),
             'steps' => fn (): array => $routes->steps($gameVersion),
@@ -93,10 +93,7 @@ class GameVersionController extends Controller
     }
 
     /**
-     * Show one step of the new game version wizard, with the steps either side
-     * of it for the back and continue links. An unknown step slug fails enum
-     * route binding and returns 404. A step opened from the review page
-     * (?review=1) returns there once saved instead of continuing onwards.
+     * Show one step of the new game version wizard.
      */
     #[Authorize('update', 'gameVersion')]
     public function setup(
@@ -108,7 +105,7 @@ class GameVersionController extends Controller
         $editLock = ResolveEditLock::run($request, $gameVersion);
 
         return Inertia::render('Manage/GameVersions/Setup', [
-            'gameVersion' => fn (): array => GameVersionResource::forManagement($gameVersion)->resolve($request),
+            'gameVersion' => fn (): array => GameVersionResource::forManagement($gameVersion->loadMissing('warcraftLogsGuild'))->resolve($request),
             'step' => $step->toOption(),
             'previousStep' => $step->previous()?->toOption(),
             'nextStep' => $step->next()?->toOption(),
@@ -121,14 +118,13 @@ class GameVersionController extends Controller
     }
 
     /**
-     * Show the final wizard step: a read-only summary of the game version's
-     * details and linked records, with a link back to each step to edit it.
+     * Show the final wizard step, a read-only summary of the game version.
      */
     #[Authorize('update', 'gameVersion')]
     public function review(Request $request, GameVersion $gameVersion, BuildGameVersionRoutes $routes): Response
     {
         return Inertia::render('Manage/GameVersions/Review', [
-            'gameVersion' => GameVersionResource::forManagement($gameVersion)->resolve($request),
+            'gameVersion' => GameVersionResource::forManagement($gameVersion->loadMissing('warcraftLogsGuild'))->resolve($request),
             'steps' => $routes->steps($gameVersion),
             'relationships' => BuildGameVersionRelationships::run($gameVersion),
             'routes' => $routes->forReview($gameVersion),
@@ -136,10 +132,7 @@ class GameVersionController extends Controller
     }
 
     /**
-     * Update the specified game version with only the fields and relationships
-     * the request contains, then return to the page that sent it. Autosaves
-     * (sent with an X-Autosave header) return without a flash message, so a
-     * toast doesn't appear every time the officer leaves a field.
+     * Update the specified game version with the fields and relationships in the request.
      */
     #[Authorize('update', 'gameVersion')]
     public function update(UpdateGameVersionRequest $request, GameVersion $gameVersion): RedirectResponse
@@ -177,15 +170,13 @@ class GameVersionController extends Controller
     }
 
     /**
-     * Build the select options shared by the create and edit forms. Warcraft
-     * Logs namespaces use the enum's own labels, because a capitalised value
-     * like "Season_of_discovery" wouldn't read well.
+     * Build the select options shared by the create and edit forms.
      *
      * @return array{
      *     factions: list<array{value: string, label: string}>,
      *     themes: list<array{value: string, label: string}>,
      *     blizzard_namespaces: list<array{value: string, label: string}>,
-     *     warcraftlogs_namespaces: list<array{value: string, label: string}>
+     *     warcraft_logs_guilds: list<array{value: int, label: string}>
      * }
      */
     private function formOptions(): array
@@ -194,10 +185,11 @@ class GameVersionController extends Controller
             'factions' => $this->enumOptions(Faction::cases()),
             'themes' => $this->enumOptions(Theme::cases()),
             'blizzard_namespaces' => $this->enumOptions(BlizzardNamespace::cases()),
-            'warcraftlogs_namespaces' => collect(WarcraftLogsNamespace::cases())
-                ->map(fn (WarcraftLogsNamespace $namespace): array => [
-                    'value' => $namespace->value,
-                    'label' => $namespace->label(),
+            'warcraft_logs_guilds' => Guild::orderBy('id')
+                ->get()
+                ->map(fn (Guild $guild): array => [
+                    'value' => $guild->id,
+                    'label' => "{$guild->id} ({$guild->namespace->label()})",
                 ])
                 ->all(),
         ];

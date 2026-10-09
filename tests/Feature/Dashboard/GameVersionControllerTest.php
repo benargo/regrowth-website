@@ -16,6 +16,7 @@ use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\Raid;
 use App\Models\User;
+use App\Models\WarcraftLogs\Guild;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Queue;
@@ -85,6 +86,8 @@ class GameVersionControllerTest extends DashboardTestCase
     #[Test]
     public function it_renders_the_create_page_with_enum_options(): void
     {
+        Guild::factory()->create(['id' => 774848, 'namespace' => WarcraftLogsNamespace::Anniversary]);
+
         $response = $this->actingAs($this->officer)->get(route('management.game-versions.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
@@ -92,8 +95,10 @@ class GameVersionControllerTest extends DashboardTestCase
             ->where('options.factions.0', ['value' => 'Alliance', 'label' => 'Alliance'])
             ->where('options.themes.0', ['value' => 'classic', 'label' => 'Classic'])
             ->where('options.blizzard_namespaces.0', ['value' => 'anniversary', 'label' => 'Anniversary'])
-            ->where('options.warcraftlogs_namespaces.0', ['value' => 'anniversary', 'label' => 'The Burning Crusade Classic Anniversary'])
-            ->has('options.warcraftlogs_namespaces', count(WarcraftLogsNamespace::cases()))
+            ->where('options.warcraft_logs_guilds', [
+                ['value' => 774848, 'label' => '774848 (The Burning Crusade Classic Anniversary)'],
+            ])
+            ->missing('options.warcraftlogs_namespaces')
             ->where('steps', GameVersionSetupStep::options())
             ->where('routes', [
                 'index' => route('management.game-versions.index'),
@@ -121,8 +126,7 @@ class GameVersionControllerTest extends DashboardTestCase
         $this->assertSame(Faction::HORDE, $gameVersion->faction);
         $this->assertSame(Theme::FOREVER, $gameVersion->theme);
         $this->assertSame(BlizzardNamespace::CLASSIC, $gameVersion->blizzard_namespace);
-        $this->assertSame(123456, $gameVersion->warcraftlogs_guild);
-        $this->assertSame(WarcraftLogsNamespace::Classic, $gameVersion->warcraftlogs_namespace);
+        $this->assertNull($gameVersion->warcraft_logs_guild_id);
     }
 
     #[Test]
@@ -171,30 +175,43 @@ class GameVersionControllerTest extends DashboardTestCase
             'faction' => 'Scourge',
             'theme' => 'neon',
             'blizzard_namespace' => 'forever',
-            'warcraftlogs_namespace' => 'ANNIVERSARY',
         ]));
 
         $response->assertInvalid([
             'faction' => 'The selected faction is invalid.',
             'theme' => 'The selected theme is invalid.',
             'blizzard_namespace' => 'The selected Blizzard API namespace is invalid.',
-            'warcraftlogs_namespace' => 'The selected Warcraft Logs namespace is invalid.',
         ]);
         $this->assertDatabaseCount('game_versions', 0);
     }
 
     #[Group('validation')]
     #[Test]
-    public function it_rejects_an_invalid_warcraftlogs_guild_id(): void
+    public function it_rejects_a_warcraft_logs_guild_that_does_not_exist(): void
     {
         $response = $this->actingAs($this->officer)->post(route('management.game-versions.store'), $this->validPayload([
-            'warcraftlogs_guild' => 0,
+            'warcraft_logs_guild_id' => 999999,
         ]));
 
         $response->assertInvalid([
-            'warcraftlogs_guild' => 'The Warcraft Logs guild ID field must be at least 1.',
+            'warcraft_logs_guild_id' => 'Choose one of the listed Warcraft Logs guilds.',
         ]);
         $this->assertDatabaseCount('game_versions', 0);
+        $this->assertDatabaseCount('warcraft_logs_guilds', 0);
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_stores_a_game_version_linked_to_an_existing_guild(): void
+    {
+        $guild = Guild::factory()->create();
+
+        $this->actingAs($this->officer)->post(route('management.game-versions.store'), $this->validPayload([
+            'warcraft_logs_guild_id' => $guild->id,
+        ]));
+
+        $this->assertSame($guild->id, GameVersion::sole()->warcraft_logs_guild_id);
+        $this->assertDatabaseCount('warcraft_logs_guilds', 1);
     }
 
     #[Group('validation')]
@@ -767,8 +784,7 @@ class GameVersionControllerTest extends DashboardTestCase
             'realm' => null,
             'faction' => null,
             'blizzard_namespace' => null,
-            'warcraftlogs_guild' => null,
-            'warcraftlogs_namespace' => null,
+            'warcraft_logs_guild_id' => null,
         ]));
 
         $response = $this->actingAs($this->officer)->patch(route('management.game-versions.update', $gameVersion), $this->validUpdatePayload([
@@ -776,8 +792,7 @@ class GameVersionControllerTest extends DashboardTestCase
             'realm' => '',
             'faction' => '',
             'blizzard_namespace' => '',
-            'warcraftlogs_guild' => '',
-            'warcraftlogs_namespace' => '',
+            'warcraft_logs_guild_id' => '',
         ]));
 
         $response->assertValid();
@@ -796,6 +811,65 @@ class GameVersionControllerTest extends DashboardTestCase
         ]);
 
         $response->assertValid();
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_ignores_the_retired_warcraftlogs_guild_fields(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $this->expectUpdate($gameVersion, ['realm' => 'Gehennas']);
+
+        $response = $this->actingAs($this->officer)->patch(route('management.game-versions.update', $gameVersion), [
+            'realm' => 'Gehennas',
+            'warcraftlogs_guild' => 774848,
+            'warcraftlogs_namespace' => 'anniversary',
+        ]);
+
+        $response->assertValid();
+    }
+
+    #[Test]
+    public function it_links_an_existing_guild_on_update(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $guild = Guild::factory()->create();
+        $this->expectUpdate($gameVersion, ['warcraft_logs_guild_id' => $guild->id]);
+
+        $response = $this->actingAs($this->officer)->patch(route('management.game-versions.update', $gameVersion), [
+            'warcraft_logs_guild_id' => $guild->id,
+        ]);
+
+        $response->assertValid();
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_rejects_an_unknown_guild_on_update(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        $response = $this->actingAs($this->officer)->patch(route('management.game-versions.update', $gameVersion), [
+            'warcraft_logs_guild_id' => 999999,
+        ]);
+
+        $response->assertInvalid(['warcraft_logs_guild_id' => 'Choose one of the listed Warcraft Logs guilds.']);
+        $this->assertNull($gameVersion->fresh()->warcraft_logs_guild_id);
+    }
+
+    #[Test]
+    public function the_edit_page_shows_the_linked_guild_and_its_namespace(): void
+    {
+        $guild = Guild::factory()->create(['id' => 774848, 'namespace' => WarcraftLogsNamespace::Anniversary]);
+        $gameVersion = GameVersion::factory()->forGuild($guild)->create();
+
+        $response = $this->actingAs($this->officer)->get($this->editUrl($gameVersion));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('gameVersion.warcraftlogs.guild', 774848)
+            ->where('gameVersion.warcraftlogs.namespace.value', 'anniversary')
+            ->where('gameVersion.warcraftlogs.namespace.label', 'The Burning Crusade Classic Anniversary')
+        );
     }
 
     #[Group('authorization')]
@@ -893,7 +967,7 @@ class GameVersionControllerTest extends DashboardTestCase
     public function it_accepts_optional_fields_sent_as_null(): void
     {
         $gameVersion = GameVersion::factory()->create();
-        $nulls = ['faction' => null, 'theme' => null, 'warcraftlogs_guild' => null];
+        $nulls = ['faction' => null, 'theme' => null, 'warcraft_logs_guild_id' => null];
         $this->expectUpdate($gameVersion, $nulls);
 
         $response = $this->actingAs($this->officer)
@@ -1376,8 +1450,7 @@ class GameVersionControllerTest extends DashboardTestCase
             'release_date' => '2022-09-26',
             'theme' => Theme::FOREVER->value,
             'blizzard_namespace' => BlizzardNamespace::CLASSIC->value,
-            'warcraftlogs_guild' => 123456,
-            'warcraftlogs_namespace' => WarcraftLogsNamespace::Classic->value,
+            'warcraft_logs_guild_id' => null,
             ...$overrides,
         ];
     }
