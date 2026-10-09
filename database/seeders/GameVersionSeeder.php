@@ -7,13 +7,19 @@ use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\GameVersion;
+use App\Models\WarcraftLogs\Guild;
 use Carbon\Carbon;
 use Carbon\CarbonTimeZone;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Arr;
 
 class GameVersionSeeder extends Seeder
 {
-    /** @var array<array<string, mixed>> */
+    /**
+     * The game versions to seed, each with the Warcraft Logs guild it uses.
+     *
+     * @return array<int, array<string, mixed>>
+     */
     protected function definitions(): array
     {
         return [
@@ -26,8 +32,7 @@ class GameVersionSeeder extends Seeder
                 'release_date' => Carbon::create(2021, 9, 4, 0, 0, 0, CarbonTimeZone::create('Europe/Paris')),
                 'theme' => Theme::CLASSIC->value,
                 'blizzard_namespace' => BlizzardNamespace::CLASSIC->value,
-                'warcraftlogs_guild' => 598032,
-                'warcraftlogs_namespace' => WarcraftLogsNamespace::Classic->value,
+                'warcraft_logs_guild' => ['id' => 598032, 'namespace' => WarcraftLogsNamespace::Classic],
             ],
             [
                 'title' => 'Burning Crusade Classic (Anniversary)',
@@ -38,8 +43,7 @@ class GameVersionSeeder extends Seeder
                 'release_date' => Carbon::create(2024, 11, 22, 0, 0, 0, CarbonTimeZone::create('Europe/Paris')),
                 'theme' => Theme::CLASSIC->value,
                 'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY->value,
-                'warcraftlogs_guild' => 774848,
-                'warcraftlogs_namespace' => WarcraftLogsNamespace::Anniversary->value,
+                'warcraft_logs_guild' => ['id' => 774848, 'namespace' => WarcraftLogsNamespace::Anniversary],
             ],
             [
                 'title' => 'World of Warcraft: Forever',
@@ -50,8 +54,7 @@ class GameVersionSeeder extends Seeder
                 'release_date' => Carbon::create(2026, 11, 5, 0, 0, 0, CarbonTimeZone::create('Europe/Paris')),
                 'theme' => Theme::FOREVER->value,
                 'blizzard_namespace' => null,
-                'warcraftlogs_guild' => null,
-                'warcraftlogs_namespace' => null,
+                'warcraft_logs_guild' => null,
             ],
         ];
     }
@@ -61,8 +64,17 @@ class GameVersionSeeder extends Seeder
      */
     public function run(): void
     {
-        foreach ($this->definitions() as $game_version) {
-            GameVersion::updateOrCreate(['slug' => $game_version['slug']], $game_version);
+        foreach ($this->definitions() as $definition) {
+            $guild = Arr::pull($definition, 'warcraft_logs_guild');
+
+            if ($guild !== null) {
+                Guild::firstOrCreate(['id' => $guild['id']], ['namespace' => $guild['namespace']]);
+            }
+
+            GameVersion::updateOrCreate(
+                ['slug' => $definition['slug']],
+                [...$definition, 'warcraft_logs_guild_id' => $guild['id'] ?? null],
+            );
         }
     }
 }

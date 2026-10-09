@@ -59,6 +59,15 @@ class PermissionSeeder extends Seeder
         ['name' => 'delete-characters', 'group' => 'character-management', 'guard_name' => 'web'],
 
         /**
+         * Warcraft Logs permissions
+         */
+        ['name' => 'view-warcraft-logs-guilds', 'group' => 'warcraftlogs', 'guard_name' => 'web'],
+        ['name' => 'create-warcraft-logs-guilds', 'group' => 'warcraftlogs', 'guard_name' => 'web'],
+        ['name' => 'update-warcraft-logs-guilds', 'group' => 'warcraftlogs', 'guard_name' => 'web'],
+        ['name' => 'delete-warcraft-logs-guilds', 'group' => 'warcraftlogs', 'guard_name' => 'web'],
+        ['name' => 'update-warcraft-logs-tags', 'group' => 'warcraftlogs', 'guard_name' => 'web'],
+
+        /**
          * Hidden permissions (not shown in the dashboard, but still used for access control)
          */
         ['name' => 'edit-datasets', 'guard_name' => 'web'],
