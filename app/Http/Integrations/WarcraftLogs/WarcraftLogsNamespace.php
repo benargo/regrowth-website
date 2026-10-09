@@ -2,8 +2,12 @@
 
 namespace App\Http\Integrations\WarcraftLogs;
 
+use App\Enums\Concerns\HasSelectOptions;
+
 enum WarcraftLogsNamespace: string
 {
+    use HasSelectOptions;
+
     case Anniversary = 'anniversary';
     case Classic = 'classic'; // Mists of Pandaria Classic
     case Era = 'era';
@@ -33,18 +37,5 @@ enum WarcraftLogsNamespace: string
             self::Retail => 'World of Warcraft',
             self::SeasonOfDiscovery => 'Season of Discovery',
         };
-    }
-
-    /**
-     * Every namespace as a value/label pair for a select input.
-     *
-     * @return list<array{value: string, label: string}>
-     */
-    public static function options(): array
-    {
-        return array_map(
-            fn (self $namespace): array => ['value' => $namespace->value, 'label' => $namespace->label()],
-            self::cases(),
-        );
     }
 }

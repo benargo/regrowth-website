@@ -2,10 +2,13 @@
 
 namespace App\Http\Integrations\Blizzard;
 
+use App\Enums\Concerns\HasSelectOptions;
 use InvalidArgumentException;
 
 enum BlizzardNamespace: string
 {
+    use HasSelectOptions;
+
     case ANNIVERSARY = 'anniversary';
     case CLASSIC = 'classic';
     case ERA = 'era';

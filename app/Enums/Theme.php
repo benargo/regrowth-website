@@ -2,10 +2,13 @@
 
 namespace App\Enums;
 
+use App\Enums\Concerns\HasSelectOptions;
 use Illuminate\Support\Facades\Vite;
 
 enum Theme: string
 {
+    use HasSelectOptions;
+
     case CLASSIC = 'classic';
     case FOREVER = 'forever';
 

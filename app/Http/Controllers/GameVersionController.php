@@ -15,12 +15,10 @@ use App\Http\Requests\UpdateGameVersionRequest;
 use App\Http\Resources\GameVersionResource;
 use App\Models\GameVersion;
 use App\Models\WarcraftLogs\Guild;
-use BackedEnum;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Support\Facades\Redirect;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -182,9 +180,9 @@ class GameVersionController extends Controller
     private function formOptions(): array
     {
         return [
-            'factions' => $this->enumOptions(Faction::cases()),
-            'themes' => $this->enumOptions(Theme::cases()),
-            'blizzard_namespaces' => $this->enumOptions(BlizzardNamespace::cases()),
+            'factions' => Faction::options(),
+            'themes' => Theme::options(),
+            'blizzard_namespaces' => BlizzardNamespace::options(),
             'warcraft_logs_guilds' => Guild::orderBy('id')
                 ->get()
                 ->map(fn (Guild $guild): array => [
@@ -193,21 +191,5 @@ class GameVersionController extends Controller
                 ])
                 ->all(),
         ];
-    }
-
-    /**
-     * Map backed enum cases to value/label pairs for a select input.
-     *
-     * @param  list<BackedEnum>  $cases
-     * @return list<array{value: string, label: string}>
-     */
-    private function enumOptions(array $cases): array
-    {
-        return collect($cases)
-            ->map(fn (BackedEnum $case): array => [
-                'value' => $case->value,
-                'label' => Str::ucfirst($case->value),
-            ])
-            ->all();
     }
 }
