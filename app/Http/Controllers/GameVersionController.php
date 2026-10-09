@@ -83,7 +83,7 @@ class GameVersionController extends Controller
         $editLock = ResolveEditLock::run($request, $gameVersion);
 
         return Inertia::render('Manage/GameVersions/Edit', [
-            'gameVersion' => fn (): array => GameVersionResource::forManagement($gameVersion->loadMissing('warcraftLogsGuild'))->resolve($request),
+            'gameVersion' => fn (): array => GameVersionResource::forManagement($gameVersion)->resolve($request),
             'options' => fn (): array => $this->formOptions(),
             'relationships' => fn (): array => BuildGameVersionRelationships::run($gameVersion),
             'steps' => fn (): array => $routes->steps($gameVersion),
@@ -105,7 +105,7 @@ class GameVersionController extends Controller
         $editLock = ResolveEditLock::run($request, $gameVersion);
 
         return Inertia::render('Manage/GameVersions/Setup', [
-            'gameVersion' => fn (): array => GameVersionResource::forManagement($gameVersion->loadMissing('warcraftLogsGuild'))->resolve($request),
+            'gameVersion' => fn (): array => GameVersionResource::forManagement($gameVersion)->resolve($request),
             'step' => $step->toOption(),
             'previousStep' => $step->previous()?->toOption(),
             'nextStep' => $step->next()?->toOption(),
@@ -124,7 +124,7 @@ class GameVersionController extends Controller
     public function review(Request $request, GameVersion $gameVersion, BuildGameVersionRoutes $routes): Response
     {
         return Inertia::render('Manage/GameVersions/Review', [
-            'gameVersion' => GameVersionResource::forManagement($gameVersion->loadMissing('warcraftLogsGuild'))->resolve($request),
+            'gameVersion' => GameVersionResource::forManagement($gameVersion)->resolve($request),
             'steps' => $routes->steps($gameVersion),
             'relationships' => BuildGameVersionRelationships::run($gameVersion),
             'routes' => $routes->forReview($gameVersion),

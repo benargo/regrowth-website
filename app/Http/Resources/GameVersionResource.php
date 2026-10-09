@@ -20,6 +20,10 @@ class GameVersionResource extends JsonResource
      */
     public static function forManagement(mixed $resource): static
     {
+        if ($resource instanceof GameVersion) {
+            $resource->loadMissing('warcraftLogsGuild');
+        }
+
         return static::withScope($resource, self::SCOPE_MANAGEMENT);
     }
 

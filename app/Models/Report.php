@@ -54,11 +54,7 @@ class Report extends Model
      */
     private function deriveGameVersionId(): ?int
     {
-        if ($this->warcraft_logs_guild_id === null) {
-            return null;
-        }
-
-        if ($this->start_time === null) {
+        if ($this->warcraft_logs_guild_id === null || $this->start_time === null) {
             return null;
         }
 

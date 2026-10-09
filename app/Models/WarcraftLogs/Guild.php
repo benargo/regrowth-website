@@ -30,10 +30,6 @@ class Guild extends Model
      */
     protected static function booted(): void
     {
-        static::created(function (): void {
-            Cache::tags(['warcraftlogs-api-response'])->flush();
-        });
-
         static::saved(function (Guild $guild): void {
             if (! $guild->wasChanged('namespace')) {
                 return;
