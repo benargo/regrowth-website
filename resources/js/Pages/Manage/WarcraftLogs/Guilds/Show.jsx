@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { Button } from "@headlessui/react";
 import { router, useForm } from "@inertiajs/react";
 import { Can, usePermission } from "@/Components/Authorizable";
+import Checkbox from "@/Components/Checkbox";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import DetailsForm from "@/Components/Datasets/DetailsForm";
 import { focusRing } from "@/Components/Datasets/RecordCard";
@@ -11,6 +11,7 @@ import { FormRow, FormSection } from "@/Components/FormControls";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
 import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
+import useRecordDeletion from "@/Hooks/useRecordDeletion";
 import Master from "@/Layouts/Master";
 
 function countOf(count, singular, plural) {
@@ -117,13 +118,12 @@ function GuildTagTable({ guild, hasUpdateTagsPermission }) {
                     <tr key={guildTag.id} className="border-ink-600/20 border-b last:border-b-0">
                         <td className="py-3 pr-4 text-white">{guildTag.name}</td>
                         <td className="py-3">
-                            <input
-                                type="checkbox"
+                            <Checkbox
                                 checked={guildTag.count_attendance}
                                 disabled={!hasUpdateTagsPermission}
                                 onChange={() => toggleCountAttendance(guildTag)}
                                 aria-label={`${guildTag.name} counts toward attendance`}
-                                className={`bg-ground-800/50 border-ink-600 text-ink-600 h-6 w-6 rounded disabled:cursor-not-allowed disabled:opacity-60 ${focusRing}`}
+                                className={`bg-ground-800/50 h-6 w-6 disabled:cursor-not-allowed disabled:opacity-60 ${focusRing}`}
                             />
                         </td>
                     </tr>
@@ -134,18 +134,7 @@ function GuildTagTable({ guild, hasUpdateTagsPermission }) {
 }
 
 function DeleteGuild({ guild }) {
-    const [isConfirming, setIsConfirming] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
-
-    const destroy = () => {
-        setIsDeleting(true);
-        router.delete(route("management.warcraftlogs.guilds.destroy", guild.id), {
-            onFinish: () => {
-                setIsDeleting(false);
-                setIsConfirming(false);
-            },
-        });
-    };
+    const deletion = useRecordDeletion();
 
     return (
         <section aria-labelledby="delete-guild-heading" className="border-ink-600/40 flex flex-col gap-3 border-t pt-6">
@@ -158,7 +147,11 @@ function DeleteGuild({ guild }) {
             </p>
             <div>
                 <Button
-                    onClick={() => setIsConfirming(true)}
+                    onClick={() =>
+                        deletion.request({
+                            links: { destroy: route("management.warcraftlogs.guilds.destroy", guild.id) },
+                        })
+                    }
                     className="inline-flex items-center gap-1.5 rounded border border-red-400 px-3 py-1.5 text-sm text-red-300 data-focus:outline-2 data-focus:outline-offset-2 data-focus:outline-red-400 data-hover:bg-red-600/20"
                 >
                     <Icon icon="trash" style="light" />
@@ -167,13 +160,13 @@ function DeleteGuild({ guild }) {
             </div>
 
             <ConfirmationModal
-                show={isConfirming}
-                onClose={() => setIsConfirming(false)}
-                onConfirm={destroy}
+                show={!!deletion.record}
+                onClose={deletion.cancel}
+                onConfirm={deletion.confirm}
                 title={`Delete Warcraft Logs guild ${guild.id}?`}
                 confirmLabel="Delete guild"
                 processingLabel="Deleting…"
-                processing={isDeleting}
+                processing={deletion.deleting}
                 variant="delete"
             >
                 This deletes {countOf(guild.guild_tags_count, "tag", "tags")} and detaches{" "}
