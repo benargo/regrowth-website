@@ -108,6 +108,6 @@ final class GetReportsRequest extends WarcraftLogsRequest implements Paginatable
      */
     public function createDtoFromResponse(Response $response): array
     {
-        return ReportData::collect($response->json('data.reportData.reports.data', []));
+        return ReportData::collect($response->json('data.reportData.reports.data') ?? []);
     }
 }
