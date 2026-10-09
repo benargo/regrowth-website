@@ -31,7 +31,7 @@ class Guild extends Model
     protected static function booted(): void
     {
         static::saved(function (Guild $guild): void {
-            if (! $guild->wasChanged('namespace')) {
+            if (! $guild->isDirty('namespace')) {
                 return;
             }
 
