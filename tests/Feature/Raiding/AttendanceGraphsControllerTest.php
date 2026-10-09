@@ -122,7 +122,7 @@ class AttendanceGraphsControllerTest extends TestCase
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Illidan', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
 
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(2)]);
         $report->characters()->attach($character->id, ['presence' => 1]);
@@ -151,7 +151,7 @@ class AttendanceGraphsControllerTest extends TestCase
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Maiev', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
 
         $r1 = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(5)]);
         $r1->characters()->attach($character->id, ['presence' => 1]);
@@ -181,7 +181,7 @@ class AttendanceGraphsControllerTest extends TestCase
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Tyrande', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
 
         $attendedReport = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(10)]);
         $attendedReport->characters()->attach($character->id, ['presence' => 1]);
@@ -213,7 +213,7 @@ class AttendanceGraphsControllerTest extends TestCase
         $rank = GuildRank::factory()->create();
         $playableClass = PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
         $character = Character::factory()->main()->withPlayableClass($playableClass)->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(3)]);
         $report->characters()->attach($character->id, ['presence' => 1]);
         $user = User::factory()->officer()->create();

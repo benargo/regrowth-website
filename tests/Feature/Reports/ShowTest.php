@@ -63,7 +63,7 @@ class ShowTest extends TestCase
     #[Test]
     public function show_includes_expected_report_fields(): void
     {
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
         $zone = Zone::factory()->create(['id' => 1000, 'name' => 'Karazhan']);
         $report = Report::factory()->withGuildTag($tag)->withZone($zone)->create([
             'title' => 'Sunday Raid',
@@ -196,7 +196,7 @@ class ShowTest extends TestCase
     #[Test]
     public function show_nearby_reports_is_returned_on_partial_reload(): void
     {
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-06-01 20:00', 'UTC')]);
         $user = User::factory()->create();
 
@@ -217,7 +217,7 @@ class ShowTest extends TestCase
     #[Test]
     public function show_nearby_reports_paginates_clusters_at_five_per_page(): void
     {
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
 
         // 20 unlinked reports → 20 singleton clusters → 5 per page, 4 pages.
         $reports = collect();
@@ -246,7 +246,7 @@ class ShowTest extends TestCase
     #[Test]
     public function show_nearby_reports_groups_linked_reports_into_one_cluster(): void
     {
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
 
         $a = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
         $b = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-02 20:00', 'UTC')]);

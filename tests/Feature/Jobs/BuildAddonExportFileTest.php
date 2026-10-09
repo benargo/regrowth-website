@@ -502,7 +502,7 @@ class BuildAddonExportFileTest extends TestCase
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->create(['name' => 'TestPlayer', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:00:00')]);
         $report->characters()->attach($character->id, ['presence' => 1]);
 
@@ -522,7 +522,7 @@ class BuildAddonExportFileTest extends TestCase
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->create(['name' => 'TestPlayer', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::now()->subDays(1)]);
         $report->characters()->attach($character->id, ['presence' => 1]);
 
@@ -541,7 +541,7 @@ class BuildAddonExportFileTest extends TestCase
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->create(['name' => 'TestPlayer', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::now()->subDays(1)]);
         $report->characters()->attach($character->id, ['presence' => 1]);
 
@@ -557,7 +557,7 @@ class BuildAddonExportFileTest extends TestCase
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->create(['name' => 'TestPlayer', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:00:00')]);
         $report->characters()->attach($character->id, ['presence' => 1]);
 
@@ -576,7 +576,7 @@ class BuildAddonExportFileTest extends TestCase
         $nonCountingRank = GuildRank::factory()->doesNotCountAttendance()->create();
         $countingChar = Character::factory()->create(['name' => 'CountingPlayer', 'rank_id' => $countingRank->id]);
         $nonCountingChar = Character::factory()->create(['name' => 'NonCountingPlayer', 'rank_id' => $nonCountingRank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::now()->subDays(1)]);
         $report->characters()->attach($countingChar->id, ['presence' => 1]);
         $report->characters()->attach($nonCountingChar->id, ['presence' => 1]);
@@ -594,8 +594,8 @@ class BuildAddonExportFileTest extends TestCase
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->create(['name' => 'TestPlayer', 'rank_id' => $rank->id]);
-        $countingTag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        $nonCountingTag = GuildTag::factory()->doesNotCountAttendance()->withoutPhase()->create();
+        $countingTag = GuildTag::factory()->countsAttendance()->create();
+        $nonCountingTag = GuildTag::factory()->doesNotCountAttendance()->create();
         $countingReport = Report::factory()->withGuildTag($countingTag)->create(['start_time' => Carbon::parse('2025-01-15 20:00:00')]);
         $nonCountingReport = Report::factory()->withGuildTag($nonCountingTag)->create(['start_time' => Carbon::parse('2025-01-22 20:00:00')]);
         $countingReport->characters()->attach($character->id, ['presence' => 1]);

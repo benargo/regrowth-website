@@ -7,6 +7,7 @@ use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\Report;
 use App\Models\User;
+use App\Models\WarcraftLogs\Guild;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -63,7 +64,7 @@ class StoreTest extends TestCase
     #[Test]
     public function store_forbids_users_without_manage_reports(): void
     {
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->post(route('raiding.reports.store'), $this->validStoreData($tag));
@@ -74,11 +75,42 @@ class StoreTest extends TestCase
     // ==================== happy path ====================
 
     #[Test]
+    public function store_gives_the_report_its_tags_guild(): void
+    {
+        $this->grantManageReports();
+        Zone::factory()->create(['id' => 1000, 'name' => 'Karazhan']);
+        $guild = Guild::factory()->create();
+        $tag = GuildTag::factory()->forGuild($guild)->create();
+        $user = User::factory()->officer()->create();
+
+        $this->actingAs($user)->post(route('raiding.reports.store'), $this->validStoreData($tag));
+
+        $this->assertDatabaseHas('reports', [
+            'title' => 'Sunday Karazhan',
+            'guild_tag_id' => $tag->id,
+            'warcraft_logs_guild_id' => $guild->id,
+        ]);
+    }
+
+    #[Test]
+    public function store_leaves_the_guild_empty_when_the_tag_has_none(): void
+    {
+        $this->grantManageReports();
+        Zone::factory()->create(['id' => 1000, 'name' => 'Karazhan']);
+        $tag = GuildTag::factory()->create();
+        $user = User::factory()->officer()->create();
+
+        $this->actingAs($user)->post(route('raiding.reports.store'), $this->validStoreData($tag));
+
+        $this->assertDatabaseHas('reports', ['guild_tag_id' => $tag->id, 'warcraft_logs_guild_id' => null]);
+    }
+
+    #[Test]
     public function store_creates_report_with_valid_data(): void
     {
         $this->grantManageReports();
         Zone::factory()->create(['id' => 1000, 'name' => 'Karazhan']);
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
         $user = User::factory()->officer()->create();
 
         $this->actingAs($user)->post(route('raiding.reports.store'), $this->validStoreData($tag));
@@ -96,7 +128,7 @@ class StoreTest extends TestCase
     {
         $this->grantManageReports();
         Zone::factory()->create(['id' => 1000]);
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->post(route('raiding.reports.store'), $this->validStoreData($tag));
@@ -111,7 +143,7 @@ class StoreTest extends TestCase
     {
         $this->grantManageReports();
         Zone::factory()->create(['id' => 1000]);
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
         $character = Character::factory()->create();
         $user = User::factory()->officer()->create();
 
@@ -133,7 +165,7 @@ class StoreTest extends TestCase
     {
         $this->grantManageReports();
         Zone::factory()->create(['id' => 1000]);
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
         $existingReport = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
@@ -159,7 +191,7 @@ class StoreTest extends TestCase
     {
         $this->grantManageReports();
         Zone::factory()->create(['id' => 1000]);
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
         $reportA = Report::factory()->withoutGuildTag()->create();
         $reportB = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
@@ -185,7 +217,7 @@ class StoreTest extends TestCase
     {
         $this->grantManageReports();
         Zone::factory()->create(['id' => 1000]);
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
         $character = Character::factory()->lootCouncillor()->create();
         $user = User::factory()->officer()->create();
 
@@ -208,7 +240,7 @@ class StoreTest extends TestCase
     {
         $this->grantManageReports();
         Zone::factory()->create(['id' => 1000]);
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
         $character = Character::factory()->lootCouncillor()->create();
         $user = User::factory()->officer()->create();
 
@@ -233,7 +265,7 @@ class StoreTest extends TestCase
     public function store_rejects_non_loot_councillor_character_for_loot_councillor_ids(): void
     {
         $this->grantManageReports();
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
         $character = Character::factory()->create(['is_loot_councillor' => false]);
         $user = User::factory()->officer()->create();
 
@@ -250,7 +282,7 @@ class StoreTest extends TestCase
     public function store_rejects_missing_title(): void
     {
         $this->grantManageReports();
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->post(route('raiding.reports.store'), array_merge(
@@ -266,7 +298,7 @@ class StoreTest extends TestCase
     public function store_rejects_end_time_before_start_time(): void
     {
         $this->grantManageReports();
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->post(route('raiding.reports.store'), array_merge(
@@ -282,7 +314,7 @@ class StoreTest extends TestCase
     public function store_rejects_invalid_guild_tag_id(): void
     {
         $this->grantManageReports();
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->post(route('raiding.reports.store'), array_merge(
@@ -298,7 +330,7 @@ class StoreTest extends TestCase
     public function store_rejects_nonexistent_character_id(): void
     {
         $this->grantManageReports();
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->post(route('raiding.reports.store'), array_merge(
@@ -314,7 +346,7 @@ class StoreTest extends TestCase
     public function store_rejects_nonexistent_linked_report_id(): void
     {
         $this->grantManageReports();
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->post(route('raiding.reports.store'), array_merge(
@@ -330,7 +362,7 @@ class StoreTest extends TestCase
     public function store_rejects_invalid_zone_id(): void
     {
         $this->grantManageReports();
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->post(route('raiding.reports.store'), array_merge(

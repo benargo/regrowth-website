@@ -110,7 +110,7 @@ class AttendanceDashboardControllerTest extends TestCase
     #[Test]
     public function invoke_returns_latest_report_date(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         Report::factory()->withGuildTag($tag)->create(['start_time' => '2025-03-07 12:00:00']);
         Report::factory()->withGuildTag($tag)->create(['start_time' => '2025-03-15 12:00:00']);
         Report::factory()->withGuildTag($tag)->create(['start_time' => '2025-03-10 12:00:00']);
@@ -255,7 +255,7 @@ class AttendanceDashboardControllerTest extends TestCase
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
 
         for ($i = 0; $i < 5; $i++) {
             $report = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(10 + $i)]);
@@ -281,7 +281,7 @@ class AttendanceDashboardControllerTest extends TestCase
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Vashj', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
 
         // 4 older raids attended
         for ($i = 0; $i < 4; $i++) {
@@ -313,8 +313,8 @@ class AttendanceDashboardControllerTest extends TestCase
         $kael = Character::factory()->main()->create(['name' => 'Kael', 'rank_id' => $rank->id]);
         $illidan = Character::factory()->main()->create(['name' => 'Illidan', 'rank_id' => $rank->id]);
 
-        $monday = GuildTag::factory()->countsAttendance()->withoutPhase()->create(['name' => 'Monday']);
-        $tuesday = GuildTag::factory()->countsAttendance()->withoutPhase()->create(['name' => 'Tuesday']);
+        $monday = GuildTag::factory()->countsAttendance()->create(['name' => 'Monday']);
+        $tuesday = GuildTag::factory()->countsAttendance()->create(['name' => 'Tuesday']);
 
         $mondayReport = Report::factory()->withGuildTag($monday)->create(['start_time' => now()->subDays(2)]);
         $mondayReport->characters()->attach($kael->id, ['presence' => 2]);
@@ -341,7 +341,7 @@ class AttendanceDashboardControllerTest extends TestCase
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Illidan', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(10)]);
         $report->characters()->attach($character->id, ['presence' => 2]);
 
@@ -405,7 +405,7 @@ class AttendanceDashboardControllerTest extends TestCase
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Maiev', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
 
         $debutReport = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(30)]);
         $debutReport->characters()->attach($character->id, ['presence' => 1]);
@@ -451,7 +451,7 @@ class AttendanceDashboardControllerTest extends TestCase
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
 
         Phase::factory()->create(['start_date' => now()->subDays(14)]);
 
@@ -479,7 +479,7 @@ class AttendanceDashboardControllerTest extends TestCase
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
 
         Phase::factory()->for(GameVersion::factory())->create(['start_date' => now()->subDays(14)]);
 
@@ -503,7 +503,7 @@ class AttendanceDashboardControllerTest extends TestCase
     public function invoke_total_players_breakdown_counts_mains_and_linked_separately(): void
     {
         $rank = GuildRank::factory()->create();
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
 
         $main1 = Character::factory()->main()->withUniqueName()->create(['rank_id' => $rank->id]);
         $main2 = Character::factory()->main()->withUniqueName()->create(['rank_id' => $rank->id]);
@@ -532,7 +532,7 @@ class AttendanceDashboardControllerTest extends TestCase
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Vol\'jin', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
 
         Phase::factory()->create(['number' => 1, 'start_date' => now()->subDays(30)]);
         Phase::factory()->create(['number' => 2, 'start_date' => now()->subDays(7)]);

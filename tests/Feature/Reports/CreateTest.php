@@ -92,7 +92,7 @@ class CreateTest extends TestCase
     {
         $this->grantManageReports();
         Zone::factory()->create();
-        GuildTag::factory()->withoutPhase()->create();
+        GuildTag::factory()->create();
         Character::factory()->create();
         $user = User::factory()->officer()->create();
 
@@ -187,7 +187,7 @@ class CreateTest extends TestCase
         $this->grantManageReports();
         Cache::tags(['raids', 'warcraftlogs'])->flush();
 
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
         $user = User::factory()->officer()->create();
 
         $r1 = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 19:00', 'UTC')]);
@@ -221,7 +221,7 @@ class CreateTest extends TestCase
         $this->grantManageReports();
         Cache::tags(['raids', 'warcraftlogs'])->flush();
 
-        $tag = GuildTag::factory()->withoutPhase()->create();
+        $tag = GuildTag::factory()->create();
         $user = User::factory()->officer()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:00', 'UTC')]);
 

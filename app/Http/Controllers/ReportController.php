@@ -175,6 +175,7 @@ class ReportController extends Controller
             'start_time' => Carbon::parse($request->start_time, 'Europe/Paris')->utc(),
             'end_time' => Carbon::parse($request->end_time, 'Europe/Paris')->utc(),
             'guild_tag_id' => $request->guild_tag_id,
+            'warcraft_logs_guild_id' => GuildTag::whereKey($request->guild_tag_id)->value('warcraft_logs_guild_id'),
             'zone_id' => $request->zone_id,
         ]);
 
