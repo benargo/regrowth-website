@@ -23,8 +23,6 @@ return new class extends Migration
             $table->dateTime('release_date')->default(Carbon::now());
             $table->string('theme')->nullable();
             $table->string('blizzard_namespace')->nullable();
-            $table->integer('warcraftlogs_guild')->nullable();
-            $table->string('warcraftlogs_namespace')->nullable();
             $table->timestamps();
         });
     }

@@ -7,12 +7,15 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Run the migrations. The ID is the Warcraft Logs guild ID, so it is
+     * never auto-incremented.
      */
     public function up(): void
     {
-        Schema::table('warcraft_logs_guilds', function (Blueprint $table) {
-            //
+        Schema::create('warcraft_logs_guilds', function (Blueprint $table): void {
+            $table->unsignedBigInteger('id')->primary();
+            $table->string('namespace');
+            $table->timestamps();
         });
     }
 
@@ -21,8 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('warcraft_logs_guilds', function (Blueprint $table) {
-            //
-        });
+        Schema::dropIfExists('warcraft_logs_guilds');
     }
 };

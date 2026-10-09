@@ -1,8 +1,10 @@
 <?php
 
 use App\Models\GameVersion;
+use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
+use App\Models\WarcraftLogs\Guild;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Collection;
@@ -49,6 +51,8 @@ return new class extends Migration
         $this->widenMediaModelIdForUuidKeys();
         $this->addGameVersionIdToCharactersTable();
         $this->addGameVersionIdToDerivedTables();
+        $this->addWarcraftLogsGuildToGameVersionsAndGuildTagsTables();
+        $this->addWarcraftLogsGuildAndPhaseToReportsTable();
     }
 
     public function down(): void
@@ -56,10 +60,7 @@ return new class extends Migration
         $this->dropGameVersionIdFromCharactersTable();
         $this->restoreMediaModelIdWidth();
 
-        // repointItemForeignKeysToUuid() is not reversible — items.blizzard_id
-        // values are not guaranteed unique once multiple game versions exist
-        // by the time this runs in an environment. Restore from a backup
-        // taken before this migration if you need to roll back.
+        // Not reversible past this point; restore from a backup to roll back.
         throw new RuntimeException('This migration is not reversible past this point — items.blizzard_id values are not guaranteed unique once multiple game versions exist. Restore from a backup taken before this migration if you need to roll back.');
     }
 
@@ -79,6 +80,31 @@ return new class extends Migration
                 $blueprint->foreignIdFor(GameVersion::class)->nullable()->after('id')->constrained()->nullOnDelete();
             });
         }
+    }
+
+    /**
+     * Link game versions and guild tags to their Warcraft Logs guild.
+     */
+    private function addWarcraftLogsGuildToGameVersionsAndGuildTagsTables(): void
+    {
+        Schema::table('game_versions', function (Blueprint $table): void {
+            $table->foreignIdFor(Guild::class, 'warcraft_logs_guild_id')->nullable()->after('blizzard_namespace')->constrained();
+        });
+
+        Schema::table('warcraft_logs_guild_tags', function (Blueprint $table): void {
+            $table->foreignIdFor(Guild::class, 'warcraft_logs_guild_id')->nullable()->after('id')->constrained()->cascadeOnDelete();
+        });
+    }
+
+    /**
+     * Link reports to their Warcraft Logs guild and phase.
+     */
+    private function addWarcraftLogsGuildAndPhaseToReportsTable(): void
+    {
+        Schema::table('reports', function (Blueprint $table): void {
+            $table->foreignIdFor(Guild::class, 'warcraft_logs_guild_id')->nullable()->after('game_version_id')->constrained();
+            $table->foreignIdFor(Phase::class)->nullable()->after('warcraft_logs_guild_id')->constrained()->nullOnDelete();
+        });
     }
 
     private function createPivotGameVersionsPlayableRacesTable(): void
@@ -113,12 +139,7 @@ return new class extends Migration
 
         $this->dropInboundItemForeignKeys();
 
-        // MariaDB/MySQL refuse to drop a primary key while its column is
-        // still auto_increment (a table can never have an auto_increment
-        // column with no key). Laravel compiles each of these into its own
-        // ALTER TABLE statement, so ordering the calls this way — remove
-        // auto_increment via the MODIFY first, then DROP PRIMARY KEY second —
-        // keeps every intermediate statement valid on its own.
+        // Remove auto_increment before dropping the primary key.
         Schema::table(self::ITEMS_TABLE, function (Blueprint $table): void {
             $table->unsignedBigInteger('id')->change();
             $table->dropPrimary();
@@ -166,12 +187,7 @@ return new class extends Migration
     }
 
     /**
-     * Drop the FK constraint on `item_id` for every table in
-     * INBOUND_ITEM_FK_TABLES, looked up dynamically rather than assuming the
-     * conventional Laravel name — some of these tables carry FK names
-     * inherited from before they were renamed (see `pivot_items_priorities`'s
-     * history), so the constraint name can't be assumed to match the
-     * current table/column names.
+     * Drop the item_id foreign key from each table that references items.
      */
     private function dropInboundItemForeignKeys(): void
     {
@@ -265,11 +281,7 @@ return new class extends Migration
     {
         $this->dropItemIdForeignKey('pivot_dailyquest_rewards');
 
-        // The composite primary key (daily_quest_id, item_id) is currently the
-        // only index covering daily_quest_id, so MariaDB refuses to drop it
-        // while the live daily_quest_id FK still relies on it for support.
-        // Add a throwaway index to keep that FK supported across the gap,
-        // then drop it once the primary key is rebuilt below.
+        // Add a temporary index on daily_quest_id so the primary key can be dropped.
         Schema::table('pivot_dailyquest_rewards', function (Blueprint $table): void {
             $table->index('daily_quest_id', 'pivot_dailyquest_rewards_daily_quest_id_temp');
         });
@@ -312,10 +324,7 @@ return new class extends Migration
     }
 
     /**
-     * Drop the FK constraint on `item_id` for the given table, looked up
-     * dynamically rather than assuming the conventional Laravel name — some
-     * tables carry FK names inherited from before they were renamed (e.g.
-     * `pivot_items_priorities`, formerly `lootcouncil_item_priorities`).
+     * Drop the item_id foreign key from the given table.
      */
     private function dropItemIdForeignKey(string $table): void
     {
