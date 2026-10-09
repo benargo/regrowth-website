@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Console\Commands;
 
+use App\Models\Character;
 use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
@@ -9,6 +10,7 @@ use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\Report;
+use App\Models\WarcraftLogs\Guild;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
@@ -68,7 +70,7 @@ class BackfillGameVersionsTest extends TestCase
     #[Test]
     public function it_skips_the_dataset_step_but_still_resolves_reports_when_several_game_versions_exist_and_none_is_given(): void
     {
-        $gameVersion = GameVersion::factory()->create();
+        $gameVersion = GameVersion::factory()->forGuild()->create();
         GameVersion::factory()->create();
         $phase = Phase::factory()->create(['game_version_id' => null]);
         $report = Report::factory()->forGameVersion($gameVersion)->create();
@@ -109,7 +111,7 @@ class BackfillGameVersionsTest extends TestCase
     #[Group('happy-path')]
     public function it_fills_the_game_version_of_existing_reports_and_events(): void
     {
-        $gameVersion = GameVersion::factory()->create();
+        $gameVersion = GameVersion::factory()->forGuild()->create();
         GameVersion::factory()->create();
         $report = Report::factory()->forGameVersion($gameVersion)->create();
         $event = Event::factory()->forGameVersion($gameVersion)->create();
@@ -126,21 +128,9 @@ class BackfillGameVersionsTest extends TestCase
     }
 
     #[Test]
-    public function it_resolves_reports_on_phases_it_has_just_assigned(): void
-    {
-        $gameVersion = GameVersion::factory()->create();
-        $phase = Phase::factory()->create(['game_version_id' => null]);
-        $report = Report::factory()->withGuildTag(GuildTag::factory()->withPhase($phase)->create())->create();
-
-        $this->artisan('app:backfill-game-versions', ['--game-version' => $gameVersion->id])->assertSuccessful();
-
-        $this->assertSame($gameVersion->id, $report->fresh()->game_version_id);
-    }
-
-    #[Test]
     public function it_changes_nothing_on_a_second_run(): void
     {
-        $gameVersion = GameVersion::factory()->create();
+        $gameVersion = GameVersion::factory()->forGuild()->create();
         Phase::factory()->create(['game_version_id' => null]);
         PlayableRace::factory()->create();
         Report::factory()->forGameVersion($gameVersion)->create();
@@ -154,5 +144,110 @@ class BackfillGameVersionsTest extends TestCase
             ->assertSuccessful();
 
         $this->assertSame(1, $gameVersion->playableRaces()->count());
+    }
+
+    // ==================== warcraft logs guilds ====================
+
+    #[Test]
+    public function it_gives_guild_tags_missing_a_guild_the_game_versions_guild(): void
+    {
+        $guild = Guild::factory()->create();
+        $gameVersion = GameVersion::factory()->forGuild($guild)->create();
+        $guildTag = GuildTag::factory()->create();
+
+        $this->artisan('app:backfill-game-versions', ['--game-version' => $gameVersion->id])
+            ->expectsOutputToContain('Guild tags: 1 rows given a Warcraft Logs guild.')
+            ->assertSuccessful();
+
+        $this->assertSame($guild->id, $guildTag->fresh()->warcraft_logs_guild_id);
+    }
+
+    #[Test]
+    public function it_gives_a_report_its_tags_guild_before_the_game_versions(): void
+    {
+        $gameVersion = GameVersion::factory()->forGuild()->create();
+        $tagsGuild = Guild::factory()->create();
+        $report = Report::factory()->withGuildTag(GuildTag::factory()->forGuild($tagsGuild)->create())->create();
+
+        $this->artisan('app:backfill-game-versions', ['--game-version' => $gameVersion->id])
+            ->expectsOutputToContain('Reports: 1 rows given a Warcraft Logs guild.')
+            ->assertSuccessful();
+
+        $this->assertSame($tagsGuild->id, $report->fresh()->warcraft_logs_guild_id);
+    }
+
+    #[Test]
+    public function it_gives_a_report_without_a_tag_the_game_versions_guild(): void
+    {
+        $guild = Guild::factory()->create();
+        $gameVersion = GameVersion::factory()->forGuild($guild)->create();
+        $report = Report::factory()->withoutGuildTag()->create();
+
+        $this->artisan('app:backfill-game-versions', ['--game-version' => $gameVersion->id])->assertSuccessful();
+
+        $this->assertSame($guild->id, $report->fresh()->warcraft_logs_guild_id);
+    }
+
+    #[Test]
+    public function it_never_reassigns_a_tag_or_report_that_already_has_a_guild(): void
+    {
+        $gameVersion = GameVersion::factory()->forGuild()->create();
+        $otherGuild = Guild::factory()->create();
+        $guildTag = GuildTag::factory()->forGuild($otherGuild)->create();
+        $report = Report::factory()->forGuild($otherGuild)->withoutGuildTag()->create();
+
+        $this->artisan('app:backfill-game-versions', ['--game-version' => $gameVersion->id])
+            ->expectsOutputToContain('Guild tags: 0 rows given a Warcraft Logs guild.')
+            ->expectsOutputToContain('Reports: 0 rows given a Warcraft Logs guild.')
+            ->assertSuccessful();
+
+        $this->assertSame($otherGuild->id, $guildTag->fresh()->warcraft_logs_guild_id);
+        $this->assertSame($otherGuild->id, $report->fresh()->warcraft_logs_guild_id);
+    }
+
+    #[Test]
+    #[Group('happy-path')]
+    public function it_derives_report_versions_after_filling_their_guilds(): void
+    {
+        $guild = Guild::factory()->create();
+        $gameVersion = GameVersion::factory()->forGuild($guild)->create(['release_date' => '2024-11-22 00:00:00']);
+        $report = Report::factory()->withoutGuildTag()->create(['start_time' => '2025-03-14 19:30:00']);
+
+        $this->artisan('app:backfill-game-versions', ['--game-version' => $gameVersion->id])
+            ->expectsOutputToContain('Updated 1 report(s).')
+            ->assertSuccessful();
+
+        $fresh = $report->fresh();
+        $this->assertSame($guild->id, $fresh->warcraft_logs_guild_id);
+        $this->assertSame($gameVersion->id, $fresh->game_version_id);
+    }
+
+    #[Test]
+    public function it_skips_the_guild_backfill_when_the_game_version_has_no_guild(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $guildTag = GuildTag::factory()->create();
+
+        $this->artisan('app:backfill-game-versions', ['--game-version' => $gameVersion->id])
+            ->expectsOutputToContain('Skipping Warcraft Logs guild backfill: pass --game-version for a game version with a Warcraft Logs guild.')
+            ->assertSuccessful();
+
+        $this->assertNull($guildTag->fresh()->warcraft_logs_guild_id);
+    }
+
+    #[Test]
+    public function it_keeps_every_attendance_row_and_report_link(): void
+    {
+        $gameVersion = GameVersion::factory()->forGuild()->create();
+        $report = Report::factory()->withoutGuildTag()->create();
+        $linkedReport = Report::factory()->withoutGuildTag()->create();
+        $character = Character::factory()->create();
+        $report->characters()->attach($character->id, ['presence' => 1]);
+        $report->linkedReports()->attach($linkedReport->id);
+
+        $this->artisan('app:backfill-game-versions', ['--game-version' => $gameVersion->id])->assertSuccessful();
+
+        $this->assertDatabaseHas('pivot_characters_raid_reports', ['character_id' => $character->id, 'raid_report_id' => $report->id, 'presence' => 1]);
+        $this->assertDatabaseHas('pivot_report_links', ['report_1' => $report->id, 'report_2' => $linkedReport->id]);
     }
 }

@@ -8,9 +8,9 @@ use App\Http\Integrations\WarcraftLogs\Requests\GetReportsRequest;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Jobs\WarcraftLogs\FetchReportsByGuildTag;
 use App\Models\GameVersion;
-use App\Models\Phase;
 use App\Models\Report;
 use App\Models\User;
+use App\Models\WarcraftLogs\Guild;
 use App\Models\WarcraftLogs\GuildTag;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -70,7 +70,7 @@ class FetchReportsByGuildTagTest extends TestCase
     }
 
     #[Test]
-    public function it_queries_the_guild_tag_on_its_game_versions_namespace_host(): void
+    public function it_queries_the_guild_tag_on_its_guilds_namespace_host(): void
     {
         $guildTag = $this->fetchableGuildTag(WarcraftLogsNamespace::Classic);
 
@@ -159,7 +159,7 @@ class FetchReportsByGuildTagTest extends TestCase
     public function it_associates_a_report_naming_another_stored_guild_tag_with_that_tag(): void
     {
         $guildTag = $this->fetchableGuildTag();
-        $otherTag = GuildTag::factory()->withoutPhase()->create();
+        $otherTag = GuildTag::factory()->forGuild($guildTag->guild)->create();
 
         $this->runJob(new FetchReportsByGuildTag($guildTag), [
             $this->reportPayload('OTHER1', 'Other', Carbon::parse('2025-01-01 19:00:00'), Carbon::parse('2025-01-01 22:00:00'), guildTagId: $otherTag->id),
@@ -195,8 +195,10 @@ class FetchReportsByGuildTagTest extends TestCase
         $this->assertDatabaseHas('reports', ['code' => 'NOTAG1', 'guild_tag_id' => null]);
     }
 
+    // ==================== guild ====================
+
     #[Test]
-    public function it_stores_the_game_version_of_the_reports_guild_tag(): void
+    public function it_stores_the_tags_guild_on_each_report(): void
     {
         $guildTag = $this->fetchableGuildTag();
 
@@ -204,33 +206,46 @@ class FetchReportsByGuildTagTest extends TestCase
             $this->reportPayload('ABC123', 'Test Report', Carbon::parse('2025-01-01 19:00:00'), Carbon::parse('2025-01-01 22:00:00'), guildTagId: $guildTag->id),
         ]);
 
-        $this->assertDatabaseHas('reports', ['code' => 'ABC123', 'game_version_id' => $guildTag->phase->game_version_id]);
+        $this->assertDatabaseHas('reports', ['code' => 'ABC123', 'warcraft_logs_guild_id' => $guildTag->warcraft_logs_guild_id]);
     }
 
-    // ==================== incomplete game version chain ====================
+    #[Test]
+    #[Group('edge-case')]
+    public function it_stores_the_guild_on_a_report_whose_tag_is_not_stored(): void
+    {
+        $guildTag = $this->fetchableGuildTag();
+
+        $this->runJob(new FetchReportsByGuildTag($guildTag), [
+            $this->reportPayload('NOTAG2', 'Unknown Tag', Carbon::parse('2025-01-01 19:00:00'), Carbon::parse('2025-01-01 22:00:00'), guildTagId: 999999),
+        ]);
+
+        $this->assertDatabaseHas('reports', ['code' => 'NOTAG2', 'guild_tag_id' => null, 'warcraft_logs_guild_id' => $guildTag->warcraft_logs_guild_id]);
+    }
 
     #[Test]
-    public function it_skips_a_guild_tag_without_a_phase(): void
+    public function it_derives_each_reports_game_version_from_its_guild_and_start_time(): void
+    {
+        $guildTag = $this->fetchableGuildTag();
+        $gameVersion = GameVersion::factory()->forGuild($guildTag->guild)->create(['release_date' => '2024-11-22 00:00:00']);
+
+        $this->runJob(new FetchReportsByGuildTag($guildTag), [
+            $this->reportPayload('ABC123', 'Test Report', Carbon::parse('2025-03-14 19:00:00'), Carbon::parse('2025-03-14 22:00:00'), guildTagId: $guildTag->id),
+        ]);
+
+        $this->assertDatabaseHas('reports', ['code' => 'ABC123', 'game_version_id' => $gameVersion->id]);
+    }
+
+    #[Test]
+    public function it_skips_a_guild_tag_without_a_guild(): void
     {
         Saloon::fake([]);
         Log::spy();
+        $guildTag = GuildTag::factory()->create();
 
-        (new FetchReportsByGuildTag(GuildTag::factory()->withoutPhase()->create()))->handle($this->makeConnector());
-
-        Saloon::assertNothingSent();
-        Log::shouldHaveReceived('warning')->once()->withArgs(
-            fn (string $message): bool => str_contains($message, 'no game version with a Warcraft Logs namespace')
-        );
-    }
-
-    #[Test]
-    public function it_skips_a_guild_tag_whose_game_version_has_no_namespace(): void
-    {
-        Saloon::fake([]);
-
-        (new FetchReportsByGuildTag($this->fetchableGuildTag(namespace: null)))->handle($this->makeConnector());
+        (new FetchReportsByGuildTag($guildTag))->handle($this->makeConnector());
 
         Saloon::assertNothingSent();
+        Log::shouldHaveReceived('warning')->once()->with("Skipping reports for guild tag {$guildTag->id}: it has no Warcraft Logs guild.");
     }
 
     // ==================== rate limiting ====================
@@ -302,22 +317,21 @@ class FetchReportsByGuildTagTest extends TestCase
 
     #[Test]
     #[Group('contract')]
-    public function it_tags_the_job_with_its_guild_tag_and_game_version(): void
+    public function it_tags_the_job_with_its_guild_tag_and_guild(): void
     {
         $guildTag = $this->fetchableGuildTag();
-        $gameVersionId = $guildTag->phase->game_version_id;
 
         $this->assertSame(
-            ['warcraftlogs', 'reports', "guild-tag:{$guildTag->id}", "game-version:{$gameVersionId}"],
+            ['warcraftlogs', 'reports', "guild-tag:{$guildTag->id}", "warcraft-logs-guild:{$guildTag->warcraft_logs_guild_id}"],
             (new FetchReportsByGuildTag($guildTag))->tags(),
         );
     }
 
     #[Test]
     #[Group('contract')]
-    public function it_omits_the_game_version_tag_when_the_chain_is_incomplete(): void
+    public function it_omits_the_guild_tag_when_the_tag_has_no_guild(): void
     {
-        $guildTag = GuildTag::factory()->withoutPhase()->create();
+        $guildTag = GuildTag::factory()->create();
 
         $this->assertSame(
             ['warcraftlogs', 'reports', "guild-tag:{$guildTag->id}"],
@@ -573,12 +587,9 @@ class FetchReportsByGuildTagTest extends TestCase
 
     // ==================== helpers ====================
 
-    private function fetchableGuildTag(?WarcraftLogsNamespace $namespace = WarcraftLogsNamespace::Anniversary): GuildTag
+    private function fetchableGuildTag(WarcraftLogsNamespace $namespace = WarcraftLogsNamespace::Anniversary): GuildTag
     {
-        $gameVersion = GameVersion::factory()->create(['warcraftlogs_namespace' => $namespace]);
-        $phase = Phase::factory()->forGameVersion($gameVersion)->create();
-
-        return GuildTag::factory()->withPhase($phase)->create();
+        return GuildTag::factory()->forGuild(Guild::factory()->create(['namespace' => $namespace]))->create();
     }
 
     /**

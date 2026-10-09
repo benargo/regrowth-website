@@ -8,14 +8,13 @@ use App\Jobs\WarcraftLogs\FetchAttendanceData;
 use App\Jobs\WarcraftLogs\FetchGuildTags;
 use App\Jobs\WarcraftLogs\FetchReportsByGuildTag;
 use App\Models\GameVersion;
-use App\Models\Report;
+use App\Models\WarcraftLogs\Guild;
 use App\Models\WarcraftLogs\GuildTag;
 use Carbon\Carbon;
 use Illuminate\Bus\Batch;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
 use Saloon\Exceptions\Request\FatalRequestException;
@@ -23,49 +22,44 @@ use Saloon\RateLimitPlugin\Exceptions\RateLimitReachedException;
 use Throwable;
 
 #[Signature('fetch:warcraft-logs {--latest}')]
-#[Description('Refreshes Warcraft Logs guild tags, reports and attendance for every game version with a Warcraft Logs guild and namespace.')]
+#[Description('Refreshes guild tags, reports and attendance for every Warcraft Logs guild.')]
 class FetchWarcraftLogs extends Command
 {
     /**
-     * Execute the console command.
+     * Execute the console command. Each guild is fetched once, however many
+     * game versions share it.
      */
     public function handle(RateLimitResetCache $rateLimitReset): int
     {
         $skipped = $this->reportUnfetchableVersions();
         $queued = 0;
         $failed = 0;
-        $since = $this->resolveSince();
 
-        $versions = GameVersion::query()
-            ->whereNotNull('warcraftlogs_guild')
-            ->whereNotNull('warcraftlogs_namespace')
-            ->orderBy('id')
-            ->get()
-            ->values();
+        $guilds = Guild::orderBy('id')->get();
 
-        foreach ($versions as $index => $version) {
-            $this->info("Fetching Warcraft Logs data for {$version->title}…");
+        foreach ($guilds as $index => $guild) {
+            $this->info("Fetching Warcraft Logs data for guild {$guild->id}…");
 
             try {
-                dispatch_sync(new FetchGuildTags($version));
+                dispatch_sync(new FetchGuildTags($guild));
             } catch (RateLimitReachedException $exception) {
                 $resetsAt = $rateLimitReset->resetsAt() ?? now()->addSeconds($exception->getLimit()->getRemainingSeconds());
 
                 $this->error("Warcraft Logs rate limit reached; points reset at {$resetsAt->setTimezone(now()->getTimezone())->toDateTimeString()}.");
                 $failed++;
-                $skipped += $versions->count() - $index - 1;
+                $skipped += $guilds->count() - $index - 1;
 
                 break;
             } catch (WarcraftLogsRequestException|FatalRequestException $exception) {
                 report($exception);
 
-                $this->error("Failed to fetch guild tags for {$version->title}: {$exception->getMessage()}");
+                $this->error("Failed to fetch guild tags for guild {$guild->id}: {$exception->getMessage()}");
                 $failed++;
 
                 continue;
             }
 
-            $this->queueReportsAndAttendance($version, $since);
+            $this->queueReportsAndAttendance($guild, $this->resolveSince($guild));
             $queued++;
         }
 
@@ -75,54 +69,57 @@ class FetchWarcraftLogs extends Command
     }
 
     /**
-     * Print one line per game version that cannot be fetched, and return how many there are.
+     * Print one line per game version without a Warcraft Logs guild, whose
+     * reports are never fetched, and return how many there are.
      */
     private function reportUnfetchableVersions(): int
     {
-        $unfetchable = GameVersion::query()
-            ->where(fn (Builder $query) => $query->whereNull('warcraftlogs_guild')->orWhereNull('warcraftlogs_namespace'))
-            ->orderBy('id')
-            ->get();
+        $unfetchable = GameVersion::whereNull('warcraft_logs_guild_id')->orderBy('id')->get();
 
         foreach ($unfetchable as $version) {
-            $this->warn("Skipping {$version->title}: no Warcraft Logs guild or namespace.");
+            $this->warn("Skipping {$version->title}: no Warcraft Logs guild.");
         }
 
         return $unfetchable->count();
     }
 
     /**
-     * With --latest, fetch only reports newer than the newest stored report across all
-     * versions.
+     * With --latest, fetch only reports newer than the guild's newest stored
+     * report. A guild with no reports yet, such as one an officer has just
+     * added, gets its whole history.
      */
-    private function resolveSince(): ?Carbon
+    private function resolveSince(Guild $guild): ?Carbon
     {
         if (! $this->option('latest')) {
             return null;
         }
 
-        return Report::latest()->first()?->end_time?->addSecond();
+        return $guild->reports()->latest()->first()?->end_time?->addSecond();
     }
 
-    private function queueReportsAndAttendance(GameVersion $version, ?Carbon $since): void
+    /**
+     * Queue a batch fetching the reports of each of the guild's tags, then the
+     * guild's attendance once the batch completes.
+     */
+    private function queueReportsAndAttendance(Guild $guild, ?Carbon $since): void
     {
-        $guildTags = $version->guildTags()->with('phase.gameVersion')->get();
+        $guildTags = $guild->guildTags()->get();
 
         if ($guildTags->isEmpty()) {
-            dispatch(new FetchAttendanceData($version));
+            dispatch(new FetchAttendanceData($guild));
 
             return;
         }
 
         Bus::batch($guildTags->map(fn (GuildTag $guildTag) => new FetchReportsByGuildTag($guildTag, $since))->all())
-            ->name("warcraftlogs:{$version->id}")
-            ->then(function (Batch $batch) use ($version): void {
-                Log::info("Warcraft Logs report batch for game version {$version->id} completed; fetching attendance.");
+            ->name("warcraftlogs:guild:{$guild->id}")
+            ->then(function (Batch $batch) use ($guild): void {
+                Log::info("Warcraft Logs report batch for guild {$guild->id} completed; fetching attendance.");
 
-                dispatch(new FetchAttendanceData($version));
+                dispatch(new FetchAttendanceData($guild));
             })
-            ->catch(function (Batch $batch, Throwable $exception) use ($version): void {
-                Log::error("Warcraft Logs batch for game version {$version->id} failed: {$exception->getMessage()}");
+            ->catch(function (Batch $batch, Throwable $exception) use ($guild): void {
+                Log::error("Warcraft Logs batch for guild {$guild->id} failed: {$exception->getMessage()}");
             })
             ->dispatch();
     }

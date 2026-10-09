@@ -7,8 +7,8 @@ use App\Http\Integrations\WarcraftLogs\Requests\GetGuildAttendanceRequest;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsConnector;
 use App\Jobs\WarcraftLogs\Concerns\ReleasesOnRateLimit;
 use App\Models\Character;
-use App\Models\GameVersion;
 use App\Models\Report;
+use App\Models\WarcraftLogs\Guild;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Builder;
@@ -34,13 +34,13 @@ class FetchAttendanceData implements ShouldQueue
      */
     public $timeout = 600; // 10 minutes
 
-    public function __construct(public GameVersion $gameVersion) {}
+    public function __construct(public Guild $guild) {}
 
     /**
      * Get the middleware the job should pass through.
      *
-     * The lock is keyed on the game version: with no key it would be per job class,
-     * and dontRelease() would silently drop a second version's job while the first runs.
+     * The lock is keyed on the guild: with no key it would be per job class,
+     * and dontRelease() would silently drop a second guild's job while the first runs.
      * It expires with the job's timeout, so a crashed worker cannot hold it forever.
      *
      * @return array<int, SkipIfBatchCancelled|WithoutOverlapping>
@@ -49,7 +49,7 @@ class FetchAttendanceData implements ShouldQueue
     {
         return [
             new SkipIfBatchCancelled,
-            (new WithoutOverlapping((string) $this->gameVersion->id))
+            (new WithoutOverlapping((string) $this->guild->id))
                 ->dontRelease()
                 ->expireAfter($this->timeout),
         ];
@@ -60,23 +60,13 @@ class FetchAttendanceData implements ShouldQueue
      */
     public function handle(WarcraftLogsConnector $warcraftLogs): void
     {
-        if ($this->gameVersion->warcraftlogs_guild === null) {
-            Log::warning("Skipping attendance for game version {$this->gameVersion->id}: no Warcraft Logs guild.");
-
-            return;
-        }
-
-        if ($this->gameVersion->warcraftlogs_namespace === null) {
-            Log::warning("Skipping attendance for game version {$this->gameVersion->id}: no Warcraft Logs namespace.");
-
-            return;
-        }
-
-        $reportIds = Report::whereNotNull('code')->pluck('id', 'code');
+        $reportIds = Report::whereBelongsTo($this->guild, 'warcraftLogsGuild')
+            ->whereNotNull('code')
+            ->pluck('id', 'code');
 
         $paginator = $warcraftLogs->paginate(new GetGuildAttendanceRequest(
-            $this->gameVersion->warcraftlogs_guild,
-            $this->gameVersion->warcraftlogs_namespace,
+            $this->guild->id,
+            $this->guild->namespace,
         ));
 
         $attendanceRecords = $paginator->collect()->filter(fn (GuildAttendanceData $guildAttendance) => $reportIds->has($guildAttendance->code));
@@ -118,7 +108,7 @@ class FetchAttendanceData implements ShouldQueue
                 Log::info("Synced attendance data for report code {$guildAttendance->code} with {$syncedCount} records.");
             });
         } catch (RateLimitReachedException $exception) {
-            $this->releaseUntilPointsReset($exception, "attendance for game version {$this->gameVersion->id}");
+            $this->releaseUntilPointsReset($exception, "attendance for Warcraft Logs guild {$this->guild->id}");
 
             return;
         }
@@ -133,6 +123,6 @@ class FetchAttendanceData implements ShouldQueue
      */
     public function tags(): array
     {
-        return ['warcraftlogs', 'attendance', "game-version:{$this->gameVersion->id}"];
+        return ['warcraftlogs', 'attendance', "warcraft-logs-guild:{$this->guild->id}"];
     }
 }

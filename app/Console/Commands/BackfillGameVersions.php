@@ -9,12 +9,13 @@ use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\Report;
+use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
-#[Signature('app:backfill-game-versions {--game-version= : Assign this game version ID to phases and guild ranks missing one}')]
-#[Description('Assign a game version to dataset rows missing one, then resolve the stored game version of every report and event.')]
+#[Signature('app:backfill-game-versions {--game-version= : Assign this game version ID, and its Warcraft Logs guild, to phases, guild ranks, guild tags and reports missing one}')]
+#[Description('Assign a game version and Warcraft Logs guild to rows missing one, then resolve the stored game version of every report and event.')]
 class BackfillGameVersions extends Command
 {
     /**
@@ -29,6 +30,7 @@ class BackfillGameVersions extends Command
         }
 
         $this->backfillDatasets();
+        $this->backfillWarcraftLogsGuilds();
         $this->backfillReports();
         $this->backfillEvents();
 
@@ -101,7 +103,37 @@ class BackfillGameVersions extends Command
     }
 
     /**
-     * Re-save every report so its saving hook re-derives its game version.
+     * Give guild tags and reports missing a Warcraft Logs guild one.
+     */
+    private function backfillWarcraftLogsGuilds(): void
+    {
+        $guildId = $this->gameVersion?->warcraft_logs_guild_id;
+
+        if ($guildId === null) {
+            $this->warn('Skipping Warcraft Logs guild backfill: pass --game-version for a game version with a Warcraft Logs guild.');
+
+            return;
+        }
+
+        $tags = GuildTag::whereNull('warcraft_logs_guild_id')->update(['warcraft_logs_guild_id' => $guildId]);
+
+        $this->line("Guild tags: {$tags} rows given a Warcraft Logs guild.");
+
+        $reports = 0;
+
+        foreach (GuildTag::whereNotNull('warcraft_logs_guild_id')->get() as $guildTag) {
+            $reports += Report::whereNull('warcraft_logs_guild_id')
+                ->whereBelongsTo($guildTag)
+                ->update(['warcraft_logs_guild_id' => $guildTag->warcraft_logs_guild_id]);
+        }
+
+        $reports += Report::whereNull('warcraft_logs_guild_id')->update(['warcraft_logs_guild_id' => $guildId]);
+
+        $this->line("Reports: {$reports} rows given a Warcraft Logs guild.");
+    }
+
+    /**
+     * Re-save every report so its saving hook re-derives its game version and phase.
      */
     private function backfillReports(): void
     {
@@ -110,7 +142,7 @@ class BackfillGameVersions extends Command
         foreach (Report::lazyById() as $report) {
             $report->save();
 
-            if ($report->wasChanged('game_version_id')) {
+            if ($report->wasChanged(['game_version_id', 'phase_id'])) {
                 $updated++;
             }
         }

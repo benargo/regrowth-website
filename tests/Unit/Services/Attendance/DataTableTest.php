@@ -44,8 +44,8 @@ class DataTableTest extends TestCase
     protected function makeTag(bool $countsAttendance = true): GuildTag
     {
         return $countsAttendance
-            ? GuildTag::factory()->countsAttendance()->withoutPhase()->create()
-            : GuildTag::factory()->doesNotCountAttendance()->withoutPhase()->create();
+            ? GuildTag::factory()->countsAttendance()->create()
+            : GuildTag::factory()->doesNotCountAttendance()->create();
     }
 
     protected function makeReport(GuildTag $tag, Carbon $startTime): Report

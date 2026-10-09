@@ -11,8 +11,8 @@ use App\Jobs\WarcraftLogs\FetchAttendanceData;
 use App\Jobs\WarcraftLogs\FetchGuildTags;
 use App\Jobs\WarcraftLogs\FetchReportsByGuildTag;
 use App\Models\GameVersion;
-use App\Models\Phase;
 use App\Models\Report;
+use App\Models\WarcraftLogs\Guild;
 use App\Models\WarcraftLogs\GuildTag;
 use Carbon\Carbon;
 use Illuminate\Bus\Batch;
@@ -41,42 +41,59 @@ class FetchWarcraftLogsTest extends TestCase
 
     #[Test]
     #[Group('happy-path')]
-    public function it_fetches_guild_tags_and_queues_a_named_report_batch_per_game_version(): void
+    public function it_fetches_guild_tags_and_queues_a_named_report_batch_per_guild(): void
     {
         Bus::fake();
 
-        $first = $this->fetchableGameVersion(111);
-        $second = $this->fetchableGameVersion(222);
+        $first = $this->guild(111);
+        $second = $this->guild(222);
         $firstTag = $this->guildTagFor($first);
         $secondTags = [$this->guildTagFor($second), $this->guildTagFor($second)];
 
         $this->artisan('fetch:warcraft-logs')
-            ->expectsOutputToContain("Fetching Warcraft Logs data for {$first->title}")
-            ->expectsOutputToContain("Fetching Warcraft Logs data for {$second->title}")
+            ->expectsOutputToContain('Fetching Warcraft Logs data for guild 111')
+            ->expectsOutputToContain('Fetching Warcraft Logs data for guild 222')
             ->assertSuccessful();
 
-        Bus::assertDispatchedSync(FetchGuildTags::class, fn (FetchGuildTags $job): bool => $job->gameVersion->is($first));
-        Bus::assertDispatchedSync(FetchGuildTags::class, fn (FetchGuildTags $job): bool => $job->gameVersion->is($second));
+        Bus::assertDispatchedSync(FetchGuildTags::class, fn (FetchGuildTags $job): bool => $job->guild->is($first));
+        Bus::assertDispatchedSync(FetchGuildTags::class, fn (FetchGuildTags $job): bool => $job->guild->is($second));
         Bus::assertBatchCount(2);
         $this->assertSame([$firstTag->id], $this->batchedTagIds($this->batchFor($first)));
         $this->assertSame(collect($secondTags)->pluck('id')->sort()->values()->all(), $this->batchedTagIds($this->batchFor($second)));
     }
 
     #[Test]
-    public function it_dispatches_attendance_for_the_version_when_its_batch_completes(): void
+    public function it_fetches_a_guild_shared_by_two_game_versions_once(): void
     {
         Bus::fake();
 
-        $gameVersion = $this->fetchableGameVersion(111);
-        $this->guildTagFor($gameVersion);
+        $guild = $this->guild(111);
+        GameVersion::factory()->forGuild($guild)->count(2)->create();
+        $this->guildTagFor($guild);
+
+        $this->artisan('fetch:warcraft-logs')
+            ->expectsOutputToContain('Warcraft Logs fetch complete: 1 queued, 0 skipped, 0 failed.')
+            ->assertSuccessful();
+
+        Bus::assertDispatchedSyncTimes(FetchGuildTags::class, 1);
+        Bus::assertBatchCount(1);
+    }
+
+    #[Test]
+    public function it_dispatches_attendance_for_the_guild_when_its_batch_completes(): void
+    {
+        Bus::fake();
+
+        $guild = $this->guild(111);
+        $this->guildTagFor($guild);
 
         $this->artisan('fetch:warcraft-logs')->assertSuccessful();
 
-        foreach ($this->batchFor($gameVersion)->thenCallbacks() as $callback) {
+        foreach ($this->batchFor($guild)->thenCallbacks() as $callback) {
             $callback($this->createStub(Batch::class));
         }
 
-        Bus::assertDispatched(FetchAttendanceData::class, fn (FetchAttendanceData $job): bool => $job->gameVersion->is($gameVersion));
+        Bus::assertDispatched(FetchAttendanceData::class, fn (FetchAttendanceData $job): bool => $job->guild->is($guild));
     }
 
     #[Test]
@@ -86,71 +103,66 @@ class FetchWarcraftLogsTest extends TestCase
         Bus::fake();
         Log::spy();
 
-        $gameVersion = $this->fetchableGameVersion(111);
-        $this->guildTagFor($gameVersion);
+        $guild = $this->guild(111);
+        $this->guildTagFor($guild);
 
         $this->artisan('fetch:warcraft-logs')->assertSuccessful();
 
-        foreach ($this->batchFor($gameVersion)->catchCallbacks() as $callback) {
+        foreach ($this->batchFor($guild)->catchCallbacks() as $callback) {
             $callback($this->createStub(Batch::class), new RuntimeException('boom'));
         }
 
-        Log::shouldHaveReceived('error')->once()->with("Warcraft Logs batch for game version {$gameVersion->id} failed: boom");
+        Log::shouldHaveReceived('error')->once()->with('Warcraft Logs batch for guild 111 failed: boom');
     }
 
     #[Test]
-    public function it_skips_and_reports_game_versions_without_warcraft_logs_fields(): void
+    public function it_warns_about_game_versions_without_a_guild(): void
     {
         Bus::fake();
 
-        $fetchable = $this->fetchableGameVersion(111);
-        $noGuild = GameVersion::factory()->create(['warcraftlogs_guild' => null]);
-        $noNamespace = GameVersion::factory()->create(['warcraftlogs_namespace' => null]);
+        $this->guild(111);
+        $noGuild = GameVersion::factory()->create(['warcraft_logs_guild_id' => null]);
 
         $this->artisan('fetch:warcraft-logs')
-            ->expectsOutputToContain("Skipping {$noGuild->title}: no Warcraft Logs guild or namespace.")
-            ->expectsOutputToContain("Skipping {$noNamespace->title}: no Warcraft Logs guild or namespace.")
-            ->expectsOutputToContain('Warcraft Logs fetch complete: 1 queued, 2 skipped, 0 failed.')
+            ->expectsOutputToContain("Skipping {$noGuild->title}: no Warcraft Logs guild.")
+            ->expectsOutputToContain('Warcraft Logs fetch complete: 1 queued, 1 skipped, 0 failed.')
             ->assertSuccessful();
 
         Bus::assertDispatchedSyncTimes(FetchGuildTags::class, 1);
-        Bus::assertDispatchedSync(FetchGuildTags::class, fn (FetchGuildTags $job): bool => $job->gameVersion->is($fetchable));
     }
 
     #[Test]
     #[Group('edge-case')]
-    public function it_dispatches_attendance_directly_when_a_version_has_no_tags_to_fetch(): void
+    public function it_dispatches_attendance_directly_when_a_guild_has_no_tags_to_fetch(): void
     {
         Bus::fake();
 
-        $gameVersion = $this->fetchableGameVersion(111);
+        $guild = $this->guild(111);
 
         $this->artisan('fetch:warcraft-logs')->assertSuccessful();
 
         Bus::assertNothingBatched();
-        Bus::assertDispatched(FetchAttendanceData::class, fn (FetchAttendanceData $job): bool => $job->gameVersion->is($gameVersion));
+        Bus::assertDispatched(FetchAttendanceData::class, fn (FetchAttendanceData $job): bool => $job->guild->is($guild));
     }
 
     // ==================== tag selection ====================
 
     #[Test]
-    public function it_queues_every_phase_linked_tag_of_the_version(): void
+    public function it_queues_every_tag_of_the_guild_and_no_other(): void
     {
         Bus::fake();
 
-        $gameVersion = $this->fetchableGameVersion(111);
-        $otherVersion = GameVersion::factory()->create(['warcraftlogs_guild' => null]);
-        $countingTag = $this->guildTagFor($gameVersion);
-        $nonCountingTag = $this->guildTagFor($gameVersion, countsAttendance: false);
-        $this->guildTagFor($otherVersion);
-        GuildTag::factory()->withoutPhase()->countsAttendance()->create();
+        $guild = $this->guild(111);
+        $countingTag = $this->guildTagFor($guild);
+        $nonCountingTag = $this->guildTagFor($guild, countsAttendance: false);
+        $this->guildTagFor($this->guild(222));
+        GuildTag::factory()->countsAttendance()->create();
 
         $this->artisan('fetch:warcraft-logs')->assertSuccessful();
 
-        Bus::assertBatchCount(1);
         $this->assertSame(
             collect([$countingTag, $nonCountingTag])->pluck('id')->sort()->values()->all(),
-            $this->batchedTagIds($this->batchFor($gameVersion)),
+            $this->batchedTagIds($this->batchFor($guild)),
         );
     }
 
@@ -161,13 +173,13 @@ class FetchWarcraftLogsTest extends TestCase
     {
         Bus::fake();
 
-        $gameVersion = $this->fetchableGameVersion(111);
-        $this->guildTagFor($gameVersion);
+        $guild = $this->guild(111);
+        $this->guildTagFor($guild);
         Report::factory()->create(['end_time' => now()->subHour()]);
 
         $this->artisan('fetch:warcraft-logs')->assertSuccessful();
 
-        $this->assertNull($this->batchFor($gameVersion)->jobs->first()->since);
+        $this->assertNull($this->batchFor($guild)->jobs->first()->since);
     }
 
     #[Test]
@@ -175,14 +187,14 @@ class FetchWarcraftLogsTest extends TestCase
     {
         Bus::fake();
 
-        $gameVersion = $this->fetchableGameVersion(111);
-        $this->guildTagFor($gameVersion);
+        $guild = $this->guild(111);
+        $this->guildTagFor($guild);
         $endTime = Carbon::parse('2025-06-01 20:00:00');
-        Report::factory()->create(['end_time' => $endTime]);
+        Report::factory()->forGuild($guild)->create(['end_time' => $endTime]);
 
         $this->artisan('fetch:warcraft-logs', ['--latest' => true])->assertSuccessful();
 
-        $this->assertTrue($this->batchFor($gameVersion)->jobs->first()->since->eq($endTime->copy()->addSecond()));
+        $this->assertTrue($this->batchFor($guild)->jobs->first()->since->eq($endTime->copy()->addSecond()));
     }
 
     #[Test]
@@ -190,12 +202,12 @@ class FetchWarcraftLogsTest extends TestCase
     {
         Bus::fake();
 
-        $gameVersion = $this->fetchableGameVersion(111);
-        $this->guildTagFor($gameVersion);
+        $guild = $this->guild(111);
+        $this->guildTagFor($guild);
 
         $this->artisan('fetch:warcraft-logs', ['--latest' => true])->assertSuccessful();
 
-        $this->assertNull($this->batchFor($gameVersion)->jobs->first()->since);
+        $this->assertNull($this->batchFor($guild)->jobs->first()->since);
     }
 
     #[Test]
@@ -203,49 +215,46 @@ class FetchWarcraftLogsTest extends TestCase
     {
         Bus::fake();
 
-        $gameVersion = $this->fetchableGameVersion(111);
-        $this->guildTagFor($gameVersion);
+        $guild = $this->guild(111);
+        $this->guildTagFor($guild);
         $newerEndTime = Carbon::parse('2025-06-15 22:00:00');
-        Report::factory()->create(['end_time' => Carbon::parse('2025-05-01 18:00:00'), 'created_at' => now()->subMinute()]);
-        Report::factory()->create(['end_time' => $newerEndTime, 'created_at' => now()]);
+        Report::factory()->forGuild($guild)->create(['end_time' => Carbon::parse('2025-05-01 18:00:00'), 'created_at' => now()->subMinute()]);
+        Report::factory()->forGuild($guild)->create(['end_time' => $newerEndTime, 'created_at' => now()]);
 
         $this->artisan('fetch:warcraft-logs', ['--latest' => true])->assertSuccessful();
 
-        $this->assertTrue($this->batchFor($gameVersion)->jobs->first()->since->eq($newerEndTime->copy()->addSecond()));
+        $this->assertTrue($this->batchFor($guild)->jobs->first()->since->eq($newerEndTime->copy()->addSecond()));
     }
 
     #[Test]
-    public function it_uses_the_same_since_for_every_game_version(): void
+    public function it_works_out_since_separately_for_each_guild(): void
     {
-        // Pins today's semantics (spec Review Focus 2): "since" is the newest report
-        // across all versions, not per version. A follow-up changes this on purpose.
         Bus::fake();
 
-        $first = $this->fetchableGameVersion(111);
-        $second = $this->fetchableGameVersion(222);
-        $firstTag = $this->guildTagFor($first);
+        $first = $this->guild(111);
+        $second = $this->guild(222);
+        $this->guildTagFor($first);
         $this->guildTagFor($second);
         $endTime = Carbon::parse('2025-06-01 20:00:00');
-        Report::factory()->withGuildTag($firstTag)->create(['end_time' => $endTime]);
+        Report::factory()->forGuild($first)->create(['end_time' => $endTime]);
 
         $this->artisan('fetch:warcraft-logs', ['--latest' => true])->assertSuccessful();
 
-        $expectedSince = $endTime->copy()->addSecond();
-        $this->assertTrue($this->batchFor($first)->jobs->first()->since->eq($expectedSince));
-        $this->assertTrue($this->batchFor($second)->jobs->first()->since->eq($expectedSince));
+        $this->assertTrue($this->batchFor($first)->jobs->first()->since->eq($endTime->copy()->addSecond()));
+        $this->assertNull($this->batchFor($second)->jobs->first()->since);
     }
 
     // ==================== guild tag failures ====================
 
     #[Test]
     #[Group('error-handling')]
-    public function it_reports_a_missing_guild_and_still_processes_the_next_version(): void
+    public function it_reports_a_missing_guild_and_still_processes_the_next_guild(): void
     {
         Bus::fake([FetchReportsByGuildTag::class, FetchAttendanceData::class]);
         Exceptions::fake();
 
-        $missing = $this->fetchableGameVersion(111);
-        $healthy = $this->fetchableGameVersion(222);
+        $this->guild(111);
+        $healthy = $this->guild(222);
         $this->guildTagFor($healthy);
 
         Saloon::fake([
@@ -260,7 +269,7 @@ class FetchWarcraftLogsTest extends TestCase
         ]);
 
         $this->artisan('fetch:warcraft-logs')
-            ->expectsOutputToContain("Failed to fetch guild tags for {$missing->title}")
+            ->expectsOutputToContain('Failed to fetch guild tags for guild 111')
             ->expectsOutputToContain('Warcraft Logs fetch complete: 1 queued, 0 skipped, 1 failed.')
             ->assertSuccessful();
 
@@ -271,13 +280,13 @@ class FetchWarcraftLogsTest extends TestCase
 
     #[Test]
     #[Group('error-handling')]
-    public function it_reports_a_connection_failure_and_still_processes_the_next_version(): void
+    public function it_reports_a_connection_failure_and_still_processes_the_next_guild(): void
     {
         Bus::fake([FetchReportsByGuildTag::class, FetchAttendanceData::class]);
         Exceptions::fake();
 
-        $unreachable = $this->fetchableGameVersion(111);
-        $healthy = $this->fetchableGameVersion(222);
+        $this->guild(111);
+        $healthy = $this->guild(222);
         $this->guildTagFor($healthy);
 
         Saloon::fake([
@@ -292,7 +301,7 @@ class FetchWarcraftLogsTest extends TestCase
         ]);
 
         $this->artisan('fetch:warcraft-logs')
-            ->expectsOutputToContain("Failed to fetch guild tags for {$unreachable->title}: Connection refused")
+            ->expectsOutputToContain('Failed to fetch guild tags for guild 111: Connection refused')
             ->expectsOutputToContain('Warcraft Logs fetch complete: 1 queued, 0 skipped, 1 failed.')
             ->assertSuccessful();
 
@@ -307,8 +316,8 @@ class FetchWarcraftLogsTest extends TestCase
         $this->freezeTime();
         Bus::fake([FetchReportsByGuildTag::class, FetchAttendanceData::class]);
 
-        $this->fetchableGameVersion(111);
-        $this->guildTagFor($this->fetchableGameVersion(222));
+        $this->guild(111);
+        $this->guildTagFor($this->guild(222));
         $this->app->make(RateLimitResetCache::class)->put(
             new RateLimitData(limitPerHour: 3600, pointsSpentThisHour: 3600.0, pointsResetIn: 1200),
         );
@@ -332,17 +341,14 @@ class FetchWarcraftLogsTest extends TestCase
 
     // ==================== helpers ====================
 
-    private function fetchableGameVersion(int $warcraftLogsGuild): GameVersion
+    private function guild(int $id): Guild
     {
-        return GameVersion::factory()->create([
-            'warcraftlogs_guild' => $warcraftLogsGuild,
-            'warcraftlogs_namespace' => WarcraftLogsNamespace::Anniversary,
-        ]);
+        return Guild::factory()->create(['id' => $id, 'namespace' => WarcraftLogsNamespace::Anniversary]);
     }
 
-    private function guildTagFor(GameVersion $gameVersion, bool $countsAttendance = true): GuildTag
+    private function guildTagFor(Guild $guild, bool $countsAttendance = true): GuildTag
     {
-        $factory = GuildTag::factory()->withPhase(Phase::factory()->forGameVersion($gameVersion)->create());
+        $factory = GuildTag::factory()->forGuild($guild);
 
         if ($countsAttendance) {
             return $factory->countsAttendance()->create();
@@ -351,10 +357,10 @@ class FetchWarcraftLogsTest extends TestCase
         return $factory->doesNotCountAttendance()->create();
     }
 
-    private function batchFor(GameVersion $gameVersion): ?PendingBatch
+    private function batchFor(Guild $guild): ?PendingBatch
     {
         return collect(Bus::dispatchedBatches())
-            ->first(fn (PendingBatch $batch): bool => $batch->name === "warcraftlogs:{$gameVersion->id}");
+            ->first(fn (PendingBatch $batch): bool => $batch->name === "warcraftlogs:guild:{$guild->id}");
     }
 
     /**

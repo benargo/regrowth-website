@@ -33,7 +33,7 @@ class ReportClusterTest extends TestCase
 
     protected function makeTag(): GuildTag
     {
-        return GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        return GuildTag::factory()->countsAttendance()->create();
     }
 
     protected function makeReport(GuildTag $tag, Carbon $startTime, ?Zone $zone = null, string|false|null $code = false): Report

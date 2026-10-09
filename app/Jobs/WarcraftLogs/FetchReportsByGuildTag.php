@@ -49,17 +49,17 @@ class FetchReportsByGuildTag implements ShouldQueue
      */
     public function handle(WarcraftLogsConnector $warcraftLogs): void
     {
-        $namespace = $this->guildTag->phase?->gameVersion?->warcraftlogs_namespace;
+        $guild = $this->guildTag->guild;
 
-        if ($namespace === null) {
-            Log::warning("Skipping reports for guild tag {$this->guildTag->id}: no game version with a Warcraft Logs namespace.");
+        if ($guild === null) {
+            Log::warning("Skipping reports for guild tag {$this->guildTag->id}: it has no Warcraft Logs guild.");
 
             return;
         }
 
         $paginator = $warcraftLogs->paginate(new GetReportsRequest(
             $this->guildTag->id,
-            $namespace,
+            $guild->namespace,
             $this->since,
             $this->before,
         ));
@@ -106,6 +106,7 @@ class FetchReportsByGuildTag implements ShouldQueue
                 'end_time' => $report->endTime,
                 'zone_id' => $report->zone?->id,
                 'guild_tag_id' => $guildTag?->id,
+                'warcraft_logs_guild_id' => $this->guildTag->warcraft_logs_guild_id,
             ],
         );
     }
@@ -233,12 +234,10 @@ class FetchReportsByGuildTag implements ShouldQueue
     {
         $tags = ['warcraftlogs', 'reports', "guild-tag:{$this->guildTag->id}"];
 
-        $gameVersionId = $this->guildTag->phase?->game_version_id;
-
-        if ($gameVersionId === null) {
+        if ($this->guildTag->warcraft_logs_guild_id === null) {
             return $tags;
         }
 
-        return [...$tags, "game-version:{$gameVersionId}"];
+        return [...$tags, "warcraft-logs-guild:{$this->guildTag->warcraft_logs_guild_id}"];
     }
 }
