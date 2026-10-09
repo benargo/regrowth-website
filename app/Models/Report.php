@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Actions\WarcraftLogs\DeriveReportGameVersion;
 use App\Events\ReportCreated;
 use App\Events\ReportUpdated;
 use App\Http\Resources\ReportCollection;
@@ -43,43 +44,7 @@ class Report extends Model
      */
     protected static function booted(): void
     {
-        static::saving(function (Report $report): void {
-            $report->game_version_id = $report->deriveGameVersionId();
-            $report->phase_id = $report->derivePhaseId();
-        });
-    }
-
-    /**
-     * The guild's latest game version released by the report's start time.
-     */
-    private function deriveGameVersionId(): ?int
-    {
-        if ($this->warcraft_logs_guild_id === null || $this->start_time === null) {
-            return null;
-        }
-
-        return GameVersion::where('warcraft_logs_guild_id', $this->warcraft_logs_guild_id)
-            ->released($this->start_time)
-            ->orderByDesc('release_date')
-            ->orderBy('id')
-            ->value('id');
-    }
-
-    /**
-     * The game version's latest phase started by the report's start time.
-     */
-    private function derivePhaseId(): ?int
-    {
-        if ($this->game_version_id === null) {
-            return null;
-        }
-
-        return Phase::where('game_version_id', $this->game_version_id)
-            ->whereNotNull('start_date')
-            ->where('start_date', '<=', $this->start_time)
-            ->orderByDesc('start_date')
-            ->orderBy('id')
-            ->value('id');
+        static::saving(fn (Report $report) => DeriveReportGameVersion::run($report));
     }
 
     /**
