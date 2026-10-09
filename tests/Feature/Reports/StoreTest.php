@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Reports;
 
+use App\Jobs\BuildAddonExportFile;
 use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\Permission;
@@ -11,6 +12,7 @@ use App\Models\WarcraftLogs\Guild;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
@@ -26,6 +28,7 @@ class StoreTest extends TestCase
     {
         parent::setUp();
 
+        Bus::fake([BuildAddonExportFile::class]);
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 

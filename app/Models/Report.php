@@ -2,15 +2,14 @@
 
 namespace App\Models;
 
-use App\Actions\WarcraftLogs\DeriveReportGameVersion;
-use App\Events\ReportCreated;
-use App\Events\ReportUpdated;
 use App\Http\Resources\ReportCollection;
 use App\Models\WarcraftLogs\Guild;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
+use App\Observers\ReportObserver;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\UseResourceCollection;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -22,30 +21,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 #[Fillable(['code', 'title', 'start_time', 'end_time', 'guild_tag_id', 'zone_id', 'warcraft_logs_guild_id'])]
 #[Hidden(['created_at', 'updated_at', 'zone_id'])]
+#[ObservedBy([ReportObserver::class])]
 #[Table(keyType: 'string', incrementing: false)]
 #[UseResourceCollection(ReportCollection::class)]
 class Report extends Model
 {
     use HasFactory;
     use HasUuids;
-
-    /**
-     * The event map for the model.
-     *
-     * @var array<string, string>
-     */
-    protected $dispatchesEvents = [
-        'created' => ReportCreated::class,
-        'updated' => ReportUpdated::class,
-    ];
-
-    /**
-     * Derive the game version and phase on every save.
-     */
-    protected static function booted(): void
-    {
-        static::saving(fn (Report $report) => DeriveReportGameVersion::run($report));
-    }
 
     /**
      * Get the attributes that should be cast.

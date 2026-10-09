@@ -740,9 +740,9 @@ class AttendanceMatrixControllerTest extends TestCase
             );
 
         // Add a new character to the DB — if caching is working this should not appear.
+        // Attaching to the existing report avoids the Report observer flushing the attendance cache.
         $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
-        $report2 = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-02-01 20:00', 'UTC')]);
-        $report2->characters()->attach($jaina->id, ['presence' => 1]);
+        $report->characters()->attach($jaina->id, ['presence' => 1]);
 
         // Second request with identical filters should return the cached result.
         $this->actingAs($user)->get(route('raiding.attendance.matrix', $params))

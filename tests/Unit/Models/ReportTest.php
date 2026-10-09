@@ -3,8 +3,6 @@
 namespace Tests\Unit\Models;
 
 use App\Events\AddonSettingsProcessed;
-use App\Events\ReportCreated;
-use App\Events\ReportUpdated;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\Phase;
@@ -639,30 +637,6 @@ class ReportTest extends ModelTestCase
         $this->expectExceptionMessage('forGameVersion() needs a game version with a Warcraft Logs guild.');
 
         $this->factory()->forGameVersion(GameVersion::factory()->create());
-    }
-
-    // ==================== events ====================
-
-    #[Test]
-    public function it_dispatches_report_created_event_on_create(): void
-    {
-        Event::fake([ReportCreated::class]);
-
-        $report = $this->create();
-
-        Event::assertDispatched(ReportCreated::class, fn ($e) => $e->report->is($report));
-    }
-
-    #[Test]
-    public function it_dispatches_report_updated_event_on_update(): void
-    {
-        $report = $this->create();
-
-        Event::fake([ReportUpdated::class]);
-
-        $report->update(['title' => 'Updated Title']);
-
-        Event::assertDispatched(ReportUpdated::class, fn ($e) => $e->report->is($report));
     }
 
     // ==================== linkedReports ====================

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Console\Commands;
 
+use App\Jobs\BuildAddonExportFile;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\GameVersion;
@@ -13,6 +14,7 @@ use App\Models\Report;
 use App\Models\WarcraftLogs\Guild;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -22,6 +24,13 @@ use Tests\TestCase;
 class BackfillGameVersionsTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Bus::fake([BuildAddonExportFile::class]);
+    }
 
     #[Test]
     #[Group('happy-path')]

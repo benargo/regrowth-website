@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Reports;
 
+use App\Jobs\BuildAddonExportFile;
 use App\Models\Character;
 use App\Models\PlayableClass;
 use App\Models\Report;
@@ -10,6 +11,7 @@ use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
@@ -21,6 +23,13 @@ use Tests\TestCase;
 class ShowTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Bus::fake([BuildAddonExportFile::class]);
+    }
 
     // ==================== show ====================
 
