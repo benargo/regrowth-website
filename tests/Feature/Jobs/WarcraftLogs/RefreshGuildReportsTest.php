@@ -1,12 +1,13 @@
 <?php
 
-namespace Tests\Feature\Actions\WarcraftLogs;
+namespace Tests\Feature\Jobs\WarcraftLogs;
 
-use App\Actions\WarcraftLogs\RefreshGuildReports;
+use App\Jobs\WarcraftLogs\RefreshGuildReports;
 use App\Models\GameVersion;
 use App\Models\Report;
 use App\Models\WarcraftLogs\Guild;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -25,7 +26,7 @@ class RefreshGuildReportsTest extends TestCase
         $reports = Report::factory()->forGuild($guild)->count(2)->create(['start_time' => '2025-03-14 19:30:00']);
         Report::whereKey($reports->modelKeys())->update(['game_version_id' => null]);
 
-        RefreshGuildReports::run($guild);
+        RefreshGuildReports::dispatchSync($guild);
 
         foreach ($reports as $report) {
             $this->assertSame($gameVersion->id, $report->fresh()->game_version_id);
@@ -41,8 +42,20 @@ class RefreshGuildReportsTest extends TestCase
         $otherReport = Report::factory()->forGuild($otherGuild)->create(['start_time' => '2025-03-14 19:30:00']);
         Report::whereKey($otherReport->id)->update(['game_version_id' => null]);
 
-        RefreshGuildReports::run($guild);
+        RefreshGuildReports::dispatchSync($guild);
 
         $this->assertNull($otherReport->fresh()->game_version_id);
+    }
+
+    #[Test]
+    public function editing_a_game_version_queues_one_refresh_for_its_guild(): void
+    {
+        $guild = Guild::factory()->create();
+        $gameVersion = GameVersion::factory()->forGuild($guild)->create();
+        Queue::fake();
+
+        $gameVersion->update(['release_date' => '2024-11-22 00:00:00']);
+
+        Queue::assertPushed(RefreshGuildReports::class, fn (RefreshGuildReports $job): bool => $job->guild->is($guild));
     }
 }
