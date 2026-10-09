@@ -10,6 +10,7 @@ use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\Report;
 use App\Models\WarcraftLogs\GuildTag;
+use App\Observers\ReportObserver;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -139,13 +140,15 @@ class BackfillGameVersions extends Command
     {
         $updated = 0;
 
-        foreach (Report::lazyById() as $report) {
-            $report->save();
+        ReportObserver::deferFlushing(function () use (&$updated): void {
+            foreach (Report::lazyById() as $report) {
+                $report->save();
 
-            if ($report->wasChanged(['game_version_id', 'phase_id'])) {
-                $updated++;
+                if ($report->wasChanged(['game_version_id', 'phase_id'])) {
+                    $updated++;
+                }
             }
-        }
+        });
 
         $this->info("Updated {$updated} report(s).");
     }

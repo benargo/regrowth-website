@@ -3,6 +3,7 @@
 namespace App\Jobs\WarcraftLogs;
 
 use App\Models\WarcraftLogs\Guild;
+use App\Observers\ReportObserver;
 use Illuminate\Contracts\Queue\ShouldBeUniqueUntilProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -61,6 +62,6 @@ class RefreshGuildReports implements ShouldBeUniqueUntilProcessing, ShouldQueue
      */
     public function handle(): void
     {
-        $this->guild->reports()->lazyById()->each->save();
+        ReportObserver::deferFlushing(fn () => $this->guild->reports()->lazyById()->each->save());
     }
 }

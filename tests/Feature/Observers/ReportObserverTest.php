@@ -62,6 +62,57 @@ class ReportObserverTest extends TestCase
     }
 
     #[Test]
+    public function defer_flushing_flushes_once_after_the_callback(): void
+    {
+        Cache::tags(['reports'])->put('reports-key', 'reports-value', 60);
+        Cache::tags(['attendance'])->put('attendance-key', 'attendance-value', 60);
+
+        ReportObserver::deferFlushing(function (): void {
+            $observer = new ReportObserver;
+            $observer->updated(Report::factory()->make());
+            $observer->updated(Report::factory()->make());
+
+            $this->assertSame('reports-value', Cache::tags(['reports'])->get('reports-key'));
+            $this->assertSame('attendance-value', Cache::tags(['attendance'])->get('attendance-key'));
+        });
+
+        $this->assertNull(Cache::tags(['reports'])->get('reports-key'));
+        $this->assertNull(Cache::tags(['attendance'])->get('attendance-key'));
+    }
+
+    #[Test]
+    public function defer_flushing_does_not_flush_when_no_report_is_saved(): void
+    {
+        Cache::tags(['reports'])->put('reports-key', 'reports-value', 60);
+
+        ReportObserver::deferFlushing(fn () => null);
+
+        $this->assertSame('reports-value', Cache::tags(['reports'])->get('reports-key'));
+    }
+
+    #[Test]
+    public function defer_flushing_flushes_and_resets_when_the_callback_throws(): void
+    {
+        Cache::tags(['reports'])->put('reports-key', 'reports-value', 60);
+
+        try {
+            ReportObserver::deferFlushing(function (): void {
+                (new ReportObserver)->updated(Report::factory()->make());
+
+                throw new \RuntimeException('Bulk save failed.');
+            });
+        } catch (\RuntimeException) {
+        }
+
+        $this->assertNull(Cache::tags(['reports'])->get('reports-key'));
+
+        Cache::tags(['reports'])->put('reports-key', 'reports-value', 60);
+        (new ReportObserver)->updated(Report::factory()->make());
+
+        $this->assertNull(Cache::tags(['reports'])->get('reports-key'));
+    }
+
+    #[Test]
     public function created_does_not_flush_other_tags(): void
     {
         Cache::tags(['other-tag'])->put('other-key', 'other-value', 60);

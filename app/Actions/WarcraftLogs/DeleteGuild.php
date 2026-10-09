@@ -4,6 +4,7 @@ namespace App\Actions\WarcraftLogs;
 
 use App\Models\Report;
 use App\Models\WarcraftLogs\Guild;
+use App\Observers\ReportObserver;
 use Illuminate\Support\Facades\DB;
 use Lorisleiva\Actions\Concerns\AsAction;
 
@@ -34,7 +35,7 @@ class DeleteGuild
 
             $guild->delete();
 
-            Report::whereKey($reportIds)->lazyById()->each->save();
+            ReportObserver::deferFlushing(fn () => Report::whereKey($reportIds)->lazyById()->each->save());
         });
     }
 }

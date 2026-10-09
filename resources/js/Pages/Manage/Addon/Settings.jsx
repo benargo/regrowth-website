@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, router, usePage } from "@inertiajs/react";
+import { Link, router } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import Alert from "@/Components/Alert";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
@@ -18,9 +18,7 @@ export default function AddonSettings({ councillors: councillorsProp, tags: tags
     const [characterSearch, setCharacterSearch] = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
     const [autoSaveKey, setAutoSaveKey] = useState(0);
-    const { auth } = usePage().props;
-    const hasTagPermission = usePermission("update-warcraft-logs-tags");
-    const canUpdateTags = auth.user.admin || hasTagPermission;
+    const canUpdateTags = usePermission("update-warcraft-logs-tags");
 
     // Rendered straight from props so the redirect-back refresh is the single
     // source of truth for the councillor list.
