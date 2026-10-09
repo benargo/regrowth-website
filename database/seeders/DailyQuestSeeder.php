@@ -106,6 +106,7 @@ class DailyQuestSeeder extends Seeder implements HasBlizzardIcons
 
             return;
         }
+
         $dailyQuests = $this->dailyQuests;
 
         foreach ($dailyQuests as $quest) {

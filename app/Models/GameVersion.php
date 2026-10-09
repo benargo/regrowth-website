@@ -28,7 +28,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 #[ObservedBy([GameVersionObserver::class])]
@@ -107,7 +106,7 @@ class GameVersion extends Model implements DatasetModel, EditLockable
     #[Scope]
     protected function released(Builder $query, ?CarbonInterface $at = null): void
     {
-        $query->where('release_date', '<=', $at ?? Carbon::now());
+        $query->where('release_date', '<=', $at ?? now());
     }
 
     // ============ Guild roster ===========
