@@ -8,6 +8,7 @@ use App\Contracts\Models\DatasetModel;
 use App\Contracts\Models\EditLockable;
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Http\Integrations\Blizzard\Support\NameSlug;
 use App\Models\Concerns\HasEditLock;
 use App\Models\Concerns\TracksUsage;
 use App\Models\WarcraftLogs\Guild;
@@ -36,6 +37,7 @@ use Illuminate\Support\Str;
     'slug',
     'realm',
     'guild_name',
+    'uses_surnames',
     'faction',
     'release_date',
     'theme',
@@ -75,6 +77,7 @@ class GameVersion extends Model implements DatasetModel, EditLockable
             'slug' => AsSlug::class,
             'faction' => Faction::class,
             'release_date' => 'datetime',
+            'uses_surnames' => 'boolean',
             'theme' => AsTheme::class,
             'blizzard_namespace' => BlizzardNamespace::class,
         ];
@@ -86,7 +89,7 @@ class GameVersion extends Model implements DatasetModel, EditLockable
     protected function guildSlug(): Attribute
     {
         return Attribute::make(
-            get: fn (): string => Str::slug($this->guild_name),
+            get: fn (): string => NameSlug::from($this->guild_name),
         );
     }
 
