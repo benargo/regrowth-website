@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Button, Checkbox, Description, Field, Fieldset, Input, Label, Legend, Select } from "@headlessui/react";
+import Icon from "@/Components/FontAwesome/Icon";
+import Tooltip from "@/Components/Tooltip";
 import slugify from "@/Helpers/Slugify";
 
 export const controlClassName =
@@ -23,21 +25,47 @@ export const linkClassName =
 
 /**
  * A labelled HeadlessUI field. The hint and the error are both Descriptions,
- * so the control's aria-describedby announces them.
+ * so the control's aria-describedby announces them. With `hintAsTooltip`,
+ * the hint is screen-reader-only and sighted users see it in a tooltip
+ * beside the label instead.
  */
-export function FormRow({ htmlFor, label, required = false, hint, error, className = "", children }) {
+export function FormRow({
+    htmlFor,
+    label,
+    required = false,
+    hint,
+    hintAsTooltip = false,
+    error,
+    className = "",
+    children,
+}) {
+    const labelContent = (
+        <>
+            {label}
+            {required && (
+                <span aria-hidden="true" className="ml-1 text-red-300">
+                    *
+                </span>
+            )}
+        </>
+    );
+
     return (
         <Field className={`flex flex-col gap-1.5 ${className}`}>
             <Label htmlFor={htmlFor} className="text-secondary-300 text-sm font-medium">
-                {label}
-                {required && (
-                    <span aria-hidden="true" className="ml-1 text-red-300">
-                        *
-                    </span>
+                {hint && hintAsTooltip ? (
+                    <Tooltip as="span" body={hint}>
+                        {labelContent}
+                        <Icon icon="question-circle" style="solid" className="ml-1.5" aria-hidden="true" />
+                    </Tooltip>
+                ) : (
+                    labelContent
                 )}
             </Label>
             {children}
-            {hint && <Description className="text-secondary-300 text-sm">{hint}</Description>}
+            {hint && (
+                <Description className={hintAsTooltip ? "sr-only" : "text-secondary-300 text-sm"}>{hint}</Description>
+            )}
             {error && <Description className="text-sm text-red-300">{error}</Description>}
         </Field>
     );
@@ -91,11 +119,11 @@ export function CheckboxInput({ name, id = name, checked, onChange, invalid }) {
             invalid={invalid}
             className={
                 "group border-ink-600 bg-ground-800 data-checked:bg-ink-600 data-focus:outline-ink-400 " +
-                "size-6 rounded border p-1 data-focus:outline-2 data-focus:outline-offset-2 data-invalid:border-red-400"
+                "block size-10.5 rounded border p-2 data-focus:outline-2 data-focus:outline-offset-2 data-invalid:border-red-400"
             }
         >
             <svg
-                className="hidden size-4 fill-none stroke-white group-data-checked:block"
+                className="hidden size-full fill-none stroke-white group-data-checked:block"
                 viewBox="0 0 14 14"
                 aria-hidden="true"
             >

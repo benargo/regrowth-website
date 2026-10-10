@@ -108,16 +108,17 @@ export default function GameVersionForm({ form, options, gameVersion = null, ...
                         >
                             {text("guild_name", { required: true, maxLength: 24, autoComplete: "off" })}
                         </FormRow>
+                        <FormRow htmlFor="faction" label={FIELD_LABELS.faction} error={errors.faction}>
+                            {select("faction", { options: options.factions, placeholder: "Not set" })}
+                        </FormRow>
                         <FormRow
                             htmlFor="uses_surnames"
                             label={FIELD_LABELS.uses_surnames}
                             hint="Tick this if every character in this version has a surname. It changes how names from Warcraft Logs and Raid-Helper are matched to characters."
+                            hintAsTooltip
                             error={errors.uses_surnames}
                         >
                             {checkbox("uses_surnames")}
-                        </FormRow>
-                        <FormRow htmlFor="faction" label={FIELD_LABELS.faction} error={errors.faction}>
-                            {select("faction", { options: options.factions, placeholder: "Not set" })}
                         </FormRow>
                     </FormSection>
 
@@ -127,7 +128,6 @@ export default function GameVersionForm({ form, options, gameVersion = null, ...
                             label={FIELD_LABELS.blizzard_namespace}
                             hint="Which Blizzard API data set items and media are fetched from."
                             error={errors.blizzard_namespace}
-                            className="md:col-span-2"
                         >
                             {select("blizzard_namespace", {
                                 options: options.blizzard_namespaces,
@@ -139,7 +139,6 @@ export default function GameVersionForm({ form, options, gameVersion = null, ...
                             label={FIELD_LABELS.warcraft_logs_guild_id}
                             hint="Reports and attendance for this version come from this guild. Add guilds, or change a guild's Warcraft Logs site, on the Warcraft Logs guilds page."
                             error={errors.warcraft_logs_guild_id}
-                            className="md:col-span-2"
                         >
                             {select("warcraft_logs_guild_id", {
                                 options: options.warcraft_logs_guilds,
