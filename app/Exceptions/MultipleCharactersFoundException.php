@@ -12,7 +12,7 @@ class MultipleCharactersFoundException extends Exception
     /**
      * @param  Collection<int, Character>  $characters
      */
-    public function __construct(private readonly Collection $characters)
+    public function __construct(public readonly Collection $characters)
     {
         parent::__construct('Multiple characters matched that name.');
     }
