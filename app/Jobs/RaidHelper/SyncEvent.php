@@ -8,9 +8,11 @@ use App\Events\Broadcasts\CompositionChanged;
 use App\Http\Integrations\RaidHelper\Data\Events\EventData;
 use App\Http\Integrations\RaidHelper\Data\Zones\ZoneData;
 use App\Http\Resources\EventCompositionResource;
+use App\Jobs\Concerns\ResolvesCharacterNames;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
+use App\Models\GameVersion;
 use App\Models\Raid;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -21,7 +23,7 @@ use Illuminate\Support\Facades\Log;
 
 class SyncEvent implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, ResolvesCharacterNames;
 
     private string $timezone;
 
@@ -78,10 +80,7 @@ class SyncEvent implements ShouldQueue
 
         $this->upsertEvent();
         $this->syncRaidsAndBosses();
-
-        $this->resolveSignedUpCharacters();
-        $this->attachNewSignedUpCharacters();
-        $this->detachBenchedCharactersNoLongerSignedUp();
+        $this->syncBench();
 
         $this->broadcastComposition();
         Cache::tags(['events'])->flush();
@@ -178,16 +177,48 @@ class SyncEvent implements ShouldQueue
     }
 
     /**
-     * Resolve the characters of all signed-up, non-absent players. Anyone not
-     * placed in the composition is benched.
+     * Bench the event's sign-ups among the characters of its game version. An
+     * event with no game version is left untouched, since an empty sign-up set
+     * would otherwise detach every benched character.
      */
-    private function resolveSignedUpCharacters(): void
+    private function syncBench(): void
     {
-        $signUps = collect($this->data->signUps ?? [])
-            ->whereNotIn('className', ['Absence', 'Late', 'Tentative']);
+        $gameVersion = $this->event->gameVersion;
 
-        $this->signedUpCharacterIds = Character::whereIn('name', $signUps->pluck('name'))
-            ->pluck('id')
+        if ($gameVersion === null) {
+            Log::error('Skipped benching Raid-Helper sign-ups for an event with no game version.', [
+                'event_id' => $this->event->id,
+                'raid_helper_event_id' => $this->data->id,
+            ]);
+
+            return;
+        }
+
+        $this->resolveSignedUpCharacters($gameVersion);
+        $this->attachNewSignedUpCharacters();
+        $this->detachBenchedCharactersNoLongerSignedUp($gameVersion);
+    }
+
+    /**
+     * Resolve the characters of every sign-up who isn't absent, among the
+     * event's game version. Bench, Late and Tentative sign-ups are included so
+     * they are on the event before an officer slots them. Anyone not placed in
+     * the composition is benched.
+     */
+    private function resolveSignedUpCharacters(GameVersion $gameVersion): void
+    {
+        $signUpNames = collect($this->data->signUps ?? [])
+            ->where('className', '!==', 'Absence')
+            ->pluck('name');
+
+        $this->signedUpCharacterIds = $this->resolveCharacterIds(
+            $gameVersion,
+            $signUpNames,
+            Character::whereBelongsTo($gameVersion)->get(),
+            'raidhelper.signups',
+        )
+            ->unique()
+            ->values()
             ->all();
     }
 
@@ -213,11 +244,13 @@ class SyncEvent implements ShouldQueue
     }
 
     /**
-     * Detach benched characters who are no longer in the sign-ups list.
+     * Detach this game version's benched characters who are no longer in the
+     * sign-ups list.
      */
-    private function detachBenchedCharactersNoLongerSignedUp(): void
+    private function detachBenchedCharactersNoLongerSignedUp(GameVersion $gameVersion): void
     {
         $benchedNoLongerSignedUp = $this->event->characters()
+            ->whereBelongsTo($gameVersion)
             ->wherePivot('is_benched', true)
             ->pluck('characters.id')
             ->diff($this->signedUpCharacterIds)

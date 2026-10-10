@@ -77,6 +77,46 @@ class BackfillGameVersionsTest extends TestCase
     }
 
     #[Test]
+    #[Group('happy-path')]
+    public function it_assigns_the_given_game_version_to_characters_missing_one(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        GameVersion::factory()->create();
+        $character = Character::factory()->create();
+
+        $this->artisan('app:backfill-game-versions', ['--game-version' => $gameVersion->id])
+            ->expectsOutputToContain(Character::class.': 1 rows backfilled.')
+            ->assertSuccessful();
+
+        $this->assertSame($gameVersion->id, $character->fresh()->game_version_id);
+    }
+
+    #[Test]
+    public function it_does_not_reassign_characters_that_already_have_a_game_version(): void
+    {
+        $targetVersion = GameVersion::factory()->create();
+        $otherVersion = GameVersion::factory()->create();
+        $character = Character::factory()->forGameVersion($otherVersion)->create();
+
+        $this->artisan('app:backfill-game-versions', ['--game-version' => $targetVersion->id])->assertSuccessful();
+
+        $this->assertSame($otherVersion->id, $character->fresh()->game_version_id);
+    }
+
+    #[Test]
+    public function it_leaves_characters_without_a_version_when_none_is_resolved(): void
+    {
+        GameVersion::factory()->count(2)->create();
+        $character = Character::factory()->create();
+
+        $this->artisan('app:backfill-game-versions')
+            ->expectsOutputToContain('Skipping dataset backfill')
+            ->assertSuccessful();
+
+        $this->assertNull($character->fresh()->game_version_id);
+    }
+
+    #[Test]
     public function it_skips_the_dataset_step_but_still_resolves_reports_when_several_game_versions_exist_and_none_is_given(): void
     {
         $gameVersion = GameVersion::factory()->forGuild()->create();

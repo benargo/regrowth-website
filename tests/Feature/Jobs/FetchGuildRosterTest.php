@@ -120,6 +120,24 @@ class FetchGuildRosterTest extends TestCase
             && $response->getPendingRequest()->headers()->get('Battlenet-Namespace') === $expectedNamespace);
     }
 
+    #[Test]
+    public function it_requests_the_profile_of_an_accented_member_by_its_accented_name(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(1, 'Draégo', 70, 0),
+        ]]);
+        $this->mockGetCharacterProfile();
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        Saloon::assertSent(fn ($request) => $request instanceof GetCharacterProfileRequest
+            && $request->resolveEndpoint() === '/profile/wow/character/spineshatter/draégo');
+    }
+
     #[Group('happy-path')]
     #[Test]
     public function it_creates_a_new_character_from_roster_member(): void

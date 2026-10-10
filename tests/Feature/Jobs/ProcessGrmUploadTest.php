@@ -841,12 +841,49 @@ class ProcessGrmUploadTest extends TestCase
         ]);
     }
 
+    // ==================== accented names ====================
+
+    #[Test]
+    #[Group('blizzard-integration')]
+    public function it_resolves_names_that_differ_only_by_an_accent_to_their_own_characters(): void
+    {
+        $this->fakeCharacters([
+            'Izepo' => 11111,
+            'Ízepo' => 22222,
+            'Ozona' => 33333,
+            'Ozonà' => 44444,
+            'Ozòna' => 55555,
+        ]);
+        Notification::fake();
+
+        $job = new ProcessGrmUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'Izepo', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => 'Ízepo'],
+                ['Name' => 'Ozona', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => 'Ozonà;Ozòna'],
+            ],
+        ], $this->user->id, $this->gameVersion->id);
+
+        $job->handle(app(BlizzardConnector::class));
+
+        $this->assertSame(
+            [11111 => 'Izepo', 22222 => 'Ízepo', 33333 => 'Ozona', 44444 => 'Ozonà', 55555 => 'Ozòna'],
+            Character::orderBy('id')->pluck('name', 'id')->all(),
+        );
+        $this->assertDatabaseHas('character_links', ['character_id' => 11111, 'linked_character_id' => 22222]);
+        $this->assertDatabaseHas('character_links', ['character_id' => 33333, 'linked_character_id' => 44444]);
+        $this->assertDatabaseHas('character_links', ['character_id' => 33333, 'linked_character_id' => 55555]);
+        Notification::assertSentTo(NotifiableChannel::stubFromConfig('officer'), GrmUploadCompleted::class);
+        Notification::assertNotSentTo(NotifiableChannel::stubFromConfig('officer'), GrmUploadFailed::class);
+    }
+
     // ==================== helpers ====================
 
     /**
      * Fake the Blizzard character status/profile endpoints.
      *
-     * The character name is slugged into the request path, so we resolve the
+     * Blizzard expects the lowercased name (diacritics kept) in the request path, so we resolve the
      * slug back to an ID from the supplied map. Names listed in $notFound
      * return a translated 404 (CharacterNotFoundException).
      *
@@ -857,16 +894,16 @@ class ProcessGrmUploadTest extends TestCase
     {
         $idBySlug = [];
         foreach ($characterMap as $name => $id) {
-            $idBySlug[Str::slug($name)] = $id;
+            $idBySlug[Str::lower($name)] = $id;
         }
 
-        $notFoundSlugs = array_map(fn (string $name) => Str::slug($name), $notFound);
+        $notFoundSlugs = array_map(fn (string $name) => Str::lower($name), $notFound);
 
         $resolve = function (PendingRequest $pendingRequest) use ($idBySlug, $notFoundSlugs): MockResponse {
             $path = parse_url($pendingRequest->getUrl(), PHP_URL_PATH) ?: '';
             // /profile/wow/character/{realm}/{slug}[/status]
             $segments = explode('/', trim($path, '/'));
-            $slug = $segments[4] ?? '';
+            $slug = rawurldecode($segments[4] ?? '');
 
             if (in_array($slug, $notFoundSlugs, true)) {
                 return MockResponse::make(
@@ -915,14 +952,14 @@ class ProcessGrmUploadTest extends TestCase
         $realmSlug = Str::slug($realm);
         $idBySlug = [];
         foreach ($characterMap as $name => $id) {
-            $idBySlug[Str::slug($name)] = $id;
+            $idBySlug[Str::lower($name)] = $id;
         }
 
         $resolve = function (PendingRequest $pendingRequest) use ($realm, $realmSlug, $idBySlug): MockResponse {
             $path = parse_url($pendingRequest->getUrl(), PHP_URL_PATH) ?: '';
             $segments = explode('/', trim($path, '/'));
             $requestRealm = $segments[3] ?? '';
-            $slug = $segments[4] ?? '';
+            $slug = rawurldecode($segments[4] ?? '');
 
             PHPUnit::assertSame($realmSlug, $requestRealm, "Expected request against realm '{$realmSlug}', got '{$requestRealm}'.");
 

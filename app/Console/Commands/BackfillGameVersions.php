@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Character;
 use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
@@ -15,7 +16,7 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
-#[Signature('app:backfill-game-versions {--game-version= : Assign this game version ID, and its Warcraft Logs guild, to phases, guild ranks, guild tags and reports missing one}')]
+#[Signature('app:backfill-game-versions {--game-version= : Assign this game version ID, and its Warcraft Logs guild, to phases, guild ranks, characters, guild tags and reports missing one}')]
 #[Description('Assign a game version and Warcraft Logs guild to rows missing one, then resolve the stored game version of every report and event.')]
 class BackfillGameVersions extends Command
 {
@@ -81,8 +82,8 @@ class BackfillGameVersions extends Command
     }
 
     /**
-     * Assign the game version to every phase and guild rank missing one, and
-     * attach every playable race and class to it.
+     * Assign the game version to every phase, guild rank and character missing
+     * one, and attach every playable race and class to it.
      */
     private function backfillDatasets(): void
     {
@@ -92,7 +93,7 @@ class BackfillGameVersions extends Command
             return;
         }
 
-        foreach ([Phase::class, GuildRank::class] as $model) {
+        foreach ([Phase::class, GuildRank::class, Character::class] as $model) {
             $updated = $model::whereNull('game_version_id')
                 ->update(['game_version_id' => $this->gameVersion->id]);
 
