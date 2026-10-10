@@ -23,6 +23,7 @@ abstract class BlizzardTestCase extends TestCase
             clientSecret: 'test_secret',
             region: $region,
             locale: $region->defaultLocale(),
+            redirectUri: 'https://regrowth.test/auth/battlenet/callback',
             eagerlyMirrorAssets: new EagerlyMirrorAssets($renderConnector),
         );
     }

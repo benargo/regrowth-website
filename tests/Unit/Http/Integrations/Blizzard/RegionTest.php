@@ -36,6 +36,24 @@ class RegionTest extends TestCase
         $this->assertSame('https://tw.api.blizzard.com', Region::TW->apiUrl());
     }
 
+    // ==================== oauthUrl ====================
+
+    #[Test]
+    public function oauth_url_returns_regional_battle_net_oauth_base(): void
+    {
+        $this->assertSame('https://eu.battle.net/oauth', Region::EU->oauthUrl());
+        $this->assertSame('https://us.battle.net/oauth', Region::US->oauthUrl());
+    }
+
+    // ==================== authorizeUrl ====================
+
+    #[Test]
+    public function authorize_url_returns_regional_battle_net_authorize_endpoint(): void
+    {
+        $this->assertSame('https://eu.battle.net/oauth/authorize', Region::EU->authorizeUrl());
+        $this->assertSame('https://us.battle.net/oauth/authorize', Region::US->authorizeUrl());
+    }
+
     // ==================== tokenUrl ====================
 
     #[Test]

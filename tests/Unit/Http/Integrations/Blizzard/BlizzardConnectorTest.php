@@ -14,14 +14,20 @@ use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
+use App\Http\Integrations\Blizzard\Requests\OAuth\GetAuthorizationCodeTokenRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceRequest;
 use Illuminate\Support\Facades\Cache;
 use Mockery;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Contracts\Authenticator;
+use Saloon\Enums\Method;
 use Saloon\Exceptions\Request\ClientException;
+use Saloon\Http\Auth\TokenAuthenticator;
 use Saloon\Http\Faking\MockResponse;
+use Saloon\Http\OAuth2\GetClientCredentialsTokenBasicAuthRequest;
+use Saloon\Http\Request;
 use Saloon\Laravel\Facades\Saloon;
 use Saloon\RateLimitPlugin\Exceptions\RateLimitReachedException;
 use Saloon\RateLimitPlugin\Limit;
@@ -54,6 +60,7 @@ class BlizzardConnectorTest extends TestCase
             clientSecret: 'test_secret',
             region: Region::EU,
             locale: 'ko_KR',
+            redirectUri: 'https://regrowth.test/auth/battlenet/callback',
             eagerlyMirrorAssets: $this->createStub(EagerlyMirrorAssets::class),
         );
     }
@@ -101,6 +108,105 @@ class BlizzardConnectorTest extends TestCase
         $cached = Cache::tags(['blizzard', 'api-auth'])->get('blizzard:access_token:v2:eu');
         $this->assertIsArray($cached);
         $this->assertSame('test_token', $cached['token']);
+    }
+
+    #[Test]
+    #[Group('happy-path')]
+    public function it_keeps_an_authenticator_supplied_by_the_request(): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => $this->tokenMock(),
+            'eu.api.blizzard.com/*' => MockResponse::make(['ok' => true]),
+        ]);
+
+        $this->makeConnector()->send($this->requestWithOwnToken('user-token'));
+
+        Saloon::assertNotSent(GetClientCredentialsTokenBasicAuthRequest::class);
+        Saloon::assertSent(fn ($request, $response) => $response->getPendingRequest()->headers()->get('Authorization') === 'Bearer user-token');
+    }
+
+    #[Test]
+    public function it_still_uses_the_client_credentials_token_for_requests_without_their_own(): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => $this->tokenMock(),
+            'eu.api.blizzard.com/*' => MockResponse::make(['ok' => true]),
+        ]);
+
+        $this->makeConnector()->send($this->requestWithOwnToken(null));
+
+        Saloon::assertSent(GetClientCredentialsTokenBasicAuthRequest::class);
+        Saloon::assertSent(fn ($request, $response) => $response->getPendingRequest()->headers()->get('Authorization') === 'Bearer test_token');
+    }
+
+    // ==================== user authorization code flow ====================
+
+    #[Test]
+    public function it_builds_the_authorization_url_with_the_wow_profile_scope(): void
+    {
+        $url = $this->makeConnector()->getAuthorizationUrl('the-state');
+
+        $this->assertStringStartsWith('https://eu.battle.net/oauth/authorize?', $url);
+
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+
+        $this->assertSame([
+            'response_type' => 'code',
+            'client_id' => 'test_id',
+            'redirect_uri' => 'https://regrowth.test/auth/battlenet/callback',
+            'scope' => 'openid wow.profile',
+            'state' => 'the-state',
+        ], $query);
+    }
+
+    #[Test]
+    #[Group('happy-path')]
+    public function it_exchanges_a_code_for_a_user_token_using_basic_auth(): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => $this->tokenMock(),
+            GetAuthorizationCodeTokenRequest::class => MockResponse::make([
+                'access_token' => 'user-token',
+                'token_type' => 'bearer',
+                'expires_in' => 86399,
+                'scope' => 'openid wow.profile',
+                'sub' => '1922840',
+            ]),
+        ]);
+
+        $this->freezeTime();
+
+        $authenticator = $this->makeConnector()->getUserAccessToken('the-code');
+
+        $this->assertSame('user-token', $authenticator->getAccessToken());
+        $this->assertSame(now()->addSeconds(86399)->getTimestamp(), $authenticator->getExpiresAt()?->getTimestamp());
+        $this->assertFalse($authenticator->isRefreshable());
+
+        Saloon::assertNotSent(GetClientCredentialsTokenBasicAuthRequest::class);
+        Saloon::assertSent(function (GetAuthorizationCodeTokenRequest $request, $response): bool {
+            $pending = $response->getPendingRequest();
+
+            return $pending->getUrl() === 'https://eu.battle.net/oauth/token'
+                && $pending->headers()->get('Authorization') === 'Basic '.base64_encode('test_id:test_secret')
+                && $pending->body()->all() === [
+                    'grant_type' => 'authorization_code',
+                    'code' => 'the-code',
+                    'redirect_uri' => 'https://regrowth.test/auth/battlenet/callback',
+                ];
+        });
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_throws_when_battle_net_rejects_the_code(): void
+    {
+        Saloon::fake([
+            GetAuthorizationCodeTokenRequest::class => MockResponse::make(['error' => 'invalid_grant'], 400),
+        ]);
+
+        $this->expectException(ApiException::class);
+
+        $this->makeConnector()->getUserAccessToken('stale-code');
     }
 
     // ==================== exception mapping ====================
@@ -304,6 +410,26 @@ class BlizzardConnectorTest extends TestCase
 
     // ==================== helpers ====================
 
+    private function requestWithOwnToken(?string $token): Request
+    {
+        return new class($token) extends Request
+        {
+            protected Method $method = Method::GET;
+
+            public function __construct(private ?string $token) {}
+
+            public function resolveEndpoint(): string
+            {
+                return '/profile/user/wow';
+            }
+
+            protected function defaultAuth(): ?Authenticator
+            {
+                return $this->token === null ? null : new TokenAuthenticator($this->token);
+            }
+        };
+    }
+
     /**
      * Invoke the connector's protected resolveLimits().
      *
@@ -341,6 +467,7 @@ class BlizzardConnectorTest extends TestCase
             clientSecret: 'test_secret',
             region: $region,
             locale: $region->defaultLocale(),
+            redirectUri: 'https://regrowth.test/auth/battlenet/callback',
             eagerlyMirrorAssets: $this->createStub(EagerlyMirrorAssets::class),
         );
     }

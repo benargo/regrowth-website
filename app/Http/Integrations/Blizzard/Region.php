@@ -18,11 +18,27 @@ enum Region: string
     }
 
     /**
+     * Get the OAuth base URL for this region.
+     */
+    public function oauthUrl(): string
+    {
+        return "https://{$this->value}.battle.net/oauth";
+    }
+
+    /**
+     * Get the OAuth authorize URL for this region (Authorization Code Flow).
+     */
+    public function authorizeUrl(): string
+    {
+        return "{$this->oauthUrl()}/authorize";
+    }
+
+    /**
      * Get the OAuth token URL for this region.
      */
     public function tokenUrl(): string
     {
-        return "https://{$this->value}.battle.net/oauth/token";
+        return "{$this->oauthUrl()}/token";
     }
 
     /**

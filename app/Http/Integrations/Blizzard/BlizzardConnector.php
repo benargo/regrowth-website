@@ -9,6 +9,7 @@ use App\Http\Integrations\Blizzard\Exceptions\InvalidRaceException;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\Exceptions\XmlException;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
+use App\Http\Integrations\Blizzard\Requests\OAuth\GetAuthorizationCodeTokenRequest;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use InvalidArgumentException;
@@ -30,10 +31,6 @@ use Throwable;
 
 /**
  * Saloon connector for the Blizzard Battle.net API.
- *
- * Handles base URL resolution per region, OAuth2 client-credentials authentication
- * (with cached token), automatic locale query parameter injection, rate limiting,
- * and translation of upstream errors into typed exception hierarchy that callers catch.
  */
 class BlizzardConnector extends Connector
 {
@@ -47,6 +44,7 @@ class BlizzardConnector extends Connector
         protected string $clientSecret,
         protected Region $region,
         protected string $locale,
+        protected string $redirectUri,
         EagerlyMirrorAssets $eagerlyMirrorAssets,
     ) {
         if (! $this->region->supportsLocale($this->locale)) {
@@ -112,7 +110,9 @@ class BlizzardConnector extends Connector
     }
 
     /**
-     * Authenticate every outgoing request with a cached OAuth2 access token.
+     * Authenticate every outgoing request with a cached OAuth2 access token,
+     * unless the request carries its own authenticator (e.g. a user's
+     * Authorization Code Flow token for `/profile/user/*` endpoints).
      *
      * Token is cached against `blizzard:access_token:{region}` with tags
      * `['blizzard', 'api-auth']` so the rest of the app can flush it on demand.
@@ -121,6 +121,10 @@ class BlizzardConnector extends Connector
     {
         // Skip token request entirely if this *is* the token request, otherwise infinite loop.
         if ($pendingRequest->getRequest() instanceof GetClientCredentialsTokenBasicAuthRequest) {
+            return;
+        }
+
+        if ($pendingRequest->getRequest()->getAuthenticator() !== null) {
             return;
         }
 
@@ -157,6 +161,34 @@ class BlizzardConnector extends Connector
         ], $ttl);
 
         return $authenticator;
+    }
+
+    /**
+     * Build the Battle.net authorize URL for the Authorization Code Flow.
+     */
+    public function getAuthorizationUrl(string $state): string
+    {
+        return $this->region->authorizeUrl().'?'.http_build_query([
+            'response_type' => 'code',
+            'client_id' => $this->clientId,
+            'redirect_uri' => $this->redirectUri,
+            'scope' => 'openid wow.profile',
+            'state' => $state,
+        ], encoding_type: PHP_QUERY_RFC3986);
+    }
+
+    /**
+     * Exchange an authorization code for a user access token (24 hours, not refreshable).
+     */
+    public function getUserAccessToken(#[\SensitiveParameter] string $code): AccessTokenAuthenticator
+    {
+        return $this->send(new GetAuthorizationCodeTokenRequest(
+            code: $code,
+            clientId: $this->clientId,
+            clientSecret: $this->clientSecret,
+            tokenUrl: $this->region->tokenUrl(),
+            redirectUri: $this->redirectUri,
+        ))->dto();
     }
 
     /**
