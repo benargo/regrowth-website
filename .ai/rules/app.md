@@ -30,4 +30,6 @@ Start a model query by calling the builder method statically (`Phase::whereHas(.
 Use the `now()` and `today()` helpers rather than `Carbon::now()`/`Carbon::today()`. Keep `Carbon::` for constructing other instants (`Carbon::parse()`, `Carbon::createFromTimestamp()`).
 
 ## Match within game versions; never delete data to reconcile
-Characters and reports only ever match against characters in the same game version; never match a name across the whole `characters` table. Reconciling old rows (pivots, attendance, event links) written under earlier matching rules may reassign or flag them, but must never delete them — this is a red line. A character with a null `game_version_id` is missing its match-up, not wrong: never detach, delete or overwrite its rows on that basis.
+Characters and reports only ever match against characters in the same game version; never match a name across the whole `characters` table. A report's version is its stored `game_version_id`, derived from its Warcraft Logs guild and `start_time`. An event's version is its stored `game_version_id`, the single version its raids share. Resolve every external name through `App\Actions\Characters\MatchCharacterName`, one version and one name per call.
+
+Reconciling old rows (pivots, attendance, event links) written under earlier matching rules may reassign or flag them, but must never delete them — this is a red line. A character with a null `game_version_id` is missing its match-up, not wrong: never detach, delete or overwrite its rows on that basis.
