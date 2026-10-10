@@ -358,6 +358,7 @@ return new class extends Migration
     {
         Schema::table('characters', function (Blueprint $table): void {
             $table->foreignIdFor(GameVersion::class)->nullable()->after('id')->constrained()->nullOnDelete();
+            $table->unique(['game_version_id', 'name']);
         });
     }
 
@@ -365,6 +366,7 @@ return new class extends Migration
     {
         Schema::table('characters', function (Blueprint $table): void {
             $table->dropForeign(['game_version_id']);
+            $table->dropUnique(['game_version_id', 'name']);
             $table->dropColumn('game_version_id');
         });
     }

@@ -68,6 +68,7 @@ class GameVersionTest extends ModelTestCase
             'slug',
             'realm',
             'guild_name',
+            'uses_surnames',
             'faction',
             'release_date',
             'theme',
@@ -85,6 +86,7 @@ class GameVersionTest extends ModelTestCase
             'slug' => AsSlug::class,
             'faction' => Faction::class,
             'release_date' => 'datetime',
+            'uses_surnames' => 'boolean',
             'theme' => AsTheme::class,
             'blizzard_namespace' => BlizzardNamespace::class,
         ]);
@@ -225,6 +227,14 @@ class GameVersionTest extends ModelTestCase
         $gameVersion = $this->make(['guild_name' => 'the Old Guard']);
 
         $this->assertSame('the-old-guard', $gameVersion->guild_slug);
+    }
+
+    #[Test]
+    public function it_keeps_diacritics_in_the_guild_slug(): void
+    {
+        $gameVersion = $this->make(['guild_name' => 'Ténèbres Éternelles']);
+
+        $this->assertSame('ténèbres-éternelles', $gameVersion->guild_slug);
     }
 
     #[Test]

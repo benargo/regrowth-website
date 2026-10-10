@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
@@ -62,6 +63,16 @@ class CharacterFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'name' => fake()->unique()->firstName(),
+        ]);
+    }
+
+    /**
+     * Indicate that the character belongs to the given game version.
+     */
+    public function forGameVersion(GameVersion $gameVersion): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'game_version_id' => $gameVersion->id,
         ]);
     }
 

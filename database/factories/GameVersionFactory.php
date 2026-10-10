@@ -27,6 +27,7 @@ class GameVersionFactory extends Factory
             'slug' => fake()->unique()->lexify('version-????'),
             'realm' => fake()->city(),
             'guild_name' => fake()->unique()->lexify('Guild ??????'),
+            'uses_surnames' => false,
             'faction' => fake()->randomElement(Faction::cases()),
             'release_date' => fake()->dateTimeBetween('-1 year', '+1 year'),
             'theme' => fake()->randomElement(Theme::cases()),
@@ -43,6 +44,17 @@ class GameVersionFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'slug' => 'tbc',
             'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
+        ]);
+    }
+
+    /**
+     * Indicate that every character in this version has a surname, stored
+     * inside its name as "{name} {surname}".
+     */
+    public function withSurnames(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'uses_surnames' => true,
         ]);
     }
 
