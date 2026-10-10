@@ -352,6 +352,41 @@ class GameVersionControllerTest extends DashboardTestCase
         $this->assertSame($guildName, GameVersion::sole()->guild_name);
     }
 
+    #[Group('happy-path')]
+    #[Test]
+    public function it_stores_whether_characters_have_surnames(): void
+    {
+        $this->actingAs($this->officer)->post(route('management.game-versions.store'), $this->validPayload([
+            'uses_surnames' => true,
+        ]));
+
+        $this->assertTrue(GameVersion::sole()->uses_surnames);
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_requires_whether_characters_have_surnames(): void
+    {
+        $response = $this->actingAs($this->officer)->post(
+            route('management.game-versions.store'),
+            Arr::except($this->validPayload(), 'uses_surnames')
+        );
+
+        $response->assertInvalid(['uses_surnames' => 'The surnames field is required.']);
+        $this->assertDatabaseCount('game_versions', 0);
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_rejects_a_surnames_flag_that_is_not_true_or_false(): void
+    {
+        $response = $this->actingAs($this->officer)->post(route('management.game-versions.store'), $this->validPayload([
+            'uses_surnames' => 'sometimes',
+        ]));
+
+        $response->assertInvalid(['uses_surnames' => 'The surnames field must be true or false.']);
+    }
+
     // ==================== edit ====================
 
     #[Group('happy-path')]
@@ -408,6 +443,17 @@ class GameVersionControllerTest extends DashboardTestCase
                 'review' => route('management.game-versions.review', $gameVersion),
             ])
         );
+    }
+
+    #[Test]
+    public function it_shares_whether_characters_have_surnames_on_the_edit_page(): void
+    {
+        $gameVersion = GameVersion::factory()->withSurnames()->create();
+        $this->fakeRelationships($gameVersion);
+
+        $response = $this->actingAs($this->officer)->get(route('management.game-versions.edit', $gameVersion));
+
+        $response->assertInertia(fn (Assert $page) => $page->where('gameVersion.uses_surnames', true));
     }
 
     // ==================== edit lock ====================
@@ -1042,6 +1088,33 @@ class GameVersionControllerTest extends DashboardTestCase
         $response->assertInvalid(['guild_name' => 'The guild name field must not be greater than 24 characters.']);
     }
 
+    #[Test]
+    public function it_updates_whether_characters_have_surnames(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $this->expectUpdate($gameVersion, ['uses_surnames' => true]);
+
+        $response = $this->actingAs($this->officer)
+            ->from($this->editUrl($gameVersion))
+            ->patch(route('management.game-versions.update', $gameVersion), ['uses_surnames' => true]);
+
+        $response->assertValid();
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_rejects_a_surnames_flag_that_is_not_true_or_false_on_update(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        UpdateGameVersion::shouldNotRun();
+
+        $response = $this->actingAs($this->officer)
+            ->from($this->editUrl($gameVersion))
+            ->patch(route('management.game-versions.update', $gameVersion), ['uses_surnames' => 'sometimes']);
+
+        $response->assertInvalid(['uses_surnames' => 'The surnames field must be true or false.']);
+    }
+
     #[Group('validation')]
     #[Test]
     #[TestWith(['wrath'])]
@@ -1446,6 +1519,7 @@ class GameVersionControllerTest extends DashboardTestCase
             'slug' => 'wrath',
             'realm' => 'Gehennas',
             'guild_name' => 'the Old Guard',
+            'uses_surnames' => false,
             'faction' => Faction::HORDE->value,
             'release_date' => '2022-09-26',
             'theme' => Theme::FOREVER->value,

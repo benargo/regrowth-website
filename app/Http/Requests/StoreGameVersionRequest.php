@@ -38,6 +38,7 @@ class StoreGameVersionRequest extends FormRequest
             'slug' => ['required', 'string', 'max:255', Rule::notIn($this->reservedSlugs()), Rule::unique('game_versions', 'slug')],
             'realm' => ['nullable', 'string', 'max:255'],
             'guild_name' => ['required', 'string', 'max:24'],
+            'uses_surnames' => ['required', 'boolean'],
             'faction' => ['nullable', Rule::enum(Faction::class)],
             'release_date' => ['required', 'date'],
             'theme' => ['required', Rule::enum(Theme::class)],
@@ -75,6 +76,7 @@ class StoreGameVersionRequest extends FormRequest
     {
         return [
             'guild_name' => 'guild name',
+            'uses_surnames' => 'surnames',
             'release_date' => 'release date',
             'blizzard_namespace' => 'Blizzard API namespace',
             'warcraft_logs_guild_id' => 'Warcraft Logs guild',

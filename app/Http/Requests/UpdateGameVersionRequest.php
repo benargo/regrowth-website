@@ -32,6 +32,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             'slug' => ['missing'],
             'realm' => ['sometimes', 'nullable', 'string', 'max:255'],
             'guild_name' => ['sometimes', 'required', 'string', 'max:24'],
+            'uses_surnames' => ['sometimes', 'required', 'boolean'],
             'faction' => ['sometimes', 'nullable', Rule::enum(Faction::class)],
             'release_date' => ['sometimes', 'required', 'date'],
             'theme' => ['sometimes', 'nullable', Rule::enum(Theme::class)],

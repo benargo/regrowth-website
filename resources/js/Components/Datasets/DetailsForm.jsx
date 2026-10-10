@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "@inertiajs/react";
 import { Button, Input } from "@headlessui/react";
 import {
+    CheckboxInput,
     ErrorSummary,
     OptionSelect,
     RequiredFieldsNote,
@@ -17,8 +18,8 @@ import { AUTOSAVE_DELAY } from "@/Hooks/useRelationshipForm";
  * A dataset's details form, either autosaving (`autosave`) or submitted
  * through `onSubmit`.
  *
- * `children` renders the fields, given text, slug and select helpers bound to
- * `form`.
+ * `children` renders the fields, given text, slug, select and checkbox helpers
+ * bound to `form`.
  */
 export default function DetailsForm({ form, autosave, onSubmit, submitLabel, processingLabel, cancelHref, children }) {
     const { data, setData, processing, errors } = form;
@@ -88,13 +89,26 @@ export default function DetailsForm({ form, autosave, onSubmit, submitLabel, pro
         />
     );
 
+    const checkbox = (name, props = {}) => (
+        <CheckboxInput
+            name={name}
+            checked={data[name]}
+            onChange={(checked) => {
+                setData(name, checked);
+                schedule();
+            }}
+            invalid={!!errors[name]}
+            {...props}
+        />
+    );
+
     return (
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-8" {...containerProps}>
             <ErrorSummary errors={errors} summaryRef={summaryRef} />
 
             <RequiredFieldsNote />
 
-            {children({ text, slug, select })}
+            {children({ text, slug, select, checkbox })}
 
             {!autosave && (
                 <div className="flex flex-wrap items-center gap-4">

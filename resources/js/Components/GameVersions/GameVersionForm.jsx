@@ -9,6 +9,7 @@ const FIELD_LABELS = {
     theme: "Theme",
     realm: "Realm",
     guild_name: "Guild name",
+    uses_surnames: "Characters have surnames",
     faction: "Faction",
     blizzard_namespace: "Blizzard API namespace",
     warcraft_logs_guild_id: "Warcraft Logs guild",
@@ -23,6 +24,7 @@ export function gameVersionFormData(gameVersion = null) {
         ...(gameVersion === null && { slug: "" }),
         realm: gameVersion?.realm ?? "",
         guild_name: gameVersion?.guild_name ?? "",
+        uses_surnames: gameVersion?.uses_surnames ?? false,
         faction: gameVersion?.faction ?? "",
         release_date: gameVersion?.release_date ?? "",
         theme: gameVersion?.theme ?? "",
@@ -40,7 +42,7 @@ export default function GameVersionForm({ form, options, gameVersion = null, ...
 
     return (
         <DetailsForm form={form} {...detailsFormProps}>
-            {({ text, slug, select }) => (
+            {({ text, slug, select, checkbox }) => (
                 <>
                     <FormSection legend="The version">
                         <FormRow
@@ -105,6 +107,14 @@ export default function GameVersionForm({ form, options, gameVersion = null, ...
                             error={errors.guild_name}
                         >
                             {text("guild_name", { required: true, maxLength: 24, autoComplete: "off" })}
+                        </FormRow>
+                        <FormRow
+                            htmlFor="uses_surnames"
+                            label={FIELD_LABELS.uses_surnames}
+                            hint="Tick this if every character in this version has a surname. It changes how names from Warcraft Logs and Raid-Helper are matched to characters."
+                            error={errors.uses_surnames}
+                        >
+                            {checkbox("uses_surnames")}
                         </FormRow>
                         <FormRow htmlFor="faction" label={FIELD_LABELS.faction} error={errors.faction}>
                             {select("faction", { options: options.factions, placeholder: "Not set" })}

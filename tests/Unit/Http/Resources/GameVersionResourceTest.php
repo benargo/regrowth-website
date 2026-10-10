@@ -96,6 +96,16 @@ class GameVersionResourceTest extends TestCase
     }
 
     #[Test]
+    public function the_default_shape_leaves_out_whether_characters_have_surnames(): void
+    {
+        $array = (new GameVersionResource(GameVersion::factory()->withSurnames()->make()))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('uses_surnames', $array);
+    }
+
+    // ==================== forManagement ====================
+
+    #[Test]
     public function the_management_scope_exposes_every_editable_field(): void
     {
         $gameVersion = GameVersion::factory()->make([
@@ -125,6 +135,7 @@ class GameVersionResourceTest extends TestCase
             'banner_class' => 'bg-raid-black-temple',
             'realm' => 'Thunderstrike',
             'guild_name' => 'Regrowth',
+            'uses_surnames' => false,
             'faction' => Faction::ALLIANCE,
             'release_date' => '2026-02-06',
             'blizzard' => ['namespace' => BlizzardNamespace::ANNIVERSARY],

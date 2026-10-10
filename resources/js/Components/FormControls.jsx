@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, Description, Field, Fieldset, Input, Label, Legend, Select } from "@headlessui/react";
+import { Button, Checkbox, Description, Field, Fieldset, Input, Label, Legend, Select } from "@headlessui/react";
 import slugify from "@/Helpers/Slugify";
 
 export const controlClassName =
@@ -74,6 +74,34 @@ export function OptionSelect({ name, id = name, value, onChange, options, placeh
                 </option>
             ))}
         </Select>
+    );
+}
+
+/**
+ * A HeadlessUI checkbox for use inside FormRow, whose Field labels it.
+ * onChange receives the new checked state.
+ */
+export function CheckboxInput({ name, id = name, checked, onChange, invalid }) {
+    return (
+        <Checkbox
+            id={id}
+            name={name}
+            checked={checked}
+            onChange={onChange}
+            invalid={invalid}
+            className={
+                "group border-ink-600 bg-ground-800 data-checked:bg-ink-600 data-focus:outline-ink-400 " +
+                "size-6 rounded border p-1 data-focus:outline-2 data-focus:outline-offset-2 data-invalid:border-red-400"
+            }
+        >
+            <svg
+                className="hidden size-4 fill-none stroke-white group-data-checked:block"
+                viewBox="0 0 14 14"
+                aria-hidden="true"
+            >
+                <path d="M3 8L6 11L11 3.5" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+        </Checkbox>
     );
 }
 

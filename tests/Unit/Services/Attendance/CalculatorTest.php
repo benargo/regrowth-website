@@ -336,6 +336,23 @@ class CalculatorTest extends TestCase
         $this->assertNotNull($this->findStats($stats, 'Sylvanas'));
     }
 
+    #[Test]
+    public function calculate_keeps_same_named_characters_of_different_game_versions_apart(): void
+    {
+        $rank = $this->makeRank();
+        $report = $this->makeReport($this->makeTag(), Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $thrall = Character::factory()->forGameVersion(GameVersion::factory()->create())->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $otherThrall = Character::factory()->forGameVersion(GameVersion::factory()->create())->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $this->attachCharacterToReport($report, $thrall, 1);
+        $this->attachCharacterToReport($report, $otherThrall, 0);
+
+        $stats = $this->makeCalculator()->wholeGuild()->keyBy(fn (CharacterAttendanceStatsData $s) => $s->character->id);
+
+        $this->assertCount(2, $stats);
+        $this->assertSame(100.0, $stats[$thrall->id]->percentage);
+        $this->assertSame(0.0, $stats[$otherThrall->id]->percentage);
+    }
+
     // ==================== wholeGuild: Returns row arrays Tests ====================
 
     #[Test]
@@ -756,7 +773,7 @@ class CalculatorTest extends TestCase
 
         $this->assertCount(1, $records);
         $this->assertEquals($report->code, $records->first()->code());
-        $this->assertTrue($records->first()->players()->has('Thrall'));
+        $this->assertTrue($records->first()->players()->has($thrall->id));
     }
 
     #[Test]
@@ -778,8 +795,8 @@ class CalculatorTest extends TestCase
         $records = $this->makeCalculator()->mergeLinkedReports($reports);
 
         $this->assertCount(1, $records);
-        $this->assertTrue($records->first()->players()->has('Thrall'));
-        $this->assertTrue($records->first()->players()->has('Jaina'));
+        $this->assertTrue($records->first()->players()->has($thrall->id));
+        $this->assertTrue($records->first()->players()->has($jaina->id));
     }
 
     #[Test]
@@ -801,7 +818,7 @@ class CalculatorTest extends TestCase
         $records = $this->makeCalculator()->mergeLinkedReports($reports);
 
         $this->assertCount(1, $records);
-        $this->assertEquals(1, $records->first()->players()['Thrall']->presence);
+        $this->assertEquals(1, $records->first()->players()[$thrall->id]->presence);
     }
 
     #[Test]
@@ -847,9 +864,9 @@ class CalculatorTest extends TestCase
         $records = $this->makeCalculator()->mergeLinkedReports($reports);
 
         $this->assertCount(1, $records);
-        $this->assertTrue($records->first()->players()->has('Alice'));
-        $this->assertTrue($records->first()->players()->has('Bob'));
-        $this->assertTrue($records->first()->players()->has('Charlie'));
+        $this->assertTrue($records->first()->players()->has($alice->id));
+        $this->assertTrue($records->first()->players()->has($bob->id));
+        $this->assertTrue($records->first()->players()->has($charlie->id));
     }
 
     #[Test]
@@ -879,12 +896,12 @@ class CalculatorTest extends TestCase
         $manualRecord = $records->first(fn ($cluster) => $cluster->id() === $manualReport->id);
         $this->assertNotNull($manualRecord);
         $this->assertNull($manualRecord->code());
-        $this->assertTrue($manualRecord->players()->has('Jaina'));
+        $this->assertTrue($manualRecord->players()->has($jaina->id));
 
         $wclRecord = $records->first(fn ($cluster) => $cluster->id() === $wclReport->id);
         $this->assertNotNull($wclRecord);
         $this->assertSame($wclReport->code, $wclRecord->code());
-        $this->assertTrue($wclRecord->players()->has('Thrall'));
+        $this->assertTrue($wclRecord->players()->has($thrall->id));
     }
 
     #[Test]
@@ -912,8 +929,8 @@ class CalculatorTest extends TestCase
         $records = $this->makeCalculator()->mergeLinkedReports($reports);
 
         $this->assertCount(1, $records);
-        $this->assertTrue($records->first()->players()->has('Thrall'));
-        $this->assertTrue($records->first()->players()->has('Jaina'));
+        $this->assertTrue($records->first()->players()->has($thrall->id));
+        $this->assertTrue($records->first()->players()->has($jaina->id));
         $this->assertSame($wclReport->code, $records->first()->code());
     }
 
@@ -947,10 +964,10 @@ class CalculatorTest extends TestCase
         $records = $this->makeCalculator()->mergeLinkedReports($reports);
 
         $this->assertCount(1, $records);
-        $this->assertTrue($records->first()->players()->has('Alice'));
-        $this->assertTrue($records->first()->players()->has('Bob'));
-        $this->assertTrue($records->first()->players()->has('Charlie'));
-        $this->assertTrue($records->first()->players()->has('Diana'));
+        $this->assertTrue($records->first()->players()->has($alice->id));
+        $this->assertTrue($records->first()->players()->has($bob->id));
+        $this->assertTrue($records->first()->players()->has($charlie->id));
+        $this->assertTrue($records->first()->players()->has($diana->id));
     }
 
     #[Test]
@@ -975,6 +992,6 @@ class CalculatorTest extends TestCase
         $records = $this->makeCalculator()->mergeLinkedReports($reports);
 
         $this->assertCount(1, $records);
-        $this->assertTrue($records->first()->players()->has('Alice'));
+        $this->assertTrue($records->first()->players()->has($alice->id));
     }
 }

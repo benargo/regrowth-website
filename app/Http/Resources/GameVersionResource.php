@@ -67,6 +67,7 @@ class GameVersionResource extends JsonResource
             ...$data,
             'realm' => $this->realm,
             'guild_name' => $this->guild_name,
+            'uses_surnames' => $this->uses_surnames,
             'faction' => $this->faction,
             'release_date' => $this->release_date?->toDateString(),
             'blizzard' => ['namespace' => $this->blizzard_namespace],

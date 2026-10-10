@@ -3,6 +3,7 @@
 namespace Tests\Unit\Services\Attendance;
 
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\Report;
 use App\Models\WarcraftLogs\GuildTag;
@@ -230,9 +231,9 @@ class ReportClusterTest extends TestCase
         $players = $cluster->players();
 
         $this->assertCount(2, $players);
-        $this->assertInstanceOf(PlayerPresenceData::class, $players['Thrall']);
-        $this->assertSame(1, $players['Thrall']->presence);
-        $this->assertSame(2, $players['Jaina']->presence);
+        $this->assertInstanceOf(PlayerPresenceData::class, $players[$thrall->id]);
+        $this->assertSame(1, $players[$thrall->id]->presence);
+        $this->assertSame(2, $players[$jaina->id]->presence);
     }
 
     #[Test]
@@ -251,7 +252,7 @@ class ReportClusterTest extends TestCase
         $players = $cluster->players();
 
         $this->assertCount(1, $players);
-        $this->assertSame(1, $players['Thrall']->presence);
+        $this->assertSame(1, $players[$thrall->id]->presence);
     }
 
     #[Test]
@@ -268,7 +269,7 @@ class ReportClusterTest extends TestCase
 
         $cluster = new ReportClusterData($this->loadReports());
 
-        $this->assertSame(1, $cluster->players()['Thrall']->presence);
+        $this->assertSame(1, $cluster->players()[$thrall->id]->presence);
     }
 
     #[Test]
@@ -285,7 +286,24 @@ class ReportClusterTest extends TestCase
 
         $cluster = new ReportClusterData($this->loadReports());
 
-        $this->assertSame(2, $cluster->players()['Thrall']->presence);
+        $this->assertSame(2, $cluster->players()[$thrall->id]->presence);
+    }
+
+    #[Test]
+    public function players_keeps_same_named_characters_of_different_game_versions_apart(): void
+    {
+        $rank = GuildRank::factory()->create();
+        $thrall = Character::factory()->forGameVersion(GameVersion::factory()->create())->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $otherThrall = Character::factory()->forGameVersion(GameVersion::factory()->create())->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $report = $this->makeReport($this->makeTag(), Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $thrall, 1);
+        $this->attachCharacter($report, $otherThrall, 2);
+
+        $players = (new ReportClusterData($this->loadReports()))->players();
+
+        $this->assertCount(2, $players);
+        $this->assertSame(1, $players[$thrall->id]->presence);
+        $this->assertSame(2, $players[$otherThrall->id]->presence);
     }
 
     // ==================== toArray and jsonSerialize ====================
