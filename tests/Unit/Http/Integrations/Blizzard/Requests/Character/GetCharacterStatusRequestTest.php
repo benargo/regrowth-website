@@ -9,6 +9,7 @@ use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterStatusRequest;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
+use Saloon\Http\Response;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
@@ -44,6 +45,33 @@ class GetCharacterStatusRequestTest extends BlizzardTestCase
         $request = new GetCharacterStatusRequest('Wild Growth', 'Ben Argo');
 
         $this->assertSame('/profile/wow/character/wild-growth/ben-argo/status', $request->resolveEndpoint());
+    }
+
+    #[Test]
+    public function it_keeps_diacritics_in_the_character_name(): void
+    {
+        $request = new GetCharacterStatusRequest('Thunderstrike', 'Ízepo');
+
+        $this->assertSame('/profile/wow/character/thunderstrike/ízepo/status', $request->resolveEndpoint());
+    }
+
+    #[Test]
+    public function it_percent_encodes_an_accented_character_name_on_the_wire(): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => $this->tokenMock(),
+            GetCharacterStatusRequest::class => MockResponse::make(
+                body: ['id' => 12345, 'is_valid' => true],
+                status: 200,
+            ),
+        ]);
+
+        $this->makeConnector()->send(new GetCharacterStatusRequest('thunderstrike', 'Ízepo'));
+
+        Saloon::assertSent(fn (GetCharacterStatusRequest $request, Response $response): bool => str_ends_with(
+            (string) $response->getPsrRequest()->getUri()->getPath(),
+            '/profile/wow/character/thunderstrike/%C3%ADzepo/status',
+        ));
     }
 
     #[Test]

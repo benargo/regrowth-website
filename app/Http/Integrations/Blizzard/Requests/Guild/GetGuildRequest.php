@@ -7,7 +7,7 @@ use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Concerns\HasCaching;
 use App\Http\Integrations\Blizzard\Concerns\RequiresRealm;
 use App\Http\Integrations\Blizzard\Data\Guild\GuildData;
-use Illuminate\Support\Str;
+use App\Http\Integrations\Blizzard\Support\NameSlug;
 use Saloon\CachePlugin\Contracts\Cacheable;
 use Saloon\Enums\Method;
 use Saloon\Http\PendingRequest;
@@ -26,7 +26,7 @@ class GetGuildRequest extends Request implements Cacheable
         protected ?BlizzardNamespace $namespace = null,
     ) {
         $this->realm = self::normalizeRealm($realm);
-        $this->guild = Str::slug($guild);
+        $this->guild = NameSlug::from($guild);
     }
 
     public function resolveEndpoint(): string

@@ -60,6 +60,14 @@ class GetGuildRosterRequestTest extends BlizzardTestCase
     }
 
     #[Test]
+    public function it_keeps_diacritics_in_the_guild_name(): void
+    {
+        $request = new GetGuildRosterRequest('Thunderstrike', 'Ténèbres Éternelles');
+
+        $this->assertSame('/data/wow/guild/thunderstrike/ténèbres-éternelles/roster', $request->resolveEndpoint());
+    }
+
+    #[Test]
     #[Group('validation')]
     public function it_throws_when_realm_is_null_for_a_namespace_that_requires_one(): void
     {

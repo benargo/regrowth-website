@@ -6,6 +6,7 @@ use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Concerns\HasCaching;
 use App\Http\Integrations\Blizzard\Data\Characters\CharacterMediaData;
+use App\Http\Integrations\Blizzard\Support\NameSlug;
 use Illuminate\Support\Str;
 use Saloon\CachePlugin\Contracts\Cacheable;
 use Saloon\Enums\Method;
@@ -25,7 +26,7 @@ class GetCharacterMediaRequest extends Request implements Cacheable
         protected ?BlizzardNamespace $namespace = null,
     ) {
         $this->realm = Str::slug($realm);
-        $this->character = Str::slug($character);
+        $this->character = NameSlug::from($character);
     }
 
     public function resolveEndpoint(): string

@@ -81,6 +81,14 @@ class GetCharacterProfileRequestTest extends BlizzardTestCase
     }
 
     #[Test]
+    public function it_keeps_diacritics_in_the_character_name(): void
+    {
+        $request = new GetCharacterProfileRequest('Thunderstrike', 'Ízepo');
+
+        $this->assertSame('/profile/wow/character/thunderstrike/ízepo', $request->resolveEndpoint());
+    }
+
+    #[Test]
     public function it_accepts_already_slugged_inputs_unchanged(): void
     {
         $request = new GetCharacterProfileRequest('thunderstrike', 'thunderlord');

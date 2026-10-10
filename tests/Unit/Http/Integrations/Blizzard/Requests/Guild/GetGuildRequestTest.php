@@ -50,6 +50,14 @@ class GetGuildRequestTest extends BlizzardTestCase
     }
 
     #[Test]
+    public function it_keeps_diacritics_in_the_guild_name(): void
+    {
+        $request = new GetGuildRequest('Thunderstrike', 'Ténèbres Éternelles');
+
+        $this->assertSame('/data/wow/guild/thunderstrike/ténèbres-éternelles', $request->resolveEndpoint());
+    }
+
+    #[Test]
     public function it_sends_the_profile_namespace_for_the_given_game_version(): void
     {
         Saloon::fake([
