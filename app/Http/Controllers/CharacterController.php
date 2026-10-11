@@ -49,7 +49,7 @@ class CharacterController extends Controller
      */
     public function index(Request $request, GameVersion $gameVersion): Response
     {
-        $rosters = GameVersion::currentRosters();
+        $rosters = GameVersion::currentRosters()->load('media');
 
         abort_unless($rosters->contains($gameVersion), 404);
 

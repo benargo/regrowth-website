@@ -42,7 +42,7 @@ class StoreGameVersionRequest extends FormRequest
             'guild_name' => ['required', 'string', 'max:24'],
             'faction' => ['nullable', Rule::enum(Faction::class)],
             'release_date' => ['required', 'date'],
-            'theme' => ['required', Rule::enum(Theme::class)],
+            'theme' => ['nullable', Rule::enum(Theme::class)],
             'blizzard_namespace' => ['nullable', Rule::enum(BlizzardNamespace::class)],
             'warcraftlogs_guild' => ['nullable', 'integer', 'min:1', 'max:2147483647'],
             'warcraftlogs_namespace' => ['nullable', Rule::enum(WarcraftLogsNamespace::class)],
@@ -64,7 +64,6 @@ class StoreGameVersionRequest extends FormRequest
             'slug.unique' => 'A game version with this slug already exists.',
             'guild_name.required' => 'The guild name is required.',
             'release_date.required' => 'The release date is required.',
-            'theme.required' => 'Please choose a theme.',
         ];
     }
 

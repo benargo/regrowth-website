@@ -22,7 +22,7 @@ function SortableImage({ url, onDelete, disabled }) {
             {...attributes}
             {...listeners}
         >
-            <img src={url} alt="" className="h-32 w-32 rounded border border-ink-600 object-cover" />
+            <img src={url} alt="" className="border-ink-600 h-32 w-32 rounded border object-cover" />
             <button
                 type="button"
                 disabled={disabled}
@@ -30,7 +30,7 @@ function SortableImage({ url, onDelete, disabled }) {
                     e.stopPropagation();
                     onDelete(url);
                 }}
-                className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs text-white opacity-0 transition-opacity disabled:cursor-wait group-hover:opacity-100"
+                className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 disabled:cursor-wait"
                 title="Delete image"
             >
                 <Icon icon="times" style="solid" />
@@ -46,9 +46,10 @@ function SortableImage({ url, onDelete, disabled }) {
  * @param {string}  [props.error]          - Validation error message
  * @param {function(File[]):void} props.onUpload   - Called with new File objects to upload
  * @param {function(string):void} props.onDelete   - Called with the URL to delete
- * @param {function(string[]):void} props.onReorder - Called with the new ordered URL array
+ * @param {function(string[]):void} [props.onReorder] - Called with the new ordered URL array; needed only when `multiple`
+ * @param {boolean} [props.multiple=true]  - Accept several images; when false, only one is sent per upload
  */
-export default function ImageManager({ images, saving, error, onUpload, onDelete, onReorder }) {
+export default function ImageManager({ images, saving, error, onUpload, onDelete, onReorder, multiple = true }) {
     const [isDraggingFile, setIsDraggingFile] = useState(false);
     const fileInputRef = useRef(null);
 
@@ -65,7 +66,7 @@ export default function ImageManager({ images, saving, error, onUpload, onDelete
         const newIndex = images.indexOf(over.id);
         if (oldIndex === -1 || newIndex === -1) return;
 
-        onReorder(arrayMove(images, oldIndex, newIndex));
+        onReorder?.(arrayMove(images, oldIndex, newIndex));
     };
 
     const handleFileDragOver = (e) => {
@@ -92,7 +93,7 @@ export default function ImageManager({ images, saving, error, onUpload, onDelete
             ["image/jpeg", "image/png", "image/webp"].includes(f.type),
         );
         if (files.length) {
-            onUpload(files);
+            onUpload(multiple ? files : files.slice(0, 1));
         }
     };
 
@@ -108,7 +109,9 @@ export default function ImageManager({ images, saving, error, onUpload, onDelete
         <div>
             {images.length > 0 && (
                 <div className="mb-6">
-                    <p className="mb-3 text-sm text-secondary-400">Drag to reorder &#124; hover to delete</p>
+                    <p className="text-secondary-400 mb-3 text-sm">
+                        {multiple ? <>Drag to reorder &#124; hover to delete</> : "Hover to delete"}
+                    </p>
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                         <SortableContext items={images} strategy={horizontalListSortingStrategy}>
                             <div className="flex flex-wrap gap-4">
@@ -135,7 +138,7 @@ export default function ImageManager({ images, saving, error, onUpload, onDelete
             >
                 {saving ? (
                     <>
-                        <Icon icon="spinner" style="solid" className="fa-spin text-2xl text-ink-400" />
+                        <Icon icon="spinner" style="solid" className="fa-spin text-ink-400 text-2xl" />
                         <span className="text-sm">Uploading…</span>
                     </>
                 ) : isDraggingFile ? (
@@ -147,15 +150,18 @@ export default function ImageManager({ images, saving, error, onUpload, onDelete
                     <>
                         <Icon icon="cloud-upload" style="solid" className="text-2xl" />
                         <span className="text-sm">
-                            Drag &amp; drop images here, or <span className="text-ink-400 underline">browse</span>
+                            Drag &amp; drop {multiple ? "images" : "an image"} here, or{" "}
+                            <span className="text-ink-400 underline">browse</span>
                         </span>
-                        <span className="text-xs text-secondary-500">JPEG, PNG, WEBP · max 2 MB each</span>
+                        <span className="text-secondary-500 text-xs">
+                            JPEG, PNG, WEBP · max 2 MB{multiple ? " each" : ""}
+                        </span>
                     </>
                 )}
                 <input
                     ref={fileInputRef}
                     type="file"
-                    multiple
+                    multiple={multiple}
                     accept="image/jpeg,image/png,image/webp"
                     onChange={handleFileInputChange}
                     className="hidden"

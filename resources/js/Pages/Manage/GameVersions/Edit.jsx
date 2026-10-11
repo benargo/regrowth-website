@@ -48,6 +48,7 @@ export default function Edit({ gameVersion, options, relationships, steps, route
                             steps={steps}
                             sections={sections}
                             gameVersion={gameVersion}
+                            options={options}
                             relationships={relationships}
                             routes={routes}
                         />

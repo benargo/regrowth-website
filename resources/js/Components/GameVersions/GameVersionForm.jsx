@@ -6,7 +6,6 @@ const FIELD_LABELS = {
     title: "Title",
     slug: "Slug",
     release_date: "Release date",
-    theme: "Theme",
     realm: "Realm",
     guild_name: "Guild name",
     faction: "Faction",
@@ -26,7 +25,6 @@ export function gameVersionFormData(gameVersion = null) {
         guild_name: gameVersion?.guild_name ?? "",
         faction: gameVersion?.faction ?? "",
         release_date: gameVersion?.release_date ?? "",
-        theme: gameVersion?.theme ?? "",
         blizzard_namespace: gameVersion?.blizzard?.namespace ?? "",
         warcraftlogs_guild: gameVersion?.warcraftlogs?.guild ?? "",
         warcraftlogs_namespace: gameVersion?.warcraftlogs?.namespace?.value ?? "",
@@ -80,19 +78,6 @@ export default function GameVersionForm({ form, options, gameVersion = null, ...
                             error={errors.release_date}
                         >
                             {text("release_date", { type: "date", required: true })}
-                        </FormRow>
-                        <FormRow
-                            htmlFor="theme"
-                            label={FIELD_LABELS.theme}
-                            required
-                            hint="Sets the site's colours and banners while this version is active."
-                            error={errors.theme}
-                        >
-                            {select("theme", {
-                                options: options.themes,
-                                placeholder: "Choose a theme",
-                                required: true,
-                            })}
                         </FormRow>
                     </FormSection>
 

@@ -13,9 +13,12 @@ use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\Raid;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
 
 #[Group('platform')]
@@ -300,7 +303,75 @@ class UpdateGameVersionTest extends TestCase
         $this->assertModelExists($rank);
     }
 
+    // ==================== media ====================
+
+    #[Group('happy-path')]
+    #[Group('laravel-media-library')]
+    #[Test]
+    #[TestWith([GameVersion::MEDIA_BANNER])]
+    #[TestWith([GameVersion::MEDIA_ICON])]
+    #[TestWith([GameVersion::MEDIA_LOGO])]
+    public function it_attaches_an_uploaded_image_to_its_collection(string $collection): void
+    {
+        Storage::fake('public');
+        $gameVersion = GameVersion::factory()->create();
+
+        $this->updateGameVersion($gameVersion, [$collection => UploadedFile::fake()->image("{$collection}.png")]);
+
+        $this->assertSame("{$collection}.png", $gameVersion->fresh()->getFirstMedia($collection)?->file_name);
+    }
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function it_clears_only_the_collection_given_as_null(): void
+    {
+        Storage::fake('public');
+        $gameVersion = GameVersion::factory()->create();
+        $this->attachImage($gameVersion, GameVersion::MEDIA_BANNER);
+        $this->attachImage($gameVersion, GameVersion::MEDIA_LOGO);
+
+        $this->updateGameVersion($gameVersion, [GameVersion::MEDIA_BANNER => null]);
+
+        $fresh = $gameVersion->fresh();
+        $this->assertFalse($fresh->hasMedia(GameVersion::MEDIA_BANNER));
+        $this->assertTrue($fresh->hasMedia(GameVersion::MEDIA_LOGO));
+    }
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function it_leaves_images_alone_when_their_keys_are_not_given(): void
+    {
+        Storage::fake('public');
+        $gameVersion = GameVersion::factory()->create();
+        $this->attachImage($gameVersion, GameVersion::MEDIA_ICON);
+
+        $this->updateGameVersion($gameVersion, ['realm' => 'Firemaw']);
+
+        $this->assertTrue($gameVersion->fresh()->hasMedia(GameVersion::MEDIA_ICON));
+    }
+
+    #[Test]
+    public function it_updates_columns_alongside_an_image(): void
+    {
+        Storage::fake('public');
+        $gameVersion = GameVersion::factory()->create(['realm' => 'Gehennas']);
+
+        $this->updateGameVersion($gameVersion, [
+            'realm' => 'Firemaw',
+            GameVersion::MEDIA_LOGO => UploadedFile::fake()->image('logo.png'),
+        ]);
+
+        $fresh = $gameVersion->fresh();
+        $this->assertSame('Firemaw', $fresh->realm);
+        $this->assertTrue($fresh->hasMedia(GameVersion::MEDIA_LOGO));
+    }
+
     // ==================== helpers ====================
+
+    private function attachImage(GameVersion $gameVersion, string $collection): void
+    {
+        $gameVersion->addMedia(UploadedFile::fake()->image("{$collection}.png"))->toMediaCollection($collection);
+    }
 
     /**
      * @param  array<string, mixed>  $data

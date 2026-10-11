@@ -56,13 +56,35 @@ function capitalise(value) {
     return value ? value.charAt(0).toUpperCase() + value.slice(1) : null;
 }
 
+/** The theme step's summary: the colour theme, then each image or its absence. */
+function themeSummary(gameVersion) {
+    const images = [
+        ["banner", "Banner"],
+        ["logo", "Logo"],
+        ["icon", "Icon"],
+    ];
+
+    return [
+        {
+            items: [
+                { id: "theme", primary: "Colour theme", secondary: capitalise(gameVersion.theme) },
+                ...images.map(([key, label]) => ({
+                    id: key,
+                    primary: label,
+                    secondary: gameVersion[`${key}_url`] ? "Uploaded" : "Not uploaded",
+                    icon: gameVersion[`${key}_url`],
+                })),
+            ],
+        },
+    ];
+}
+
 /** The details step's [label, value] pairs. */
 function gameVersionDetails(gameVersion) {
     return [
         ["Title", gameVersion.title],
         ["Slug", gameVersion.slug],
         ["Release date", gameVersion.release_date ? formatDate(gameVersion.release_date).long : null],
-        ["Theme", capitalise(gameVersion.theme)],
         ["Realm", gameVersion.realm],
         ["Guild name", gameVersion.guild_name],
         ["Faction", capitalise(gameVersion.faction)],
@@ -84,7 +106,7 @@ export default function Review({ gameVersion, steps, relationships, routes }) {
                     routes={routes}
                     steps={steps}
                     details={gameVersionDetails(gameVersion)}
-                    summaries={STEP_SUMMARIES}
+                    summaries={{ ...STEP_SUMMARIES, theme: () => themeSummary(gameVersion) }}
                     relationships={relationships}
                 />
             </PageContainer>

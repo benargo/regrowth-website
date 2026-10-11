@@ -19,6 +19,7 @@ class GameVersionSetupStepTest extends TestCase
     {
         $this->assertSame(
             [
+                ['value' => 'theme', 'label' => 'Theme', 'component' => 'ThemeSection'],
                 ['value' => 'races-and-classes', 'label' => 'Races and classes', 'component' => 'RacesAndClassesSection'],
                 ['value' => 'phases', 'label' => 'Phases and raids', 'component' => 'PhasesSection'],
                 ['value' => 'guild-ranks', 'label' => 'Guild ranks', 'component' => 'GuildRanksSection'],
@@ -32,12 +33,13 @@ class GameVersionSetupStepTest extends TestCase
     #[Test]
     public function it_starts_the_wizard_at_the_first_case(): void
     {
-        $this->assertSame(GameVersionSetupStep::RACES_AND_CLASSES, GameVersionSetupStep::first());
+        $this->assertSame(GameVersionSetupStep::Theme, GameVersionSetupStep::first());
     }
 
     // ==================== next() ====================
 
     #[Test]
+    #[TestWith(['theme', 'races-and-classes'])]
     #[TestWith(['races-and-classes', 'phases'])]
     #[TestWith(['phases', 'guild-ranks'])]
     public function it_returns_the_step_after_the_given_step(string $step, string $expected): void
@@ -54,6 +56,7 @@ class GameVersionSetupStepTest extends TestCase
     // ==================== previous() ====================
 
     #[Test]
+    #[TestWith(['races-and-classes', 'theme'])]
     #[TestWith(['phases', 'races-and-classes'])]
     #[TestWith(['guild-ranks', 'phases'])]
     public function it_returns_the_step_before_the_given_step(string $step, string $expected): void
@@ -64,7 +67,7 @@ class GameVersionSetupStepTest extends TestCase
     #[Test]
     public function it_returns_no_step_before_the_first_step(): void
     {
-        $this->assertNull(GameVersionSetupStep::RACES_AND_CLASSES->previous());
+        $this->assertNull(GameVersionSetupStep::Theme->previous());
     }
 
     // ==================== component() ====================

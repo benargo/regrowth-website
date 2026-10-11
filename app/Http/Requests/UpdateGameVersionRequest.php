@@ -7,6 +7,7 @@ use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Http\Requests\Concerns\ChecksEditLock;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\Phase;
 use App\Models\PlayableClass;
@@ -73,6 +74,9 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             ],
             'guild_ranks.*.name' => ['required', 'string', 'max:255'],
             'guild_ranks.*.count_attendance' => ['required', 'boolean'],
+            GameVersion::MEDIA_BANNER => $this->imageRules(),
+            GameVersion::MEDIA_ICON => $this->imageRules(),
+            GameVersion::MEDIA_LOGO => $this->imageRules(),
         ];
     }
 
@@ -99,6 +103,9 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             'guild_ranks.max' => 'A guild can have up to 10 ranks.',
             'guild_ranks.*.id.exists' => 'One of these ranks no longer exists. Reload the page and try again.',
             'guild_ranks.*.name.required' => 'Enter a name for every rank.',
+            ...$this->imageMessages(GameVersion::MEDIA_BANNER),
+            ...$this->imageMessages(GameVersion::MEDIA_ICON),
+            ...$this->imageMessages(GameVersion::MEDIA_LOGO),
         ];
     }
 
@@ -127,6 +134,31 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
     {
         return [
             $this->editLockCheck('gameVersion', 'game version'),
+        ];
+    }
+
+    /**
+     * The rules for an image replacing one of the game version's media
+     * collections. Null removes the image.
+     *
+     * @return list<string>
+     */
+    protected function imageRules(): array
+    {
+        return ['sometimes', 'nullable', 'image', 'mimes:webp,png,jpeg', 'max:2048'];
+    }
+
+    /**
+     * The messages for an image field, naming the image it replaces.
+     *
+     * @return array<string, string>
+     */
+    protected function imageMessages(string $field): array
+    {
+        return [
+            "{$field}.image" => "The {$field} must be a JPEG, PNG or WEBP image.",
+            "{$field}.mimes" => "The {$field} must be a JPEG, PNG or WEBP image.",
+            "{$field}.max" => "The {$field} must be 2 MB or smaller.",
         ];
     }
 
