@@ -48,19 +48,30 @@ class PlannedAbsencePolicy
     }
 
     /**
-     * Determine whether the user can update the model.
+     * Determine whether the user can update their own planned absence.
+     * Only the creator can, and only until the absence has started.
      */
     public function update(User $user, PlannedAbsence $plannedAbsence): bool
     {
-        return $user->isAuthorizedTo('update-planned-absences') || $plannedAbsence->createdBy()->is($user);
+        return $plannedAbsence->createdBy()->is($user) && ! $plannedAbsence->hasStarted();
     }
 
     /**
-     * Determine whether the user can delete the model.
+     * Determine whether the user can delete their own planned absence.
+     * Only the creator can, and only until the absence has started.
      */
     public function delete(User $user, PlannedAbsence $plannedAbsence): bool
     {
-        return $user->isAuthorizedTo('delete-planned-absences') || $plannedAbsence->createdBy()->is($user);
+        return $plannedAbsence->createdBy()->is($user) && ! $plannedAbsence->hasStarted();
+    }
+
+    /**
+     * Determine whether the user can delete anyone's planned absences,
+     * including ones that have started.
+     */
+    public function deleteForOthers(User $user): bool
+    {
+        return $user->isAuthorizedTo('delete-planned-absences');
     }
 
     /**

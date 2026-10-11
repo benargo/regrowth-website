@@ -62,4 +62,12 @@ class PlannedAbsence extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    /**
+     * An absence has started once its start date is before today.
+     */
+    public function hasStarted(): bool
+    {
+        return $this->start_date->lt(today());
+    }
 }

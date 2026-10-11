@@ -128,41 +128,97 @@ class PlannedAbsencePolicyTest extends TestCase
     // ==================== update ====================
 
     #[Test]
-    public function it_allows_update_with_permission(): void
+    public function it_allows_update_for_the_creator_before_the_absence_starts(): void
     {
-        $user = $this->userWithPermission('update-planned-absences');
-        $absence = PlannedAbsence::factory()->create();
+        $this->freezeTime();
+        $user = $this->userWithoutPermission();
+        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id, 'start_date' => today()->addDay()]);
 
         $this->assertTrue($this->policy->update($user, $absence));
     }
 
     #[Test]
-    public function it_allows_update_when_user_is_creator(): void
+    public function it_allows_update_for_the_creator_on_the_start_date(): void
     {
+        $this->freezeTime();
         $user = $this->userWithoutPermission();
-        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id]);
+        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id, 'start_date' => today()]);
 
         $this->assertTrue($this->policy->update($user, $absence));
+    }
+
+    #[Test]
+    public function it_denies_update_for_the_creator_once_the_absence_has_started(): void
+    {
+        $this->freezeTime();
+        $user = $this->userWithoutPermission();
+        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id, 'start_date' => today()->subDay()]);
+
+        $this->assertFalse($this->policy->update($user, $absence));
+    }
+
+    #[Test]
+    public function it_denies_update_for_a_non_creator_even_with_update_permission(): void
+    {
+        $this->freezeTime();
+        $user = $this->userWithPermission('update-planned-absences');
+        $absence = PlannedAbsence::factory()->create(['start_date' => today()->addDay()]);
+
+        $this->assertFalse($this->policy->update($user, $absence));
     }
 
     // ==================== delete ====================
 
     #[Test]
-    public function it_allows_delete_with_permission(): void
+    public function it_allows_delete_for_the_creator_before_the_absence_starts(): void
     {
-        $user = $this->userWithPermission('delete-planned-absences');
-        $absence = PlannedAbsence::factory()->create();
+        $this->freezeTime();
+        $user = $this->userWithoutPermission();
+        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id, 'start_date' => today()->addDay()]);
 
         $this->assertTrue($this->policy->delete($user, $absence));
     }
 
     #[Test]
-    public function it_allows_delete_when_user_is_creator(): void
+    public function it_allows_delete_for_the_creator_on_the_start_date(): void
     {
+        $this->freezeTime();
         $user = $this->userWithoutPermission();
-        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id]);
+        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id, 'start_date' => today()]);
 
         $this->assertTrue($this->policy->delete($user, $absence));
+    }
+
+    #[Test]
+    public function it_denies_delete_for_the_creator_once_the_absence_has_started(): void
+    {
+        $this->freezeTime();
+        $user = $this->userWithoutPermission();
+        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id, 'start_date' => today()->subDay()]);
+
+        $this->assertFalse($this->policy->delete($user, $absence));
+    }
+
+    #[Test]
+    public function it_denies_delete_for_a_non_creator_even_with_delete_permission(): void
+    {
+        $this->freezeTime();
+        $user = $this->userWithPermission('delete-planned-absences');
+        $absence = PlannedAbsence::factory()->create(['start_date' => today()->addDay()]);
+
+        $this->assertFalse($this->policy->delete($user, $absence));
+    }
+
+    #[Test]
+    public function it_allows_delete_for_others_with_delete_permission(): void
+    {
+        $this->assertTrue($this->policy->deleteForOthers($this->userWithPermission('delete-planned-absences')));
+    }
+
+    #[Test]
+    public function it_denies_delete_for_others_without_permission(): void
+    {
+        $this->assertFalse($this->policy->deleteForOthers($this->userWithoutPermission()));
     }
 
     // ==================== restore ====================
