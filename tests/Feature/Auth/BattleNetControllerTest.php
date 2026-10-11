@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Contracts\Http\SharesBattleNetSession;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
@@ -14,6 +15,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
 use Saloon\Exceptions\Request\FatalRequestException;
+use Saloon\Http\Auth\AccessTokenAuthenticator;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\PendingRequest;
 use Saloon\Laravel\Facades\Saloon;
@@ -58,7 +60,7 @@ class BattleNetControllerTest extends TestCase
         $this->assertStringStartsWith('https://eu.battle.net/oauth/authorize?', $location);
         $this->assertSame('openid wow.profile', $query['scope']);
         $this->assertSame(32, strlen($query['state']));
-        $response->assertSessionHas('battlenet.oauth_state', $query['state']);
+        $response->assertSessionHas(SharesBattleNetSession::STATE_KEY, $query['state']);
     }
 
     // ==================== callback ====================
@@ -72,20 +74,59 @@ class BattleNetControllerTest extends TestCase
 
     #[Test]
     #[Group('happy-path')]
-    public function callback_stores_the_access_token_in_the_session(): void
+    public function callback_stores_the_authenticator_in_the_session(): void
     {
         $this->freezeTime();
         $this->fakeTokenExchange();
 
         $response = $this->actingAs(User::factory()->create())
-            ->withSession(['battlenet.oauth_state' => 'expected-state'])
+            ->withSession([SharesBattleNetSession::STATE_KEY => 'expected-state'])
             ->get(route('battlenet.callback', ['code' => 'the-code', 'state' => 'expected-state']));
 
         $response->assertRedirect(route('account.index'));
         $response->assertSessionHas('success', 'Connected to Battle.net.');
-        $response->assertSessionMissing('battlenet.oauth_state');
-        $response->assertSessionHas('battlenet.access_token', 'user-token');
-        $response->assertSessionHas('battlenet.token_expires_at', now()->addSeconds(86399)->getTimestamp());
+        $response->assertSessionMissing(SharesBattleNetSession::STATE_KEY);
+
+        $authenticator = session(SharesBattleNetSession::AUTHENTICATOR_KEY);
+
+        $this->assertInstanceOf(AccessTokenAuthenticator::class, $authenticator);
+        $this->assertSame('user-token', $authenticator->getAccessToken());
+        $this->assertSame(now()->addSeconds(86399)->getTimestamp(), $authenticator->getExpiresAt()?->getTimestamp());
+    }
+
+    #[Test]
+    #[Group('happy-path')]
+    public function callback_redirects_to_the_intended_url_and_consumes_it(): void
+    {
+        $this->fakeTokenExchange();
+
+        $response = $this->actingAs(User::factory()->create())
+            ->withSession([
+                SharesBattleNetSession::STATE_KEY => 'expected-state',
+                SharesBattleNetSession::INTENDED_URL_KEY => 'https://regrowth.test/account/absences/create',
+            ])
+            ->get(route('battlenet.callback', ['state' => 'expected-state', 'code' => 'auth-code']));
+
+        $response->assertRedirect('https://regrowth.test/account/absences/create')
+            ->assertSessionHas('success', 'Connected to Battle.net.')
+            ->assertSessionMissing(SharesBattleNetSession::INTENDED_URL_KEY);
+
+        $this->assertTrue(session(SharesBattleNetSession::AUTHENTICATOR_KEY)->hasNotExpired());
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function callback_failure_redirects_to_the_intended_url_with_the_error(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->withSession([
+                SharesBattleNetSession::STATE_KEY => 'expected-state',
+                SharesBattleNetSession::INTENDED_URL_KEY => 'https://regrowth.test/account/absences/create',
+            ])
+            ->get(route('battlenet.callback', ['state' => 'wrong', 'code' => 'auth-code']))
+            ->assertRedirect('https://regrowth.test/account/absences/create')
+            ->assertSessionHas('error', 'Failed to connect to Battle.net. Please try again.')
+            ->assertSessionMissing(SharesBattleNetSession::INTENDED_URL_KEY);
     }
 
     #[Test]
@@ -95,7 +136,7 @@ class BattleNetControllerTest extends TestCase
         $this->fakeTokenExchange();
 
         $response = $this->actingAs(User::factory()->create())
-            ->withSession(['battlenet.oauth_state' => 'expected-state'])
+            ->withSession([SharesBattleNetSession::STATE_KEY => 'expected-state'])
             ->get(route('battlenet.callback', ['code' => 'the-code']));
 
         $this->assertConnectFailed($response);
@@ -109,7 +150,7 @@ class BattleNetControllerTest extends TestCase
         $this->fakeTokenExchange();
 
         $response = $this->actingAs(User::factory()->create())
-            ->withSession(['battlenet.oauth_state' => 'expected-state'])
+            ->withSession([SharesBattleNetSession::STATE_KEY => 'expected-state'])
             ->get(route('battlenet.callback', ['code' => 'the-code', 'state' => 'forged-state']));
 
         $this->assertConnectFailed($response);
@@ -136,7 +177,7 @@ class BattleNetControllerTest extends TestCase
         $this->fakeTokenExchange();
 
         $response = $this->actingAs(User::factory()->create())
-            ->withSession(['battlenet.oauth_state' => 'expected-state'])
+            ->withSession([SharesBattleNetSession::STATE_KEY => 'expected-state'])
             ->get(route('battlenet.callback', ['state' => 'expected-state']));
 
         $this->assertConnectFailed($response);
@@ -150,7 +191,7 @@ class BattleNetControllerTest extends TestCase
         $this->fakeTokenExchange();
 
         $response = $this->actingAs(User::factory()->create())
-            ->withSession(['battlenet.oauth_state' => 'expected-state'])
+            ->withSession([SharesBattleNetSession::STATE_KEY => 'expected-state'])
             ->get(route('battlenet.callback', ['error' => 'access_denied', 'state' => 'expected-state']));
 
         $this->assertConnectFailed($response);
@@ -166,7 +207,7 @@ class BattleNetControllerTest extends TestCase
         ]);
 
         $response = $this->actingAs(User::factory()->create())
-            ->withSession(['battlenet.oauth_state' => 'expected-state'])
+            ->withSession([SharesBattleNetSession::STATE_KEY => 'expected-state'])
             ->get(route('battlenet.callback', ['code' => 'stale-code', 'state' => 'expected-state']));
 
         $this->assertConnectFailed($response);
@@ -183,7 +224,7 @@ class BattleNetControllerTest extends TestCase
         ]);
 
         $this->actingAs(User::factory()->create())
-            ->withSession(['battlenet.oauth_state' => 'expected-state'])
+            ->withSession([SharesBattleNetSession::STATE_KEY => 'expected-state'])
             ->get(route('battlenet.callback', ['code' => 'stale-code', 'state' => 'expected-state']));
 
         Log::shouldHaveReceived('warning')
@@ -198,7 +239,7 @@ class BattleNetControllerTest extends TestCase
         $this->fakeUnreachableTokenExchange();
 
         $response = $this->actingAs(User::factory()->create())
-            ->withSession(['battlenet.oauth_state' => 'expected-state'])
+            ->withSession([SharesBattleNetSession::STATE_KEY => 'expected-state'])
             ->get(route('battlenet.callback', ['code' => 'the-code', 'state' => 'expected-state']));
 
         $this->assertConnectFailed($response);
@@ -213,7 +254,7 @@ class BattleNetControllerTest extends TestCase
         $this->fakeUnreachableTokenExchange();
 
         $this->actingAs(User::factory()->create())
-            ->withSession(['battlenet.oauth_state' => 'expected-state'])
+            ->withSession([SharesBattleNetSession::STATE_KEY => 'expected-state'])
             ->get(route('battlenet.callback', ['code' => 'the-code', 'state' => 'expected-state']));
 
         Log::shouldHaveReceived('warning')
@@ -247,7 +288,6 @@ class BattleNetControllerTest extends TestCase
     {
         $response->assertRedirect(route('account.index'));
         $response->assertSessionHas('error', 'Failed to connect to Battle.net. Please try again.');
-        $response->assertSessionMissing('battlenet.access_token');
-        $response->assertSessionMissing('battlenet.token_expires_at');
+        $response->assertSessionMissing(SharesBattleNetSession::AUTHENTICATOR_KEY);
     }
 }
