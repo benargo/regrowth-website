@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use App\Enums\Faction;
-use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Http\Requests\Concerns\ChecksEditLock;
@@ -35,7 +34,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             'guild_name' => ['sometimes', 'required', 'string', 'max:24'],
             'faction' => ['sometimes', 'nullable', Rule::enum(Faction::class)],
             'release_date' => ['sometimes', 'required', 'date'],
-            'theme' => ['sometimes', 'nullable', Rule::enum(Theme::class)],
+            'color' => ['sometimes', $this->route('gameVersion')->color === null ? 'nullable' : 'required', 'string', 'regex:/^#?[0-9a-fA-F]{6}$/'],
             'blizzard_namespace' => ['sometimes', 'nullable', Rule::enum(BlizzardNamespace::class)],
             'warcraftlogs_guild' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:2147483647'],
             'warcraftlogs_namespace' => ['sometimes', 'nullable', Rule::enum(WarcraftLogsNamespace::class)],
@@ -90,6 +89,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
         return [
             ...parent::messages(),
             'slug.missing' => "The slug can't be changed once the game version is created.",
+            'color.required' => "The colour can't be removed once it has been set.",
             'playable_race_ids.*.exists' => 'One of the selected races no longer exists. Reload the page and try again.',
             'playable_class_ids.*.exists' => 'One of the selected classes no longer exists. Reload the page and try again.',
             'phase_ids.*.exists' => 'One of the selected phases no longer exists. Reload the page and try again.',

@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Enums\Faction;
-use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\GameVersion;
@@ -18,13 +17,26 @@ class GameVersionSeeder extends Seeder
     {
         return [
             [
+                'title' => 'Mists of Pandaria Classic',
+                'slug' => 'mop',
+                'realm' => 'Mirage Raceway',
+                'guild_name' => config('services.blizzard.guild.name'),
+                'uses_surnames' => false,
+                'faction' => Faction::ALLIANCE->value,
+                'release_date' => Carbon::create(2021, 9, 4, 0, 0, 0, CarbonTimeZone::create('Europe/Paris')),
+                'color' => 0x00FF98, // 0, 255, 152
+                'blizzard_namespace' => BlizzardNamespace::CLASSIC->value,
+                'warcraftlogs_guild' => 598032,
+                'warcraftlogs_namespace' => WarcraftLogsNamespace::CLASSIC->value,
+            ],
+            [
                 'title' => 'Burning Crusade Classic (Anniversary)',
                 'slug' => 'tbc',
                 'realm' => 'Thunderstrike',
                 'guild_name' => config('services.blizzard.guild.name'),
                 'faction' => Faction::ALLIANCE->value,
                 'release_date' => Carbon::create(2026, 2, 6, 0, 0, 0, CarbonTimeZone::create('Europe/Paris')),
-                'theme' => Theme::CLASSIC->value,
+                'color' => 0x4AE832, // 74, 232, 50
                 'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY->value,
                 'warcraftlogs_guild' => 774848,
                 'warcraftlogs_namespace' => WarcraftLogsNamespace::ANNIVERSARY->value,
@@ -36,7 +48,7 @@ class GameVersionSeeder extends Seeder
                 'guild_name' => config('services.blizzard.guild.name'),
                 'faction' => Faction::HORDE->value,
                 'release_date' => Carbon::create(2026, 11, 5, 0, 0, 0, CarbonTimeZone::create('Europe/Paris')),
-                'theme' => Theme::FOREVER->value,
+                'color' => 0xC69B3A, // 198, 155, 58
                 'blizzard_namespace' => null,
                 'warcraftlogs_guild' => null,
                 'warcraftlogs_namespace' => null,

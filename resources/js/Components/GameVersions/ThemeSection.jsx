@@ -1,35 +1,18 @@
 import { useState } from "react";
 import { router, useForm } from "@inertiajs/react";
+import ColorPicker from "@/Components/ColorPicker";
 import Relationships from "@/Components/Datasets/Relationships";
-import { FormRow, OptionSelect, SaveButton } from "@/Components/FormControls";
+import { FormRow, SaveButton } from "@/Components/FormControls";
 import ImageManager from "@/Components/ImageManager";
+import { toHex } from "@/Helpers/ModelColor";
 import { useFormAutosave } from "@/Hooks/useAutosave";
 import { AUTOSAVE_DELAY } from "@/Hooks/useRelationshipForm";
-
-/** Each image the game version can have, keyed by its media collection. */
-const IMAGES = [
-    {
-        key: "banner",
-        label: "Banner",
-        hint: "The wide header image shown at the top of this version's pages.",
-    },
-    {
-        key: "logo",
-        label: "Logo",
-        hint: "The game's full-colour logo.",
-    },
-    {
-        key: "icon",
-        label: "Icon",
-        hint: "A single-colour version of the logo, for small spaces such as menus.",
-    },
-];
 
 /**
  * One image upload. Files are sent as soon as they are chosen, with the PATCH
  * spoofed over POST because browsers can't send files in a real PATCH.
  */
-function ImageField({ image, url, routes }) {
+function ImageField({ field, label, hint, url, routes }) {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
 
@@ -39,41 +22,34 @@ function ImageField({ image, url, routes }) {
             preserveState: true,
             onStart: () => setSaving(true),
             onSuccess: () => setError(null),
-            onError: (errors) => setError(errors[image.key] ?? null),
+            onError: (errors) => setError(errors[field] ?? null),
             onFinish: () => setSaving(false),
             ...options,
         });
     }
 
     return (
-        <FormRow label={image.label} hint={image.hint}>
+        <FormRow label={label} hint={hint}>
             <ImageManager
                 images={url ? [url] : []}
                 saving={saving}
                 error={error}
                 multiple={false}
-                onUpload={([file]) => send("post", { _method: "patch", [image.key]: file }, { forceFormData: true })}
-                onDelete={() => send("patch", { [image.key]: null })}
+                onUpload={([file]) => send("post", { _method: "patch", [field]: file }, { forceFormData: true })}
+                onDelete={() => send("patch", { [field]: null })}
             />
         </FormRow>
     );
 }
 
-export default function ThemeSection({
-    gameVersion,
-    options,
-    routes,
-    submitLabel = "Save theme",
-    onSaved,
-    autosave = false,
-}) {
-    const saved = { theme: gameVersion.theme };
+export default function ThemeSection({ gameVersion, routes, submitLabel = "Save theme", onSaved, autosave = false }) {
+    const saved = { color: toHex(gameVersion.color) };
     const form = useForm(saved);
     const { schedule, containerProps } = useFormAutosave({
         form,
         url: routes.update,
         saved,
-        key: "theme",
+        key: "color",
         trigger: "blur",
         delay: AUTOSAVE_DELAY,
         enabled: autosave,
@@ -91,32 +67,47 @@ export default function ThemeSection({
         <Relationships
             id="theme"
             title="Theme"
-            description="Choose the site's colours for this version and upload its images. Images save as soon as you add or delete them."
+            description="Choose this version's colour and upload its images. Images save as soon as you add or delete them."
         >
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-8" {...containerProps}>
                 <FormRow
-                    htmlFor="theme"
-                    label="Colour theme"
-                    hint="Sets the site's colours and banner backgrounds while this version is active."
-                    error={form.errors.theme}
-                    className="max-w-sm"
+                    label="Colour"
+                    hint="Fills this version's page headers, behind the banner image."
+                    error={form.errors.color}
                 >
-                    <OptionSelect
-                        name="theme"
-                        value={form.data.theme}
-                        onChange={(value) => {
-                            form.setData("theme", value);
-                            schedule();
-                        }}
-                        options={options.themes}
-                        placeholder="Site default"
-                        invalid={!!form.errors.theme}
+                    {/* The picker is controlled, so onChange keeps it in step while dragging. */}
+                    <ColorPicker
+                        color={form.data.color ?? "#000000"}
+                        onChange={(color) => form.setData("color", color.hex)}
+                        onChangeComplete={() => schedule()}
                     />
                 </FormRow>
 
-                {IMAGES.map((image) => (
-                    <ImageField key={image.key} image={image} url={gameVersion[`${image.key}_url`]} routes={routes} />
-                ))}
+                <ImageField
+                    field="banner"
+                    label="Banner"
+                    hint="The wide header image shown at the top of this version's pages."
+                    url={gameVersion.banner_url}
+                    routes={routes}
+                />
+
+                {/* The logo and icon are square, so they sit side by side on wider screens. */}
+                <div className="grid gap-8 md:grid-cols-2">
+                    <ImageField
+                        field="logo"
+                        label="Logo"
+                        hint="The game's full-colour logo."
+                        url={gameVersion.logo_url}
+                        routes={routes}
+                    />
+                    <ImageField
+                        field="icon"
+                        label="Icon"
+                        hint="A single-colour version of the logo, for small spaces such as menus."
+                        url={gameVersion.icon_url}
+                        routes={routes}
+                    />
+                </div>
 
                 {!autosave && <SaveButton processing={form.processing} label={submitLabel} />}
             </form>

@@ -2,11 +2,10 @@
 
 namespace Tests\Unit\Models;
 
+use App\Casts\AsBinaryColor;
 use App\Casts\AsSlug;
-use App\Casts\AsTheme;
 use App\Contracts\Models\DatasetModel;
 use App\Enums\Faction;
-use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\Character;
@@ -75,7 +74,7 @@ class GameVersionTest extends ModelTestCase
             'guild_name',
             'faction',
             'release_date',
-            'theme',
+            'color',
             'blizzard_namespace',
             'warcraftlogs_guild',
             'warcraftlogs_namespace',
@@ -91,7 +90,7 @@ class GameVersionTest extends ModelTestCase
             'slug' => AsSlug::class,
             'faction' => Faction::class,
             'release_date' => 'datetime',
-            'theme' => AsTheme::class,
+            'color' => AsBinaryColor::class,
             'blizzard_namespace' => BlizzardNamespace::class,
             'warcraftlogs_guild' => 'integer',
             'warcraftlogs_namespace' => WarcraftLogsNamespace::class,
@@ -179,38 +178,27 @@ class GameVersionTest extends ModelTestCase
     }
 
     #[Test]
-    public function theme_is_cast_to_theme_enum(): void
+    public function color_is_stored_from_a_hex_string_and_read_back_as_hex(): void
     {
-        $gameVersion = $this->create(['theme' => Theme::FOREVER]);
+        $gameVersion = $this->create(['color' => '#8B7ED0']);
 
-        $this->assertSame(Theme::FOREVER, $gameVersion->fresh()->theme);
+        $this->assertSame('8b7ed0', $gameVersion->fresh()->color);
     }
 
     #[Test]
-    #[Group('error-handling')]
-    public function theme_throws_for_a_value_outside_the_enum(): void
+    public function color_is_stored_from_an_integer_and_read_back_as_hex(): void
     {
-        $gameVersion = $this->create();
+        $gameVersion = $this->create(['color' => 0x4AE832]);
 
-        DB::table('game_versions')
-            ->where('id', $gameVersion->id)
-            ->update(['theme' => 'some-future-theme']);
-
-        $this->expectException(\ValueError::class);
-
-        $gameVersion->fresh()->theme;
+        $this->assertSame('4ae832', $gameVersion->fresh()->color);
     }
 
     #[Test]
-    public function theme_defaults_to_the_default_theme_when_set_to_null(): void
+    public function color_stays_null_when_not_set(): void
     {
-        $gameVersion = $this->create(['theme' => null]);
+        $gameVersion = $this->create(['color' => null]);
 
-        $this->assertSame(Theme::default(), $gameVersion->theme);
-        $this->assertTableHas([
-            'id' => $gameVersion->id,
-            'theme' => Theme::default()->value,
-        ]);
+        $this->assertNull($gameVersion->fresh()->color);
     }
 
     #[Test]

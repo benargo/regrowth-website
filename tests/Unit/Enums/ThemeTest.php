@@ -65,24 +65,4 @@ class ThemeTest extends TestCase
 
         Theme::default();
     }
-
-    // ==================== bannerCssClass() ====================
-
-    #[Test]
-    public function it_builds_the_classic_banner_css_class_with_the_default_prefix(): void
-    {
-        $this->assertSame('bg-raid-black-temple', Theme::CLASSIC->bannerCssClass());
-    }
-
-    #[Test]
-    public function it_builds_the_forever_banner_css_class_with_the_default_prefix(): void
-    {
-        $this->assertSame('bg-camelot', Theme::FOREVER->bannerCssClass());
-    }
-
-    #[Test]
-    public function it_builds_the_banner_css_class_with_a_custom_prefix(): void
-    {
-        $this->assertSame('from-raid-black-temple', Theme::CLASSIC->bannerCssClass('from'));
-    }
 }

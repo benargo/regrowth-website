@@ -28,7 +28,11 @@ export default function Setup({
 }) {
     return (
         <Master title={`Set up ${gameVersion.title}`}>
-            <SharedHeader backgroundClass={gameVersion.banner_class} title={`Set up ${gameVersion.title}`} />
+            <SharedHeader
+                color={gameVersion.color}
+                image={gameVersion.banner_url}
+                title={`Set up ${gameVersion.title}`}
+            />
 
             <SetupSteps steps={steps} currentStep={step.value} routes={routes} />
 

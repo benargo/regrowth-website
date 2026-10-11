@@ -8,7 +8,6 @@ use App\Actions\GameVersion\BuildGameVersionRoutes;
 use App\Actions\GameVersion\UpdateGameVersion;
 use App\Enums\Faction;
 use App\Enums\GameVersionSetupStep;
-use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Http\Requests\StoreGameVersionRequest;
@@ -185,7 +184,6 @@ class GameVersionController extends Controller
      *
      * @return array{
      *     factions: list<array{value: string, label: string}>,
-     *     themes: list<array{value: string, label: string}>,
      *     blizzard_namespaces: list<array{value: string, label: string}>,
      *     warcraftlogs_namespaces: list<array{value: string, label: string}>
      * }
@@ -194,7 +192,6 @@ class GameVersionController extends Controller
     {
         return [
             'factions' => $this->enumOptions(Faction::cases()),
-            'themes' => $this->enumOptions(Theme::cases()),
             'blizzard_namespaces' => $this->enumOptions(BlizzardNamespace::cases()),
             'warcraftlogs_namespaces' => collect(WarcraftLogsNamespace::cases())
                 ->map(fn (WarcraftLogsNamespace $namespace): array => [

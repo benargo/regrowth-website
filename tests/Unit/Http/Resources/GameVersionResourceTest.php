@@ -3,7 +3,6 @@
 namespace Tests\Unit\Http\Resources;
 
 use App\Enums\Faction;
-use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Http\Resources\GameVersionResource;
@@ -33,8 +32,7 @@ class GameVersionResourceTest extends TestCase
         $this->assertArrayHasKey('id', $array);
         $this->assertArrayHasKey('title', $array);
         $this->assertArrayHasKey('slug', $array);
-        $this->assertArrayHasKey('theme', $array);
-        $this->assertArrayHasKey('banner_class', $array);
+        $this->assertArrayHasKey('color', $array);
         $this->assertArrayHasKey('banner_url', $array);
         $this->assertArrayHasKey('icon_url', $array);
         $this->assertArrayHasKey('logo_url', $array);
@@ -71,23 +69,23 @@ class GameVersionResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_correct_theme(): void
+    public function it_returns_the_color_as_bare_hex(): void
     {
-        $gameVersion = GameVersion::factory()->create(['theme' => Theme::FOREVER]);
+        $gameVersion = GameVersion::factory()->create(['color' => '#8B7ED0']);
 
-        $array = (new GameVersionResource($gameVersion))->resolve(new Request);
+        $array = (new GameVersionResource($gameVersion->fresh()))->resolve(new Request);
 
-        $this->assertSame(Theme::FOREVER, $array['theme']);
+        $this->assertSame('8b7ed0', $array['color']);
     }
 
     #[Test]
-    public function it_returns_the_banner_css_class_for_the_theme(): void
+    public function it_returns_a_null_color_when_none_is_set(): void
     {
-        $gameVersion = GameVersion::factory()->create(['theme' => Theme::CLASSIC]);
+        $gameVersion = GameVersion::factory()->create(['color' => null]);
 
-        $array = (new GameVersionResource($gameVersion))->resolve(new Request);
+        $array = (new GameVersionResource($gameVersion->fresh()))->resolve(new Request);
 
-        $this->assertSame(Theme::CLASSIC->bannerCssClass(), $array['banner_class']);
+        $this->assertNull($array['color']);
     }
 
     #[Test]
@@ -97,7 +95,7 @@ class GameVersionResourceTest extends TestCase
 
         $array = (new GameVersionResource($gameVersion))->resolve(new Request);
 
-        $this->assertSame(['id', 'title', 'slug', 'theme', 'banner_class', 'banner_url', 'icon_url', 'logo_url'], array_keys($array));
+        $this->assertSame(['id', 'title', 'slug', 'color', 'banner_url', 'icon_url', 'logo_url'], array_keys($array));
     }
 
     // ==================== images ====================
@@ -143,7 +141,7 @@ class GameVersionResourceTest extends TestCase
             'guild_name' => 'Regrowth',
             'faction' => Faction::ALLIANCE,
             'release_date' => Carbon::create(2026, 2, 6, 0, 0, 0, 'Europe/Paris'),
-            'theme' => Theme::CLASSIC,
+            'color' => 0x4AE832,
             'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
             'warcraftlogs_guild' => 774848,
             'warcraftlogs_namespace' => WarcraftLogsNamespace::ANNIVERSARY,
@@ -155,8 +153,7 @@ class GameVersionResourceTest extends TestCase
             'id' => 7,
             'title' => 'Burning Crusade Classic (Anniversary)',
             'slug' => 'tbc',
-            'theme' => Theme::CLASSIC,
-            'banner_class' => 'bg-raid-black-temple',
+            'color' => '4ae832',
             'banner_url' => null,
             'icon_url' => null,
             'logo_url' => null,

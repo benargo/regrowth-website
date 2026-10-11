@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
+use App\Casts\AsBinaryColor;
 use App\Casts\AsSlug;
-use App\Casts\AsTheme;
 use App\Contracts\Models\DatasetModel;
 use App\Contracts\Models\EditLockable;
 use App\Enums\Faction;
@@ -37,7 +37,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
     'guild_name',
     'faction',
     'release_date',
-    'theme',
+    'color',
     'blizzard_namespace',
     'warcraftlogs_guild',
     'warcraftlogs_namespace',
@@ -91,7 +91,7 @@ class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia
             'slug' => AsSlug::class,
             'faction' => Faction::class,
             'release_date' => 'datetime',
-            'theme' => AsTheme::class,
+            'color' => AsBinaryColor::class,
             'blizzard_namespace' => BlizzardNamespace::class,
             'warcraftlogs_guild' => 'integer',
             'warcraftlogs_namespace' => WarcraftLogsNamespace::class,

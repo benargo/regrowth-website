@@ -14,15 +14,4 @@ enum Theme: string
     {
         return self::from(config('app.theme') ?? self::CLASSIC->value);
     }
-
-    /**
-     * Get the CSS class for the banner background for this theme.
-     */
-    public function bannerCssClass(string $prefix = 'bg'): string
-    {
-        return match ($this) {
-            self::CLASSIC => "$prefix-raid-black-temple",
-            self::FOREVER => "$prefix-camelot",
-        };
-    }
 }

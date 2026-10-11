@@ -21,7 +21,7 @@ export default function Edit({ gameVersion, options, relationships, steps, route
 
     return (
         <Master title={`Edit ${gameVersion.title}`}>
-            <SharedHeader backgroundClass={gameVersion.banner_class} title={gameVersion.title} />
+            <SharedHeader color={gameVersion.color} image={gameVersion.banner_url} title={gameVersion.title} />
 
             <ToolNav>
                 <div className="flex-initial space-x-4">

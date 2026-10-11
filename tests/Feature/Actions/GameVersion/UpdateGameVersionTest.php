@@ -4,7 +4,6 @@ namespace Tests\Feature\Actions\GameVersion;
 
 use App\Actions\GameVersion\UpdateGameVersion;
 use App\Enums\Faction;
-use App\Enums\Theme;
 use App\Models\Boss;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
@@ -37,7 +36,7 @@ class UpdateGameVersionTest extends TestCase
             'title' => 'Era',
             'realm' => 'Gehennas',
             'faction' => Faction::HORDE,
-            'theme' => Theme::FOREVER,
+            'color' => '#8B7ED0',
             'warcraftlogs_guild' => 123456,
         ]);
 
@@ -47,7 +46,7 @@ class UpdateGameVersionTest extends TestCase
         $this->assertSame('Firemaw', $fresh->realm);
         $this->assertSame('Era', $fresh->title);
         $this->assertSame(Faction::HORDE, $fresh->faction);
-        $this->assertSame(Theme::FOREVER, $fresh->theme);
+        $this->assertSame('8b7ed0', $fresh->color);
         $this->assertSame(123456, $fresh->warcraftlogs_guild);
     }
 
@@ -82,14 +81,23 @@ class UpdateGameVersionTest extends TestCase
     }
 
     #[Test]
-    public function it_stores_the_default_theme_for_a_theme_given_as_null(): void
+    public function it_stores_a_color_given_as_a_hex_code(): void
     {
-        config(['app.theme' => 'classic']);
-        $gameVersion = GameVersion::factory()->create(['theme' => Theme::FOREVER]);
+        $gameVersion = GameVersion::factory()->create(['color' => null]);
 
-        $this->updateGameVersion($gameVersion, ['theme' => null]);
+        $this->updateGameVersion($gameVersion, ['color' => '#4AE832']);
 
-        $this->assertDatabaseHas('game_versions', ['id' => $gameVersion->id, 'theme' => Theme::CLASSIC->value]);
+        $this->assertSame('4ae832', $gameVersion->fresh()->color);
+    }
+
+    #[Test]
+    public function it_clears_the_color_when_given_as_null(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['color' => '#8B7ED0']);
+
+        $this->updateGameVersion($gameVersion, ['color' => null]);
+
+        $this->assertNull($gameVersion->fresh()->color);
     }
 
     #[Test]
