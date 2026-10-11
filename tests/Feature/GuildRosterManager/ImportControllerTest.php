@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\GuildRosterManager;
 
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRequest;
 use App\Jobs\ProcessGrmUpload;
 use App\Models\GameVersion;
@@ -130,12 +131,26 @@ class ImportControllerTest extends DashboardTestCase
     }
 
     #[Test]
-    public function create_shows_the_game_version_named_in_the_query_string(): void
+    public function create_shows_and_remembers_the_game_version_named_in_the_query_string(): void
     {
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'release_date' => now()->subWeek()]);
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'older', 'release_date' => now()->subYear()]);
 
         $response = $this->actingAs($this->officer)->get(route('management.grm.create', ['game_version' => 'older']));
+
+        $response->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, 'older');
+        $response->assertInertia(fn (Assert $page) => $page->where('gameVersion.slug', 'older'));
+    }
+
+    #[Test]
+    public function create_shows_the_remembered_game_version(): void
+    {
+        GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'release_date' => now()->subWeek()]);
+        GameVersion::factory()->fetchableRoster()->create(['slug' => 'older', 'release_date' => now()->subYear()]);
+
+        $response = $this->actingAs($this->officer)
+            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'older'])
+            ->get(route('management.grm.create'));
 
         $response->assertInertia(fn (Assert $page) => $page->where('gameVersion.slug', 'older'));
     }
@@ -159,24 +174,24 @@ class ImportControllerTest extends DashboardTestCase
     }
 
     #[Test]
-    public function create_returns_not_found_for_an_unknown_game_version(): void
+    public function create_falls_back_to_the_newest_current_roster_for_an_unknown_game_version(): void
     {
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'tbc']);
 
         $response = $this->actingAs($this->officer)->get(route('management.grm.create', ['game_version' => 'nope']));
 
-        $response->assertNotFound();
+        $response->assertInertia(fn (Assert $page) => $page->where('gameVersion.slug', 'tbc'));
     }
 
     #[Test]
-    public function create_returns_not_found_for_a_game_version_without_a_current_roster(): void
+    public function create_falls_back_to_the_newest_current_roster_for_a_game_version_without_a_current_roster(): void
     {
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'guild_name' => 'Regrowth', 'release_date' => now()->subWeek()]);
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'older', 'guild_name' => 'Regrowth', 'release_date' => now()->subYear()]);
 
         $response = $this->actingAs($this->officer)->get(route('management.grm.create', ['game_version' => 'older']));
 
-        $response->assertNotFound();
+        $response->assertInertia(fn (Assert $page) => $page->where('gameVersion.slug', 'newer'));
     }
 
     #[Test]

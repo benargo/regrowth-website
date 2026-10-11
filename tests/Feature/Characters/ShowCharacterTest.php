@@ -237,7 +237,7 @@ class ShowCharacterTest extends TestCase
         $response = $this->get(route('characters.show', [$character, $character->slug]));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('roster_url', route('roster.index', $forever))
+            ->where('roster_url', route('roster.index', ['game_version' => 'forever']))
         );
     }
 
@@ -257,7 +257,7 @@ class ShowCharacterTest extends TestCase
         $response = $this->get(route('characters.show', [$character, $character->slug]));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('roster_url', route('characters.index'))
+            ->where('roster_url', route('roster.index'))
         );
     }
 

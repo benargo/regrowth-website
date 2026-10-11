@@ -12,7 +12,7 @@ import SpecIcon from "@/Components/Characters/SpecIcon";
 import SearchInput from "@/Components/Search/SearchInput";
 import { Can } from "@/Components/Authorizable";
 import SortableTable from "@/Components/SortableTable";
-import TabNav from "@/Components/TabNav";
+import GameVersionSelector from "@/Components/GameVersions/GameVersionSelector";
 import useLocalStorage from "@/Hooks/useLocalStorage";
 import raidSpec from "@/Helpers/RaidSpec";
 
@@ -280,16 +280,7 @@ function RosterContent({ gameVersion, gameVersions, characters, classes, ranks, 
         <Master title="Guild Roster">
             <SharedHeader title="Guild Roster" color={gameVersion.color} image={gameVersion.banner_url} />
             <PageContainer>
-                {gameVersions.length > 1 && (
-                    <TabNav
-                        currentTab={gameVersion.slug}
-                        tabs={gameVersions.map((version) => ({
-                            name: version.slug,
-                            label: version.title,
-                            href: route("roster.index", version.slug),
-                        }))}
-                    />
-                )}
+                <GameVersionSelector gameVersions={gameVersions} currentGameVersion={gameVersion} />
                 {isLoading ? (
                     <IndexSkeleton />
                 ) : (

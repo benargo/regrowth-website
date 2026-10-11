@@ -2,18 +2,20 @@
 
 namespace App\Http\Controllers\GuildRosterManager;
 
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Actions\GuildRosterManager\CheckUploadStatus;
 use App\Actions\GuildRosterManager\CountGuildMembers;
 use App\Actions\GuildRosterManager\FindLatestUpload;
 use App\Actions\GuildRosterManager\StoreUpload;
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\RemembersCurrentGameVersion;
 use App\Http\Requests\GuildRosterManager\StoreImportRequest;
 use App\Http\Resources\GameVersionResource;
 use App\Models\GameVersion;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,17 +23,18 @@ use Inertia\Response;
 class ImportController extends Controller
 {
     /**
-     * Show the GRM upload form for the game version named in the query string,
-     * or for the newest current roster.
+     * Show the GRM upload form for the user's current game version.
      */
+    #[Middleware(RemembersCurrentGameVersion::class)]
     public function create(
         Request $request,
+        ResolveCurrentGameVersion $resolveCurrentGameVersion,
         FindLatestUpload $findLatestUpload,
         CountGuildMembers $countGuildMembers,
         CheckUploadStatus $checkUploadStatus,
     ): Response {
         $gameVersions = GameVersion::currentRosters()->load('media')->values();
-        $gameVersion = $this->selectedGameVersion($request, $gameVersions);
+        $gameVersion = $resolveCurrentGameVersion->handle($gameVersions);
 
         return Inertia::render('Manage/GRM/Create', [
             'gameVersion' => $gameVersion ? (new GameVersionResource($gameVersion))->resolve($request) : null,
@@ -47,25 +50,6 @@ class ImportController extends Controller
                 'statuses',
             ),
         ]);
-    }
-
-    /**
-     * Pick the game version named by `?game_version=`, or the newest current
-     * roster when none is named. A slug that isn't a current roster is a 404.
-     *
-     * @param  Collection<int, GameVersion>  $gameVersions
-     */
-    protected function selectedGameVersion(Request $request, Collection $gameVersions): ?GameVersion
-    {
-        if (! $request->filled('game_version')) {
-            return $gameVersions->first();
-        }
-
-        $gameVersion = $gameVersions->firstWhere('slug', $request->string('game_version')->toString());
-
-        abort_if($gameVersion === null, 404);
-
-        return $gameVersion;
     }
 
     /**
