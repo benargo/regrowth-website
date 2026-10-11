@@ -32,3 +32,6 @@ Authorize controller actions with the #[Authorize('ability', Model::class)] PHP 
 Where Laravel provides a global helper for a framework primitive, use it: `now()`, `config()`, `session()`, `redirect()` / `back()`, `route()`, `response()`, `abort()` / `abort_if()`. This follows laravel-best-practices `style.md` and Spatie's "use the `config()` helper". Reach for a facade only when no helper covers the call, or the helper would hide which method is being used. Examples: `Log::warning()`, `Storage::disk()`, `Cache::remember()`, `Route::` in route files.
 
 This is about general app code (controllers, actions, jobs, services). It does not change the separate policy of preferring dependency injection over both helpers and facades for third-party API service/connector classes (Blizzard, Discord, WarcraftLogs, RaidHelper).
+
+## Don't call ->resolve($request) on Resources in controllers
+Controllers must not call `->resolve($request)` on Resource classes. Pass the Resource instance (or collection) directly to `Inertia::render()` props or return it from the action, and let Laravel/Inertia serialize it at the response boundary. `->resolve()` is for unit-testing Resource output, not controller code.
