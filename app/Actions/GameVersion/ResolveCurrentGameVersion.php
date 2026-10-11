@@ -18,7 +18,6 @@ class ResolveCurrentGameVersion
 
     /**
      * @param  Collection<int, GameVersion>  $selectable  In the page's display order, default first
-     *                                                  (as {@see GameVersion::currentRosters()} returns them).
      */
     public function handle(Collection $selectable): ?GameVersion
     {
