@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Auth;
+namespace App\Http\Controllers\Account;
 
 use App\Attributes\UsesTheme;
 use App\Enums\Theme;
@@ -16,7 +16,7 @@ class AccountController extends Controller
     /**
      * Display the authenticated user's account page.
      */
-    public function index(Request $request): Response
+    public function __invoke(Request $request): Response
     {
         $user = $request->user()->load(['discordRoles', 'plannedAbsences.character']);
 

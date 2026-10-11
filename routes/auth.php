@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Auth\AccountController;
 use App\Http\Controllers\Auth\BattleNetController;
 use App\Http\Controllers\Auth\DiscordController;
 use App\Http\Controllers\Auth\LocalLoginController;
@@ -36,15 +35,6 @@ Route::get('auth/battlenet', [BattleNetController::class, 'redirect'])
 
 Route::get('auth/battlenet/callback', [BattleNetController::class, 'callback'])
     ->name('battlenet.callback');
-
-/*
-|--------------------------------------------------------------------------
-| User account settings routes
-|--------------------------------------------------------------------------
-*/
-Route::group(['prefix' => 'account', 'as' => 'account.', 'middleware' => ['auth']], function () {
-    Route::get('/', [AccountController::class, 'index'])->name('index');
-});
 
 /*
 |--------------------------------------------------------------------------

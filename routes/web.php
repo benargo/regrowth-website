@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Account\AccountController;
 use App\Http\Controllers\AttendanceDashboardController;
 use App\Http\Controllers\AttendanceGraphsController;
 use App\Http\Controllers\AttendanceMatrixController;
@@ -33,6 +34,13 @@ use Inertia\Inertia;
 Route::get('/', HomeController::class)->name('home');
 
 Route::get('/search', SearchController::class)->name('search');
+
+/**
+ * User account settings
+ */
+Route::group(['prefix' => 'account', 'as' => 'account.', 'middleware' => ['auth']], function () {
+    Route::get('/', AccountController::class)->name('index');
+});
 
 /**
  * Guild Roster
