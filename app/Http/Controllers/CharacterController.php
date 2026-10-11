@@ -128,6 +128,11 @@ class CharacterController extends Controller
 
     /**
      * Persist character edits.
+     *
+     * Accepts partial payloads: each field is written only when the caller
+     * supplied it, so the addon settings page can toggle the loot-councillor
+     * flag without owning the character's specializations. Both writes run
+     * inside a transaction so they succeed or fail together.
      */
     #[Middleware('auth')]
     #[Authorize('update', 'character')]

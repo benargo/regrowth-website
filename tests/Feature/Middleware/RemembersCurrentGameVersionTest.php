@@ -17,14 +17,28 @@ class RemembersCurrentGameVersionTest extends TestCase
 {
     #[Test]
     #[Group('happy-path')]
-    public function it_remembers_the_requested_game_version_and_calls_the_next_middleware(): void
+    public function it_remembers_the_requested_game_version_and_redirects_to_the_url_without_it(): void
     {
-        $request = $this->requestWithSession(['game_version' => 'mop']);
+        $request = $this->requestWithSession(['game_version' => 'mop', 'page' => '2']);
 
         $response = (new RemembersCurrentGameVersion)->handle($request, fn () => response('next'));
 
         $this->assertSame('mop', $request->session()->get(ResolveCurrentGameVersion::SESSION_KEY));
-        $this->assertSame('next', $response->getContent());
+        $this->assertSame(303, $response->getStatusCode());
+        $this->assertSame('http://localhost/roster?page=2', $response->headers->get('Location'));
+    }
+
+    #[Test]
+    public function it_keeps_flashed_data_for_the_page_it_redirects_to(): void
+    {
+        $request = $this->requestWithSession(['game_version' => 'mop']);
+        $request->session()->flash('success', 'Uploaded.');
+        $request->session()->ageFlashData();
+
+        (new RemembersCurrentGameVersion)->handle($request, fn () => response('next'));
+        $request->session()->ageFlashData();
+
+        $this->assertSame('Uploaded.', $request->session()->get('success'));
     }
 
     /**

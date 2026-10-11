@@ -219,8 +219,10 @@ class RosterTest extends TestCase
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'release_date' => Carbon::now()->subDay()]);
 
         $this->get(route('roster.index', ['game_version' => 'tbc']))
-            ->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, 'tbc')
-            ->assertInertia(fn (Assert $page) => $page->where('gameVersion.slug', 'tbc'));
+            ->assertRedirect(route('roster.index'))
+            ->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, 'tbc');
+
+        $this->get(route('roster.index'))->assertInertia(fn (Assert $page) => $page->where('gameVersion.slug', 'tbc'));
     }
 
     #[Test]
@@ -228,7 +230,7 @@ class RosterTest extends TestCase
     {
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'later', 'release_date' => Carbon::now()->addMonth()]);
 
-        $this->get(route('roster.index', ['game_version' => 'later']))->assertInertia(fn (Assert $page) => $page
+        $this->followingRedirects()->get(route('roster.index', ['game_version' => 'later']))->assertInertia(fn (Assert $page) => $page
             ->where('gameVersion.slug', 'tbc')
         );
     }
@@ -274,7 +276,7 @@ class RosterTest extends TestCase
         $horde = PlayableRace::factory()->create(['faction' => Faction::HORDE]);
         $this->gameVersion->playableRaces()->attach($horde);
 
-        $this->get(route('roster.index', ['game_version' => 'tbc']))->assertInertia(fn (Assert $page) => $page
+        $this->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'tbc'])->get(route('roster.index'))->assertInertia(fn (Assert $page) => $page
             ->where('ranks', ['Guild Master'])
             ->has('classes', 1)
             ->has('races', 1)
