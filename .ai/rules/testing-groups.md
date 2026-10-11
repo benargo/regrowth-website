@@ -48,7 +48,8 @@ vendor/bin/sail artisan test --testsuite=Feature --group=authorization --compact
 | `raidhelper-integration`   | Raid-Helper connector, webhooks, composition/event sync, RH requests.                                                                                                    |
 | `warcraftlogs-integration` | Warcraft Logs connector, requests, DTOs, rate limiting, report links/fetch jobs, report cache.                                                                           |
 | `discord-integration`      | Discord client/resources/payloads, role/user sync, Discord-delivered notifications, Discord auth.                                                                        |
-| `auth`                     | Authentication, accounts/profile, roles/ranks/permissions, view-as-role, policies, channel auth.                                                                         |
+| `auth`                     | Authentication, roles/ranks/permissions, view-as-role, policies, channel auth.                                                                                           |
+| `account`                  | Single-user account management — the authenticated user's own account pages and settings.                                                                                |
 | `dashboard`                | Officer-dashboard page smoke loads (used only where a class is purely dashboard-page-oriented).                                                                          |
 | `broadcasting`             | Reverb/Echo broadcast events, channel authorisation, broadcast-on-retry behaviour.                                                                                       |
 | `media`                    | Media-library path generators, icon serving and attachment, portraits.                                                                                                   |

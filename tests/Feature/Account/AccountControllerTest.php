@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Auth;
+namespace Tests\Feature\Account;
 
 use App\Models\Character;
 use App\Models\DiscordRole;
@@ -12,7 +12,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
-#[Group('auth')]
+#[Group('account')]
 class AccountControllerTest extends TestCase
 {
     use RefreshDatabase;
