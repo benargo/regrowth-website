@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests\Unit\Http\Requests\PlannedAbsences;
+namespace Tests\Unit\Http\Requests;
 
-use App\Http\Requests\PlannedAbsences\StorePlannedAbsenceRequest;
+use App\Http\Requests\StorePlannedAbsenceRequest;
 use App\Models\PlannedAbsence;
 use Illuminate\Validation\Rules\Exists;
 use PHPUnit\Framework\Attributes\Group;
@@ -20,36 +20,24 @@ class StorePlannedAbsenceRequestTest extends TestCase
     // ==================== rules ====================
 
     #[Test]
-    public function rules_character_uses_integer_rules_when_value_is_numeric(): void
-    {
-        $rules = $this->makeRequest(['character' => '5'])->rules();
-
-        $this->assertArrayHasKey('character', $rules);
-        $this->assertContains('required', $rules['character']);
-        $this->assertContains('integer', $rules['character']);
-        $this->assertContains('min:1', $rules['character']);
-        $this->assertTrue(collect($rules['character'])->contains(fn ($r) => $r instanceof Exists));
-    }
-
-    #[Test]
-    public function rules_character_uses_string_rules_when_value_is_not_numeric(): void
-    {
-        $rules = $this->makeRequest(['character' => 'Thrall'])->rules();
-
-        $this->assertArrayHasKey('character', $rules);
-        $this->assertContains('required', $rules['character']);
-        $this->assertContains('string', $rules['character']);
-        $this->assertContains('max:11', $rules['character']);
-        $this->assertContains('regex:/^[^\d\s]+$/u', $rules['character']);
-    }
-
-    #[Test]
-    public function rules_character_uses_string_rules_when_no_value_provided(): void
+    public function rules_require_a_released_game_version(): void
     {
         $rules = $this->makeRequest()->rules();
 
-        $this->assertArrayHasKey('character', $rules);
-        $this->assertContains('string', $rules['character']);
+        $this->assertContains('required', $rules['game_version']);
+        $this->assertContains('integer', $rules['game_version']);
+        $this->assertTrue(collect($rules['game_version'])->contains(fn ($rule) => $rule instanceof Exists));
+    }
+
+    #[Test]
+    public function rules_require_the_character_by_id(): void
+    {
+        $rules = $this->makeRequest(['character' => 'Thrall'])->rules();
+
+        $this->assertContains('required', $rules['character']);
+        $this->assertContains('integer', $rules['character']);
+        $this->assertContains('min:1', $rules['character']);
+        $this->assertTrue(collect($rules['character'])->contains(fn ($rule) => $rule instanceof Exists));
     }
 
     #[Test]

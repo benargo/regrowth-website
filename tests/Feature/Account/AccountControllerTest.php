@@ -151,4 +151,34 @@ class AccountControllerTest extends TestCase
             )
         );
     }
+
+    #[Test]
+    public function index_lists_only_the_absences_the_user_can_delete(): void
+    {
+        $this->freezeTime();
+        $user = User::factory()->create();
+        $officer = User::factory()->create();
+        $upcoming = PlannedAbsence::factory()->withCharacter()->create(['user_id' => $user->id, 'created_by' => $user->id, 'start_date' => today()->addWeek()]);
+        PlannedAbsence::factory()->withCharacter()->create(['user_id' => $user->id, 'created_by' => $user->id, 'start_date' => today()->subDay()]);
+        PlannedAbsence::factory()->withCharacter()->create(['user_id' => $user->id, 'created_by' => $officer->id, 'start_date' => today()->addWeek()]);
+
+        $this->actingAs($user)
+            ->get(route('account.index'))
+            ->assertInertia(fn (Assert $page) => $page->where('planned_absences.deletable', [$upcoming->id]));
+    }
+
+    #[Test]
+    public function index_lists_only_the_absences_the_user_can_edit(): void
+    {
+        $this->freezeTime();
+        $user = User::factory()->create();
+        $officer = User::factory()->create();
+        $upcoming = PlannedAbsence::factory()->withCharacter()->create(['user_id' => $user->id, 'created_by' => $user->id, 'start_date' => today()->addWeek()]);
+        PlannedAbsence::factory()->withCharacter()->create(['user_id' => $user->id, 'created_by' => $user->id, 'start_date' => today()->subDay()]);
+        PlannedAbsence::factory()->withCharacter()->create(['user_id' => $user->id, 'created_by' => $officer->id, 'start_date' => today()->addWeek()]);
+
+        $this->actingAs($user)
+            ->get(route('account.index'))
+            ->assertInertia(fn (Assert $page) => $page->where('planned_absences.editable', [$upcoming->id]));
+    }
 }

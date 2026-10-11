@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Exceptions\CharacterNotMainException;
-use App\Exceptions\MultipleCharactersFoundException;
-use App\Http\Requests\PlannedAbsences\StorePlannedAbsenceRequest;
-use App\Http\Requests\PlannedAbsences\UpdatePlannedAbsenceRequest;
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Http\Middleware\RemembersCurrentGameVersion;
+use App\Http\Requests\StorePlannedAbsenceRequest;
+use App\Http\Requests\UpdatePlannedAbsenceRequest;
 use App\Http\Resources\CharacterResource;
+use App\Http\Resources\GameVersionResource;
 use App\Http\Resources\PlannedAbsenceResource;
 use App\Models\Character;
 use App\Models\DiscordRole;
+use App\Models\GameVersion;
 use App\Models\PlannedAbsence;
 use App\Models\User;
 use App\Services\Discord\Discord;
@@ -19,10 +21,10 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
-use Normalizer;
 
 #[Middleware('auth')]
 class PlannedAbsenceController extends Controller
@@ -65,65 +67,37 @@ class PlannedAbsenceController extends Controller
     */
 
     /**
-     * Show the form for creating a new resource.
+     * Show the form for logging an absence for any main character in the
+     * officer's current game version.
      */
-    #[Authorize('create', PlannedAbsence::class)]
+    #[Authorize('createForOthers', PlannedAbsence::class)]
+    #[Middleware(RemembersCurrentGameVersion::class)]
     public function create(Request $request): Response
     {
-        $characters = $this->buildCharactersResourceCollection($request);
-
-        $resolvedCharacter = $request->user()->cannot('createForOthers', PlannedAbsence::class)
-            ? $this->resolveCharacterFromUserNickname($request->user())
-            : null;
+        $selectable = $this->selectableGameVersions();
+        $gameVersion = ResolveCurrentGameVersion::run($selectable);
 
         return Inertia::render('Raiding/Absences/Form', [
-            'characters' => $characters,
-            'resolved_character' => $resolvedCharacter ? new CharacterResource($resolvedCharacter)->resolve($request) : null,
+            'game_versions' => GameVersionResource::collection($selectable)->resolve($request),
+            'game_version' => $gameVersion ? (new GameVersionResource($gameVersion))->resolve($request) : null,
+            'characters' => $this->pickerCharacters($request, $gameVersion),
             'action' => route('raiding.absences.store'),
+            'discord_members' => Inertia::optional(fn (): array => $this->searchDiscordMembers($request)),
         ]);
     }
 
     /**
      * Store a newly created resource in storage.
-     *
-     * @throws MultipleCharactersFoundException
-     * @throws CharacterNotMainException
      */
-    #[Authorize('create', PlannedAbsence::class)]
+    #[Authorize('createForOthers', PlannedAbsence::class)]
     public function store(StorePlannedAbsenceRequest $request): RedirectResponse
     {
-        $input = $request->input('character');
-
-        if (is_numeric($input)) {
-            $character = Character::find((int) $input);
-        } else {
-            $normalizedInput = $this->normalizeCharacterName($input);
-
-            $matches = Character::all()->filter(
-                fn (Character $c) => $this->normalizeCharacterName($c->name) === $normalizedInput
-            );
-
-            if ($matches->count() > 1) {
-                throw new MultipleCharactersFoundException($matches);
-            }
-
-            $character = $matches->first();
-        }
-
-        if ($character === null) {
-            return back()->withErrors(['character' => 'Character not found.']);
-        }
-
-        if (! $character->is_main) {
-            throw new CharacterNotMainException($character);
-        }
-
         if ($request->has('user')) {
             $user = $this->resolveUser($request->input('user'));
         }
 
         PlannedAbsence::create([
-            'character_id' => $character->id,
+            'character_id' => $request->integer('character'),
             'user_id' => $user->id ?? null,
             'start_date' => $request->input('start_date'),
             'end_date' => $request->input('end_date', null),
@@ -131,7 +105,7 @@ class PlannedAbsenceController extends Controller
             'created_by' => $request->user()->id,
         ]);
 
-        return $this->redirectAfterModification($request, 'Planned absence created successfully.');
+        return to_route('raiding.absences.index')->with('success', 'Planned absence created successfully.');
     }
 
     /*
@@ -141,45 +115,36 @@ class PlannedAbsenceController extends Controller
     */
 
     /**
-     * Show the form for editing the specified resource.
+     * Show the form for editing the specified resource. The picker is limited
+     * to the version of the absence's character.
      */
-    #[Authorize('update', 'plannedAbsence')]
+    #[Authorize('createForOthers', PlannedAbsence::class)]
     public function edit(Request $request, PlannedAbsence $plannedAbsence): Response
     {
-        $characters = $this->buildCharactersResourceCollection($request);
+        $plannedAbsence->load(['character.playableRace', 'character.gameVersion', 'createdBy']);
 
-        $plannedAbsence->load(['character.playableRace', 'createdBy']);
-
-        $resolvedCharacter = $request->user()->cannot('createForOthers', PlannedAbsence::class)
-            ? $this->resolveCharacterFromUserNickname($request->user())
-            : null;
+        $gameVersion = $plannedAbsence->character?->gameVersion
+            ?? ResolveCurrentGameVersion::run($this->selectableGameVersions());
 
         return Inertia::render('Raiding/Absences/Form', [
-            'characters' => $characters,
-            'planned_absence' => new PlannedAbsenceResource($plannedAbsence)->resolve($request),
-            'resolved_character' => $resolvedCharacter ? new CharacterResource($resolvedCharacter)->resolve($request) : null,
+            'planned_absence' => (new PlannedAbsenceResource($plannedAbsence))->resolve($request),
+            'game_version' => $gameVersion ? (new GameVersionResource($gameVersion))->resolve($request) : null,
+            'characters' => $this->pickerCharacters($request, $gameVersion),
             'action' => route('raiding.absences.update', $plannedAbsence),
+            'discord_members' => Inertia::optional(fn (): array => $this->searchDiscordMembers($request)),
         ]);
     }
 
     /**
      * Update the specified resource in storage.
-     *
-     * @throws CharacterNotMainException
      */
-    #[Authorize('update', 'plannedAbsence')]
+    #[Authorize('createForOthers', PlannedAbsence::class)]
     public function update(UpdatePlannedAbsenceRequest $request, PlannedAbsence $plannedAbsence): RedirectResponse
     {
         $updates = [];
 
         if ($request->has('character')) {
-            $character = $request->character();
-
-            if (! $character->is_main) {
-                throw new CharacterNotMainException($character);
-            }
-
-            $updates = Arr::add($updates, 'character_id', $character->id);
+            $updates = Arr::add($updates, 'character_id', $request->integer('character'));
         }
 
         if ($request->has('user')) {
@@ -201,7 +166,7 @@ class PlannedAbsenceController extends Controller
 
         $plannedAbsence->update($updates);
 
-        return $this->redirectAfterModification($request, 'Planned absence updated successfully.');
+        return to_route('raiding.absences.index')->with('success', 'Planned absence updated successfully.');
     }
 
     /*
@@ -213,12 +178,12 @@ class PlannedAbsenceController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    #[Authorize('delete', 'plannedAbsence')]
-    public function destroy(Request $request, PlannedAbsence $plannedAbsence): RedirectResponse
+    #[Authorize('deleteForOthers', PlannedAbsence::class)]
+    public function destroy(PlannedAbsence $plannedAbsence): RedirectResponse
     {
         $plannedAbsence->delete();
 
-        return $this->redirectAfterModification($request, 'Planned absence deleted successfully.');
+        return to_route('raiding.absences.index')->with('success', 'Planned absence deleted successfully.');
     }
 
     /**
@@ -245,52 +210,6 @@ class PlannedAbsenceController extends Controller
     | Helpers
     |--------------------------------------------------------------------------
     */
-
-    /**
-     * Determine where to redirect the user after creating/updating a planned absence, based on their permissions
-     */
-    private function redirectAfterModification(Request $request, string $successMessage = 'Success'): RedirectResponse
-    {
-        if ($request->user()->can('viewAny', PlannedAbsence::class)) {
-            return to_route('raiding.absences.index')->with('success', $successMessage);
-        }
-
-        return to_route('account.index')->with('success', $successMessage);
-    }
-
-    /**
-     * Normalize a character name by stripping diacritics and lowercasing,
-     * so that "Deo", "Déo", and "Deò" all produce the same value.
-     */
-    private function normalizeCharacterName(string $name): string
-    {
-        $decomposed = Normalizer::normalize($name, Normalizer::FORM_KD);
-
-        return mb_strtolower(preg_replace('/\p{Mn}/u', '', $decomposed));
-    }
-
-    /**
-     * Attempt to resolve a main Character from the first word of the user's Discord nickname.
-     *
-     * Returns null when the nickname is absent, or when zero or multiple characters match
-     * (to avoid ambiguity, the user must pick manually in those cases).
-     */
-    private function resolveCharacterFromUserNickname(User $user): ?Character
-    {
-        if ($user->nickname === null) {
-            return null;
-        }
-
-        $firstWord = explode(' ', trim($user->nickname))[0];
-        $normalized = $this->normalizeCharacterName($firstWord);
-
-        $matches = Character::query()
-            ->where('is_main', true)
-            ->get()
-            ->filter(fn (Character $c) => $this->normalizeCharacterName($c->name) === $normalized);
-
-        return $matches->count() === 1 ? $matches->first() : null;
-    }
 
     /**
      * Resolve a user based on the provided identifier.
@@ -331,18 +250,67 @@ class PlannedAbsenceController extends Controller
     }
 
     /**
-     * Build a resource collection of main characters for use in the create/edit forms.
+     * Search the Discord server's members by username or nickname prefix,
+     * for the user picker. Only evaluated when the page reloads the prop.
+     *
+     * @return array<int, array{id: string|null, nickname: string|null, username: string|null}>
      */
-    private function buildCharactersResourceCollection(Request $request): array
+    private function searchDiscordMembers(Request $request): array
     {
-        return Cache::tags(['characters'])->remember('characters:mains:to_resource_collection', now()->addDay(), function () use ($request) {
-            return CharacterResource::collection(
-                Character::query()
-                    ->with('playableRace')
+        $validated = $request->validate([
+            'member_search' => ['required', 'string'],
+            'member_limit' => ['sometimes', 'integer', 'min:1', 'max:25'],
+        ]);
+
+        $query = $validated['member_search'];
+        $limit = (int) ($validated['member_limit'] ?? 1);
+
+        // Cache plain arrays: cache.serializable_classes is false, so cached objects can't be unserialized.
+        return Cache::tags(['discord'])->remember(
+            'discord:members:search:'.mb_strtolower($query),
+            now()->addMinutes(5),
+            fn (): array => $this->discord->searchGuildMembers($query, $limit)
+                ->map(fn ($member): array => [
+                    'id' => $member->user?->id,
+                    'nickname' => $member->nick,
+                    'username' => $member->user?->username,
+                ])
+                ->all()
+        );
+    }
+
+    /**
+     * The versions an officer can log absences against: released versions,
+     * newest first.
+     *
+     * @return Collection<int, GameVersion>
+     */
+    private function selectableGameVersions(): Collection
+    {
+        return GameVersion::released()->orderByDesc('release_date')->get();
+    }
+
+    /**
+     * Every main character in the game version, for the picker.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function pickerCharacters(Request $request, ?GameVersion $gameVersion): array
+    {
+        if ($gameVersion === null) {
+            return [];
+        }
+
+        return Cache::tags(['characters'])->remember(
+            "characters:game_version:{$gameVersion->id}:planned_absence_mains",
+            now()->addDay(),
+            fn (): array => CharacterResource::collection(
+                Character::where('game_version_id', $gameVersion->id)
                     ->where('is_main', true)
+                    ->with(['playableRace', 'playableClass'])
                     ->orderBy('name')
                     ->get()
-            )->resolve($request);
-        });
+            )->resolve($request),
+        );
     }
 }

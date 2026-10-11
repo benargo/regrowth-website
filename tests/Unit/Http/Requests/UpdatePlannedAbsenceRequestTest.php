@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests\Unit\Http\Requests\PlannedAbsences;
+namespace Tests\Unit\Http\Requests;
 
-use App\Http\Requests\PlannedAbsences\UpdatePlannedAbsenceRequest;
+use App\Http\Requests\UpdatePlannedAbsenceRequest;
 use App\Models\PlannedAbsence;
 use Illuminate\Validation\Rules\Exists;
 use PHPUnit\Framework\Attributes\Group;
@@ -29,6 +29,16 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
         $this->assertContains('integer', $rules['character']);
         $this->assertContains('min:1', $rules['character']);
         $this->assertTrue(collect($rules['character'])->contains(fn ($r) => $r instanceof Exists));
+    }
+
+    #[Test]
+    public function rules_require_a_released_game_version_with_a_character(): void
+    {
+        $rules = $this->makeRequest()->rules();
+
+        $this->assertContains('required_with:character', $rules['game_version']);
+        $this->assertContains('integer', $rules['game_version']);
+        $this->assertTrue(collect($rules['game_version'])->contains(fn ($rule) => $rule instanceof Exists));
     }
 
     #[Test]
@@ -133,42 +143,5 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
         $this->assertContains('sometimes', $rules['reason']);
         $this->assertContains('string', $rules['reason']);
         $this->assertNotContains('required', $rules['reason']);
-    }
-
-    // ==================== authorize ====================
-
-    #[Test]
-    public function authorize_returns_true_when_no_character_is_passed(): void
-    {
-        $user = \Mockery::mock();
-
-        $request = $this->makeRequest();
-        $request->setUserResolver(fn () => $user);
-
-        $this->assertTrue($request->authorize());
-    }
-
-    #[Test]
-    public function authorize_returns_false_when_character_is_passed_and_user_lacks_update_permission(): void
-    {
-        $user = \Mockery::mock();
-        $user->shouldReceive('isAuthorizedTo')->with('update-planned-absences')->andReturn(false);
-
-        $request = $this->makeRequest(['character' => '5']);
-        $request->setUserResolver(fn () => $user);
-
-        $this->assertFalse($request->authorize());
-    }
-
-    #[Test]
-    public function authorize_returns_true_when_character_is_passed_and_user_has_update_permission(): void
-    {
-        $user = \Mockery::mock();
-        $user->shouldReceive('isAuthorizedTo')->with('update-planned-absences')->andReturn(true);
-
-        $request = $this->makeRequest(['character' => '5']);
-        $request->setUserResolver(fn () => $user);
-
-        $this->assertTrue($request->authorize());
     }
 }

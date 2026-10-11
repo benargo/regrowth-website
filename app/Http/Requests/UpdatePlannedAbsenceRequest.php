@@ -1,23 +1,15 @@
 <?php
 
-namespace App\Http\Requests\PlannedAbsences;
+namespace App\Http\Requests;
 
-use App\Models\Character;
 use App\Models\PlannedAbsence;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdatePlannedAbsenceRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return ! $this->has('character') || $this->user()->isAuthorizedTo('update-planned-absences');
-    }
-
     /**
      * Get the validation rules that apply to the request.
      *
@@ -35,7 +27,19 @@ class UpdatePlannedAbsenceRequest extends FormRequest
         }
 
         return [
-            'character' => ['sometimes', 'integer', 'min:1', Rule::exists('characters', 'id')],
+            'game_version' => [
+                'required_with:character',
+                'integer',
+                Rule::exists('game_versions', 'id')->where(fn (Builder $query) => $query->where('release_date', '<=', now())),
+            ],
+            'character' => [
+                'sometimes',
+                'integer',
+                'min:1',
+                Rule::exists('characters', 'id')
+                    ->where('game_version_id', $this->integer('game_version'))
+                    ->where('is_main', true),
+            ],
             'user' => ['sometimes', 'nullable', 'string'],
             'start_date' => $startDateRules,
             'end_date' => ['sometimes', 'nullable', 'date', ...($effectiveStartDate ? ['after:'.$effectiveStartDate] : [])],
@@ -51,22 +55,17 @@ class UpdatePlannedAbsenceRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'game_version.required_with' => 'A game version is required.',
+            'game_version.integer' => 'The game version must be an ID.',
+            'game_version.exists' => "That game version isn't available.",
             'character.integer' => 'The character ID must be an integer.',
             'character.min' => 'The character ID must be at least 1.',
-            'character.exists' => 'The specified character does not exist.',
+            'character.exists' => 'Choose a main character.',
             'start_date.date' => 'The start date must be a valid date.',
             'start_date.after_or_equal' => 'The start date must not be in the past.',
             'end_date.date' => 'The end date must be a valid date.',
             'end_date.after' => 'The end date must be after the start date.',
             'reason.string' => 'The reason must be a string.',
         ];
-    }
-
-    /**
-     * Resolve the Character model from the validated character ID.
-     */
-    public function character(): ?Character
-    {
-        return $this->has('character') ? Character::find((int) $this->input('character')) : null;
     }
 }

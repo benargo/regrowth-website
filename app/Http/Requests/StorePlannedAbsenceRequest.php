@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Requests\PlannedAbsences;
+namespace App\Http\Requests;
 
 use App\Models\PlannedAbsence;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -22,9 +23,19 @@ class StorePlannedAbsenceRequest extends FormRequest
         }
 
         return [
-            'character' => is_numeric($this->input('character'))
-                ? ['required', 'integer', 'min:1', Rule::exists('characters', 'id')]
-                : ['required', 'string', 'max:11', 'regex:/^[^\d\s]+$/u'],
+            'game_version' => [
+                'required',
+                'integer',
+                Rule::exists('game_versions', 'id')->where(fn (Builder $query) => $query->where('release_date', '<=', now())),
+            ],
+            'character' => [
+                'required',
+                'integer',
+                'min:1',
+                Rule::exists('characters', 'id')
+                    ->where('game_version_id', $this->integer('game_version'))
+                    ->where('is_main', true),
+            ],
             'user' => ['sometimes', 'nullable', 'string'],
             'start_date' => $startDateRules,
             'end_date' => ['nullable', 'date', 'after:start_date'],
@@ -40,12 +51,13 @@ class StorePlannedAbsenceRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'game_version.required' => 'A game version is required.',
+            'game_version.integer' => 'The game version must be an ID.',
+            'game_version.exists' => "That game version isn't available.",
             'character.required' => 'A character is required.',
             'character.integer' => 'The character ID must be an integer.',
             'character.min' => 'The character ID must be at least 1.',
-            'character.exists' => 'The specified character does not exist.',
-            'character.max' => 'Character name must be less than 12 characters.',
-            'character.regex' => 'Character name must not contain spaces or numbers.',
+            'character.exists' => 'Choose a main character.',
             'start_date.required' => 'A start date is required.',
             'start_date.date' => 'The start date must be a valid date.',
             'start_date.after_or_equal' => 'The start date must not be in the past.',

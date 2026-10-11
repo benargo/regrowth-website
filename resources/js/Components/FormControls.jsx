@@ -193,11 +193,18 @@ export function SlugInput({ name, id = name, value, onChange, onBlur, maxLength,
     );
 }
 
-export function FormSection({ legend, children }) {
+/**
+ * A titled group of form rows. Give it an `id` to link to it from an
+ * "On this page" sidebar.
+ */
+export function FormSection({ id, legend, isSingleColumn = false, children }) {
     return (
-        <Fieldset className="border-ink-600/40 flex flex-col gap-6 border-t pt-6 first:border-t-0 first:pt-0">
+        <Fieldset
+            id={id}
+            className="border-ink-600/40 flex scroll-mt-48 flex-col gap-6 border-t pt-6 first:border-t-0 first:pt-0 lg:scroll-mt-28"
+        >
             <Legend className="font-serif text-xl text-white">{legend}</Legend>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">{children}</div>
+            <div className={`grid grid-cols-1 gap-6 ${isSingleColumn ? "" : "md:grid-cols-2"}`}>{children}</div>
         </Fieldset>
     );
 }

@@ -1,0 +1,247 @@
+import { useEffect } from "react";
+import { Deferred, useForm, usePage } from "@inertiajs/react";
+import Master from "@/Layouts/Master";
+import SharedHeader from "@/Components/SharedHeader";
+import PageContainer from "@/Components/PageContainer";
+import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
+import Icon from "@/Components/FontAwesome/Icon";
+import Alert from "@/Components/Alert";
+import EmptyState from "@/Components/EmptyState";
+import BattleNetLoginButton from "@/Components/Blizzard/BattleNetLoginButton";
+import GameVersionSelector from "@/Components/GameVersions/GameVersionSelector";
+import CharacterPortrait from "@/Components/Characters/CharacterPortrait";
+import CharacterSearch from "@/Components/Characters/CharacterSearch";
+import ClassPill from "@/Components/Characters/ClassPill";
+import { FormRow, FormSection } from "@/Components/FormControls";
+import AbsenceForm from "@/Components/PlannedAbsences/AbsenceForm";
+import AbsenceDetailsFields from "@/Components/PlannedAbsences/AbsenceDetailsFields";
+import AbsenceFormLayout from "@/Components/PlannedAbsences/AbsenceFormLayout";
+import { usePermission } from "@/Hooks/usePermission";
+
+const TICKET_URL = "https://discord.com/channels/829020506907869214/1011331714376794233";
+
+function ConnectBattleNet({ message }) {
+    return (
+        <div className="flex flex-col items-start gap-3">
+            <p className="text-secondary-300 text-sm">{message}</p>
+            <BattleNetLoginButton>Connect Battle.net</BattleNetLoginButton>
+        </div>
+    );
+}
+
+function CharacterPickerSkeleton() {
+    return (
+        <div className="animate-pulse" aria-hidden="true">
+            <div className="border-ink-600 bg-ground-800 h-10.5 rounded border" />
+        </div>
+    );
+}
+
+function AccountCharacterPicker({ gameVersion, value, onChange, invalid }) {
+    const { battle_net: battleNet, account_characters: accountCharacters } = usePage().props;
+    const characters = accountCharacters?.characters ?? [];
+    const onlyCharacterId = characters.length === 1 ? characters[0].id : null;
+
+    useEffect(() => {
+        if (onlyCharacterId && value === null) {
+            onChange(onlyCharacterId);
+        }
+    }, [onlyCharacterId]);
+
+    if (!battleNet.connected) {
+        return (
+            <ConnectBattleNet message="Connect your Battle.net account to choose one of your characters. We only read your character list; nothing is stored." />
+        );
+    }
+
+    return (
+        <Deferred data="account_characters" fallback={<CharacterPickerSkeleton />}>
+            {accountCharacters?.error === "reconnect" ? (
+                <ConnectBattleNet message="Your Battle.net connection has expired. Connect again to choose a character." />
+            ) : accountCharacters?.error === "unavailable" ? (
+                <Alert type="warning">Battle.net is unavailable right now. Please try again shortly.</Alert>
+            ) : (
+                <div className="flex flex-col gap-2">
+                    {accountCharacters?.mains_only === false && (
+                        <p className="text-secondary-300 text-sm">
+                            None of your characters is marked as a main on the roster yet. Pick the one you raid on.
+                        </p>
+                    )}
+                    <CharacterSearch
+                        id="character"
+                        characters={characters}
+                        disabled={onlyCharacterId !== null}
+                        value={value}
+                        onChange={onChange}
+                        invalid={invalid}
+                        emptyMessage={`None of the characters on your Battle.net account are on the ${gameVersion.title} roster.`}
+                    />
+                </div>
+            )}
+        </Deferred>
+    );
+}
+
+function CreateForm({ gameVersion, action, canBackdate }) {
+    const { data, setData, post, transform, processing, errors, clearErrors } = useForm({
+        game_version: gameVersion.id,
+        character: null,
+        start_date: "",
+        end_date: "",
+        reason: "",
+    });
+
+    function submit(visitOptions) {
+        transform(({ end_date, ...rest }) => ({ ...rest, end_date: end_date || null }));
+        post(action, visitOptions);
+    }
+
+    const characterError = errors.character ?? errors.game_version;
+
+    return (
+        <AbsenceForm
+            errors={errors}
+            processing={processing}
+            onSubmit={submit}
+            submitLabel="Log absence"
+            cancelHref={route("account.index")}
+        >
+            <FormSection id="whos-away" legend="Who's away">
+                <FormRow
+                    htmlFor="character"
+                    label="Character"
+                    required
+                    error={characterError}
+                   
+                >
+                    <AccountCharacterPicker
+                        gameVersion={gameVersion}
+                        value={data.character}
+                        onChange={(id) => {
+                            setData("character", id);
+                            if (id) {
+                                clearErrors("character", "game_version");
+                            }
+                        }}
+                        invalid={Boolean(characterError)}
+                    />
+                </FormRow>
+            </FormSection>
+
+            <AbsenceDetailsFields
+                data={data}
+                setData={setData}
+                errors={errors}
+                clearErrors={clearErrors}
+                canBackdate={canBackdate}
+            />
+        </AbsenceForm>
+    );
+}
+
+function EditForm({ plannedAbsence, action, canBackdate }) {
+    const { data, setData, patch, transform, processing, errors, clearErrors } = useForm({
+        start_date: plannedAbsence.start_date ?? "",
+        end_date: plannedAbsence.end_date ?? "",
+        reason: plannedAbsence.reason ?? "",
+    });
+
+    function submit(visitOptions) {
+        transform(({ end_date, ...rest }) => ({ ...rest, end_date: end_date || null }));
+        patch(action, visitOptions);
+    }
+
+    const character = plannedAbsence.character;
+
+    return (
+        <AbsenceForm
+            errors={errors}
+            processing={processing}
+            onSubmit={submit}
+            submitLabel="Save changes"
+            cancelHref={route("account.index")}
+        >
+            <FormSection id="whos-away" legend="Who's away">
+                <div className="flex items-center gap-3">
+                    {character ? (
+                        <>
+                            <CharacterPortrait character={character} className="size-10" />
+                            <span className="text-white">{character.name}</span>
+                            <ClassPill playableClass={character.playable_class} />
+                        </>
+                    ) : (
+                        <span className="text-secondary-300">Unknown character</span>
+                    )}
+                </div>
+            </FormSection>
+
+            <AbsenceDetailsFields
+                data={data}
+                setData={setData}
+                errors={errors}
+                clearErrors={clearErrors}
+                canBackdate={canBackdate}
+            />
+        </AbsenceForm>
+    );
+}
+
+export default function Form() {
+    const {
+        game_versions: gameVersions = null,
+        game_version: gameVersion = null,
+        planned_absence: plannedAbsence = null,
+        action,
+    } = usePage().props;
+
+    const canBackdate = usePermission("manage-planned-absences");
+    const pageTitle = plannedAbsence ? "Edit Planned Absence" : "Log Planned Absence";
+
+    const ticketNote = (
+        <>
+            Please{" "}
+            <a href={TICKET_URL} className="underline hover:text-white">
+                create a ticket on Discord
+            </a>{" "}
+            if you need to record an absence that started in the past, or your character isn't listed.
+        </>
+    );
+
+    return (
+        <Master title={pageTitle}>
+            <SharedHeader title={pageTitle} backgroundClass="bg-illidan" />
+
+            <ToolNav>
+                <ToolNavLink href={route("account.index")}>
+                    <Icon icon="arrow-left" style="solid" className="mr-2" />
+                    <span>Back to your account</span>
+                </ToolNavLink>
+            </ToolNav>
+
+            <PageContainer>
+                {!plannedAbsence && gameVersions && (
+                    <div className="mb-10">
+                        <GameVersionSelector gameVersions={gameVersions} currentGameVersion={gameVersion} />
+                    </div>
+                )}
+
+                {plannedAbsence || gameVersion ? (
+                    <AbsenceFormLayout note={canBackdate ? null : ticketNote}>
+                        {plannedAbsence ? (
+                            <EditForm plannedAbsence={plannedAbsence} action={action} canBackdate={canBackdate} />
+                        ) : (
+                            <CreateForm
+                                key={gameVersion.slug}
+                                gameVersion={gameVersion}
+                                action={action}
+                                canBackdate={canBackdate}
+                            />
+                        )}
+                    </AbsenceFormLayout>
+                ) : (
+                    <EmptyState icon="calendar-times" message="There's no guild roster to log an absence against yet." />
+                )}
+            </PageContainer>
+        </Master>
+    );
+}

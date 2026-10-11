@@ -8,6 +8,7 @@ import Icon from "@/Components/FontAwesome/Icon";
 import { Can } from "@/Components/Authorizable";
 import SpecIcon from "@/Components/Characters/SpecIcon";
 import SpecBadge from "@/Components/Characters/SpecBadge";
+import CharacterPortrait from "@/Components/Characters/CharacterPortrait";
 import EmptyState from "@/Components/EmptyState";
 import ToolNav from "@/Components/ToolNav";
 import raidSpec from "@/Helpers/RaidSpec";
@@ -107,25 +108,7 @@ export default function Show({ character, roster_url, recent_reports }) {
             <PageContainer>
                 {/* Identity strip */}
                 <div className="mb-8 flex flex-wrap items-center gap-4">
-                    {character.portrait_url ? (
-                        <img
-                            src={character.portrait_url}
-                            alt={character.name}
-                            className="h-20 w-20 rounded-xl border border-ink-600/30 shadow-lg shadow-black/50"
-                        />
-                    ) : (
-                        <div className="flex h-20 w-20 items-center justify-center rounded-xl border border-secondary-600/30 bg-secondary-700/50 shadow-lg shadow-black/50">
-                            {character.playable_class?.icon_url ? (
-                                <img
-                                    src={character.playable_class.icon_url}
-                                    alt={character.playable_class.name}
-                                    className="h-10 w-10 rounded opacity-40"
-                                />
-                            ) : (
-                                <Icon icon="user" style="light" className="text-2xl text-secondary-500" />
-                            )}
-                        </div>
-                    )}
+                    <CharacterPortrait character={character} className="size-20 text-2xl" alt={character.name} />
                     <div>
                         <h2 className="text-2xl font-bold text-white">{character.name}</h2>
                         <div className="mt-1 flex flex-wrap items-center gap-2">
