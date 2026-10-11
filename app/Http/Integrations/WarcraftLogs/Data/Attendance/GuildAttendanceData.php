@@ -2,11 +2,7 @@
 
 namespace App\Http\Integrations\WarcraftLogs\Data\Attendance;
 
-use App\Http\Integrations\WarcraftLogs\Data\Casts\MillisecondTimestampCast;
-use App\Http\Integrations\WarcraftLogs\Data\World\ZoneData;
-use Carbon\Carbon;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
-use Spatie\LaravelData\Attributes\WithCast;
 use Spatie\LaravelData\Data;
 
 final class GuildAttendanceData extends Data
@@ -18,9 +14,6 @@ final class GuildAttendanceData extends Data
         public readonly string $code,
         #[DataCollectionOf(PlayerAttendanceData::class)]
         public readonly array $players,
-        #[WithCast(MillisecondTimestampCast::class)]
-        public readonly Carbon $startTime,
-        public readonly ?ZoneData $zone = null,
     ) {}
 
     /**

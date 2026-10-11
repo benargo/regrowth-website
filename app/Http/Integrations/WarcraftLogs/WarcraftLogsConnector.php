@@ -22,7 +22,6 @@ use Saloon\PaginationPlugin\Contracts\HasPagination;
 use Saloon\PaginationPlugin\PagedPaginator;
 use Saloon\RateLimitPlugin\Contracts\RateLimitStore;
 use Saloon\RateLimitPlugin\Limit;
-use Saloon\RateLimitPlugin\Stores\LaravelCacheStore;
 use Saloon\RateLimitPlugin\Traits\HasRateLimits;
 use Saloon\Traits\OAuth2\ClientCredentialsBasicAuthGrant;
 use Saloon\Traits\Plugins\AcceptsJson;
@@ -60,7 +59,7 @@ class WarcraftLogsConnector extends Connector implements HasPagination
         protected string $clientSecret,
         private readonly RateLimitResetCache $rateLimitReset,
         MonitorRateLimit $monitorRateLimit,
-        private readonly ?RateLimitStore $store = null,
+        private readonly RateLimitStore $store,
     ) {
         $this->middleware()->onResponse($monitorRateLimit, 'monitorRateLimit');
     }
@@ -94,8 +93,7 @@ class WarcraftLogsConnector extends Connector implements HasPagination
     }
 
     /**
-     * Reuse the cached token until it expires. The key and tags differ from the legacy
-     * client's untagged `warcraftlogs:client_token`, so the two never clobber each other.
+     * Reuse the cached token until it expires.
      */
     protected function cachedAuthenticator(): AccessTokenAuthenticator
     {
@@ -179,11 +177,10 @@ class WarcraftLogsConnector extends Connector implements HasPagination
 
     /**
      * The provider injects a tagged store, so the cooldown can be flushed on purpose.
-     * The untagged fallback keeps tests on the array driver isolated.
      */
     protected function resolveRateLimitStore(): RateLimitStore
     {
-        return $this->store ?? new LaravelCacheStore(Cache::store());
+        return $this->store;
     }
 
     /**

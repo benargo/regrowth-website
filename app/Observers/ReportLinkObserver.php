@@ -4,7 +4,6 @@ namespace App\Observers;
 
 use App\Jobs\BuildAddonExportFile;
 use App\Models\ReportLink;
-use Illuminate\Support\Facades\Cache;
 
 class ReportLinkObserver
 {
@@ -29,8 +28,7 @@ class ReportLinkObserver
      */
     private function linksChanged(): void
     {
-        Cache::tags(['attendance'])->flush();
-        Cache::tags(['reports'])->flush();
+        ReportObserver::flushCaches();
 
         BuildAddonExportFile::dispatch()->delay(now()->addSeconds(120));
     }

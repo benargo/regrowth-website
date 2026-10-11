@@ -10,6 +10,7 @@ use App\Jobs\WarcraftLogs\Concerns\ReleasesOnRateLimit;
 use App\Models\GameVersion;
 use App\Models\Report;
 use App\Models\WarcraftLogs\Guild;
+use App\Observers\ReportObserver;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -80,9 +81,11 @@ class FetchAttendanceData implements ShouldQueue
         $recordsByGameVersion = $this->groupByGameVersion($attendanceRecords);
         $gameVersions = $this->loadGameVersions($recordsByGameVersion->keys());
 
-        foreach ($recordsByGameVersion as $gameVersionId => $guildAttendances) {
-            $this->syncGameVersionAttendance($gameVersions->get($gameVersionId), $guildAttendances);
-        }
+        ReportObserver::deferFlushing(function () use ($recordsByGameVersion, $gameVersions): void {
+            foreach ($recordsByGameVersion as $gameVersionId => $guildAttendances) {
+                $this->syncGameVersionAttendance($gameVersions->get($gameVersionId), $guildAttendances);
+            }
+        });
 
         Log::info('Completed fetching and syncing attendance data.');
     }
@@ -96,7 +99,7 @@ class FetchAttendanceData implements ShouldQueue
     {
         return Report::whereBelongsTo($this->guild, 'warcraftLogsGuild')
             ->whereNotNull('code')
-            ->get(['id', 'code', 'game_version_id'])
+            ->get()
             ->keyBy('code');
     }
 
@@ -156,7 +159,7 @@ class FetchAttendanceData implements ShouldQueue
         );
 
         foreach ($guildAttendances as $guildAttendance) {
-            $this->syncReportAttendance($guildAttendance, $this->reports->get($guildAttendance->code)->id, $characterIds);
+            $this->syncReportAttendance($guildAttendance, $this->reports->get($guildAttendance->code), $characterIds);
         }
     }
 
@@ -185,13 +188,13 @@ class FetchAttendanceData implements ShouldQueue
      *
      * @param  Collection<string, int>  $characterIds  Character IDs keyed by player name.
      */
-    private function syncReportAttendance(GuildAttendanceData $guildAttendance, string $reportId, Collection $characterIds): void
+    private function syncReportAttendance(GuildAttendanceData $guildAttendance, Report $report, Collection $characterIds): void
     {
         $syncData = collect($guildAttendance->players)
             ->filter(fn ($player) => $characterIds->has($player->name))
             ->map(fn ($player) => [
                 'character_id' => $characterIds->get($player->name),
-                'raid_report_id' => $reportId,
+                'raid_report_id' => $report->id,
                 'presence' => $player->presence,
             ])
             ->values()
@@ -208,7 +211,7 @@ class FetchAttendanceData implements ShouldQueue
             ['character_id', 'raid_report_id'],
             ['presence']
         );
-        Report::find($reportId)?->touch();
+        $report->touch();
 
         $syncedCount = count($syncData);
 

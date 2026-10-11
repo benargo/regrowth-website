@@ -28,26 +28,11 @@ final class GetGuildAttendanceRequest extends WarcraftLogsRequest implements Pag
                     attendance(page: $page, limit: $limit) {
                         data {
                             code
-                            startTime
                             players {
                                 name
                                 presence
                             }
-                            zone {
-                                id
-                                name
-                                difficulties {
-                                    id
-                                    name
-                                    sizes
-                                }
-                                expansion {
-                                    id
-                                    name
-                                }
-                            }
                         }
-                        current_page
                         has_more_pages
                     }
                 }

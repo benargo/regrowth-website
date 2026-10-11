@@ -4,8 +4,6 @@ namespace Tests\Unit\Http\Integrations\WarcraftLogs\Data\Attendance;
 
 use App\Http\Integrations\WarcraftLogs\Data\Attendance\GuildAttendanceData;
 use App\Http\Integrations\WarcraftLogs\Data\Attendance\PlayerAttendanceData;
-use App\Http\Integrations\WarcraftLogs\Data\World\ZoneData;
-use Carbon\Carbon;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -14,15 +12,11 @@ use Tests\TestCase;
 class GuildAttendanceDataTest extends TestCase
 {
     #[Test]
-    public function it_hydrates_code_start_time_and_zone(): void
+    public function it_hydrates_the_code(): void
     {
         $attendance = GuildAttendanceData::from($this->sampleApiResponse());
 
         $this->assertSame('aBcD1234', $attendance->code);
-        $this->assertInstanceOf(Carbon::class, $attendance->startTime);
-        $this->assertSame(1700000000123, $attendance->startTime->getTimestampMs());
-        $this->assertInstanceOf(ZoneData::class, $attendance->zone);
-        $this->assertSame(1047, $attendance->zone->id);
     }
 
     #[Test]
@@ -37,23 +31,11 @@ class GuildAttendanceDataTest extends TestCase
     }
 
     #[Test]
-    public function it_hydrates_an_empty_player_list_and_a_null_zone(): void
+    public function it_hydrates_an_empty_player_list(): void
     {
-        $attendance = GuildAttendanceData::from([...$this->sampleApiResponse(), 'players' => [], 'zone' => null]);
+        $attendance = GuildAttendanceData::from([...$this->sampleApiResponse(), 'players' => []]);
 
         $this->assertSame([], $attendance->players);
-        $this->assertNull($attendance->zone);
-    }
-
-    #[Test]
-    public function it_hydrates_a_missing_zone_as_null(): void
-    {
-        $payload = $this->sampleApiResponse();
-        unset($payload['zone']);
-
-        $attendance = GuildAttendanceData::from($payload);
-
-        $this->assertNull($attendance->zone);
     }
 
     #[Test]
@@ -82,17 +64,10 @@ class GuildAttendanceDataTest extends TestCase
     {
         return [
             'code' => 'aBcD1234',
-            'startTime' => 1700000000123.0,
             'players' => [
                 ['name' => 'Thrall', 'presence' => 1],
                 ['name' => 'Jaina', 'presence' => 2],
                 ['name' => 'Sylvanas', 'presence' => 1],
-            ],
-            'zone' => [
-                'id' => 1047,
-                'name' => 'Karazhan',
-                'difficulties' => [['id' => 3, 'name' => 'Normal', 'sizes' => [10]]],
-                'expansion' => ['id' => 1001, 'name' => 'The Burning Crusade'],
             ],
         ];
     }

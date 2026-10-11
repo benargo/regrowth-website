@@ -9,6 +9,7 @@ use App\Jobs\WarcraftLogs\Concerns\ReleasesOnRateLimit;
 use App\Models\Report as ReportModel;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
+use App\Observers\ReportObserver;
 use Carbon\Carbon;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -67,9 +68,11 @@ class FetchReportsByGuildTag implements ShouldQueue
         ));
 
         try {
-            foreach ($paginator->items() as $report) {
-                $this->persistReport($report);
-            }
+            ReportObserver::deferFlushing(function () use ($paginator): void {
+                foreach ($paginator->items() as $report) {
+                    $this->persistReport($report);
+                }
+            });
         } catch (RateLimitReachedException $exception) {
             $this->releaseUntilPointsReset($exception, "reports for guild tag {$this->guildTag->id}");
 

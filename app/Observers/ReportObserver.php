@@ -83,9 +83,8 @@ class ReportObserver
     /**
      * Flush the caches derived from reports.
      */
-    private static function flushCaches(): void
+    public static function flushCaches(): void
     {
-        Cache::tags(['attendance'])->flush();
-        Cache::tags(['reports'])->flush();
+        Cache::tags(['attendance', 'reports'])->flush();
     }
 }

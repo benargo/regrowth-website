@@ -7,19 +7,16 @@ use App\Observers\ReportObserver;
 use Illuminate\Contracts\Queue\ShouldBeUniqueUntilProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Attributes\DeleteWhenMissingModels;
 
 /**
  * Re-saves every report of a Warcraft Logs guild, so each one re-derives its
  * game version and phase after the versions or phases behind it changed.
  */
+#[DeleteWhenMissingModels]
 class RefreshGuildReports implements ShouldBeUniqueUntilProcessing, ShouldQueue
 {
     use Queueable;
-
-    /**
-     * Drop the job if the guild is deleted before it runs.
-     */
-    public bool $deleteWhenMissingModels = true;
 
     /**
      * Let the unique lock lapse if a pending refresh is lost from the queue,
@@ -37,6 +34,20 @@ class RefreshGuildReports implements ShouldBeUniqueUntilProcessing, ShouldQueue
     public static function schedule(Guild $guild): void
     {
         static::dispatch($guild)->afterCommit();
+    }
+
+    /**
+     * Schedule a refresh for each of the given guilds, ignoring nulls and duplicates.
+     *
+     * @param  iterable<int, int|null>  $guildIds
+     */
+    public static function scheduleForGuildIds(iterable $guildIds): void
+    {
+        $guildIds = collect($guildIds)->filter()->unique();
+
+        foreach (Guild::whereKey($guildIds)->get() as $guild) {
+            static::schedule($guild);
+        }
     }
 
     /**

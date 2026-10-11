@@ -2,7 +2,6 @@
 
 namespace App\Actions\WarcraftLogs;
 
-use App\Models\Report;
 use App\Models\WarcraftLogs\Guild;
 use App\Observers\ReportObserver;
 use Illuminate\Support\Facades\DB;
@@ -11,14 +10,15 @@ use Lorisleiva\Actions\Concerns\AsAction;
 /**
  * Deletes a Warcraft Logs guild and its tags. Its game versions and reports
  * are detached rather than deleted, and the reports lose their deleted tag;
- * the detached reports then re-derive a null game version and phase.
- * Attendance rows and report links are never touched.
+ * a report without a guild derives no game version or phase, so both are
+ * cleared in the same update. Attendance rows and report links are never touched.
  *
  * Tags are deleted through Eloquent so GuildTagObserver flushes its caches;
  * the foreign key's cascade only backs this up.
  *
- * The bulk updates skip GameVersionObserver on purpose: the only reports a
- * detach affects are this guild's, and they are re-saved here.
+ * The bulk updates skip GameVersionObserver and ReportObserver on purpose: the
+ * only reports a detach affects are this guild's, which are cleared here, and
+ * the report caches are flushed once instead.
  */
 class DeleteGuild
 {
@@ -27,15 +27,17 @@ class DeleteGuild
     public function handle(Guild $guild): void
     {
         DB::transaction(function () use ($guild): void {
-            $reportIds = $guild->reports()->pluck('id');
-
             $guild->gameVersions()->update(['warcraft_logs_guild_id' => null]);
             $guild->guildTags->each->delete();
-            $guild->reports()->update(['warcraft_logs_guild_id' => null]);
+            $guild->reports()->update([
+                'warcraft_logs_guild_id' => null,
+                'game_version_id' => null,
+                'phase_id' => null,
+            ]);
 
             $guild->delete();
-
-            ReportObserver::deferFlushing(fn () => Report::whereKey($reportIds)->lazyById()->each->save());
         });
+
+        ReportObserver::flushCaches();
     }
 }

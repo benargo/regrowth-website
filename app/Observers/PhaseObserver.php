@@ -6,7 +6,6 @@ use App\Jobs\WarcraftLogs\RefreshGuildReports;
 use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\Phase;
-use App\Models\WarcraftLogs\Guild;
 use Illuminate\Database\Eloquent\Builder;
 
 class PhaseObserver
@@ -57,13 +56,8 @@ class PhaseObserver
      */
     private function refreshReportsOfGameVersions(array $gameVersionIds): void
     {
-        $guildIds = GameVersion::whereKey(array_unique(array_filter($gameVersionIds)))
-            ->pluck('warcraft_logs_guild_id')
-            ->filter()
-            ->unique();
-
-        foreach (Guild::whereKey($guildIds)->get() as $guild) {
-            RefreshGuildReports::schedule($guild);
-        }
+        RefreshGuildReports::scheduleForGuildIds(
+            GameVersion::whereKey(array_unique(array_filter($gameVersionIds)))->pluck('warcraft_logs_guild_id'),
+        );
     }
 }

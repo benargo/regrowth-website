@@ -77,7 +77,6 @@ class WarcraftLogsConnectorTest extends WarcraftLogsTestCase
         $cached = Cache::tags(['warcraftlogs', 'api-auth'])->get('warcraftlogs:access_token');
         $this->assertIsArray($cached);
         $this->assertSame('test_token', $cached['token']);
-        $this->assertFalse(Cache::has('warcraftlogs:client_token'), 'The legacy token key must stay untouched.');
     }
 
     // ==================== revoked tokens ====================
