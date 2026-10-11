@@ -41,7 +41,7 @@ A 404 from the render CDN (`FetchAssetRequest` / `RenderConnector`) throws `App\
 In seeders/resources that send both `GetItemRequest`/`GetItemMediaRequest` **and** `FetchAssetRequest`, catch the abstract parent so a single icon-CDN 404 doesn't abort the whole batch:
 
 ```php
-catch (NotFoundException | BlizzardApiException | FatalRequestException $e) {
+catch (NotFoundException | ApiException | FatalRequestException $e) {
     // skip this record, continue the loop
 }
 ```

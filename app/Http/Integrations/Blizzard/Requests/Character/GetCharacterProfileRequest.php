@@ -7,7 +7,7 @@ use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Concerns\HasCaching;
 use App\Http\Integrations\Blizzard\Concerns\RequiresRealm;
 use App\Http\Integrations\Blizzard\Data\Characters\CharacterProfileData;
-use Illuminate\Support\Str;
+use App\Http\Integrations\Blizzard\Support\NameSlug;
 use Saloon\CachePlugin\Contracts\Cacheable;
 use Saloon\Enums\Method;
 use Saloon\Http\PendingRequest;
@@ -26,7 +26,7 @@ class GetCharacterProfileRequest extends Request implements Cacheable
         protected ?BlizzardNamespace $namespace = null,
     ) {
         $this->realm = self::normalizeRealm($realm);
-        $this->character = Str::slug($character);
+        $this->character = NameSlug::from($character);
     }
 
     public function resolveEndpoint(): string

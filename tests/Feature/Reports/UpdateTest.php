@@ -2,12 +2,14 @@
 
 namespace Tests\Feature\Reports;
 
+use App\Jobs\BuildAddonExportFile;
 use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\Report;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -24,6 +26,7 @@ class UpdateTest extends TestCase
     {
         parent::setUp();
 
+        Bus::fake([BuildAddonExportFile::class]);
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 

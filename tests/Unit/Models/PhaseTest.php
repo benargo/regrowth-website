@@ -6,7 +6,7 @@ use App\Helpers\Database\Eloquent\Relations\HasManyKeyBy;
 use App\Models\GameVersion;
 use App\Models\Phase;
 use App\Models\Raid;
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\Report;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
@@ -197,6 +197,17 @@ class PhaseTest extends ModelTestCase
     // ==================== relationships ====================
 
     #[Test]
+    public function it_has_many_reports(): void
+    {
+        $phase = $this->create();
+        $report = Report::factory()->create();
+        Report::whereKey($report->id)->update(['phase_id' => $phase->id]);
+
+        $this->assertRelation($phase, 'reports', HasMany::class);
+        $this->assertTrue($phase->reports->sole()->is($report));
+    }
+
+    #[Test]
     public function it_has_many_raids(): void
     {
         $phase = $this->create();
@@ -240,18 +251,6 @@ class PhaseTest extends ModelTestCase
         $phase = $this->factory()->unscheduled()->create();
 
         $this->assertFalse($phase->hasStarted());
-    }
-
-    // ==================== guild tags ====================
-
-    #[Test]
-    public function it_has_many_guild_tags(): void
-    {
-        $phase = $this->create();
-        GuildTag::factory()->count(3)->create(['phase_id' => $phase->id]);
-
-        $this->assertRelation($phase, 'guildTags', HasMany::class);
-        $this->assertCount(3, $phase->guildTags);
     }
 
     // ==================== game version ====================

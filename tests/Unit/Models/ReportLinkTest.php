@@ -2,8 +2,6 @@
 
 namespace Tests\Unit\Models;
 
-use App\Events\ReportLinkDeleted;
-use App\Events\ReportLinkSaved;
 use App\Models\Report;
 use App\Models\ReportLink;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,17 +20,6 @@ class ReportLinkTest extends TestCase
         $pivot = new ReportLink;
 
         $this->assertSame('pivot_report_links', $pivot->getTable());
-    }
-
-    #[Test]
-    public function it_dispatches_events_on_saved_and_deleted(): void
-    {
-        $pivot = new ReportLink;
-
-        $this->assertSame([
-            'saved' => ReportLinkSaved::class,
-            'deleted' => ReportLinkDeleted::class,
-        ], $pivot->dispatchesEvents());
     }
 
     #[Test]

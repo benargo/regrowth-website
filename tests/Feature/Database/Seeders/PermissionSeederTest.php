@@ -34,6 +34,14 @@ class PermissionSeederTest extends TestCase
     // ==================== schema validation ====================
 
     #[Test]
+    public function it_defines_the_warcraft_logs_permissions(): void
+    {
+        $names = collect($this->permissions)->where('group', 'warcraftlogs')->pluck('name')->sort()->values()->all();
+
+        $this->assertSame(['create-warcraft-logs-guilds', 'delete-warcraft-logs-guilds', 'update-warcraft-logs-guilds', 'update-warcraft-logs-tags', 'view-warcraft-logs-guilds'], $names);
+    }
+
+    #[Test]
     public function every_permission_entry_has_a_name_key(): void
     {
         foreach ($this->permissions as $index => $permission) {

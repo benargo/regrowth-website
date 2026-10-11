@@ -6,15 +6,16 @@ use App\Events\Broadcasts\CompositionChanged;
 use App\Http\Integrations\RaidHelper\Data\Compositions\CompositionData;
 use App\Http\Integrations\RaidHelper\Data\Compositions\CompositionSlotData;
 use App\Http\Resources\EventCompositionResource;
-use App\Models\Character;
+use App\Jobs\Concerns\ResolvesCharacterNames;
 use App\Models\Event;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class SyncComposition implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, ResolvesCharacterNames;
 
     public function __construct(
         public readonly string $raidHelperEventId,
@@ -43,26 +44,47 @@ class SyncComposition implements ShouldQueue
 
     /**
      * Execute the job.
+     *
+     * Slot names are resolved among the event's characters in its game
+     * version, since a slot can only hold someone who signed up. A name not on
+     * the event yet is skipped; the SyncEvent that attaches it dispatches
+     * FetchComposition, which slots it. An event with no game version is left
+     * untouched, since an empty slotted set would otherwise detach every
+     * slotted character.
      */
     public function handle(): void
     {
         $event = Event::where('raid_helper_event_id', $this->raidHelperEventId)->first();
+        $gameVersion = $event->gameVersion;
+
+        if ($gameVersion === null) {
+            Log::error('Skipped a Raid-Helper composition for an event with no game version.', [
+                'event_id' => $event->id,
+                'raid_helper_event_id' => $this->raidHelperEventId,
+            ]);
+
+            return;
+        }
+
+        $characterIds = $this->resolveCharacterIds(
+            $gameVersion,
+            array_column($this->data->slots, 'name'),
+            $event->characters()->whereBelongsTo($gameVersion)->get(),
+            'raidhelper.composition',
+        );
 
         // Build the sync array for slotted characters.
         $slottedSync = [];
 
-        $allSlotNames = array_column($this->data->slots, 'name');
-        $charactersByName = Character::whereIn('name', $allSlotNames)->get()->keyBy('name');
-
         foreach ($this->data->slots as $slot) {
             /** @var CompositionSlotData $slot */
-            $character = $charactersByName->get($slot->name);
+            $characterId = $characterIds->get($slot->name);
 
-            if (! $character) {
+            if ($characterId === null) {
                 continue;
             }
 
-            $slottedSync[$character->id] = [
+            $slottedSync[$characterId] = [
                 'slot_number' => $slot->slotNumber,
                 'group_number' => $slot->groupNumber,
                 'signup_status' => $slot->isConfirmed,
@@ -73,12 +95,11 @@ class SyncComposition implements ShouldQueue
         // Sync slotted characters without detaching (preserves benched pivots).
         $event->characters()->syncWithoutDetaching($slottedSync);
 
-        // Detach characters that are no longer slotted and are not benched.
-        $slottedIds = array_keys($slottedSync);
-
+        // Detach this version's characters that are no longer slotted and are not benched.
         $toDetach = $event->characters()
+            ->whereBelongsTo($gameVersion)
             ->wherePivot('is_benched', false)
-            ->whereNotIn('characters.id', $slottedIds)
+            ->whereNotIn('characters.id', array_keys($slottedSync))
             ->pluck('characters.id')
             ->all();
 

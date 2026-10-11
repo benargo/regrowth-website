@@ -124,7 +124,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
         $report->characters()->attach($character->id, ['presence' => 1]);
 
@@ -155,7 +155,7 @@ class AttendanceMatrixControllerTest extends TestCase
             'rank_id' => $rank->id,
             'playable_class_id' => $playableClass->id,
         ]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
         $report->characters()->attach($character->id, ['presence' => 1]);
 
@@ -195,7 +195,7 @@ class AttendanceMatrixControllerTest extends TestCase
     public function invoke_includes_filter_option_props(): void
     {
         GuildRank::factory()->create();
-        GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        GuildTag::factory()->countsAttendance()->create();
 
         $user = User::factory()->officer()->create();
 
@@ -261,8 +261,8 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_default_guild_tag_ids_include_only_attendance_counting_tags(): void
     {
-        $countingTag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        GuildTag::factory()->withoutPhase()->create(['count_attendance' => false]);
+        $countingTag = GuildTag::factory()->countsAttendance()->create();
+        GuildTag::factory()->create(['count_attendance' => false]);
 
         $user = User::factory()->officer()->create();
 
@@ -466,7 +466,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_accepts_since_date_equal_to_minimum(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'Europe/Paris')]);
 
         $user = User::factory()->officer()->create();
@@ -481,7 +481,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_rejects_since_date_before_minimum(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'Europe/Paris')]);
 
         $user = User::factory()->officer()->create();
@@ -495,7 +495,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_accepts_before_date_equal_to_minimum(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'Europe/Paris')]);
 
         $user = User::factory()->officer()->create();
@@ -509,7 +509,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_rejects_before_date_before_minimum(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'Europe/Paris')]);
 
         $user = User::factory()->officer()->create();
@@ -546,7 +546,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_earliest_date_is_day_before_earliest_report(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-03-10 20:00', 'Europe/Paris')]);
         Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'Europe/Paris')]);
 
@@ -568,7 +568,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
         $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
 
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
 
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
         $report->characters()->attach($thrall->id, ['presence' => 1]);
@@ -593,8 +593,8 @@ class AttendanceMatrixControllerTest extends TestCase
         $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
         $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
 
-        $tag1 = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        $tag2 = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag1 = GuildTag::factory()->countsAttendance()->create();
+        $tag2 = GuildTag::factory()->countsAttendance()->create();
 
         $report1 = Report::factory()->withGuildTag($tag1)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
         $report2 = Report::factory()->withGuildTag($tag2)->create(['start_time' => Carbon::parse('2025-01-08 20:00', 'Europe/Paris')]);
@@ -620,7 +620,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
         $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
 
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
 
         $oldReport = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
         $newReport = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-02-01 20:00', 'Europe/Paris')]);
@@ -647,7 +647,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
         $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
 
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
 
         $oldReport = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
         $newReport = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-02-01 20:00', 'Europe/Paris')]);
@@ -723,7 +723,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $rank = GuildRank::factory()->create();
         $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
         $report->characters()->attach($thrall->id, ['presence' => 1]);
 
@@ -740,9 +740,9 @@ class AttendanceMatrixControllerTest extends TestCase
             );
 
         // Add a new character to the DB — if caching is working this should not appear.
+        // Attaching to the existing report avoids the Report observer flushing the attendance cache.
         $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
-        $report2 = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-02-01 20:00', 'UTC')]);
-        $report2->characters()->attach($jaina->id, ['presence' => 1]);
+        $report->characters()->attach($jaina->id, ['presence' => 1]);
 
         // Second request with identical filters should return the cached result.
         $this->actingAs($user)->get(route('raiding.attendance.matrix', $params))
@@ -775,7 +775,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
 
         $raidDate = Carbon::parse('2025-01-15 20:00', 'UTC');
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => $raidDate]);
@@ -808,7 +808,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $main1 = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank1->id]);
         $main2 = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank2->id]);
 
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:00', 'UTC')]);
         $report->characters()->attach($main1->id, ['presence' => 1]);
         $report->characters()->attach($main2->id, ['presence' => 1]);
@@ -841,7 +841,7 @@ class AttendanceMatrixControllerTest extends TestCase
             ['character_id' => $alt->id, 'linked_character_id' => $main->id, 'created_at' => now(), 'updated_at' => now()],
         ]);
 
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:00', 'UTC')]);
         $report->characters()->attach($main->id, ['presence' => 0]);
         $report->characters()->attach($alt->id, ['presence' => 0]);
@@ -865,8 +865,8 @@ class AttendanceMatrixControllerTest extends TestCase
         $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
         $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
 
-        $tag1 = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        $tag2 = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag1 = GuildTag::factory()->countsAttendance()->create();
+        $tag2 = GuildTag::factory()->countsAttendance()->create();
 
         $report1 = Report::factory()->withGuildTag($tag1)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
         $report2 = Report::factory()->withGuildTag($tag2)->create(['start_time' => Carbon::parse('2025-01-08 20:00', 'UTC')]);

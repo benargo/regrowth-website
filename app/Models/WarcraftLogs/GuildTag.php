@@ -2,11 +2,9 @@
 
 namespace App\Models\WarcraftLogs;
 
-use App\Contracts\Models\DatasetModel;
-use App\Models\Phase;
 use App\Models\Report;
 use App\Observers\WarcraftLogs\GuildTagObserver;
-use App\Policies\DatasetPolicy;
+use App\Policies\WarcraftLogsGuildPolicy;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -17,10 +15,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[ObservedBy([GuildTagObserver::class])]
-#[UsePolicy(DatasetPolicy::class)]
-#[Fillable(['id', 'name', 'count_attendance', 'phase_id'])]
+#[UsePolicy(WarcraftLogsGuildPolicy::class)]
+#[Fillable(['id', 'name', 'count_attendance', 'warcraft_logs_guild_id'])]
 #[Table('warcraft_logs_guild_tags')]
-class GuildTag extends Model implements DatasetModel
+class GuildTag extends Model
 {
     use HasFactory;
 
@@ -42,17 +40,18 @@ class GuildTag extends Model implements DatasetModel
     {
         return [
             'count_attendance' => 'boolean',
+            'warcraft_logs_guild_id' => 'integer',
         ];
     }
 
     /**
-     * Get the phase associated with the guild tag.
+     * Get the Warcraft Logs guild the tag belongs to.
      *
-     * @return BelongsTo<Phase>
+     * @return BelongsTo<Guild, $this>
      */
-    public function phase(): BelongsTo
+    public function guild(): BelongsTo
     {
-        return $this->belongsTo(Phase::class);
+        return $this->belongsTo(Guild::class, 'warcraft_logs_guild_id');
     }
 
     /**

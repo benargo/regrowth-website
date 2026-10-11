@@ -2,7 +2,7 @@
 
 namespace Database\Factories\WarcraftLogs;
 
-use App\Models\Phase;
+use App\Models\WarcraftLogs\Guild;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
@@ -29,9 +29,6 @@ class GuildTagFactory extends Factory
         return [
             'name' => fake()->word(),
             'count_attendance' => fake()->boolean(30),
-            'phase_id' => fake()->optional(0.5)->randomElement(
-                Phase::pluck('id')->toArray() ?: [null]
-            ),
         ];
     }
 
@@ -56,22 +53,13 @@ class GuildTagFactory extends Factory
     }
 
     /**
-     * Indicate that the guild tag should be associated with a phase.
+     * Indicate that the guild tag belongs to a Warcraft Logs guild, a new one
+     * when none is given.
      */
-    public function withPhase(?Phase $phase = null): static
+    public function forGuild(?Guild $guild = null): static
     {
         return $this->state(fn (array $attributes) => [
-            'phase_id' => $phase?->id ?? Phase::factory(),
-        ]);
-    }
-
-    /**
-     * Indicate that the guild tag should not be associated with a phase.
-     */
-    public function withoutPhase(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'phase_id' => null,
+            'warcraft_logs_guild_id' => $guild?->id ?? Guild::factory(),
         ]);
     }
 }

@@ -34,6 +34,7 @@ class BlizzardServiceProvider extends ServiceProvider
                 clientSecret: data_get($config, 'client_secret'),
                 region: Region::from(data_get($config, 'region', 'eu')),
                 locale: data_get($config, 'locale'),
+                redirectUri: route('battlenet.callback'),
                 eagerlyMirrorAssets: $app->make(EagerlyMirrorAssets::class),
             );
         });

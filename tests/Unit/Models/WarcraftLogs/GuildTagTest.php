@@ -2,13 +2,17 @@
 
 namespace Tests\Unit\Models\WarcraftLogs;
 
-use App\Models\Phase;
+use App\Contracts\Models\DatasetModel;
 use App\Models\Report;
+use App\Models\WarcraftLogs\Guild;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Observers\WarcraftLogs\GuildTagObserver;
+use App\Policies\WarcraftLogsGuildPolicy;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
@@ -42,6 +46,13 @@ class GuildTagTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_is_governed_by_the_warcraft_logs_guild_policy_not_the_dataset_policy(): void
+    {
+        $this->assertInstanceOf(WarcraftLogsGuildPolicy::class, Gate::getPolicyFor(GuildTag::class));
+        $this->assertNotInstanceOf(DatasetModel::class, new GuildTag);
+    }
+
+    #[Test]
     public function it_uses_auto_incrementing_id(): void
     {
         $model = new GuildTag;
@@ -59,7 +70,7 @@ class GuildTagTest extends ModelTestCase
             'id',
             'name',
             'count_attendance',
-            'phase_id',
+            'warcraft_logs_guild_id',
         ]);
     }
 
@@ -72,7 +83,7 @@ class GuildTagTest extends ModelTestCase
             'id',
             'name',
             'count_attendance',
-            'phase_id',
+            'warcraft_logs_guild_id',
         ]);
     }
 
@@ -97,6 +108,13 @@ class GuildTagTest extends ModelTestCase
     // ==================== persistence ====================
 
     #[Test]
+    public function its_table_has_no_phase_column(): void
+    {
+        $this->assertFalse(Schema::hasColumn('warcraft_logs_guild_tags', 'phase_id'));
+        $this->assertFalse(Schema::hasColumn('warcraft_logs_guild_tags', 'tbc_phase_id'));
+    }
+
+    #[Test]
     public function it_can_be_created_with_required_attributes(): void
     {
         $guildTag = $this->create([
@@ -110,31 +128,19 @@ class GuildTagTest extends ModelTestCase
     #[Test]
     public function it_can_be_created_with_all_attributes(): void
     {
-        $phase = Phase::factory()->create();
+        $guild = Guild::factory()->create();
 
         $guildTag = $this->create([
             'name' => 'Main Roster',
             'count_attendance' => true,
-            'phase_id' => $phase->id,
+            'warcraft_logs_guild_id' => $guild->id,
         ]);
 
         $this->assertTableHas([
             'name' => 'Main Roster',
             'count_attendance' => true,
-            'phase_id' => $phase->id,
+            'warcraft_logs_guild_id' => $guild->id,
         ]);
-        $this->assertModelExists($guildTag);
-    }
-
-    #[Test]
-    public function it_allows_null_phase_id(): void
-    {
-        $guildTag = $this->create([
-            'name' => 'Unassigned Tag',
-            'phase_id' => null,
-        ]);
-
-        $this->assertNull($guildTag->phase_id);
         $this->assertModelExists($guildTag);
     }
 
@@ -165,52 +171,22 @@ class GuildTagTest extends ModelTestCase
         $this->assertFalse($guildTag->count_attendance);
     }
 
-    #[Test]
-    public function factory_with_phase_state_associates_a_phase(): void
-    {
-        $guildTag = $this->factory()->withPhase()->create();
+    // ==================== guild relationship ====================
 
-        $this->assertNotNull($guildTag->phase_id);
-        $this->assertNotNull($guildTag->phase);
+    #[Test]
+    public function it_belongs_to_a_guild(): void
+    {
+        $guild = Guild::factory()->create();
+        $guildTag = $this->factory()->forGuild($guild)->create();
+
+        $this->assertRelation($guildTag, 'guild', BelongsTo::class);
+        $this->assertTrue($guildTag->guild->is($guild));
     }
 
     #[Test]
-    public function factory_with_phase_state_accepts_specific_phase(): void
+    public function guild_is_null_when_the_tag_has_no_guild(): void
     {
-        $phase = Phase::factory()->create(['description' => 'Test Phase']);
-
-        $guildTag = $this->factory()->withPhase($phase)->create();
-
-        $this->assertSame($phase->id, $guildTag->phase_id);
-        $this->assertSame('Test Phase', $guildTag->phase->description);
-    }
-
-    #[Test]
-    public function factory_without_phase_state_sets_null_phase(): void
-    {
-        $guildTag = $this->factory()->withoutPhase()->create();
-
-        $this->assertNull($guildTag->phase_id);
-    }
-
-    // ==================== phase relationship ====================
-
-    #[Test]
-    public function it_belongs_to_a_phase(): void
-    {
-        $phase = Phase::factory()->create();
-        $guildTag = $this->create(['phase_id' => $phase->id]);
-
-        $this->assertRelation($guildTag, 'phase', BelongsTo::class);
-        $this->assertSame($phase->id, $guildTag->phase->id);
-    }
-
-    #[Test]
-    public function phase_relationship_returns_null_when_no_phase_associated(): void
-    {
-        $guildTag = $this->create(['phase_id' => null]);
-
-        $this->assertNull($guildTag->phase);
+        $this->assertNull($this->create()->guild);
     }
 
     #[Test]

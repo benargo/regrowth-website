@@ -17,11 +17,11 @@ class DatabaseSeeder extends Seeder
             SiteAdminSeeder::class,
             PermissionSeeder::class,
 
-            // Then seed the core Blizzard data.
+            // Then seed the game versions that drive everything else.
             GameVersionSeeder::class,
-            GuildRankSeeder::class,
 
-            // Then seed the datasets
+            // Then seed the datasets.
+            GuildRankSeeder::class,
             PhaseSeeder::class,
             RaidSeeder::class,
             BossSeeder::class,
@@ -30,12 +30,15 @@ class DatabaseSeeder extends Seeder
             PlayableRaceSeeder::class,
             TargetMarkerSeeder::class,
 
-            // Then seed the daily quests data
+            // Then seed the daily quests data.
             DailyQuestSeeder::class,
 
-            // Then seed the loot bias data
+            // Then seed the loot bias data.
             PrioritySeeder::class,
             ItemSeeder::class,
+
+            // Finally, fetch live data from external APIs when enabled.
+            ApiDataSeeder::class,
         ]);
 
         if (app()->environment(['local', 'testing'])) {

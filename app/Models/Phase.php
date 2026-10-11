@@ -5,10 +5,11 @@ namespace App\Models;
 use App\Contracts\Models\DatasetModel;
 use App\Events\AddonSettingsProcessed;
 use App\Helpers\Database\Eloquent\Traits\HasManyKeyBy;
-use App\Models\WarcraftLogs\GuildTag;
+use App\Observers\PhaseObserver;
 use App\Policies\DatasetPolicy;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[ObservedBy([PhaseObserver::class])]
 #[Fillable(['number', 'description', 'start_date', 'game_version_id'])]
 #[Hidden(['created_at', 'updated_at'])]
 #[UsePolicy(DatasetPolicy::class)]
@@ -78,11 +80,13 @@ class Phase extends Model implements DatasetModel
     }
 
     /**
-     * Get the Warcraft Logs guild tags associated with this phase.
+     * Get the reports whose start time falls in this phase.
+     *
+     * @return HasMany<Report, $this>
      */
-    public function guildTags(): HasMany
+    public function reports(): HasMany
     {
-        return $this->hasMany(GuildTag::class);
+        return $this->hasMany(Report::class);
     }
 
     /**

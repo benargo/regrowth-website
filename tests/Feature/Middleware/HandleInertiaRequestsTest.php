@@ -62,6 +62,18 @@ class HandleInertiaRequestsTest extends TestCase
     }
 
     #[Test]
+    public function it_shares_every_permission_for_admins(): void
+    {
+        Permission::firstOrCreate(['name' => 'update-warcraft-logs-tags', 'guard_name' => 'web']);
+        $user = User::factory()->admin()->create();
+
+        $this->actingAs($user)
+            ->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.permissions', fn ($permissions) => $permissions->sort()->values()->all() === Permission::pluck('name')->sort()->values()->all())
+            );
+    }
+
+    #[Test]
     public function it_shares_empty_permissions_for_guests(): void
     {
         $this->get('/')

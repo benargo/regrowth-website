@@ -24,6 +24,11 @@ use Saloon\Exceptions\Request\Statuses\ForbiddenException;
 
 class ItemSeeder extends Seeder
 {
+    /**
+     * The slug of the game version this seeder scopes its records to.
+     */
+    public string $gameVersionSlug = 'anniversary';
+
     public function __construct(
         private readonly BlizzardConnector $blizzard,
         private readonly RenderConnector $renderConnector,
@@ -751,7 +756,13 @@ class ItemSeeder extends Seeder
 
     public function run(): void
     {
-        $gameVersion = GameVersion::where('slug', 'tbc')->sole();
+        $gameVersion = GameVersion::where('slug', $this->gameVersionSlug)->first();
+
+        if ($gameVersion === null) {
+            $this->command?->error("Game version [{$this->gameVersionSlug}] not found — skipping.");
+
+            return;
+        }
 
         foreach ($this->items as $item) {
             try {

@@ -4,8 +4,8 @@ namespace Database\Factories;
 
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
-use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\GameVersion;
+use App\Models\WarcraftLogs\Guild;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
 
@@ -26,12 +26,11 @@ class GameVersionFactory extends Factory
             'slug' => fake()->unique()->lexify('version-????'),
             'realm' => fake()->city(),
             'guild_name' => fake()->unique()->lexify('Guild ??????'),
+            'uses_surnames' => false,
             'faction' => fake()->randomElement(Faction::cases()),
             'release_date' => fake()->dateTimeBetween('-1 year', '+1 year'),
             'color' => fake()->hexColor(),
             'blizzard_namespace' => fake()->randomElement(BlizzardNamespace::cases()),
-            'warcraftlogs_guild' => fake()->numberBetween(1, 999999),
-            'warcraftlogs_namespace' => fake()->randomElement(WarcraftLogsNamespace::cases()),
         ];
     }
 
@@ -48,6 +47,17 @@ class GameVersionFactory extends Factory
     }
 
     /**
+     * Indicate that every character in this version has a surname, stored
+     * inside its name as "{name} {surname}".
+     */
+    public function withSurnames(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'uses_surnames' => true,
+        ]);
+    }
+
+    /**
      * Indicate that Blizzard can return this version's guild roster.
      */
     public function fetchableRoster(): static
@@ -56,6 +66,17 @@ class GameVersionFactory extends Factory
             'realm' => 'Thunderstrike',
             'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
             'release_date' => Carbon::now()->subMonth(),
+        ]);
+    }
+
+    /**
+     * Indicate that the version belongs to a Warcraft Logs guild, a new one
+     * when none is given.
+     */
+    public function forGuild(?Guild $guild = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'warcraft_logs_guild_id' => $guild?->id ?? Guild::factory(),
         ]);
     }
 }

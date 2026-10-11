@@ -175,6 +175,7 @@ class ReportController extends Controller
             'start_time' => Carbon::parse($request->start_time, 'Europe/Paris')->utc(),
             'end_time' => Carbon::parse($request->end_time, 'Europe/Paris')->utc(),
             'guild_tag_id' => $request->guild_tag_id,
+            'warcraft_logs_guild_id' => GuildTag::whereKey($request->guild_tag_id)->value('warcraft_logs_guild_id'),
             'zone_id' => $request->zone_id,
         ]);
 
@@ -305,7 +306,7 @@ class ReportController extends Controller
         $perPage = 5;
 
         $reportTimes = Report::hydrate(
-            Cache::tags(['raiding', 'warcraftlogs'])->remember(
+            Cache::tags(['reports'])->remember(
                 'reports:select:id,start_time',
                 now()->addMinutes(5),
                 fn () => Report::select('id', 'start_time')->get()->toArray()
@@ -313,7 +314,7 @@ class ReportController extends Controller
         )->pluck('start_time', 'id');
 
         $links = ReportLink::hydrate(
-            Cache::tags(['raiding', 'warcraftlogs'])->remember(
+            Cache::tags(['reports'])->remember(
                 'reports:links:all_edges',
                 now()->addMinutes(5),
                 fn () => DB::table('pivot_report_links')->select('report_1', 'report_2')->get()->toArray()

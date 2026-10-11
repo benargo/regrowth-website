@@ -126,13 +126,13 @@ class Calculator
             'players' => $cluster->players(),
         ])->values()->all();
 
-        /** @var array<string, array{character: Character, firstAttendance: Carbon}> $characterInfo */
+        /** @var array<int, array{character: Character, firstAttendance: Carbon}> $characterInfo */
         $characterInfo = [];
 
         foreach ($clusterSnapshots as $snapshot) {
-            foreach ($snapshot['players'] as $name => $playerPresence) {
-                if (! isset($characterInfo[$name])) {
-                    $characterInfo[$name] = [
+            foreach ($snapshot['players'] as $characterId => $playerPresence) {
+                if (! isset($characterInfo[$characterId])) {
+                    $characterInfo[$characterId] = [
                         'character' => $playerPresence->character,
                         'firstAttendance' => $snapshot['startTime'],
                     ];
@@ -148,7 +148,7 @@ class Calculator
 
         $stats = [];
 
-        foreach ($characterInfo as $characterName => $info) {
+        foreach ($characterInfo as $characterId => $info) {
             $totalReports = 0;
             $reportsAttended = 0;
 
@@ -163,7 +163,7 @@ class Calculator
 
                 $totalReports++;
 
-                $playerPresence = $snapshot['players'][$characterName] ?? null;
+                $playerPresence = $snapshot['players'][$characterId] ?? null;
 
                 if ($playerPresence !== null && in_array($playerPresence->presence, [1, 2], true)) {
                     $reportsAttended++;
@@ -172,7 +172,7 @@ class Calculator
 
             $percentage = $totalReports > 0 ? ($reportsAttended / $totalReports) * 100 : 0.0;
 
-            $stats[$characterName] = new CharacterAttendanceStatsData(
+            $stats[$characterId] = new CharacterAttendanceStatsData(
                 character: $info['character'],
                 firstAttendance: $info['firstAttendance'],
                 totalReports: $totalReports,

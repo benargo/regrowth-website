@@ -4,12 +4,14 @@ namespace Tests\Unit\Http\Resources\WarcraftLogs;
 
 use App\Http\Resources\UserResource;
 use App\Http\Resources\WarcraftLogs\LinkedReportResource;
+use App\Jobs\BuildAddonExportFile;
 use App\Models\Report;
 use App\Models\User;
 use App\Models\WarcraftLogs\Zone;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
+use Illuminate\Support\Facades\Bus;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -19,6 +21,13 @@ use Tests\TestCase;
 class LinkedReportResourceTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Bus::fake([BuildAddonExportFile::class]);
+    }
 
     #[Test]
     public function it_returns_all_expected_keys(): void

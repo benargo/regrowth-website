@@ -7,6 +7,8 @@ use App\Enums\SignupStatus;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
+use App\Models\GameVersion;
+use App\Models\Phase;
 use App\Models\Raid;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -97,6 +99,19 @@ class EventFactory extends Factory
             foreach ($raids as $index => $raid) {
                 $event->raids()->attach($raid->id, ['sort_order' => $index + 1]);
             }
+        });
+    }
+
+    /**
+     * Attach a raid in the given game version, and store that game version.
+     */
+    public function forGameVersion(GameVersion $gameVersion): static
+    {
+        return $this->afterCreating(function (Event $event) use ($gameVersion): void {
+            $raid = Raid::factory()->for(Phase::factory()->forGameVersion($gameVersion))->create();
+
+            $event->raids()->attach($raid->id, ['sort_order' => 1]);
+            $event->refreshGameVersion();
         });
     }
 

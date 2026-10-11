@@ -4,6 +4,7 @@ namespace Tests\Feature\Dashboard;
 
 use App\Models\Character;
 use App\Models\User;
+use App\Models\WarcraftLogs\Guild;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -163,6 +164,21 @@ class AddonSettingsControllerTest extends DashboardTestCase
             ->has('tags.data', 1)
             ->where('tags.data.0.name', 'TestTag')
             ->where('tags.data.0.count_attendance', true)
+        );
+    }
+
+    #[Test]
+    public function settings_gives_each_guild_tag_its_guild_so_it_can_be_toggled(): void
+    {
+        $guild = Guild::factory()->create();
+        GuildTag::factory()->forGuild($guild)->create(['name' => 'Alpha']);
+        GuildTag::factory()->create(['name' => 'Beta']);
+
+        $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('tags.data.0.guild_id', $guild->id)
+            ->where('tags.data.1.guild_id', null)
         );
     }
 

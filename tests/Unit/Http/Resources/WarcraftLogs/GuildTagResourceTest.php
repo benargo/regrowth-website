@@ -3,6 +3,7 @@
 namespace Tests\Unit\Http\Resources\WarcraftLogs;
 
 use App\Http\Resources\WarcraftLogs\GuildTagResource;
+use App\Models\WarcraftLogs\Guild;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -25,6 +26,7 @@ class GuildTagResourceTest extends TestCase
         $this->assertArrayHasKey('id', $array);
         $this->assertArrayHasKey('name', $array);
         $this->assertArrayHasKey('count_attendance', $array);
+        $this->assertArrayHasKey('guild_id', $array);
     }
 
     #[Test]
@@ -68,47 +70,33 @@ class GuildTagResourceTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_the_guild_id(): void
+    {
+        $guild = Guild::factory()->create();
+        $guildTag = GuildTag::factory()->forGuild($guild)->create();
+
+        $array = (new GuildTagResource($guildTag))->resolve(new Request);
+
+        $this->assertSame($guild->id, $array['guild_id']);
+    }
+
+    #[Test]
+    public function it_returns_a_null_guild_id_when_the_tag_has_no_guild(): void
+    {
+        $guildTag = GuildTag::factory()->create();
+
+        $array = (new GuildTagResource($guildTag))->resolve(new Request);
+
+        $this->assertNull($array['guild_id']);
+    }
+
+    #[Test]
     public function it_does_not_expose_extra_keys(): void
     {
         $guildTag = GuildTag::factory()->create();
-        $guildTag->load('phase');
 
         $array = (new GuildTagResource($guildTag))->resolve(new Request);
 
-        $this->assertSame(['id', 'name', 'count_attendance', 'phase_number'], array_keys($array));
-    }
-
-    #[Test]
-    public function it_includes_phase_number_when_phase_loaded(): void
-    {
-        $guildTag = GuildTag::factory()->withPhase()->create();
-        $guildTag->load('phase');
-
-        $array = (new GuildTagResource($guildTag))->resolve(new Request);
-
-        $this->assertArrayHasKey('phase_number', $array);
-        $this->assertSame($guildTag->phase->number, $array['phase_number']);
-    }
-
-    #[Test]
-    public function it_returns_null_phase_number_when_tag_has_no_phase(): void
-    {
-        $guildTag = GuildTag::factory()->withoutPhase()->create();
-        $guildTag->load('phase');
-
-        $array = (new GuildTagResource($guildTag))->resolve(new Request);
-
-        $this->assertArrayHasKey('phase_number', $array);
-        $this->assertNull($array['phase_number']);
-    }
-
-    #[Test]
-    public function it_excludes_phase_number_when_phase_not_loaded(): void
-    {
-        $guildTag = GuildTag::factory()->withPhase()->create();
-
-        $array = (new GuildTagResource($guildTag))->resolve(new Request);
-
-        $this->assertArrayNotHasKey('phase_number', $array);
+        $this->assertSame(['id', 'name', 'count_attendance', 'guild_id'], array_keys($array));
     }
 }

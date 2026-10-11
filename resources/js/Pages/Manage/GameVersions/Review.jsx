@@ -89,6 +89,7 @@ function gameVersionDetails(gameVersion) {
         ["Release date", gameVersion.release_date ? formatDate(gameVersion.release_date).long : null],
         ["Realm", gameVersion.realm],
         ["Guild name", gameVersion.guild_name],
+        ["Characters have surnames", gameVersion.uses_surnames ? "Yes" : "No"],
         ["Faction", capitalise(gameVersion.faction)],
         ["Blizzard API namespace", capitalise(gameVersion.blizzard.namespace)],
         ["Warcraft Logs guild ID", gameVersion.warcraftlogs.guild],

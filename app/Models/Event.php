@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -107,6 +108,16 @@ class Event extends PrunableModel
     // ========== Relationships ============
 
     /**
+     * Get the game version shared by this event's raids.
+     *
+     * @return BelongsTo<GameVersion, $this>
+     */
+    public function gameVersion(): BelongsTo
+    {
+        return $this->belongsTo(GameVersion::class);
+    }
+
+    /**
      * @return BelongsToMany<Boss, $this>
      */
     public function bosses(): BelongsToMany
@@ -179,5 +190,22 @@ class Event extends PrunableModel
     public function assignments(): HasMany
     {
         return $this->hasMany(EventAssignment::class);
+    }
+
+    // ========== Game version ============
+
+    /**
+     * Store the game version this event's raids share, or null when it has no
+     * raids, its raids span several game versions, or a raid's phase has none.
+     */
+    public function refreshGameVersion(): void
+    {
+        $gameVersionIds = Phase::whereIn('id', $this->raids()->reorder()->select('raids.phase_id'))
+            ->pluck('game_version_id')
+            ->unique();
+
+        $this->gameVersion()
+            ->associate($gameVersionIds->containsOneItem() ? $gameVersionIds->first() : null)
+            ->save();
     }
 }

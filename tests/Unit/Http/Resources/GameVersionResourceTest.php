@@ -7,6 +7,7 @@ use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Http\Resources\GameVersionResource;
 use App\Models\GameVersion;
+use App\Models\WarcraftLogs\Guild;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -131,6 +132,16 @@ class GameVersionResourceTest extends TestCase
     // ==================== management scope ====================
 
     #[Test]
+    public function the_default_shape_leaves_out_whether_characters_have_surnames(): void
+    {
+        $array = (new GameVersionResource(GameVersion::factory()->withSurnames()->make()))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('uses_surnames', $array);
+    }
+
+    // ==================== forManagement ====================
+
+    #[Test]
     public function the_management_scope_exposes_every_editable_field(): void
     {
         $gameVersion = GameVersion::factory()->make([
@@ -143,9 +154,12 @@ class GameVersionResourceTest extends TestCase
             'release_date' => Carbon::create(2026, 2, 6, 0, 0, 0, 'Europe/Paris'),
             'color' => 0x4AE832,
             'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
-            'warcraftlogs_guild' => 774848,
-            'warcraftlogs_namespace' => WarcraftLogsNamespace::ANNIVERSARY,
+            'warcraft_logs_guild_id' => 774848,
         ]);
+        $gameVersion->setRelation('warcraftLogsGuild', Guild::factory()->make([
+            'id' => 774848,
+            'namespace' => WarcraftLogsNamespace::Anniversary,
+        ]));
 
         $array = GameVersionResource::forManagement($gameVersion)->resolve(new Request);
 
@@ -159,13 +173,14 @@ class GameVersionResourceTest extends TestCase
             'logo_url' => null,
             'realm' => 'Thunderstrike',
             'guild_name' => 'Regrowth',
+            'uses_surnames' => false,
             'faction' => Faction::ALLIANCE,
             'release_date' => '2026-02-06',
             'blizzard' => ['namespace' => BlizzardNamespace::ANNIVERSARY],
             'warcraftlogs' => [
                 'guild' => 774848,
                 'namespace' => [
-                    'value' => WarcraftLogsNamespace::ANNIVERSARY,
+                    'value' => WarcraftLogsNamespace::Anniversary,
                     'label' => 'The Burning Crusade Classic Anniversary',
                 ],
             ],
@@ -179,8 +194,7 @@ class GameVersionResourceTest extends TestCase
             'realm' => null,
             'faction' => null,
             'blizzard_namespace' => null,
-            'warcraftlogs_guild' => null,
-            'warcraftlogs_namespace' => null,
+            'warcraft_logs_guild_id' => null,
         ]);
 
         $array = GameVersionResource::forManagement($gameVersion)->resolve(new Request);

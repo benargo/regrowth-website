@@ -1,4 +1,4 @@
-import { Deferred, router, useForm } from "@inertiajs/react";
+import { useForm } from "@inertiajs/react";
 import { useState } from "react";
 import Master from "@/Layouts/Master";
 import Collapsible from "@/Components/Collapsible";
@@ -12,61 +12,11 @@ import PageContainer from "@/Components/PageContainer";
 import PrimaryButton from "@/Components/PrimaryButton";
 import SecondaryButton from "@/Components/SecondaryButton";
 
-function GuildTagsLoadingSkeleton() {
-    return (
-        <div className="max-h-64 space-y-2 overflow-y-auto">
-            {[...Array(5)].map((_, index) => (
-                <div key={index} className="flex animate-pulse items-center gap-3 p-2">
-                    <div className="h-4 w-4 rounded bg-ink-600/30"></div>
-                    <div className="h-4 w-32 rounded bg-ink-600/30"></div>
-                </div>
-            ))}
-        </div>
-    );
-}
-
-function GuildTagsList({ allGuildTags, selectedTagIds, onToggleTag }) {
-    if (!allGuildTags || allGuildTags.length === 0) {
-        return <p className="text-secondary-400">No Warcraft Logs tags available. Tags are synced from Warcraft Logs.</p>;
-    }
-
-    return (
-        <div className="max-h-64 space-y-2 overflow-y-auto">
-            {allGuildTags.data.map((tag) => (
-                <label
-                    key={tag.id}
-                    className="flex cursor-pointer items-center gap-3 rounded p-2 hover:bg-ink-600/10"
-                >
-                    <input
-                        type="checkbox"
-                        checked={selectedTagIds.includes(tag.id)}
-                        onChange={() => onToggleTag(tag.id)}
-                        className="bg-ground-800/50 h-4 w-4 rounded border-ink-600 text-ink-600 focus:ring-ink-500"
-                    />
-                    <span className="text-white">{tag.name}</span>
-                </label>
-            ))}
-        </div>
-    );
-}
-
-export default function ManagePhases({ phases, current_phase, all_guild_tags }) {
+export default function ManagePhases({ phases, current_phase }) {
     const [editingPhase, setEditingPhase] = useState(null);
-    const [editingTagsPhase, setEditingTagsPhase] = useState(null);
 
     const { data, setData, put, processing, errors, reset } = useForm({
         start_date: "",
-    });
-
-    const {
-        data: tagsData,
-        setData: setTagsData,
-        put: putTags,
-        processing: tagsProcessing,
-        errors: tagsErrors,
-        reset: resetTags,
-    } = useForm({
-        guild_tag_ids: [],
     });
 
     const toParisDatetimeLocal = (isoString) => {
@@ -102,49 +52,6 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
             preserveScroll: true,
             onSuccess: () => closeModal(),
         });
-    };
-
-    const openTagsModal = (phase) => {
-        setEditingTagsPhase(phase);
-        const currentTagIds = phase.guild_tags?.map((tag) => tag.id) || [];
-        setTagsData("guild_tag_ids", currentTagIds);
-    };
-
-    const closeTagsModal = () => {
-        setEditingTagsPhase(null);
-        resetTags();
-    };
-
-    const handleTagsSubmit = (e) => {
-        e.preventDefault();
-        putTags(route("management.phases.guild-tags.update", editingTagsPhase.id), {
-            preserveScroll: true,
-            onSuccess: () => closeTagsModal(),
-        });
-    };
-
-    const toggleTag = (tagId) => {
-        const currentIds = tagsData.guild_tag_ids;
-        if (currentIds.includes(tagId)) {
-            setTagsData(
-                "guild_tag_ids",
-                currentIds.filter((id) => id !== tagId),
-            );
-        } else {
-            setTagsData("guild_tag_ids", [...currentIds, tagId]);
-        }
-    };
-
-    const toggleCountAttendance = (tagId, currentValue) => {
-        router.patch(
-            route("wcl.guild-tags.toggle-attendance", { guildTag: tagId }),
-            {
-                count_attendance: !currentValue,
-            },
-            {
-                preserveScroll: true,
-            },
-        );
     };
 
     const formatDate = (dateString, options = {}) => {
@@ -185,7 +92,7 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
                             )
                         }
                     >
-                        <div className="grid grid-cols-1 md:grid-cols-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3">
                             {/* Start date */}
                             <div className="text-md my-4 md:mr-8">
                                 <h3 className="text-lg font-bold">
@@ -246,51 +153,6 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
                                     <p className="mb-2">No bosses assigned to this phase.</p>
                                 )}
                             </div>
-                            {/* Warcraft Logs Tags */}
-                            <div className="text-md my-4 md:mr-8">
-                                <h3 className="text-lg font-bold">Warcraft Logs Tags</h3>
-                                {phase.guild_tags?.length > 0 ? (
-                                    <div className="items-top my-2 flex flex-col flex-wrap gap-2">
-                                        <div className="mb-1 flex flex-row items-end gap-2">
-                                            <h2 className="flex-auto font-semibold">Tag name</h2>
-                                            <p className="w-16 flex-initial text-xs font-semibold">
-                                                Counts toward attendance
-                                            </p>
-                                        </div>
-                                        {phase.guild_tags.map((tag) => (
-                                            <div key={tag.id} className="flex flex-row items-center gap-2">
-                                                <span className="flex-auto">{tag.name}</span>
-                                                <span
-                                                    className="w-16 flex-initial text-xs text-green-400"
-                                                    title="Counts toward attendance"
-                                                >
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={tag.count_attendance}
-                                                        onChange={() =>
-                                                            toggleCountAttendance(tag.id, tag.count_attendance)
-                                                        }
-                                                        className="bg-ground-800/50 h-4 w-4 rounded border-ink-600 text-ink-600 focus:ring-ink-500"
-                                                    />
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="mb-2">No tags assigned to this phase.</p>
-                                )}
-                                <p className="flex justify-center md:justify-start">
-                                    <button
-                                        onClick={() => openTagsModal(phase)}
-                                        className="flex items-center gap-4 rounded border border-ink-600 px-2 py-3 transition-colors hover:bg-ink-600/20"
-                                    >
-                                        <div className="mx-1 text-center">
-                                            <Icon icon="tags" style="solid" className="h-4 w-4" />
-                                        </div>
-                                        <div className="text-md mr-1">Manage tags</div>
-                                    </button>
-                                </p>
-                            </div>
                         </div>
                     </Collapsible>
                 ))}
@@ -321,36 +183,6 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
                         </SecondaryButton>
                         <PrimaryButton type="submit" processing={processing}>
                             {processing ? "Saving..." : "Save"}
-                        </PrimaryButton>
-                    </div>
-                </form>
-            </Modal>
-
-            {/* Edit Guild Tags Modal */}
-            <Modal show={editingTagsPhase !== null} onClose={closeTagsModal} maxWidth="md">
-                <form onSubmit={handleTagsSubmit} className="p-6">
-                    <h2 className="text-lg font-bold text-white">
-                        Manage Warcraft Logs Tags for Phase {editingTagsPhase?.id}
-                    </h2>
-                    <p className="mt-1 text-sm text-white">
-                        Select which Warcraft Logs tags should be associated with this phase.
-                    </p>
-                    <div className="mt-4">
-                        <Deferred data="all_guild_tags" fallback={<GuildTagsLoadingSkeleton />}>
-                            <GuildTagsList
-                                allGuildTags={all_guild_tags}
-                                selectedTagIds={tagsData.guild_tag_ids}
-                                onToggleTag={toggleTag}
-                            />
-                        </Deferred>
-                        <InputError message={tagsErrors.guild_tag_ids} className="mt-2" />
-                    </div>
-                    <div className="mt-6 flex justify-end gap-3">
-                        <SecondaryButton type="button" onClick={closeTagsModal}>
-                            Cancel
-                        </SecondaryButton>
-                        <PrimaryButton type="submit" processing={tagsProcessing}>
-                            {tagsProcessing ? "Saving..." : "Save"}
                         </PrimaryButton>
                     </div>
                 </form>

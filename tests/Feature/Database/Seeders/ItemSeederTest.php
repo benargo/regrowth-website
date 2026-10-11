@@ -39,7 +39,7 @@ class ItemSeederTest extends TestCase
 
         $this->seed([PhaseSeeder::class, RaidSeeder::class, BossSeeder::class]);
 
-        $this->gameVersion = GameVersion::factory()->tbc()->create();
+        $this->gameVersion = GameVersion::factory()->create();
 
         Storage::fake('public');
     }
@@ -116,7 +116,7 @@ class ItemSeederTest extends TestCase
         $allItems = (new \ReflectionProperty(ItemSeeder::class, 'items'))->getValue(app(ItemSeeder::class));
         $firstFiveIds = array_column(array_slice($allItems, 0, 5), 'id');
 
-        return $this->seedSpecificItems($firstFiveIds);
+        return $this->seedSpecificItems($firstFiveIds, $this->gameVersion->slug);
     }
 
     // ==================== seeder behaviour ====================
@@ -132,7 +132,7 @@ class ItemSeederTest extends TestCase
     }
 
     #[Test]
-    public function seeder_scopes_items_to_the_tbc_game_version_when_others_exist(): void
+    public function seeder_scopes_items_to_the_resolved_game_version_when_others_exist(): void
     {
         $this->fakeSaloon();
         $otherGameVersion = GameVersion::factory()->create();
@@ -226,7 +226,7 @@ class ItemSeederTest extends TestCase
     {
         $this->fakeSaloon();
 
-        $this->seedSpecificItems([32589, 32590, 32591, 32592, 32609, 34009]);
+        $this->seedSpecificItems([32589, 32590, 32591, 32592, 32609, 34009], $this->gameVersion->slug);
 
         foreach ([32589, 32590, 32591, 32592, 32609, 34009] as $itemId) {
             $this->assertEqualsCanonicalizing(
@@ -242,8 +242,8 @@ class ItemSeederTest extends TestCase
     {
         $this->fakeSaloon();
 
-        $this->seedSpecificItems([32589]);
-        $this->seedSpecificItems([32589]);
+        $this->seedSpecificItems([32589], $this->gameVersion->slug);
+        $this->seedSpecificItems([32589], $this->gameVersion->slug);
 
         $this->assertSame(2, Item::where('blizzard_id', 32589)->first()->raids()->count());
     }
@@ -393,5 +393,13 @@ class ItemSeederTest extends TestCase
         $this->assertNotNull($item28454);
         $this->assertSame('Item 28454', $item28454->name);
         $this->assertTrue($item28454->hasMedia('blizzard_icons'));
+    }
+
+    #[Test]
+    public function it_skips_seeding_when_the_game_version_does_not_exist(): void
+    {
+        $this->seedSpecificItems([32589], 'missing-version');
+
+        $this->assertDatabaseEmpty(Item::class);
     }
 }

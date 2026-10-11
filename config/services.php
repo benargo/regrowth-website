@@ -63,7 +63,6 @@ return [
     'warcraftlogs' => [
         'client_id' => env('WCL_CLIENT_ID'),
         'client_secret' => env('WCL_CLIENT_SECRET'),
-        'guild_id' => 774848,
         'expansion_id' => 1001,
     ],
 

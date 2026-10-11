@@ -2,7 +2,9 @@
 
 namespace Tests\Unit\Services\Attendance;
 
+use App\Jobs\BuildAddonExportFile;
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
 use App\Models\Report;
@@ -13,6 +15,7 @@ use App\Services\Attendance\DataTable;
 use App\Services\Attendance\FiltersData;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -26,6 +29,7 @@ class DataTableTest extends TestCase
     {
         parent::setUp();
 
+        Bus::fake([BuildAddonExportFile::class]);
         config(['app.timezone' => 'Europe/Paris']);
     }
 
@@ -44,8 +48,8 @@ class DataTableTest extends TestCase
     protected function makeTag(bool $countsAttendance = true): GuildTag
     {
         return $countsAttendance
-            ? GuildTag::factory()->countsAttendance()->withoutPhase()->create()
-            : GuildTag::factory()->doesNotCountAttendance()->withoutPhase()->create();
+            ? GuildTag::factory()->countsAttendance()->create()
+            : GuildTag::factory()->doesNotCountAttendance()->create();
     }
 
     protected function makeReport(GuildTag $tag, Carbon $startTime): Report
@@ -438,6 +442,23 @@ class DataTableTest extends TestCase
 
         $names = $rows->pluck('character.name');
         $this->assertTrue($names->contains($alt->name));
+    }
+
+    #[Test]
+    public function rows_keeps_same_named_characters_of_different_game_versions_apart(): void
+    {
+        $rank = $this->makeRank();
+        $report = $this->makeReport($this->makeTag(), Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $thrall = Character::factory()->forGameVersion(GameVersion::factory()->create())->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $otherThrall = Character::factory()->forGameVersion(GameVersion::factory()->create())->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $this->attachCharacter($report, $thrall, 1);
+        $this->attachCharacter($report, $otherThrall, 0);
+
+        $rows = $this->makeDataTable()->rows()->keyBy(fn (CharacterAttendanceRowData $row) => $row->character->id);
+
+        $this->assertCount(2, $rows);
+        $this->assertSame([1], $rows[$thrall->id]->attendance);
+        $this->assertSame([0], $rows[$otherThrall->id]->attendance);
     }
 
     // ==================== resolvedRankIds() Tests ====================

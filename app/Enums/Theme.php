@@ -2,8 +2,12 @@
 
 namespace App\Enums;
 
+use App\Enums\Concerns\HasSelectOptions;
+
 enum Theme: string
 {
+    use HasSelectOptions;
+
     case CLASSIC = 'classic';
     case FOREVER = 'forever';
 

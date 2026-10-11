@@ -3,6 +3,7 @@
 namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\ReportResource;
+use App\Jobs\BuildAddonExportFile;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlayableClass;
@@ -13,6 +14,7 @@ use App\Models\WarcraftLogs\Zone;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
+use Illuminate\Support\Facades\Bus;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -22,6 +24,13 @@ use Tests\TestCase;
 class ReportResourceTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Bus::fake([BuildAddonExportFile::class]);
+    }
 
     #[Test]
     public function it_returns_all_expected_keys(): void

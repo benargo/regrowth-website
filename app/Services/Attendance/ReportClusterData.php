@@ -61,10 +61,10 @@ final class ReportClusterData extends Data
     }
 
     /**
-     * Merged per-character presence across the cluster, keyed by character name. Higher
+     * Merged per-character presence across the cluster, keyed by character ID. Higher
      * presencePriority wins (present beats late beats absent).
      *
-     * @return Collection<string, PlayerPresenceData>
+     * @return Collection<int, PlayerPresenceData>
      */
     public function players(): Collection
     {
@@ -72,12 +72,11 @@ final class ReportClusterData extends Data
 
         foreach ($this->reports as $report) {
             foreach ($report->characters as $character) {
-                $name = $character->name;
                 $presence = (int) $character->pivot->presence;
 
-                if (! isset($merged[$name])
-                    || Calculator::presencePriority($presence) > Calculator::presencePriority($merged[$name]->presence)) {
-                    $merged[$name] = new PlayerPresenceData($character, $presence);
+                if (! isset($merged[$character->id])
+                    || Calculator::presencePriority($presence) > Calculator::presencePriority($merged[$character->id]->presence)) {
+                    $merged[$character->id] = new PlayerPresenceData($character, $presence);
                 }
             }
         }

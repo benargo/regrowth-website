@@ -99,7 +99,7 @@ class AttendanceNamesControllerTest extends TestCase
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:00', 'UTC')]);
         $report->characters()->attach($character->id, ['presence' => 1]);
 
@@ -126,7 +126,7 @@ class AttendanceNamesControllerTest extends TestCase
             ['character_id' => $alt->id, 'linked_character_id' => $main->id, 'created_at' => now(), 'updated_at' => now()],
         ]);
 
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:00', 'UTC')]);
         $report->characters()->attach($main->id, ['presence' => 1]);
         $report->characters()->attach($alt->id, ['presence' => 1]);
@@ -148,7 +148,7 @@ class AttendanceNamesControllerTest extends TestCase
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:00', 'UTC')]);
         $report->characters()->attach($character->id, ['presence' => 0]);
 
@@ -175,7 +175,7 @@ class AttendanceNamesControllerTest extends TestCase
             ['character_id' => $alt->id, 'linked_character_id' => $main->id, 'created_at' => now(), 'updated_at' => now()],
         ]);
 
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = GuildTag::factory()->countsAttendance()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:00', 'UTC')]);
         $report->characters()->attach($main->id, ['presence' => 1]);
         $report->characters()->attach($alt->id, ['presence' => 1]);

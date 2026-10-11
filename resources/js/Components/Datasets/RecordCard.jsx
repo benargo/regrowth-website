@@ -47,29 +47,34 @@ export default function RecordCard({ title, subtitle, headerColor, headerImage, 
                     ))}
                 </dl>
 
-                <p id={usageId} className="text-secondary-300 text-sm">
-                    {inUse
-                        ? `Used by ${usage.join(", ")}. Remove or reassign these before deleting.`
-                        : "Not used by any records yet."}
-                </p>
+                {hasUsage && (
+                    <p id={usageId} className="text-secondary-300 text-sm">
+                        {isInUse
+                            ? `Used by ${usage.join(", ")}. Remove or reassign these before deleting.`
+                            : "Not used by any records yet."}
+                    </p>
+                )}
 
                 <div className="flex flex-wrap gap-2">
                     <Link
                         href={links.edit}
                         className={`border-ink-500 hover:bg-ink-600/30 inline-flex items-center gap-1.5 rounded border px-3 py-1.5 text-sm text-white ${focusRing}`}
                     >
-                        <Icon icon="edit" style="light" />
-                        Edit<span className="sr-only"> {title}</span>
+                        <Icon icon={editIcon} style="light" />
+                        {editLabel}
+                        <span className="sr-only"> {title}</span>
                     </Link>
-                    <Button
-                        disabled={inUse}
-                        aria-describedby={usageId}
-                        onClick={onDelete}
-                        className="data-disabled:border-secondary-600 data-disabled:text-secondary-400 inline-flex items-center gap-1.5 rounded border border-red-400 px-3 py-1.5 text-sm text-red-300 data-disabled:cursor-not-allowed data-focus:outline-2 data-focus:outline-offset-2 data-focus:outline-red-400 data-hover:bg-red-600/20"
-                    >
-                        <Icon icon="trash" style="light" />
-                        Delete<span className="sr-only"> {title}</span>
-                    </Button>
+                    {onDelete && (
+                        <Button
+                            disabled={isInUse}
+                            aria-describedby={hasUsage ? usageId : undefined}
+                            onClick={onDelete}
+                            className="data-disabled:border-secondary-600 data-disabled:text-secondary-400 inline-flex items-center gap-1.5 rounded border border-red-400 px-3 py-1.5 text-sm text-red-300 data-disabled:cursor-not-allowed data-focus:outline-2 data-focus:outline-offset-2 data-focus:outline-red-400 data-hover:bg-red-600/20"
+                        >
+                            <Icon icon="trash" style="light" />
+                            Delete<span className="sr-only"> {title}</span>
+                        </Button>
+                    )}
                 </div>
             </div>
         </article>

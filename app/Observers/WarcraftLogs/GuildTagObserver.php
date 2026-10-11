@@ -21,6 +21,10 @@ class GuildTagObserver
     public function updated(GuildTag $guildTag): void
     {
         Cache::tags(['db', 'lootcouncil'])->flush();
+
+        if ($guildTag->wasChanged('count_attendance')) {
+            Cache::tags(['attendance'])->flush();
+        }
     }
 
     /**
@@ -29,5 +33,9 @@ class GuildTagObserver
     public function deleted(GuildTag $guildTag): void
     {
         Cache::tags(['db', 'lootcouncil'])->flush();
+
+        if ($guildTag->count_attendance) {
+            Cache::tags(['attendance'])->flush();
+        }
     }
 }

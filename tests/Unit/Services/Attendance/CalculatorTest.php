@@ -4,8 +4,10 @@ namespace Tests\Unit\Services\Attendance;
 
 use App\Exceptions\EmptyCollectionException;
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\Report;
+use App\Models\WarcraftLogs\Guild;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Services\Attendance\Calculator;
 use App\Services\Attendance\CharacterAttendanceStatsData;
@@ -51,8 +53,8 @@ class CalculatorTest extends TestCase
     protected function makeTag(bool $countsAttendance = true): GuildTag
     {
         return $countsAttendance
-            ? GuildTag::factory()->countsAttendance()->withoutPhase()->create()
-            : GuildTag::factory()->doesNotCountAttendance()->withoutPhase()->create();
+            ? GuildTag::factory()->countsAttendance()->create()
+            : GuildTag::factory()->doesNotCountAttendance()->create();
     }
 
     protected function makeReport(GuildTag $tag, Carbon $startTime): Report
@@ -334,6 +336,23 @@ class CalculatorTest extends TestCase
         $this->assertNotNull($this->findStats($stats, 'Sylvanas'));
     }
 
+    #[Test]
+    public function calculate_keeps_same_named_characters_of_different_game_versions_apart(): void
+    {
+        $rank = $this->makeRank();
+        $report = $this->makeReport($this->makeTag(), Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $thrall = Character::factory()->forGameVersion(GameVersion::factory()->create())->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $otherThrall = Character::factory()->forGameVersion(GameVersion::factory()->create())->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $this->attachCharacterToReport($report, $thrall, 1);
+        $this->attachCharacterToReport($report, $otherThrall, 0);
+
+        $stats = $this->makeCalculator()->wholeGuild()->keyBy(fn (CharacterAttendanceStatsData $s) => $s->character->id);
+
+        $this->assertCount(2, $stats);
+        $this->assertSame(100.0, $stats[$thrall->id]->percentage);
+        $this->assertSame(0.0, $stats[$otherThrall->id]->percentage);
+    }
+
     // ==================== wholeGuild: Returns row arrays Tests ====================
 
     #[Test]
@@ -387,6 +406,40 @@ class CalculatorTest extends TestCase
         $thrall = $this->findStats($this->makeCalculator()->wholeGuild(), 'Thrall');
 
         // Only the one counting report should be included
+        $this->assertEquals(1, $thrall->totalReports);
+    }
+
+    #[Test]
+    public function calculate_counts_a_report_whose_guild_derives_no_game_version(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $guild = Guild::factory()->create();
+        GameVersion::factory()->forGuild($guild)->create(['release_date' => '2030-01-01 00:00:00']);
+        $report = Report::factory()
+            ->forGuild($guild)
+            ->withGuildTag(GuildTag::factory()->forGuild($guild)->countsAttendance()->create())
+            ->create(['start_time' => Carbon::parse('2025-01-15 20:00', 'Europe/Paris')]);
+        $this->attachCharacterToReport($report, $character, 1);
+
+        $thrall = $this->findStats($this->makeCalculator()->wholeGuild(), 'Thrall');
+
+        $this->assertNull($report->fresh()->game_version_id);
+        $this->assertEquals(1, $thrall->totalReports);
+        $this->assertEquals(1, $thrall->reportsAttended);
+    }
+
+    #[Test]
+    public function calculate_counts_a_report_whose_tag_has_no_guild(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $report = $this->makeReport($this->makeTag(true), Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
+        $this->attachCharacterToReport($report, $character, 1);
+
+        $thrall = $this->findStats($this->makeCalculator()->wholeGuild(), 'Thrall');
+
+        $this->assertNull($report->guildTag->warcraft_logs_guild_id);
         $this->assertEquals(1, $thrall->totalReports);
     }
 
@@ -720,7 +773,7 @@ class CalculatorTest extends TestCase
 
         $this->assertCount(1, $records);
         $this->assertEquals($report->code, $records->first()->code());
-        $this->assertTrue($records->first()->players()->has('Thrall'));
+        $this->assertTrue($records->first()->players()->has($thrall->id));
     }
 
     #[Test]
@@ -742,8 +795,8 @@ class CalculatorTest extends TestCase
         $records = $this->makeCalculator()->mergeLinkedReports($reports);
 
         $this->assertCount(1, $records);
-        $this->assertTrue($records->first()->players()->has('Thrall'));
-        $this->assertTrue($records->first()->players()->has('Jaina'));
+        $this->assertTrue($records->first()->players()->has($thrall->id));
+        $this->assertTrue($records->first()->players()->has($jaina->id));
     }
 
     #[Test]
@@ -765,7 +818,7 @@ class CalculatorTest extends TestCase
         $records = $this->makeCalculator()->mergeLinkedReports($reports);
 
         $this->assertCount(1, $records);
-        $this->assertEquals(1, $records->first()->players()['Thrall']->presence);
+        $this->assertEquals(1, $records->first()->players()[$thrall->id]->presence);
     }
 
     #[Test]
@@ -811,9 +864,9 @@ class CalculatorTest extends TestCase
         $records = $this->makeCalculator()->mergeLinkedReports($reports);
 
         $this->assertCount(1, $records);
-        $this->assertTrue($records->first()->players()->has('Alice'));
-        $this->assertTrue($records->first()->players()->has('Bob'));
-        $this->assertTrue($records->first()->players()->has('Charlie'));
+        $this->assertTrue($records->first()->players()->has($alice->id));
+        $this->assertTrue($records->first()->players()->has($bob->id));
+        $this->assertTrue($records->first()->players()->has($charlie->id));
     }
 
     #[Test]
@@ -843,12 +896,12 @@ class CalculatorTest extends TestCase
         $manualRecord = $records->first(fn ($cluster) => $cluster->id() === $manualReport->id);
         $this->assertNotNull($manualRecord);
         $this->assertNull($manualRecord->code());
-        $this->assertTrue($manualRecord->players()->has('Jaina'));
+        $this->assertTrue($manualRecord->players()->has($jaina->id));
 
         $wclRecord = $records->first(fn ($cluster) => $cluster->id() === $wclReport->id);
         $this->assertNotNull($wclRecord);
         $this->assertSame($wclReport->code, $wclRecord->code());
-        $this->assertTrue($wclRecord->players()->has('Thrall'));
+        $this->assertTrue($wclRecord->players()->has($thrall->id));
     }
 
     #[Test]
@@ -876,8 +929,8 @@ class CalculatorTest extends TestCase
         $records = $this->makeCalculator()->mergeLinkedReports($reports);
 
         $this->assertCount(1, $records);
-        $this->assertTrue($records->first()->players()->has('Thrall'));
-        $this->assertTrue($records->first()->players()->has('Jaina'));
+        $this->assertTrue($records->first()->players()->has($thrall->id));
+        $this->assertTrue($records->first()->players()->has($jaina->id));
         $this->assertSame($wclReport->code, $records->first()->code());
     }
 
@@ -911,10 +964,10 @@ class CalculatorTest extends TestCase
         $records = $this->makeCalculator()->mergeLinkedReports($reports);
 
         $this->assertCount(1, $records);
-        $this->assertTrue($records->first()->players()->has('Alice'));
-        $this->assertTrue($records->first()->players()->has('Bob'));
-        $this->assertTrue($records->first()->players()->has('Charlie'));
-        $this->assertTrue($records->first()->players()->has('Diana'));
+        $this->assertTrue($records->first()->players()->has($alice->id));
+        $this->assertTrue($records->first()->players()->has($bob->id));
+        $this->assertTrue($records->first()->players()->has($charlie->id));
+        $this->assertTrue($records->first()->players()->has($diana->id));
     }
 
     #[Test]
@@ -939,6 +992,6 @@ class CalculatorTest extends TestCase
         $records = $this->makeCalculator()->mergeLinkedReports($reports);
 
         $this->assertCount(1, $records);
-        $this->assertTrue($records->first()->players()->has('Alice'));
+        $this->assertTrue($records->first()->players()->has($alice->id));
     }
 }

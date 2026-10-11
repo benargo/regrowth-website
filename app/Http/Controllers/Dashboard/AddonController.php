@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Dashboard;
 use App\Actions\GuildRosterManager\CheckUploadFreshness;
 use App\Http\Controllers\Controller;
 use App\Models\GameVersion;
-use App\Services\WarcraftLogs\GuildTags;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
@@ -17,7 +16,6 @@ class AddonController extends Controller
 {
     public function __construct(
         protected CheckUploadFreshness $checkUploadFreshness,
-        protected GuildTags $guildTags,
         protected FilesystemManager $storage,
     ) {}
 

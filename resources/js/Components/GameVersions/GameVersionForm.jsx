@@ -8,10 +8,10 @@ const FIELD_LABELS = {
     release_date: "Release date",
     realm: "Realm",
     guild_name: "Guild name",
+    uses_surnames: "Characters have surnames",
     faction: "Faction",
     blizzard_namespace: "Blizzard API namespace",
-    warcraftlogs_guild: "Warcraft Logs guild ID",
-    warcraftlogs_namespace: "Warcraft Logs namespace",
+    warcraft_logs_guild_id: "Warcraft Logs guild",
 };
 
 /**
@@ -23,11 +23,11 @@ export function gameVersionFormData(gameVersion = null) {
         ...(gameVersion === null && { slug: "" }),
         realm: gameVersion?.realm ?? "",
         guild_name: gameVersion?.guild_name ?? "",
+        uses_surnames: gameVersion?.uses_surnames ?? false,
         faction: gameVersion?.faction ?? "",
         release_date: gameVersion?.release_date ?? "",
         blizzard_namespace: gameVersion?.blizzard?.namespace ?? "",
-        warcraftlogs_guild: gameVersion?.warcraftlogs?.guild ?? "",
-        warcraftlogs_namespace: gameVersion?.warcraftlogs?.namespace?.value ?? "",
+        warcraft_logs_guild_id: gameVersion?.warcraftlogs?.guild ?? "",
     };
 }
 
@@ -40,7 +40,7 @@ export default function GameVersionForm({ form, options, gameVersion = null, ...
 
     return (
         <DetailsForm form={form} {...detailsFormProps}>
-            {({ text, slug, select }) => (
+            {({ text, slug, select, checkbox }) => (
                 <>
                     <FormSection legend="The version">
                         <FormRow
@@ -96,6 +96,15 @@ export default function GameVersionForm({ form, options, gameVersion = null, ...
                         <FormRow htmlFor="faction" label={FIELD_LABELS.faction} error={errors.faction}>
                             {select("faction", { options: options.factions, placeholder: "Not set" })}
                         </FormRow>
+                        <FormRow
+                            htmlFor="uses_surnames"
+                            label={FIELD_LABELS.uses_surnames}
+                            hint="Tick this if every character in this version has a surname. It changes how names from Warcraft Logs and Raid-Helper are matched to characters."
+                            hintAsTooltip
+                            error={errors.uses_surnames}
+                        >
+                            {checkbox("uses_surnames")}
+                        </FormRow>
                     </FormSection>
 
                     <FormSection legend="Integrations">
@@ -104,7 +113,6 @@ export default function GameVersionForm({ form, options, gameVersion = null, ...
                             label={FIELD_LABELS.blizzard_namespace}
                             hint="Which Blizzard API data set items and media are fetched from."
                             error={errors.blizzard_namespace}
-                            className="md:col-span-2"
                         >
                             {select("blizzard_namespace", {
                                 options: options.blizzard_namespaces,
@@ -112,21 +120,13 @@ export default function GameVersionForm({ form, options, gameVersion = null, ...
                             })}
                         </FormRow>
                         <FormRow
-                            htmlFor="warcraftlogs_guild"
-                            label={FIELD_LABELS.warcraftlogs_guild}
-                            hint="The number at the end of the guild's Warcraft Logs page address."
-                            error={errors.warcraftlogs_guild}
+                            htmlFor="warcraft_logs_guild_id"
+                            label={FIELD_LABELS.warcraft_logs_guild_id}
+                            hint="Reports and attendance for this version come from this guild. Add guilds, or change a guild's Warcraft Logs site, on the Warcraft Logs guilds page."
+                            error={errors.warcraft_logs_guild_id}
                         >
-                            {text("warcraftlogs_guild", { type: "number", min: 1, inputMode: "numeric" })}
-                        </FormRow>
-                        <FormRow
-                            htmlFor="warcraftlogs_namespace"
-                            label={FIELD_LABELS.warcraftlogs_namespace}
-                            hint="Which Warcraft Logs site this version's reports come from."
-                            error={errors.warcraftlogs_namespace}
-                        >
-                            {select("warcraftlogs_namespace", {
-                                options: options.warcraftlogs_namespaces,
+                            {select("warcraft_logs_guild_id", {
+                                options: options.warcraft_logs_guilds,
                                 placeholder: "Not set",
                             })}
                         </FormRow>

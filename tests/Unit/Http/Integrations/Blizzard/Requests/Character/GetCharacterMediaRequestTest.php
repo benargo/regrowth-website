@@ -65,6 +65,14 @@ class GetCharacterMediaRequestTest extends BlizzardTestCase
     }
 
     #[Test]
+    public function it_keeps_diacritics_in_the_character_name(): void
+    {
+        $request = new GetCharacterMediaRequest('Thunderstrike', 'Ízepo');
+
+        $this->assertSame('/profile/wow/character/thunderstrike/ízepo/character-media', $request->resolveEndpoint());
+    }
+
+    #[Test]
     public function it_accepts_already_slugged_inputs_unchanged(): void
     {
         $request = new GetCharacterMediaRequest('thunderstrike', 'wastedhippy');

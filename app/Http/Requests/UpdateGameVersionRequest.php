@@ -4,13 +4,13 @@ namespace App\Http\Requests;
 
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
-use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Http\Requests\Concerns\ChecksEditLock;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
+use App\Models\WarcraftLogs\Guild;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -33,12 +33,12 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             'slug' => ['missing'],
             'realm' => ['sometimes', 'nullable', 'string', 'max:255'],
             'guild_name' => ['sometimes', 'required', 'string', 'max:24'],
+            'uses_surnames' => ['sometimes', 'required', 'boolean'],
             'faction' => ['sometimes', 'nullable', Rule::enum(Faction::class)],
             'release_date' => ['sometimes', 'required', 'date'],
             'color' => ['sometimes', $this->route('gameVersion')->color === null ? 'nullable' : 'required', ...$this->colorFormatRules()],
             'blizzard_namespace' => ['sometimes', 'nullable', Rule::enum(BlizzardNamespace::class)],
-            'warcraftlogs_guild' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:2147483647'],
-            'warcraftlogs_namespace' => ['sometimes', 'nullable', Rule::enum(WarcraftLogsNamespace::class)],
+            'warcraft_logs_guild_id' => ['sometimes', 'nullable', 'integer', Rule::exists(Guild::class, 'id')],
             'playable_race_ids' => ['sometimes', 'array'],
             'playable_race_ids.*' => ['integer', 'distinct', Rule::exists(PlayableRace::class, 'id')],
             'playable_class_ids' => ['sometimes', 'array'],

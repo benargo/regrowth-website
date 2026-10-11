@@ -61,19 +61,19 @@ class DataTable
             return collect();
         }
 
-        /** @var array<int, array{startTime: Carbon, players: Collection<string, PlayerPresenceData>}> $clusterSnapshots */
+        /** @var array<int, array{startTime: Carbon, players: Collection<int, PlayerPresenceData>}> $clusterSnapshots */
         $clusterSnapshots = $records->values()->map(fn (ReportClusterData $cluster) => [
             'startTime' => $cluster->startTime(),
             'players' => $cluster->players(),
         ])->all();
 
-        /** @var array<string, array{characterId: int, firstIndex: int}> $characterInfo */
+        /** @var array<int, array{characterId: int, firstIndex: int}> $characterInfo */
         $characterInfo = [];
 
         foreach ($clusterSnapshots as $index => $snapshot) {
-            foreach ($snapshot['players'] as $name => $player) {
-                if (! isset($characterInfo[$name])) {
-                    $characterInfo[$name] = [
+            foreach ($snapshot['players'] as $characterId => $player) {
+                if (! isset($characterInfo[$characterId])) {
+                    $characterInfo[$characterId] = [
                         'characterId' => $player->character->id,
                         'firstIndex' => $index,
                     ];
@@ -113,7 +113,7 @@ class DataTable
 
         $rows = [];
 
-        foreach ($characterInfo as $name => $info) {
+        foreach ($characterInfo as $characterId => $info) {
             $character = $characters[$info['characterId']] ?? null;
 
             if ($character === null) {
@@ -140,7 +140,7 @@ class DataTable
                     continue;
                 }
 
-                $player = $snapshot['players'][$name] ?? null;
+                $player = $snapshot['players'][$characterId] ?? null;
                 $presence = $player?->presence;
                 $attended = in_array($presence, [1, 2], true);
 

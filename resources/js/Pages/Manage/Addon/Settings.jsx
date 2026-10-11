@@ -11,12 +11,14 @@ import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
 import TabNav from "@/Components/TabNav";
 import parseAutocompleteSelection from "@/Helpers/ParseAutocompleteSelection";
+import { usePermission } from "@/Hooks/usePermission";
 
 export default function AddonSettings({ councillors: councillorsProp, tags: tagsProp, characters }) {
     const [tags, setTags] = useState(tagsProp?.data ?? []);
     const [characterSearch, setCharacterSearch] = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
     const [autoSaveKey, setAutoSaveKey] = useState(0);
+    const canUpdateTags = usePermission("update-warcraft-logs-tags");
 
     // Rendered straight from props so the redirect-back refresh is the single
     // source of truth for the councillor list.
@@ -56,11 +58,11 @@ export default function AddonSettings({ councillors: councillorsProp, tags: tags
         }
     };
 
-    const handleToggleTagAttendance = (tagId, currentValue) => {
+    const handleToggleTagAttendance = (tag) => {
         router.patch(
-            route("wcl.guild-tags.toggle-attendance", tagId),
+            route("management.warcraftlogs.guilds.tags.toggle-attendance", { guild: tag.guild_id, guildTag: tag.id }),
             {
-                count_attendance: !currentValue,
+                count_attendance: !tag.count_attendance,
             },
             {
                 preserveScroll: true,
@@ -186,21 +188,33 @@ export default function AddonSettings({ councillors: councillorsProp, tags: tags
                         </p>
                         {tags.length > 0 ? (
                             <div className="border-ink-600 mt-4 rounded-md border">
-                                {tags.map((tag) => (
-                                    <div
-                                        key={tag.id}
-                                        className="border-b-line flex flex-row items-center border-b first:rounded-t-md last:rounded-b-md"
-                                    >
-                                        <div className="border-ink-600 bg-ground-800/50 mr-2 flex h-12 w-12 items-center justify-center border p-2">
-                                            <Checkbox
-                                                checked={tag.count_attendance}
-                                                onChange={() => handleToggleTagAttendance(tag.id, tag.count_attendance)}
-                                                id={`tag-${tag.id}`}
-                                            />
+                                {tags.map((tag) => {
+                                    const hasGuild = tag.guild_id !== null;
+
+                                    return (
+                                        <div
+                                            key={tag.id}
+                                            className="border-b-line flex flex-row items-center border-b first:rounded-t-md last:rounded-b-md"
+                                        >
+                                            <div className="border-ink-600 bg-ground-800/50 mr-2 flex h-12 w-12 items-center justify-center border p-2">
+                                                <Checkbox
+                                                    checked={tag.count_attendance}
+                                                    disabled={!canUpdateTags || !hasGuild}
+                                                    title={
+                                                        !canUpdateTags
+                                                            ? "You do not have permission to change Warcraft Logs tags"
+                                                            : !hasGuild
+                                                              ? "This tag has no Warcraft Logs guild yet"
+                                                              : undefined
+                                                    }
+                                                    onChange={() => handleToggleTagAttendance(tag)}
+                                                    id={`tag-${tag.id}`}
+                                                />
+                                            </div>
+                                            <label htmlFor={`tag-${tag.id}`}>{tag.name}</label>
                                         </div>
-                                        <label htmlFor={`tag-${tag.id}`}>{tag.name}</label>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         ) : (
                             <p className="mt-2 text-sm text-secondary-400">No tags available.</p>

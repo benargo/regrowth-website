@@ -11,6 +11,7 @@ use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\Raid;
+use App\Models\WarcraftLogs\Guild;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
@@ -36,8 +37,8 @@ class UpdateGameVersionTest extends TestCase
             'title' => 'Era',
             'realm' => 'Gehennas',
             'faction' => Faction::HORDE,
-            'color' => '#8B7ED0',
-            'warcraftlogs_guild' => 123456,
+            'color' => 0x8B7ED0,
+            'warcraft_logs_guild_id' => Guild::factory()->create(['id' => 123456])->id,
         ]);
 
         $this->updateGameVersion($gameVersion, ['realm' => 'Firemaw']);
@@ -47,7 +48,7 @@ class UpdateGameVersionTest extends TestCase
         $this->assertSame('Era', $fresh->title);
         $this->assertSame(Faction::HORDE, $fresh->faction);
         $this->assertSame('8b7ed0', $fresh->color);
-        $this->assertSame(123456, $fresh->warcraftlogs_guild);
+        $this->assertSame(123456, $fresh->warcraft_logs_guild_id);
     }
 
     #[Test]
@@ -66,17 +67,17 @@ class UpdateGameVersionTest extends TestCase
         $gameVersion = GameVersion::factory()->create([
             'realm' => 'Gehennas',
             'faction' => Faction::HORDE,
-            'warcraftlogs_guild' => 123456,
+            'warcraft_logs_guild_id' => Guild::factory()->create(['id' => 123456])->id,
         ]);
 
         $this->updateGameVersion($gameVersion, [
             'faction' => null,
-            'warcraftlogs_guild' => null,
+            'warcraft_logs_guild_id' => null,
         ]);
 
         $fresh = $gameVersion->fresh();
         $this->assertNull($fresh->faction);
-        $this->assertNull($fresh->warcraftlogs_guild);
+        $this->assertNull($fresh->warcraft_logs_guild_id);
         $this->assertSame('Gehennas', $fresh->realm);
     }
 
