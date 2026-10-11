@@ -16,7 +16,15 @@ const sections = import.meta.glob("/resources/js/Components/GameVersions/*Sectio
     import: "default",
 });
 
-export default function Edit({ gameVersion, options, relationships, steps, routes, canEdit, editor }) {
+export default function Edit({
+    gameVersion: { data: gameVersion, media },
+    options,
+    relationships,
+    steps,
+    routes,
+    canEdit,
+    editor,
+}) {
     const form = useForm(gameVersionFormData(gameVersion));
 
     return (
@@ -48,6 +56,7 @@ export default function Edit({ gameVersion, options, relationships, steps, route
                             steps={steps}
                             sections={sections}
                             gameVersion={gameVersion}
+                            media={media}
                             options={options}
                             relationships={relationships}
                             routes={routes}

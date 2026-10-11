@@ -14,7 +14,7 @@ const sections = import.meta.glob("/resources/js/Components/GameVersions/*Sectio
 });
 
 export default function Setup({
-    gameVersion,
+    gameVersion: { data: gameVersion, media },
     options,
     step,
     previousStep,
@@ -47,7 +47,7 @@ export default function Setup({
                     editor={editor}
                     recordName="game version"
                     sections={sections}
-                    sectionProps={{ gameVersion, options, relationships }}
+                    sectionProps={{ gameVersion, media, options, relationships }}
                 />
             </PageContainer>
         </Master>

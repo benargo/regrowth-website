@@ -12,6 +12,7 @@ use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 use Illuminate\Validation\Validator;
@@ -73,9 +74,9 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             ],
             'guild_ranks.*.name' => ['required', 'string', 'max:255'],
             'guild_ranks.*.count_attendance' => ['required', 'boolean'],
-            GameVersion::MEDIA_BANNER => $this->imageRules(),
-            GameVersion::MEDIA_ICON => $this->imageRules(),
-            GameVersion::MEDIA_LOGO => $this->imageRules(),
+            GameVersion::MEDIA_BANNER => $this->imageRules(GameVersion::MEDIA_BANNER),
+            GameVersion::MEDIA_ICON => $this->imageRules(GameVersion::MEDIA_ICON),
+            GameVersion::MEDIA_LOGO => $this->imageRules(GameVersion::MEDIA_LOGO),
         ];
     }
 
@@ -139,25 +140,33 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
 
     /**
      * The rules for an image replacing one of the game version's media
-     * collections. Null removes the image.
+     * collections, accepting the types the collection accepts. Null removes
+     * the image.
      *
      * @return list<string>
      */
-    protected function imageRules(): array
+    protected function imageRules(string $collection): array
     {
-        return ['sometimes', 'nullable', 'image', 'mimes:webp,png,jpeg', 'max:2048'];
+        $mimeTypes = (new GameVersion)->acceptedMimeTypes($collection);
+
+        return ['sometimes', 'nullable', 'file', 'mimetypes:'.implode(',', $mimeTypes), 'max:2048'];
     }
 
     /**
-     * The messages for an image field, naming the image it replaces.
+     * The messages for an image field, naming the image it replaces and the
+     * types it accepts.
      *
      * @return array<string, string>
      */
     protected function imageMessages(string $field): array
     {
+        $types = collect((new GameVersion)->acceptedMimeTypes($field))
+            ->map(fn (string $mimeType): string => Str::of($mimeType)->after('/')->before('+')->upper()->toString())
+            ->join(', ', ' or ');
+
         return [
-            "{$field}.image" => "The {$field} must be a JPEG, PNG or WEBP image.",
-            "{$field}.mimes" => "The {$field} must be a JPEG, PNG or WEBP image.",
+            "{$field}.file" => "The {$field} must be a {$types} image.",
+            "{$field}.mimetypes" => "The {$field} must be a {$types} image.",
             "{$field}.max" => "The {$field} must be 2 MB or smaller.",
         ];
     }

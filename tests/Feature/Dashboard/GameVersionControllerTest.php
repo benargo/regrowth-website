@@ -378,10 +378,15 @@ class GameVersionControllerTest extends DashboardTestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Manage/GameVersions/Edit')
-            ->where('gameVersion.id', $gameVersion->id)
-            ->where('gameVersion.title', 'Era')
-            ->where('gameVersion.release_date', '2019-08-27')
-            ->where('gameVersion.faction', 'Horde')
+            ->where('gameVersion.data.id', $gameVersion->id)
+            ->where('gameVersion.data.title', 'Era')
+            ->where('gameVersion.data.release_date', '2019-08-27')
+            ->where('gameVersion.data.faction', 'Horde')
+            ->where('gameVersion.media', [
+                GameVersion::MEDIA_BANNER => ['limit' => 1, 'accepts' => ['image/jpeg', 'image/png', 'image/webp']],
+                GameVersion::MEDIA_ICON => ['limit' => 1, 'accepts' => ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']],
+                GameVersion::MEDIA_LOGO => ['limit' => 1, 'accepts' => ['image/jpeg', 'image/png', 'image/webp']],
+            ])
         );
     }
 
@@ -626,7 +631,7 @@ class GameVersionControllerTest extends DashboardTestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Manage/GameVersions/Setup')
-            ->where('gameVersion.title', 'Era')
+            ->where('gameVersion.data.title', 'Era')
             ->where('step', GameVersionSetupStep::PHASES->toOption())
             ->where('previousStep', GameVersionSetupStep::RACES_AND_CLASSES->toOption())
             ->where('nextStep', GameVersionSetupStep::GUILD_RANKS->toOption())
@@ -709,7 +714,7 @@ class GameVersionControllerTest extends DashboardTestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Manage/GameVersions/Review')
-            ->where('gameVersion.title', 'Era')
+            ->where('gameVersion.data.title', 'Era')
             ->has('steps', count(GameVersionSetupStep::cases()))
             ->where('steps.3.href', route('management.game-versions.setup', [$gameVersion, 'guild-ranks']))
             ->where('relationships', $relationships)
@@ -1377,6 +1382,25 @@ class GameVersionControllerTest extends DashboardTestCase
         $this->assertSame("{$collection}.webp", $gameVersion->fresh()->getFirstMedia($collection)?->file_name);
     }
 
+    #[Group('happy-path')]
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function it_stores_an_svg_icon(): void
+    {
+        Storage::fake('public');
+        $gameVersion = GameVersion::factory()->create();
+
+        $response = $this->actingAs($this->officer)
+            ->from($this->editUrl($gameVersion))
+            ->post(route('management.game-versions.update', $gameVersion), [
+                '_method' => 'PATCH',
+                GameVersion::MEDIA_ICON => $this->fakeSvg('icon.svg'),
+            ]);
+
+        $response->assertValid();
+        $this->assertSame('icon.svg', $gameVersion->fresh()->getFirstMedia(GameVersion::MEDIA_ICON)?->file_name);
+    }
+
     #[Test]
     public function it_passes_an_image_removed_as_null_to_the_update(): void
     {
@@ -1402,6 +1426,38 @@ class GameVersionControllerTest extends DashboardTestCase
             ]);
 
         $response->assertInvalid([GameVersion::MEDIA_LOGO => 'The logo must be a JPEG, PNG or WEBP image.']);
+    }
+
+    #[Group('validation')]
+    #[Test]
+    #[TestWith([GameVersion::MEDIA_BANNER])]
+    #[TestWith([GameVersion::MEDIA_LOGO])]
+    public function it_rejects_an_svg_for_a_collection_that_does_not_accept_one(string $collection): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        UpdateGameVersion::shouldNotRun();
+
+        $response = $this->actingAs($this->officer)
+            ->patch(route('management.game-versions.update', $gameVersion), [
+                $collection => $this->fakeSvg("{$collection}.svg"),
+            ]);
+
+        $response->assertInvalid([$collection => "The {$collection} must be a JPEG, PNG or WEBP image."]);
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_names_svg_among_the_accepted_types_when_rejecting_an_icon(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        UpdateGameVersion::shouldNotRun();
+
+        $response = $this->actingAs($this->officer)
+            ->patch(route('management.game-versions.update', $gameVersion), [
+                GameVersion::MEDIA_ICON => UploadedFile::fake()->create('icon.pdf', 10, 'application/pdf'),
+            ]);
+
+        $response->assertInvalid([GameVersion::MEDIA_ICON => 'The icon must be a JPEG, PNG, WEBP or SVG image.']);
     }
 
     #[Group('validation')]
@@ -1503,6 +1559,17 @@ class GameVersionControllerTest extends DashboardTestCase
     private function editUrl(GameVersion $gameVersion): string
     {
         return route('management.game-versions.edit', $gameVersion);
+    }
+
+    /**
+     * A small SVG upload, with real markup so its MIME type is detected as image/svg+xml.
+     */
+    private function fakeSvg(string $name): UploadedFile
+    {
+        return UploadedFile::fake()->createWithContent(
+            $name,
+            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16"/></svg>',
+        );
     }
 
     /**

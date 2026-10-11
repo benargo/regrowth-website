@@ -6,6 +6,7 @@ use App\Models\GameVersion;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
+use Spatie\MediaLibrary\MediaCollections\MediaCollection;
 
 class GameVersionResource extends JsonResource
 {
@@ -79,6 +80,27 @@ class GameVersionResource extends JsonResource
             'items_count' => $this->whenCounted('items'),
             'characters_count' => $this->whenCounted('characters'),
             'guild_ranks_count' => $this->whenCounted('guildRanks'),
+        ];
+    }
+
+    /**
+     * Get additional data that should be returned with the resource array:
+     * details of each media collection, such as the most files it holds
+     * (or null when it is unlimited) and the MIME types it accepts.
+     *
+     * @return array{media: array<string, array{limit: int|null, accepts: list<string>}>}
+     */
+    public function with(Request $request): array
+    {
+        return [
+            'media' => $this->getRegisteredMediaCollections()
+                ->mapWithKeys(fn (MediaCollection $collection): array => [
+                    $collection->name => [
+                        'limit' => $collection->collectionSizeLimit ?: null,
+                        'accepts' => $collection->acceptsMimeTypes,
+                    ],
+                ])
+                ->all(),
         ];
     }
 }

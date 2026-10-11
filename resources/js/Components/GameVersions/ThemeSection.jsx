@@ -12,7 +12,7 @@ import { AUTOSAVE_DELAY } from "@/Hooks/useRelationshipForm";
  * One image upload. Files are sent as soon as they are chosen, with the PATCH
  * spoofed over POST because browsers can't send files in a real PATCH.
  */
-function ImageField({ field, label, hint, url, routes }) {
+function ImageField({ field, label, hint, url, max, accepts, routes }) {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
 
@@ -35,6 +35,8 @@ function ImageField({ field, label, hint, url, routes }) {
                 saving={saving}
                 error={error}
                 multiple={false}
+                max={max}
+                accepts={accepts}
                 onUpload={([file]) => send("post", { _method: "patch", [field]: file }, { forceFormData: true })}
                 onDelete={() => send("patch", { [field]: null })}
             />
@@ -42,7 +44,14 @@ function ImageField({ field, label, hint, url, routes }) {
     );
 }
 
-export default function ThemeSection({ gameVersion, routes, submitLabel = "Save theme", onSaved, autosave = false }) {
+export default function ThemeSection({
+    gameVersion,
+    media = {},
+    routes,
+    submitLabel = "Save theme",
+    onSaved,
+    autosave = false,
+}) {
     const saved = { color: toHex(gameVersion.color) };
     const form = useForm(saved);
     const { schedule, containerProps } = useFormAutosave({
@@ -88,6 +97,8 @@ export default function ThemeSection({ gameVersion, routes, submitLabel = "Save 
                     label="Banner"
                     hint="The wide header image shown at the top of this version's pages."
                     url={gameVersion.banner_url}
+                    max={media.banner?.limit ?? null}
+                    accepts={media.banner?.accepts}
                     routes={routes}
                 />
 
@@ -98,6 +109,8 @@ export default function ThemeSection({ gameVersion, routes, submitLabel = "Save 
                         label="Logo"
                         hint="The game's full-colour logo."
                         url={gameVersion.logo_url}
+                        max={media.logo?.limit ?? null}
+                        accepts={media.logo?.accepts}
                         routes={routes}
                     />
                     <ImageField
@@ -105,6 +118,8 @@ export default function ThemeSection({ gameVersion, routes, submitLabel = "Save 
                         label="Icon"
                         hint="A single-colour version of the logo, for small spaces such as menus."
                         url={gameVersion.icon_url}
+                        max={media.icon?.limit ?? null}
+                        accepts={media.icon?.accepts}
                         routes={routes}
                     />
                 </div>

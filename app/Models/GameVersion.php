@@ -120,13 +120,35 @@ class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia
 
     // ============ Media ===========
 
+    /**
+     * Register the image collections. The icon also takes SVGs, since it is a
+     * single-colour mark that should stay crisp at any size.
+     */
     public function registerMediaCollections(): void
     {
-        foreach ([self::MEDIA_BANNER, self::MEDIA_ICON, self::MEDIA_LOGO] as $name) {
-            $this->addMediaCollection($name)
-                ->singleFile()
-                ->acceptsMimeTypes(['image/webp', 'image/png', 'image/jpeg']);
-        }
+        $rasterImages = ['image/jpeg', 'image/png', 'image/webp'];
+
+        $this->addMediaCollection(self::MEDIA_BANNER)
+            ->singleFile()
+            ->acceptsMimeTypes($rasterImages);
+
+        $this->addMediaCollection(self::MEDIA_ICON)
+            ->singleFile()
+            ->acceptsMimeTypes([...$rasterImages, 'image/svg+xml']);
+
+        $this->addMediaCollection(self::MEDIA_LOGO)
+            ->singleFile()
+            ->acceptsMimeTypes($rasterImages);
+    }
+
+    /**
+     * Get the MIME types a media collection accepts.
+     *
+     * @return list<string>
+     */
+    public function acceptedMimeTypes(string $collection): array
+    {
+        return $this->getRegisteredMediaCollections()->firstWhere('name', $collection)->acceptsMimeTypes ?? [];
     }
 
     // ============ Guild roster ===========

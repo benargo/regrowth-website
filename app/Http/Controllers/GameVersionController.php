@@ -83,7 +83,7 @@ class GameVersionController extends Controller
         $editLock = ResolveEditLock::run($request, $gameVersion);
 
         return Inertia::render('Manage/GameVersions/Edit', [
-            'gameVersion' => fn (): array => GameVersionResource::forManagement($gameVersion)->resolve($request),
+            'gameVersion' => GameVersionResource::forManagement($gameVersion),
             'options' => fn (): array => $this->formOptions(),
             'relationships' => fn (): array => BuildGameVersionRelationships::run($gameVersion),
             'steps' => fn (): array => $routes->steps($gameVersion),
@@ -108,7 +108,7 @@ class GameVersionController extends Controller
         $editLock = ResolveEditLock::run($request, $gameVersion);
 
         return Inertia::render('Manage/GameVersions/Setup', [
-            'gameVersion' => fn (): array => GameVersionResource::forManagement($gameVersion)->resolve($request),
+            'gameVersion' => GameVersionResource::forManagement($gameVersion),
             'step' => $step->toOption(),
             'options' => fn (): array => $this->formOptions(),
             'previousStep' => $step->previous()?->toOption(),
@@ -126,10 +126,10 @@ class GameVersionController extends Controller
      * details and linked records, with a link back to each step to edit it.
      */
     #[Authorize('update', 'gameVersion')]
-    public function review(Request $request, GameVersion $gameVersion, BuildGameVersionRoutes $routes): Response
+    public function review(GameVersion $gameVersion, BuildGameVersionRoutes $routes): Response
     {
         return Inertia::render('Manage/GameVersions/Review', [
-            'gameVersion' => GameVersionResource::forManagement($gameVersion)->resolve($request),
+            'gameVersion' => GameVersionResource::forManagement($gameVersion),
             'steps' => $routes->steps($gameVersion),
             'relationships' => BuildGameVersionRelationships::run($gameVersion),
             'routes' => $routes->forReview($gameVersion),

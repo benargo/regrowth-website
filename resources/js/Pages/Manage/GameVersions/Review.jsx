@@ -95,7 +95,7 @@ function gameVersionDetails(gameVersion) {
     ];
 }
 
-export default function Review({ gameVersion, steps, relationships, routes }) {
+export default function Review({ gameVersion: { data: gameVersion }, steps, relationships, routes }) {
     return (
         <Master title={`Review ${gameVersion.title}`}>
             <SharedHeader

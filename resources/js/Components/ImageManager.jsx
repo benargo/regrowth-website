@@ -5,8 +5,20 @@ import { CSS } from "@dnd-kit/utilities";
 import Icon from "@/Components/FontAwesome/Icon";
 import InputError from "@/Components/InputError";
 
-function SortableImage({ url, onDelete, disabled }) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: url });
+const DEFAULT_ACCEPTS = ["image/jpeg", "image/png", "image/webp"];
+
+/**
+ * Turn MIME types into a readable list, e.g. "JPEG, PNG, WEBP, SVG".
+ */
+function describeTypes(mimeTypes) {
+    return mimeTypes.map((type) => type.split("/").pop().split("+")[0].toUpperCase()).join(", ");
+}
+
+function SortableImage({ url, onDelete, disabled, sortable }) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+        id: url,
+        disabled: !sortable,
+    });
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -18,7 +30,7 @@ function SortableImage({ url, onDelete, disabled }) {
         <div
             ref={setNodeRef}
             style={style}
-            className={`group relative inline-block ${disabled ? "cursor-wait" : "cursor-grab"}`}
+            className={`group relative inline-block ${disabled ? "cursor-wait" : sortable ? "cursor-grab" : ""}`}
             {...attributes}
             {...listeners}
         >
@@ -48,9 +60,23 @@ function SortableImage({ url, onDelete, disabled }) {
  * @param {function(string):void} props.onDelete   - Called with the URL to delete
  * @param {function(string[]):void} [props.onReorder] - Called with the new ordered URL array; needed only when `multiple`
  * @param {boolean} [props.multiple=true]  - Accept several images; when false, only one is sent per upload
+ * @param {number|null} [props.max=null]   - Most images allowed; the upload box hides once it is reached
+ * @param {string[]} [props.accepts]       - MIME types allowed; defaults to JPEG, PNG and WEBP
  */
-export default function ImageManager({ images, saving, error, onUpload, onDelete, onReorder, multiple = true }) {
+export default function ImageManager({
+    images,
+    saving,
+    error,
+    onUpload,
+    onDelete,
+    onReorder,
+    multiple = true,
+    max = null,
+    accepts = DEFAULT_ACCEPTS,
+}) {
     const [isDraggingFile, setIsDraggingFile] = useState(false);
+    const remaining = max === null ? Infinity : max - images.length;
+    const isSortable = max !== 1;
     const fileInputRef = useRef(null);
 
     const sensors = useSensors(
@@ -89,16 +115,14 @@ export default function ImageManager({ images, saving, error, onUpload, onDelete
         e.preventDefault();
         e.stopPropagation();
         setIsDraggingFile(false);
-        const files = Array.from(e.dataTransfer.files).filter((f) =>
-            ["image/jpeg", "image/png", "image/webp"].includes(f.type),
-        );
+        const files = Array.from(e.dataTransfer.files).filter((f) => accepts.includes(f.type));
         if (files.length) {
-            onUpload(multiple ? files : files.slice(0, 1));
+            onUpload(files.slice(0, multiple ? remaining : 1));
         }
     };
 
     const handleFileInputChange = (e) => {
-        const files = Array.from(e.target.files || []);
+        const files = Array.from(e.target.files || []).slice(0, remaining);
         if (files.length) {
             onUpload(files);
         }
@@ -110,13 +134,19 @@ export default function ImageManager({ images, saving, error, onUpload, onDelete
             {images.length > 0 && (
                 <div className="mb-6">
                     <p className="text-secondary-400 mb-3 text-sm">
-                        {multiple ? <>Drag to reorder &#124; hover to delete</> : "Hover to delete"}
+                        {multiple && isSortable ? <>Drag to reorder &#124; hover to delete</> : "Hover to delete"}
                     </p>
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                         <SortableContext items={images} strategy={horizontalListSortingStrategy}>
                             <div className="flex flex-wrap gap-4">
                                 {images.map((url) => (
-                                    <SortableImage key={url} url={url} onDelete={onDelete} disabled={saving} />
+                                    <SortableImage
+                                        key={url}
+                                        url={url}
+                                        onDelete={onDelete}
+                                        disabled={saving}
+                                        sortable={isSortable}
+                                    />
                                 ))}
                             </div>
                         </SortableContext>
@@ -124,49 +154,51 @@ export default function ImageManager({ images, saving, error, onUpload, onDelete
                 </div>
             )}
 
-            <div
-                onDragOver={handleFileDragOver}
-                onDragEnter={handleFileDragOver}
-                onDragLeave={handleFileDragLeave}
-                onDrop={handleFileDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-colors ${
-                    isDraggingFile
-                        ? "border-ink-400 bg-ink-600/10 text-ink-300"
-                        : "border-secondary-600 text-secondary-400 hover:border-ink-600 hover:text-secondary-300"
-                }`}
-            >
-                {saving ? (
-                    <>
-                        <Icon icon="spinner" style="solid" className="fa-spin text-ink-400 text-2xl" />
-                        <span className="text-sm">Uploading…</span>
-                    </>
-                ) : isDraggingFile ? (
-                    <>
-                        <Icon icon="image" style="solid" className="text-2xl" />
-                        <span className="text-sm font-medium">Drop to upload</span>
-                    </>
-                ) : (
-                    <>
-                        <Icon icon="cloud-upload" style="solid" className="text-2xl" />
-                        <span className="text-sm">
-                            Drag &amp; drop {multiple ? "images" : "an image"} here, or{" "}
-                            <span className="text-ink-400 underline">browse</span>
-                        </span>
-                        <span className="text-secondary-500 text-xs">
-                            JPEG, PNG, WEBP · max 2 MB{multiple ? " each" : ""}
-                        </span>
-                    </>
-                )}
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple={multiple}
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={handleFileInputChange}
-                    className="hidden"
-                />
-            </div>
+            {remaining > 0 && (
+                <div
+                    onDragOver={handleFileDragOver}
+                    onDragEnter={handleFileDragOver}
+                    onDragLeave={handleFileDragLeave}
+                    onDrop={handleFileDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-colors ${
+                        isDraggingFile
+                            ? "border-ink-400 bg-ink-600/10 text-ink-300"
+                            : "border-secondary-600 text-secondary-400 hover:border-ink-600 hover:text-secondary-300"
+                    }`}
+                >
+                    {saving ? (
+                        <>
+                            <Icon icon="spinner" style="solid" className="fa-spin text-ink-400 text-2xl" />
+                            <span className="text-sm">Uploading…</span>
+                        </>
+                    ) : isDraggingFile ? (
+                        <>
+                            <Icon icon="image" style="solid" className="text-2xl" />
+                            <span className="text-sm font-medium">Drop to upload</span>
+                        </>
+                    ) : (
+                        <>
+                            <Icon icon="cloud-upload" style="solid" className="text-2xl" />
+                            <span className="text-sm">
+                                Drag &amp; drop {multiple ? "images" : "an image"} here, or{" "}
+                                <span className="text-ink-400 underline">browse</span>
+                            </span>
+                            <span className="text-secondary-500 text-xs">
+                                {describeTypes(accepts)} · max 2 MB{multiple ? " each" : ""}
+                            </span>
+                        </>
+                    )}
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple={multiple}
+                        accept={accepts.join(",")}
+                        onChange={handleFileInputChange}
+                        className="hidden"
+                    />
+                </div>
+            )}
 
             <InputError message={error} className="mt-2" />
         </div>

@@ -205,4 +205,22 @@ class GameVersionResourceTest extends TestCase
         $this->assertArrayNotHasKey('guild_tags_count', $array);
         $this->assertArrayNotHasKey('characters_count', $array);
     }
+
+    // ==================== metadata ====================
+
+    #[Test]
+    public function it_returns_the_limit_and_accepted_types_of_each_media_collection_as_metadata(): void
+    {
+        $gameVersion = GameVersion::factory()->make();
+
+        $metadata = (new GameVersionResource($gameVersion))->with(new Request);
+
+        $this->assertSame([
+            'media' => [
+                GameVersion::MEDIA_BANNER => ['limit' => 1, 'accepts' => ['image/jpeg', 'image/png', 'image/webp']],
+                GameVersion::MEDIA_ICON => ['limit' => 1, 'accepts' => ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']],
+                GameVersion::MEDIA_LOGO => ['limit' => 1, 'accepts' => ['image/jpeg', 'image/png', 'image/webp']],
+            ],
+        ], $metadata);
+    }
 }
