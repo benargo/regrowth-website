@@ -7,9 +7,8 @@ import { modelBackground } from "@/Helpers/ModelColor";
 export const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-400";
 
 /**
- * What a record is used by, as "3 phases"-style phrases. `labels` lists
- * [countKey, singular, plural] for each usage count on the record; counts of
- * zero are left out.
+ * Turns a record's usage counts into phrases like "3 phases", skipping zeros.
+ * Each label is [countKey, singular, plural].
  */
 export function usageSummary(record, labels) {
     return labels
@@ -18,15 +17,26 @@ export function usageSummary(record, labels) {
 }
 
 /**
- * One record on a dataset's Index page: a header (with an optional
- * `headerImage` over a `headerColor`), its [label, value] details, what uses
- * it, and Edit and Delete actions. Delete is disabled while anything still
- * uses the record.
+ * A record card for a dataset's Index page, with Edit and Delete actions.
+ * Delete is disabled while the record is in use; omit `usage` or `onDelete`
+ * to hide the usage sentence or the Delete button.
  */
-export default function RecordCard({ title, subtitle, headerColor, headerImage, details, usage, links, onDelete }) {
+export default function RecordCard({
+    title,
+    subtitle,
+    headerColor,
+    headerImage,
+    details,
+    usage = null,
+    links,
+    editLabel = "Edit",
+    editIcon = "edit",
+    onDelete = null,
+}) {
     const usageId = useId();
     const header = modelBackground(headerColor, headerImage);
-    const inUse = usage.length > 0;
+    const hasUsage = usage !== null;
+    const isInUse = hasUsage && usage.length > 0;
 
     return (
         <article className="border-ink-600/40 bg-ground-800/60 overflow-hidden rounded border">
