@@ -50,8 +50,9 @@ class CharacterController extends Controller
     public function index(Request $request, GameVersion $gameVersion): Response
     {
         $rosters = GameVersion::currentRosters()->load('media');
+        $gameVersion = $rosters->first(fn (GameVersion $roster): bool => $roster->is($gameVersion));
 
-        abort_unless($rosters->contains($gameVersion), 404);
+        abort_if($gameVersion === null, 404);
 
         return Inertia::render('Roster/Index', [
             'gameVersion' => (new GameVersionResource($gameVersion))->resolve($request),

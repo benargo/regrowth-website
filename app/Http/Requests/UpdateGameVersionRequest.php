@@ -147,7 +147,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
      */
     protected function imageRules(string $collection): array
     {
-        $mimeTypes = (new GameVersion)->acceptedMimeTypes($collection);
+        $mimeTypes = $this->route('gameVersion')->acceptedMimeTypes($collection);
 
         return ['sometimes', 'nullable', 'file', 'mimetypes:'.implode(',', $mimeTypes), 'max:2048'];
     }
@@ -160,7 +160,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
      */
     protected function imageMessages(string $field): array
     {
-        $types = collect((new GameVersion)->acceptedMimeTypes($field))
+        $types = collect($this->route('gameVersion')->acceptedMimeTypes($field))
             ->map(fn (string $mimeType): string => Str::of($mimeType)->after('/')->before('+')->upper()->toString())
             ->join(', ', ' or ');
 

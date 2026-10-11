@@ -21,7 +21,6 @@ class GameVersionSeeder extends Seeder
                 'slug' => 'mop',
                 'realm' => 'Mirage Raceway',
                 'guild_name' => config('services.blizzard.guild.name'),
-                'uses_surnames' => false,
                 'faction' => Faction::ALLIANCE->value,
                 'release_date' => Carbon::create(2021, 9, 4, 0, 0, 0, CarbonTimeZone::create('Europe/Paris')),
                 'color' => 0x00FF98, // 0, 255, 152

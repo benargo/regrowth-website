@@ -57,7 +57,6 @@ export default function Edit({
                             sections={sections}
                             gameVersion={gameVersion}
                             media={media}
-                            options={options}
                             relationships={relationships}
                             routes={routes}
                         />

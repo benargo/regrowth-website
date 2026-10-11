@@ -110,7 +110,6 @@ class GameVersionController extends Controller
         return Inertia::render('Manage/GameVersions/Setup', [
             'gameVersion' => GameVersionResource::forManagement($gameVersion),
             'step' => $step->toOption(),
-            'options' => fn (): array => $this->formOptions(),
             'previousStep' => $step->previous()?->toOption(),
             'nextStep' => $step->next()?->toOption(),
             'steps' => fn (): array => $routes->steps($gameVersion),

@@ -5,27 +5,38 @@ import Relationships from "@/Components/Datasets/Relationships";
 import { FormRow, SaveButton } from "@/Components/FormControls";
 import ImageManager from "@/Components/ImageManager";
 import { toHex } from "@/Helpers/ModelColor";
-import { useFormAutosave } from "@/Hooks/useAutosave";
+import { autosaveVisit, useAutosaveQueue, useFormAutosave } from "@/Hooks/useAutosave";
 import { AUTOSAVE_DELAY } from "@/Hooks/useRelationshipForm";
 
 /**
  * One image upload. Files are sent as soon as they are chosen, with the PATCH
  * spoofed over POST because browsers can't send files in a real PATCH.
+ *
+ * On an autosaving page, each upload or delete waits its turn in the save
+ * queue, so its visit neither cancels nor is cancelled by an autosave.
  */
 function ImageField({ field, label, hint, url, max, accepts, routes }) {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
+    const queue = useAutosaveQueue();
 
     function send(method, data, options = {}) {
-        router[method](routes.update, data, {
-            preserveScroll: true,
-            preserveState: true,
-            onStart: () => setSaving(true),
-            onSuccess: () => setError(null),
-            onError: (errors) => setError(errors[field] ?? null),
-            onFinish: () => setSaving(false),
-            ...options,
-        });
+        const run = () =>
+            autosaveVisit(router, method, routes.update, {
+                data,
+                ...options,
+                onStart: () => setSaving(true),
+                onSuccess: () => setError(null),
+                onError: (errors) => setError(errors[field] ?? null),
+                onFinish: () => setSaving(false),
+            });
+
+        if (queue) {
+            queue.enqueue(`image-${field}`, run);
+            return;
+        }
+
+        run();
     }
 
     return (
