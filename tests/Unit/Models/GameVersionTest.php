@@ -2,11 +2,10 @@
 
 namespace Tests\Unit\Models;
 
+use App\Casts\AsBinaryColor;
 use App\Casts\AsSlug;
-use App\Casts\AsTheme;
 use App\Contracts\Models\DatasetModel;
 use App\Enums\Faction;
-use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\Character;
@@ -25,12 +24,17 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\MediaCollections\Exceptions\FileUnacceptableForCollection;
 use Tests\Support\ModelTestCase;
 
 #[Group('platform')]
@@ -70,7 +74,7 @@ class GameVersionTest extends ModelTestCase
             'guild_name',
             'faction',
             'release_date',
-            'theme',
+            'color',
             'blizzard_namespace',
             'warcraftlogs_guild',
             'warcraftlogs_namespace',
@@ -86,7 +90,7 @@ class GameVersionTest extends ModelTestCase
             'slug' => AsSlug::class,
             'faction' => Faction::class,
             'release_date' => 'datetime',
-            'theme' => AsTheme::class,
+            'color' => AsBinaryColor::class,
             'blizzard_namespace' => BlizzardNamespace::class,
             'warcraftlogs_guild' => 'integer',
             'warcraftlogs_namespace' => WarcraftLogsNamespace::class,
@@ -174,38 +178,27 @@ class GameVersionTest extends ModelTestCase
     }
 
     #[Test]
-    public function theme_is_cast_to_theme_enum(): void
+    public function color_is_stored_from_a_hex_string_and_read_back_as_hex(): void
     {
-        $gameVersion = $this->create(['theme' => Theme::FOREVER]);
+        $gameVersion = $this->create(['color' => '#8B7ED0']);
 
-        $this->assertSame(Theme::FOREVER, $gameVersion->fresh()->theme);
+        $this->assertSame('8b7ed0', $gameVersion->fresh()->color);
     }
 
     #[Test]
-    #[Group('error-handling')]
-    public function theme_throws_for_a_value_outside_the_enum(): void
+    public function color_is_stored_from_an_integer_and_read_back_as_hex(): void
     {
-        $gameVersion = $this->create();
+        $gameVersion = $this->create(['color' => 0x4AE832]);
 
-        DB::table('game_versions')
-            ->where('id', $gameVersion->id)
-            ->update(['theme' => 'some-future-theme']);
-
-        $this->expectException(\ValueError::class);
-
-        $gameVersion->fresh()->theme;
+        $this->assertSame('4ae832', $gameVersion->fresh()->color);
     }
 
     #[Test]
-    public function theme_defaults_to_the_default_theme_when_set_to_null(): void
+    public function color_stays_null_when_not_set(): void
     {
-        $gameVersion = $this->create(['theme' => null]);
+        $gameVersion = $this->create(['color' => null]);
 
-        $this->assertSame(Theme::default(), $gameVersion->theme);
-        $this->assertTableHas([
-            'id' => $gameVersion->id,
-            'theme' => Theme::default()->value,
-        ]);
+        $this->assertNull($gameVersion->fresh()->color);
     }
 
     #[Test]
@@ -513,6 +506,56 @@ class GameVersionTest extends ModelTestCase
     public function default_roster_is_null_when_no_versions_exist(): void
     {
         $this->assertNull(GameVersion::defaultRoster());
+    }
+
+    // ==================== media ====================
+
+    #[Test]
+    public function it_implements_has_media_interface(): void
+    {
+        $this->assertInstanceOf(HasMedia::class, new GameVersion);
+    }
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    #[TestWith([GameVersion::MEDIA_BANNER])]
+    #[TestWith([GameVersion::MEDIA_ICON])]
+    #[TestWith([GameVersion::MEDIA_LOGO])]
+    public function it_registers_a_single_file_image_collection(string $name): void
+    {
+        $collection = (new GameVersion)->getRegisteredMediaCollections()->firstWhere('name', $name);
+
+        $this->assertNotNull($collection);
+        $this->assertTrue($collection->singleFile);
+    }
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function a_new_banner_replaces_the_old_one(): void
+    {
+        Storage::fake('public');
+        $gameVersion = $this->create();
+
+        $gameVersion->addMedia(UploadedFile::fake()->image('old.png'))->toMediaCollection(GameVersion::MEDIA_BANNER);
+        $gameVersion->addMedia(UploadedFile::fake()->image('new.png'))->toMediaCollection(GameVersion::MEDIA_BANNER);
+
+        $media = $gameVersion->fresh()->getMedia(GameVersion::MEDIA_BANNER);
+        $this->assertCount(1, $media);
+        $this->assertSame('new.png', $media->first()->file_name);
+    }
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function it_rejects_a_file_that_is_not_an_image(): void
+    {
+        Storage::fake('public');
+        $gameVersion = $this->create();
+
+        $this->expectException(FileUnacceptableForCollection::class);
+
+        $gameVersion->addMediaFromString('not an image')
+            ->usingFileName('notes.txt')
+            ->toMediaCollection(GameVersion::MEDIA_LOGO);
     }
 
     // ==================== helpers ====================

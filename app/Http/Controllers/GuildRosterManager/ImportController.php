@@ -30,7 +30,7 @@ class ImportController extends Controller
         CountGuildMembers $countGuildMembers,
         CheckUploadStatus $checkUploadStatus,
     ): Response {
-        $gameVersions = GameVersion::currentRosters()->values();
+        $gameVersions = GameVersion::currentRosters()->load('media')->values();
         $gameVersion = $this->selectedGameVersion($request, $gameVersions);
 
         return Inertia::render('Manage/GRM/Create', [

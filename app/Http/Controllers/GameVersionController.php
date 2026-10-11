@@ -8,7 +8,6 @@ use App\Actions\GameVersion\BuildGameVersionRoutes;
 use App\Actions\GameVersion\UpdateGameVersion;
 use App\Enums\Faction;
 use App\Enums\GameVersionSetupStep;
-use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Http\Requests\StoreGameVersionRequest;
@@ -34,6 +33,7 @@ class GameVersionController extends Controller
     public function index(Request $request, BuildGameVersionRoutes $routes): Response
     {
         $gameVersions = GameVersion::query()
+            ->with('media')
             ->withUsageCounts()
             ->orderBy('release_date')
             ->get();
@@ -83,7 +83,7 @@ class GameVersionController extends Controller
         $editLock = ResolveEditLock::run($request, $gameVersion);
 
         return Inertia::render('Manage/GameVersions/Edit', [
-            'gameVersion' => fn (): array => GameVersionResource::forManagement($gameVersion)->resolve($request),
+            'gameVersion' => GameVersionResource::forManagement($gameVersion),
             'options' => fn (): array => $this->formOptions(),
             'relationships' => fn (): array => BuildGameVersionRelationships::run($gameVersion),
             'steps' => fn (): array => $routes->steps($gameVersion),
@@ -108,7 +108,7 @@ class GameVersionController extends Controller
         $editLock = ResolveEditLock::run($request, $gameVersion);
 
         return Inertia::render('Manage/GameVersions/Setup', [
-            'gameVersion' => fn (): array => GameVersionResource::forManagement($gameVersion)->resolve($request),
+            'gameVersion' => GameVersionResource::forManagement($gameVersion),
             'step' => $step->toOption(),
             'previousStep' => $step->previous()?->toOption(),
             'nextStep' => $step->next()?->toOption(),
@@ -125,10 +125,10 @@ class GameVersionController extends Controller
      * details and linked records, with a link back to each step to edit it.
      */
     #[Authorize('update', 'gameVersion')]
-    public function review(Request $request, GameVersion $gameVersion, BuildGameVersionRoutes $routes): Response
+    public function review(GameVersion $gameVersion, BuildGameVersionRoutes $routes): Response
     {
         return Inertia::render('Manage/GameVersions/Review', [
-            'gameVersion' => GameVersionResource::forManagement($gameVersion)->resolve($request),
+            'gameVersion' => GameVersionResource::forManagement($gameVersion),
             'steps' => $routes->steps($gameVersion),
             'relationships' => BuildGameVersionRelationships::run($gameVersion),
             'routes' => $routes->forReview($gameVersion),
@@ -183,7 +183,6 @@ class GameVersionController extends Controller
      *
      * @return array{
      *     factions: list<array{value: string, label: string}>,
-     *     themes: list<array{value: string, label: string}>,
      *     blizzard_namespaces: list<array{value: string, label: string}>,
      *     warcraftlogs_namespaces: list<array{value: string, label: string}>
      * }
@@ -192,7 +191,6 @@ class GameVersionController extends Controller
     {
         return [
             'factions' => $this->enumOptions(Faction::cases()),
-            'themes' => $this->enumOptions(Theme::cases()),
             'blizzard_namespaces' => $this->enumOptions(BlizzardNamespace::cases()),
             'warcraftlogs_namespaces' => collect(WarcraftLogsNamespace::cases())
                 ->map(fn (WarcraftLogsNamespace $namespace): array => [

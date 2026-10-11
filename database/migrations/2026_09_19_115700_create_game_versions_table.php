@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('guild_name', 24);
             $table->enum('faction', Faction::cases())->nullable();
             $table->dateTime('release_date')->default(Carbon::now());
-            $table->string('theme')->nullable();
+            $table->binary('color', length: 3)->nullable();
             $table->string('blizzard_namespace')->nullable();
             $table->integer('warcraftlogs_guild')->nullable();
             $table->string('warcraftlogs_namespace')->nullable();

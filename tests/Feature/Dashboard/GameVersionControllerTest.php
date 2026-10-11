@@ -6,7 +6,6 @@ use App\Actions\GameVersion\BuildGameVersionRelationships;
 use App\Actions\GameVersion\UpdateGameVersion;
 use App\Enums\Faction;
 use App\Enums\GameVersionSetupStep;
-use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\GameVersion;
@@ -17,8 +16,10 @@ use App\Models\PlayableRace;
 use App\Models\Raid;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
 use Mockery\Matcher\MatcherInterface;
@@ -90,7 +91,7 @@ class GameVersionControllerTest extends DashboardTestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Manage/GameVersions/Create')
             ->where('options.factions.0', ['value' => 'Alliance', 'label' => 'Alliance'])
-            ->where('options.themes.0', ['value' => 'classic', 'label' => 'Classic'])
+            ->missing('options.themes')
             ->where('options.blizzard_namespaces.0', ['value' => 'anniversary', 'label' => 'Anniversary'])
             ->where('options.warcraftlogs_namespaces.0', ['value' => 'anniversary', 'label' => 'The Burning Crusade Classic Anniversary'])
             ->has('options.warcraftlogs_namespaces', count(WarcraftLogsNamespace::cases()))
@@ -111,7 +112,7 @@ class GameVersionControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->post(route('management.game-versions.store'), $this->validPayload());
 
         $gameVersion = GameVersion::sole();
-        $response->assertRedirect(route('management.game-versions.setup', [$gameVersion, 'races-and-classes']));
+        $response->assertRedirect(route('management.game-versions.setup', [$gameVersion, 'theme']));
         $response->assertSessionHas('success', 'Added Wrath Classic.');
 
         $this->assertSame('Wrath Classic', $gameVersion->title);
@@ -119,7 +120,7 @@ class GameVersionControllerTest extends DashboardTestCase
         $this->assertSame('Gehennas', $gameVersion->realm);
         $this->assertSame('the Old Guard', $gameVersion->guild_name);
         $this->assertSame(Faction::HORDE, $gameVersion->faction);
-        $this->assertSame(Theme::FOREVER, $gameVersion->theme);
+        $this->assertSame('8b7ed0', $gameVersion->color);
         $this->assertSame(BlizzardNamespace::CLASSIC, $gameVersion->blizzard_namespace);
         $this->assertSame(123456, $gameVersion->warcraftlogs_guild);
         $this->assertSame(WarcraftLogsNamespace::CLASSIC, $gameVersion->warcraftlogs_namespace);
@@ -137,6 +138,18 @@ class GameVersionControllerTest extends DashboardTestCase
         );
     }
 
+    #[Test]
+    public function it_stores_no_color_when_none_is_chosen(): void
+    {
+        $response = $this->actingAs($this->officer)->post(
+            route('management.game-versions.store'),
+            Arr::except($this->validPayload(), 'color'),
+        );
+
+        $response->assertValid();
+        $this->assertNull(GameVersion::sole()->color);
+    }
+
     #[Group('authorization')]
     #[Test]
     public function it_forbids_store_without_edit_datasets_permission(): void
@@ -151,15 +164,15 @@ class GameVersionControllerTest extends DashboardTestCase
 
     #[Group('validation')]
     #[Test]
-    public function it_requires_title_release_date_and_theme(): void
+    public function it_requires_title_and_release_date(): void
     {
         $response = $this->actingAs($this->officer)->post(route('management.game-versions.store'), []);
 
         $response->assertInvalid([
             'title' => 'The game version title is required.',
             'release_date' => 'The release date is required.',
-            'theme' => 'Please choose a theme.',
         ]);
+        $response->assertValid('color');
         $this->assertDatabaseCount('game_versions', 0);
     }
 
@@ -169,17 +182,30 @@ class GameVersionControllerTest extends DashboardTestCase
     {
         $response = $this->actingAs($this->officer)->post(route('management.game-versions.store'), $this->validPayload([
             'faction' => 'Scourge',
-            'theme' => 'neon',
             'blizzard_namespace' => 'forever',
             'warcraftlogs_namespace' => 'ANNIVERSARY',
         ]));
 
         $response->assertInvalid([
             'faction' => 'The selected faction is invalid.',
-            'theme' => 'The selected theme is invalid.',
             'blizzard_namespace' => 'The selected Blizzard API namespace is invalid.',
             'warcraftlogs_namespace' => 'The selected Warcraft Logs namespace is invalid.',
         ]);
+        $this->assertDatabaseCount('game_versions', 0);
+    }
+
+    #[Group('validation')]
+    #[Test]
+    #[TestWith(['neon'])]
+    #[TestWith(['#fff'])]
+    #[TestWith(['#8b7ed0ff'])]
+    public function it_rejects_a_color_that_is_not_a_six_digit_hex_code(string $color): void
+    {
+        $response = $this->actingAs($this->officer)->post(route('management.game-versions.store'), $this->validPayload([
+            'color' => $color,
+        ]));
+
+        $response->assertInvalid(['color' => 'The colour must be a six-digit hex code, for example #8B7ED0.']);
         $this->assertDatabaseCount('game_versions', 0);
     }
 
@@ -352,11 +378,15 @@ class GameVersionControllerTest extends DashboardTestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Manage/GameVersions/Edit')
-            ->where('gameVersion.id', $gameVersion->id)
-            ->where('gameVersion.title', 'Era')
-            ->where('gameVersion.release_date', '2019-08-27')
-            ->where('gameVersion.faction', 'Horde')
-            ->has('options.themes', 2)
+            ->where('gameVersion.data.id', $gameVersion->id)
+            ->where('gameVersion.data.title', 'Era')
+            ->where('gameVersion.data.release_date', '2019-08-27')
+            ->where('gameVersion.data.faction', 'Horde')
+            ->where('gameVersion.media', [
+                GameVersion::MEDIA_BANNER => ['accepts' => ['image/jpeg', 'image/png', 'image/webp']],
+                GameVersion::MEDIA_ICON => ['accepts' => ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']],
+                GameVersion::MEDIA_LOGO => ['accepts' => ['image/jpeg', 'image/png', 'image/webp']],
+            ])
         );
     }
 
@@ -384,7 +414,7 @@ class GameVersionControllerTest extends DashboardTestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('steps', count(GameVersionSetupStep::cases()))
-            ->where('steps.0.href', route('management.game-versions.setup', [$gameVersion, 'races-and-classes']))
+            ->where('steps.0.href', route('management.game-versions.setup', [$gameVersion, 'theme']))
             ->where('routes', [
                 'index' => route('management.game-versions.index'),
                 'update' => route('management.game-versions.update', $gameVersion),
@@ -601,12 +631,12 @@ class GameVersionControllerTest extends DashboardTestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Manage/GameVersions/Setup')
-            ->where('gameVersion.title', 'Era')
+            ->where('gameVersion.data.title', 'Era')
             ->where('step', GameVersionSetupStep::PHASES->toOption())
             ->where('previousStep', GameVersionSetupStep::RACES_AND_CLASSES->toOption())
             ->where('nextStep', GameVersionSetupStep::GUILD_RANKS->toOption())
             ->has('steps', count(GameVersionSetupStep::cases()))
-            ->where('steps.1.href', route('management.game-versions.setup', [$gameVersion, 'phases']))
+            ->where('steps.2.href', route('management.game-versions.setup', [$gameVersion, 'phases']))
             ->where('relationships', $relationships)
             ->where('returnToReview', false)
             ->where('routes', [
@@ -684,9 +714,9 @@ class GameVersionControllerTest extends DashboardTestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Manage/GameVersions/Review')
-            ->where('gameVersion.title', 'Era')
+            ->where('gameVersion.data.title', 'Era')
             ->has('steps', count(GameVersionSetupStep::cases()))
-            ->where('steps.2.href', route('management.game-versions.setup', [$gameVersion, 'guild-ranks']))
+            ->where('steps.3.href', route('management.game-versions.setup', [$gameVersion, 'guild-ranks']))
             ->where('relationships', $relationships)
             ->where('routes', [
                 'index' => route('management.game-versions.index'),
@@ -892,8 +922,8 @@ class GameVersionControllerTest extends DashboardTestCase
     #[Test]
     public function it_accepts_optional_fields_sent_as_null(): void
     {
-        $gameVersion = GameVersion::factory()->create();
-        $nulls = ['faction' => null, 'theme' => null, 'warcraftlogs_guild' => null];
+        $gameVersion = GameVersion::factory()->create(['color' => null]);
+        $nulls = ['faction' => null, 'color' => null, 'warcraftlogs_guild' => null];
         $this->expectUpdate($gameVersion, $nulls);
 
         $response = $this->actingAs($this->officer)
@@ -901,6 +931,20 @@ class GameVersionControllerTest extends DashboardTestCase
             ->patchJson(route('management.game-versions.update', $gameVersion), $nulls);
 
         $response->assertValid();
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_rejects_clearing_a_color_once_it_is_set(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['color' => '#8B7ED0']);
+        UpdateGameVersion::shouldNotRun();
+
+        $response = $this->actingAs($this->officer)
+            ->from($this->editUrl($gameVersion))
+            ->patchJson(route('management.game-versions.update', $gameVersion), ['color' => null]);
+
+        $response->assertInvalid(['color' => "The colour can't be removed once it has been set."]);
     }
 
     #[Group('validation')]
@@ -1313,6 +1357,124 @@ class GameVersionControllerTest extends DashboardTestCase
         $response->assertRedirect($this->editUrl($gameVersion));
     }
 
+    // ==================== update: images ====================
+
+    #[Group('happy-path')]
+    #[Group('laravel-media-library')]
+    #[Test]
+    #[TestWith([GameVersion::MEDIA_BANNER])]
+    #[TestWith([GameVersion::MEDIA_ICON])]
+    #[TestWith([GameVersion::MEDIA_LOGO])]
+    public function it_stores_an_image_uploaded_as_a_spoofed_patch(string $collection): void
+    {
+        Storage::fake('public');
+        $gameVersion = GameVersion::factory()->create(['title' => 'Era']);
+
+        $response = $this->actingAs($this->officer)
+            ->from($this->editUrl($gameVersion))
+            ->post(route('management.game-versions.update', $gameVersion), [
+                '_method' => 'PATCH',
+                $collection => UploadedFile::fake()->image("{$collection}.webp"),
+            ]);
+
+        $response->assertRedirect($this->editUrl($gameVersion));
+        $response->assertSessionHas('success', 'Saved changes to Era.');
+        $this->assertSame("{$collection}.webp", $gameVersion->fresh()->getFirstMedia($collection)?->file_name);
+    }
+
+    #[Group('happy-path')]
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function it_stores_an_svg_icon(): void
+    {
+        Storage::fake('public');
+        $gameVersion = GameVersion::factory()->create();
+
+        $response = $this->actingAs($this->officer)
+            ->from($this->editUrl($gameVersion))
+            ->post(route('management.game-versions.update', $gameVersion), [
+                '_method' => 'PATCH',
+                GameVersion::MEDIA_ICON => $this->fakeSvg('icon.svg'),
+            ]);
+
+        $response->assertValid();
+        $this->assertSame('icon.svg', $gameVersion->fresh()->getFirstMedia(GameVersion::MEDIA_ICON)?->file_name);
+    }
+
+    #[Test]
+    public function it_passes_an_image_removed_as_null_to_the_update(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $this->expectUpdate($gameVersion, [GameVersion::MEDIA_BANNER => null]);
+
+        $response = $this->actingAs($this->officer)
+            ->patch(route('management.game-versions.update', $gameVersion), [GameVersion::MEDIA_BANNER => null]);
+
+        $response->assertValid();
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_rejects_an_upload_that_is_not_an_image(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        UpdateGameVersion::shouldNotRun();
+
+        $response = $this->actingAs($this->officer)
+            ->patch(route('management.game-versions.update', $gameVersion), [
+                GameVersion::MEDIA_LOGO => UploadedFile::fake()->create('logo.pdf', 10, 'application/pdf'),
+            ]);
+
+        $response->assertInvalid([GameVersion::MEDIA_LOGO => 'The logo must be a JPEG, PNG or WEBP image.']);
+    }
+
+    #[Group('validation')]
+    #[Test]
+    #[TestWith([GameVersion::MEDIA_BANNER])]
+    #[TestWith([GameVersion::MEDIA_LOGO])]
+    public function it_rejects_an_svg_for_a_collection_that_does_not_accept_one(string $collection): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        UpdateGameVersion::shouldNotRun();
+
+        $response = $this->actingAs($this->officer)
+            ->patch(route('management.game-versions.update', $gameVersion), [
+                $collection => $this->fakeSvg("{$collection}.svg"),
+            ]);
+
+        $response->assertInvalid([$collection => "The {$collection} must be a JPEG, PNG or WEBP image."]);
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_names_svg_among_the_accepted_types_when_rejecting_an_icon(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        UpdateGameVersion::shouldNotRun();
+
+        $response = $this->actingAs($this->officer)
+            ->patch(route('management.game-versions.update', $gameVersion), [
+                GameVersion::MEDIA_ICON => UploadedFile::fake()->create('icon.pdf', 10, 'application/pdf'),
+            ]);
+
+        $response->assertInvalid([GameVersion::MEDIA_ICON => 'The icon must be a JPEG, PNG, WEBP or SVG image.']);
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_rejects_an_image_larger_than_two_megabytes(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        UpdateGameVersion::shouldNotRun();
+
+        $response = $this->actingAs($this->officer)
+            ->patch(route('management.game-versions.update', $gameVersion), [
+                GameVersion::MEDIA_BANNER => UploadedFile::fake()->image('banner.png')->size(2049),
+            ]);
+
+        $response->assertInvalid([GameVersion::MEDIA_BANNER => 'The banner must be 2 MB or smaller.']);
+    }
+
     // ==================== destroy ====================
 
     #[Group('happy-path')]
@@ -1374,7 +1536,7 @@ class GameVersionControllerTest extends DashboardTestCase
             'guild_name' => 'the Old Guard',
             'faction' => Faction::HORDE->value,
             'release_date' => '2022-09-26',
-            'theme' => Theme::FOREVER->value,
+            'color' => '#8B7ED0',
             'blizzard_namespace' => BlizzardNamespace::CLASSIC->value,
             'warcraftlogs_guild' => 123456,
             'warcraftlogs_namespace' => WarcraftLogsNamespace::CLASSIC->value,
@@ -1397,6 +1559,17 @@ class GameVersionControllerTest extends DashboardTestCase
     private function editUrl(GameVersion $gameVersion): string
     {
         return route('management.game-versions.edit', $gameVersion);
+    }
+
+    /**
+     * A small SVG upload, with real markup so its MIME type is detected as image/svg+xml.
+     */
+    private function fakeSvg(string $name): UploadedFile
+    {
+        return UploadedFile::fake()->createWithContent(
+            $name,
+            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16"/></svg>',
+        );
     }
 
     /**

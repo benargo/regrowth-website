@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Enums\Faction;
-use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\GameVersion;
@@ -29,7 +28,7 @@ class GameVersionFactory extends Factory
             'guild_name' => fake()->unique()->lexify('Guild ??????'),
             'faction' => fake()->randomElement(Faction::cases()),
             'release_date' => fake()->dateTimeBetween('-1 year', '+1 year'),
-            'theme' => fake()->randomElement(Theme::cases()),
+            'color' => fake()->hexColor(),
             'blizzard_namespace' => fake()->randomElement(BlizzardNamespace::cases()),
             'warcraftlogs_guild' => fake()->numberBetween(1, 999999),
             'warcraftlogs_namespace' => fake()->randomElement(WarcraftLogsNamespace::cases()),

@@ -3,7 +3,6 @@
 namespace Tests\Unit\Http\Resources;
 
 use App\Enums\Faction;
-use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Http\Resources\GameVersionResource;
@@ -11,8 +10,11 @@ use App\Models\GameVersion;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
 
 #[Group('platform')]
@@ -30,8 +32,10 @@ class GameVersionResourceTest extends TestCase
         $this->assertArrayHasKey('id', $array);
         $this->assertArrayHasKey('title', $array);
         $this->assertArrayHasKey('slug', $array);
-        $this->assertArrayHasKey('theme', $array);
-        $this->assertArrayHasKey('banner_class', $array);
+        $this->assertArrayHasKey('color', $array);
+        $this->assertArrayHasKey('banner_url', $array);
+        $this->assertArrayHasKey('icon_url', $array);
+        $this->assertArrayHasKey('logo_url', $array);
     }
 
     #[Test]
@@ -65,23 +69,23 @@ class GameVersionResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_correct_theme(): void
+    public function it_returns_the_color_as_bare_hex(): void
     {
-        $gameVersion = GameVersion::factory()->create(['theme' => Theme::FOREVER]);
+        $gameVersion = GameVersion::factory()->create(['color' => '#8B7ED0']);
 
-        $array = (new GameVersionResource($gameVersion))->resolve(new Request);
+        $array = (new GameVersionResource($gameVersion->fresh()))->resolve(new Request);
 
-        $this->assertSame(Theme::FOREVER, $array['theme']);
+        $this->assertSame('8b7ed0', $array['color']);
     }
 
     #[Test]
-    public function it_returns_the_banner_css_class_for_the_theme(): void
+    public function it_returns_a_null_color_when_none_is_set(): void
     {
-        $gameVersion = GameVersion::factory()->create(['theme' => Theme::CLASSIC]);
+        $gameVersion = GameVersion::factory()->create(['color' => null]);
 
-        $array = (new GameVersionResource($gameVersion))->resolve(new Request);
+        $array = (new GameVersionResource($gameVersion->fresh()))->resolve(new Request);
 
-        $this->assertSame(Theme::CLASSIC->bannerCssClass(), $array['banner_class']);
+        $this->assertNull($array['color']);
     }
 
     #[Test]
@@ -91,8 +95,40 @@ class GameVersionResourceTest extends TestCase
 
         $array = (new GameVersionResource($gameVersion))->resolve(new Request);
 
-        $this->assertSame(['id', 'title', 'slug', 'theme', 'banner_class'], array_keys($array));
+        $this->assertSame(['id', 'title', 'slug', 'color', 'banner_url', 'icon_url', 'logo_url'], array_keys($array));
     }
+
+    // ==================== images ====================
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    #[TestWith([GameVersion::MEDIA_BANNER, 'banner_url'])]
+    #[TestWith([GameVersion::MEDIA_ICON, 'icon_url'])]
+    #[TestWith([GameVersion::MEDIA_LOGO, 'logo_url'])]
+    public function it_returns_the_url_of_an_uploaded_image(string $collection, string $key): void
+    {
+        Storage::fake('public');
+        $gameVersion = GameVersion::factory()->create();
+        $media = $gameVersion->addMedia(UploadedFile::fake()->image("{$collection}.png"))->toMediaCollection($collection);
+
+        $array = (new GameVersionResource($gameVersion->fresh()))->resolve(new Request);
+
+        $this->assertSame($media->getUrl(), $array[$key]);
+    }
+
+    #[Test]
+    public function it_returns_null_urls_when_no_images_are_uploaded(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        $array = (new GameVersionResource($gameVersion))->resolve(new Request);
+
+        $this->assertNull($array['banner_url']);
+        $this->assertNull($array['icon_url']);
+        $this->assertNull($array['logo_url']);
+    }
+
+    // ==================== management scope ====================
 
     #[Test]
     public function the_management_scope_exposes_every_editable_field(): void
@@ -105,7 +141,7 @@ class GameVersionResourceTest extends TestCase
             'guild_name' => 'Regrowth',
             'faction' => Faction::ALLIANCE,
             'release_date' => Carbon::create(2026, 2, 6, 0, 0, 0, 'Europe/Paris'),
-            'theme' => Theme::CLASSIC,
+            'color' => 0x4AE832,
             'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
             'warcraftlogs_guild' => 774848,
             'warcraftlogs_namespace' => WarcraftLogsNamespace::ANNIVERSARY,
@@ -117,8 +153,10 @@ class GameVersionResourceTest extends TestCase
             'id' => 7,
             'title' => 'Burning Crusade Classic (Anniversary)',
             'slug' => 'tbc',
-            'theme' => Theme::CLASSIC,
-            'banner_class' => 'bg-raid-black-temple',
+            'color' => '4ae832',
+            'banner_url' => null,
+            'icon_url' => null,
+            'logo_url' => null,
             'realm' => 'Thunderstrike',
             'guild_name' => 'Regrowth',
             'faction' => Faction::ALLIANCE,
@@ -166,5 +204,23 @@ class GameVersionResourceTest extends TestCase
         $this->assertSame(2, $array['phases_count']);
         $this->assertArrayNotHasKey('guild_tags_count', $array);
         $this->assertArrayNotHasKey('characters_count', $array);
+    }
+
+    // ==================== metadata ====================
+
+    #[Test]
+    public function it_returns_the_accepted_types_of_each_media_collection_as_metadata(): void
+    {
+        $gameVersion = GameVersion::factory()->make();
+
+        $metadata = (new GameVersionResource($gameVersion))->with(new Request);
+
+        $this->assertSame([
+            'media' => [
+                GameVersion::MEDIA_BANNER => ['accepts' => ['image/jpeg', 'image/png', 'image/webp']],
+                GameVersion::MEDIA_ICON => ['accepts' => ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']],
+                GameVersion::MEDIA_LOGO => ['accepts' => ['image/jpeg', 'image/png', 'image/webp']],
+            ],
+        ], $metadata);
     }
 }

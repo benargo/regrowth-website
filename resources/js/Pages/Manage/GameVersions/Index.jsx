@@ -2,6 +2,7 @@ import ConfirmationModal from "@/Components/ConfirmationModal";
 import IndexLayout from "@/Components/Datasets/IndexLayout";
 import RecordCard, { usageSummary } from "@/Components/Datasets/RecordCard";
 import SharedHeader from "@/Components/SharedHeader";
+import { toHex } from "@/Helpers/ModelColor";
 import useRecordDeletion from "@/Hooks/useRecordDeletion";
 import Master from "@/Layouts/Master";
 
@@ -27,11 +28,12 @@ function GameVersionCard({ gameVersion, onDelete }) {
                     Released <time dateTime={gameVersion.release_date}>{releaseDate}</time>
                 </>
             }
-            headerClassName={gameVersion.banner_class}
+            headerColor={gameVersion.color}
+            headerImage={gameVersion.banner_url}
             details={[
                 ["Realm", gameVersion.realm],
                 ["Faction", gameVersion.faction],
-                ["Theme", gameVersion.theme],
+                ["Colour", toHex(gameVersion.color)],
                 ["Blizzard API namespace", gameVersion.blizzard.namespace],
                 ["Warcraft Logs guild ID", gameVersion.warcraftlogs.guild],
                 ["Warcraft Logs namespace", gameVersion.warcraftlogs.namespace.label],

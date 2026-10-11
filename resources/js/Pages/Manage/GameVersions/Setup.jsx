@@ -14,7 +14,7 @@ const sections = import.meta.glob("/resources/js/Components/GameVersions/*Sectio
 });
 
 export default function Setup({
-    gameVersion,
+    gameVersion: { data: gameVersion, media },
     step,
     previousStep,
     nextStep,
@@ -27,7 +27,11 @@ export default function Setup({
 }) {
     return (
         <Master title={`Set up ${gameVersion.title}`}>
-            <SharedHeader backgroundClass={gameVersion.banner_class} title={`Set up ${gameVersion.title}`} />
+            <SharedHeader
+                color={gameVersion.color}
+                image={gameVersion.banner_url}
+                title={`Set up ${gameVersion.title}`}
+            />
 
             <SetupSteps steps={steps} currentStep={step.value} routes={routes} />
 
@@ -42,7 +46,7 @@ export default function Setup({
                     editor={editor}
                     recordName="game version"
                     sections={sections}
-                    sectionProps={{ gameVersion, relationships }}
+                    sectionProps={{ gameVersion, media, relationships }}
                 />
             </PageContainer>
         </Master>

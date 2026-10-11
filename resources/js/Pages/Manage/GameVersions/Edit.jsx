@@ -16,12 +16,20 @@ const sections = import.meta.glob("/resources/js/Components/GameVersions/*Sectio
     import: "default",
 });
 
-export default function Edit({ gameVersion, options, relationships, steps, routes, canEdit, editor }) {
+export default function Edit({
+    gameVersion: { data: gameVersion, media },
+    options,
+    relationships,
+    steps,
+    routes,
+    canEdit,
+    editor,
+}) {
     const form = useForm(gameVersionFormData(gameVersion));
 
     return (
         <Master title={`Edit ${gameVersion.title}`}>
-            <SharedHeader backgroundClass={gameVersion.banner_class} title={gameVersion.title} />
+            <SharedHeader color={gameVersion.color} image={gameVersion.banner_url} title={gameVersion.title} />
 
             <ToolNav>
                 <div className="flex-initial space-x-4">
@@ -48,6 +56,7 @@ export default function Edit({ gameVersion, options, relationships, steps, route
                             steps={steps}
                             sections={sections}
                             gameVersion={gameVersion}
+                            media={media}
                             relationships={relationships}
                             routes={routes}
                         />

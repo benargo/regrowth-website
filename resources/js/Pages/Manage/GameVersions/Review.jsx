@@ -4,9 +4,10 @@ import SetupSteps from "@/Components/Datasets/SetupSteps";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
 import formatDate from "@/Helpers/FormatDate";
+import { toHex } from "@/Helpers/ModelColor";
 import Master from "@/Layouts/Master";
 
-/** Per-step summary builders for the linked records lists. */
+/** Per-step summary builders for the linked records lists, given the relationships and the game version. */
 const STEP_SUMMARIES = {
     "races-and-classes": (relationships) => [
         {
@@ -50,10 +51,34 @@ const STEP_SUMMARIES = {
             })),
         },
     ],
+    theme: (relationships, gameVersion) => themeSummary(gameVersion),
 };
 
 function capitalise(value) {
     return value ? value.charAt(0).toUpperCase() + value.slice(1) : null;
+}
+
+/** The theme step's summary: the colour, then each image or its absence. */
+function themeSummary(gameVersion) {
+    const images = [
+        ["banner", "Banner"],
+        ["logo", "Logo"],
+        ["icon", "Icon"],
+    ];
+
+    return [
+        {
+            items: [
+                { id: "color", primary: "Colour", secondary: toHex(gameVersion.color) ?? "Not set" },
+                ...images.map(([key, label]) => ({
+                    id: key,
+                    primary: label,
+                    secondary: gameVersion[`${key}_url`] ? "Uploaded" : "Not uploaded",
+                    icon: gameVersion[`${key}_url`],
+                })),
+            ],
+        },
+    ];
 }
 
 /** The details step's [label, value] pairs. */
@@ -62,7 +87,6 @@ function gameVersionDetails(gameVersion) {
         ["Title", gameVersion.title],
         ["Slug", gameVersion.slug],
         ["Release date", gameVersion.release_date ? formatDate(gameVersion.release_date).long : null],
-        ["Theme", capitalise(gameVersion.theme)],
         ["Realm", gameVersion.realm],
         ["Guild name", gameVersion.guild_name],
         ["Faction", capitalise(gameVersion.faction)],
@@ -72,10 +96,14 @@ function gameVersionDetails(gameVersion) {
     ];
 }
 
-export default function Review({ gameVersion, steps, relationships, routes }) {
+export default function Review({ gameVersion: { data: gameVersion }, steps, relationships, routes }) {
     return (
         <Master title={`Review ${gameVersion.title}`}>
-            <SharedHeader backgroundClass={gameVersion.banner_class} title={`Review ${gameVersion.title}`} />
+            <SharedHeader
+                color={gameVersion.color}
+                image={gameVersion.banner_url}
+                title={`Review ${gameVersion.title}`}
+            />
 
             <SetupSteps steps={steps} currentStep="review" routes={routes} />
 
@@ -84,6 +112,7 @@ export default function Review({ gameVersion, steps, relationships, routes }) {
                     routes={routes}
                     steps={steps}
                     details={gameVersionDetails(gameVersion)}
+                    record={gameVersion}
                     summaries={STEP_SUMMARIES}
                     relationships={relationships}
                 />

@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
+use App\Casts\AsBinaryColor;
 use App\Casts\AsSlug;
-use App\Casts\AsTheme;
 use App\Contracts\Models\DatasetModel;
 use App\Contracts\Models\EditLockable;
 use App\Enums\Faction;
@@ -27,6 +27,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 #[Fillable([
     'title',
@@ -35,20 +37,47 @@ use Illuminate\Support\Str;
     'guild_name',
     'faction',
     'release_date',
-    'theme',
+    'color',
     'blizzard_namespace',
     'warcraftlogs_guild',
     'warcraftlogs_namespace',
 ])]
 #[UsePolicy(DatasetPolicy::class)]
-class GameVersion extends Model implements DatasetModel, EditLockable
+class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia
 {
     use HasEditLock;
 
     /** @use HasFactory<GameVersionFactory> */
     use HasFactory;
 
+    use InteractsWithMedia;
     use TracksUsage;
+
+    /**
+     * The wide header image shown above the game version's pages.
+     */
+    public const string MEDIA_BANNER = 'banner';
+
+    /**
+     * A single-colour mark for compact places such as navigation.
+     */
+    public const string MEDIA_ICON = 'icon';
+
+    /**
+     * The full-colour game logo.
+     */
+    public const string MEDIA_LOGO = 'logo';
+
+    /**
+     * Every image collection. Each holds a single file.
+     *
+     * @var list<string>
+     */
+    public const array MEDIA_COLLECTIONS = [
+        self::MEDIA_BANNER,
+        self::MEDIA_ICON,
+        self::MEDIA_LOGO,
+    ];
 
     /**
      * Relationships whose existing rows mark this game version as in use.
@@ -73,7 +102,7 @@ class GameVersion extends Model implements DatasetModel, EditLockable
             'slug' => AsSlug::class,
             'faction' => Faction::class,
             'release_date' => 'datetime',
-            'theme' => AsTheme::class,
+            'color' => AsBinaryColor::class,
             'blizzard_namespace' => BlizzardNamespace::class,
             'warcraftlogs_guild' => 'integer',
             'warcraftlogs_namespace' => WarcraftLogsNamespace::class,
@@ -98,6 +127,39 @@ class GameVersion extends Model implements DatasetModel, EditLockable
         return Attribute::make(
             get: fn (): ?string => $this->realm === null ? null : Str::slug($this->realm),
         );
+    }
+
+    // ============ Media ===========
+
+    /**
+     * Register the image collections. The icon also takes SVGs, since it is a
+     * single-colour mark that should stay crisp at any size.
+     */
+    public function registerMediaCollections(): void
+    {
+        $rasterImages = ['image/jpeg', 'image/png', 'image/webp'];
+
+        $this->addMediaCollection(self::MEDIA_BANNER)
+            ->singleFile()
+            ->acceptsMimeTypes($rasterImages);
+
+        $this->addMediaCollection(self::MEDIA_ICON)
+            ->singleFile()
+            ->acceptsMimeTypes([...$rasterImages, 'image/svg+xml']);
+
+        $this->addMediaCollection(self::MEDIA_LOGO)
+            ->singleFile()
+            ->acceptsMimeTypes($rasterImages);
+    }
+
+    /**
+     * Get the MIME types a media collection accepts.
+     *
+     * @return list<string>
+     */
+    public function acceptedMimeTypes(string $collection): array
+    {
+        return $this->getRegisteredMediaCollections()->firstWhere('name', $collection)->acceptsMimeTypes ?? [];
     }
 
     // ============ Guild roster ===========
