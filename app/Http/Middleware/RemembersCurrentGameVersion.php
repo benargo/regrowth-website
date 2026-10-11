@@ -17,7 +17,7 @@ class RemembersCurrentGameVersion
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->filled('game_version') && $request->header('Purpose') !== 'prefetch') {
+        if ($request->filled('game_version') && ! $request->prefetch()) {
             $request->session()->put(
                 ResolveCurrentGameVersion::SESSION_KEY,
                 $request->string('game_version')->toString(),

@@ -17,14 +17,12 @@ class ResolveCurrentGameVersion
     public const string SESSION_KEY = 'current_game_version';
 
     /**
-     * @param  Collection<int, GameVersion>  $selectable  In the page's display order.
+     * @param  Collection<int, GameVersion>  $selectable  In the page's display order, default first
+     *                                                  (as {@see GameVersion::currentRosters()} returns them).
      */
     public function handle(Collection $selectable): ?GameVersion
     {
-        $defaultRoster = GameVersion::defaultRoster();
-
         return $selectable->firstWhere('slug', session(self::SESSION_KEY))
-            ?? $selectable->first(fn (GameVersion $gameVersion): bool => $gameVersion->is($defaultRoster))
             ?? $selectable->first();
     }
 }
