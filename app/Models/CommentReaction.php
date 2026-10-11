@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use App\Events\CommentReactionCreated;
-use App\Events\CommentReactionDeleted;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -18,16 +16,6 @@ use Illuminate\Validation\ValidationException;
 class CommentReaction extends Model
 {
     use HasFactory;
-
-    /**
-     * The event map for the model.
-     *
-     * @var array<string, string>
-     */
-    protected $dispatchesEvents = [
-        'created' => CommentReactionCreated::class,
-        'deleted' => CommentReactionDeleted::class,
-    ];
 
     /**
      * Boot the model.

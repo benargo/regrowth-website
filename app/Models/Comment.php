@@ -4,9 +4,6 @@ namespace App\Models;
 
 use App\Casts\AsClassName;
 use App\Casts\AsKeyType;
-use App\Events\CommentCreated;
-use App\Events\CommentDeleted;
-use App\Events\CommentUpdated;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
@@ -30,17 +27,6 @@ class Comment extends Model
      */
     protected $attributes = [
         'is_resolved' => false,
-    ];
-
-    /**
-     * The event map for the model.
-     *
-     * @var array<string, string>
-     */
-    protected $dispatchesEvents = [
-        'created' => CommentCreated::class,
-        'deleted' => CommentDeleted::class,
-        'updated' => CommentUpdated::class,
     ];
 
     /**
