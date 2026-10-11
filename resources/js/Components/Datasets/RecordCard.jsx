@@ -2,7 +2,7 @@ import { useId } from "react";
 import { Button } from "@headlessui/react";
 import { Link } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
-import modelColor from "@/Helpers/ModelColor";
+import { modelBackground } from "@/Helpers/ModelColor";
 
 export const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-400";
 
@@ -18,29 +18,19 @@ export function usageSummary(record, labels) {
 }
 
 /**
- * One record on a dataset's Index page: a header (with an optional banner
- * background class, or a `headerImage` over a `headerColor`), its [label, value] details, what uses it, and Edit and Delete
- * actions. Delete is disabled while anything still uses the record.
+ * One record on a dataset's Index page: a header (with an optional
+ * `headerImage` over a `headerColor`), its [label, value] details, what uses
+ * it, and Edit and Delete actions. Delete is disabled while anything still
+ * uses the record.
  */
-export default function RecordCard({
-    title,
-    subtitle,
-    headerClassName = "",
-    headerColor,
-    headerImage,
-    details,
-    usage,
-    links,
-    onDelete,
-}) {
+export default function RecordCard({ title, subtitle, headerColor, headerImage, details, usage, links, onDelete }) {
     const usageId = useId();
-    const tint = modelColor(headerColor);
-    const headerStyle = headerImage ? { ...tint.style, backgroundImage: `url("${headerImage}")` } : tint.style;
+    const header = modelBackground(headerColor, headerImage);
     const inUse = usage.length > 0;
 
     return (
         <article className="border-ink-600/40 bg-ground-800/60 overflow-hidden rounded border">
-            <header className={`${headerClassName} ${tint.className} bg-cover bg-center`} style={headerStyle}>
+            <header className={`${header.className} bg-cover bg-center`} style={header.style}>
                 <div className="flex flex-col gap-1 bg-linear-to-r from-black/85 to-black/40 px-4 py-5">
                     <h2 className="font-serif text-2xl text-white">{title}</h2>
                     {subtitle && <p className="text-secondary-300 text-sm">{subtitle}</p>}

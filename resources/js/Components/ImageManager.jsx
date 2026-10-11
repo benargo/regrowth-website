@@ -58,9 +58,9 @@ function SortableImage({ url, onDelete, disabled, sortable }) {
  * @param {string}  [props.error]          - Validation error message
  * @param {function(File[]):void} props.onUpload   - Called with new File objects to upload
  * @param {function(string):void} props.onDelete   - Called with the URL to delete
- * @param {function(string[]):void} [props.onReorder] - Called with the new ordered URL array; needed only when `multiple`
- * @param {boolean} [props.multiple=true]  - Accept several images; when false, only one is sent per upload
- * @param {number|null} [props.max=null]   - Most images allowed; the upload box hides once it is reached
+ * @param {function(string[]):void} [props.onReorder] - Called with the new ordered URL array; not needed when `max` is 1
+ * @param {number|null} [props.max=null]   - Most images allowed; the upload box hides once it is reached, and a
+ *                                           max of 1 makes it a single-image field
  * @param {string[]} [props.accepts]       - MIME types allowed; defaults to JPEG, PNG and WEBP
  */
 export default function ImageManager({
@@ -70,13 +70,12 @@ export default function ImageManager({
     onUpload,
     onDelete,
     onReorder,
-    multiple = true,
     max = null,
     accepts = DEFAULT_ACCEPTS,
 }) {
     const [isDraggingFile, setIsDraggingFile] = useState(false);
     const remaining = max === null ? Infinity : max - images.length;
-    const isSortable = max !== 1;
+    const multiple = max !== 1;
     const fileInputRef = useRef(null);
 
     const sensors = useSensors(
@@ -117,7 +116,7 @@ export default function ImageManager({
         setIsDraggingFile(false);
         const files = Array.from(e.dataTransfer.files).filter((f) => accepts.includes(f.type));
         if (files.length) {
-            onUpload(files.slice(0, multiple ? remaining : 1));
+            onUpload(files.slice(0, remaining));
         }
     };
 
@@ -134,7 +133,7 @@ export default function ImageManager({
             {images.length > 0 && (
                 <div className="mb-6">
                     <p className="text-secondary-400 mb-3 text-sm">
-                        {multiple && isSortable ? <>Drag to reorder &#124; hover to delete</> : "Hover to delete"}
+                        {multiple ? <>Drag to reorder &#124; hover to delete</> : "Hover to delete"}
                     </p>
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                         <SortableContext items={images} strategy={horizontalListSortingStrategy}>
@@ -145,7 +144,7 @@ export default function ImageManager({
                                         url={url}
                                         onDelete={onDelete}
                                         disabled={saving}
-                                        sortable={isSortable}
+                                        sortable={multiple}
                                     />
                                 ))}
                             </div>

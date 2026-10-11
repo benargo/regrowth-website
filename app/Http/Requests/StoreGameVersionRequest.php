@@ -41,7 +41,7 @@ class StoreGameVersionRequest extends FormRequest
             'guild_name' => ['required', 'string', 'max:24'],
             'faction' => ['nullable', Rule::enum(Faction::class)],
             'release_date' => ['required', 'date'],
-            'color' => ['nullable', 'string', 'regex:/^#?[0-9a-fA-F]{6}$/'],
+            'color' => ['nullable', ...$this->colorFormatRules()],
             'blizzard_namespace' => ['nullable', Rule::enum(BlizzardNamespace::class)],
             'warcraftlogs_guild' => ['nullable', 'integer', 'min:1', 'max:2147483647'],
             'warcraftlogs_namespace' => ['nullable', Rule::enum(WarcraftLogsNamespace::class)],
@@ -99,6 +99,17 @@ class StoreGameVersionRequest extends FormRequest
             ->unique()
             ->values()
             ->all();
+    }
+
+    /**
+     * The format a colour must take: a six-digit hex code, with or without
+     * the leading #, as AsBinaryColor stores it.
+     *
+     * @return list<string>
+     */
+    protected function colorFormatRules(): array
+    {
+        return ['string', 'regex:/^#?[0-9a-fA-F]{6}$/'];
     }
 
     /**

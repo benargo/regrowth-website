@@ -85,20 +85,17 @@ class GameVersionResource extends JsonResource
 
     /**
      * Get additional data that should be returned with the resource array:
-     * details of each media collection, such as the most files it holds
-     * (or null when it is unlimited) and the MIME types it accepts.
+     * the MIME types each media collection accepts. Every collection holds a
+     * single file, so no limit is sent.
      *
-     * @return array{media: array<string, array{limit: int|null, accepts: list<string>}>}
+     * @return array{media: array<string, array{accepts: list<string>}>}
      */
     public function with(Request $request): array
     {
         return [
             'media' => $this->getRegisteredMediaCollections()
                 ->mapWithKeys(fn (MediaCollection $collection): array => [
-                    $collection->name => [
-                        'limit' => $collection->collectionSizeLimit ?: null,
-                        'accepts' => $collection->acceptsMimeTypes,
-                    ],
+                    $collection->name => ['accepts' => $collection->acceptsMimeTypes],
                 ])
                 ->all(),
         ];

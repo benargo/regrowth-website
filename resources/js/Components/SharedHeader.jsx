@@ -1,4 +1,4 @@
-import modelColor from "@/Helpers/ModelColor";
+import { modelBackground } from "@/Helpers/ModelColor";
 
 /**
  * The page masthead. A model's `image` and `color` (such as a game version's
@@ -6,9 +6,8 @@ import modelColor from "@/Helpers/ModelColor";
  * colour, so the colour shows while it loads or when there's no image.
  */
 export default function SharedHeader({ title, subtitle, backgroundClass = "bg-masthead", color, image }) {
-    const tint = modelColor(color);
-    const background = image || color ? tint.className : backgroundClass;
-    const style = image ? { ...tint.style, backgroundImage: `url("${image}")` } : tint.style;
+    const { className, style } = modelBackground(color, image);
+    const background = image || color ? className : backgroundClass;
 
     return (
         <header

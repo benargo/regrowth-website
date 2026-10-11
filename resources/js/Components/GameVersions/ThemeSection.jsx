@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { router, useForm } from "@inertiajs/react";
 import ColorPicker from "@/Components/ColorPicker";
 import Relationships from "@/Components/Datasets/Relationships";
@@ -8,14 +8,20 @@ import { toHex } from "@/Helpers/ModelColor";
 import { autosaveVisit, useAutosaveQueue, useFormAutosave } from "@/Hooks/useAutosave";
 import { AUTOSAVE_DELAY } from "@/Hooks/useRelationshipForm";
 
+/** A stable fallback, so a missing `media` prop doesn't defeat ImageField's memo. */
+const NO_MEDIA = {};
+
 /**
  * One image upload. Files are sent as soon as they are chosen, with the PATCH
  * spoofed over POST because browsers can't send files in a real PATCH.
  *
  * On an autosaving page, each upload or delete waits its turn in the save
  * queue, so its visit neither cancels nor is cancelled by an autosave.
+ *
+ * Memoised so dragging the colour picker doesn't re-render every uploader.
  */
-function ImageField({ field, label, hint, url, max, accepts, routes }) {
+const ImageField = memo(function ImageField({ field, label, hint, gameVersion, media, routes }) {
+    const url = gameVersion[`${field}_url`];
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
     const queue = useAutosaveQueue();
@@ -45,19 +51,18 @@ function ImageField({ field, label, hint, url, max, accepts, routes }) {
                 images={url ? [url] : []}
                 saving={saving}
                 error={error}
-                multiple={false}
-                max={max}
-                accepts={accepts}
+                max={1}
+                accepts={media[field]?.accepts}
                 onUpload={([file]) => send("post", { _method: "patch", [field]: file }, { forceFormData: true })}
                 onDelete={() => send("patch", { [field]: null })}
             />
         </FormRow>
     );
-}
+});
 
 export default function ThemeSection({
     gameVersion,
-    media = {},
+    media = NO_MEDIA,
     routes,
     submitLabel = "Save theme",
     onSaved,
@@ -107,9 +112,8 @@ export default function ThemeSection({
                     field="banner"
                     label="Banner"
                     hint="The wide header image shown at the top of this version's pages."
-                    url={gameVersion.banner_url}
-                    max={media.banner?.limit ?? null}
-                    accepts={media.banner?.accepts}
+                    gameVersion={gameVersion}
+                    media={media}
                     routes={routes}
                 />
 
@@ -119,18 +123,16 @@ export default function ThemeSection({
                         field="logo"
                         label="Logo"
                         hint="The game's full-colour logo."
-                        url={gameVersion.logo_url}
-                        max={media.logo?.limit ?? null}
-                        accepts={media.logo?.accepts}
+                        gameVersion={gameVersion}
+                        media={media}
                         routes={routes}
                     />
                     <ImageField
                         field="icon"
                         label="Icon"
                         hint="A single-colour version of the logo, for small spaces such as menus."
-                        url={gameVersion.icon_url}
-                        max={media.icon?.limit ?? null}
-                        accepts={media.icon?.accepts}
+                        gameVersion={gameVersion}
+                        media={media}
                         routes={routes}
                     />
                 </div>

@@ -40,3 +40,19 @@ export default function modelColor(color, utilities = ["bg"]) {
         style: { "--model-color": hex },
     };
 }
+
+/**
+ * The className and style for a background that shows a model's image over
+ * its colour, so the colour fills in while the image loads or when there is
+ * none. Spread both onto the element alongside `bg-cover bg-center`.
+ *
+ *     const { className, style } = modelBackground(gameVersion.color, gameVersion.banner_url);
+ */
+export function modelBackground(color, image) {
+    const tint = modelColor(color);
+
+    return {
+        className: tint.className,
+        style: image ? { ...tint.style, backgroundImage: `url("${image}")` } : tint.style,
+    };
+}

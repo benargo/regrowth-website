@@ -35,7 +35,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             'guild_name' => ['sometimes', 'required', 'string', 'max:24'],
             'faction' => ['sometimes', 'nullable', Rule::enum(Faction::class)],
             'release_date' => ['sometimes', 'required', 'date'],
-            'color' => ['sometimes', $this->route('gameVersion')->color === null ? 'nullable' : 'required', 'string', 'regex:/^#?[0-9a-fA-F]{6}$/'],
+            'color' => ['sometimes', $this->route('gameVersion')->color === null ? 'nullable' : 'required', ...$this->colorFormatRules()],
             'blizzard_namespace' => ['sometimes', 'nullable', Rule::enum(BlizzardNamespace::class)],
             'warcraftlogs_guild' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:2147483647'],
             'warcraftlogs_namespace' => ['sometimes', 'nullable', Rule::enum(WarcraftLogsNamespace::class)],
@@ -74,9 +74,8 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             ],
             'guild_ranks.*.name' => ['required', 'string', 'max:255'],
             'guild_ranks.*.count_attendance' => ['required', 'boolean'],
-            GameVersion::MEDIA_BANNER => $this->imageRules(GameVersion::MEDIA_BANNER),
-            GameVersion::MEDIA_ICON => $this->imageRules(GameVersion::MEDIA_ICON),
-            GameVersion::MEDIA_LOGO => $this->imageRules(GameVersion::MEDIA_LOGO),
+            ...collect(GameVersion::MEDIA_COLLECTIONS)
+                ->mapWithKeys(fn (string $collection): array => [$collection => $this->imageRules($collection)]),
         ];
     }
 
@@ -104,9 +103,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             'guild_ranks.max' => 'A guild can have up to 10 ranks.',
             'guild_ranks.*.id.exists' => 'One of these ranks no longer exists. Reload the page and try again.',
             'guild_ranks.*.name.required' => 'Enter a name for every rank.',
-            ...$this->imageMessages(GameVersion::MEDIA_BANNER),
-            ...$this->imageMessages(GameVersion::MEDIA_ICON),
-            ...$this->imageMessages(GameVersion::MEDIA_LOGO),
+            ...collect(GameVersion::MEDIA_COLLECTIONS)->flatMap($this->imageMessages(...)),
         ];
     }
 
@@ -164,9 +161,11 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             ->map(fn (string $mimeType): string => Str::of($mimeType)->after('/')->before('+')->upper()->toString())
             ->join(', ', ' or ');
 
+        $typeMessage = "The {$field} must be a {$types} image.";
+
         return [
-            "{$field}.file" => "The {$field} must be a {$types} image.",
-            "{$field}.mimetypes" => "The {$field} must be a {$types} image.",
+            "{$field}.file" => $typeMessage,
+            "{$field}.mimetypes" => $typeMessage,
             "{$field}.max" => "The {$field} must be 2 MB or smaller.",
         ];
     }

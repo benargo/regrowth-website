@@ -10,9 +10,9 @@ import { linkButtonClassName } from "@/Components/FormControls";
  * step, each with an Edit link that returns here once saved. `details` are
  * [label, value] pairs. `summaries` maps each step value to a function that
  * builds that step's linked records lists ({ heading?, items }) from the
- * relationships.
+ * relationships and the `record` itself.
  */
-export default function ReviewSummary({ routes, steps, details, summaries, relationships }) {
+export default function ReviewSummary({ routes, steps, details, summaries, relationships, record }) {
     const lastStep = steps[steps.length - 1];
 
     return (
@@ -46,7 +46,7 @@ export default function ReviewSummary({ routes, steps, details, summaries, relat
                         editHref={withReview(step.href)}
                         editLabel={`Edit ${step.label.toLowerCase()}`}
                     >
-                        {summarise(relationships).map((list, index) => (
+                        {summarise(relationships, record).map((list, index) => (
                             <ReviewSection.Records
                                 key={list.heading ?? index}
                                 heading={list.heading}

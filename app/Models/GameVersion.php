@@ -69,6 +69,17 @@ class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia
     public const string MEDIA_LOGO = 'logo';
 
     /**
+     * Every image collection. Each holds a single file.
+     *
+     * @var list<string>
+     */
+    public const array MEDIA_COLLECTIONS = [
+        self::MEDIA_BANNER,
+        self::MEDIA_ICON,
+        self::MEDIA_LOGO,
+    ];
+
+    /**
      * Relationships whose existing rows mark this game version as in use.
      *
      * @return list<string>

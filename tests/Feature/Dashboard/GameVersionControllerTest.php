@@ -383,9 +383,9 @@ class GameVersionControllerTest extends DashboardTestCase
             ->where('gameVersion.data.release_date', '2019-08-27')
             ->where('gameVersion.data.faction', 'Horde')
             ->where('gameVersion.media', [
-                GameVersion::MEDIA_BANNER => ['limit' => 1, 'accepts' => ['image/jpeg', 'image/png', 'image/webp']],
-                GameVersion::MEDIA_ICON => ['limit' => 1, 'accepts' => ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']],
-                GameVersion::MEDIA_LOGO => ['limit' => 1, 'accepts' => ['image/jpeg', 'image/png', 'image/webp']],
+                GameVersion::MEDIA_BANNER => ['accepts' => ['image/jpeg', 'image/png', 'image/webp']],
+                GameVersion::MEDIA_ICON => ['accepts' => ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']],
+                GameVersion::MEDIA_LOGO => ['accepts' => ['image/jpeg', 'image/png', 'image/webp']],
             ])
         );
     }

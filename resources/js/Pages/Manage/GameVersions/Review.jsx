@@ -7,7 +7,7 @@ import formatDate from "@/Helpers/FormatDate";
 import { toHex } from "@/Helpers/ModelColor";
 import Master from "@/Layouts/Master";
 
-/** Per-step summary builders for the linked records lists. */
+/** Per-step summary builders for the linked records lists, given the relationships and the game version. */
 const STEP_SUMMARIES = {
     "races-and-classes": (relationships) => [
         {
@@ -51,6 +51,7 @@ const STEP_SUMMARIES = {
             })),
         },
     ],
+    theme: (relationships, gameVersion) => themeSummary(gameVersion),
 };
 
 function capitalise(value) {
@@ -111,7 +112,8 @@ export default function Review({ gameVersion: { data: gameVersion }, steps, rela
                     routes={routes}
                     steps={steps}
                     details={gameVersionDetails(gameVersion)}
-                    summaries={{ ...STEP_SUMMARIES, theme: () => themeSummary(gameVersion) }}
+                    record={gameVersion}
+                    summaries={STEP_SUMMARIES}
                     relationships={relationships}
                 />
             </PageContainer>

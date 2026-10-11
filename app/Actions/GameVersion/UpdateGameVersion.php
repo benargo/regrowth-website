@@ -46,23 +46,12 @@ class UpdateGameVersion
     ];
 
     /**
-     * Validated keys that carry an image for the media collection of the same name.
-     *
-     * @var list<string>
-     */
-    private const array MEDIA_KEYS = [
-        GameVersion::MEDIA_BANNER,
-        GameVersion::MEDIA_ICON,
-        GameVersion::MEDIA_LOGO,
-    ];
-
-    /**
      * @param  array<string, mixed>  $data  The request's validated data.
      */
     public function handle(GameVersion $gameVersion, array $data): void
     {
         DB::transaction(function () use ($gameVersion, $data): void {
-            $gameVersion->update(Arr::except($data, [...self::RELATIONSHIP_KEYS, ...self::MEDIA_KEYS]));
+            $gameVersion->update(Arr::except($data, [...self::RELATIONSHIP_KEYS, ...GameVersion::MEDIA_COLLECTIONS]));
 
             if (Arr::exists($data, 'playable_race_ids')) {
                 $gameVersion->playableRaces()->sync($data['playable_race_ids']);
@@ -89,7 +78,7 @@ class UpdateGameVersion
             }
         });
 
-        foreach (Arr::only($data, self::MEDIA_KEYS) as $collection => $file) {
+        foreach (Arr::only($data, GameVersion::MEDIA_COLLECTIONS) as $collection => $file) {
             $this->replaceImage($gameVersion, $collection, $file);
         }
     }
