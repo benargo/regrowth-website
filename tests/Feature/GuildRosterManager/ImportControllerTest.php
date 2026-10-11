@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\GuildRosterManager;
 
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRequest;
 use App\Jobs\ProcessGrmUpload;
 use App\Models\GameVersion;
@@ -130,12 +131,27 @@ class ImportControllerTest extends DashboardTestCase
     }
 
     #[Test]
-    public function create_shows_the_game_version_named_in_the_query_string(): void
+    public function create_shows_and_remembers_the_game_version_named_in_the_query_string(): void
     {
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'release_date' => now()->subWeek()]);
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'older', 'release_date' => now()->subYear()]);
 
         $response = $this->actingAs($this->officer)->get(route('management.grm.create', ['game_version' => 'older']));
+
+        $response->assertRedirect(route('management.grm.create'));
+        $response->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, 'older');
+        $this->get(route('management.grm.create'))->assertInertia(fn (Assert $page) => $page->where('gameVersion.slug', 'older'));
+    }
+
+    #[Test]
+    public function create_shows_the_remembered_game_version(): void
+    {
+        GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'release_date' => now()->subWeek()]);
+        GameVersion::factory()->fetchableRoster()->create(['slug' => 'older', 'release_date' => now()->subYear()]);
+
+        $response = $this->actingAs($this->officer)
+            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'older'])
+            ->get(route('management.grm.create'));
 
         $response->assertInertia(fn (Assert $page) => $page->where('gameVersion.slug', 'older'));
     }
@@ -159,24 +175,24 @@ class ImportControllerTest extends DashboardTestCase
     }
 
     #[Test]
-    public function create_returns_not_found_for_an_unknown_game_version(): void
+    public function create_falls_back_to_the_newest_current_roster_for_an_unknown_game_version(): void
     {
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'tbc']);
 
-        $response = $this->actingAs($this->officer)->get(route('management.grm.create', ['game_version' => 'nope']));
+        $response = $this->actingAs($this->officer)->followingRedirects()->get(route('management.grm.create', ['game_version' => 'nope']));
 
-        $response->assertNotFound();
+        $response->assertInertia(fn (Assert $page) => $page->where('gameVersion.slug', 'tbc'));
     }
 
     #[Test]
-    public function create_returns_not_found_for_a_game_version_without_a_current_roster(): void
+    public function create_falls_back_to_the_newest_current_roster_for_a_game_version_without_a_current_roster(): void
     {
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'guild_name' => 'Regrowth', 'release_date' => now()->subWeek()]);
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'older', 'guild_name' => 'Regrowth', 'release_date' => now()->subYear()]);
 
-        $response = $this->actingAs($this->officer)->get(route('management.grm.create', ['game_version' => 'older']));
+        $response = $this->actingAs($this->officer)->followingRedirects()->get(route('management.grm.create', ['game_version' => 'older']));
 
-        $response->assertNotFound();
+        $response->assertInertia(fn (Assert $page) => $page->where('gameVersion.slug', 'newer'));
     }
 
     #[Test]
@@ -204,7 +220,9 @@ class ImportControllerTest extends DashboardTestCase
         $this->mockGetGuild(['member_count' => 623]);
         $this->applyBlizzardMocks();
 
-        $response = $this->actingAs($this->officer)->get(route('management.grm.create', ['game_version' => $selected->slug]));
+        $response = $this->actingAs($this->officer)
+            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $selected->slug])
+            ->get(route('management.grm.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('memberCount')
@@ -273,7 +291,9 @@ class ImportControllerTest extends DashboardTestCase
         Storage::disk('local')->put('grm/uploads/beta/latest.csv', self::CSV);
         touch(Storage::disk('local')->path('grm/uploads/beta/latest.csv'), 1790000000);
 
-        $response = $this->actingAs($this->officer)->get(route('management.grm.create', ['game_version' => 'beta']));
+        $response = $this->actingAs($this->officer)
+            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'beta'])
+            ->get(route('management.grm.create'));
 
         $response->assertInertia(fn (Assert $page) => $page->where('lastUploadTimestamp', 'Monday, 21 September 2026 at 16:13'));
     }

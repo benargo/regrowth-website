@@ -264,9 +264,9 @@ class DashboardPagesTest extends TestCase
     public function characters_index_page_loads(): void
     {
         $user = User::factory()->officer()->create();
-        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
+        GameVersion::factory()->fetchableRoster()->create();
 
-        $response = $this->actingAs($user)->get(route('roster.index', $gameVersion));
+        $response = $this->actingAs($user)->get(route('roster.index'));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page->component('Roster/Index'));

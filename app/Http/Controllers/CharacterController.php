@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Contracts\HasCharacterMedia;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
+use App\Http\Middleware\RemembersCurrentGameVersion;
 use App\Http\Requests\UpdateCharacterRequest;
 use App\Http\Resources\CharacterResource;
 use App\Http\Resources\GameVersionResource;
@@ -21,7 +23,6 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -33,24 +34,13 @@ class CharacterController extends Controller
     ) {}
 
     /**
-     * Redirect the legacy roster URL to the default game version's roster.
+     * Display the guild roster of the user's current game version.
      */
-    public function redirectToDefaultRoster(): RedirectResponse
-    {
-        $gameVersion = GameVersion::defaultRoster();
-
-        abort_if($gameVersion === null, 404);
-
-        return Redirect::route('roster.index', $gameVersion, 303);
-    }
-
-    /**
-     * Display a game version's guild roster.
-     */
-    public function index(Request $request, GameVersion $gameVersion): Response
+    #[Middleware(RemembersCurrentGameVersion::class)]
+    public function index(Request $request, ResolveCurrentGameVersion $resolveCurrentGameVersion): Response
     {
         $rosters = GameVersion::currentRosters()->load('media');
-        $gameVersion = $rosters->first(fn (GameVersion $roster): bool => $roster->is($gameVersion));
+        $gameVersion = $resolveCurrentGameVersion->handle($rosters);
 
         abort_if($gameVersion === null, 404);
 
@@ -110,8 +100,8 @@ class CharacterController extends Controller
         return Inertia::render('Roster/Characters/Show', [
             'character' => (new CharacterResource($character))->resolve($request),
             'roster_url' => $gameVersion?->ownsCurrentRoster()
-                ? URL::route('roster.index', $gameVersion)
-                : URL::route('characters.index'),
+                ? URL::route('roster.index', ['game_version' => $gameVersion->slug])
+                : URL::route('roster.index'),
             'recent_reports' => Inertia::defer(fn () => $character->warcraftLogsReports()
                 ->orderByDesc('start_time')
                 ->limit(10)

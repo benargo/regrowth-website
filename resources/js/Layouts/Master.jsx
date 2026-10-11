@@ -87,7 +87,7 @@ export default function Master({ title, children }) {
                         {/* Desktop menu */}
                         <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-between">
                             <div className="flex items-center gap-1">
-                                <NavLink href={route("characters.index")}>
+                                <NavLink href={route("roster.index")}>
                                     <Icon icon="users" style="solid" className="mr-2 h-6" />
                                     Roster
                                 </NavLink>
@@ -183,7 +183,7 @@ export default function Master({ title, children }) {
                     id="mobile-menu"
                 >
                     <div className="space-y-1 px-2 pt-2 pb-3">
-                        <ResponsiveNavLink href={route("characters.index")}>
+                        <ResponsiveNavLink href={route("roster.index")}>
                             <Icon icon="users" style="solid" className="mr-2 h-6" />
                             Roster
                         </ResponsiveNavLink>

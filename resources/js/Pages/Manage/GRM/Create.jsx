@@ -3,7 +3,7 @@ import Icon from "@/Components/FontAwesome/Icon";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
-import TabNav from "@/Components/TabNav";
+import GameVersionSelector from "@/Components/GameVersions/GameVersionSelector";
 import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import UploadForm from "@/Components/GuildRosterManager/UploadForm";
 import UploadProgressModal from "@/Components/GuildRosterManager/UploadProgressModal";
@@ -39,8 +39,8 @@ function UploadStatusSummary({ gameVersion, status, lastUploadTimestamp }) {
 }
 
 export default function Create({ gameVersion, gameVersions, lastUploadTimestamp, memberCount, uploadStatuses }) {
-    // The modal sits outside the per-version subtree, and the tabs preserve page
-    // state, so switching tabs while an upload is processing keeps its progress on screen.
+    // The modal sits outside the per-version subtree, and switching versions
+    // preserves page state, so an upload's progress stays on screen.
     const progressModalRef = useRef(null);
 
     return (
@@ -64,18 +64,11 @@ export default function Create({ gameVersion, gameVersions, lastUploadTimestamp,
                     </p>
                 ) : (
                     <>
-                        {gameVersions.length > 1 && (
-                            <TabNav
-                                currentTab={gameVersion.slug}
-                                preserveState
-                                tabs={gameVersions.map((version) => ({
-                                    name: version.slug,
-                                    label: version.title,
-                                    href: route("management.grm.create", { game_version: version.slug }),
-                                    indicator: <UploadStatusDot status={uploadStatuses?.[version.slug]} />,
-                                }))}
-                            />
-                        )}
+                        <GameVersionSelector
+                            gameVersions={gameVersions}
+                            currentGameVersion={gameVersion}
+                            indicator={(version) => <UploadStatusDot status={uploadStatuses?.[version.slug]} />}
+                        />
 
                         <h2 className="mb-2 text-xl font-bold">
                             Upload GRM data for <span className="text-heading">{gameVersion.title}</span>

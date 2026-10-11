@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Characters;
 
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Region;
@@ -42,7 +43,7 @@ class RosterTest extends TestCase
     #[Test]
     public function index_is_accessible_without_authentication(): void
     {
-        $response = $this->get(route('roster.index', $this->gameVersion));
+        $response = $this->get(route('roster.index'));
 
         $response->assertOk();
     }
@@ -53,7 +54,6 @@ class RosterTest extends TestCase
         // Filters are persisted client-side in localStorage, so the server no
         // longer round-trips a filters prop or reads filter query parameters.
         $response = $this->get(route('roster.index', [
-            'gameVersion' => $this->gameVersion,
             'filter[search]' => 'Ozona',
             'sort_column' => 'name',
             'sort_direction' => 'desc',
@@ -82,7 +82,7 @@ class RosterTest extends TestCase
             ],
         ]);
 
-        $response = $this->get(route('roster.index', $this->gameVersion));
+        $response = $this->get(route('roster.index'));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
@@ -125,7 +125,7 @@ class RosterTest extends TestCase
             ],
         ]);
 
-        $response = $this->get(route('roster.index', $this->gameVersion));
+        $response = $this->get(route('roster.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -157,7 +157,7 @@ class RosterTest extends TestCase
             ],
         ]);
 
-        $response = $this->get(route('roster.index', $this->gameVersion));
+        $response = $this->get(route('roster.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -183,7 +183,7 @@ class RosterTest extends TestCase
         GuildRank::factory()->create(['game_version_id' => $this->gameVersion->id, 'sort_order' => 1, 'name' => 'Officer']);
         GuildRank::factory()->create(['game_version_id' => $this->gameVersion->id, 'sort_order' => 2, 'name' => 'Officer']);
 
-        $response = $this->get(route('roster.index', $this->gameVersion));
+        $response = $this->get(route('roster.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Roster/Index')
@@ -191,38 +191,63 @@ class RosterTest extends TestCase
         );
     }
 
-    // ==================== redirectToDefaultRoster ====================
-
-    #[Test]
-    public function legacy_roster_url_redirects_to_the_default_game_version(): void
-    {
-        GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'release_date' => Carbon::now()->subDay()]);
-
-        $this->get(route('characters.index'))->assertRedirect(route('roster.index', 'newer'))->assertStatus(303);
-    }
-
-    #[Test]
-    public function legacy_roster_url_is_not_found_when_no_game_version_has_a_roster(): void
-    {
-        GameVersion::query()->delete();
-
-        $this->get(route('characters.index'))->assertNotFound();
-    }
-
     // ==================== index — game version ====================
 
     #[Test]
-    public function unknown_game_version_slug_is_not_found(): void
+    public function it_shows_the_default_roster_when_no_game_version_is_remembered(): void
     {
-        $this->get('/no-such-version/roster')->assertNotFound();
+        GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'release_date' => Carbon::now()->subDay()]);
+
+        $this->get(route('roster.index'))->assertInertia(fn (Assert $page) => $page
+            ->where('gameVersion.slug', 'newer')
+        );
     }
 
     #[Test]
-    public function game_version_without_a_current_roster_is_not_found(): void
+    public function it_shows_the_remembered_game_version(): void
     {
-        $unreleased = GameVersion::factory()->fetchableRoster()->create(['slug' => 'later', 'release_date' => Carbon::now()->addMonth()]);
+        GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'release_date' => Carbon::now()->subDay()]);
 
-        $this->get(route('roster.index', $unreleased))->assertNotFound();
+        $this->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'tbc'])
+            ->get(route('roster.index'))
+            ->assertInertia(fn (Assert $page) => $page->where('gameVersion.slug', 'tbc'));
+    }
+
+    #[Test]
+    public function it_shows_and_remembers_the_requested_game_version(): void
+    {
+        GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'release_date' => Carbon::now()->subDay()]);
+
+        $this->get(route('roster.index', ['game_version' => 'tbc']))
+            ->assertRedirect(route('roster.index'))
+            ->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, 'tbc');
+
+        $this->get(route('roster.index'))->assertInertia(fn (Assert $page) => $page->where('gameVersion.slug', 'tbc'));
+    }
+
+    #[Test]
+    public function it_falls_back_to_the_default_roster_for_a_game_version_without_a_current_roster(): void
+    {
+        GameVersion::factory()->fetchableRoster()->create(['slug' => 'later', 'release_date' => Carbon::now()->addMonth()]);
+
+        $this->followingRedirects()->get(route('roster.index', ['game_version' => 'later']))->assertInertia(fn (Assert $page) => $page
+            ->where('gameVersion.slug', 'tbc')
+        );
+    }
+
+    #[Test]
+    public function it_is_not_found_when_no_game_version_has_a_roster(): void
+    {
+        GameVersion::query()->delete();
+
+        $this->get(route('roster.index'))->assertNotFound();
+    }
+
+    #[Test]
+    #[Group('deprecated')]
+    public function the_per_version_roster_url_is_gone(): void
+    {
+        $this->get('/tbc/roster')->assertNotFound();
     }
 
     #[Test]
@@ -231,7 +256,7 @@ class RosterTest extends TestCase
         $this->gameVersion->update(['realm' => 'Living Flame', 'guild_name' => 'Wild Growth', 'blizzard_namespace' => BlizzardNamespace::ERA]);
         $this->fakeRosterWithMembers([]);
 
-        $this->get(route('roster.index', $this->gameVersion))->assertInertia(fn (Assert $page) => $page
+        $this->get(route('roster.index'))->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload->has('characters', 0))
         );
 
@@ -251,7 +276,7 @@ class RosterTest extends TestCase
         $horde = PlayableRace::factory()->create(['faction' => Faction::HORDE]);
         $this->gameVersion->playableRaces()->attach($horde);
 
-        $this->get(route('roster.index', $this->gameVersion))->assertInertia(fn (Assert $page) => $page
+        $this->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'tbc'])->get(route('roster.index'))->assertInertia(fn (Assert $page) => $page
             ->where('ranks', ['Guild Master'])
             ->has('classes', 1)
             ->has('races', 1)
@@ -264,7 +289,7 @@ class RosterTest extends TestCase
     {
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'release_date' => Carbon::now()->subDay()]);
 
-        $this->get(route('roster.index', $this->gameVersion))->assertInertia(fn (Assert $page) => $page
+        $this->get(route('roster.index'))->assertInertia(fn (Assert $page) => $page
             ->has('gameVersions', 2)
             ->where('gameVersions.0.slug', 'newer')
             ->where('gameVersions.1.slug', 'tbc')

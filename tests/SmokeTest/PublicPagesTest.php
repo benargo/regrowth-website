@@ -41,9 +41,9 @@ class PublicPagesTest extends TestCase
             ], status: 200),
         ]);
 
-        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
+        GameVersion::factory()->fetchableRoster()->create();
 
-        $response = $this->get(route('roster.index', $gameVersion));
+        $response = $this->get(route('roster.index'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
