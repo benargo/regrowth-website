@@ -4,8 +4,7 @@ namespace Tests\Unit\Models;
 
 use App\Contracts\HasCharacterMedia;
 use App\Enums\Gender;
-use App\Events\CharacterDeleted;
-use App\Events\CharacterUpdated;
+use App\Jobs\BuildAddonExportFile;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
@@ -18,7 +17,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -89,17 +88,6 @@ class CharacterTest extends ModelTestCase
             'is_main' => 'boolean',
             'is_loot_councillor' => 'boolean',
         ]);
-    }
-
-    #[Test]
-    public function it_dispatches_events_on_updated_and_deleted(): void
-    {
-        $model = new Character;
-
-        $this->assertSame([
-            'updated' => CharacterUpdated::class,
-            'deleted' => CharacterDeleted::class,
-        ], $model->dispatchesEvents());
     }
 
     #[Test]
@@ -250,7 +238,7 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function deleting_character_cascades_to_character_links(): void
     {
-        Event::fake([CharacterDeleted::class]);
+        Bus::fake([BuildAddonExportFile::class]);
 
         $mainCharacter = $this->factory()->main()->create(['name' => 'MainChar']);
         $altCharacter = $this->create(['name' => 'AltChar']);

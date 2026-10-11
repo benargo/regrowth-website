@@ -19,9 +19,6 @@ class SearchController extends Controller
 
     /**
      * Return the top matching items for the search overlay.
-     *
-     * Cached under the shared ['db', 'lootcouncil'] tags, so the existing
-     * FlushLootCouncilCache listener invalidates results whenever an item changes.
      */
     public function __invoke(SearchRequest $request): JsonResponse
     {

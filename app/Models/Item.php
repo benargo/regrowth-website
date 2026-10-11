@@ -5,11 +5,12 @@ namespace App\Models;
 use App\Contracts\Commentable;
 use App\Contracts\HasBlizzardIcons;
 use App\Enums\ItemQuality;
-use App\Events\ItemSaved;
 use App\Http\Integrations\Blizzard\Data\Item\ItemData;
+use App\Observers\ItemObserver;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -25,6 +26,7 @@ use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
+#[ObservedBy([ItemObserver::class])]
 #[Fillable(['boss_id', 'name', 'quality', 'group', 'notes', 'blizzard_id', 'game_version_id'])]
 #[Hidden(['wowhead_url', 'created_at', 'updated_at'])]
 class Item extends Model implements Commentable, HasBlizzardIcons, HasMedia
@@ -32,15 +34,6 @@ class Item extends Model implements Commentable, HasBlizzardIcons, HasMedia
     use HasFactory;
     use HasUuids;
     use InteractsWithMedia;
-
-    /**
-     * The event map for the model.
-     *
-     * @var array<string, string>
-     */
-    protected $dispatchesEvents = [
-        'saved' => ItemSaved::class,
-    ];
 
     /**
      * Get the attributes that should be cast.

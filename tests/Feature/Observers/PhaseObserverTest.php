@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Observers;
 
+use App\Jobs\BuildAddonExportFile;
 use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\Phase;
@@ -9,6 +10,7 @@ use App\Models\Raid;
 use App\Models\Report;
 use App\Models\WarcraftLogs\Guild;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -106,6 +108,17 @@ class PhaseObserverTest extends TestCase
         $phase->update(['game_version_id' => GameVersion::factory()->create()->id]);
 
         $this->assertSame($gameVersion->id, $otherEvent->fresh()->game_version_id);
+    }
+
+    #[Test]
+    public function updating_a_phase_schedules_addon_export_build(): void
+    {
+        $phase = Phase::factory()->create();
+        Bus::fake([BuildAddonExportFile::class]);
+
+        $phase->update(['description' => 'Renamed phase']);
+
+        Bus::assertDispatched(BuildAddonExportFile::class, fn (BuildAddonExportFile $job) => $job->delay !== null);
     }
 
     // ==================== helpers ====================

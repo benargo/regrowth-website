@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Jobs\BuildAddonExportFile;
 use App\Jobs\WarcraftLogs\RefreshGuildReports;
 use App\Models\Event;
 use App\Models\GameVersion;
@@ -23,6 +24,8 @@ class PhaseObserver
      */
     public function updated(Phase $phase): void
     {
+        BuildAddonExportFile::dispatch()->delay(now()->addSeconds(120));
+
         if (! $phase->wasChanged(['start_date', 'game_version_id'])) {
             return;
         }

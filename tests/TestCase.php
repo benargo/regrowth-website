@@ -2,11 +2,11 @@
 
 namespace Tests;
 
+use App\Jobs\BuildAddonExportFile;
 use App\Listeners\FetchGuildRoster;
-use App\Listeners\FlushLootCouncilCache;
 use App\Listeners\FlushPermissionsCache;
-use App\Listeners\ScheduleAddonExportBuild;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\Facades\Queue;
 use Saloon\Config;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -21,9 +21,9 @@ abstract class TestCase extends BaseTestCase
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         $this->mock(FetchGuildRoster::class)->shouldReceive('handle');
-        $this->mock(FlushLootCouncilCache::class)->shouldReceive('handle');
         $this->mock(FlushPermissionsCache::class)->shouldReceive('handle');
-        $this->mock(ScheduleAddonExportBuild::class)->shouldReceive('handle');
+
+        Queue::fake([BuildAddonExportFile::class]);
 
         if (! self::$strayRequestsPrevented) {
             Config::preventStrayRequests();

@@ -3,11 +3,11 @@
 namespace Tests\Feature\Jobs;
 
 use App\Enums\Gender;
-use App\Events\CharacterUpdated;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
+use App\Jobs\BuildAddonExportFile;
 use App\Jobs\FetchGuildRoster;
 use App\Models\Character;
 use App\Models\GameVersion;
@@ -19,7 +19,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Middleware\RateLimitedWithRedis;
-use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -387,10 +387,10 @@ class FetchGuildRosterTest extends TestCase
 
     #[Group('happy-path')]
     #[Test]
-    public function it_does_not_dispatch_character_updated_when_syncing(): void
+    public function it_does_not_schedule_addon_export_build_when_syncing(): void
     {
         $gameVersion = $this->createGameVersion();
-        Event::fake([CharacterUpdated::class]);
+        Bus::fake([BuildAddonExportFile::class]);
 
         GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
 
@@ -402,7 +402,7 @@ class FetchGuildRosterTest extends TestCase
 
         (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
 
-        Event::assertNotDispatched(CharacterUpdated::class);
+        Bus::assertNotDispatched(BuildAddonExportFile::class);
     }
 
     #[Group('happy-path')]
