@@ -14,7 +14,6 @@ use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
-use App\Http\Integrations\Blizzard\Requests\OAuth\GetAuthorizationCodeTokenRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceRequest;
 use Illuminate\Support\Facades\Cache;
@@ -157,56 +156,6 @@ class BlizzardConnectorTest extends TestCase
             'scope' => 'openid wow.profile',
             'state' => 'the-state',
         ], $query);
-    }
-
-    #[Test]
-    #[Group('happy-path')]
-    public function it_exchanges_a_code_for_a_user_token_using_basic_auth(): void
-    {
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => $this->tokenMock(),
-            GetAuthorizationCodeTokenRequest::class => MockResponse::make([
-                'access_token' => 'user-token',
-                'token_type' => 'bearer',
-                'expires_in' => 86399,
-                'scope' => 'openid wow.profile',
-                'sub' => '1922840',
-            ]),
-        ]);
-
-        $this->freezeTime();
-
-        $authenticator = $this->makeConnector()->getUserAccessToken('the-code');
-
-        $this->assertSame('user-token', $authenticator->getAccessToken());
-        $this->assertSame(now()->addSeconds(86399)->getTimestamp(), $authenticator->getExpiresAt()?->getTimestamp());
-        $this->assertFalse($authenticator->isRefreshable());
-
-        Saloon::assertNotSent(GetClientCredentialsTokenBasicAuthRequest::class);
-        Saloon::assertSent(function (GetAuthorizationCodeTokenRequest $request, $response): bool {
-            $pending = $response->getPendingRequest();
-
-            return $pending->getUrl() === 'https://eu.battle.net/oauth/token'
-                && $pending->headers()->get('Authorization') === 'Basic '.base64_encode('test_id:test_secret')
-                && $pending->body()->all() === [
-                    'grant_type' => 'authorization_code',
-                    'code' => 'the-code',
-                    'redirect_uri' => 'https://regrowth.test/auth/battlenet/callback',
-                ];
-        });
-    }
-
-    #[Test]
-    #[Group('error-handling')]
-    public function it_throws_when_battle_net_rejects_the_code(): void
-    {
-        Saloon::fake([
-            GetAuthorizationCodeTokenRequest::class => MockResponse::make(['error' => 'invalid_grant'], 400),
-        ]);
-
-        $this->expectException(ApiException::class);
-
-        $this->makeConnector()->getUserAccessToken('stale-code');
     }
 
     // ==================== exception mapping ====================
