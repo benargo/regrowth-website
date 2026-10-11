@@ -67,9 +67,9 @@ export default function Master({ title, children }) {
                             href="/"
                         >
                             <img
-                                src="/images/guild_emblem.webp"
-                                alt="Guild Emblem"
-                                className="inline-block max-h-8 lg:mr-2 lg:max-h-16"
+                                src="/images/logo_regrowthforever.webp"
+                                alt="Regrowth Forever logo"
+                                className="mr-2 inline-block max-h-8 lg:max-h-14"
                             />
                             <span className="hidden lg:inline">Regrowth</span>
                         </Link>
@@ -297,16 +297,8 @@ export default function Master({ title, children }) {
                                     <span className="sr-only">Regrowth</span>
                                 </Link>
                                 <img
-                                    src={
-                                        theme === "forever"
-                                            ? "/images/logo_forever.webp"
-                                            : "/images/logo_tbcclassic.webp"
-                                    }
-                                    alt={
-                                        theme === "forever"
-                                            ? "World of Warcraft: Forever logo"
-                                            : "World of Warcraft Classic logo"
-                                    }
+                                    src="/images/logo_forever.webp"
+                                    alt="World of Warcraft: Forever logo"
                                     className="h-20 w-1/2 flex-1 object-contain md:mr-4 md:w-auto"
                                 />
                                 <span className="sr-only">
