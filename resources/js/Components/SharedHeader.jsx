@@ -1,6 +1,19 @@
-export default function SharedHeader({ title, subtitle, backgroundClass = "bg-masthead" }) {
+import { modelBackground } from "@/Helpers/ModelColor";
+
+/**
+ * The page masthead. A model's `image` and `color` (such as a game version's
+ * banner and colour) replace the default background: the image sits over the
+ * colour, so the colour shows while it loads or when there's no image.
+ */
+export default function SharedHeader({ title, subtitle, backgroundClass = "bg-masthead", color, image }) {
+    const { className, style } = modelBackground(color, image);
+    const background = image || color ? className : backgroundClass;
+
     return (
-        <header className={`${backgroundClass} border-ink-600 h-64 border-b-8 text-white md:h-128`}>
+        <header
+            className={`${background} border-ink-600 h-64 border-b-8 bg-cover bg-center text-white md:h-128`}
+            style={style}
+        >
             <div className="flex h-full w-full items-center bg-black/50 px-4 pt-20.5 pb-8 lg:pt-21.5">
                 <div className="container mx-auto">
                     <h1 className="from-ink-100 to-ink-300 mb-3 bg-linear-to-b bg-clip-text pb-1 text-center font-serif text-5xl text-transparent drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)] text-shadow-sm">

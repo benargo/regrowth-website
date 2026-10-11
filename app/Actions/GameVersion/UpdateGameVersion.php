@@ -4,6 +4,7 @@ namespace App\Actions\GameVersion;
 
 use App\Models\GameVersion;
 use App\Models\Raid;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Lorisleiva\Actions\Concerns\AsAction;
@@ -21,6 +22,10 @@ use Lorisleiva\Actions\Concerns\AsAction;
  * phases, so the per-row cost doesn't matter.
  *
  * Guild ranks are replaced as a whole ordered list; see SyncGuildRanks.
+ *
+ * Images follow the same contract: an uploaded file replaces the image in
+ * that collection and null removes it. They are stored once the database
+ * changes have committed, so file I/O never holds the transaction open.
  */
 class UpdateGameVersion
 {
@@ -46,7 +51,7 @@ class UpdateGameVersion
     public function handle(GameVersion $gameVersion, array $data): void
     {
         DB::transaction(function () use ($gameVersion, $data): void {
-            $gameVersion->update(Arr::except($data, self::RELATIONSHIP_KEYS));
+            $gameVersion->update(Arr::except($data, [...self::RELATIONSHIP_KEYS, ...GameVersion::MEDIA_COLLECTIONS]));
 
             if (Arr::exists($data, 'playable_race_ids')) {
                 $gameVersion->playableRaces()->sync($data['playable_race_ids']);
@@ -72,6 +77,25 @@ class UpdateGameVersion
                 SyncGuildRanks::run($gameVersion, $data['guild_ranks']);
             }
         });
+
+        foreach (Arr::only($data, GameVersion::MEDIA_COLLECTIONS) as $collection => $file) {
+            $this->replaceImage($gameVersion, $collection, $file);
+        }
+    }
+
+    /**
+     * Store the uploaded image in its single-file collection, replacing the
+     * previous one, or empty the collection when no file is given.
+     */
+    private function replaceImage(GameVersion $gameVersion, string $collection, ?UploadedFile $file): void
+    {
+        if ($file === null) {
+            $gameVersion->clearMediaCollection($collection);
+
+            return;
+        }
+
+        $gameVersion->addMedia($file)->toMediaCollection($collection);
     }
 
     /**

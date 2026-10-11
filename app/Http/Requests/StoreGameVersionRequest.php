@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use App\Enums\Faction;
-use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Models\WarcraftLogs\Guild;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -41,7 +40,7 @@ class StoreGameVersionRequest extends FormRequest
             'uses_surnames' => ['required', 'boolean'],
             'faction' => ['nullable', Rule::enum(Faction::class)],
             'release_date' => ['required', 'date'],
-            'theme' => ['required', Rule::enum(Theme::class)],
+            'color' => ['nullable', ...$this->colorFormatRules()],
             'blizzard_namespace' => ['nullable', Rule::enum(BlizzardNamespace::class)],
             'warcraft_logs_guild_id' => ['nullable', 'integer', Rule::exists(Guild::class, 'id')],
         ];
@@ -62,8 +61,8 @@ class StoreGameVersionRequest extends FormRequest
             'slug.unique' => 'A game version with this slug already exists.',
             'guild_name.required' => 'The guild name is required.',
             'release_date.required' => 'The release date is required.',
-            'theme.required' => 'Please choose a theme.',
             'warcraft_logs_guild_id.exists' => 'Choose one of the listed Warcraft Logs guilds.',
+            'color.regex' => 'The colour must be a six-digit hex code, for example #8B7ED0.',
         ];
     }
 
@@ -96,6 +95,17 @@ class StoreGameVersionRequest extends FormRequest
             ->unique()
             ->values()
             ->all();
+    }
+
+    /**
+     * The format a colour must take: a six-digit hex code, with or without
+     * the leading #, as AsBinaryColor stores it.
+     *
+     * @return list<string>
+     */
+    protected function colorFormatRules(): array
+    {
+        return ['string', 'regex:/^#?[0-9a-fA-F]{6}$/'];
     }
 
     /**

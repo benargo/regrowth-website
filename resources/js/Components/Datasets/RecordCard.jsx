@@ -2,6 +2,7 @@ import { useId } from "react";
 import { Button } from "@headlessui/react";
 import { Link } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
+import { modelBackground } from "@/Helpers/ModelColor";
 
 export const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-400";
 
@@ -17,32 +18,19 @@ export function usageSummary(record, labels) {
 }
 
 /**
- * One record on a dataset's Index page: a header (with an optional banner
- * background), its [label, value] details, what uses it, and Edit and Delete
- * actions. Delete is disabled while anything still uses the record.
- *
- * `editLabel`/`editIcon` reword the main link (e.g. "Manage" for a record
- * whose page isn't an edit form). Without `usage` the usage sentence is left
- * out, and without `onDelete` so is the Delete button.
+ * One record on a dataset's Index page: a header (with an optional
+ * `headerImage` over a `headerColor`), its [label, value] details, what uses
+ * it, and Edit and Delete actions. Delete is disabled while anything still
+ * uses the record.
  */
-export default function RecordCard({
-    title,
-    subtitle,
-    headerClassName = "",
-    details,
-    usage = null,
-    links,
-    editLabel = "Edit",
-    editIcon = "edit",
-    onDelete = null,
-}) {
+export default function RecordCard({ title, subtitle, headerColor, headerImage, details, usage, links, onDelete }) {
     const usageId = useId();
-    const hasUsage = usage !== null;
-    const isInUse = hasUsage && usage.length > 0;
+    const header = modelBackground(headerColor, headerImage);
+    const inUse = usage.length > 0;
 
     return (
         <article className="border-ink-600/40 bg-ground-800/60 overflow-hidden rounded border">
-            <header className={`${headerClassName} bg-cover bg-center`}>
+            <header className={`${header.className} bg-cover bg-center`} style={header.style}>
                 <div className="flex flex-col gap-1 bg-linear-to-r from-black/85 to-black/40 px-4 py-5">
                     <h2 className="font-serif text-2xl text-white">{title}</h2>
                     {subtitle && <p className="text-secondary-300 text-sm">{subtitle}</p>}

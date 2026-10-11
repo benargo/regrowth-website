@@ -25,6 +25,12 @@ class BuildGameVersionRoutesTest extends TestCase
 
         $this->assertSame([
             [
+                'value' => 'theme',
+                'label' => 'Theme',
+                'component' => 'ThemeSection',
+                'href' => 'http://localhost/manage/game-versions/7/setup/theme',
+            ],
+            [
                 'value' => 'races-and-classes',
                 'label' => 'Races and classes',
                 'component' => 'RacesAndClassesSection',
@@ -50,7 +56,7 @@ class BuildGameVersionRoutesTest extends TestCase
     {
         $steps = BuildGameVersionRoutes::make()->steps();
 
-        $this->assertSame(['races-and-classes', 'phases', 'guild-ranks'], array_column($steps, 'value'));
+        $this->assertSame(['theme', 'races-and-classes', 'phases', 'guild-ranks'], array_column($steps, 'value'));
         $this->assertSame([], array_column($steps, 'href'));
     }
 
@@ -119,10 +125,10 @@ class BuildGameVersionRoutesTest extends TestCase
     {
         return [
             'first step goes back to the details' => [
-                GameVersionSetupStep::RACES_AND_CLASSES,
+                GameVersionSetupStep::Theme,
                 false,
                 'http://localhost/manage/game-versions/7/edit',
-                'http://localhost/manage/game-versions/7/setup/phases',
+                'http://localhost/manage/game-versions/7/setup/races-and-classes',
             ],
             'middle step links both neighbours' => [
                 GameVersionSetupStep::PHASES,
@@ -137,7 +143,7 @@ class BuildGameVersionRoutesTest extends TestCase
                 'http://localhost/manage/game-versions/7/review',
             ],
             'step opened from the review returns there' => [
-                GameVersionSetupStep::RACES_AND_CLASSES,
+                GameVersionSetupStep::Theme,
                 true,
                 'http://localhost/manage/game-versions/7/edit',
                 'http://localhost/manage/game-versions/7/review',

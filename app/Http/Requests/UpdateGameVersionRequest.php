@@ -3,15 +3,16 @@
 namespace App\Http\Requests;
 
 use App\Enums\Faction;
-use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Requests\Concerns\ChecksEditLock;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\WarcraftLogs\Guild;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 use Illuminate\Validation\Validator;
@@ -35,7 +36,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             'uses_surnames' => ['sometimes', 'required', 'boolean'],
             'faction' => ['sometimes', 'nullable', Rule::enum(Faction::class)],
             'release_date' => ['sometimes', 'required', 'date'],
-            'theme' => ['sometimes', 'nullable', Rule::enum(Theme::class)],
+            'color' => ['sometimes', $this->route('gameVersion')->color === null ? 'nullable' : 'required', ...$this->colorFormatRules()],
             'blizzard_namespace' => ['sometimes', 'nullable', Rule::enum(BlizzardNamespace::class)],
             'warcraft_logs_guild_id' => ['sometimes', 'nullable', 'integer', Rule::exists(Guild::class, 'id')],
             'playable_race_ids' => ['sometimes', 'array'],
@@ -73,6 +74,8 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             ],
             'guild_ranks.*.name' => ['required', 'string', 'max:255'],
             'guild_ranks.*.count_attendance' => ['required', 'boolean'],
+            ...collect(GameVersion::MEDIA_COLLECTIONS)
+                ->mapWithKeys(fn (string $collection): array => [$collection => $this->imageRules($collection)]),
         ];
     }
 
@@ -86,6 +89,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
         return [
             ...parent::messages(),
             'slug.missing' => "The slug can't be changed once the game version is created.",
+            'color.required' => "The colour can't be removed once it has been set.",
             'playable_race_ids.*.exists' => 'One of the selected races no longer exists. Reload the page and try again.',
             'playable_class_ids.*.exists' => 'One of the selected classes no longer exists. Reload the page and try again.',
             'phase_ids.*.exists' => 'One of the selected phases no longer exists. Reload the page and try again.',
@@ -99,6 +103,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             'guild_ranks.max' => 'A guild can have up to 10 ranks.',
             'guild_ranks.*.id.exists' => 'One of these ranks no longer exists. Reload the page and try again.',
             'guild_ranks.*.name.required' => 'Enter a name for every rank.',
+            ...collect(GameVersion::MEDIA_COLLECTIONS)->flatMap($this->imageMessages(...)),
         ];
     }
 
@@ -127,6 +132,41 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
     {
         return [
             $this->editLockCheck('gameVersion', 'game version'),
+        ];
+    }
+
+    /**
+     * The rules for an image replacing one of the game version's media
+     * collections, accepting the types the collection accepts. Null removes
+     * the image.
+     *
+     * @return list<string>
+     */
+    protected function imageRules(string $collection): array
+    {
+        $mimeTypes = $this->route('gameVersion')->acceptedMimeTypes($collection);
+
+        return ['sometimes', 'nullable', 'file', 'mimetypes:'.implode(',', $mimeTypes), 'max:2048'];
+    }
+
+    /**
+     * The messages for an image field, naming the image it replaces and the
+     * types it accepts.
+     *
+     * @return array<string, string>
+     */
+    protected function imageMessages(string $field): array
+    {
+        $types = collect($this->route('gameVersion')->acceptedMimeTypes($field))
+            ->map(fn (string $mimeType): string => Str::of($mimeType)->after('/')->before('+')->upper()->toString())
+            ->join(', ', ' or ');
+
+        $typeMessage = "The {$field} must be a {$types} image.";
+
+        return [
+            "{$field}.file" => $typeMessage,
+            "{$field}.mimetypes" => $typeMessage,
+            "{$field}.max" => "The {$field} must be 2 MB or smaller.",
         ];
     }
 

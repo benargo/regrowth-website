@@ -9,6 +9,7 @@ enum GameVersionSetupStep: string implements SetupStep
 {
     use IsSetupStep;
 
+    case Theme = 'theme';
     case RACES_AND_CLASSES = 'races-and-classes';
     case PHASES = 'phases';
     case GUILD_RANKS = 'guild-ranks';
@@ -16,6 +17,7 @@ enum GameVersionSetupStep: string implements SetupStep
     public function label(): string
     {
         return match ($this) {
+            self::Theme => 'Theme',
             self::RACES_AND_CLASSES => 'Races and classes',
             self::PHASES => 'Phases and raids',
             self::GUILD_RANKS => 'Guild ranks',

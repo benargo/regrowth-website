@@ -22,7 +22,7 @@ return new class extends Migration
             $table->boolean('uses_surnames')->default(false);
             $table->enum('faction', Faction::cases())->nullable();
             $table->dateTime('release_date')->default(Carbon::now());
-            $table->string('theme')->nullable();
+            $table->binary('color', length: 3)->nullable();
             $table->string('blizzard_namespace')->nullable();
             $table->timestamps();
         });

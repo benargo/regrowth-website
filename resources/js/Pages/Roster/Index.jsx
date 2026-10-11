@@ -278,7 +278,7 @@ function RosterContent({ gameVersion, gameVersions, characters, classes, ranks, 
 
     return (
         <Master title="Guild Roster">
-            <SharedHeader title="Guild Roster" backgroundClass={gameVersion.banner_class} />
+            <SharedHeader title="Guild Roster" color={gameVersion.color} image={gameVersion.banner_url} />
             <PageContainer>
                 {gameVersions.length > 1 && (
                     <TabNav

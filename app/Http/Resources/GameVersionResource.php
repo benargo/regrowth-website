@@ -6,6 +6,7 @@ use App\Models\GameVersion;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
+use Spatie\MediaLibrary\MediaCollections\MediaCollection;
 
 class GameVersionResource extends JsonResource
 {
@@ -55,8 +56,10 @@ class GameVersionResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'slug' => $this->slug,
-            'theme' => $this->theme,
-            'banner_class' => $this->theme->bannerCssClass(),
+            'color' => $this->color,
+            'banner_url' => $this->getFirstMediaUrl(GameVersion::MEDIA_BANNER) ?: null,
+            'icon_url' => $this->getFirstMediaUrl(GameVersion::MEDIA_ICON) ?: null,
+            'logo_url' => $this->getFirstMediaUrl(GameVersion::MEDIA_LOGO) ?: null,
         ];
 
         if ($this->scope !== self::SCOPE_MANAGEMENT) {
@@ -82,6 +85,24 @@ class GameVersionResource extends JsonResource
             'items_count' => $this->whenCounted('items'),
             'characters_count' => $this->whenCounted('characters'),
             'guild_ranks_count' => $this->whenCounted('guildRanks'),
+        ];
+    }
+
+    /**
+     * Get additional data that should be returned with the resource array:
+     * the MIME types each media collection accepts. Every collection holds a
+     * single file, so no limit is sent.
+     *
+     * @return array{media: array<string, array{accepts: list<string>}>}
+     */
+    public function with(Request $request): array
+    {
+        return [
+            'media' => $this->getRegisteredMediaCollections()
+                ->mapWithKeys(fn (MediaCollection $collection): array => [
+                    $collection->name => ['accepts' => $collection->acceptsMimeTypes],
+                ])
+                ->all(),
         ];
     }
 }
