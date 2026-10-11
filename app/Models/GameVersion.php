@@ -27,6 +27,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 #[Fillable([
     'title',
@@ -41,14 +43,30 @@ use Illuminate\Support\Str;
     'warcraftlogs_namespace',
 ])]
 #[UsePolicy(DatasetPolicy::class)]
-class GameVersion extends Model implements DatasetModel, EditLockable
+class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia
 {
     use HasEditLock;
 
     /** @use HasFactory<GameVersionFactory> */
     use HasFactory;
 
+    use InteractsWithMedia;
     use TracksUsage;
+
+    /**
+     * The wide header image shown above the game version's pages.
+     */
+    public const string MEDIA_BANNER = 'banner';
+
+    /**
+     * A single-colour mark for compact places such as navigation.
+     */
+    public const string MEDIA_ICON = 'icon';
+
+    /**
+     * The full-colour game logo.
+     */
+    public const string MEDIA_LOGO = 'logo';
 
     /**
      * Relationships whose existing rows mark this game version as in use.
@@ -98,6 +116,17 @@ class GameVersion extends Model implements DatasetModel, EditLockable
         return Attribute::make(
             get: fn (): ?string => $this->realm === null ? null : Str::slug($this->realm),
         );
+    }
+
+    // ============ Media ===========
+
+    public function registerMediaCollections(): void
+    {
+        foreach ([self::MEDIA_BANNER, self::MEDIA_ICON, self::MEDIA_LOGO] as $name) {
+            $this->addMediaCollection($name)
+                ->singleFile()
+                ->acceptsMimeTypes(['image/webp', 'image/png', 'image/jpeg']);
+        }
     }
 
     // ============ Guild roster ===========

@@ -25,12 +25,17 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\MediaCollections\Exceptions\FileUnacceptableForCollection;
 use Tests\Support\ModelTestCase;
 
 #[Group('platform')]
@@ -513,6 +518,56 @@ class GameVersionTest extends ModelTestCase
     public function default_roster_is_null_when_no_versions_exist(): void
     {
         $this->assertNull(GameVersion::defaultRoster());
+    }
+
+    // ==================== media ====================
+
+    #[Test]
+    public function it_implements_has_media_interface(): void
+    {
+        $this->assertInstanceOf(HasMedia::class, new GameVersion);
+    }
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    #[TestWith([GameVersion::MEDIA_BANNER])]
+    #[TestWith([GameVersion::MEDIA_ICON])]
+    #[TestWith([GameVersion::MEDIA_LOGO])]
+    public function it_registers_a_single_file_image_collection(string $name): void
+    {
+        $collection = (new GameVersion)->getRegisteredMediaCollections()->firstWhere('name', $name);
+
+        $this->assertNotNull($collection);
+        $this->assertTrue($collection->singleFile);
+    }
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function a_new_banner_replaces_the_old_one(): void
+    {
+        Storage::fake('public');
+        $gameVersion = $this->create();
+
+        $gameVersion->addMedia(UploadedFile::fake()->image('old.png'))->toMediaCollection(GameVersion::MEDIA_BANNER);
+        $gameVersion->addMedia(UploadedFile::fake()->image('new.png'))->toMediaCollection(GameVersion::MEDIA_BANNER);
+
+        $media = $gameVersion->fresh()->getMedia(GameVersion::MEDIA_BANNER);
+        $this->assertCount(1, $media);
+        $this->assertSame('new.png', $media->first()->file_name);
+    }
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function it_rejects_a_file_that_is_not_an_image(): void
+    {
+        Storage::fake('public');
+        $gameVersion = $this->create();
+
+        $this->expectException(FileUnacceptableForCollection::class);
+
+        $gameVersion->addMediaFromString('not an image')
+            ->usingFileName('notes.txt')
+            ->toMediaCollection(GameVersion::MEDIA_LOGO);
     }
 
     // ==================== helpers ====================

@@ -11,8 +11,11 @@ use App\Models\GameVersion;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
 
 #[Group('platform')]
@@ -32,6 +35,9 @@ class GameVersionResourceTest extends TestCase
         $this->assertArrayHasKey('slug', $array);
         $this->assertArrayHasKey('theme', $array);
         $this->assertArrayHasKey('banner_class', $array);
+        $this->assertArrayHasKey('banner_url', $array);
+        $this->assertArrayHasKey('icon_url', $array);
+        $this->assertArrayHasKey('logo_url', $array);
     }
 
     #[Test]
@@ -91,8 +97,40 @@ class GameVersionResourceTest extends TestCase
 
         $array = (new GameVersionResource($gameVersion))->resolve(new Request);
 
-        $this->assertSame(['id', 'title', 'slug', 'theme', 'banner_class'], array_keys($array));
+        $this->assertSame(['id', 'title', 'slug', 'theme', 'banner_class', 'banner_url', 'icon_url', 'logo_url'], array_keys($array));
     }
+
+    // ==================== images ====================
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    #[TestWith([GameVersion::MEDIA_BANNER, 'banner_url'])]
+    #[TestWith([GameVersion::MEDIA_ICON, 'icon_url'])]
+    #[TestWith([GameVersion::MEDIA_LOGO, 'logo_url'])]
+    public function it_returns_the_url_of_an_uploaded_image(string $collection, string $key): void
+    {
+        Storage::fake('public');
+        $gameVersion = GameVersion::factory()->create();
+        $media = $gameVersion->addMedia(UploadedFile::fake()->image("{$collection}.png"))->toMediaCollection($collection);
+
+        $array = (new GameVersionResource($gameVersion->fresh()))->resolve(new Request);
+
+        $this->assertSame($media->getUrl(), $array[$key]);
+    }
+
+    #[Test]
+    public function it_returns_null_urls_when_no_images_are_uploaded(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        $array = (new GameVersionResource($gameVersion))->resolve(new Request);
+
+        $this->assertNull($array['banner_url']);
+        $this->assertNull($array['icon_url']);
+        $this->assertNull($array['logo_url']);
+    }
+
+    // ==================== management scope ====================
 
     #[Test]
     public function the_management_scope_exposes_every_editable_field(): void
@@ -119,6 +157,9 @@ class GameVersionResourceTest extends TestCase
             'slug' => 'tbc',
             'theme' => Theme::CLASSIC,
             'banner_class' => 'bg-raid-black-temple',
+            'banner_url' => null,
+            'icon_url' => null,
+            'logo_url' => null,
             'realm' => 'Thunderstrike',
             'guild_name' => 'Regrowth',
             'faction' => Faction::ALLIANCE,

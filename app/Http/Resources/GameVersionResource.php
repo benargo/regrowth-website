@@ -53,6 +53,9 @@ class GameVersionResource extends JsonResource
             'slug' => $this->slug,
             'theme' => $this->theme,
             'banner_class' => $this->theme->bannerCssClass(),
+            'banner_url' => $this->getFirstMediaUrl(GameVersion::MEDIA_BANNER) ?: null,
+            'icon_url' => $this->getFirstMediaUrl(GameVersion::MEDIA_ICON) ?: null,
+            'logo_url' => $this->getFirstMediaUrl(GameVersion::MEDIA_LOGO) ?: null,
         ];
 
         if ($this->scope !== self::SCOPE_MANAGEMENT) {

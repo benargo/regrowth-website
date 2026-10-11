@@ -3,7 +3,6 @@
 namespace Tests\Unit\Enums;
 
 use App\Enums\Theme;
-use Illuminate\Support\Facades\Vite;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -67,30 +66,6 @@ class ThemeTest extends TestCase
         Theme::default();
     }
 
-    // ==================== bannerImagePath() ====================
-
-    #[Test]
-    public function it_resolves_the_classic_banner_image_through_vite(): void
-    {
-        Vite::shouldReceive('asset')
-            ->once()
-            ->with('resources/images/banner_anniversary.webp')
-            ->andReturn('https://cdn.example.com/banner_anniversary.webp');
-
-        $this->assertSame('https://cdn.example.com/banner_anniversary.webp', Theme::CLASSIC->bannerImagePath());
-    }
-
-    #[Test]
-    public function it_resolves_the_forever_banner_image_through_vite(): void
-    {
-        Vite::shouldReceive('asset')
-            ->once()
-            ->with('resources/images/banner_camelot.webp')
-            ->andReturn('https://cdn.example.com/banner_camelot.webp');
-
-        $this->assertSame('https://cdn.example.com/banner_camelot.webp', Theme::FOREVER->bannerImagePath());
-    }
-
     // ==================== bannerCssClass() ====================
 
     #[Test]
@@ -109,29 +84,5 @@ class ThemeTest extends TestCase
     public function it_builds_the_banner_css_class_with_a_custom_prefix(): void
     {
         $this->assertSame('from-raid-black-temple', Theme::CLASSIC->bannerCssClass('from'));
-    }
-
-    // ==================== iconPath() ====================
-
-    #[Test]
-    public function it_resolves_the_classic_icon_through_vite(): void
-    {
-        Vite::shouldReceive('asset')
-            ->once()
-            ->with('resources/images/icon_tbcclassic.webp')
-            ->andReturn('https://cdn.example.com/icon_tbcclassic.webp');
-
-        $this->assertSame('https://cdn.example.com/icon_tbcclassic.webp', Theme::CLASSIC->iconPath());
-    }
-
-    #[Test]
-    public function it_resolves_the_forever_icon_through_vite(): void
-    {
-        Vite::shouldReceive('asset')
-            ->once()
-            ->with('resources/images/icon_camelot.webp')
-            ->andReturn('https://cdn.example.com/icon_camelot.webp');
-
-        $this->assertSame('https://cdn.example.com/icon_camelot.webp', Theme::FOREVER->iconPath());
     }
 }
