@@ -28,20 +28,20 @@ class GameVersionController extends Controller
      * Display a listing of game versions.
      */
     #[Authorize('viewAny', GameVersion::class)]
-    public function index(Request $request, BuildGameVersionRoutes $routes): Response
+    public function index(BuildGameVersionRoutes $routes): Response
     {
         $gameVersions = GameVersion::with('warcraftLogsGuild')
             ->withUsageCounts()
             ->orderBy('release_date')
             ->get();
 
+        $gameVersionResources = GameVersionResource::collectionForManagement($gameVersions);
+        $gameVersionResources->collection->each(
+            fn (GameVersionResource $resource): GameVersionResource => $resource->withLinks($routes->links($resource->resource)),
+        );
+
         return Inertia::render('Manage/GameVersions/Index', [
-            'gameVersions' => GameVersionResource::collectionForManagement($gameVersions)
-                ->map(fn (GameVersionResource $resource): array => [
-                    ...$resource->resolve($request),
-                    'links' => $routes->links($resource->resource),
-                ])
-                ->all(),
+            'gameVersions' => $gameVersionResources,
             'routes' => $routes->forIndex(),
         ]);
     }

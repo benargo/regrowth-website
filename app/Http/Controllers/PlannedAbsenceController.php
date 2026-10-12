@@ -21,6 +21,7 @@ use App\Services\Discord\Discord;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Collection;
@@ -47,10 +48,10 @@ class PlannedAbsenceController extends Controller
      * Display a listing of the resource.
      */
     #[Authorize('viewAny', PlannedAbsence::class)]
-    public function index(Request $request): Response
+    public function index(): Response
     {
         return Inertia::render('Raiding/Absences/Index', [
-            'planned_absences' => Inertia::defer(function () use ($request) {
+            'planned_absences' => Inertia::defer(function () {
                 $absences = PlannedAbsence::query()
                     ->withTrashed()
                     ->with(['character.media', 'character.playableClass', 'createdBy'])
@@ -62,7 +63,7 @@ class PlannedAbsenceController extends Controller
                     ->pluck('character')->filter()->unique('id')
                     ->each(fn (Character $character) => RefreshCharacterPortrait::queueIfStale($character));
 
-                return PlannedAbsenceResource::collectionForOfficerList($absences)->map->resolve($request)->all();
+                return PlannedAbsenceResource::collectionForOfficerList($absences);
             }),
         ]);
     }
@@ -86,9 +87,9 @@ class PlannedAbsenceController extends Controller
         $gameVersion = ResolveCurrentGameVersion::run($selectable);
 
         return Inertia::render('Raiding/Absences/Form', [
-            'game_versions' => GameVersionResource::collection($selectable)->resolve($request),
-            'game_version' => $gameVersion ? (new GameVersionResource($gameVersion))->resolve($request) : null,
-            'characters' => $this->pickerCharacters($request, $gameVersion),
+            'game_versions' => GameVersionResource::collection($selectable),
+            'game_version' => $gameVersion ? new GameVersionResource($gameVersion) : null,
+            'characters' => $this->pickerCharacters($gameVersion),
             'action' => route('raiding.absences.store'),
             'reasons' => PlannedAbsenceReasonData::options(),
             'discord_members' => Inertia::optional(fn (): array => $this->searchDiscordMembers($request)),
@@ -140,9 +141,9 @@ class PlannedAbsenceController extends Controller
             ?? ResolveCurrentGameVersion::run($this->selectableGameVersions());
 
         return Inertia::render('Raiding/Absences/Form', [
-            'planned_absence' => (new PlannedAbsenceResource($plannedAbsence))->resolve($request),
-            'game_version' => $gameVersion ? (new GameVersionResource($gameVersion))->resolve($request) : null,
-            'characters' => $this->pickerCharacters($request, $gameVersion),
+            'planned_absence' => new PlannedAbsenceResource($plannedAbsence),
+            'game_version' => $gameVersion ? new GameVersionResource($gameVersion) : null,
+            'characters' => $this->pickerCharacters($gameVersion),
             'action' => route('raiding.absences.update', $plannedAbsence),
             'reasons' => PlannedAbsenceReasonData::options(),
             'discord_members' => Inertia::optional(fn (): array => $this->searchDiscordMembers($request)),
@@ -296,25 +297,19 @@ class PlannedAbsenceController extends Controller
 
     /**
      * Every main character in the game version, for the picker.
-     *
-     * @return array<int, array<string, mixed>>
      */
-    private function pickerCharacters(Request $request, ?GameVersion $gameVersion): array
+    private function pickerCharacters(?GameVersion $gameVersion): AnonymousResourceCollection
     {
         if ($gameVersion === null) {
-            return [];
+            return CharacterResource::collection(collect());
         }
 
-        return Cache::tags(['characters'])->remember(
-            "characters:game_version:{$gameVersion->id}:planned_absence_mains",
-            now()->addDay(),
-            fn (): array => CharacterResource::collection(
-                Character::where('game_version_id', $gameVersion->id)
-                    ->where('is_main', true)
-                    ->with(['playableRace', 'playableClass'])
-                    ->orderBy('name')
-                    ->get()
-            )->resolve($request),
+        return CharacterResource::collection(
+            Character::where('game_version_id', $gameVersion->id)
+                ->where('is_main', true)
+                ->with(['playableRace', 'playableClass'])
+                ->orderBy('name')
+                ->get()
         );
     }
 }

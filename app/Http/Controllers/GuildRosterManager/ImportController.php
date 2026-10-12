@@ -13,7 +13,6 @@ use App\Http\Requests\GuildRosterManager\StoreImportRequest;
 use App\Http\Resources\GameVersionResource;
 use App\Models\GameVersion;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Inertia\Inertia;
@@ -27,7 +26,6 @@ class ImportController extends Controller
      */
     #[Middleware(RemembersCurrentGameVersion::class)]
     public function create(
-        Request $request,
         ResolveCurrentGameVersion $resolveCurrentGameVersion,
         FindLatestUpload $findLatestUpload,
         CountGuildMembers $countGuildMembers,
@@ -37,8 +35,8 @@ class ImportController extends Controller
         $gameVersion = $resolveCurrentGameVersion->handle($gameVersions);
 
         return Inertia::render('Manage/GRM/Create', [
-            'gameVersion' => $gameVersion ? (new GameVersionResource($gameVersion))->resolve($request) : null,
-            'gameVersions' => GameVersionResource::collection($gameVersions)->resolve($request),
+            'gameVersion' => $gameVersion ? new GameVersionResource($gameVersion) : null,
+            'gameVersions' => GameVersionResource::collection($gameVersions),
             'lastUploadTimestamp' => fn (): ?string => $gameVersion
                 ? $findLatestUpload->handle($gameVersion)?->lastModified->format('l, j F Y \a\t H:i')
                 : null,

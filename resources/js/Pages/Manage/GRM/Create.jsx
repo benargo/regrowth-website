@@ -38,7 +38,14 @@ function UploadStatusSummary({ gameVersion, status, lastUploadTimestamp }) {
     );
 }
 
-export default function Create({ gameVersion, gameVersions, lastUploadTimestamp, memberCount, uploadStatuses }) {
+export default function Create({
+    gameVersion: gameVersionResource,
+    gameVersions: { data: gameVersions },
+    lastUploadTimestamp,
+    memberCount,
+    uploadStatuses,
+}) {
+    const gameVersion = gameVersionResource?.data ?? null;
     // The modal sits outside the per-version subtree, and switching versions
     // preserves page state, so an upload's progress stays on screen.
     const progressModalRef = useRef(null);

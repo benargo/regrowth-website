@@ -4,8 +4,8 @@ namespace App\Http\Resources;
 
 use App\Models\GameVersion;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Collection;
 use Spatie\MediaLibrary\MediaCollections\MediaCollection;
 
 class GameVersionResource extends JsonResource
@@ -15,6 +15,11 @@ class GameVersionResource extends JsonResource
     protected const SCOPE_MANAGEMENT = 'management';
 
     protected string $scope = self::SCOPE_DEFAULT;
+
+    /**
+     * @var array<string, mixed>|null
+     */
+    protected ?array $links = null;
 
     /**
      * The full shape for the Officers' game version management pages.
@@ -30,11 +35,22 @@ class GameVersionResource extends JsonResource
 
     /**
      * @param  iterable<int, GameVersion>  $resources
-     * @return Collection<int, static>
      */
-    public static function collectionForManagement(iterable $resources): Collection
+    public static function collectionForManagement(iterable $resources): AnonymousResourceCollection
     {
-        return collect($resources)->map(fn (GameVersion $gameVersion) => static::forManagement($gameVersion));
+        return static::collection(collect($resources)->map(fn (GameVersion $gameVersion) => static::forManagement($gameVersion)));
+    }
+
+    /**
+     * Attach the management action links for this game version.
+     *
+     * @param  array<string, mixed>  $links
+     */
+    public function withLinks(array $links): static
+    {
+        $this->links = $links;
+
+        return $this;
     }
 
     protected static function withScope(mixed $resource, string $scope): static
@@ -85,6 +101,7 @@ class GameVersionResource extends JsonResource
             'items_count' => $this->whenCounted('items'),
             'characters_count' => $this->whenCounted('characters'),
             'guild_ranks_count' => $this->whenCounted('guildRanks'),
+            'links' => $this->when($this->links !== null, fn (): ?array => $this->links),
         ];
     }
 

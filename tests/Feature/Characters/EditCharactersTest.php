@@ -90,9 +90,9 @@ class EditCharactersTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Manage/Characters/Edit')
-            ->has('character')
-            ->has('character.specializations', 1)
-            ->has('specializations', 3)
+            ->has('character.data')
+            ->has('character.data.specializations', 1)
+            ->has('specializations.data', 3)
         );
     }
 

@@ -81,7 +81,7 @@ function SectionHeading({ children }) {
     );
 }
 
-export default function Show({ character, roster_url, recent_reports }) {
+export default function Show({ character: { data: character }, roster_url, recent_reports }) {
     const spec = raidSpec(character);
     const isLoading = recent_reports === undefined;
 

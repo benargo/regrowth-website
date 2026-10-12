@@ -67,7 +67,8 @@ function AbsenceTable({ absences, isCurrent = false, canDelete }) {
 }
 
 export default function Index() {
-    const { planned_absences: plannedAbsences } = usePage().props;
+    const { planned_absences: plannedAbsencesResource } = usePage().props;
+    const plannedAbsences = plannedAbsencesResource?.data;
     const canDeleteAbsences = usePermission("delete-planned-absences");
     const [showDeleted, setShowDeleted] = useState(false);
 

@@ -106,7 +106,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/Absences/Index')
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('planned_absences', 0)
+                ->has('planned_absences.data', 0)
             )
         );
     }
@@ -122,8 +122,8 @@ class PlannedAbsenceControllerTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/Absences/Index')
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('planned_absences', 1)
-                ->has('planned_absences.0', fn (Assert $absence) => $absence
+                ->has('planned_absences.data', 1)
+                ->has('planned_absences.data.0', fn (Assert $absence) => $absence
                     ->has('id')
                     ->has('character')
                     ->has('start_date')
@@ -156,9 +156,9 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('planned_absences', 2)
-                ->where('planned_absences.0.id', $sooner->id)
-                ->where('planned_absences.1.id', $later->id)
+                ->has('planned_absences.data', 2)
+                ->where('planned_absences.data.0.id', $sooner->id)
+                ->where('planned_absences.data.1.id', $later->id)
             )
         );
     }
@@ -177,7 +177,7 @@ class PlannedAbsenceControllerTest extends TestCase
             ->get(route('raiding.absences.index'))
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->where('planned_absences.0.character.portrait_url', $character->getFirstMediaUrl(Character::MEDIA_COLLECTION))
+                    ->where('planned_absences.data.0.character.portrait_url', $character->getFirstMediaUrl(Character::MEDIA_COLLECTION))
                 )
             );
     }
@@ -196,7 +196,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $this->actingAs(User::factory()->member()->create())
             ->get(route('raiding.absences.index'))
             ->assertInertia(fn (Assert $page) => $page
-                ->loadDeferredProps(fn (Assert $reload) => $reload->has('planned_absences', 2))
+                ->loadDeferredProps(fn (Assert $reload) => $reload->has('planned_absences.data', 2))
             );
 
         RefreshCharacterPortrait::assertPushed(1);
@@ -221,7 +221,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $this->actingAs(User::factory()->member()->create())
             ->get(route('raiding.absences.index'))
             ->assertInertia(fn (Assert $page) => $page
-                ->loadDeferredProps(fn (Assert $reload) => $reload->has('planned_absences', 2))
+                ->loadDeferredProps(fn (Assert $reload) => $reload->has('planned_absences.data', 2))
             );
 
         RefreshCharacterPortrait::assertNotPushed();
@@ -236,7 +236,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $this->actingAs($user)
             ->get(route('raiding.absences.index'))
             ->assertInertia(fn (Assert $page) => $page
-                ->loadDeferredProps(fn (Assert $reload) => $reload->has('planned_absences', 1))
+                ->loadDeferredProps(fn (Assert $reload) => $reload->has('planned_absences.data', 1))
             );
 
         PlannedAbsence::withoutEvents(fn () => PlannedAbsence::factory()->withCharacter()->create());
@@ -244,7 +244,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $this->actingAs($user)
             ->get(route('raiding.absences.index'))
             ->assertInertia(fn (Assert $page) => $page
-                ->loadDeferredProps(fn (Assert $reload) => $reload->has('planned_absences', 2))
+                ->loadDeferredProps(fn (Assert $reload) => $reload->has('planned_absences.data', 2))
             );
     }
 
@@ -319,9 +319,9 @@ class PlannedAbsenceControllerTest extends TestCase
             ->get(route('raiding.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Raiding/Absences/Form')
-                ->where('game_version.id', $current->id)
-                ->has('game_versions', 2)
-                ->where('characters', fn ($characters) => collect($characters)->pluck('id')->all() === [$main->id]));
+                ->where('game_version.data.id', $current->id)
+                ->has('game_versions.data', 2)
+                ->where('characters.data', fn ($characters) => collect($characters)->pluck('id')->all() === [$main->id]));
     }
 
     #[Test]
@@ -334,8 +334,8 @@ class PlannedAbsenceControllerTest extends TestCase
             ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $older->slug])
             ->get(route('raiding.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
-                ->where('game_version.id', $older->id)
-                ->where('characters', fn ($characters) => collect($characters)->pluck('id')->all() === [$main->id]));
+                ->where('game_version.data.id', $older->id)
+                ->where('characters.data', fn ($characters) => collect($characters)->pluck('id')->all() === [$main->id]));
     }
 
     #[Test]
@@ -346,8 +346,8 @@ class PlannedAbsenceControllerTest extends TestCase
         $this->actingAs($this->officer())
             ->get(route('raiding.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
-                ->where('game_version.id', $newer->id)
-                ->where('game_versions.0.id', $newer->id));
+                ->where('game_version.data.id', $newer->id)
+                ->where('game_versions.data.0.id', $newer->id));
     }
 
     #[Test]
@@ -360,8 +360,8 @@ class PlannedAbsenceControllerTest extends TestCase
             ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $unreleased->slug])
             ->get(route('raiding.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
-                ->where('game_version.id', $newer->id)
-                ->where('game_versions', fn ($gameVersions) => collect($gameVersions)->pluck('id')->all() === [$newer->id, $older->id]));
+                ->where('game_version.data.id', $newer->id)
+                ->where('game_versions.data', fn ($gameVersions) => collect($gameVersions)->pluck('id')->all() === [$newer->id, $older->id]));
     }
 
     #[Test]
@@ -381,7 +381,7 @@ class PlannedAbsenceControllerTest extends TestCase
             ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $older->slug])
             ->get(route('raiding.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
-                ->where('characters', fn ($characters) => collect($characters)->pluck('id')->all() === [$olderMain->id]));
+                ->where('characters.data', fn ($characters) => collect($characters)->pluck('id')->all() === [$olderMain->id]));
     }
 
     #[Test]
@@ -394,7 +394,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $this->actingAs($officer)
             ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $current->slug])
             ->get(route('raiding.absences.create'))
-            ->assertInertia(fn (Assert $page) => $page->where('characters', []));
+            ->assertInertia(fn (Assert $page) => $page->where('characters.data', []));
 
         $character->update(['is_main' => true]);
 
@@ -402,7 +402,7 @@ class PlannedAbsenceControllerTest extends TestCase
             ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $current->slug])
             ->get(route('raiding.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
-                ->where('characters', fn ($characters) => collect($characters)->pluck('id')->all() === [$character->id]));
+                ->where('characters.data', fn ($characters) => collect($characters)->pluck('id')->all() === [$character->id]));
     }
 
     #[Test]
@@ -529,7 +529,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/Absences/Form')
-            ->has('planned_absence', fn (Assert $data) => $data
+            ->has('planned_absence.data', fn (Assert $data) => $data
                 ->where('id', $absence->id)
                 ->has('character')
                 ->has('user')
@@ -571,9 +571,9 @@ class PlannedAbsenceControllerTest extends TestCase
             ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $newer->slug])
             ->get(route('raiding.absences.edit', $absence))
             ->assertInertia(fn (Assert $page) => $page
-                ->where('game_version.id', $older->id)
+                ->where('game_version.data.id', $older->id)
                 ->missing('game_versions')
-                ->where('characters', fn ($characters) => collect($characters)->pluck('id')->all() === [$character->id]));
+                ->where('characters.data', fn ($characters) => collect($characters)->pluck('id')->all() === [$character->id]));
     }
 
     #[Test]
@@ -586,7 +586,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $this->actingAs($this->officer())
             ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $older->slug])
             ->get(route('raiding.absences.edit', $absence))
-            ->assertInertia(fn (Assert $page) => $page->where('game_version.id', $older->id));
+            ->assertInertia(fn (Assert $page) => $page->where('game_version.data.id', $older->id));
     }
 
     // ==================== store: Access Control ====================

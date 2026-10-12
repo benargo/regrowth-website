@@ -39,7 +39,7 @@ function CharacterPickerSkeleton() {
 
 function AccountCharacterPicker({ gameVersion, value, onChange, invalid }) {
     const { battle_net: battleNet, account_characters: accountCharacters } = usePage().props;
-    const characters = accountCharacters?.characters ?? [];
+    const characters = accountCharacters?.characters?.data ?? [];
     const onlyCharacterId = characters.length === 1 ? characters[0].id : null;
 
     useEffect(() => {
@@ -194,12 +194,15 @@ function EditForm({ plannedAbsence, action, canBackdate, reasons }) {
 
 export default function Form() {
     const {
-        game_versions: gameVersions = null,
-        game_version: gameVersion = null,
-        planned_absence: plannedAbsence = null,
+        game_versions: gameVersionsResource = null,
+        game_version: gameVersionResource = null,
+        planned_absence: plannedAbsenceResource = null,
         action,
         reasons = [],
     } = usePage().props;
+    const gameVersions = gameVersionsResource?.data ?? null;
+    const gameVersion = gameVersionResource?.data ?? null;
+    const plannedAbsence = plannedAbsenceResource?.data ?? null;
 
     const canBackdate = usePermission("backdate-planned-absences");
     const pageTitle = plannedAbsence ? "Edit Planned Absence" : "Log Planned Absence";

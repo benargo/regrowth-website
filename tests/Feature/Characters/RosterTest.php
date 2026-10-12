@@ -88,10 +88,10 @@ class RosterTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Roster/Index')
             ->missing('characters')
-            ->has('classes')
+            ->has('classes.data')
             ->has('ranks')
-            ->has('races')
-            ->loadDeferredProps(fn (Assert $reload) => $reload->has('characters', 1))
+            ->has('races.data')
+            ->loadDeferredProps(fn (Assert $reload) => $reload->has('characters.data', 1))
         );
     }
 
@@ -129,11 +129,11 @@ class RosterTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('characters', 2)
-                ->where('characters.0.character.is_known', true)
-                ->where('characters.0.character.is_main', true)
-                ->where('characters.1.character.is_known', false)
-                ->where('characters.1.character.is_main', false)
+                ->has('characters.data', 2)
+                ->where('characters.data.0.character.is_known', true)
+                ->where('characters.data.0.character.is_main', true)
+                ->where('characters.data.1.character.is_known', false)
+                ->where('characters.data.1.character.is_main', false)
             )
         );
     }
@@ -161,14 +161,14 @@ class RosterTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('characters', 1)
-                ->where('characters.0.rank', 'Warden')
-                ->where('characters.0.character.id', 52461508)
-                ->where('characters.0.character.name', 'Ozona')
-                ->where('characters.0.character.slug', 'ozona')
-                ->where('characters.0.character.level', 60)
-                ->where('characters.0.character.playable_class_id', 8)
-                ->where('characters.0.character.playable_race_id', 7)
+                ->has('characters.data', 1)
+                ->where('characters.data.0.rank', 'Warden')
+                ->where('characters.data.0.character.id', 52461508)
+                ->where('characters.data.0.character.name', 'Ozona')
+                ->where('characters.data.0.character.slug', 'ozona')
+                ->where('characters.data.0.character.level', 60)
+                ->where('characters.data.0.character.playable_class_id', 8)
+                ->where('characters.data.0.character.playable_race_id', 7)
                 ->missing('characters.0.character.realm')
                 ->missing('characters.0.character.playable_class')
                 ->missing('characters.0.character.playable_race')
@@ -199,7 +199,7 @@ class RosterTest extends TestCase
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'release_date' => Carbon::now()->subDay()]);
 
         $this->get(route('roster.index'))->assertInertia(fn (Assert $page) => $page
-            ->where('gameVersion.slug', 'newer')
+            ->where('gameVersion.data.slug', 'newer')
         );
     }
 
@@ -210,7 +210,7 @@ class RosterTest extends TestCase
 
         $this->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'tbc'])
             ->get(route('roster.index'))
-            ->assertInertia(fn (Assert $page) => $page->where('gameVersion.slug', 'tbc'));
+            ->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', 'tbc'));
     }
 
     #[Test]
@@ -222,7 +222,7 @@ class RosterTest extends TestCase
             ->assertRedirect(route('roster.index'))
             ->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, 'tbc');
 
-        $this->get(route('roster.index'))->assertInertia(fn (Assert $page) => $page->where('gameVersion.slug', 'tbc'));
+        $this->get(route('roster.index'))->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', 'tbc'));
     }
 
     #[Test]
@@ -231,7 +231,7 @@ class RosterTest extends TestCase
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'later', 'release_date' => Carbon::now()->addMonth()]);
 
         $this->followingRedirects()->get(route('roster.index', ['game_version' => 'later']))->assertInertia(fn (Assert $page) => $page
-            ->where('gameVersion.slug', 'tbc')
+            ->where('gameVersion.data.slug', 'tbc')
         );
     }
 
@@ -257,7 +257,7 @@ class RosterTest extends TestCase
         $this->fakeRosterWithMembers([]);
 
         $this->get(route('roster.index'))->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload->has('characters', 0))
+            ->loadDeferredProps(fn (Assert $reload) => $reload->has('characters.data', 0))
         );
 
         Saloon::assertSent(fn ($request, $response) => $request instanceof GetGuildRosterRequest
@@ -278,9 +278,9 @@ class RosterTest extends TestCase
 
         $this->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'tbc'])->get(route('roster.index'))->assertInertia(fn (Assert $page) => $page
             ->where('ranks', ['Guild Master'])
-            ->has('classes', 1)
-            ->has('races', 1)
-            ->where('gameVersion.slug', 'tbc')
+            ->has('classes.data', 1)
+            ->has('races.data', 1)
+            ->where('gameVersion.data.slug', 'tbc')
         );
     }
 
@@ -290,9 +290,9 @@ class RosterTest extends TestCase
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'release_date' => Carbon::now()->subDay()]);
 
         $this->get(route('roster.index'))->assertInertia(fn (Assert $page) => $page
-            ->has('gameVersions', 2)
-            ->where('gameVersions.0.slug', 'newer')
-            ->where('gameVersions.1.slug', 'tbc')
+            ->has('gameVersions.data', 2)
+            ->where('gameVersions.data.0.slug', 'newer')
+            ->where('gameVersions.data.1.slug', 'tbc')
         );
     }
 

@@ -131,13 +131,17 @@ function OfficerAbsenceForm({ gameVersion, characters, plannedAbsence, action, r
 
 export default function Form() {
     const {
-        game_versions: gameVersions = null,
-        game_version: gameVersion = null,
-        characters,
-        planned_absence: plannedAbsence = null,
+        game_versions: gameVersionsResource = null,
+        game_version: gameVersionResource = null,
+        characters: charactersResource,
+        planned_absence: plannedAbsenceResource = null,
         action,
         reasons = [],
     } = usePage().props;
+    const gameVersions = gameVersionsResource?.data ?? null;
+    const gameVersion = gameVersionResource?.data ?? null;
+    const characters = charactersResource?.data;
+    const plannedAbsence = plannedAbsenceResource?.data ?? null;
 
     const pageTitle = plannedAbsence ? "Edit Planned Absence" : "Log Planned Absence";
 

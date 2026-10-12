@@ -22,6 +22,7 @@ use App\Models\GameVersion;
 use App\Models\PlannedAbsence;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Facades\Log;
@@ -53,10 +54,10 @@ class PlannedAbsenceController extends Controller
         session()->put(SharesBattleNetSession::INTENDED_URL_KEY, $request->fullUrlWithoutQuery(['character_portrait']));
 
         return Inertia::render('Account/Absences/Form', [
-            'game_versions' => GameVersionResource::collection($selectable)->resolve($request),
-            'game_version' => $gameVersion ? (new GameVersionResource($gameVersion))->resolve($request) : null,
+            'game_versions' => GameVersionResource::collection($selectable),
+            'game_version' => $gameVersion ? new GameVersionResource($gameVersion) : null,
             'battle_net' => ['connected' => $accessToken !== null],
-            'account_characters' => Inertia::defer(fn (): array => $this->accountCharacters($request, $accessToken, $gameVersion)),
+            'account_characters' => Inertia::defer(fn (): array => $this->accountCharacters($accessToken, $gameVersion)),
             'action' => route('account.absences.store'),
             'reasons' => PlannedAbsenceReasonData::options(),
             'character_portrait' => Inertia::optional(fn (): array => $this->characterPortrait($request)),
@@ -87,12 +88,12 @@ class PlannedAbsenceController extends Controller
      * is read-only, so Battle.net isn't needed.
      */
     #[Authorize('update', 'plannedAbsence')]
-    public function edit(Request $request, PlannedAbsence $plannedAbsence): Response
+    public function edit(PlannedAbsence $plannedAbsence): Response
     {
         $plannedAbsence->load(['character.playableRace', 'createdBy']);
 
         return Inertia::render('Account/Absences/Form', [
-            'planned_absence' => (new PlannedAbsenceResource($plannedAbsence))->resolve($request),
+            'planned_absence' => new PlannedAbsenceResource($plannedAbsence),
             'action' => route('account.absences.update', $plannedAbsence),
             'reasons' => PlannedAbsenceReasonData::options(),
         ]);
@@ -133,12 +134,12 @@ class PlannedAbsenceController extends Controller
     /**
      * The characters the member can pick, or why Battle.net couldn't list them.
      *
-     * @return array{characters: array<int, mixed>, mains_only: bool, error: 'reconnect'|'unavailable'|null}
+     * @return array{characters: AnonymousResourceCollection, mains_only: bool, error: 'reconnect'|'unavailable'|null}
      */
-    private function accountCharacters(Request $request, ?string $accessToken, ?GameVersion $gameVersion): array
+    private function accountCharacters(?string $accessToken, ?GameVersion $gameVersion): array
     {
         if ($accessToken === null || $gameVersion === null) {
-            return ['characters' => [], 'mains_only' => true, 'error' => null];
+            return ['characters' => CharacterResource::collection(collect()), 'mains_only' => true, 'error' => null];
         }
 
         try {
@@ -147,16 +148,16 @@ class PlannedAbsenceController extends Controller
             if ($exception->getResponse()->status() === 401) {
                 session()->forget(SharesBattleNetSession::AUTHENTICATOR_KEY);
 
-                return ['characters' => [], 'mains_only' => true, 'error' => 'reconnect'];
+                return ['characters' => CharacterResource::collection(collect()), 'mains_only' => true, 'error' => 'reconnect'];
             }
 
             Log::warning('Battle.net account characters unavailable.', ['status' => $exception->getResponse()->status()]);
 
-            return ['characters' => [], 'mains_only' => true, 'error' => 'unavailable'];
+            return ['characters' => CharacterResource::collection(collect()), 'mains_only' => true, 'error' => 'unavailable'];
         } catch (FatalRequestException $exception) {
             Log::warning('Battle.net account characters unavailable.', ['message' => $exception->getMessage()]);
 
-            return ['characters' => [], 'mains_only' => true, 'error' => 'unavailable'];
+            return ['characters' => CharacterResource::collection(collect()), 'mains_only' => true, 'error' => 'unavailable'];
         }
 
         $characters = ResolveSelectableAccountCharacters::run($accountCharacters)->load('media');
@@ -164,7 +165,7 @@ class PlannedAbsenceController extends Controller
         $characters->each(fn (Character $character) => RefreshCharacterPortrait::queueIfStale($character));
 
         return [
-            'characters' => CharacterResource::collection($characters)->resolve($request),
+            'characters' => CharacterResource::collection($characters),
             'mains_only' => $characters->isEmpty() || $characters->contains('is_main', true),
             'error' => null,
         ];

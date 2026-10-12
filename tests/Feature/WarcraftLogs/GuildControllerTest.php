@@ -40,13 +40,13 @@ class GuildControllerTest extends DashboardTestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Manage/WarcraftLogs/Guilds/Index')
-            ->has('guilds', 2)
-            ->where('guilds.0.id', 598032)
-            ->where('guilds.1.id', 774848)
-            ->where('guilds.1.namespace', ['value' => 'anniversary', 'label' => 'The Burning Crusade Classic Anniversary'])
-            ->where('guilds.1.guild_tags_count', 2)
-            ->has('guilds.1.game_versions', 1)
-            ->where('guilds.1.game_versions.0.id', $gameVersion->id)
+            ->has('guilds.data', 2)
+            ->where('guilds.data.0.id', 598032)
+            ->where('guilds.data.1.id', 774848)
+            ->where('guilds.data.1.namespace', ['value' => 'anniversary', 'label' => 'The Burning Crusade Classic Anniversary'])
+            ->where('guilds.data.1.guild_tags_count', 2)
+            ->has('guilds.data.1.game_versions', 1)
+            ->where('guilds.data.1.game_versions.0.id', $gameVersion->id)
         );
     }
 
@@ -204,16 +204,16 @@ class GuildControllerTest extends DashboardTestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Manage/WarcraftLogs/Guilds/Show')
-            ->where('guild.id', 774848)
-            ->where('guild.namespace.value', 'anniversary')
-            ->where('guild.guild_tags', [
+            ->where('guild.data.id', 774848)
+            ->where('guild.data.namespace.value', 'anniversary')
+            ->where('guild.data.guild_tags', [
                 ['id' => $alpha->id, 'name' => 'Alpha', 'count_attendance' => false, 'guild_id' => 774848],
                 ['id' => $zulu->id, 'name' => 'Zulu', 'count_attendance' => true, 'guild_id' => 774848],
             ])
-            ->has('guild.game_versions', 1)
-            ->where('guild.game_versions_count', 1)
-            ->where('guild.guild_tags_count', 2)
-            ->where('guild.reports_count', 3)
+            ->has('guild.data.game_versions', 1)
+            ->where('guild.data.game_versions_count', 1)
+            ->where('guild.data.guild_tags_count', 2)
+            ->where('guild.data.reports_count', 3)
             ->has('namespaces', count(WarcraftLogsNamespace::cases()))
         );
     }

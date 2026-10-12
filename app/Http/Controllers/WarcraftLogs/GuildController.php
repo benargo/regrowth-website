@@ -12,7 +12,6 @@ use App\Jobs\WarcraftLogs\FetchGuildTags;
 use App\Models\WarcraftLogs\Guild;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -23,7 +22,7 @@ class GuildController extends Controller
      * List every Warcraft Logs guild with its game versions and tag count.
      */
     #[Authorize('viewAny', Guild::class)]
-    public function index(Request $request): Response
+    public function index(): Response
     {
         $guilds = Guild::with(['gameVersions' => fn (HasMany $query) => $query->orderBy('release_date')])
             ->withCount('guildTags')
@@ -31,7 +30,7 @@ class GuildController extends Controller
             ->get();
 
         return Inertia::render('Manage/WarcraftLogs/Guilds/Index', [
-            'guilds' => GuildResource::collection($guilds)->resolve($request),
+            'guilds' => GuildResource::collection($guilds),
         ]);
     }
 
@@ -66,7 +65,7 @@ class GuildController extends Controller
      * deleting it would detach and how many tags it would delete.
      */
     #[Authorize('view', 'guild')]
-    public function show(Request $request, Guild $guild): Response
+    public function show(Guild $guild): Response
     {
         $guild->load([
             'gameVersions' => fn (HasMany $query) => $query->orderBy('release_date'),
@@ -74,7 +73,7 @@ class GuildController extends Controller
         ])->loadCount(['gameVersions', 'guildTags', 'reports']);
 
         return Inertia::render('Manage/WarcraftLogs/Guilds/Show', [
-            'guild' => GuildResource::make($guild)->resolve($request),
+            'guild' => GuildResource::make($guild),
             'namespaces' => WarcraftLogsNamespace::options(),
         ]);
     }

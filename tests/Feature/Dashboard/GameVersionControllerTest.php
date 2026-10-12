@@ -67,13 +67,13 @@ class GameVersionControllerTest extends DashboardTestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Manage/GameVersions/Index')
-            ->has('gameVersions', 2)
-            ->where('gameVersions.0.title', 'Earlier')
-            ->where('gameVersions.0.phases_count', 0)
-            ->where('gameVersions.1.title', 'Later')
-            ->where('gameVersions.1.phases_count', 1)
-            ->has('gameVersions.1.characters_count')
-            ->where('gameVersions.1.links', [
+            ->has('gameVersions.data', 2)
+            ->where('gameVersions.data.0.title', 'Earlier')
+            ->where('gameVersions.data.0.phases_count', 0)
+            ->where('gameVersions.data.1.title', 'Later')
+            ->where('gameVersions.data.1.phases_count', 1)
+            ->has('gameVersions.data.1.characters_count')
+            ->where('gameVersions.data.1.links', [
                 'edit' => route('management.game-versions.edit', $later),
                 'destroy' => route('management.game-versions.destroy', $later),
             ])

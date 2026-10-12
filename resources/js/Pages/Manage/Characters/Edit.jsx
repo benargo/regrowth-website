@@ -17,7 +17,7 @@ function SectionHeading({ children }) {
     );
 }
 
-export default function Edit({ character, specializations }) {
+export default function Edit({ character: { data: character }, specializations: { data: specializations } }) {
     const { data, setData, patch, processing, errors } = useForm({
         is_loot_councillor: character.is_loot_councillor ?? false,
         specializations: {

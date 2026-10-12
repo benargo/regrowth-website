@@ -99,7 +99,7 @@ class PlannedAbsenceControllerTest extends TestCase
                 ->where('action', route('account.absences.store'))
                 ->where('reasons', PlannedAbsenceReasonData::options()->toArray())
                 ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->where('account_characters', ['characters' => [], 'mains_only' => true, 'error' => null])));
+                    ->where('account_characters', ['characters' => ['data' => []], 'mains_only' => true, 'error' => null])));
 
         Saloon::assertNothingSent();
     }
@@ -130,14 +130,14 @@ class PlannedAbsenceControllerTest extends TestCase
             ->get(route('account.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Account/Absences/Form')
-                ->where('game_version.id', $gameVersion->id)
+                ->where('game_version.data.id', $gameVersion->id)
                 ->where('battle_net.connected', true)
                 ->missing('account_characters')
                 ->loadDeferredProps(fn (Assert $reload) => $reload
                     ->where('account_characters.error', null)
                     ->where('account_characters.mains_only', true)
-                    ->has('account_characters.characters', 1)
-                    ->where('account_characters.characters.0.id', $mine->id)));
+                    ->has('account_characters.characters.data', 1)
+                    ->where('account_characters.characters.data.0.id', $mine->id)));
     }
 
     #[Test]
@@ -153,7 +153,7 @@ class PlannedAbsenceControllerTest extends TestCase
             ->withSession($this->battleNetSession())
             ->get(route('account.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
-                ->loadDeferredProps(fn (Assert $reload) => $reload->has('account_characters.characters', 1)));
+                ->loadDeferredProps(fn (Assert $reload) => $reload->has('account_characters.characters.data', 1)));
 
         RefreshCharacterPortrait::assertPushed(1);
         RefreshCharacterPortrait::assertPushed(fn (RefreshCharacterPortrait $action, array $parameters): bool => $parameters[0]->is($mine));
@@ -191,7 +191,7 @@ class PlannedAbsenceControllerTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
                     ->where('account_characters.mains_only', false)
-                    ->where('account_characters.characters', fn ($characters) => collect($characters)->pluck('id')->all() === [$auburn->id, $noonian->id])));
+                    ->where('account_characters.characters.data', fn ($characters) => collect($characters)->pluck('id')->all() === [$auburn->id, $noonian->id])));
     }
 
     #[Test]
@@ -206,7 +206,7 @@ class PlannedAbsenceControllerTest extends TestCase
             ->get(route('account.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->where('account_characters', ['characters' => [], 'mains_only' => true, 'error' => 'reconnect'])));
+                    ->where('account_characters', ['characters' => ['data' => []], 'mains_only' => true, 'error' => 'reconnect'])));
 
         $this->assertNull(session(SharesBattleNetSession::AUTHENTICATOR_KEY));
     }
@@ -223,7 +223,7 @@ class PlannedAbsenceControllerTest extends TestCase
             ->get(route('account.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->where('account_characters', ['characters' => [], 'mains_only' => true, 'error' => 'unavailable'])));
+                    ->where('account_characters', ['characters' => ['data' => []], 'mains_only' => true, 'error' => 'unavailable'])));
 
         $this->assertNotNull(session(SharesBattleNetSession::AUTHENTICATOR_KEY));
     }
@@ -238,8 +238,8 @@ class PlannedAbsenceControllerTest extends TestCase
             ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $officerOnly->slug])
             ->get(route('account.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
-                ->where('game_version.id', $currentRoster->id)
-                ->where('game_versions', fn ($gameVersions) => collect($gameVersions)->pluck('id')->all() === [$currentRoster->id]))
+                ->where('game_version.data.id', $currentRoster->id)
+                ->where('game_versions.data', fn ($gameVersions) => collect($gameVersions)->pluck('id')->all() === [$currentRoster->id]))
             ->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, $officerOnly->slug);
     }
 
@@ -399,8 +399,8 @@ class PlannedAbsenceControllerTest extends TestCase
             ->get(route('account.absences.edit', $absence))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Account/Absences/Form')
-                ->where('planned_absence.id', $absence->id)
-                ->where('planned_absence.character.id', $absence->character_id)
+                ->where('planned_absence.data.id', $absence->id)
+                ->where('planned_absence.data.character.id', $absence->character_id)
                 ->where('action', route('account.absences.update', $absence))
                 ->where('reasons', PlannedAbsenceReasonData::options()->toArray())
                 ->missing('account_characters')

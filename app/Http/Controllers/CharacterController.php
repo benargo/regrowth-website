@@ -17,7 +17,6 @@ use App\Http\Resources\PlayableSpecializationResource;
 use App\Models\Character;
 use App\Models\GameVersion;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
@@ -35,7 +34,7 @@ class CharacterController extends Controller
      * Display the guild roster of the user's current game version.
      */
     #[Middleware(RemembersCurrentGameVersion::class)]
-    public function index(Request $request, ResolveCurrentGameVersion $resolveCurrentGameVersion): Response
+    public function index(ResolveCurrentGameVersion $resolveCurrentGameVersion): Response
     {
         $rosters = GameVersion::currentRosters()->load('media');
         $gameVersion = $resolveCurrentGameVersion->handle($rosters);
@@ -43,19 +42,19 @@ class CharacterController extends Controller
         abort_if($gameVersion === null, 404);
 
         return Inertia::render('Roster/Index', [
-            'gameVersion' => (new GameVersionResource($gameVersion))->resolve($request),
-            'gameVersions' => GameVersionResource::collection($rosters)->resolve($request),
-            'classes' => PlayableClassResource::collection($gameVersion->playableClasses()->orderBy('name')->get())->resolve($request),
+            'gameVersion' => new GameVersionResource($gameVersion),
+            'gameVersions' => GameVersionResource::collection($rosters),
+            'classes' => PlayableClassResource::collection($gameVersion->playableClasses()->orderBy('name')->get()),
             'ranks' => $gameVersion->guildRanks()->select('name')->ordered()->pluck('name')->unique()->values(),
-            'races' => PlayableRaceResource::collection($gameVersion->playableRaces()->orderBy('name')->get())->resolve($request),
-            'characters' => Inertia::defer(function () use ($request, $gameVersion) {
+            'races' => PlayableRaceResource::collection($gameVersion->playableRaces()->orderBy('name')->get()),
+            'characters' => Inertia::defer(function () use ($gameVersion) {
                 $members = $this->blizzard->send(new GetGuildRosterRequest(
                     $gameVersion->realm_slug,
                     $gameVersion->guild_slug,
                     $gameVersion->blizzard_namespace,
                 ))->dto()->members ?? [];
 
-                return (new GuildRosterMemberCollection($members, $gameVersion))->resolve($request);
+                return new GuildRosterMemberCollection($members, $gameVersion);
             }),
         ]);
     }
@@ -63,7 +62,7 @@ class CharacterController extends Controller
     /**
      * Display a single character's overview.
      */
-    public function show(Request $request, Character $character, ?string $slug = null): Response|RedirectResponse
+    public function show(Character $character, ?string $slug = null): Response|RedirectResponse
     {
         if ($slug !== $character->slug) {
             return redirect()->route('characters.show', [
@@ -79,7 +78,7 @@ class CharacterController extends Controller
         RefreshCharacterPortrait::queueIfStale($character);
 
         return Inertia::render('Roster/Characters/Show', [
-            'character' => (new CharacterResource($character))->resolve($request),
+            'character' => new CharacterResource($character),
             'roster_url' => $gameVersion?->ownsCurrentRoster()
                 ? URL::route('roster.index', ['game_version' => $gameVersion->slug])
                 : URL::route('roster.index'),
@@ -95,15 +94,15 @@ class CharacterController extends Controller
      */
     #[Middleware('auth')]
     #[Authorize('update', 'character')]
-    public function edit(Request $request, Character $character, string $slug): Response
+    public function edit(Character $character, string $slug): Response
     {
         $character->load(['playableClass.specializations', 'specializations']);
 
         return Inertia::render('Manage/Characters/Edit', [
-            'character' => (new CharacterResource($character))->resolve($request),
+            'character' => new CharacterResource($character),
             'specializations' => PlayableSpecializationResource::collection(
                 $character->playableClass->specializations()->orderBy('name')->get()
-            )->resolve($request),
+            ),
         ]);
     }
 

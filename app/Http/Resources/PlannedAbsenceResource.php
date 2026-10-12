@@ -4,8 +4,8 @@ namespace App\Http\Resources;
 
 use App\Models\PlannedAbsence;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Collection;
 
 /**
  * Eager-loading requirements differ per scope:
@@ -30,11 +30,10 @@ class PlannedAbsenceResource extends JsonResource
 
     /**
      * @param  iterable<int, PlannedAbsence>  $resources
-     * @return Collection<int, static>
      */
-    public static function collectionForOfficerList(iterable $resources): Collection
+    public static function collectionForOfficerList(iterable $resources): AnonymousResourceCollection
     {
-        return collect($resources)->map(fn ($absence) => static::forOfficerList($absence));
+        return static::collection(collect($resources)->map(fn (PlannedAbsence $absence) => static::forOfficerList($absence)));
     }
 
     protected static function withScope(mixed $resource, string $scope): static

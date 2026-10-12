@@ -107,7 +107,7 @@ class ShowCharacterTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Roster/Characters/Show')
-            ->has('character')
+            ->has('character.data')
             ->missing('recent_reports')
             ->loadDeferredProps(fn (Assert $reload) => $reload->has('recent_reports'))
         );
@@ -129,7 +129,7 @@ class ShowCharacterTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Roster/Characters/Show')
-            ->where('character.gender', null)
+            ->where('character.data.gender', null)
         );
     }
 
