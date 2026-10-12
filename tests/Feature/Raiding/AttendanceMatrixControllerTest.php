@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Raiding;
 
+use App\Enums\PlannedAbsenceReason;
 use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\GuildRank;
@@ -785,6 +786,8 @@ class AttendanceMatrixControllerTest extends TestCase
             'character_id' => $character->id,
             'start_date' => '2025-01-15',
             'end_date' => '2025-01-15',
+            'reason' => PlannedAbsenceReason::Work,
+            'notes' => 'Late shift.',
         ]);
 
         $user = User::factory()->officer()->create();
@@ -794,6 +797,11 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('matrix.planned_absences', 1)
+                ->where('matrix.planned_absences.0.reason.key', 'Stuck at work')
+                ->where('matrix.planned_absences.0.reason.label', 'Stuck at work')
+                ->where('matrix.planned_absences.0.reason.description', PlannedAbsenceReason::Work->description())
+                ->where('matrix.planned_absences.0.reason.icon', 'briefcase')
+                ->where('matrix.planned_absences.0.notes', 'Late shift.')
             )
         );
     }

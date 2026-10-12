@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Data\PlannedAbsenceReasonData;
 use App\Http\Middleware\RemembersCurrentGameVersion;
 use App\Http\Requests\StorePlannedAbsenceRequest;
 use App\Http\Requests\UpdatePlannedAbsenceRequest;
@@ -82,6 +83,7 @@ class PlannedAbsenceController extends Controller
             'game_version' => $gameVersion ? (new GameVersionResource($gameVersion))->resolve($request) : null,
             'characters' => $this->pickerCharacters($request, $gameVersion),
             'action' => route('raiding.absences.store'),
+            'reasons' => PlannedAbsenceReasonData::options(),
             'discord_members' => Inertia::optional(fn (): array => $this->searchDiscordMembers($request)),
         ]);
     }
@@ -102,6 +104,7 @@ class PlannedAbsenceController extends Controller
             'start_date' => $request->input('start_date'),
             'end_date' => $request->input('end_date', null),
             'reason' => $request->input('reason'),
+            'notes' => $request->input('notes'),
             'created_by' => $request->user()->id,
         ]);
 
@@ -131,6 +134,7 @@ class PlannedAbsenceController extends Controller
             'game_version' => $gameVersion ? (new GameVersionResource($gameVersion))->resolve($request) : null,
             'characters' => $this->pickerCharacters($request, $gameVersion),
             'action' => route('raiding.absences.update', $plannedAbsence),
+            'reasons' => PlannedAbsenceReasonData::options(),
             'discord_members' => Inertia::optional(fn (): array => $this->searchDiscordMembers($request)),
         ]);
     }
@@ -162,6 +166,10 @@ class PlannedAbsenceController extends Controller
 
         if ($request->has('reason')) {
             $updates = Arr::add($updates, 'reason', $request->input('reason'));
+        }
+
+        if ($request->has('notes')) {
+            $updates = Arr::add($updates, 'notes', $request->input('notes'));
         }
 
         $plannedAbsence->update($updates);

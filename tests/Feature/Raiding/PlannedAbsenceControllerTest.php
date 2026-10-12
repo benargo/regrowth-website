@@ -3,6 +3,8 @@
 namespace Tests\Feature\Raiding;
 
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Data\PlannedAbsenceReasonData;
+use App\Enums\PlannedAbsenceReason;
 use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\GameVersion;
@@ -123,8 +125,8 @@ class PlannedAbsenceControllerTest extends TestCase
                     ->has('character')
                     ->has('start_date')
                     ->has('end_date')
-                    ->has('reason')
-                    ->has('discord_message_id')
+                    ->has('reason', fn (Assert $reason) => $reason->hasAll(['key', 'label', 'description', 'icon']))
+                    ->has('notes')
                     ->has('created_by')
                     ->has('created_at')
                     ->has('updated_at')
@@ -317,6 +319,17 @@ class PlannedAbsenceControllerTest extends TestCase
     // ==================== create: action prop ====================
 
     #[Test]
+    public function create_passes_reason_options(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $this->actingAs($user)
+            ->get(route('raiding.absences.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('reasons', PlannedAbsenceReasonData::options()->toArray()));
+    }
+
+    #[Test]
     public function create_passes_action_url_to_page(): void
     {
         $user = User::factory()->officer()->create();
@@ -366,6 +379,18 @@ class PlannedAbsenceControllerTest extends TestCase
     // ==================== edit: Inertia Response ====================
 
     #[Test]
+    public function edit_passes_reason_options(): void
+    {
+        $user = User::factory()->officer()->create();
+        $absence = PlannedAbsence::factory()->withCharacter()->create();
+
+        $this->actingAs($user)
+            ->get(route('raiding.absences.edit', $absence))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('reasons', PlannedAbsenceReasonData::options()->toArray()));
+    }
+
+    #[Test]
     public function edit_renders_correct_inertia_component(): void
     {
         $user = User::factory()->officer()->create();
@@ -385,7 +410,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $absence = PlannedAbsence::factory()->withCharacter()->create([
             'start_date' => '2026-06-01',
             'end_date' => '2026-06-07',
-            'reason' => 'On holiday.',
+            'reason' => PlannedAbsenceReason::Holiday,
         ]);
 
         $response = $this->actingAs($user)->get(route('raiding.absences.edit', $absence));
@@ -397,8 +422,8 @@ class PlannedAbsenceControllerTest extends TestCase
                 ->has('character')
                 ->where('start_date', '2026-06-01')
                 ->where('end_date', '2026-06-07')
-                ->where('reason', 'On holiday.')
-                ->has('discord_message_id')
+                ->where('reason.key', 'On holiday')
+                ->has('notes')
                 ->has('created_by')
                 ->has('created_at')
                 ->has('updated_at')
@@ -473,13 +498,34 @@ class PlannedAbsenceControllerTest extends TestCase
             'game_version' => $character->game_version_id,
             'character' => $character->id,
             'start_date' => now()->addDay()->format('Y-m-d'),
-            'reason' => 'Going on holiday.',
+            'reason' => PlannedAbsenceReason::Holiday->value,
         ]);
 
         $response->assertForbidden();
     }
 
     // ==================== store: Happy Paths ====================
+
+    #[Test]
+    public function store_saves_reason_and_notes(): void
+    {
+        $user = User::factory()->officer()->create();
+        $character = $this->mainInReleasedVersion();
+
+        $this->actingAs($user)
+            ->post(route('raiding.absences.store'), [
+                ...$this->absencePayload($character->gameVersion, $character),
+                'reason' => PlannedAbsenceReason::Other->value,
+                'notes' => 'Spoke to an officer.',
+            ])
+            ->assertRedirectToRoute('raiding.absences.index');
+
+        $this->assertDatabaseHas('planned_absences', [
+            'character_id' => $character->id,
+            'reason' => PlannedAbsenceReason::Other->value,
+            'notes' => 'Spoke to an officer.',
+        ]);
+    }
 
     #[Test]
     public function store_creates_absence_with_character_id(): void
@@ -495,7 +541,7 @@ class PlannedAbsenceControllerTest extends TestCase
             'character' => $character->id,
             'start_date' => $startDate->format('Y-m-d'),
             'end_date' => $endDate->format('Y-m-d'),
-            'reason' => 'Going on holiday.',
+            'reason' => PlannedAbsenceReason::Holiday->value,
         ]);
 
         $response->assertRedirectToRoute('raiding.absences.index');
@@ -517,7 +563,7 @@ class PlannedAbsenceControllerTest extends TestCase
             'game_version' => $character->game_version_id,
             'character' => $character->id,
             'start_date' => now()->addDay()->format('Y-m-d'),
-            'reason' => 'Indefinite absence.',
+            'reason' => PlannedAbsenceReason::Holiday->value,
         ]);
 
         $response->assertRedirectToRoute('raiding.absences.index');
@@ -529,6 +575,22 @@ class PlannedAbsenceControllerTest extends TestCase
 
     // ==================== store: Validation ====================
 
+    #[Test]
+    #[Group('validation')]
+    public function store_rejects_a_reason_outside_the_enum(): void
+    {
+        $user = User::factory()->officer()->create();
+        $character = $this->mainInReleasedVersion();
+
+        $this->actingAs($user)
+            ->postJson(route('raiding.absences.store'), [
+                ...$this->absencePayload($character->gameVersion, $character),
+                'reason' => 'Travelling for work',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['reason' => 'Choose one of the listed reasons.']);
+    }
+
     #[Group('validation')]
     #[Test]
     public function store_requires_character(): void
@@ -537,7 +599,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response = $this->actingAs($user)->postJson(route('raiding.absences.store'), [
             'start_date' => now()->addDay()->format('Y-m-d'),
-            'reason' => 'Away for a week.',
+            'reason' => PlannedAbsenceReason::Holiday->value,
         ]);
 
         $response->assertUnprocessable();
@@ -554,7 +616,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response = $this->actingAs($user)->postJson(route('raiding.absences.store'), [
             'game_version' => $character->game_version_id,
             'character' => $character->id,
-            'reason' => 'Away for a week.',
+            'reason' => PlannedAbsenceReason::Holiday->value,
         ]);
 
         $response->assertUnprocessable();
@@ -590,7 +652,7 @@ class PlannedAbsenceControllerTest extends TestCase
             'character' => $character->id,
             'start_date' => now()->addDays(7)->format('Y-m-d'),
             'end_date' => now()->addDay()->format('Y-m-d'),
-            'reason' => 'Away for a week.',
+            'reason' => PlannedAbsenceReason::Holiday->value,
         ]);
 
         $response->assertUnprocessable();
@@ -635,7 +697,7 @@ class PlannedAbsenceControllerTest extends TestCase
             ->post(route('raiding.absences.store'), [
                 'character' => $versionless->id,
                 'start_date' => now()->addDay()->format('Y-m-d'),
-                'reason' => 'Away.',
+                'reason' => PlannedAbsenceReason::Holiday->value,
             ])
             ->assertSessionHasErrors(['game_version' => 'A game version is required.', 'character' => 'Choose a main character.']);
 
@@ -677,7 +739,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $absence = PlannedAbsence::factory()->withCharacter()->create(['created_by' => $member->id]);
 
         $response = $this->actingAs($member)->patchJson(route('raiding.absences.update', $absence), [
-            'reason' => 'Updated reason.',
+            'reason' => PlannedAbsenceReason::Holiday->value,
         ]);
 
         $response->assertForbidden();
@@ -727,19 +789,21 @@ class PlannedAbsenceControllerTest extends TestCase
     }
 
     #[Test]
-    public function update_updates_reason(): void
+    public function update_updates_reason_and_notes(): void
     {
         $user = User::factory()->officer()->create();
-        $absence = PlannedAbsence::factory()->withCharacter()->create(['reason' => 'Old reason.']);
+        $absence = PlannedAbsence::factory()->withCharacter()->create(['reason' => PlannedAbsenceReason::Holiday, 'notes' => 'Old notes.']);
 
         $response = $this->actingAs($user)->patchJson(route('raiding.absences.update', $absence), [
-            'reason' => 'New reason.',
+            'reason' => PlannedAbsenceReason::Work->value,
+            'notes' => 'New notes.',
         ]);
 
         $response->assertRedirect();
         $this->assertDatabaseHas('planned_absences', [
             'id' => $absence->id,
-            'reason' => 'New reason.',
+            'reason' => PlannedAbsenceReason::Work->value,
+            'notes' => 'New notes.',
         ]);
     }
 
@@ -917,7 +981,7 @@ class PlannedAbsenceControllerTest extends TestCase
             'character' => $character->id,
             'user' => $targetUser->id,
             'start_date' => now()->addDay()->format('Y-m-d'),
-            'reason' => 'Away for work.',
+            'reason' => PlannedAbsenceReason::Holiday->value,
         ]);
 
         $response->assertRedirectToRoute('raiding.absences.index');
@@ -970,7 +1034,7 @@ class PlannedAbsenceControllerTest extends TestCase
             'character' => $character->id,
             'user' => $unknownUserId,
             'start_date' => now()->addDay()->format('Y-m-d'),
-            'reason' => 'Away.',
+            'reason' => PlannedAbsenceReason::Holiday->value,
         ]);
 
         $response->assertRedirectToRoute('raiding.absences.index');
@@ -1154,7 +1218,7 @@ class PlannedAbsenceControllerTest extends TestCase
             'game_version' => $gameVersion->id,
             'character' => $character->id,
             'start_date' => now()->addDay()->format('Y-m-d'),
-            'reason' => 'Away.',
+            'reason' => PlannedAbsenceReason::Holiday->value,
         ];
     }
 }

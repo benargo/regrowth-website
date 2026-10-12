@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\PlannedAbsenceReason;
 use App\Models\PlannedAbsence;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Database\Query\Builder;
@@ -43,7 +44,12 @@ class UpdatePlannedAbsenceRequest extends FormRequest
             'user' => ['sometimes', 'nullable', 'string'],
             'start_date' => $startDateRules,
             'end_date' => ['sometimes', 'nullable', 'date', ...($effectiveStartDate ? ['after:'.$effectiveStartDate] : [])],
-            'reason' => ['sometimes', 'string'],
+            'reason' => ['sometimes', Rule::enum(PlannedAbsenceReason::class)],
+            'notes' => [
+                'nullable',
+                'string',
+                Rule::requiredIf(fn (): bool => $this->notesAreRequired($plannedAbsence)),
+            ],
         ];
     }
 
@@ -65,7 +71,24 @@ class UpdatePlannedAbsenceRequest extends FormRequest
             'start_date.after_or_equal' => 'The start date must not be in the past.',
             'end_date.date' => 'The end date must be a valid date.',
             'end_date.after' => 'The end date must be after the start date.',
-            'reason.string' => 'The reason must be a string.',
+            'reason.enum' => 'Choose one of the listed reasons.',
+            'notes.required' => 'Add a note when the reason is Other.',
+            'notes.string' => 'The notes must be text.',
         ];
+    }
+
+    /**
+     * Notes are required for an "Other" absence. On a partial update the
+     * stored reason and notes stand in for whatever the request leaves out.
+     */
+    private function notesAreRequired(?PlannedAbsence $plannedAbsence): bool
+    {
+        $reason = $this->enum('reason', PlannedAbsenceReason::class) ?? $plannedAbsence?->reason?->key;
+
+        if ($reason !== PlannedAbsenceReason::Other) {
+            return false;
+        }
+
+        return $this->has('notes') || blank($plannedAbsence?->notes);
     }
 }

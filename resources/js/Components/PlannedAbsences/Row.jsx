@@ -68,11 +68,13 @@ export default function PlannedAbsenceRow({
                     )}
                 </div>
 
-                {absence.reason && (
-                    <div className="text-secondary-300 flex-1 text-sm">
-                        <FormattedMarkdown>{absence.reason}</FormattedMarkdown>
-                    </div>
-                )}
+                <div className="text-secondary-300 flex flex-1 flex-col gap-1 text-sm">
+                    <span className="text-ink-300 flex items-center font-medium">
+                        <Icon icon={absence.reason.icon} style="solid" className="mr-1.5 h-4 text-sky-400" aria-hidden="true" />
+                        {absence.reason.label}
+                    </span>
+                    {absence.notes && <FormattedMarkdown>{absence.notes}</FormattedMarkdown>}
+                </div>
 
                 {showCreatedBy && absence.created_by && absence.created_at && (
                     <div className="text-secondary-500 shrink-0 text-xs">

@@ -82,13 +82,14 @@ function AccountCharacterPicker({ gameVersion, value, onChange, invalid }) {
     );
 }
 
-function CreateForm({ gameVersion, action, canBackdate }) {
+function CreateForm({ gameVersion, action, canBackdate, reasons }) {
     const { data, setData, post, transform, processing, errors, clearErrors } = useForm({
         game_version: gameVersion.id,
         character: null,
         start_date: "",
         end_date: "",
         reason: "",
+        notes: "",
     });
 
     function submit(visitOptions) {
@@ -134,16 +135,18 @@ function CreateForm({ gameVersion, action, canBackdate }) {
                 errors={errors}
                 clearErrors={clearErrors}
                 canBackdate={canBackdate}
+                reasons={reasons}
             />
         </AbsenceForm>
     );
 }
 
-function EditForm({ plannedAbsence, action, canBackdate }) {
+function EditForm({ plannedAbsence, action, canBackdate, reasons }) {
     const { data, setData, patch, transform, processing, errors, clearErrors } = useForm({
         start_date: plannedAbsence.start_date ?? "",
         end_date: plannedAbsence.end_date ?? "",
-        reason: plannedAbsence.reason ?? "",
+        reason: plannedAbsence.reason?.key ?? "",
+        notes: plannedAbsence.notes ?? "",
     });
 
     function submit(visitOptions) {
@@ -181,6 +184,7 @@ function EditForm({ plannedAbsence, action, canBackdate }) {
                 errors={errors}
                 clearErrors={clearErrors}
                 canBackdate={canBackdate}
+                reasons={reasons}
             />
         </AbsenceForm>
     );
@@ -192,6 +196,7 @@ export default function Form() {
         game_version: gameVersion = null,
         planned_absence: plannedAbsence = null,
         action,
+        reasons = [],
     } = usePage().props;
 
     const canBackdate = usePermission("manage-planned-absences");
@@ -228,13 +233,14 @@ export default function Form() {
                 {plannedAbsence || gameVersion ? (
                     <AbsenceFormLayout note={canBackdate ? null : ticketNote}>
                         {plannedAbsence ? (
-                            <EditForm plannedAbsence={plannedAbsence} action={action} canBackdate={canBackdate} />
+                            <EditForm plannedAbsence={plannedAbsence} action={action} canBackdate={canBackdate} reasons={reasons} />
                         ) : (
                             <CreateForm
                                 key={gameVersion.slug}
                                 gameVersion={gameVersion}
                                 action={action}
                                 canBackdate={canBackdate}
+                                reasons={reasons}
                             />
                         )}
                     </AbsenceFormLayout>

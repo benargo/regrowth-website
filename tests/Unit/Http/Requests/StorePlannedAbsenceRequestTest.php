@@ -2,8 +2,12 @@
 
 namespace Tests\Unit\Http\Requests;
 
+use App\Enums\PlannedAbsenceReason;
 use App\Http\Requests\StorePlannedAbsenceRequest;
 use App\Models\PlannedAbsence;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\Rules\Exists;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -102,12 +106,33 @@ class StorePlannedAbsenceRequestTest extends TestCase
     }
 
     #[Test]
-    public function rules_requires_reason_as_string(): void
+    public function rules_require_a_reason_from_the_enum(): void
     {
         $rules = $this->makeRequest()->rules();
 
-        $this->assertArrayHasKey('reason', $rules);
         $this->assertContains('required', $rules['reason']);
-        $this->assertContains('string', $rules['reason']);
+        $this->assertTrue(collect($rules['reason'])->contains(fn ($rule) => $rule instanceof Enum));
+    }
+
+    #[Test]
+    public function rules_make_notes_optional_for_a_listed_reason(): void
+    {
+        $validator = Validator::make(
+            ['reason' => PlannedAbsenceReason::Holiday->value, 'notes' => null],
+            Arr::only($this->makeRequest(['reason' => PlannedAbsenceReason::Holiday->value])->rules(), ['reason', 'notes']),
+        );
+
+        $this->assertTrue($validator->passes());
+    }
+
+    #[Test]
+    public function rules_require_notes_for_other(): void
+    {
+        $validator = Validator::make(
+            ['reason' => PlannedAbsenceReason::Other->value, 'notes' => null],
+            Arr::only($this->makeRequest(['reason' => PlannedAbsenceReason::Other->value])->rules(), ['reason', 'notes']),
+        );
+
+        $this->assertSame(['notes'], $validator->errors()->keys());
     }
 }

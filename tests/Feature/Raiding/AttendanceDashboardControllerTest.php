@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Raiding;
 
+use App\Enums\PlannedAbsenceReason;
 use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\GameVersion;
@@ -187,6 +188,7 @@ class AttendanceDashboardControllerTest extends TestCase
             'character_id' => $characterA->id,
             'start_date' => now()->addDays(2),
             'end_date' => now()->addDays(4),
+            'reason' => PlannedAbsenceReason::Medical,
         ]);
 
         $user = User::factory()->officer()->create();
@@ -198,6 +200,8 @@ class AttendanceDashboardControllerTest extends TestCase
                 ->has('stats.upcomingAbsences', 2)
                 ->where('stats.upcomingAbsences.0.character.name', 'Arthas')
                 ->where('stats.upcomingAbsences.1.character.name', 'Jaina')
+                ->where('stats.upcomingAbsences.0.reason.key', 'Medical recovery')
+                ->where('stats.upcomingAbsences.0.reason.icon', 'clinic-medical')
             )
         );
     }

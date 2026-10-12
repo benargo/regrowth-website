@@ -2,8 +2,13 @@
 
 namespace Tests\Unit\Http\Requests;
 
+use App\Enums\PlannedAbsenceReason;
 use App\Http\Requests\UpdatePlannedAbsenceRequest;
 use App\Models\PlannedAbsence;
+use Illuminate\Routing\Route;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\Rules\Exists;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -135,13 +140,64 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
     }
 
     #[Test]
-    public function rules_reason_is_sometimes_string(): void
+    public function rules_reason_is_sometimes_an_enum(): void
     {
-        $rules = $this->makeRequest()->rules();
+        $rules = $this->makeRequestFor(new PlannedAbsence, [])->rules();
 
-        $this->assertArrayHasKey('reason', $rules);
         $this->assertContains('sometimes', $rules['reason']);
-        $this->assertContains('string', $rules['reason']);
-        $this->assertNotContains('required', $rules['reason']);
+        $this->assertTrue(collect($rules['reason'])->contains(fn ($rule) => $rule instanceof Enum));
+    }
+
+    #[Test]
+    public function update_keeps_other_when_notes_are_already_stored(): void
+    {
+        $absence = new PlannedAbsence(['reason' => PlannedAbsenceReason::Other, 'notes' => 'Told Thrall.']);
+
+        $this->assertSame([], $this->notesErrors($absence, ['start_date' => today()->addDay()->format('Y-m-d')]));
+    }
+
+    #[Test]
+    public function rules_require_notes_when_switching_to_other_with_no_stored_notes(): void
+    {
+        $absence = new PlannedAbsence(['reason' => PlannedAbsenceReason::Holiday, 'notes' => null]);
+
+        $this->assertSame(['notes'], $this->notesErrors($absence, ['reason' => PlannedAbsenceReason::Other->value]));
+    }
+
+    #[Test]
+    public function rules_reject_clearing_notes_on_an_other_absence(): void
+    {
+        $absence = new PlannedAbsence(['reason' => PlannedAbsenceReason::Other, 'notes' => 'Told Thrall.']);
+
+        $this->assertSame(['notes'], $this->notesErrors($absence, ['notes' => null]));
+    }
+
+    #[Test]
+    public function rules_allow_clearing_notes_on_a_listed_reason(): void
+    {
+        $absence = new PlannedAbsence(['reason' => PlannedAbsenceReason::Work, 'notes' => 'Late shift.']);
+
+        $this->assertSame([], $this->notesErrors($absence, ['notes' => null]));
+    }
+
+    private function makeRequestFor(PlannedAbsence $plannedAbsence, array $data): UpdatePlannedAbsenceRequest
+    {
+        $request = UpdatePlannedAbsenceRequest::create('/', 'PATCH', $data);
+        $request->setRouteResolver(function () use ($request, $plannedAbsence) {
+            $route = new Route('PATCH', '/{plannedAbsence}', []);
+            $route->bind($request);
+            $route->setParameter('plannedAbsence', $plannedAbsence);
+
+            return $route;
+        });
+
+        return $request;
+    }
+
+    private function notesErrors(PlannedAbsence $plannedAbsence, array $data): array
+    {
+        $rules = Arr::only($this->makeRequestFor($plannedAbsence, $data)->rules(), ['reason', 'notes']);
+
+        return Validator::make($data, $rules)->errors()->keys();
     }
 }

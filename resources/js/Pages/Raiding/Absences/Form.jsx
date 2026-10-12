@@ -26,7 +26,7 @@ function matchNickname(characters, nickname) {
     return matches.length === 1 ? matches[0] : null;
 }
 
-function OfficerAbsenceForm({ gameVersion, characters, plannedAbsence, action }) {
+function OfficerAbsenceForm({ gameVersion, characters, plannedAbsence, action, reasons }) {
     const isEditing = plannedAbsence !== null;
     const originalCharacterId = plannedAbsence?.character?.id ?? null;
 
@@ -36,7 +36,8 @@ function OfficerAbsenceForm({ gameVersion, characters, plannedAbsence, action })
         user: plannedAbsence?.user?.id ?? null,
         start_date: plannedAbsence?.start_date ?? "",
         end_date: plannedAbsence?.end_date ?? "",
-        reason: plannedAbsence?.reason ?? "",
+        reason: plannedAbsence?.reason?.key ?? "",
+        notes: plannedAbsence?.notes ?? "",
     });
 
     // A legacy absence may belong to a character that is no longer a main; keep it selectable as the current value.
@@ -121,7 +122,7 @@ function OfficerAbsenceForm({ gameVersion, characters, plannedAbsence, action })
                 </FormRow>
             </FormSection>
 
-            <AbsenceDetailsFields data={data} setData={setData} errors={errors} clearErrors={clearErrors} canBackdate isOfficer />
+            <AbsenceDetailsFields data={data} setData={setData} errors={errors} clearErrors={clearErrors} reasons={reasons} canBackdate isOfficer />
         </AbsenceForm>
     );
 }
@@ -133,6 +134,7 @@ export default function Form() {
         characters,
         planned_absence: plannedAbsence = null,
         action,
+        reasons = [],
     } = usePage().props;
 
     const pageTitle = plannedAbsence ? "Edit Planned Absence" : "Log Planned Absence";
@@ -163,6 +165,7 @@ export default function Form() {
                             characters={characters}
                             plannedAbsence={plannedAbsence}
                             action={action}
+                            reasons={reasons}
                         />
                     </AbsenceFormLayout>
                 ) : (

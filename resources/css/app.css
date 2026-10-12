@@ -28,6 +28,8 @@
 @source "../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php";
 @source "../../storage/framework/views/*.php";
 
+@custom-variant dark (&:where([data-theme], [data-theme] *));
+
 @theme {
     --font-sans:
         "Semplicita Pro", "Open Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",

@@ -4,6 +4,8 @@ namespace Tests\Feature\Account;
 
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Contracts\Http\SharesBattleNetSession;
+use App\Data\PlannedAbsenceReasonData;
+use App\Enums\PlannedAbsenceReason;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
@@ -93,6 +95,7 @@ class PlannedAbsenceControllerTest extends TestCase
                 ->component('Account/Absences/Form')
                 ->where('battle_net.connected', false)
                 ->where('action', route('account.absences.store'))
+                ->where('reasons', PlannedAbsenceReasonData::options()->toArray())
                 ->loadDeferredProps(fn (Assert $reload) => $reload
                     ->where('account_characters', ['characters' => [], 'mains_only' => true, 'error' => null])));
 
@@ -233,7 +236,7 @@ class PlannedAbsenceControllerTest extends TestCase
             'character_id' => $character->id,
             'user_id' => $member->id,
             'created_by' => $member->id,
-            'reason' => 'Away.',
+            'reason' => PlannedAbsenceReason::Holiday->value,
         ]);
     }
 
@@ -361,6 +364,7 @@ class PlannedAbsenceControllerTest extends TestCase
                 ->where('planned_absence.id', $absence->id)
                 ->where('planned_absence.character.id', $absence->character_id)
                 ->where('action', route('account.absences.update', $absence))
+                ->where('reasons', PlannedAbsenceReasonData::options()->toArray())
                 ->missing('account_characters')
                 ->missing('game_versions'));
 
@@ -394,22 +398,36 @@ class PlannedAbsenceControllerTest extends TestCase
 
     #[Test]
     #[Group('happy-path')]
-    public function update_changes_dates_and_reason_for_the_owner(): void
+    public function update_changes_dates_reason_and_notes_for_the_owner(): void
     {
         $member = $this->member();
-        $absence = PlannedAbsence::factory()->withCharacter()->create(['created_by' => $member->id, 'start_date' => today()->addWeek(), 'reason' => 'Old reason.']);
+        $absence = PlannedAbsence::factory()->withCharacter()->create(['created_by' => $member->id, 'start_date' => today()->addWeek(), 'reason' => PlannedAbsenceReason::Holiday, 'notes' => 'Old notes.']);
         $startDate = now()->addDays(3)->format('Y-m-d');
         $endDate = now()->addDays(5)->format('Y-m-d');
 
         $this->actingAs($member)
-            ->patch(route('account.absences.update', $absence), ['start_date' => $startDate, 'end_date' => $endDate, 'reason' => 'New reason.'])
+            ->patch(route('account.absences.update', $absence), ['start_date' => $startDate, 'end_date' => $endDate, 'reason' => PlannedAbsenceReason::Family->value, 'notes' => 'New notes.'])
             ->assertRedirectToRoute('account.index')
             ->assertSessionHas('success', 'Planned absence updated successfully.');
 
         $absence->refresh();
         $this->assertSame($startDate, $absence->start_date->format('Y-m-d'));
         $this->assertSame($endDate, $absence->end_date->format('Y-m-d'));
-        $this->assertSame('New reason.', $absence->reason);
+        $this->assertSame(PlannedAbsenceReason::Family, $absence->reason->key);
+        $this->assertSame('New notes.', $absence->notes);
+    }
+
+    #[Test]
+    public function update_clears_notes(): void
+    {
+        $member = $this->member();
+        $absence = PlannedAbsence::factory()->withCharacter()->create(['created_by' => $member->id, 'start_date' => today()->addWeek(), 'reason' => PlannedAbsenceReason::Work, 'notes' => 'Late shift.']);
+
+        $this->actingAs($member)
+            ->patch(route('account.absences.update', $absence), ['reason' => PlannedAbsenceReason::Work->value, 'notes' => ''])
+            ->assertRedirectToRoute('account.index');
+
+        $this->assertNull($absence->fresh()->notes);
     }
 
     #[Test]
@@ -431,13 +449,13 @@ class PlannedAbsenceControllerTest extends TestCase
     #[Group('authorization')]
     public function update_returns_403_for_another_users_absence(): void
     {
-        $absence = PlannedAbsence::factory()->withCharacter()->create(['created_by' => User::factory()->create()->id, 'reason' => 'Theirs.']);
+        $absence = PlannedAbsence::factory()->withCharacter()->create(['created_by' => User::factory()->create()->id, 'reason' => PlannedAbsenceReason::Holiday]);
 
         $this->actingAs($this->member())
-            ->patch(route('account.absences.update', $absence), ['reason' => 'Mine now.'])
+            ->patch(route('account.absences.update', $absence), ['reason' => PlannedAbsenceReason::Work->value])
             ->assertForbidden();
 
-        $this->assertSame('Theirs.', $absence->fresh()->reason);
+        $this->assertSame(PlannedAbsenceReason::Holiday, $absence->fresh()->reason->key);
     }
 
     #[Test]
@@ -598,7 +616,7 @@ class PlannedAbsenceControllerTest extends TestCase
             'game_version' => $gameVersion->id,
             'character' => $character->id,
             'start_date' => now()->addDay()->format('Y-m-d'),
-            'reason' => 'Away.',
+            'reason' => PlannedAbsenceReason::Holiday->value,
         ];
     }
 

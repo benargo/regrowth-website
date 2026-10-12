@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Account;
 
+use App\Enums\PlannedAbsenceReason;
 use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\PlannedAbsence;
@@ -131,7 +132,7 @@ class AccountControllerTest extends TestCase
             'user_id' => $user->id,
             'character_id' => $character->id,
             'start_date' => '2026-04-01',
-            'reason' => 'Holiday.',
+            'reason' => PlannedAbsenceReason::Holiday,
         ]);
 
         $response = $this->actingAs($user)->get(route('account.index'));
@@ -145,8 +146,8 @@ class AccountControllerTest extends TestCase
                 ->where('character.name', 'Aragorn')
                 ->has('start_date')
                 ->has('end_date')
-                ->has('reason')
-                ->has('discord_message_id')
+                ->has('reason', fn (Assert $reason) => $reason->hasAll(['key', 'label', 'description', 'icon']))
+                ->has('notes')
                 ->has('created_at')
             )
         );

@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Actions\Characters\FetchBattleNetAccountCharacters;
 use App\Actions\Characters\ResolveSelectableAccountCharacters;
 use App\Contracts\Http\SharesBattleNetSession;
+use App\Enums\PlannedAbsenceReason;
 use App\Http\Integrations\Blizzard\Exceptions\ApiException;
 use App\Models\GameVersion;
 use App\Models\PlannedAbsence;
@@ -42,7 +43,12 @@ class StoreAccountPlannedAbsenceRequest extends FormRequest
             'user' => ['prohibited'],
             'start_date' => $startDateRules,
             'end_date' => ['nullable', 'date', 'after:start_date'],
-            'reason' => ['required', 'string'],
+            'reason' => ['required', Rule::enum(PlannedAbsenceReason::class)],
+            'notes' => [
+                'nullable',
+                'string',
+                Rule::requiredIf($this->input('reason') === PlannedAbsenceReason::Other->value),
+            ],
         ];
     }
 
@@ -85,8 +91,10 @@ class StoreAccountPlannedAbsenceRequest extends FormRequest
             'start_date.after_or_equal' => 'The start date must not be in the past.',
             'end_date.date' => 'The end date must be a valid date.',
             'end_date.after' => 'The end date must be after the start date.',
-            'reason.required' => 'A reason is required.',
-            'reason.string' => 'The reason must be a string.',
+            'reason.required' => 'Choose a reason.',
+            'reason.enum' => 'Choose one of the listed reasons.',
+            'notes.required' => 'Add a note when the reason is Other.',
+            'notes.string' => 'The notes must be text.',
         ];
     }
 

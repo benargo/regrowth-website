@@ -6,6 +6,7 @@ use App\Actions\Characters\FetchBattleNetAccountCharacters;
 use App\Actions\Characters\ResolveSelectableAccountCharacters;
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Contracts\Http\SharesBattleNetSession;
+use App\Data\PlannedAbsenceReasonData;
 use App\Http\Controllers\Controller;
 use App\Http\Integrations\Blizzard\Exceptions\ApiException;
 use App\Http\Middleware\RemembersCurrentGameVersion;
@@ -52,6 +53,7 @@ class PlannedAbsenceController extends Controller
             'battle_net' => ['connected' => $accessToken !== null],
             'account_characters' => Inertia::defer(fn (): array => $this->accountCharacters($request, $accessToken, $gameVersion)),
             'action' => route('account.absences.store'),
+            'reasons' => PlannedAbsenceReasonData::options(),
         ]);
     }
 
@@ -67,6 +69,7 @@ class PlannedAbsenceController extends Controller
             'start_date' => $request->input('start_date'),
             'end_date' => $request->input('end_date'),
             'reason' => $request->input('reason'),
+            'notes' => $request->input('notes'),
             'created_by' => $request->user()->id,
         ]);
 
@@ -85,6 +88,7 @@ class PlannedAbsenceController extends Controller
         return Inertia::render('Account/Absences/Form', [
             'planned_absence' => (new PlannedAbsenceResource($plannedAbsence))->resolve($request),
             'action' => route('account.absences.update', $plannedAbsence),
+            'reasons' => PlannedAbsenceReasonData::options(),
         ]);
     }
 
@@ -94,7 +98,7 @@ class PlannedAbsenceController extends Controller
     #[Authorize('update', 'plannedAbsence')]
     public function update(UpdateAccountPlannedAbsenceRequest $request, PlannedAbsence $plannedAbsence): RedirectResponse
     {
-        $plannedAbsence->update($request->safe()->only(['start_date', 'end_date', 'reason']));
+        $plannedAbsence->update($request->safe()->only(['start_date', 'end_date', 'reason', 'notes']));
 
         return to_route('account.index')->with('success', 'Planned absence updated successfully.');
     }
