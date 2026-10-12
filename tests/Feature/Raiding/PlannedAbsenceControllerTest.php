@@ -107,6 +107,7 @@ class PlannedAbsenceControllerTest extends TestCase
             ->component('Raiding/Absences/Index')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('planned_absences.data', 0)
+                ->has('past_planned_absences', 0)
             )
         );
     }
@@ -115,7 +116,7 @@ class PlannedAbsenceControllerTest extends TestCase
     public function index_deferred_planned_absences_returns_collection_with_expected_structure(): void
     {
         $user = User::factory()->member()->create();
-        PlannedAbsence::factory()->withCharacter()->create();
+        PlannedAbsence::factory()->withCharacter()->create(['start_date' => today()->addDay(), 'end_date' => today()->addDays(3)]);
 
         $response = $this->actingAs($user)->get(route('raiding.absences.index'));
 
@@ -147,9 +148,11 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $later = PlannedAbsence::factory()->withCharacter()->create([
             'start_date' => now()->addDays(5),
+            'end_date' => null,
         ]);
         $sooner = PlannedAbsence::factory()->withCharacter()->create([
             'start_date' => now()->addDay(),
+            'end_date' => null,
         ]);
 
         $response = $this->actingAs($user)->get(route('raiding.absences.index'));
@@ -171,7 +174,11 @@ class PlannedAbsenceControllerTest extends TestCase
         $character->addMediaFromString('BINARY')
             ->usingFileName('character_15678.jpg')
             ->toMediaCollection(Character::MEDIA_COLLECTION);
-        PlannedAbsence::factory()->create(['character_id' => $character->id]);
+        PlannedAbsence::factory()->create([
+            'character_id' => $character->id,
+            'start_date' => today()->addDay(),
+            'end_date' => today()->addDays(3),
+        ]);
 
         $this->actingAs(User::factory()->member()->create())
             ->get(route('raiding.absences.index'))
@@ -221,17 +228,20 @@ class PlannedAbsenceControllerTest extends TestCase
         $this->actingAs(User::factory()->member()->create())
             ->get(route('raiding.absences.index'))
             ->assertInertia(fn (Assert $page) => $page
-                ->loadDeferredProps(fn (Assert $reload) => $reload->has('planned_absences.data', 2))
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('planned_absences.data', 1)
+                    ->has('past_planned_absences', 1)
+                )
             );
 
         RefreshCharacterPortrait::assertNotPushed();
     }
 
     #[Test]
-    public function index_reflects_new_absences_without_cache_flush(): void
+    public function index_reflects_new_current_and_upcoming_absences_without_cache_flush(): void
     {
         $user = User::factory()->member()->create();
-        PlannedAbsence::factory()->withCharacter()->create();
+        PlannedAbsence::factory()->withCharacter()->create(['start_date' => today()->addDay(), 'end_date' => today()->addDays(3)]);
 
         $this->actingAs($user)
             ->get(route('raiding.absences.index'))
@@ -239,12 +249,147 @@ class PlannedAbsenceControllerTest extends TestCase
                 ->loadDeferredProps(fn (Assert $reload) => $reload->has('planned_absences.data', 1))
             );
 
-        PlannedAbsence::withoutEvents(fn () => PlannedAbsence::factory()->withCharacter()->create());
+        PlannedAbsence::withoutEvents(fn () => PlannedAbsence::factory()->withCharacter()->create(['start_date' => today(), 'end_date' => null]));
 
         $this->actingAs($user)
             ->get(route('raiding.absences.index'))
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload->has('planned_absences.data', 2))
+            );
+    }
+
+    // ==================== index: Past Absences ====================
+
+    #[Test]
+    public function index_splits_ended_absences_into_the_past_prop(): void
+    {
+        $past = $this->pastAbsence();
+        $endsToday = PlannedAbsence::factory()->withCharacter()->create(['start_date' => today()->subDays(2), 'end_date' => today()]);
+
+        $this->actingAs(User::factory()->member()->create())
+            ->get(route('raiding.absences.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('planned_absences.data', 1)
+                    ->where('planned_absences.data.0.id', $endsToday->id)
+                    ->has('past_planned_absences', 1)
+                    ->where('past_planned_absences.0.id', $past->id)
+                    ->has('past_planned_absences.0.character.portrait_url')
+                    ->has('past_planned_absences.0.permissions', fn (Assert $permissions) => $permissions->hasAll(['edit', 'delete']))
+                )
+            );
+    }
+
+    #[Test]
+    public function index_includes_deleted_past_absences(): void
+    {
+        $this->pastAbsence()->delete();
+
+        $this->actingAs(User::factory()->member()->create())
+            ->get(route('raiding.absences.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('past_planned_absences', 1)
+                    ->whereNot('past_planned_absences.0.deleted_at', null)
+                )
+            );
+    }
+
+    #[Test]
+    public function index_serves_past_absences_from_cache_until_the_end_of_the_day(): void
+    {
+        $user = User::factory()->member()->create();
+        $this->pastAbsence();
+
+        $this->actingAs($user)
+            ->get(route('raiding.absences.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload->has('past_planned_absences', 1))
+            );
+
+        PlannedAbsence::withoutEvents(fn () => $this->pastAbsence());
+
+        $this->actingAs($user)
+            ->get(route('raiding.absences.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload->has('past_planned_absences', 1))
+            );
+
+        $this->travelTo(today()->addDay()->addMinute());
+
+        $this->actingAs($user)
+            ->get(route('raiding.absences.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload->has('past_planned_absences', 2))
+            );
+    }
+
+    #[Test]
+    public function index_does_not_share_cached_past_absence_permissions_between_viewers(): void
+    {
+        $this->pastAbsence();
+
+        $this->actingAs(User::factory()->member()->create())
+            ->get(route('raiding.absences.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->where('past_planned_absences.0.permissions', ['edit' => false, 'delete' => false])
+                )
+            );
+
+        $this->actingAs($this->officer())
+            ->get(route('raiding.absences.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->where('past_planned_absences.0.permissions', ['edit' => true, 'delete' => true])
+                )
+            );
+    }
+
+    // ==================== index: Character Portraits ====================
+
+    #[Test]
+    public function index_does_not_load_character_portraits_until_requested(): void
+    {
+        PlannedAbsence::factory()->withCharacter()->create(['start_date' => today()->addDay(), 'end_date' => today()->addDays(3)]);
+
+        $this->actingAs(User::factory()->member()->create())
+            ->get(route('raiding.absences.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->missing('character_portraits')
+                ->loadDeferredProps(fn (Assert $reload) => $reload->missing('character_portraits'))
+            );
+    }
+
+    #[Test]
+    public function index_character_portraits_maps_current_and_upcoming_characters_to_their_portraits(): void
+    {
+        Queue::fake();
+        Storage::fake('public');
+        $withPortrait = Character::factory()->create();
+        $withPortrait->addMediaFromString('BINARY')
+            ->usingFileName('character_15678.jpg')
+            ->toMediaCollection(Character::MEDIA_COLLECTION);
+        $withoutPortrait = Character::factory()->create();
+        $pastOnly = Character::factory()->create();
+        $deletedOnly = Character::factory()->create();
+
+        PlannedAbsence::factory()->create(['character_id' => $withPortrait->id, 'start_date' => today()->subDay(), 'end_date' => today()->addDay()]);
+        PlannedAbsence::factory()->create(['character_id' => $withoutPortrait->id, 'start_date' => today()->addDay(), 'end_date' => null]);
+        $this->pastAbsence(['character_id' => $pastOnly->id]);
+        PlannedAbsence::factory()->create(['character_id' => $deletedOnly->id, 'start_date' => today()->addDay(), 'end_date' => today()->addDays(2)])->delete();
+
+        $this->actingAs(User::factory()->member()->create())
+            ->get(route('raiding.absences.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->reloadOnly('character_portraits', fn (Assert $reload) => $reload
+                    ->where('character_portraits', [
+                        $withPortrait->id => $withPortrait->getFirstMediaUrl(Character::MEDIA_COLLECTION),
+                        $withoutPortrait->id => null,
+                    ])
+                    ->missing('planned_absences')
+                    ->missing('past_planned_absences')
+                )
             );
     }
 
@@ -1488,6 +1633,20 @@ class PlannedAbsenceControllerTest extends TestCase
             GameVersion::factory()->fetchableRoster()->create(['release_date' => now()->subWeek()]),
             GameVersion::factory()->fetchableRoster()->create(['release_date' => now()->subYear()]),
         ];
+    }
+
+    /**
+     * An absence that ended last week.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function pastAbsence(array $attributes = []): PlannedAbsence
+    {
+        return PlannedAbsence::factory()->withCharacter()->create([
+            'start_date' => today()->subDays(10),
+            'end_date' => today()->subDays(5),
+            ...$attributes,
+        ]);
     }
 
     private function mainInReleasedVersion(): Character

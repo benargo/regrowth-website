@@ -264,6 +264,37 @@ class PlannedAbsenceTest extends ModelTestCase
         $this->assertSame('2026-03-20', $array['end_date']);
     }
 
+    // ==================== scopes ====================
+
+    #[Test]
+    public function ended_scope_includes_only_absences_that_ended_before_today(): void
+    {
+        $endedYesterday = $this->create(['start_date' => today()->subDays(3), 'end_date' => today()->subDay()]);
+        $openEndedPast = $this->create(['start_date' => today()->subDay(), 'end_date' => null]);
+        $endsToday = $this->create(['start_date' => today()->subDays(3), 'end_date' => today()]);
+        $upcoming = $this->create(['start_date' => today()->addDay(), 'end_date' => today()->addDays(2)]);
+
+        $ids = PlannedAbsence::ended()->pluck('id');
+
+        $this->assertEqualsCanonicalizing([$endedYesterday->id, $openEndedPast->id], $ids->all());
+        $this->assertNotContains($endsToday->id, $ids);
+        $this->assertNotContains($upcoming->id, $ids);
+    }
+
+    #[Test]
+    public function not_ended_scope_includes_current_and_upcoming_absences(): void
+    {
+        $endedYesterday = $this->create(['start_date' => today()->subDays(3), 'end_date' => today()->subDay()]);
+        $endsToday = $this->create(['start_date' => today()->subDays(3), 'end_date' => today()]);
+        $openEndedToday = $this->create(['start_date' => today(), 'end_date' => null]);
+        $upcoming = $this->create(['start_date' => today()->addDay(), 'end_date' => today()->addDays(2)]);
+
+        $ids = PlannedAbsence::notEnded()->pluck('id');
+
+        $this->assertEqualsCanonicalizing([$endsToday->id, $openEndedToday->id, $upcoming->id], $ids->all());
+        $this->assertNotContains($endedYesterday->id, $ids);
+    }
+
     // ==================== observer ====================
 
     #[Test]

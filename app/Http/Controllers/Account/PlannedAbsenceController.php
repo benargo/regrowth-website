@@ -40,8 +40,7 @@ class PlannedAbsenceController extends Controller
     use SharesCharacterPortrait;
 
     /**
-     * Show the form for logging an absence against one of the member's own
-     * characters in their current game version.
+     * Show the form for logging an absence.
      */
     #[Authorize('create', PlannedAbsence::class)]
     #[Middleware(RemembersCurrentGameVersion::class)]
@@ -89,8 +88,7 @@ class PlannedAbsenceController extends Controller
     }
 
     /**
-     * Show the form for changing an absence's dates and reason. The character
-     * is read-only, so Battle.net isn't needed.
+     * Show the form for editing an absence.
      */
     #[Authorize('update', 'plannedAbsence')]
     public function edit(PlannedAbsence $plannedAbsence): Response
@@ -114,7 +112,7 @@ class PlannedAbsenceController extends Controller
     }
 
     /**
-     * Delete one of the member's own absences before it starts.
+     * Delete an absence.
      */
     #[Authorize('delete', 'plannedAbsence')]
     public function destroy(PlannedAbsence $plannedAbsence): RedirectResponse
@@ -125,7 +123,7 @@ class PlannedAbsenceController extends Controller
     }
 
     /**
-     * The characters the member can pick, or why Battle.net couldn't list them.
+     * The member's selectable characters, or the Battle.net error.
      *
      * @return array{characters: AnonymousResourceCollection, mains_only: bool, error: array{code: BattleNetSessionError, message: string}|null}
      */

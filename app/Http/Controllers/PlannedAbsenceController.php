@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Characters\RefreshCharacterPortrait;
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Contracts\HasCharacterMedia;
 use App\Data\PlannedAbsenceReasonData;
 use App\Http\Controllers\Concerns\SharesCharacterPortrait;
 use App\Http\Middleware\RemembersCurrentGameVersion;
@@ -19,6 +20,7 @@ use App\Models\PlannedAbsence;
 use App\Models\User;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -39,38 +41,75 @@ class PlannedAbsenceController extends Controller
         protected Discord $discord
     ) {}
 
-    /*
-    |--------------------------------------------------------------------------
-    | Index
-    |--------------------------------------------------------------------------
-    */
-
     /**
      * Display a listing of the resource.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
         return Inertia::render('Raiding/Absences/Index', [
             'planned_absences' => Inertia::defer(function () {
                 $absences = PlannedAbsence::query()
                     ->withTrashed()
+                    ->notEnded()
                     ->with(['character.media', 'character.playableClass', 'createdBy'])
                     ->orderBy('start_date')
                     ->get();
 
                 $absences
-                    ->filter(fn (PlannedAbsence $absence) => ! $absence->trashed() && ($absence->end_date ?? $absence->start_date)->gte(today()))
+                    ->reject(fn (PlannedAbsence $absence) => $absence->trashed())
                     ->pluck('character')->filter()->unique('id')
                     ->each(fn (Character $character) => RefreshCharacterPortrait::queueIfStale($character));
 
                 return PlannedAbsenceResource::collectionForOfficerList($absences);
             }),
+            'past_planned_absences' => Inertia::defer(fn (): array => $this->pastAbsences($request)),
+            'character_portraits' => Inertia::optional(fn (): object => $this->characterPortraits()),
         ]);
     }
 
     /**
-     * Show the form for logging an absence for any main character in the
-     * officer's current game version.
+     * Get the past absences for the officer table.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function pastAbsences(Request $request): array
+    {
+        $user = $request->user();
+        $canUpdate = (int) $user->isAuthorizedTo('update-planned-absences');
+        $canDelete = (int) $user->isAuthorizedTo('delete-planned-absences');
+
+        return Cache::tags(['attendance'])->remember(
+            "planned_absences:past:{$canUpdate}:{$canDelete}",
+            now()->endOfDay(),
+            fn (): array => PlannedAbsenceResource::collectionForOfficerList(
+                PlannedAbsence::query()
+                    ->withTrashed()
+                    ->ended()
+                    ->with(['character.media', 'character.playableClass', 'createdBy'])
+                    ->orderBy('start_date')
+                    ->get()
+            )->resolve($request)
+        );
+    }
+
+    /**
+     * Get the portrait URL of each character with a current or upcoming
+     * absence, keyed by character ID.
+     */
+    private function characterPortraits(): object
+    {
+        return (object) Character::query()
+            ->whereHas('plannedAbsences', fn (Builder $query) => $query->notEnded())
+            ->with('media')
+            ->get()
+            ->mapWithKeys(fn (Character $character): array => [
+                $character->id => $character->getFirstMediaUrl(HasCharacterMedia::MEDIA_COLLECTION) ?: null,
+            ])
+            ->all();
+    }
+
+    /**
+     * Show the form for creating a new resource.
      */
     #[Authorize('create', PlannedAbsence::class)]
     #[Middleware(RemembersCurrentGameVersion::class)]
@@ -118,8 +157,7 @@ class PlannedAbsenceController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource. The picker is limited
-     * to the version of the absence's character.
+     * Show the form for editing the specified resource.
      */
     #[Authorize('update', 'plannedAbsence')]
     public function edit(Request $request, PlannedAbsence $plannedAbsence): Response
@@ -194,17 +232,8 @@ class PlannedAbsenceController extends Controller
         return back()->with('success', 'Planned absence restored successfully.');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers
-    |--------------------------------------------------------------------------
-    */
-
     /**
-     * Resolve a user based on the provided identifier.
-     *
-     * The user may already exist in the database, but if not we should check the Discord API
-     * to find a matching user and create a new user record.
+     * Find a user by ID, or create one from their Discord guild member data.
      *
      * @throws UserNotInGuildException
      * @throws \Exception
@@ -239,8 +268,7 @@ class PlannedAbsenceController extends Controller
     }
 
     /**
-     * Search the Discord server's members by username or nickname prefix,
-     * for the user picker. Only evaluated when the page reloads the prop.
+     * Search the Discord server's members by username or nickname prefix.
      *
      * @return array<int, array{id: string|null, nickname: string|null, username: string|null}>
      */
@@ -269,8 +297,7 @@ class PlannedAbsenceController extends Controller
     }
 
     /**
-     * The versions an officer can log absences against: released versions,
-     * newest first.
+     * Get the released game versions, newest first.
      *
      * @return Collection<int, GameVersion>
      */
@@ -280,7 +307,7 @@ class PlannedAbsenceController extends Controller
     }
 
     /**
-     * Every main character in the game version, for the picker.
+     * Get every main character in the game version.
      */
     private function pickerCharacters(?GameVersion $gameVersion): AnonymousResourceCollection
     {

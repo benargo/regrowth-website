@@ -18,11 +18,11 @@ import todayDateString from "@/Helpers/todayDateString";
 const SECTION_HEADING = "text-ink-300 font-semibold";
 
 /**
- * Reloads the absences once the server's queued portrait refresh for this
+ * Reloads the portrait map once the server's queued portrait refresh for this
  * character broadcasts. A component so each character joins its own channel.
  */
 function PortraitListener({ characterId }) {
-    useCharacterPortraitChannel(characterId, () => router.reload({ only: ["planned_absences"] }));
+    useCharacterPortraitChannel(characterId, () => router.reload({ only: ["character_portraits"] }));
 
     return null;
 }
@@ -67,10 +67,33 @@ function AbsenceTable({ absences, isCurrent = false, canDelete }) {
 }
 
 export default function Index() {
-    const { planned_absences: plannedAbsencesResource } = usePage().props;
-    const plannedAbsences = plannedAbsencesResource?.data;
+    const {
+        planned_absences: plannedAbsencesResource,
+        past_planned_absences: pastPlannedAbsences,
+        character_portraits: characterPortraits,
+    } = usePage().props;
     const canDeleteAbsences = usePermission("delete-planned-absences");
     const [showDeleted, setShowDeleted] = useState(false);
+
+    // Current and upcoming absences load live; past ones come from the server's daily cache.
+    const plannedAbsences = useMemo(() => {
+        if (!plannedAbsencesResource || !pastPlannedAbsences) {
+            return null;
+        }
+
+        return [...plannedAbsencesResource.data, ...pastPlannedAbsences].map((absence) => {
+            const characterId = absence.character?.id;
+
+            if (!characterPortraits || !(characterId in characterPortraits)) {
+                return absence;
+            }
+
+            return {
+                ...absence,
+                character: { ...absence.character, portrait_url: characterPortraits[characterId] },
+            };
+        });
+    }, [plannedAbsencesResource, pastPlannedAbsences, characterPortraits]);
 
     const sections = useMemo(() => {
         if (!plannedAbsences) {

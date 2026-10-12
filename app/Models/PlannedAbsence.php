@@ -7,6 +7,8 @@ use App\Observers\PlannedAbsenceObserver;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -63,6 +65,26 @@ class PlannedAbsence extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Scope a query to absences whose last day (the start date when
+     * open-ended) is before today.
+     */
+    #[Scope]
+    protected function ended(Builder $query): void
+    {
+        $query->whereRaw('COALESCE(end_date, start_date) < ?', [today()]);
+    }
+
+    /**
+     * Scope a query to current and upcoming absences: those whose last day
+     * (the start date when open-ended) is today or later.
+     */
+    #[Scope]
+    protected function notEnded(Builder $query): void
+    {
+        $query->whereRaw('COALESCE(end_date, start_date) >= ?', [today()]);
     }
 
     /**
