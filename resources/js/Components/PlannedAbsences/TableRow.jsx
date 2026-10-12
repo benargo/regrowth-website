@@ -8,7 +8,6 @@ import formatDate from "@/Helpers/FormatDate";
 import Pill from "@/Components/Pill";
 import { TableRow, TableCell } from "@/Components/Table";
 import { ActionMenu, ActionMenuLink, ActionMenuButton } from "@/Components/ActionMenu";
-import { usePermission } from "@/Hooks/usePermission";
 
 /**
  * The short weekday the character is back on: the day after their absence ends.
@@ -25,15 +24,14 @@ function returnWeekday(endDate) {
  */
 export default function PlannedAbsenceTableRow({ absence, isCurrent = false, canDelete = false }) {
     const { auth } = usePage().props;
-    const canManage = usePermission("manage-planned-absences");
     const [confirmingDelete, setConfirmingDelete] = useState(false);
 
     const character = absence.character;
     const characterName = character?.name ?? "Unknown Character";
     const isDeleted = Boolean(absence.deleted_at);
     const canRestore = auth.user?.admin ?? false;
-    // The edit route needs manage-planned-absences and doesn't resolve deleted absences.
-    const canEdit = canManage && !isDeleted;
+    // The edit route doesn't resolve deleted absences.
+    const canEdit = Boolean(absence.permissions?.edit) && !isDeleted;
     const hasActions = canEdit || (!isDeleted && canDelete) || (isDeleted && canRestore);
     const startLabel = formatDate(absence.start_date).medium;
     const endLabel = absence.end_date ? formatDate(absence.end_date).medium : "Open-ended";
