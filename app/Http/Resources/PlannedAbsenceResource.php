@@ -29,7 +29,7 @@ class PlannedAbsenceResource extends JsonResource
             'start_date' => $this->start_date->format('Y-m-d'),
             'end_date' => $this->end_date?->format('Y-m-d'),
             'reason' => $this->reason,
-            'discord_message_id' => $this->discord_message_id,
+            'notes' => $this->notes,
             'created_by' => $this->whenLoaded('createdBy', function () use ($request) {
                 return $this->createdBy->toResource()->resolve($request);
             }),

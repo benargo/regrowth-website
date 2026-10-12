@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Data\PlannedAbsenceReasonData;
 use App\Observers\PlannedAbsenceObserver;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[ObservedBy([PlannedAbsenceObserver::class])]
-#[Fillable(['character_id', 'user_id', 'start_date', 'end_date', 'reason', 'discord_message_id', 'created_by'])]
+#[Fillable(['character_id', 'user_id', 'start_date', 'end_date', 'reason', 'notes', 'created_by'])]
 class PlannedAbsence extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
@@ -28,6 +29,7 @@ class PlannedAbsence extends Model
         return [
             'start_date' => 'datetime',
             'end_date' => 'datetime',
+            'reason' => PlannedAbsenceReasonData::class,
         ];
     }
 

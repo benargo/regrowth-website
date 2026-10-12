@@ -2,6 +2,8 @@
 
 namespace Tests\Unit\Models;
 
+use App\Data\PlannedAbsenceReasonData;
+use App\Enums\PlannedAbsenceReason;
 use App\Models\Character;
 use App\Models\PlannedAbsence;
 use App\Models\User;
@@ -10,6 +12,7 @@ use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
@@ -62,7 +65,7 @@ class PlannedAbsenceTest extends ModelTestCase
             'start_date',
             'end_date',
             'reason',
-            'discord_message_id',
+            'notes',
             'created_by',
         ]);
     }
@@ -78,7 +81,7 @@ class PlannedAbsenceTest extends ModelTestCase
             'start_date',
             'end_date',
             'reason',
-            'discord_message_id',
+            'notes',
             'created_by',
         ]);
     }
@@ -91,6 +94,7 @@ class PlannedAbsenceTest extends ModelTestCase
         $this->assertCasts($model, [
             'start_date' => 'datetime',
             'end_date' => 'datetime',
+            'reason' => PlannedAbsenceReasonData::class,
         ]);
     }
 
@@ -181,19 +185,28 @@ class PlannedAbsenceTest extends ModelTestCase
     }
 
     #[Test]
-    public function discord_message_id_is_nullable_by_default(): void
+    public function it_casts_reason_through_the_reason_cast(): void
     {
-        $absence = $this->create();
+        $absence = $this->create(['reason' => PlannedAbsenceReason::Work]);
 
-        $this->assertNull($absence->discord_message_id);
+        $this->assertSame(PlannedAbsenceReason::Work, $absence->fresh()->reason->key);
     }
 
     #[Test]
-    public function factory_with_discord_message_id_state_sets_discord_message_id(): void
+    public function notes_are_nullable(): void
     {
-        $absence = $this->factory()->withDiscordMessageId()->create();
+        $absence = $this->create(['notes' => null]);
 
-        $this->assertNotNull($absence->discord_message_id);
+        $this->assertNull($absence->fresh()->notes);
+    }
+
+    #[Test]
+    public function a_row_inserted_without_a_reason_defaults_to_other(): void
+    {
+        $absence = $this->create();
+        DB::table('planned_absences')->where('id', $absence->id)->update(['reason' => DB::raw('DEFAULT(reason)')]);
+
+        $this->assertSame(PlannedAbsenceReason::DEFAULT, $absence->fresh()->reason->key);
     }
 
     #[Test]

@@ -2,6 +2,8 @@
 
 namespace Tests\Unit\Http\Resources;
 
+use App\Data\PlannedAbsenceReasonData;
+use App\Enums\PlannedAbsenceReason;
 use App\Http\Resources\PlannedAbsenceResource;
 use App\Models\Character;
 use App\Models\PlannedAbsence;
@@ -39,7 +41,8 @@ class PlannedAbsenceResourceTest extends TestCase
         $this->assertArrayHasKey('start_date', $array);
         $this->assertArrayHasKey('end_date', $array);
         $this->assertArrayHasKey('reason', $array);
-        $this->assertArrayHasKey('discord_message_id', $array);
+        $this->assertArrayHasKey('notes', $array);
+        $this->assertArrayNotHasKey('discord_message_id', $array);
         $this->assertArrayHasKey('created_by', $array);
     }
 
@@ -51,13 +54,15 @@ class PlannedAbsenceResourceTest extends TestCase
         $this->mockRequestUser();
 
         $absence = PlannedAbsence::factory()->create([
-            'reason' => 'I will be on holiday.',
+            'reason' => PlannedAbsenceReason::Holiday,
+            'notes' => 'I will be on holiday.',
         ]);
 
         $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
 
         $this->assertSame($absence->id, $array['id']);
-        $this->assertSame('I will be on holiday.', $array['reason']);
+        $this->assertEquals(PlannedAbsenceReasonData::fromReason(PlannedAbsenceReason::Holiday), $array['reason']);
+        $this->assertSame('I will be on holiday.', $array['notes']);
     }
 
     // ==================== character relation ====================
@@ -204,27 +209,15 @@ class PlannedAbsenceResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_null_discord_message_id_when_not_set(): void
+    public function it_returns_null_notes_when_not_set(): void
     {
         $this->mockRequestUser();
 
-        $absence = PlannedAbsence::factory()->create();
+        $absence = PlannedAbsence::factory()->create(['notes' => null]);
 
         $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
 
-        $this->assertNull($array['discord_message_id']);
-    }
-
-    #[Test]
-    public function it_returns_discord_message_id_when_set(): void
-    {
-        $this->mockRequestUser();
-
-        $absence = PlannedAbsence::factory()->withDiscordMessageId()->create();
-
-        $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
-
-        $this->assertSame($absence->discord_message_id, $array['discord_message_id']);
+        $this->assertNull($array['notes']);
     }
 
     // ==================== date formatting ====================
