@@ -21,7 +21,7 @@ trait ValidatesPlannedAbsenceDetails
     {
         return [
             'start_date' => ['required', ...$this->startDateRules()],
-            'end_date' => ['nullable', 'date', 'after:start_date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'reason' => ['required', Rule::enum(PlannedAbsenceReason::class)],
             'notes' => $this->notesRules(null),
         ];
@@ -39,7 +39,7 @@ trait ValidatesPlannedAbsenceDetails
 
         return [
             'start_date' => ['sometimes', ...$this->startDateRules()],
-            'end_date' => ['sometimes', 'nullable', 'date', ...($effectiveStartDate ? ['after:'.$effectiveStartDate] : [])],
+            'end_date' => ['sometimes', 'nullable', 'date', ...($effectiveStartDate ? ['after_or_equal:'.$effectiveStartDate] : [])],
             'reason' => ['sometimes', Rule::enum(PlannedAbsenceReason::class)],
             'notes' => $this->notesRules($plannedAbsence),
         ];
@@ -58,7 +58,7 @@ trait ValidatesPlannedAbsenceDetails
             'start_date.date' => 'The start date must be a valid date.',
             'start_date.after_or_equal' => 'The start date must not be in the past.',
             'end_date.date' => 'The end date must be a valid date.',
-            'end_date.after' => 'The end date must be after the start date.',
+            'end_date.after_or_equal' => 'The end date must be on or after the start date.',
             'reason.required' => 'Choose a reason.',
             'reason.enum' => 'Choose one of the listed reasons.',
             'notes.required' => 'Add a note when the reason is Other.',

@@ -532,6 +532,7 @@ class PlannedAbsenceControllerTest extends TestCase
             ->has('planned_absence', fn (Assert $data) => $data
                 ->where('id', $absence->id)
                 ->has('character')
+                ->has('user')
                 ->where('start_date', '2026-06-01')
                 ->where('end_date', '2026-06-07')
                 ->where('reason.key', 'On holiday')
@@ -686,6 +687,28 @@ class PlannedAbsenceControllerTest extends TestCase
         ]);
     }
 
+    #[Test]
+    public function store_accepts_an_end_date_on_the_start_date(): void
+    {
+        $user = User::factory()->officer()->create();
+        $character = $this->mainInReleasedVersion();
+        $date = now()->addDay()->format('Y-m-d');
+
+        $response = $this->actingAs($user)->post(route('raiding.absences.store'), [
+            'game_version' => $character->game_version_id,
+            'character' => $character->id,
+            'start_date' => $date,
+            'end_date' => $date,
+            'reason' => PlannedAbsenceReason::Holiday->value,
+        ]);
+
+        $response->assertRedirectToRoute('raiding.absences.index');
+        $this->assertDatabaseHas('planned_absences', [
+            'character_id' => $character->id,
+            'end_date' => $date.' 00:00:00',
+        ]);
+    }
+
     // ==================== store: Validation ====================
 
     #[Test]
@@ -755,7 +778,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
     #[Group('validation')]
     #[Test]
-    public function store_validates_end_date_must_be_after_start_date(): void
+    public function store_validates_end_date_must_not_be_before_start_date(): void
     {
         $user = User::factory()->officer()->create();
         $character = $this->mainInReleasedVersion();
@@ -933,6 +956,26 @@ class PlannedAbsenceControllerTest extends TestCase
     }
 
     #[Test]
+    public function update_accepts_an_end_date_on_the_stored_start_date(): void
+    {
+        $user = User::factory()->officer()->create();
+        $absence = PlannedAbsence::factory()->withCharacter()->create([
+            'start_date' => now()->addDay(),
+            'end_date' => now()->addDays(7),
+        ]);
+
+        $response = $this->actingAs($user)->patchJson(route('raiding.absences.update', $absence), [
+            'end_date' => $absence->start_date->format('Y-m-d'),
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('planned_absences', [
+            'id' => $absence->id,
+            'end_date' => $absence->start_date->format('Y-m-d').' 00:00:00',
+        ]);
+    }
+
+    #[Test]
     public function update_updates_reason_and_notes(): void
     {
         $user = User::factory()->officer()->create();
@@ -999,7 +1042,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
     #[Group('validation')]
     #[Test]
-    public function update_validates_end_date_must_be_after_start_date(): void
+    public function update_validates_end_date_must_not_be_before_start_date(): void
     {
         $user = User::factory()->officer()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create(['start_date' => now()->addDays(7)]);

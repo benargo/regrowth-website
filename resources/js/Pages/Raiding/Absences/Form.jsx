@@ -30,7 +30,7 @@ function OfficerAbsenceForm({ gameVersion, characters, plannedAbsence, action, r
     const isEditing = plannedAbsence !== null;
     const originalCharacterId = plannedAbsence?.character?.id ?? null;
 
-    const { data, setData, post, patch, transform, processing, errors, clearErrors } = useForm({
+    const { data, setData, post, patch, transform, processing, errors, clearErrors, setError } = useForm({
         game_version: gameVersion?.id ?? null,
         character: originalCharacterId,
         user: plannedAbsence?.user?.id ?? null,
@@ -83,6 +83,8 @@ function OfficerAbsenceForm({ gameVersion, characters, plannedAbsence, action, r
 
     return (
         <AbsenceForm
+            data={data}
+            setError={setError}
             errors={errors}
             processing={processing}
             onSubmit={submit}

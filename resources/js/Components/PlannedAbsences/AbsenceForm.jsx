@@ -4,12 +4,16 @@ import { Button } from "@headlessui/react";
 import Icon from "@/Components/FontAwesome/Icon";
 import { ErrorSummary, RequiredFieldsNote, buttonClassName, linkClassName } from "@/Components/FormControls";
 
+const END_BEFORE_START_MESSAGE = "The end date must be on or after the start date.";
+
 /**
  * The frame of the officer and self-service absence forms: an error summary,
- * the required-fields note, the fields, then Save and Cancel. `onSubmit`
- * receives Inertia visit options to pass to `post` or `patch`.
+ * the required-fields note, the fields, then Save and Cancel. `data` and
+ * `setError` come from the page's Inertia `useForm`, so the dates can be
+ * checked before the request is sent. `onSubmit` receives Inertia visit
+ * options to pass to `post` or `patch`.
  */
-export default function AbsenceForm({ errors, processing, onSubmit, submitLabel, cancelHref, children }) {
+export default function AbsenceForm({ data, setError, errors, processing, onSubmit, submitLabel, cancelHref, children }) {
     const summaryRef = useRef(null);
     const [failedSubmits, setFailedSubmits] = useState(0);
 
@@ -29,6 +33,15 @@ export default function AbsenceForm({ errors, processing, onSubmit, submitLabel,
 
     function handleSubmit(event) {
         event.preventDefault();
+
+        // Dates are YYYY-MM-DD strings, so they compare in calendar order.
+        if (data.start_date && data.end_date && data.end_date < data.start_date) {
+            setError("end_date", END_BEFORE_START_MESSAGE);
+            setFailedSubmits((count) => count + 1);
+
+            return;
+        }
+
         onSubmit({ onError: () => setFailedSubmits((count) => count + 1) });
     }
 

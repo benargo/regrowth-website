@@ -131,12 +131,12 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
     }
 
     #[Test]
-    public function rules_end_date_includes_after_clause_when_start_date_is_provided(): void
+    public function rules_end_date_includes_after_or_equal_clause_when_start_date_is_provided(): void
     {
         $rules = $this->makeRequest(['start_date' => '2026-04-01'])->rules();
 
         $this->assertArrayHasKey('end_date', $rules);
-        $this->assertContains('after:2026-04-01', $rules['end_date']);
+        $this->assertContains('after_or_equal:2026-04-01', $rules['end_date']);
     }
 
     #[Test]

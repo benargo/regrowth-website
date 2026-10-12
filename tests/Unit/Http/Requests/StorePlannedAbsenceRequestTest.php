@@ -83,14 +83,14 @@ class StorePlannedAbsenceRequestTest extends TestCase
     }
 
     #[Test]
-    public function rules_end_date_is_nullable_date_after_start_date(): void
+    public function rules_end_date_is_nullable_date_on_or_after_start_date(): void
     {
         $rules = $this->makeRequest()->rules();
 
         $this->assertArrayHasKey('end_date', $rules);
         $this->assertContains('nullable', $rules['end_date']);
         $this->assertContains('date', $rules['end_date']);
-        $this->assertContains('after:start_date', $rules['end_date']);
+        $this->assertContains('after_or_equal:start_date', $rules['end_date']);
     }
 
     #[Test]

@@ -84,7 +84,7 @@ function AccountCharacterPicker({ gameVersion, value, onChange, invalid }) {
 }
 
 function CreateForm({ gameVersion, action, canBackdate, reasons }) {
-    const { data, setData, post, processing, errors, clearErrors } = useForm({
+    const { data, setData, post, processing, errors, clearErrors, setError } = useForm({
         game_version: gameVersion.id,
         character: null,
         start_date: "",
@@ -101,6 +101,8 @@ function CreateForm({ gameVersion, action, canBackdate, reasons }) {
 
     return (
         <AbsenceForm
+            data={data}
+            setError={setError}
             errors={errors}
             processing={processing}
             onSubmit={submit}
@@ -141,7 +143,7 @@ function CreateForm({ gameVersion, action, canBackdate, reasons }) {
 }
 
 function EditForm({ plannedAbsence, action, canBackdate, reasons }) {
-    const { data, setData, patch, processing, errors, clearErrors } = useForm({
+    const { data, setData, patch, processing, errors, clearErrors, setError } = useForm({
         start_date: plannedAbsence.start_date ?? "",
         end_date: plannedAbsence.end_date ?? "",
         reason: plannedAbsence.reason?.key ?? "",
@@ -156,6 +158,8 @@ function EditForm({ plannedAbsence, action, canBackdate, reasons }) {
 
     return (
         <AbsenceForm
+            data={data}
+            setError={setError}
             errors={errors}
             processing={processing}
             onSubmit={submit}
