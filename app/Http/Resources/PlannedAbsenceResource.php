@@ -11,6 +11,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * Eager-loading requirements differ per scope:
  *   - default:        nothing (character.playableClass is lazy-loaded)
  *   - forOfficerList: $absence->load('character.media', 'character.playableClass', 'createdBy');
+ *
+ * forOfficerList also adds a `meta` block with has_started / has_ended, so the
+ * officer index groups absences by the server's date rather than the browser's.
  */
 class PlannedAbsenceResource extends JsonResource
 {
@@ -76,6 +79,10 @@ class PlannedAbsenceResource extends JsonResource
             'created_at' => $this->created_at->toDateTimeString(),
             'updated_at' => $this->updated_at->toDateTimeString(),
             'deleted_at' => $this->deleted_at?->toDateTimeString(),
+            'meta' => $this->when($this->scope === self::SCOPE_OFFICER_LIST, fn (): array => [
+                'has_started' => $this->start_date->lte(today()),
+                'has_ended' => ($this->end_date ?? $this->start_date)->lt(today()),
+            ]),
         ];
     }
 

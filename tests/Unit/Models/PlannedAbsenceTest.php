@@ -210,23 +210,6 @@ class PlannedAbsenceTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_has_not_started_on_or_before_its_start_date(): void
-    {
-        $this->freezeTime();
-
-        $this->assertFalse($this->make(['start_date' => today()])->hasStarted());
-        $this->assertFalse($this->make(['start_date' => today()->addDay()])->hasStarted());
-    }
-
-    #[Test]
-    public function it_has_started_once_its_start_date_has_passed(): void
-    {
-        $this->freezeTime();
-
-        $this->assertTrue($this->make(['start_date' => today()->subDay()])->hasStarted());
-    }
-
-    #[Test]
     public function it_can_be_soft_deleted(): void
     {
         $absence = $this->create();

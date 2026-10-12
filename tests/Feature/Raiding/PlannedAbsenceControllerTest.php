@@ -135,6 +135,7 @@ class PlannedAbsenceControllerTest extends TestCase
                     ->has('created_at')
                     ->has('updated_at')
                     ->has('deleted_at')
+                    ->has('meta', fn (Assert $meta) => $meta->hasAll(['has_started', 'has_ended']))
                     ->missing('permissions')
                 )
                 ->has('planned_absences.permissions', fn (Assert $permissions) => $permissions->hasAll(['update', 'delete', 'restore']))

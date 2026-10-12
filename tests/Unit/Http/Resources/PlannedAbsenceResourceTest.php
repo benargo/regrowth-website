@@ -167,6 +167,51 @@ class PlannedAbsenceResourceTest extends TestCase
         $this->assertArrayNotHasKey('portrait_url', $array['character']);
     }
 
+    // ==================== officer list meta ====================
+
+    #[Test]
+    public function default_scope_omits_meta(): void
+    {
+        $this->mockRequestUser();
+
+        $absence = PlannedAbsence::factory()->create();
+
+        $array = (new PlannedAbsenceResource($absence))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('meta', $array);
+    }
+
+    #[Test]
+    public function for_officer_list_meta_has_started_from_the_start_date(): void
+    {
+        $this->mockRequestUser();
+        $this->freezeTime();
+
+        $this->assertTrue($this->officerListMeta(['start_date' => today()->subDay()])['has_started']);
+        $this->assertTrue($this->officerListMeta(['start_date' => today()])['has_started']);
+        $this->assertFalse($this->officerListMeta(['start_date' => today()->addDay()])['has_started']);
+    }
+
+    #[Test]
+    public function for_officer_list_meta_has_ended_once_the_end_date_has_passed(): void
+    {
+        $this->mockRequestUser();
+        $this->freezeTime();
+
+        $this->assertTrue($this->officerListMeta(['start_date' => today()->subDays(3), 'end_date' => today()->subDay()])['has_ended']);
+        $this->assertFalse($this->officerListMeta(['start_date' => today()->subDays(3), 'end_date' => today()])['has_ended']);
+    }
+
+    #[Test]
+    public function for_officer_list_meta_has_ended_from_the_start_date_when_open_ended(): void
+    {
+        $this->mockRequestUser();
+        $this->freezeTime();
+
+        $this->assertTrue($this->officerListMeta(['start_date' => today()->subDay(), 'end_date' => null])['has_ended']);
+        $this->assertFalse($this->officerListMeta(['start_date' => today(), 'end_date' => null])['has_ended']);
+    }
+
     // ==================== user relation ====================
 
     #[Test]
@@ -395,6 +440,17 @@ class PlannedAbsenceResourceTest extends TestCase
     }
 
     // ==================== helpers ====================
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @return array{has_started: bool, has_ended: bool}
+     */
+    private function officerListMeta(array $attributes): array
+    {
+        $absence = PlannedAbsence::factory()->create($attributes);
+
+        return PlannedAbsenceResource::forOfficerList($absence)->resolve(new Request)['meta'];
+    }
 
     private function requestFor(User $user): Request
     {

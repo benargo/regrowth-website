@@ -86,12 +86,4 @@ class PlannedAbsence extends Model
     {
         $query->whereRaw('COALESCE(end_date, start_date) >= ?', [today()]);
     }
-
-    /**
-     * An absence has started once its start date is before today.
-     */
-    public function hasStarted(): bool
-    {
-        return $this->start_date->lt(today());
-    }
 }

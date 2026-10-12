@@ -40,23 +40,21 @@ class PlannedAbsencePolicy
     }
 
     /**
-     * Determine whether the user can update the model. Users with permission
-     * can update any absence; the creator can update their own until it starts.
+     * Determine whether the user can update the model.
      */
     public function update(User $user, PlannedAbsence $plannedAbsence): bool
     {
         return $user->isAuthorizedTo('update-planned-absences')
-            || ($plannedAbsence->createdBy()->is($user) && ! $plannedAbsence->hasStarted());
+            || $this->creatorCanChange($user, $plannedAbsence);
     }
 
     /**
-     * Determine whether the user can delete the model. Users with permission
-     * can delete any absence; the creator can delete their own until it starts.
+     * Determine whether the user can delete the model.
      */
     public function delete(User $user, PlannedAbsence $plannedAbsence): bool
     {
         return $user->isAuthorizedTo('delete-planned-absences')
-            || ($plannedAbsence->createdBy()->is($user) && ! $plannedAbsence->hasStarted());
+            || $this->creatorCanChange($user, $plannedAbsence);
     }
 
     /**
@@ -73,5 +71,13 @@ class PlannedAbsencePolicy
     public function forceDelete(User $user, PlannedAbsence $plannedAbsence): bool
     {
         return $user->isAdmin() ?? false;
+    }
+
+    /**
+     * Determine whether the user created the absence and it starts today or later.
+     */
+    private function creatorCanChange(User $user, PlannedAbsence $plannedAbsence): bool
+    {
+        return $plannedAbsence->createdBy()->is($user) && $plannedAbsence->start_date->gte(today());
     }
 }

@@ -12,7 +12,6 @@ import useCharacterPortraitChannel from "@/Hooks/useCharacterPortraitChannel";
 import ToggleFilter from "@/Components/ToggleFilter";
 import { Table, TableHead, TableBody, TableHeader } from "@/Components/Table";
 import { linkButtonClassName } from "@/Components/FormControls";
-import todayDateString from "@/Helpers/todayDateString";
 
 const SECTION_HEADING = "text-ink-300 font-semibold";
 const NO_PERMISSIONS = { update: false, delete: false, restore: false };
@@ -102,19 +101,17 @@ export default function Index() {
             return null;
         }
 
-        const today = todayDateString();
         const current = [];
         const upcoming = [];
         const past = [];
 
+        // The server decides which absences have started or ended, so grouping follows its date, not the browser's.
         plannedAbsences
             .filter((absence) => showDeleted || !absence.deleted_at)
             .forEach((absence) => {
-                const end = absence.end_date ?? absence.start_date;
-
-                if (absence.start_date > today) {
+                if (!absence.meta.has_started) {
                     upcoming.push(absence);
-                } else if (end >= today) {
+                } else if (!absence.meta.has_ended) {
                     current.push(absence);
                 } else {
                     past.push(absence);

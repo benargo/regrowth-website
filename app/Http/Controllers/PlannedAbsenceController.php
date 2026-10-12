@@ -76,7 +76,7 @@ class PlannedAbsenceController extends Controller
     private function pastAbsences(Request $request): array
     {
         return Cache::tags(['attendance'])->remember(
-            'planned_absences:past',
+            'planned_absences:past:v2',
             now()->endOfDay(),
             fn (): array => PlannedAbsenceResource::collectionForOfficerList(
                 PlannedAbsence::query()
