@@ -708,6 +708,7 @@ class PlannedAbsenceControllerTest extends TestCase
                 ->has('created_at')
                 ->has('updated_at')
                 ->has('deleted_at')
+                ->has('meta')
                 ->missing('permissions')
             )
             ->where('planned_absence.permissions', ['edit' => true, 'delete' => true, 'restore' => false, 'backdate' => true])
@@ -1003,7 +1004,8 @@ class PlannedAbsenceControllerTest extends TestCase
                 'start_date' => now()->addDay()->format('Y-m-d'),
                 'reason' => PlannedAbsenceReason::Holiday->value,
             ])
-            ->assertSessionHasErrors(['game_version' => 'A game version is required.', 'character' => 'Choose a main character.']);
+            ->assertSessionHasErrors(['character' => 'Choose a main character.'])
+            ->assertSessionDoesntHaveErrors('game_version');
 
         $this->assertDatabaseCount('planned_absences', 0);
     }
@@ -1017,7 +1019,8 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $this->actingAs($this->officer())
             ->post(route('raiding.absences.store'), $this->absencePayload($unreleased, $main))
-            ->assertSessionHasErrors(['game_version' => "That game version isn't available."]);
+            ->assertSessionHasErrors(['character' => "That game version isn't available."])
+            ->assertSessionDoesntHaveErrors('game_version');
 
         $this->assertDatabaseCount('planned_absences', 0);
     }
@@ -1279,7 +1282,24 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $this->actingAs($this->officer())
             ->patch(route('raiding.absences.update', $absence), ['character' => $main->id])
-            ->assertSessionHasErrors(['game_version' => 'A game version is required.']);
+            ->assertSessionHasErrors('character')
+            ->assertSessionDoesntHaveErrors('game_version');
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function update_rejects_an_unreleased_game_version(): void
+    {
+        $unreleased = GameVersion::factory()->create(['release_date' => now()->addMonth()]);
+        $main = Character::factory()->main()->forGameVersion($unreleased)->create();
+        $absence = PlannedAbsence::factory()->withCharacter()->create();
+
+        $this->actingAs($this->officer())
+            ->patch(route('raiding.absences.update', $absence), ['game_version' => $unreleased->id, 'character' => $main->id])
+            ->assertSessionHasErrors(['character' => "That game version isn't available."])
+            ->assertSessionDoesntHaveErrors('game_version');
+
+        $this->assertNotSame($main->id, $absence->fresh()->character_id);
     }
 
     // ==================== destroy: Access Control ====================

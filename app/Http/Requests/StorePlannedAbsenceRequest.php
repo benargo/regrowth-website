@@ -2,14 +2,15 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ReportsGameVersionErrorsOnCharacter;
 use App\Http\Requests\Concerns\ValidatesPlannedAbsenceDetails;
 use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StorePlannedAbsenceRequest extends FormRequest
 {
+    use ReportsGameVersionErrorsOnCharacter;
     use ValidatesPlannedAbsenceDetails;
 
     /**
@@ -23,7 +24,7 @@ class StorePlannedAbsenceRequest extends FormRequest
             'game_version' => [
                 'required',
                 'integer',
-                Rule::exists('game_versions', 'id')->where(fn (Builder $query) => $query->where('release_date', '<=', now())),
+                $this->releasedGameVersionRule(),
             ],
             'character' => [
                 'required',
@@ -48,7 +49,6 @@ class StorePlannedAbsenceRequest extends FormRequest
         return [
             'game_version.required' => 'A game version is required.',
             'game_version.integer' => 'The game version must be an ID.',
-            'game_version.exists' => "That game version isn't available.",
             'character.required' => 'A character is required.',
             'character.integer' => 'The character ID must be an integer.',
             'character.min' => 'The character ID must be at least 1.',

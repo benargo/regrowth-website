@@ -1,10 +1,19 @@
-import { useEffect, useRef, useState } from "react";
 import { Link } from "@inertiajs/react";
 import { Button } from "@headlessui/react";
 import Icon from "@/Components/FontAwesome/Icon";
 import { ErrorSummary, RequiredFieldsNote, buttonClassName, linkClassName } from "@/Components/FormControls";
+import { useErrorSummaryFocus } from "@/Components/FormPage";
 
 const END_BEFORE_START_MESSAGE = "The end date must be on or after the start date.";
+
+/**
+ * The absence form's sections, linked from the "On this page" sidebar. Each
+ * `value` is the id of its FormSection.
+ */
+export const ABSENCE_SECTIONS = [
+    { value: "whos-away", label: "Who's away" },
+    { value: "the-absence", label: "The absence" },
+];
 
 /**
  * The frame of the officer and self-service absence forms: an error summary,
@@ -14,22 +23,7 @@ const END_BEFORE_START_MESSAGE = "The end date must be on or after the start dat
  * options to pass to `post` or `patch`.
  */
 export default function AbsenceForm({ data, setError, errors, processing, onSubmit, submitLabel, cancelHref, children }) {
-    const summaryRef = useRef(null);
-    const [failedSubmits, setFailedSubmits] = useState(0);
-
-    // Focus after React commits the errors render, so the summary exists.
-    useEffect(() => {
-        if (failedSubmits > 0) {
-            summaryRef.current?.focus();
-        }
-    }, [failedSubmits]);
-
-    // The game version has no field of its own; it's chosen with the character.
-    const { game_version: gameVersionError, ...summaryErrors } = errors;
-
-    if (gameVersionError && !summaryErrors.character) {
-        summaryErrors.character = gameVersionError;
-    }
+    const { summaryRef, focusSummary } = useErrorSummaryFocus();
 
     function handleSubmit(event) {
         event.preventDefault();
@@ -37,17 +31,17 @@ export default function AbsenceForm({ data, setError, errors, processing, onSubm
         // Dates are YYYY-MM-DD strings, so they compare in calendar order.
         if (data.start_date && data.end_date && data.end_date < data.start_date) {
             setError("end_date", END_BEFORE_START_MESSAGE);
-            setFailedSubmits((count) => count + 1);
+            focusSummary();
 
             return;
         }
 
-        onSubmit({ onError: () => setFailedSubmits((count) => count + 1) });
+        onSubmit({ onError: focusSummary });
     }
 
     return (
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-8">
-            <ErrorSummary errors={summaryErrors} summaryRef={summaryRef} />
+            <ErrorSummary errors={errors} summaryRef={summaryRef} />
 
             <RequiredFieldsNote />
 

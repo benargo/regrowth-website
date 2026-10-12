@@ -3,7 +3,9 @@
 namespace App\Http\Requests\Concerns;
 
 use App\Enums\PlannedAbsenceReason;
+use App\Models\GameVersion;
 use App\Models\PlannedAbsence;
+use Closure;
 use Illuminate\Validation\Rule;
 
 /**
@@ -64,6 +66,20 @@ trait ValidatesPlannedAbsenceDetails
             'notes.required' => 'Add a note when the reason is Other.',
             'notes.string' => 'The notes must be text.',
         ];
+    }
+
+    /**
+     * Passes only for a game version the GameVersion::released() scope keeps.
+     *
+     * @return Closure(string, mixed, Closure(string): mixed): void
+     */
+    protected function releasedGameVersionRule(): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail): void {
+            if (! GameVersion::released()->whereKey($value)->exists()) {
+                $fail("That game version isn't available.");
+            }
+        };
     }
 
     /**

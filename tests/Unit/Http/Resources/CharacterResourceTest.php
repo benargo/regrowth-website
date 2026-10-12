@@ -245,13 +245,13 @@ class CharacterResourceTest extends TestCase
     // ==================== portrait url ====================
 
     #[Test]
-    public function it_includes_portrait_url_key(): void
+    public function it_omits_portrait_url_when_media_is_not_loaded(): void
     {
         $character = Character::factory()->create();
 
-        $array = (new CharacterResource($character))->toArray(new Request);
+        $array = (new CharacterResource($character))->resolve(new Request);
 
-        $this->assertArrayHasKey('portrait_url', $array);
+        $this->assertArrayNotHasKey('portrait_url', $array);
     }
 
     #[Test]
@@ -259,7 +259,7 @@ class CharacterResourceTest extends TestCase
     {
         $character = Character::factory()->create();
 
-        $array = (new CharacterResource($character))->toArray(new Request);
+        $array = (new CharacterResource($character->load('media')))->toArray(new Request);
 
         $this->assertNull($array['portrait_url']);
     }
@@ -275,25 +275,12 @@ class CharacterResourceTest extends TestCase
             ->withCustomProperties(['size' => 135])
             ->toMediaCollection(Character::MEDIA_COLLECTION);
 
-        $array = (new CharacterResource($character))->toArray(new Request);
+        $array = (new CharacterResource($character->load('media')))->toArray(new Request);
 
         $this->assertNotNull($array['portrait_url']);
         $this->assertStringContainsString('/storage/', $array['portrait_url']);
         $this->assertStringContainsString('character_15678.jpg', $array['portrait_url']);
         $this->assertStringNotContainsString('/icons/', $array['portrait_url']);
-    }
-
-    // ==================== absence list scope ====================
-
-    #[Test]
-    public function for_absence_list_returns_only_id_name_slug_portrait_and_class(): void
-    {
-        $character = Character::factory()->create();
-
-        $array = CharacterResource::forAbsenceList($character->load('playableClass'))->resolve(new Request);
-
-        $this->assertSame(['id', 'name', 'slug', 'portrait_url', 'playable_class'], array_keys($array));
-        $this->assertNull($array['portrait_url']);
     }
 
     // ==================== linked characters relation ====================

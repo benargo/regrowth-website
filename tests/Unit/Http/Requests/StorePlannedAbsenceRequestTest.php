@@ -5,6 +5,7 @@ namespace Tests\Unit\Http\Requests;
 use App\Enums\PlannedAbsenceReason;
 use App\Http\Requests\StorePlannedAbsenceRequest;
 use App\Models\PlannedAbsence;
+use Closure;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Enum;
@@ -30,7 +31,7 @@ class StorePlannedAbsenceRequestTest extends TestCase
 
         $this->assertContains('required', $rules['game_version']);
         $this->assertContains('integer', $rules['game_version']);
-        $this->assertTrue(collect($rules['game_version'])->contains(fn ($rule) => $rule instanceof Exists));
+        $this->assertTrue(collect($rules['game_version'])->contains(fn ($rule) => $rule instanceof Closure));
     }
 
     #[Test]

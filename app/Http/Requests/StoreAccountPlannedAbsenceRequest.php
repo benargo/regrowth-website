@@ -6,6 +6,7 @@ use App\Actions\Characters\FetchBattleNetAccountCharacters;
 use App\Actions\Characters\ResolveSelectableAccountCharacters;
 use App\Http\Integrations\Blizzard\Exceptions\BattleNetSessionException;
 use App\Http\Integrations\Blizzard\Support\BattleNetSession;
+use App\Http\Requests\Concerns\ReportsGameVersionErrorsOnCharacter;
 use App\Http\Requests\Concerns\ValidatesPlannedAbsenceDetails;
 use App\Models\GameVersion;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -19,6 +20,7 @@ use Illuminate\Validation\Validator;
  */
 class StoreAccountPlannedAbsenceRequest extends FormRequest
 {
+    use ReportsGameVersionErrorsOnCharacter;
     use ValidatesPlannedAbsenceDetails;
 
     /**

@@ -151,6 +151,7 @@ class AccountControllerTest extends TestCase
                 ->has('created_at')
                 ->has('updated_at')
                 ->has('deleted_at')
+                ->has('meta')
                 ->missing('permissions')
             )
             ->has('planned_absences.permissions', fn (Assert $permissions) => $permissions->hasAll(['edit', 'delete']))

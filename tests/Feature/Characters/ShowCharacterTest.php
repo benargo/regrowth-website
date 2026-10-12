@@ -152,6 +152,26 @@ class ShowCharacterTest extends TestCase
         Saloon::assertNotSent(GetCharacterMediaRequest::class);
     }
 
+    #[Test]
+    #[Group('media')]
+    public function show_includes_the_character_portrait_url(): void
+    {
+        Queue::fake();
+        Storage::fake('public');
+
+        $character = Character::factory()->withPlayableClass()->withRank()->create();
+        $character->addMediaFromString('BINARY')
+            ->usingFileName('portrait.jpg')
+            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION);
+
+        $this->get(route('characters.show', [
+            'character' => $character,
+            'slug' => $this->characterSlug($character),
+        ]))->assertInertia(fn (Assert $page) => $page
+            ->where('character.data.portrait_url', $character->getFirstMediaUrl(HasCharacterMedia::MEDIA_COLLECTION))
+        );
+    }
+
     // ==================== show — roster link ====================
 
     #[Test]

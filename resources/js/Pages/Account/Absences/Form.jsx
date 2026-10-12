@@ -13,9 +13,9 @@ import CharacterPortrait from "@/Components/Characters/CharacterPortrait";
 import CharacterSearch from "@/Components/Characters/CharacterSearch";
 import ClassPill from "@/Components/Characters/ClassPill";
 import { FormRow, FormSection } from "@/Components/FormControls";
-import AbsenceForm from "@/Components/PlannedAbsences/AbsenceForm";
+import FormPageLayout, { FormPageSection } from "@/Components/FormPage";
+import AbsenceForm, { ABSENCE_SECTIONS } from "@/Components/PlannedAbsences/AbsenceForm";
 import AbsenceDetailsFields from "@/Components/PlannedAbsences/AbsenceDetailsFields";
-import AbsenceFormLayout from "@/Components/PlannedAbsences/AbsenceFormLayout";
 import { usePermission } from "@/Hooks/usePermission";
 
 const TICKET_URL = "https://discord.com/channels/829020506907869214/1011331714376794233";
@@ -83,21 +83,30 @@ function AccountCharacterPicker({ gameVersion, value, onChange, invalid }) {
     );
 }
 
-function CreateForm({ gameVersion, action, canBackdate, reasons }) {
-    const { data, setData, post, processing, errors, clearErrors, setError } = useForm({
-        game_version: gameVersion.id,
+function AccountAbsenceForm({ gameVersion, plannedAbsence, action, canBackdate, reasons }) {
+    const isEditing = plannedAbsence !== null;
+
+    const { data, setData, post, patch, transform, processing, errors, clearErrors, setError } = useForm({
+        game_version: gameVersion?.id ?? null,
         character: null,
-        start_date: "",
-        end_date: "",
-        reason: "",
-        notes: "",
+        start_date: plannedAbsence?.start_date ?? "",
+        end_date: plannedAbsence?.end_date ?? "",
+        reason: plannedAbsence?.reason?.key ?? "",
+        notes: plannedAbsence?.notes ?? "",
     });
 
     function submit(visitOptions) {
-        post(action, visitOptions);
+        // An absence's character can't change once it's logged.
+        transform(({ game_version, character, ...rest }) => (isEditing ? rest : { ...rest, game_version, character }));
+
+        if (isEditing) {
+            patch(action, visitOptions);
+        } else {
+            post(action, visitOptions);
+        }
     }
 
-    const characterError = errors.character ?? errors.game_version;
+    const character = plannedAbsence?.character;
 
     return (
         <AbsenceForm
@@ -106,73 +115,37 @@ function CreateForm({ gameVersion, action, canBackdate, reasons }) {
             errors={errors}
             processing={processing}
             onSubmit={submit}
-            submitLabel="Log absence"
+            submitLabel={isEditing ? "Save changes" : "Log absence"}
             cancelHref={route("account.index")}
         >
             <FormSection id="whos-away" legend="Who's away">
-                <FormRow htmlFor="character" label="Character" required error={characterError}>
-                    <AccountCharacterPicker
-                        gameVersion={gameVersion}
-                        value={data.character}
-                        onChange={(id) => {
-                            setData("character", id);
-                            if (id) {
-                                clearErrors("character", "game_version");
-                            }
-                        }}
-                        invalid={Boolean(characterError)}
-                    />
-                </FormRow>
-            </FormSection>
-
-            <AbsenceDetailsFields
-                data={data}
-                setData={setData}
-                errors={errors}
-                clearErrors={clearErrors}
-                canBackdate={canBackdate}
-                reasons={reasons}
-            />
-        </AbsenceForm>
-    );
-}
-
-function EditForm({ plannedAbsence, action, canBackdate, reasons }) {
-    const { data, setData, patch, processing, errors, clearErrors, setError } = useForm({
-        start_date: plannedAbsence.start_date ?? "",
-        end_date: plannedAbsence.end_date ?? "",
-        reason: plannedAbsence.reason?.key ?? "",
-        notes: plannedAbsence.notes ?? "",
-    });
-
-    function submit(visitOptions) {
-        patch(action, visitOptions);
-    }
-
-    const character = plannedAbsence.character;
-
-    return (
-        <AbsenceForm
-            data={data}
-            setError={setError}
-            errors={errors}
-            processing={processing}
-            onSubmit={submit}
-            submitLabel="Save changes"
-            cancelHref={route("account.index")}
-        >
-            <FormSection id="whos-away" legend="Who's away">
-                <div className="flex items-center gap-3">
-                    {character ? (
-                        <>
-                            <CharacterPortrait character={character} className="size-10" />
-                            <span className="text-white">{character.name}</span>
-                            <ClassPill playableClass={character.playable_class} />
-                        </>
-                    ) : (
-                        <span className="text-secondary-300">Unknown character</span>
-                    )}
-                </div>
+                {isEditing ? (
+                    <div className="flex items-center gap-3">
+                        {character ? (
+                            <>
+                                <CharacterPortrait character={character} className="size-10" />
+                                <span className="text-white">{character.name}</span>
+                                <ClassPill playableClass={character.playable_class} />
+                            </>
+                        ) : (
+                            <span className="text-secondary-300">Unknown character</span>
+                        )}
+                    </div>
+                ) : (
+                    <FormRow htmlFor="character" label="Character" required error={errors.character}>
+                        <AccountCharacterPicker
+                            gameVersion={gameVersion}
+                            value={data.character}
+                            onChange={(id) => {
+                                setData("character", id);
+                                if (id) {
+                                    clearErrors("character");
+                                }
+                            }}
+                            invalid={Boolean(errors.character)}
+                        />
+                    </FormRow>
+                )}
             </FormSection>
 
             <AbsenceDetailsFields
@@ -235,24 +208,18 @@ export default function Form() {
                 )}
 
                 {plannedAbsence || gameVersion ? (
-                    <AbsenceFormLayout note={canBackdate ? null : ticketNote}>
-                        {plannedAbsence ? (
-                            <EditForm
+                    <FormPageLayout sections={ABSENCE_SECTIONS} note={canBackdate ? null : ticketNote}>
+                        <FormPageSection>
+                            <AccountAbsenceForm
+                                key={gameVersion?.slug ?? plannedAbsence.id}
+                                gameVersion={gameVersion}
                                 plannedAbsence={plannedAbsence}
                                 action={action}
                                 canBackdate={canBackdate}
                                 reasons={reasons}
                             />
-                        ) : (
-                            <CreateForm
-                                key={gameVersion.slug}
-                                gameVersion={gameVersion}
-                                action={action}
-                                canBackdate={canBackdate}
-                                reasons={reasons}
-                            />
-                        )}
-                    </AbsenceFormLayout>
+                        </FormPageSection>
+                    </FormPageLayout>
                 ) : (
                     <EmptyState
                         icon="calendar-times"

@@ -71,7 +71,7 @@ class CharacterController extends Controller
             ], 303);
         }
 
-        $character->load(['gameVersion', 'playableClass', 'playableRace', 'rank', 'specializations', 'linkedCharacters.playableClass', 'linkedCharacters.rank']);
+        $character->load(['gameVersion', 'media', 'playableClass', 'playableRace', 'rank', 'specializations', 'linkedCharacters.playableClass', 'linkedCharacters.rank']);
 
         $gameVersion = $character->gameVersion;
 

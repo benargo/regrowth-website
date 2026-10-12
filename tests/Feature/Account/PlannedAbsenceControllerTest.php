@@ -361,7 +361,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $character = Character::factory()->main()->forGameVersion($officerOnly)->create(['id' => 52963250, 'name' => 'Auburn']);
         $this->fakeAccount([52963250]);
 
-        $this->assertStoreRejected($this->absencePayload($officerOnly, $character), ['game_version' => "That game version isn't available."]);
+        $this->assertStoreRejected($this->absencePayload($officerOnly, $character), ['character' => "That game version isn't available."], withoutErrors: ['game_version']);
     }
 
     #[Test]
@@ -674,13 +674,18 @@ class PlannedAbsenceControllerTest extends TestCase
     /**
      * @param  array<string, mixed>  $payload
      * @param  array<int|string, string>  $errors
+     * @param  array<int, string>  $withoutErrors  Keys that must not carry an error
      */
-    private function assertStoreRejected(array $payload, array $errors): void
+    private function assertStoreRejected(array $payload, array $errors, array $withoutErrors = []): void
     {
-        $this->actingAs($this->member())
+        $response = $this->actingAs($this->member())
             ->withSession($this->battleNetSession())
             ->post(route('account.absences.store'), $payload)
             ->assertSessionHasErrors($errors);
+
+        if ($withoutErrors !== []) {
+            $response->assertSessionDoesntHaveErrors($withoutErrors);
+        }
 
         $this->assertDatabaseCount('planned_absences', 0);
     }

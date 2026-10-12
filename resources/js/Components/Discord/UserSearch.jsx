@@ -6,7 +6,8 @@ import { controlClassName } from "@/Components/FormControls";
 
 /**
  * Searches the Discord server's members by partially reloading the page's optional `discord_members` prop.
- * Put it in a FormRow, which labels it and shows any error.
+ * A page that offers it backs that prop with the SearchGuildMembers action, passing it `member_search`
+ * and `member_limit` from the request. Put it in a FormRow, which labels it and shows any error.
  */
 export default function UserSearch({ id, value, onSelect, invalid = false }) {
     const results = usePage().props.discord_members ?? [];

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Characters\RefreshCharacterPortrait;
+use App\Actions\Discord\SearchGuildMembers;
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Contracts\HasCharacterMedia;
 use App\Data\PlannedAbsenceReasonData;
@@ -60,7 +61,7 @@ class PlannedAbsenceController extends Controller
                     ->pluck('character')->filter()->unique('id')
                     ->each(fn (Character $character) => RefreshCharacterPortrait::queueIfStale($character));
 
-                return PlannedAbsenceResource::collectionForOfficerList($absences)
+                return PlannedAbsenceResource::collection($absences)
                     ->additional(['permissions' => $this->officerPermissions($request->user())]);
             }),
             'past_planned_absences' => Inertia::defer(fn (): array => $this->pastAbsences($request)),
@@ -76,9 +77,9 @@ class PlannedAbsenceController extends Controller
     private function pastAbsences(Request $request): array
     {
         return Cache::tags(['attendance'])->remember(
-            'planned_absences:past:v2',
+            'planned_absences:past:v3',
             now()->endOfDay(),
-            fn (): array => PlannedAbsenceResource::collectionForOfficerList(
+            fn (): array => PlannedAbsenceResource::collection(
                 PlannedAbsence::query()
                     ->withTrashed()
                     ->ended()
@@ -140,7 +141,7 @@ class PlannedAbsenceController extends Controller
             'characters' => fn () => $this->pickerCharacters($gameVersion()),
             'action' => route('raiding.absences.store'),
             'reasons' => fn () => PlannedAbsenceReasonData::options(),
-            'discord_members' => Inertia::optional(fn (): array => $this->searchDiscordMembers($request)),
+            'discord_members' => Inertia::optional(fn (): array => SearchGuildMembers::run($request->only(['member_search', 'member_limit']))),
             'character_portrait' => Inertia::optional(fn (): array => $this->characterPortrait($request)),
         ]);
     }
@@ -188,7 +189,7 @@ class PlannedAbsenceController extends Controller
             'characters' => fn () => $this->pickerCharacters($gameVersion()),
             'action' => route('raiding.absences.update', $plannedAbsence),
             'reasons' => fn () => PlannedAbsenceReasonData::options(),
-            'discord_members' => Inertia::optional(fn (): array => $this->searchDiscordMembers($request)),
+            'discord_members' => Inertia::optional(fn (): array => SearchGuildMembers::run($request->only(['member_search', 'member_limit']))),
             'character_portrait' => Inertia::optional(fn (): array => $this->characterPortrait($request)),
         ]);
     }
@@ -280,35 +281,6 @@ class PlannedAbsenceController extends Controller
     }
 
     /**
-     * Search the Discord server's members by username or nickname prefix.
-     *
-     * @return array<int, array{id: string|null, nickname: string|null, username: string|null}>
-     */
-    private function searchDiscordMembers(Request $request): array
-    {
-        $validated = $request->validate([
-            'member_search' => ['required', 'string'],
-            'member_limit' => ['sometimes', 'integer', 'min:1', 'max:25'],
-        ]);
-
-        $query = $validated['member_search'];
-        $limit = (int) ($validated['member_limit'] ?? 1);
-
-        // Cache plain arrays: cache.serializable_classes is false, so cached objects can't be unserialized.
-        return Cache::tags(['discord'])->remember(
-            "discord:members:search:{$limit}:".mb_strtolower($query),
-            now()->addMinutes(5),
-            fn (): array => $this->discord->searchGuildMembers($query, $limit)
-                ->map(fn ($member): array => [
-                    'id' => $member->user?->id,
-                    'nickname' => $member->nick,
-                    'username' => $member->user?->username,
-                ])
-                ->all()
-        );
-    }
-
-    /**
      * Get the released game versions, newest first.
      *
      * @return Collection<int, GameVersion>
@@ -330,7 +302,7 @@ class PlannedAbsenceController extends Controller
         return CharacterResource::collection(
             Character::where('game_version_id', $gameVersion->id)
                 ->where('is_main', true)
-                ->with(['playableRace', 'playableClass'])
+                ->with(['media', 'playableRace', 'playableClass'])
                 ->orderBy('name')
                 ->get()
         );

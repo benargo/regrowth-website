@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from "react";
 import { Link } from "@inertiajs/react";
 import { Button, Input } from "@headlessui/react";
 import {
@@ -11,6 +10,7 @@ import {
     controlClassName,
     linkClassName,
 } from "@/Components/FormControls";
+import { useErrorSummaryFocus } from "@/Components/FormPage";
 import { useFormAutosave } from "@/Hooks/useAutosave";
 import { AUTOSAVE_DELAY } from "@/Hooks/useRelationshipForm";
 
@@ -23,8 +23,7 @@ import { AUTOSAVE_DELAY } from "@/Hooks/useRelationshipForm";
  */
 export default function DetailsForm({ form, autosave, onSubmit, submitLabel, processingLabel, cancelHref, children }) {
     const { data, setData, processing, errors } = form;
-    const summaryRef = useRef(null);
-    const [failedSubmits, setFailedSubmits] = useState(0);
+    const { summaryRef, focusSummary } = useErrorSummaryFocus();
     const { schedule, flush, containerProps } = useFormAutosave({
         form,
         url: autosave?.url,
@@ -35,13 +34,6 @@ export default function DetailsForm({ form, autosave, onSubmit, submitLabel, pro
         enabled: Boolean(autosave),
     });
 
-    // Focus after React commits the errors render, so the summary exists.
-    useEffect(() => {
-        if (failedSubmits > 0) {
-            summaryRef.current?.focus();
-        }
-    }, [failedSubmits]);
-
     function handleSubmit(e) {
         e.preventDefault();
 
@@ -51,7 +43,7 @@ export default function DetailsForm({ form, autosave, onSubmit, submitLabel, pro
             return;
         }
 
-        onSubmit({ onError: () => setFailedSubmits((count) => count + 1) });
+        onSubmit({ onError: focusSummary });
     }
 
     const text = (name, props = {}) => (

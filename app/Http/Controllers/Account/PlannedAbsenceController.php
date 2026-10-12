@@ -94,7 +94,7 @@ class PlannedAbsenceController extends Controller
     public function edit(PlannedAbsence $plannedAbsence): Response
     {
         return Inertia::render('Account/Absences/Form', [
-            'planned_absence' => fn () => new PlannedAbsenceResource($plannedAbsence->load(['character.playableRace', 'createdBy'])),
+            'planned_absence' => fn () => new PlannedAbsenceResource($plannedAbsence->load(['character.media', 'character.playableRace', 'createdBy'])),
             'action' => route('account.absences.update', $plannedAbsence),
             'reasons' => fn () => PlannedAbsenceReasonData::options(),
         ]);

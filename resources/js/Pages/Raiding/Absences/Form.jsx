@@ -10,9 +10,9 @@ import UserSearch from "@/Components/Discord/UserSearch";
 import GameVersionSelector from "@/Components/GameVersions/GameVersionSelector";
 import CharacterSearch from "@/Components/Characters/CharacterSearch";
 import { FormRow, FormSection } from "@/Components/FormControls";
-import AbsenceForm from "@/Components/PlannedAbsences/AbsenceForm";
+import FormPageLayout, { FormPageSection } from "@/Components/FormPage";
+import AbsenceForm, { ABSENCE_SECTIONS } from "@/Components/PlannedAbsences/AbsenceForm";
 import AbsenceDetailsFields from "@/Components/PlannedAbsences/AbsenceDetailsFields";
-import AbsenceFormLayout from "@/Components/PlannedAbsences/AbsenceFormLayout";
 import normaliseCharacterName from "@/Helpers/NormaliseCharacterName";
 
 /**
@@ -79,8 +79,6 @@ function OfficerAbsenceForm({ gameVersion, characters, plannedAbsence, action, r
         }
     }
 
-    const characterError = errors.character ?? errors.game_version;
-
     return (
         <AbsenceForm
             data={data}
@@ -106,7 +104,7 @@ function OfficerAbsenceForm({ gameVersion, characters, plannedAbsence, action, r
                     />
                 </FormRow>
 
-                <FormRow htmlFor="character" label="Character" required error={characterError}>
+                <FormRow htmlFor="character" label="Character" required error={errors.character}>
                     <CharacterSearch
                         refreshPortrait
                         id="character"
@@ -115,10 +113,10 @@ function OfficerAbsenceForm({ gameVersion, characters, plannedAbsence, action, r
                         onChange={(id) => {
                             setData("character", id);
                             if (id) {
-                                clearErrors("character", "game_version");
+                                clearErrors("character");
                             }
                         }}
-                        invalid={Boolean(characterError)}
+                        invalid={Boolean(errors.character)}
                         emptyMessage={`No mains on the ${gameVersion.title} roster match your search.`}
                     />
                 </FormRow>
@@ -164,16 +162,18 @@ export default function Form() {
                 )}
 
                 {gameVersion ? (
-                    <AbsenceFormLayout>
-                        <OfficerAbsenceForm
-                            key={gameVersion.slug}
-                            gameVersion={gameVersion}
-                            characters={characters}
-                            plannedAbsence={plannedAbsence}
-                            action={action}
-                            reasons={reasons}
-                        />
-                    </AbsenceFormLayout>
+                    <FormPageLayout sections={ABSENCE_SECTIONS}>
+                        <FormPageSection>
+                            <OfficerAbsenceForm
+                                key={gameVersion.slug}
+                                gameVersion={gameVersion}
+                                characters={characters}
+                                plannedAbsence={plannedAbsence}
+                                action={action}
+                                reasons={reasons}
+                            />
+                        </FormPageSection>
+                    </FormPageLayout>
                 ) : (
                     <EmptyState
                         icon="calendar-times"
