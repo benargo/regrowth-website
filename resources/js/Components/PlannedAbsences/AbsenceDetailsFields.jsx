@@ -1,6 +1,7 @@
 import { Fieldset, Input, Legend } from "@headlessui/react";
 import { FormRow, FormSection, RadioCardGroup, controlClassName } from "@/Components/FormControls";
 import MarkdownEditor from "@/Components/MarkdownEditor";
+import todayDateString from "@/Helpers/todayDateString";
 
 const ALLOWED_FORMATS = ["bold", "italic", "underline", "bulletList", "numberedList"];
 
@@ -42,7 +43,7 @@ export default function AbsenceDetailsFields({
                     type="date"
                     value={data.start_date}
                     onChange={(event) => setField("start_date", event.target.value)}
-                    min={canBackdate ? undefined : new Date().toISOString().split("T")[0]}
+                    min={canBackdate ? undefined : todayDateString()}
                     max="2099-12-31"
                     invalid={Boolean(errors.start_date)}
                     required

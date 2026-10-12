@@ -15,7 +15,7 @@ class ItemObserver
     public function saved(Item|ItemPriority $model): void
     {
         $this->flushLootCouncilCache();
-        $this->scheduleAddonExportBuild();
+        BuildAddonExportFile::schedule();
     }
 
     /**
@@ -23,8 +23,7 @@ class ItemObserver
      */
     public function deleted(Item|ItemPriority $model): void
     {
-        $this->flushLootCouncilCache();
-        $this->scheduleAddonExportBuild();
+        $this->saved($model);
     }
 
     /**
@@ -33,13 +32,5 @@ class ItemObserver
     private function flushLootCouncilCache(): void
     {
         Cache::tags(['lootcouncil'])->flush();
-    }
-
-    /**
-     * Schedule a rebuild of the addon export file.
-     */
-    private function scheduleAddonExportBuild(): void
-    {
-        BuildAddonExportFile::dispatch()->delay(now()->addSeconds(120));
     }
 }

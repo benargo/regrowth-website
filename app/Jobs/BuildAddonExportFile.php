@@ -34,6 +34,15 @@ class BuildAddonExportFile implements ShouldQueue
     public int $backoff = 60;
 
     /**
+     * Queue a rebuild two minutes from now, so a burst of changes settles
+     * before the export is built.
+     */
+    public static function schedule(): void
+    {
+        static::dispatch()->delay(now()->addSeconds(120));
+    }
+
+    /**
      * Define the middleware for the job.
      *
      * @return array<int, object>

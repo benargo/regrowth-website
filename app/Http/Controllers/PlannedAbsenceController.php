@@ -23,7 +23,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
@@ -61,7 +60,7 @@ class PlannedAbsenceController extends Controller
                 $absences
                     ->filter(fn (PlannedAbsence $absence) => ! $absence->trashed() && ($absence->end_date ?? $absence->start_date)->gte(today()))
                     ->pluck('character')->filter()->unique('id')
-                    ->each(fn (Character $character) => RefreshCharacterPortrait::dispatch($character));
+                    ->each(fn (Character $character) => RefreshCharacterPortrait::queueIfStale($character));
 
                 return PlannedAbsenceResource::collectionForOfficerList($absences)->map->resolve($request)->all();
             }),
@@ -154,31 +153,14 @@ class PlannedAbsenceController extends Controller
     #[Authorize('createForOthers', PlannedAbsence::class)]
     public function update(UpdatePlannedAbsenceRequest $request, PlannedAbsence $plannedAbsence): RedirectResponse
     {
-        $updates = [];
+        $updates = $request->safe()->only(['start_date', 'end_date', 'reason', 'notes']);
 
         if ($request->has('character')) {
-            $updates = Arr::add($updates, 'character_id', $request->integer('character'));
+            $updates['character_id'] = $request->integer('character');
         }
 
         if ($request->has('user')) {
-            $user = $this->resolveUser($request->input('user'));
-            $updates = Arr::add($updates, 'user_id', $user->id);
-        }
-
-        if ($request->has('start_date')) {
-            $updates = Arr::add($updates, 'start_date', $request->input('start_date'));
-        }
-
-        if ($request->has('end_date')) {
-            $updates = Arr::add($updates, 'end_date', $request->input('end_date', null));
-        }
-
-        if ($request->has('reason')) {
-            $updates = Arr::add($updates, 'reason', $request->input('reason'));
-        }
-
-        if ($request->has('notes')) {
-            $updates = Arr::add($updates, 'notes', $request->input('notes'));
+            $updates['user_id'] = $this->resolveUser($request->input('user'))->id;
         }
 
         $plannedAbsence->update($updates);

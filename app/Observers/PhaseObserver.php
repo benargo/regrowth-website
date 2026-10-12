@@ -24,7 +24,7 @@ class PhaseObserver
      */
     public function updated(Phase $phase): void
     {
-        BuildAddonExportFile::dispatch()->delay(now()->addSeconds(120));
+        BuildAddonExportFile::schedule();
 
         if (! $phase->wasChanged(['start_date', 'game_version_id'])) {
             return;

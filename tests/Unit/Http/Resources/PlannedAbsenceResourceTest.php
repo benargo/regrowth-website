@@ -45,6 +45,7 @@ class PlannedAbsenceResourceTest extends TestCase
         $this->assertArrayHasKey('notes', $array);
         $this->assertArrayNotHasKey('discord_message_id', $array);
         $this->assertArrayHasKey('created_by', $array);
+        $this->assertArrayHasKey('permissions', $array);
     }
 
     // ==================== scalar fields ====================

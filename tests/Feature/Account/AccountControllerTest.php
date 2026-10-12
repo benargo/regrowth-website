@@ -154,7 +154,7 @@ class AccountControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_lists_only_the_absences_the_user_can_delete(): void
+    public function index_marks_only_the_absences_the_user_can_delete(): void
     {
         $this->freezeTime();
         $user = User::factory()->create();
@@ -165,11 +165,13 @@ class AccountControllerTest extends TestCase
 
         $this->actingAs($user)
             ->get(route('account.index'))
-            ->assertInertia(fn (Assert $page) => $page->where('planned_absences.deletable', [$upcoming->id]));
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('planned_absences.data', fn ($absences) => collect($absences)->where('permissions.delete', true)->pluck('id')->all() === [$upcoming->id])
+            );
     }
 
     #[Test]
-    public function index_lists_only_the_absences_the_user_can_edit(): void
+    public function index_marks_only_the_absences_the_user_can_edit(): void
     {
         $this->freezeTime();
         $user = User::factory()->create();
@@ -180,6 +182,8 @@ class AccountControllerTest extends TestCase
 
         $this->actingAs($user)
             ->get(route('account.index'))
-            ->assertInertia(fn (Assert $page) => $page->where('planned_absences.editable', [$upcoming->id]));
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('planned_absences.data', fn ($absences) => collect($absences)->where('permissions.edit', true)->pluck('id')->all() === [$upcoming->id])
+            );
     }
 }

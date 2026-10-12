@@ -2,10 +2,10 @@
 
 namespace App\Http\Resources;
 
+use App\Contracts\HasCharacterMedia;
 use App\Models\Character;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Collection;
 
 /**
  * Eager-loading requirements differ per scope:
@@ -35,15 +35,6 @@ class CharacterResource extends JsonResource
         return static::withScope($resource, self::SCOPE_ABSENCE_LIST);
     }
 
-    /**
-     * @param  iterable<int, Character>  $resources
-     * @return Collection<int, static>
-     */
-    public static function collectionForAbsenceList(iterable $resources): Collection
-    {
-        return collect($resources)->map(fn ($character) => static::forAbsenceList($character));
-    }
-
     protected static function withScope(mixed $resource, string $scope): static
     {
         $instance = new static($resource);
@@ -64,7 +55,7 @@ class CharacterResource extends JsonResource
                 'id' => $this->id,
                 'name' => $this->name,
                 'slug' => $this->slug,
-                'portrait_url' => $this->getFirstMediaUrl('character_portraits') ?: null,
+                'portrait_url' => $this->getFirstMediaUrl(HasCharacterMedia::MEDIA_COLLECTION) ?: null,
                 'playable_class' => $this->whenLoaded('playableClass', fn () => (new PlayableClassResource($this->playableClass))->resolve($request)),
             ];
         }
@@ -76,7 +67,7 @@ class CharacterResource extends JsonResource
             'level' => $this->level,
             'is_main' => $this->is_main,
             'is_loot_councillor' => $this->is_loot_councillor,
-            'portrait_url' => $this->getFirstMediaUrl('character_portraits') ?: null,
+            'portrait_url' => $this->getFirstMediaUrl(HasCharacterMedia::MEDIA_COLLECTION) ?: null,
             'planned_absences' => $this->whenLoaded('plannedAbsences', fn () => PlannedAbsenceResource::collection($this->plannedAbsences)),
             'playable_class' => $this->whenLoaded('playableClass', fn () => (new PlayableClassResource($this->playableClass))->resolve($request)),
             'playable_race' => $this->whenLoaded('playableRace', fn () => (new PlayableRaceResource($this->playableRace))->resolve($request)),

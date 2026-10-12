@@ -12,19 +12,10 @@ import { usePermission } from "@/Hooks/usePermission";
 import useCharacterPortraitChannel from "@/Hooks/useCharacterPortraitChannel";
 import ToggleFilter from "@/Components/ToggleFilter";
 import { Table, TableHead, TableBody, TableHeader } from "@/Components/Table";
+import { linkButtonClassName } from "@/Components/FormControls";
+import todayDateString from "@/Helpers/todayDateString";
 
 const SECTION_HEADING = "text-ink-300 font-semibold";
-
-/**
- * Today's local date as YYYY-MM-DD, so it compares directly with the resource's date strings.
- */
-function todayDateString() {
-    const now = new Date();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-
-    return `${now.getFullYear()}-${month}-${day}`;
-}
 
 /**
  * Reloads the absences once the server's queued portrait refresh for this
@@ -134,11 +125,8 @@ export default function Index() {
                 <div className="mb-6 flex flex-row flex-wrap items-center justify-end gap-6">
                     <ToggleFilter label="Show deleted" value={showDeleted} onChange={setShowDeleted} />
                     <Can permission="manage-planned-absences">
-                        <Link
-                            href={route("raiding.absences.create")}
-                            className="bg-ink-600 hover:bg-ink-700 focus:bg-ink-700 focus:ring-ink-500 active:bg-ink-800 inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:outline-hidden"
-                        >
-                            <Icon icon="plus" style="solid" className="mr-1.5 h-4" />
+                        <Link href={route("raiding.absences.create")} className={linkButtonClassName}>
+                            <Icon icon="plus" style="solid" className="h-4" />
                             Add absence
                         </Link>
                     </Can>

@@ -161,7 +161,7 @@ class PlannedAbsenceController extends Controller
 
         $characters = ResolveSelectableAccountCharacters::run($accountCharacters)->load('media');
 
-        $characters->each(fn (Character $character) => RefreshCharacterPortrait::dispatch($character));
+        $characters->each(fn (Character $character) => RefreshCharacterPortrait::queueIfStale($character));
 
         return [
             'characters' => CharacterResource::collection($characters)->resolve($request),

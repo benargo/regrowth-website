@@ -52,6 +52,18 @@ class RefreshCharacterPortrait
     }
 
     /**
+     * Queue a refresh only when the character's portrait is missing or stale,
+     * so page loads don't queue a job per character that would do nothing.
+     * Load the character's media first to avoid a query per character.
+     */
+    public static function queueIfStale(Character $character): void
+    {
+        if (self::isStale($character)) {
+            self::dispatch($character);
+        }
+    }
+
+    /**
      * Whether the character has no portrait, or one stored at least the refresh period ago.
      */
     public static function isStale(Character $character): bool

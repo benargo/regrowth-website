@@ -2,8 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\PlannedAbsenceReason;
-use App\Models\PlannedAbsence;
+use App\Http\Requests\Concerns\ValidatesPlannedAbsenceDetails;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
@@ -11,6 +10,8 @@ use Illuminate\Validation\Rule;
 
 class StorePlannedAbsenceRequest extends FormRequest
 {
+    use ValidatesPlannedAbsenceDetails;
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -18,11 +19,6 @@ class StorePlannedAbsenceRequest extends FormRequest
      */
     public function rules(): array
     {
-        $startDateRules = ['required', 'date'];
-        if (! $this->user()?->can('createBackdated', PlannedAbsence::class)) {
-            $startDateRules[] = 'after_or_equal:today';
-        }
-
         return [
             'game_version' => [
                 'required',
@@ -38,14 +34,7 @@ class StorePlannedAbsenceRequest extends FormRequest
                     ->where('is_main', true),
             ],
             'user' => ['sometimes', 'nullable', 'string'],
-            'start_date' => $startDateRules,
-            'end_date' => ['nullable', 'date', 'after:start_date'],
-            'reason' => ['required', Rule::enum(PlannedAbsenceReason::class)],
-            'notes' => [
-                'nullable',
-                'string',
-                Rule::requiredIf($this->input('reason') === PlannedAbsenceReason::Other->value),
-            ],
+            ...$this->createAbsenceDetailRules(),
         ];
     }
 
@@ -64,15 +53,7 @@ class StorePlannedAbsenceRequest extends FormRequest
             'character.integer' => 'The character ID must be an integer.',
             'character.min' => 'The character ID must be at least 1.',
             'character.exists' => 'Choose a main character.',
-            'start_date.required' => 'A start date is required.',
-            'start_date.date' => 'The start date must be a valid date.',
-            'start_date.after_or_equal' => 'The start date must not be in the past.',
-            'end_date.date' => 'The end date must be a valid date.',
-            'end_date.after' => 'The end date must be after the start date.',
-            'reason.required' => 'Choose a reason.',
-            'reason.enum' => 'Choose one of the listed reasons.',
-            'notes.required' => 'Add a note when the reason is Other.',
-            'notes.string' => 'The notes must be text.',
+            ...$this->absenceDetailMessages(),
         ];
     }
 }

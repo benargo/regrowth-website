@@ -66,9 +66,8 @@ function OfficerAbsenceForm({ gameVersion, characters, plannedAbsence, action, r
     }
 
     function submit(visitOptions) {
-        transform(({ game_version, character, user, end_date, ...rest }) => ({
+        transform(({ game_version, character, user, ...rest }) => ({
             ...rest,
-            end_date: end_date || null,
             ...(user ? { user } : {}),
             ...(!isEditing || character !== originalCharacterId ? { game_version, character } : {}),
         }));

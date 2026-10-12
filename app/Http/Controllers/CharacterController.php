@@ -76,7 +76,7 @@ class CharacterController extends Controller
 
         $gameVersion = $character->gameVersion;
 
-        RefreshCharacterPortrait::dispatch($character);
+        RefreshCharacterPortrait::queueIfStale($character);
 
         return Inertia::render('Roster/Characters/Show', [
             'character' => (new CharacterResource($character))->resolve($request),

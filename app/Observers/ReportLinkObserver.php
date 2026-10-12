@@ -30,6 +30,6 @@ class ReportLinkObserver
     {
         ReportObserver::flushCaches();
 
-        BuildAddonExportFile::dispatch()->delay(now()->addSeconds(120));
+        BuildAddonExportFile::schedule();
     }
 }

@@ -28,7 +28,7 @@ trait SharesCharacterPortrait
 
         $character = Character::with('media')->findOrFail($validated['character_portrait']);
 
-        RefreshCharacterPortrait::dispatch($character);
+        RefreshCharacterPortrait::queueIfStale($character);
 
         return [
             'id' => $character->id,

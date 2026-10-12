@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { usePage, router } from "@inertiajs/react";
-import Icon from "@/Components/FontAwesome/Icon";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import CharacterPortrait from "@/Components/Characters/CharacterPortrait";
+import ReasonLabel from "@/Components/PlannedAbsences/ReasonLabel";
 import formatDate from "@/Helpers/FormatDate";
 import Pill from "@/Components/Pill";
 import { TableRow, TableCell } from "@/Components/Table";
@@ -17,15 +17,6 @@ function returnWeekday(endDate) {
     const returnDate = new Date(year, month - 1, day + 1);
 
     return returnDate.toLocaleString("en-GB", { weekday: "short" });
-}
-
-function ReasonLabel({ reason, className }) {
-    return (
-        <span className={`flex items-center gap-1.5 ${className ?? ""}`}>
-            <Icon icon={reason.icon} style="solid" className="h-[1em] text-sky-400" aria-hidden="true" />
-            {reason.label}
-        </span>
-    );
 }
 
 /**

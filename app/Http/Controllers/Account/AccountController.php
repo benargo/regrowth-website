@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Account;
 use App\Attributes\UsesTheme;
 use App\Enums\Theme;
 use App\Http\Controllers\Controller;
-use App\Models\PlannedAbsence;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -26,18 +25,7 @@ class AccountController extends Controller
                 ->sortByDesc('position')
                 ->values()
                 ->map(fn ($role) => ['id' => $role->id, 'name' => $role->name]),
-            'planned_absences' => $user->plannedAbsences
-                ->toResourceCollection()
-                ->additional([
-                    'editable' => $user->plannedAbsences
-                        ->filter(fn (PlannedAbsence $plannedAbsence): bool => $user->can('update', $plannedAbsence))
-                        ->values()
-                        ->modelKeys(),
-                    'deletable' => $user->plannedAbsences
-                        ->filter(fn (PlannedAbsence $plannedAbsence): bool => $user->can('delete', $plannedAbsence))
-                        ->values()
-                        ->modelKeys(),
-                ]),
+            'planned_absences' => $user->plannedAbsences->toResourceCollection(),
         ]);
     }
 }

@@ -5,10 +5,9 @@ namespace App\Http\Requests;
 use App\Actions\Characters\FetchBattleNetAccountCharacters;
 use App\Actions\Characters\ResolveSelectableAccountCharacters;
 use App\Contracts\Http\SharesBattleNetSession;
-use App\Enums\PlannedAbsenceReason;
 use App\Http\Integrations\Blizzard\Exceptions\ApiException;
+use App\Http\Requests\Concerns\ValidatesPlannedAbsenceDetails;
 use App\Models\GameVersion;
-use App\Models\PlannedAbsence;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -21,6 +20,8 @@ use Saloon\Exceptions\Request\FatalRequestException;
  */
 class StoreAccountPlannedAbsenceRequest extends FormRequest
 {
+    use ValidatesPlannedAbsenceDetails;
+
     public const string RECONNECT_MESSAGE = 'Your Battle.net connection has expired. Please connect again.';
 
     public const string UNAVAILABLE_MESSAGE = 'Battle.net is unavailable right now. Please try again shortly.';
@@ -32,23 +33,11 @@ class StoreAccountPlannedAbsenceRequest extends FormRequest
      */
     public function rules(): array
     {
-        $startDateRules = ['required', 'date'];
-        if (! $this->user()?->can('createBackdated', PlannedAbsence::class)) {
-            $startDateRules[] = 'after_or_equal:today';
-        }
-
         return [
             'game_version' => ['required', 'integer', Rule::in(GameVersion::currentRosters()->modelKeys())],
             'character' => ['required', 'integer', 'min:1'],
             'user' => ['prohibited'],
-            'start_date' => $startDateRules,
-            'end_date' => ['nullable', 'date', 'after:start_date'],
-            'reason' => ['required', Rule::enum(PlannedAbsenceReason::class)],
-            'notes' => [
-                'nullable',
-                'string',
-                Rule::requiredIf($this->input('reason') === PlannedAbsenceReason::Other->value),
-            ],
+            ...$this->createAbsenceDetailRules(),
         ];
     }
 
@@ -86,15 +75,7 @@ class StoreAccountPlannedAbsenceRequest extends FormRequest
             'character.integer' => 'The character ID must be an integer.',
             'character.min' => 'The character ID must be at least 1.',
             'user.prohibited' => 'You can only log absences for yourself here.',
-            'start_date.required' => 'A start date is required.',
-            'start_date.date' => 'The start date must be a valid date.',
-            'start_date.after_or_equal' => 'The start date must not be in the past.',
-            'end_date.date' => 'The end date must be a valid date.',
-            'end_date.after' => 'The end date must be after the start date.',
-            'reason.required' => 'Choose a reason.',
-            'reason.enum' => 'Choose one of the listed reasons.',
-            'notes.required' => 'Add a note when the reason is Other.',
-            'notes.string' => 'The notes must be text.',
+            ...$this->absenceDetailMessages(),
         ];
     }
 

@@ -12,6 +12,7 @@ use App\Models\Character;
 use App\Models\GameVersion;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -120,6 +121,29 @@ class RefreshCharacterPortraitTest extends TestCase
         RefreshCharacterPortrait::run($character);
 
         Bus::assertNotDispatched(AttachPortraitToCharacter::class);
+    }
+
+    #[Test]
+    public function queue_if_stale_queues_a_refresh_for_a_stale_portrait(): void
+    {
+        $character = $this->characterWithPortrait();
+        $this->travel(RefreshCharacterPortrait::STALE_AFTER_SECONDS)->seconds();
+        Queue::fake();
+
+        RefreshCharacterPortrait::queueIfStale($character);
+
+        RefreshCharacterPortrait::assertPushed(1);
+    }
+
+    #[Test]
+    public function queue_if_stale_does_not_queue_a_refresh_for_a_fresh_portrait(): void
+    {
+        $character = $this->characterWithPortrait();
+        Queue::fake();
+
+        RefreshCharacterPortrait::queueIfStale($character);
+
+        RefreshCharacterPortrait::assertNotPushed();
     }
 
     private function characterWithPortrait(): Character

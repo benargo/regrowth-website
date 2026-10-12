@@ -75,6 +75,10 @@ class PlannedAbsenceResource extends JsonResource
                 return $this->createdBy->toResource()->resolve($request);
             }),
             'created_at' => $this->created_at->toDateTimeString(),
+            'permissions' => [
+                'edit' => $request->user()?->can('update', $this->resource) ?? false,
+                'delete' => $request->user()?->can('delete', $this->resource) ?? false,
+            ],
         ];
 
         if ($request->user()?->can('viewAny', PlannedAbsence::class)) {

@@ -23,7 +23,7 @@ class CharacterObserver
     {
         Cache::tags(['characters'])->flush();
 
-        $this->scheduleAddonExportBuild();
+        BuildAddonExportFile::schedule();
     }
 
     /**
@@ -33,14 +33,6 @@ class CharacterObserver
     {
         Cache::tags(['characters'])->flush();
 
-        $this->scheduleAddonExportBuild();
-    }
-
-    /**
-     * Schedule a rebuild of the addon export file.
-     */
-    private function scheduleAddonExportBuild(): void
-    {
-        BuildAddonExportFile::dispatch()->delay(now()->addSeconds(120));
+        BuildAddonExportFile::schedule();
     }
 }
