@@ -110,12 +110,7 @@ function CreateForm({ gameVersion, action, canBackdate, reasons }) {
             cancelHref={route("account.index")}
         >
             <FormSection id="whos-away" legend="Who's away">
-                <FormRow
-                    htmlFor="character"
-                    label="Character"
-                    required
-                    error={characterError}
-                >
+                <FormRow htmlFor="character" label="Character" required error={characterError}>
                     <AccountCharacterPicker
                         gameVersion={gameVersion}
                         value={data.character}
@@ -204,7 +199,11 @@ export default function Form() {
     const gameVersion = gameVersionResource?.data ?? null;
     const plannedAbsence = plannedAbsenceResource?.data ?? null;
 
-    const canBackdate = usePermission("backdate-planned-absences");
+    // Editing an absence takes the server's verdict; logging a new one falls back to the role permission.
+    const hasBackdatePermission = usePermission("backdate-planned-absences");
+    const canBackdate = plannedAbsenceResource
+        ? Boolean(plannedAbsenceResource.permissions?.backdate)
+        : hasBackdatePermission;
     const pageTitle = plannedAbsence ? "Edit Planned Absence" : "Log Planned Absence";
 
     const ticketNote = (
@@ -238,7 +237,12 @@ export default function Form() {
                 {plannedAbsence || gameVersion ? (
                     <AbsenceFormLayout note={canBackdate ? null : ticketNote}>
                         {plannedAbsence ? (
-                            <EditForm plannedAbsence={plannedAbsence} action={action} canBackdate={canBackdate} reasons={reasons} />
+                            <EditForm
+                                plannedAbsence={plannedAbsence}
+                                action={action}
+                                canBackdate={canBackdate}
+                                reasons={reasons}
+                            />
                         ) : (
                             <CreateForm
                                 key={gameVersion.slug}
@@ -250,7 +254,10 @@ export default function Form() {
                         )}
                     </AbsenceFormLayout>
                 ) : (
-                    <EmptyState icon="calendar-times" message="There's no guild roster to log an absence against yet." />
+                    <EmptyState
+                        icon="calendar-times"
+                        message="There's no guild roster to log an absence against yet."
+                    />
                 )}
             </PageContainer>
         </Master>

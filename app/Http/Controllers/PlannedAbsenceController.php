@@ -47,7 +47,7 @@ class PlannedAbsenceController extends Controller
     public function index(Request $request): Response
     {
         return Inertia::render('Raiding/Absences/Index', [
-            'planned_absences' => Inertia::defer(function () {
+            'planned_absences' => Inertia::defer(function () use ($request) {
                 $absences = PlannedAbsence::query()
                     ->withTrashed()
                     ->notEnded()
@@ -60,7 +60,8 @@ class PlannedAbsenceController extends Controller
                     ->pluck('character')->filter()->unique('id')
                     ->each(fn (Character $character) => RefreshCharacterPortrait::queueIfStale($character));
 
-                return PlannedAbsenceResource::collectionForOfficerList($absences);
+                return PlannedAbsenceResource::collectionForOfficerList($absences)
+                    ->additional(['permissions' => $this->officerPermissions($request->user())]);
             }),
             'past_planned_absences' => Inertia::defer(fn (): array => $this->pastAbsences($request)),
             'character_portraits' => Inertia::optional(fn (): object => $this->characterPortraits()),
@@ -74,12 +75,8 @@ class PlannedAbsenceController extends Controller
      */
     private function pastAbsences(Request $request): array
     {
-        $user = $request->user();
-        $canUpdate = (int) $user->isAuthorizedTo('update-planned-absences');
-        $canDelete = (int) $user->isAuthorizedTo('delete-planned-absences');
-
         return Cache::tags(['attendance'])->remember(
-            "planned_absences:past:{$canUpdate}:{$canDelete}",
+            'planned_absences:past',
             now()->endOfDay(),
             fn (): array => PlannedAbsenceResource::collectionForOfficerList(
                 PlannedAbsence::query()
@@ -90,6 +87,21 @@ class PlannedAbsenceController extends Controller
                     ->get()
             )->resolve($request)
         );
+    }
+
+    /**
+     * The officer's permissions, which apply to every absence on the index.
+     * Computed per request and kept out of the cached past absences.
+     *
+     * @return array{update: bool, delete: bool, restore: bool}
+     */
+    private function officerPermissions(User $user): array
+    {
+        return [
+            'update' => $user->isAuthorizedTo('update-planned-absences'),
+            'delete' => $user->isAuthorizedTo('delete-planned-absences'),
+            'restore' => $user->can('restore', PlannedAbsence::class),
+        ];
     }
 
     /**

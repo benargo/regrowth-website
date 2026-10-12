@@ -261,6 +261,18 @@ class PlannedAbsencePolicyTest extends TestCase
         $this->assertFalse($this->policy->restore($user, $absence));
     }
 
+    #[Test]
+    public function it_allows_class_level_restore_for_admins(): void
+    {
+        $this->assertTrue(User::factory()->admin()->create()->can('restore', PlannedAbsence::class));
+    }
+
+    #[Test]
+    public function it_denies_class_level_restore_for_non_admins(): void
+    {
+        $this->assertFalse(User::factory()->create()->can('restore', PlannedAbsence::class));
+    }
+
     // ==================== force delete ====================
 
     #[Test]

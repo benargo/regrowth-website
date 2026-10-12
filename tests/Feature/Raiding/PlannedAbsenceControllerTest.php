@@ -135,8 +135,9 @@ class PlannedAbsenceControllerTest extends TestCase
                     ->has('created_at')
                     ->has('updated_at')
                     ->has('deleted_at')
-                    ->has('permissions', fn (Assert $permissions) => $permissions->hasAll(['edit', 'delete']))
+                    ->missing('permissions')
                 )
+                ->has('planned_absences.permissions', fn (Assert $permissions) => $permissions->hasAll(['update', 'delete', 'restore']))
             )
         );
     }
@@ -275,7 +276,7 @@ class PlannedAbsenceControllerTest extends TestCase
                     ->has('past_planned_absences', 1)
                     ->where('past_planned_absences.0.id', $past->id)
                     ->has('past_planned_absences.0.character.portrait_url')
-                    ->has('past_planned_absences.0.permissions', fn (Assert $permissions) => $permissions->hasAll(['edit', 'delete']))
+                    ->missing('past_planned_absences.0.permissions')
                 )
             );
     }
@@ -325,25 +326,45 @@ class PlannedAbsenceControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_does_not_share_cached_past_absence_permissions_between_viewers(): void
+    public function index_grants_officer_permissions_without_restore(): void
     {
-        $this->pastAbsence();
-
-        $this->actingAs(User::factory()->member()->create())
-            ->get(route('raiding.absences.index'))
-            ->assertInertia(fn (Assert $page) => $page
-                ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->where('past_planned_absences.0.permissions', ['edit' => false, 'delete' => false])
-                )
-            );
-
         $this->actingAs($this->officer())
             ->get(route('raiding.absences.index'))
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->where('past_planned_absences.0.permissions', ['edit' => true, 'delete' => true])
+                    ->where('planned_absences.permissions', ['update' => true, 'delete' => true, 'restore' => false])
                 )
             );
+    }
+
+    #[Test]
+    public function index_grants_admins_every_permission(): void
+    {
+        $this->actingAs(User::factory()->admin()->create())
+            ->get(route('raiding.absences.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->where('planned_absences.permissions', ['update' => true, 'delete' => true, 'restore' => true])
+                )
+            );
+    }
+
+    #[Test]
+    public function index_does_not_cache_permissions_when_a_member_loads_first(): void
+    {
+        $this->pastAbsence();
+
+        $this->assertIndexPermissions(User::factory()->member()->create(), ['update' => false, 'delete' => false, 'restore' => false]);
+        $this->assertIndexPermissions(User::factory()->admin()->create(), ['update' => true, 'delete' => true, 'restore' => true]);
+    }
+
+    #[Test]
+    public function index_does_not_cache_permissions_when_an_admin_loads_first(): void
+    {
+        $this->pastAbsence();
+
+        $this->assertIndexPermissions(User::factory()->admin()->create(), ['update' => true, 'delete' => true, 'restore' => true]);
+        $this->assertIndexPermissions(User::factory()->member()->create(), ['update' => false, 'delete' => false, 'restore' => false]);
     }
 
     // ==================== index: Character Portraits ====================
@@ -686,8 +707,9 @@ class PlannedAbsenceControllerTest extends TestCase
                 ->has('created_at')
                 ->has('updated_at')
                 ->has('deleted_at')
-                ->has('permissions', fn (Assert $permissions) => $permissions->hasAll(['edit', 'delete']))
+                ->missing('permissions')
             )
+            ->where('planned_absence.permissions', ['edit' => true, 'delete' => true, 'restore' => false, 'backdate' => true])
         );
     }
 
@@ -1584,6 +1606,22 @@ class PlannedAbsenceControllerTest extends TestCase
             'mute' => false,
             'flags' => 0,
         ]);
+    }
+
+    /**
+     * @param  array{update: bool, delete: bool, restore: bool}  $expected
+     */
+    private function assertIndexPermissions(User $user, array $expected): void
+    {
+        $this->actingAs($user)
+            ->get(route('raiding.absences.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->where('planned_absences.permissions', $expected)
+                    ->has('past_planned_absences', 1)
+                    ->missing('past_planned_absences.0.permissions')
+                )
+            );
     }
 
     private function officer(): User

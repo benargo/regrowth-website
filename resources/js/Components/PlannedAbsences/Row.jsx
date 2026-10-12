@@ -7,7 +7,7 @@ import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import ReasonLabel from "@/Components/PlannedAbsences/ReasonLabel";
 import { usePermission } from "@/Hooks/usePermission";
 
-export default function PlannedAbsenceRow({ absence, showCreatedBy = false }) {
+export default function PlannedAbsenceRow({ absence, showCreatedBy = false, canEdit = false, canDelete = false }) {
     const canEditAny = usePermission("update-planned-absences");
     const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -44,7 +44,7 @@ export default function PlannedAbsenceRow({ absence, showCreatedBy = false }) {
                 )}
 
                 <div className="flex shrink-0 gap-4">
-                    {(canEditAny || absence.permissions.edit) && (
+                    {(canEditAny || canEdit) && (
                         <Link
                             href={route(canEditAny ? "raiding.absences.edit" : "account.absences.edit", absence.id)}
                             className="text-ink-400 hover:text-ink-300 flex items-center text-sm"
@@ -53,7 +53,7 @@ export default function PlannedAbsenceRow({ absence, showCreatedBy = false }) {
                             Edit
                         </Link>
                     )}
-                    {absence.permissions.delete && (
+                    {canDelete && (
                         <button
                             onClick={() => setConfirmingDelete(true)}
                             className="flex items-center text-sm text-red-400 hover:text-red-300"

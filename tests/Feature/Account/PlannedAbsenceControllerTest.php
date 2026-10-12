@@ -410,6 +410,19 @@ class PlannedAbsenceControllerTest extends TestCase
     }
 
     #[Test]
+    public function edit_passes_permissions_alongside_the_absence(): void
+    {
+        $member = $this->member();
+        $absence = PlannedAbsence::factory()->withCharacter()->create(['user_id' => $member->id, 'created_by' => $member->id, 'start_date' => today()->addWeek()]);
+
+        $this->actingAs($member)
+            ->get(route('account.absences.edit', $absence))
+            ->assertInertia(fn (Assert $page) => $page
+                ->missing('planned_absence.data.permissions')
+                ->where('planned_absence.permissions', ['edit' => true, 'delete' => true, 'restore' => false, 'backdate' => false]));
+    }
+
+    #[Test]
     #[Group('authorization')]
     public function edit_returns_403_for_another_users_absence(): void
     {

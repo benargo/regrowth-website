@@ -51,7 +51,7 @@ class PlannedAbsenceResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $resource = [
+        return [
             'id' => $this->id,
             'character' => $this->whenLoaded('character', function () use ($request) {
                 if ($this->scope === self::SCOPE_OFFICER_LIST) {
@@ -74,17 +74,27 @@ class PlannedAbsenceResource extends JsonResource
                 return $this->createdBy->toResource()->resolve($request);
             }),
             'created_at' => $this->created_at->toDateTimeString(),
+            'updated_at' => $this->updated_at->toDateTimeString(),
+            'deleted_at' => $this->deleted_at?->toDateTimeString(),
+        ];
+    }
+
+    /**
+     * Get additional data that should be returned with the resource array.
+     *
+     * @return array{permissions: array{edit: bool, delete: bool, restore: bool, backdate: bool}}
+     */
+    public function with(Request $request): array
+    {
+        $user = $request->user();
+
+        return [
             'permissions' => [
-                'edit' => $request->user()?->can('update', $this->resource) ?? false,
-                'delete' => $request->user()?->can('delete', $this->resource) ?? false,
+                'edit' => $user?->can('update', $this->resource) ?? false,
+                'delete' => $user?->can('delete', $this->resource) ?? false,
+                'restore' => $user?->can('restore', $this->resource) ?? false,
+                'backdate' => $user?->can('backdate', PlannedAbsence::class) ?? false,
             ],
         ];
-
-        if ($request->user()?->can('viewAny', PlannedAbsence::class)) {
-            $resource['updated_at'] = $this->updated_at->toDateTimeString();
-            $resource['deleted_at'] = $this->deleted_at?->toDateTimeString();
-        }
-
-        return $resource;
     }
 }

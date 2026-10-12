@@ -149,8 +149,11 @@ class AccountControllerTest extends TestCase
                 ->has('reason', fn (Assert $reason) => $reason->hasAll(['key', 'label', 'description', 'icon']))
                 ->has('notes')
                 ->has('created_at')
-                ->has('permissions', fn (Assert $permissions) => $permissions->hasAll(['edit', 'delete']))
+                ->has('updated_at')
+                ->has('deleted_at')
+                ->missing('permissions')
             )
+            ->has('planned_absences.permissions', fn (Assert $permissions) => $permissions->hasAll(['edit', 'delete']))
         );
     }
 
@@ -167,7 +170,7 @@ class AccountControllerTest extends TestCase
         $this->actingAs($user)
             ->get(route('account.index'))
             ->assertInertia(fn (Assert $page) => $page
-                ->where('planned_absences.data', fn ($absences) => collect($absences)->where('permissions.delete', true)->pluck('id')->all() === [$upcoming->id])
+                ->where('planned_absences.permissions.delete', fn ($flags) => collect($flags)->count() === 3 && collect($flags)->filter()->keys()->all() === [$upcoming->id])
             );
     }
 
@@ -184,7 +187,7 @@ class AccountControllerTest extends TestCase
         $this->actingAs($user)
             ->get(route('account.index'))
             ->assertInertia(fn (Assert $page) => $page
-                ->where('planned_absences.data', fn ($absences) => collect($absences)->where('permissions.edit', true)->pluck('id')->all() === [$upcoming->id])
+                ->where('planned_absences.permissions.edit', fn ($flags) => collect($flags)->count() === 3 && collect($flags)->filter()->keys()->all() === [$upcoming->id])
             );
     }
 }

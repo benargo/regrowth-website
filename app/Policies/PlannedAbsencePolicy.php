@@ -62,7 +62,7 @@ class PlannedAbsencePolicy
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, PlannedAbsence $plannedAbsence): bool
+    public function restore(User $user, ?PlannedAbsence $plannedAbsence = null): bool
     {
         return $user->isAdmin() ?? false;
     }

@@ -70,7 +70,13 @@ export default function Index() {
                 ) : (
                     <div className="flex flex-col gap-2">
                         {planned_absences.data.map((absence) => (
-                            <PlannedAbsenceRow key={absence.id} absence={absence} showCreatedBy />
+                            <PlannedAbsenceRow
+                                key={absence.id}
+                                absence={absence}
+                                showCreatedBy
+                                canEdit={Boolean(planned_absences.permissions.edit[absence.id])}
+                                canDelete={Boolean(planned_absences.permissions.delete[absence.id])}
+                            />
                         ))}
                     </div>
                 )}

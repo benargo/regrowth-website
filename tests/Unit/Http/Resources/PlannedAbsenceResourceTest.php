@@ -6,6 +6,7 @@ use App\Data\PlannedAbsenceReasonData;
 use App\Enums\PlannedAbsenceReason;
 use App\Http\Resources\PlannedAbsenceResource;
 use App\Models\Character;
+use App\Models\DiscordRole;
 use App\Models\PlannedAbsence;
 use App\Models\PlayableClass;
 use App\Models\User;
@@ -18,6 +19,7 @@ use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 #[Group('raiding')]
@@ -45,7 +47,10 @@ class PlannedAbsenceResourceTest extends TestCase
         $this->assertArrayHasKey('notes', $array);
         $this->assertArrayNotHasKey('discord_message_id', $array);
         $this->assertArrayHasKey('created_by', $array);
-        $this->assertArrayHasKey('permissions', $array);
+        $this->assertArrayHasKey('created_at', $array);
+        $this->assertArrayHasKey('updated_at', $array);
+        $this->assertArrayHasKey('deleted_at', $array);
+        $this->assertArrayNotHasKey('permissions', $array);
     }
 
     // ==================== scalar fields ====================
@@ -301,7 +306,117 @@ class PlannedAbsenceResourceTest extends TestCase
         $this->assertArrayHasKey('slug', $array['character']['playable_class']);
     }
 
+    // ==================== permissions metadata ====================
+
+    #[Test]
+    public function with_returns_the_permission_flags(): void
+    {
+        $absence = PlannedAbsence::factory()->create();
+
+        $with = (new PlannedAbsenceResource($absence))->with($this->requestFor(User::factory()->create()));
+
+        $this->assertSame(['edit', 'delete', 'restore', 'backdate'], array_keys($with['permissions']));
+    }
+
+    #[Test]
+    public function with_allows_restore_for_admins(): void
+    {
+        $absence = PlannedAbsence::factory()->create();
+
+        $with = (new PlannedAbsenceResource($absence))->with($this->requestFor(User::factory()->admin()->create()));
+
+        $this->assertTrue($with['permissions']['restore']);
+    }
+
+    #[Test]
+    public function with_denies_restore_for_non_admins(): void
+    {
+        $absence = PlannedAbsence::factory()->create();
+
+        $with = (new PlannedAbsenceResource($absence))->with($this->requestFor(User::factory()->create()));
+
+        $this->assertFalse($with['permissions']['restore']);
+    }
+
+    #[Test]
+    public function with_allows_backdate_with_backdate_permission(): void
+    {
+        $absence = PlannedAbsence::factory()->create();
+
+        $with = (new PlannedAbsenceResource($absence))->with($this->requestFor($this->userWithPermission('backdate-planned-absences')));
+
+        $this->assertTrue($with['permissions']['backdate']);
+    }
+
+    #[Test]
+    public function with_denies_backdate_without_permission(): void
+    {
+        $absence = PlannedAbsence::factory()->create();
+
+        $with = (new PlannedAbsenceResource($absence))->with($this->requestFor(User::factory()->create()));
+
+        $this->assertFalse($with['permissions']['backdate']);
+    }
+
+    #[Test]
+    public function with_allows_edit_and_delete_for_the_creator_before_the_absence_starts(): void
+    {
+        $this->freezeTime();
+        $user = User::factory()->create();
+        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id, 'start_date' => today()->addDay()]);
+
+        $with = (new PlannedAbsenceResource($absence))->with($this->requestFor($user));
+
+        $this->assertTrue($with['permissions']['edit']);
+        $this->assertTrue($with['permissions']['delete']);
+    }
+
+    #[Test]
+    public function with_denies_edit_and_delete_for_the_creator_once_the_absence_has_started(): void
+    {
+        $this->freezeTime();
+        $user = User::factory()->create();
+        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id, 'start_date' => today()->subDay()]);
+
+        $with = (new PlannedAbsenceResource($absence))->with($this->requestFor($user));
+
+        $this->assertFalse($with['permissions']['edit']);
+        $this->assertFalse($with['permissions']['delete']);
+    }
+
+    #[Test]
+    public function with_denies_everything_without_a_user(): void
+    {
+        $absence = PlannedAbsence::factory()->create();
+
+        $with = (new PlannedAbsenceResource($absence))->with(new Request);
+
+        $this->assertSame(['edit' => false, 'delete' => false, 'restore' => false, 'backdate' => false], $with['permissions']);
+    }
+
     // ==================== helpers ====================
+
+    private function requestFor(User $user): Request
+    {
+        $request = new Request;
+        $request->setUserResolver(fn () => $user);
+
+        return $request;
+    }
+
+    private function userWithPermission(string $permission): User
+    {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+
+        $role = DiscordRole::factory()->create();
+        $role->givePermissionTo($permission);
+
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($role->id);
+        $user->load('discordRoles.permissions');
+
+        return $user;
+    }
 
     /**
      * Helper method to mock the request user for testing authorization logic in the resource.

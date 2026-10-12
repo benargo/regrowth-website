@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { usePage, router } from "@inertiajs/react";
+import { router } from "@inertiajs/react";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import CharacterPortrait from "@/Components/Characters/CharacterPortrait";
@@ -21,17 +21,22 @@ function returnWeekday(endDate) {
 
 /**
  * One planned absence in the officer table. Owns its own delete confirmation.
+ * Permissions come from the page, as they apply to every absence alike.
  */
-export default function PlannedAbsenceTableRow({ absence, isCurrent = false, canDelete = false }) {
-    const { auth } = usePage().props;
+export default function PlannedAbsenceTableRow({
+    absence,
+    isCurrent = false,
+    canUpdate = false,
+    canDelete = false,
+    canRestore = false,
+}) {
     const [confirmingDelete, setConfirmingDelete] = useState(false);
 
     const character = absence.character;
     const characterName = character?.name ?? "Unknown Character";
     const isDeleted = Boolean(absence.deleted_at);
-    const canRestore = auth.user?.admin ?? false;
     // The edit route doesn't resolve deleted absences.
-    const canEdit = Boolean(absence.permissions?.edit) && !isDeleted;
+    const canEdit = canUpdate && !isDeleted;
     const hasActions = canEdit || (!isDeleted && canDelete) || (isDeleted && canRestore);
     const startLabel = formatDate(absence.start_date).medium;
     const endLabel = absence.end_date ? formatDate(absence.end_date).medium : "Open-ended";

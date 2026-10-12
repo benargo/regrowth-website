@@ -8,7 +8,6 @@ import EmptyState from "@/Components/EmptyState";
 import Icon from "@/Components/FontAwesome/Icon";
 import PlannedAbsenceTableRow from "@/Components/PlannedAbsences/TableRow";
 import { Can } from "@/Components/Authorizable";
-import { usePermission } from "@/Hooks/usePermission";
 import useCharacterPortraitChannel from "@/Hooks/useCharacterPortraitChannel";
 import ToggleFilter from "@/Components/ToggleFilter";
 import { Table, TableHead, TableBody, TableHeader } from "@/Components/Table";
@@ -16,6 +15,7 @@ import { linkButtonClassName } from "@/Components/FormControls";
 import todayDateString from "@/Helpers/todayDateString";
 
 const SECTION_HEADING = "text-ink-300 font-semibold";
+const NO_PERMISSIONS = { update: false, delete: false, restore: false };
 
 /**
  * Reloads the portrait map once the server's queued portrait refresh for this
@@ -37,7 +37,7 @@ function PlannedAbsencesSkeleton() {
     );
 }
 
-function AbsenceTable({ absences, isCurrent = false, canDelete }) {
+function AbsenceTable({ absences, isCurrent = false, permissions }) {
     return (
         <Table className="mt-3 text-left text-sm">
             <TableHead>
@@ -58,7 +58,9 @@ function AbsenceTable({ absences, isCurrent = false, canDelete }) {
                         key={absence.id}
                         absence={absence}
                         isCurrent={isCurrent}
-                        canDelete={canDelete}
+                        canUpdate={permissions.update}
+                        canDelete={permissions.delete}
+                        canRestore={permissions.restore}
                     />
                 ))}
             </TableBody>
@@ -72,7 +74,7 @@ export default function Index() {
         past_planned_absences: pastPlannedAbsences,
         character_portraits: characterPortraits,
     } = usePage().props;
-    const canDeleteAbsences = usePermission("delete-planned-absences");
+    const permissions = plannedAbsencesResource?.permissions ?? NO_PERMISSIONS;
     const [showDeleted, setShowDeleted] = useState(false);
 
     // Current and upcoming absences load live; past ones come from the server's daily cache.
@@ -165,14 +167,14 @@ export default function Index() {
                         {sections.current.length > 0 && (
                             <section>
                                 <h2 className={SECTION_HEADING}>Away now</h2>
-                                <AbsenceTable absences={sections.current} isCurrent canDelete={canDeleteAbsences} />
+                                <AbsenceTable absences={sections.current} isCurrent permissions={permissions} />
                             </section>
                         )}
 
                         <section>
                             <h2 className={SECTION_HEADING}>Coming up</h2>
                             {sections.upcoming.length > 0 ? (
-                                <AbsenceTable absences={sections.upcoming} canDelete={canDeleteAbsences} />
+                                <AbsenceTable absences={sections.upcoming} permissions={permissions} />
                             ) : (
                                 <p className="text-secondary-500 mt-3 text-sm">No one has an absence booked.</p>
                             )}
@@ -189,7 +191,7 @@ export default function Index() {
                                     Past absences ({sections.past.length})
                                 </DisclosureButton>
                                 <DisclosurePanel>
-                                    <AbsenceTable absences={sections.past} canDelete={canDeleteAbsences} />
+                                    <AbsenceTable absences={sections.past} permissions={permissions} />
                                 </DisclosurePanel>
                             </Disclosure>
                         )}
