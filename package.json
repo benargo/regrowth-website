@@ -7,7 +7,7 @@
         "dev": "vite"
     },
     "devDependencies": {
-        "@headlessui/react": "^2.0.0",
+        "@headlessui/react": "^2.2.10",
         "@inertiajs/react": "^3.0.0",
         "@laravel/echo-react": "^2.3.3",
         "@prettier/plugin-php": "^0.25.0",
@@ -24,7 +24,7 @@
         "pusher-js": "^8.5.0",
         "react": "^19.2.4",
         "react-dom": "^19.2.4",
-        "tailwindcss": "^4.3.1",
+        "tailwindcss": "^4.3.3",
         "vite": "^7.0.4"
     },
     "dependencies": {
@@ -32,8 +32,10 @@
         "@dnd-kit/sortable": "^10.0.0",
         "@dnd-kit/utilities": "^3.2.2",
         "@fortawesome/fontawesome-pro": "file:resources/fonts/fortawesome-fontawesome-pro-5.15.4.tgz",
+        "clsx": "^2.1.1",
         "country-flag-icons": "^1.6.20",
         "embla-carousel-react": "^8.6.0",
+        "motion": "^14.1.0",
         "react-color": "^2.19.3",
         "react-markdown": "^10.1.0",
         "recharts": "^3.8.1"
