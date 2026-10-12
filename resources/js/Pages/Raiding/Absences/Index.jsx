@@ -124,7 +124,7 @@ export default function Index() {
             <PageContainer>
                 <div className="mb-6 flex flex-row flex-wrap items-center justify-end gap-6">
                     <ToggleFilter label="Show deleted" value={showDeleted} onChange={setShowDeleted} />
-                    <Can permission="manage-planned-absences">
+                    <Can permission="create-planned-absences">
                         <Link href={route("raiding.absences.create")} className={linkButtonClassName}>
                             <Icon icon="plus" style="solid" className="h-4" />
                             Add absence

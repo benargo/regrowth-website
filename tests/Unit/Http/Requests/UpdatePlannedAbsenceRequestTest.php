@@ -86,7 +86,7 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
         $absence->shouldReceive('getAttribute')->with('start_date')->andReturn(null);
 
         $user = \Mockery::mock();
-        $user->shouldReceive('can')->with('createBackdated', PlannedAbsence::class)->andReturn(false);
+        $user->shouldReceive('can')->with('backdate', PlannedAbsence::class)->andReturn(false);
 
         $request = $this->makeRequest();
         $request->setUserResolver(fn () => $user);
@@ -106,7 +106,7 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
         $absence->shouldReceive('getAttribute')->with('start_date')->andReturn(null);
 
         $user = \Mockery::mock();
-        $user->shouldReceive('can')->with('createBackdated', PlannedAbsence::class)->andReturn(true);
+        $user->shouldReceive('can')->with('backdate', PlannedAbsence::class)->andReturn(true);
 
         $request = $this->makeRequest();
         $request->setUserResolver(fn () => $user);

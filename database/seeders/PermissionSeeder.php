@@ -42,7 +42,7 @@ class PermissionSeeder extends Seeder
         ['name' => 'view-planned-absences', 'group' => 'planned-absences', 'guard_name' => 'web'],
         ['name' => 'update-planned-absences', 'group' => 'planned-absences', 'guard_name' => 'web'],
         ['name' => 'delete-planned-absences', 'group' => 'planned-absences', 'guard_name' => 'web'],
-        ['name' => 'manage-planned-absences', 'group' => 'planned-absences', 'guard_name' => 'web'],
+        ['name' => 'backdate-planned-absences', 'group' => 'planned-absences', 'guard_name' => 'web'],
 
         /**
          * Daily quests permissions

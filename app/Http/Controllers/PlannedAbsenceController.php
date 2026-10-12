@@ -77,7 +77,8 @@ class PlannedAbsenceController extends Controller
      * Show the form for logging an absence for any main character in the
      * officer's current game version.
      */
-    #[Authorize('createForOthers', PlannedAbsence::class)]
+    #[Authorize('viewAny', PlannedAbsence::class)]
+    #[Authorize('create', PlannedAbsence::class)]
     #[Middleware(RemembersCurrentGameVersion::class)]
     public function create(Request $request): Response
     {
@@ -98,7 +99,8 @@ class PlannedAbsenceController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    #[Authorize('createForOthers', PlannedAbsence::class)]
+    #[Authorize('viewAny', PlannedAbsence::class)]
+    #[Authorize('create', PlannedAbsence::class)]
     public function store(StorePlannedAbsenceRequest $request): RedirectResponse
     {
         if ($request->has('user')) {
@@ -128,7 +130,8 @@ class PlannedAbsenceController extends Controller
      * Show the form for editing the specified resource. The picker is limited
      * to the version of the absence's character.
      */
-    #[Authorize('createForOthers', PlannedAbsence::class)]
+    #[Authorize('viewAny', PlannedAbsence::class)]
+    #[Authorize('update', 'plannedAbsence')]
     public function edit(Request $request, PlannedAbsence $plannedAbsence): Response
     {
         $plannedAbsence->load(['character.playableRace', 'character.gameVersion', 'createdBy']);
@@ -150,7 +153,8 @@ class PlannedAbsenceController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    #[Authorize('createForOthers', PlannedAbsence::class)]
+    #[Authorize('viewAny', PlannedAbsence::class)]
+    #[Authorize('update', 'plannedAbsence')]
     public function update(UpdatePlannedAbsenceRequest $request, PlannedAbsence $plannedAbsence): RedirectResponse
     {
         $updates = $request->safe()->only(['start_date', 'end_date', 'reason', 'notes']);
@@ -177,7 +181,8 @@ class PlannedAbsenceController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    #[Authorize('deleteForOthers', PlannedAbsence::class)]
+    #[Authorize('viewAny', PlannedAbsence::class)]
+    #[Authorize('delete', 'plannedAbsence')]
     public function destroy(PlannedAbsence $plannedAbsence): RedirectResponse
     {
         $plannedAbsence->delete();

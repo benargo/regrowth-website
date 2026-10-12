@@ -59,7 +59,7 @@ class PlannedAbsenceControllerTest extends TestCase
             ['name' => 'Raider', 'position' => 4, 'is_visible' => true]
         );
 
-        foreach (['view-planned-absences', 'create-planned-absences', 'manage-planned-absences', 'update-planned-absences', 'delete-planned-absences'] as $permission) {
+        foreach (['view-planned-absences', 'create-planned-absences', 'backdate-planned-absences', 'update-planned-absences', 'delete-planned-absences'] as $permission) {
             $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']));
         }
 

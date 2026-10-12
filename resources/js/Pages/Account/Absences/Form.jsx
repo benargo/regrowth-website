@@ -197,7 +197,7 @@ export default function Form() {
         reasons = [],
     } = usePage().props;
 
-    const canBackdate = usePermission("manage-planned-absences");
+    const canBackdate = usePermission("backdate-planned-absences");
     const pageTitle = plannedAbsence ? "Edit Planned Absence" : "Log Planned Absence";
 
     const ticketNote = (

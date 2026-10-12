@@ -8,7 +8,7 @@ import ReasonLabel from "@/Components/PlannedAbsences/ReasonLabel";
 import { usePermission } from "@/Hooks/usePermission";
 
 export default function PlannedAbsenceRow({ absence, showCreatedBy = false }) {
-    const canManage = usePermission("manage-planned-absences");
+    const canEditAny = usePermission("update-planned-absences");
     const [confirmingDelete, setConfirmingDelete] = useState(false);
 
     const deleteAbsence = () => {
@@ -44,9 +44,9 @@ export default function PlannedAbsenceRow({ absence, showCreatedBy = false }) {
                 )}
 
                 <div className="flex shrink-0 gap-4">
-                    {(canManage || absence.permissions.edit) && (
+                    {(canEditAny || absence.permissions.edit) && (
                         <Link
-                            href={route(canManage ? "raiding.absences.edit" : "account.absences.edit", absence.id)}
+                            href={route(canEditAny ? "raiding.absences.edit" : "account.absences.edit", absence.id)}
                             className="text-ink-400 hover:text-ink-300 flex items-center text-sm"
                         >
                             <Icon icon="pen" style="regular" className="mr-1.5 h-4" />

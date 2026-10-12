@@ -71,7 +71,7 @@ trait ValidatesPlannedAbsenceDetails
      */
     private function startDateRules(): array
     {
-        if ($this->user()?->can('createBackdated', PlannedAbsence::class)) {
+        if ($this->user()?->can('backdate', PlannedAbsence::class)) {
             return ['date'];
         }
 

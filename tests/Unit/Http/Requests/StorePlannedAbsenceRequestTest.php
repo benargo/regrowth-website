@@ -58,7 +58,7 @@ class StorePlannedAbsenceRequestTest extends TestCase
     public function rules_start_date_includes_after_or_equal_today_when_user_cannot_backdate(): void
     {
         $user = \Mockery::mock();
-        $user->shouldReceive('can')->with('createBackdated', PlannedAbsence::class)->andReturn(false);
+        $user->shouldReceive('can')->with('backdate', PlannedAbsence::class)->andReturn(false);
 
         $request = $this->makeRequest();
         $request->setUserResolver(fn () => $user);
@@ -72,7 +72,7 @@ class StorePlannedAbsenceRequestTest extends TestCase
     public function rules_start_date_excludes_after_or_equal_today_when_user_can_backdate(): void
     {
         $user = \Mockery::mock();
-        $user->shouldReceive('can')->with('createBackdated', PlannedAbsence::class)->andReturn(true);
+        $user->shouldReceive('can')->with('backdate', PlannedAbsence::class)->andReturn(true);
 
         $request = $this->makeRequest();
         $request->setUserResolver(fn () => $user);

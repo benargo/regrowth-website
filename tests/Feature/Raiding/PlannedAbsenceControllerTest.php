@@ -48,13 +48,13 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $viewPermission = Permission::firstOrCreate(['name' => 'view-planned-absences', 'guard_name' => 'web']);
         $createPermission = Permission::firstOrCreate(['name' => 'create-planned-absences', 'guard_name' => 'web']);
-        $createForOthersPermission = Permission::firstOrCreate(['name' => 'manage-planned-absences', 'guard_name' => 'web']);
+        $backdatePermission = Permission::firstOrCreate(['name' => 'backdate-planned-absences', 'guard_name' => 'web']);
         $updatePermission = Permission::firstOrCreate(['name' => 'update-planned-absences', 'guard_name' => 'web']);
         $deletePermission = Permission::firstOrCreate(['name' => 'delete-planned-absences', 'guard_name' => 'web']);
 
         $officerRole->givePermissionTo($viewPermission);
         $officerRole->givePermissionTo($createPermission);
-        $officerRole->givePermissionTo($createForOthersPermission);
+        $officerRole->givePermissionTo($backdatePermission);
         $officerRole->givePermissionTo($updatePermission);
         $officerRole->givePermissionTo($deletePermission);
         $memberRole->givePermissionTo($viewPermission);
@@ -134,6 +134,7 @@ class PlannedAbsenceControllerTest extends TestCase
                     ->has('created_at')
                     ->has('updated_at')
                     ->has('deleted_at')
+                    ->has('permissions', fn (Assert $permissions) => $permissions->hasAll(['edit', 'delete']))
                 )
             )
         );
@@ -259,7 +260,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
     #[Group('authorization')]
     #[Test]
-    public function create_returns_403_without_create_for_others_permission(): void
+    public function create_returns_403_without_view_permission(): void
     {
         $user = $this->member();
 
@@ -268,10 +269,21 @@ class PlannedAbsenceControllerTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
-    public function create_allows_user_with_create_permission(): void
+    public function create_returns_403_without_create_permission(): void
     {
-        $user = User::factory()->officer()->create();
+        $user = $this->userWithPermissions(['view-planned-absences', 'backdate-planned-absences']);
+
+        $response = $this->actingAs($user)->get(route('raiding.absences.create'));
+
+        $response->assertForbidden();
+    }
+
+    #[Test]
+    public function create_allows_user_with_view_and_create_permissions(): void
+    {
+        $user = $this->userWithPermissions(['view-planned-absences', 'create-planned-absences']);
 
         $response = $this->actingAs($user)->get(route('raiding.absences.create'));
 
@@ -453,10 +465,22 @@ class PlannedAbsenceControllerTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
+    #[Test]
+    public function edit_returns_403_without_update_permission(): void
+    {
+        $user = $this->userWithPermissions(['view-planned-absences', 'backdate-planned-absences']);
+        $absence = PlannedAbsence::factory()->withCharacter()->create();
+
+        $response = $this->actingAs($user)->get(route('raiding.absences.edit', $absence));
+
+        $response->assertForbidden();
+    }
+
     #[Test]
     public function edit_allows_user_with_update_permission(): void
     {
-        $user = User::factory()->officer()->create();
+        $user = $this->userWithPermissions(['view-planned-absences', 'update-planned-absences']);
         $absence = PlannedAbsence::factory()->withCharacter()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.absences.edit', $absence));
@@ -516,6 +540,7 @@ class PlannedAbsenceControllerTest extends TestCase
                 ->has('created_at')
                 ->has('updated_at')
                 ->has('deleted_at')
+                ->has('permissions', fn (Assert $permissions) => $permissions->hasAll(['edit', 'delete']))
             )
         );
     }
@@ -576,7 +601,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
     #[Group('authorization')]
     #[Test]
-    public function store_returns_403_without_create_for_others_permission(): void
+    public function store_returns_403_without_view_permission(): void
     {
         $user = $this->member();
         $character = $this->mainInReleasedVersion();
@@ -833,6 +858,37 @@ class PlannedAbsenceControllerTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
+    #[Test]
+    public function update_returns_403_without_update_permission(): void
+    {
+        $user = $this->userWithPermissions(['view-planned-absences', 'backdate-planned-absences']);
+        $absence = PlannedAbsence::factory()->withCharacter()->create();
+
+        $response = $this->actingAs($user)->patchJson(route('raiding.absences.update', $absence), [
+            'reason' => PlannedAbsenceReason::Holiday->value,
+        ]);
+
+        $response->assertForbidden();
+    }
+
+    #[Test]
+    public function update_allows_user_with_update_permission(): void
+    {
+        $user = $this->userWithPermissions(['view-planned-absences', 'update-planned-absences']);
+        $absence = PlannedAbsence::factory()->withCharacter()->create(['reason' => PlannedAbsenceReason::Other]);
+
+        $response = $this->actingAs($user)->patch(route('raiding.absences.update', $absence), [
+            'reason' => PlannedAbsenceReason::Holiday->value,
+        ]);
+
+        $response->assertRedirect(route('raiding.absences.index'));
+        $this->assertDatabaseHas('planned_absences', [
+            'id' => $absence->id,
+            'reason' => PlannedAbsenceReason::Holiday->value,
+        ]);
+    }
+
     // ==================== update: Happy Paths ====================
 
     #[Test]
@@ -1041,12 +1097,25 @@ class PlannedAbsenceControllerTest extends TestCase
         $this->assertNotSoftDeleted($absence);
     }
 
+    #[Group('authorization')]
+    #[Test]
+    public function destroy_returns_403_without_delete_permission(): void
+    {
+        $user = $this->userWithPermissions(['view-planned-absences', 'backdate-planned-absences']);
+        $absence = PlannedAbsence::factory()->withCharacter()->create(['start_date' => today()->addWeek()]);
+
+        $response = $this->actingAs($user)->deleteJson(route('raiding.absences.destroy', $absence));
+
+        $response->assertForbidden();
+        $this->assertNotSoftDeleted($absence);
+    }
+
     // ==================== destroy: Happy Paths ====================
 
     #[Test]
     public function destroy_deletes_a_started_absence_with_permission(): void
     {
-        $user = User::factory()->officer()->create();
+        $user = $this->userWithPermissions(['view-planned-absences', 'delete-planned-absences']);
         $absence = PlannedAbsence::factory()->withCharacter()->create(['start_date' => today()->subWeek()]);
 
         $response = $this->actingAs($user)->delete(route('raiding.absences.destroy', $absence));
@@ -1346,6 +1415,25 @@ class PlannedAbsenceControllerTest extends TestCase
         $role->givePermissionTo(Permission::firstOrCreate(['name' => 'create-planned-absences', 'guard_name' => 'web']));
 
         return User::factory()->raider()->create();
+    }
+
+    /**
+     * A user holding exactly the given permissions through a dedicated role.
+     *
+     * @param  array<int, string>  $permissions
+     */
+    private function userWithPermissions(array $permissions): User
+    {
+        $role = DiscordRole::factory()->create();
+
+        foreach ($permissions as $permission) {
+            $role->givePermissionTo(Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']));
+        }
+
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($role->id);
+
+        return $user;
     }
 
     /**

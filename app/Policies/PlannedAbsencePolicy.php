@@ -32,46 +32,31 @@ class PlannedAbsencePolicy
     }
 
     /**
-     * Determine whether the user can create models for others.
+     * Determine whether the user can backdate planned absences.
      */
-    public function createForOthers(User $user): bool
+    public function backdate(User $user): bool
     {
-        return $user->isAuthorizedTo('manage-planned-absences');
+        return $user->isAuthorizedTo('backdate-planned-absences');
     }
 
     /**
-     * Determine whether the user can create backdated planned absences.
-     */
-    public function createBackdated(User $user): bool
-    {
-        return $user->isAuthorizedTo('manage-planned-absences');
-    }
-
-    /**
-     * Determine whether the user can update their own planned absence.
-     * Only the creator can, and only until the absence has started.
+     * Determine whether the user can update the model. Users with permission
+     * can update any absence; the creator can update their own until it starts.
      */
     public function update(User $user, PlannedAbsence $plannedAbsence): bool
     {
-        return $plannedAbsence->createdBy()->is($user) && ! $plannedAbsence->hasStarted();
+        return $user->isAuthorizedTo('update-planned-absences')
+            || ($plannedAbsence->createdBy()->is($user) && ! $plannedAbsence->hasStarted());
     }
 
     /**
-     * Determine whether the user can delete their own planned absence.
-     * Only the creator can, and only until the absence has started.
+     * Determine whether the user can delete the model. Users with permission
+     * can delete any absence; the creator can delete their own until it starts.
      */
     public function delete(User $user, PlannedAbsence $plannedAbsence): bool
     {
-        return $plannedAbsence->createdBy()->is($user) && ! $plannedAbsence->hasStarted();
-    }
-
-    /**
-     * Determine whether the user can delete anyone's planned absences,
-     * including ones that have started.
-     */
-    public function deleteForOthers(User $user): bool
-    {
-        return $user->isAuthorizedTo('delete-planned-absences');
+        return $user->isAuthorizedTo('delete-planned-absences')
+            || ($plannedAbsence->createdBy()->is($user) && ! $plannedAbsence->hasStarted());
     }
 
     /**

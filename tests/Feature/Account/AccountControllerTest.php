@@ -149,6 +149,7 @@ class AccountControllerTest extends TestCase
                 ->has('reason', fn (Assert $reason) => $reason->hasAll(['key', 'label', 'description', 'icon']))
                 ->has('notes')
                 ->has('created_at')
+                ->has('permissions', fn (Assert $permissions) => $permissions->hasAll(['edit', 'delete']))
             )
         );
     }
