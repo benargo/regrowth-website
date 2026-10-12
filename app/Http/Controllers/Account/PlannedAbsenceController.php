@@ -6,11 +6,12 @@ use App\Actions\Characters\FetchBattleNetAccountCharacters;
 use App\Actions\Characters\RefreshCharacterPortrait;
 use App\Actions\Characters\ResolveSelectableAccountCharacters;
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
-use App\Contracts\Http\SharesBattleNetSession;
 use App\Data\PlannedAbsenceReasonData;
 use App\Http\Controllers\Concerns\SharesCharacterPortrait;
 use App\Http\Controllers\Controller;
-use App\Http\Integrations\Blizzard\Exceptions\ApiException;
+use App\Http\Integrations\Blizzard\Exceptions\BattleNetSessionException;
+use App\Http\Integrations\Blizzard\Support\BattleNetSession;
+use App\Http\Integrations\Blizzard\Support\BattleNetSessionError;
 use App\Http\Middleware\RemembersCurrentGameVersion;
 use App\Http\Requests\StoreAccountPlannedAbsenceRequest;
 use App\Http\Requests\UpdateAccountPlannedAbsenceRequest;
@@ -25,10 +26,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
-use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
-use Saloon\Exceptions\Request\FatalRequestException;
 
 /**
  * Lets members log, edit and delete their own planned absences against the
@@ -45,19 +44,18 @@ class PlannedAbsenceController extends Controller
      */
     #[Authorize('create', PlannedAbsence::class)]
     #[Middleware(RemembersCurrentGameVersion::class)]
-    public function create(Request $request): Response
+    public function create(Request $request, BattleNetSession $battleNet): Response
     {
         $selectable = GameVersion::currentRosters()->values();
         $gameVersion = ResolveCurrentGameVersion::run($selectable);
-        $accessToken = $this->battleNetAccessToken();
 
-        session()->put(SharesBattleNetSession::INTENDED_URL_KEY, $request->fullUrlWithoutQuery(['character_portrait']));
+        $battleNet->rememberIntendedUrl($request->fullUrlWithoutQuery(['character_portrait']));
 
         return Inertia::render('Account/Absences/Form', [
             'game_versions' => GameVersionResource::collection($selectable),
             'game_version' => $gameVersion ? new GameVersionResource($gameVersion) : null,
-            'battle_net' => ['connected' => $accessToken !== null],
-            'account_characters' => Inertia::defer(fn (): array => $this->accountCharacters($accessToken, $gameVersion)),
+            'battle_net' => ['connected' => $battleNet->isConnected()],
+            'account_characters' => Inertia::defer(fn (): array => $this->accountCharacters($battleNet, $gameVersion)),
             'action' => route('account.absences.store'),
             'reasons' => PlannedAbsenceReasonData::options(),
             'character_portrait' => Inertia::optional(fn (): array => $this->characterPortrait($request)),
@@ -122,42 +120,24 @@ class PlannedAbsenceController extends Controller
     }
 
     /**
-     * The member's Battle.net access token, while it is still valid.
-     */
-    private function battleNetAccessToken(): ?string
-    {
-        $authenticator = session(SharesBattleNetSession::AUTHENTICATOR_KEY);
-
-        return $authenticator?->hasNotExpired() ? $authenticator->getAccessToken() : null;
-    }
-
-    /**
      * The characters the member can pick, or why Battle.net couldn't list them.
      *
-     * @return array{characters: AnonymousResourceCollection, mains_only: bool, error: 'reconnect'|'unavailable'|null}
+     * @return array{characters: AnonymousResourceCollection, mains_only: bool, error: array{code: BattleNetSessionError, message: string}|null}
      */
-    private function accountCharacters(?string $accessToken, ?GameVersion $gameVersion): array
+    private function accountCharacters(BattleNetSession $battleNet, ?GameVersion $gameVersion): array
     {
-        if ($accessToken === null || $gameVersion === null) {
+        if (! $battleNet->isConnected() || $gameVersion === null) {
             return ['characters' => CharacterResource::collection(collect()), 'mains_only' => true, 'error' => null];
         }
 
         try {
-            $accountCharacters = FetchBattleNetAccountCharacters::run($accessToken, $gameVersion);
-        } catch (ApiException $exception) {
-            if ($exception->getResponse()->status() === 401) {
-                session()->forget(SharesBattleNetSession::AUTHENTICATOR_KEY);
-
-                return ['characters' => CharacterResource::collection(collect()), 'mains_only' => true, 'error' => 'reconnect'];
-            }
-
-            Log::warning('Battle.net account characters unavailable.', ['status' => $exception->getResponse()->status()]);
-
-            return ['characters' => CharacterResource::collection(collect()), 'mains_only' => true, 'error' => 'unavailable'];
-        } catch (FatalRequestException $exception) {
-            Log::warning('Battle.net account characters unavailable.', ['message' => $exception->getMessage()]);
-
-            return ['characters' => CharacterResource::collection(collect()), 'mains_only' => true, 'error' => 'unavailable'];
+            $accountCharacters = $battleNet->withAccessToken(fn (string $accessToken) => FetchBattleNetAccountCharacters::run($accessToken, $gameVersion));
+        } catch (BattleNetSessionException $exception) {
+            return [
+                'characters' => CharacterResource::collection(collect()),
+                'mains_only' => true,
+                'error' => ['code' => $exception->error, 'message' => $exception->error->message()],
+            ];
         }
 
         $characters = ResolveSelectableAccountCharacters::run($accountCharacters)->load('media');

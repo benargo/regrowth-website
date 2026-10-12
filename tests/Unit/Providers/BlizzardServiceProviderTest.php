@@ -6,6 +6,7 @@ use App\Facades\Blizzard as BlizzardFacade;
 use App\Facades\BlizzardRenderPath;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\RenderConnector;
+use App\Http\Integrations\Blizzard\Support\BattleNetSession;
 use App\Http\Integrations\Blizzard\Support\MirrorPaths;
 use App\Providers\BlizzardServiceProvider;
 use App\Support\MediaLibrary\CharacterMediaPathGenerator;
@@ -44,6 +45,19 @@ class BlizzardServiceProviderTest extends TestCase
 
     #[Test]
     #[Group('contract')]
+    public function it_scopes_the_battle_net_session_to_each_request(): void
+    {
+        $instance = $this->app->make(BattleNetSession::class);
+
+        $this->assertSame($instance, $this->app->make(BattleNetSession::class));
+
+        $this->app->forgetScopedInstances();
+
+        $this->assertNotSame($instance, $this->app->make(BattleNetSession::class));
+    }
+
+    #[Test]
+    #[Group('contract')]
     public function it_aliases_the_facade_accessors_to_the_singletons(): void
     {
         $this->assertSame($this->app->make(BlizzardConnector::class), $this->app->make(BlizzardFacade::class));
@@ -74,6 +88,7 @@ class BlizzardServiceProviderTest extends TestCase
     public function it_provides_every_class_it_binds(): void
     {
         $this->assertSame([
+            BattleNetSession::class,
             BlizzardConnector::class,
             CharacterMediaPathGenerator::class,
             MirrorPaths::class,

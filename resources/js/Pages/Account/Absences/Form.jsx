@@ -56,10 +56,10 @@ function AccountCharacterPicker({ gameVersion, value, onChange, invalid }) {
 
     return (
         <Deferred data="account_characters" fallback={<CharacterPickerSkeleton />}>
-            {accountCharacters?.error === "reconnect" ? (
-                <ConnectBattleNet message="Your Battle.net connection has expired. Connect again to choose a character." />
-            ) : accountCharacters?.error === "unavailable" ? (
-                <Alert type="warning">Battle.net is unavailable right now. Please try again shortly.</Alert>
+            {accountCharacters?.error?.code === "reconnect" ? (
+                <ConnectBattleNet message={accountCharacters.error.message} />
+            ) : accountCharacters?.error?.code === "unavailable" ? (
+                <Alert type="warning">{accountCharacters.error.message}</Alert>
             ) : (
                 <div className="flex flex-col gap-2">
                     {accountCharacters?.mains_only === false && (

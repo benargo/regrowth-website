@@ -4,13 +4,13 @@ namespace Tests\Feature\Account;
 
 use App\Actions\Characters\RefreshCharacterPortrait;
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
-use App\Contracts\Http\SharesBattleNetSession;
 use App\Data\PlannedAbsenceReasonData;
 use App\Enums\PlannedAbsenceReason;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\Requests\Account\GetAccountProfileSummaryRequest;
+use App\Http\Integrations\Blizzard\Support\BattleNetSession;
 use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\GameVersion;
@@ -82,7 +82,7 @@ class PlannedAbsenceControllerTest extends TestCase
     {
         $this->actingAs($this->member())
             ->get(route('account.absences.create'))
-            ->assertSessionHas(SharesBattleNetSession::INTENDED_URL_KEY, route('account.absences.create'));
+            ->assertSessionHas(BattleNetSession::INTENDED_URL_KEY, route('account.absences.create'));
     }
 
     #[Test]
@@ -110,7 +110,7 @@ class PlannedAbsenceControllerTest extends TestCase
         GameVersion::factory()->fetchableRoster()->create();
 
         $this->actingAs($this->member())
-            ->withSession([SharesBattleNetSession::AUTHENTICATOR_KEY => new AccessTokenAuthenticator('user-token', expiresAt: now()->subMinute()->toDateTimeImmutable())])
+            ->withSession([BattleNetSession::AUTHENTICATOR_KEY => new AccessTokenAuthenticator('user-token', expiresAt: now()->subMinute()->toDateTimeImmutable())])
             ->get(route('account.absences.create'))
             ->assertInertia(fn (Assert $page) => $page->where('battle_net.connected', false));
     }
@@ -206,9 +206,9 @@ class PlannedAbsenceControllerTest extends TestCase
             ->get(route('account.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->where('account_characters', ['characters' => ['data' => []], 'mains_only' => true, 'error' => 'reconnect'])));
+                    ->where('account_characters', ['characters' => ['data' => []], 'mains_only' => true, 'error' => ['code' => 'reconnect', 'message' => 'Your Battle.net connection has expired. Please connect again.']])));
 
-        $this->assertNull(session(SharesBattleNetSession::AUTHENTICATOR_KEY));
+        $this->assertNull(session(BattleNetSession::AUTHENTICATOR_KEY));
     }
 
     #[Test]
@@ -223,9 +223,9 @@ class PlannedAbsenceControllerTest extends TestCase
             ->get(route('account.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->where('account_characters', ['characters' => ['data' => []], 'mains_only' => true, 'error' => 'unavailable'])));
+                    ->where('account_characters', ['characters' => ['data' => []], 'mains_only' => true, 'error' => ['code' => 'unavailable', 'message' => 'Battle.net is unavailable right now. Please try again shortly.']])));
 
-        $this->assertNotNull(session(SharesBattleNetSession::AUTHENTICATOR_KEY));
+        $this->assertNotNull(session(BattleNetSession::AUTHENTICATOR_KEY));
     }
 
     #[Test]
@@ -339,7 +339,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $this->assertStoreRejected($this->absencePayload($gameVersion, $character), ['character' => 'Your Battle.net connection has expired. Please connect again.']);
 
-        $this->assertNull(session(SharesBattleNetSession::AUTHENTICATOR_KEY));
+        $this->assertNull(session(BattleNetSession::AUTHENTICATOR_KEY));
     }
 
     #[Test]
@@ -587,7 +587,7 @@ class PlannedAbsenceControllerTest extends TestCase
      */
     private function battleNetSession(): array
     {
-        return [SharesBattleNetSession::AUTHENTICATOR_KEY => new AccessTokenAuthenticator('user-token', expiresAt: now()->addHour()->toDateTimeImmutable())];
+        return [BattleNetSession::AUTHENTICATOR_KEY => new AccessTokenAuthenticator('user-token', expiresAt: now()->addHour()->toDateTimeImmutable())];
     }
 
     /**

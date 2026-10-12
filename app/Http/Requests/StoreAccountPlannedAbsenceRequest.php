@@ -4,15 +4,14 @@ namespace App\Http\Requests;
 
 use App\Actions\Characters\FetchBattleNetAccountCharacters;
 use App\Actions\Characters\ResolveSelectableAccountCharacters;
-use App\Contracts\Http\SharesBattleNetSession;
-use App\Http\Integrations\Blizzard\Exceptions\ApiException;
+use App\Http\Integrations\Blizzard\Exceptions\BattleNetSessionException;
+use App\Http\Integrations\Blizzard\Support\BattleNetSession;
 use App\Http\Requests\Concerns\ValidatesPlannedAbsenceDetails;
 use App\Models\GameVersion;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
-use Saloon\Exceptions\Request\FatalRequestException;
 
 /**
  * A member logging an absence for themselves against a character on their
@@ -21,10 +20,6 @@ use Saloon\Exceptions\Request\FatalRequestException;
 class StoreAccountPlannedAbsenceRequest extends FormRequest
 {
     use ValidatesPlannedAbsenceDetails;
-
-    public const string RECONNECT_MESSAGE = 'Your Battle.net connection has expired. Please connect again.';
-
-    public const string UNAVAILABLE_MESSAGE = 'Battle.net is unavailable right now. Please try again shortly.';
 
     /**
      * Get the validation rules that apply to the request.
@@ -47,15 +42,15 @@ class StoreAccountPlannedAbsenceRequest extends FormRequest
      *
      * @return array<int, callable(Validator): void>
      */
-    public function after(): array
+    public function after(BattleNetSession $battleNet): array
     {
         return [
-            function (Validator $validator): void {
+            function (Validator $validator) use ($battleNet): void {
                 if ($validator->errors()->hasAny(['game_version', 'character'])) {
                     return;
                 }
 
-                $this->checkAccountCharacter($validator);
+                $this->checkAccountCharacter($validator, $battleNet);
             },
         ];
     }
@@ -79,32 +74,14 @@ class StoreAccountPlannedAbsenceRequest extends FormRequest
         ];
     }
 
-    private function checkAccountCharacter(Validator $validator): void
+    private function checkAccountCharacter(Validator $validator, BattleNetSession $battleNet): void
     {
-        $authenticator = session(SharesBattleNetSession::AUTHENTICATOR_KEY);
-        $accessToken = $authenticator?->hasNotExpired() ? $authenticator->getAccessToken() : null;
-
-        if ($accessToken === null) {
-            $validator->errors()->add('character', self::RECONNECT_MESSAGE);
-
-            return;
-        }
+        $gameVersion = GameVersion::find($this->integer('game_version'));
 
         try {
-            $accountCharacters = FetchBattleNetAccountCharacters::run($accessToken, GameVersion::find($this->integer('game_version')));
-        } catch (ApiException $exception) {
-            if ($exception->getResponse()->status() === 401) {
-                session()->forget(SharesBattleNetSession::AUTHENTICATOR_KEY);
-                $validator->errors()->add('character', self::RECONNECT_MESSAGE);
-
-                return;
-            }
-
-            $validator->errors()->add('character', self::UNAVAILABLE_MESSAGE);
-
-            return;
-        } catch (FatalRequestException) {
-            $validator->errors()->add('character', self::UNAVAILABLE_MESSAGE);
+            $accountCharacters = $battleNet->withAccessToken(fn (string $accessToken) => FetchBattleNetAccountCharacters::run($accessToken, $gameVersion));
+        } catch (BattleNetSessionException $exception) {
+            $validator->errors()->add('character', $exception->error->message());
 
             return;
         }
