@@ -25,7 +25,7 @@ class PlannedAbsenceReasonTest extends TestCase
         return [
             'holiday' => [PlannedAbsenceReason::Holiday, 'On holiday', 'umbrella-beach'],
             'work' => [PlannedAbsenceReason::Work, 'Stuck at work', 'briefcase'],
-            'other' => [PlannedAbsenceReason::Other, 'Other', 'question'],
+            'other' => [PlannedAbsenceReason::Other, 'Other', 'portal-exit'],
         ];
     }
 

@@ -30,7 +30,7 @@ enum PlannedAbsenceReason: string
         return match ($this) {
             self::Holiday => 'umbrella-beach',
             self::Work => 'briefcase',
-            self::Other => 'question',
+            self::Other => 'portal-exit',
         };
     }
 }
