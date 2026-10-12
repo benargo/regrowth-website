@@ -1,5 +1,17 @@
 import { useState } from "react";
-import { Button, Checkbox, Description, Field, Fieldset, Input, Label, Legend, Select } from "@headlessui/react";
+import {
+    Button,
+    Checkbox,
+    Description,
+    Field,
+    Fieldset,
+    Input,
+    Label,
+    Legend,
+    Radio,
+    RadioGroup,
+    Select,
+} from "@headlessui/react";
 import Icon from "@/Components/FontAwesome/Icon";
 import Tooltip from "@/Components/Tooltip";
 import slugify from "@/Helpers/Slugify";
@@ -130,6 +142,62 @@ export function CheckboxInput({ name, id = name, checked, onChange, invalid }) {
                 <path d="M3 8L6 11L11 3.5" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
         </Checkbox>
+    );
+}
+
+/**
+ * A HeadlessUI radio group drawn as selectable cards, each with an optional
+ * icon and description. `options` is `[{ value, label, description, icon }]`;
+ * onChange receives the chosen value. Pass layout classes, such as a grid,
+ * through `className`.
+ */
+export function RadioCardGroup({ id, name, value, onChange, options, invalid, className = "" }) {
+    return (
+        <RadioGroup
+            id={id}
+            name={name}
+            value={value}
+            onChange={onChange}
+            aria-invalid={invalid ? true : undefined}
+            className={className}
+        >
+            {options.map((option) => (
+                <Field
+                    key={option.value}
+                    className={
+                        "border-ink-600 bg-ground-800 has-data-checked:border-ink-300 has-data-checked:bg-ink-600/30 " +
+                        "has-data-focus:outline-ink-400 has-data-hover:border-ink-400 grid grid-cols-[1.125rem_1fr] " +
+                        "content-start items-center gap-x-3 gap-y-1 rounded border p-3 has-data-focus:outline-2 has-data-focus:outline-offset-2"
+                    }
+                >
+                    <Radio
+                        value={option.value}
+                        className={
+                            "group border-ink-500 bg-ground-900 flex size-4.5 cursor-pointer data-checked:border-sky-400 " +
+                            "items-center justify-center rounded-full border focus:outline-none"
+                        }
+                    >
+                        <span className="invisible size-2 rounded-full bg-sky-400 group-data-checked:visible" />
+                    </Radio>
+                    <Label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-white">
+                        {option.icon && (
+                            <Icon
+                                icon={option.icon}
+                                style="solid"
+                                className="w-4 text-center text-sky-400"
+                                aria-hidden="true"
+                            />
+                        )}
+                        {option.label}
+                    </Label>
+                    {option.description && (
+                        <Description className="text-secondary-300 col-start-2 text-sm">
+                            {option.description}
+                        </Description>
+                    )}
+                </Field>
+            ))}
+        </RadioGroup>
     );
 }
 

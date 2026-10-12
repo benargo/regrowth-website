@@ -22,14 +22,15 @@ class PlannedAbsenceFactory extends Factory
     {
         $start = fake()->dateTimeBetween('-1 month', '+1 month');
         $end = fake()->dateTimeBetween($start, (clone $start)->modify('+2 weeks'));
+        $reason = fake()->randomElement(PlannedAbsenceReason::cases());
 
         return [
             'character_id' => Character::factory(),
             'user_id' => User::factory(),
             'start_date' => $start,
             'end_date' => $end,
-            'reason' => fake()->randomElement(PlannedAbsenceReason::cases()),
-            'notes' => fake()->optional()->sentence(),
+            'reason' => $reason,
+            'notes' => $reason === PlannedAbsenceReason::Other ? fake()->sentence() : fake()->optional()->sentence(),
             'created_by' => User::factory(),
         ];
     }

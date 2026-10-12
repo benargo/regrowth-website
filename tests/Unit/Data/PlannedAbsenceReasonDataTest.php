@@ -74,9 +74,9 @@ class PlannedAbsenceReasonDataTest extends TestCase
     #[Test]
     public function cast_set_stores_the_value_of_reason_data(): void
     {
-        $data = PlannedAbsenceReasonData::fromReason(PlannedAbsenceReason::Medical);
+        $data = PlannedAbsenceReasonData::fromReason(PlannedAbsenceReason::Holiday);
 
-        $this->assertSame('Medical recovery', $this->caster()->set($this->createStub(Model::class), 'reason', $data, []));
+        $this->assertSame('On holiday', $this->caster()->set($this->createStub(Model::class), 'reason', $data, []));
     }
 
     #[Test]

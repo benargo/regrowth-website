@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Account;
 
+use App\Actions\Characters\RefreshCharacterPortrait;
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Contracts\Http\SharesBattleNetSession;
 use App\Data\PlannedAbsenceReasonData;
@@ -17,6 +18,7 @@ use App\Models\Permission;
 use App\Models\PlannedAbsence;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -136,6 +138,42 @@ class PlannedAbsenceControllerTest extends TestCase
                     ->where('account_characters.mains_only', true)
                     ->has('account_characters.characters', 1)
                     ->where('account_characters.characters.0.id', $mine->id)));
+    }
+
+    #[Test]
+    public function create_refreshes_the_portraits_of_the_selectable_account_characters(): void
+    {
+        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
+        $mine = Character::factory()->main()->forGameVersion($gameVersion)->create(['id' => 52963250]);
+        Character::factory()->forGameVersion($gameVersion)->create(['id' => 79938434, 'is_main' => false]);
+        $this->fakeAccount([52963250, 79938434]);
+        Queue::fake();
+
+        $this->actingAs($this->member())
+            ->withSession($this->battleNetSession())
+            ->get(route('account.absences.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload->has('account_characters.characters', 1)));
+
+        RefreshCharacterPortrait::assertPushed(1);
+        RefreshCharacterPortrait::assertPushed(fn (RefreshCharacterPortrait $action, array $parameters): bool => $parameters[0]->is($mine));
+    }
+
+    #[Test]
+    public function create_returns_the_character_portrait_on_a_partial_reload(): void
+    {
+        GameVersion::factory()->fetchableRoster()->create();
+        $character = Character::factory()->create();
+        Queue::fake();
+
+        $this->actingAs($this->member())
+            ->get(route('account.absences.create', ['character_portrait' => $character->id]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->missing('character_portrait')
+                ->reloadOnly('character_portrait', fn (Assert $reload) => $reload
+                    ->where('character_portrait', ['id' => $character->id, 'portrait_url' => null])));
+
+        RefreshCharacterPortrait::assertPushed(1);
     }
 
     #[Test]
@@ -406,14 +444,14 @@ class PlannedAbsenceControllerTest extends TestCase
         $endDate = now()->addDays(5)->format('Y-m-d');
 
         $this->actingAs($member)
-            ->patch(route('account.absences.update', $absence), ['start_date' => $startDate, 'end_date' => $endDate, 'reason' => PlannedAbsenceReason::Family->value, 'notes' => 'New notes.'])
+            ->patch(route('account.absences.update', $absence), ['start_date' => $startDate, 'end_date' => $endDate, 'reason' => PlannedAbsenceReason::Work->value, 'notes' => 'New notes.'])
             ->assertRedirectToRoute('account.index')
             ->assertSessionHas('success', 'Planned absence updated successfully.');
 
         $absence->refresh();
         $this->assertSame($startDate, $absence->start_date->format('Y-m-d'));
         $this->assertSame($endDate, $absence->end_date->format('Y-m-d'));
-        $this->assertSame(PlannedAbsenceReason::Family, $absence->reason->key);
+        $this->assertSame(PlannedAbsenceReason::Work, $absence->reason->key);
         $this->assertSame('New notes.', $absence->notes);
     }
 

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Raiding;
 
+use App\Actions\Characters\RefreshCharacterPortrait;
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Data\PlannedAbsenceReasonData;
 use App\Enums\PlannedAbsenceReason;
@@ -15,6 +16,8 @@ use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\GuildMember;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
@@ -157,6 +160,91 @@ class PlannedAbsenceControllerTest extends TestCase
                 ->where('planned_absences.1.id', $later->id)
             )
         );
+    }
+
+    #[Test]
+    public function index_includes_character_portrait_url(): void
+    {
+        Storage::fake('public');
+        $character = Character::factory()->create();
+        $character->addMediaFromString('BINARY')
+            ->usingFileName('character_15678.jpg')
+            ->toMediaCollection(Character::MEDIA_COLLECTION);
+        PlannedAbsence::factory()->create(['character_id' => $character->id]);
+
+        $this->actingAs(User::factory()->member()->create())
+            ->get(route('raiding.absences.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->where('planned_absences.0.character.portrait_url', $character->getFirstMediaUrl(Character::MEDIA_COLLECTION))
+                )
+            );
+    }
+
+    #[Test]
+    public function index_queues_one_portrait_refresh_per_absent_character(): void
+    {
+        Queue::fake();
+        $character = $this->mainInReleasedVersion();
+        PlannedAbsence::factory()->count(2)->create([
+            'character_id' => $character->id,
+            'start_date' => now()->addDay(),
+            'end_date' => now()->addDays(3),
+        ]);
+
+        $this->actingAs(User::factory()->member()->create())
+            ->get(route('raiding.absences.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload->has('planned_absences', 2))
+            );
+
+        RefreshCharacterPortrait::assertPushed(1);
+        RefreshCharacterPortrait::assertPushed(fn (RefreshCharacterPortrait $action, array $parameters): bool => $parameters[0]->is($character));
+    }
+
+    #[Test]
+    public function index_does_not_refresh_portraits_for_past_or_deleted_absences(): void
+    {
+        Queue::fake();
+        PlannedAbsence::factory()->create([
+            'character_id' => $this->mainInReleasedVersion()->id,
+            'start_date' => now()->subDays(10),
+            'end_date' => now()->subDays(5),
+        ]);
+        PlannedAbsence::factory()->create([
+            'character_id' => $this->mainInReleasedVersion()->id,
+            'start_date' => now()->addDay(),
+            'end_date' => now()->addDays(3),
+        ])->delete();
+
+        $this->actingAs(User::factory()->member()->create())
+            ->get(route('raiding.absences.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload->has('planned_absences', 2))
+            );
+
+        RefreshCharacterPortrait::assertNotPushed();
+    }
+
+    #[Test]
+    public function index_reflects_new_absences_without_cache_flush(): void
+    {
+        $user = User::factory()->member()->create();
+        PlannedAbsence::factory()->withCharacter()->create();
+
+        $this->actingAs($user)
+            ->get(route('raiding.absences.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload->has('planned_absences', 1))
+            );
+
+        PlannedAbsence::withoutEvents(fn () => PlannedAbsence::factory()->withCharacter()->create());
+
+        $this->actingAs($user)
+            ->get(route('raiding.absences.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload->has('planned_absences', 2))
+            );
     }
 
     // ==================== create: Access Control ====================
@@ -1055,6 +1143,73 @@ class PlannedAbsenceControllerTest extends TestCase
         $this->actingAs($this->officer())
             ->get(route('raiding.absences.create', ['member_search' => 'test']))
             ->assertInertia(fn (Assert $page) => $page->missing('discord_members'));
+    }
+
+    #[Test]
+    public function create_does_not_refresh_portraits_on_a_full_load(): void
+    {
+        $character = $this->mainInReleasedVersion();
+        Queue::fake();
+
+        $this->actingAs($this->officer())
+            ->get(route('raiding.absences.create', ['character_portrait' => $character->id]))
+            ->assertInertia(fn (Assert $page) => $page->missing('character_portrait'));
+
+        RefreshCharacterPortrait::assertNotPushed();
+    }
+
+    #[Test]
+    public function create_refreshes_and_returns_the_character_portrait_on_a_partial_reload(): void
+    {
+        $character = $this->mainInReleasedVersion();
+        Queue::fake();
+
+        $this->actingAs($this->officer())
+            ->get(route('raiding.absences.create', ['character_portrait' => $character->id]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->reloadOnly('character_portrait', fn (Assert $reload) => $reload
+                    ->where('character_portrait', ['id' => $character->id, 'portrait_url' => null])));
+
+        RefreshCharacterPortrait::assertPushed(1);
+        RefreshCharacterPortrait::assertPushed(fn (RefreshCharacterPortrait $action, array $parameters): bool => $parameters[0]->is($character));
+    }
+
+    #[Test]
+    public function edit_returns_the_character_portrait_on_a_partial_reload(): void
+    {
+        $character = $this->mainInReleasedVersion();
+        $plannedAbsence = PlannedAbsence::factory()->create(['character_id' => $character->id]);
+        Queue::fake();
+
+        $this->actingAs($this->officer())
+            ->get(route('raiding.absences.edit', ['plannedAbsence' => $plannedAbsence, 'character_portrait' => $character->id]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->reloadOnly('character_portrait', fn (Assert $reload) => $reload
+                    ->where('character_portrait.id', $character->id)));
+
+        RefreshCharacterPortrait::assertPushed(1);
+    }
+
+    #[Test]
+    #[Group('validation')]
+    public function create_rejects_an_unknown_character_when_reloading_the_character_portrait(): void
+    {
+        Queue::fake();
+
+        $officer = $this->officer();
+        $version = $this->actingAs($officer)->get(route('raiding.absences.create'))->viewData('page')['version'];
+
+        $this->actingAs($officer)
+            ->withHeaders([
+                'X-Inertia' => 'true',
+                'X-Inertia-Version' => (string) $version,
+                'X-Inertia-Partial-Component' => 'Raiding/Absences/Form',
+                'X-Inertia-Partial-Data' => 'character_portrait',
+            ])
+            ->get(route('raiding.absences.create', ['character_portrait' => 999999999]))
+            ->assertSessionHasErrors('character_portrait');
+
+        RefreshCharacterPortrait::assertNotPushed();
     }
 
     #[Test]

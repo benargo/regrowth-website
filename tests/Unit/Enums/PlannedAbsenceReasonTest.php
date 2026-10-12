@@ -12,9 +12,9 @@ use PHPUnit\Framework\TestCase;
 class PlannedAbsenceReasonTest extends TestCase
 {
     #[Test]
-    public function it_has_exactly_ten_cases(): void
+    public function it_has_exactly_three_cases(): void
     {
-        $this->assertCount(10, PlannedAbsenceReason::cases());
+        $this->assertCount(3, PlannedAbsenceReason::cases());
     }
 
     /**
@@ -23,14 +23,7 @@ class PlannedAbsenceReasonTest extends TestCase
     public static function reasonProvider(): array
     {
         return [
-            'bereavement' => [PlannedAbsenceReason::Bereavement, 'Bereavement', 'heart-broken'],
-            'caring' => [PlannedAbsenceReason::Caring, 'Caring for someone', 'hand-holding-medical'],
-            'education' => [PlannedAbsenceReason::Education, 'School or education', 'graduation-cap'],
-            'event' => [PlannedAbsenceReason::Event, 'At a concert', 'guitar-electric'],
-            'family' => [PlannedAbsenceReason::Family, 'Family and social obligations', 'baby'],
             'holiday' => [PlannedAbsenceReason::Holiday, 'On holiday', 'umbrella-beach'],
-            'medical' => [PlannedAbsenceReason::Medical, 'Medical recovery', 'clinic-medical'],
-            'religion' => [PlannedAbsenceReason::Religion, 'Religious observance', 'praying-hands'],
             'work' => [PlannedAbsenceReason::Work, 'Stuck at work', 'briefcase'],
             'other' => [PlannedAbsenceReason::Other, 'Other', 'question'],
         ];
@@ -67,9 +60,9 @@ class PlannedAbsenceReasonTest extends TestCase
     }
 
     #[Test]
-    public function other_description_mentions_an_officer(): void
+    public function other_description_mentions_the_notes(): void
     {
-        $this->assertStringContainsString('officer', PlannedAbsenceReason::Other->description());
+        $this->assertStringContainsString('notes', PlannedAbsenceReason::Other->description());
     }
 
     #[Test]

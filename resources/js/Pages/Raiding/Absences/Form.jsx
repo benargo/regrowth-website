@@ -107,6 +107,7 @@ function OfficerAbsenceForm({ gameVersion, characters, plannedAbsence, action, r
 
                 <FormRow htmlFor="character" label="Character" required error={characterError}>
                     <CharacterSearch
+                        refreshPortrait
                         id="character"
                         characters={selectableCharacters}
                         value={data.character}

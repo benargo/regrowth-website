@@ -283,6 +283,19 @@ class CharacterResourceTest extends TestCase
         $this->assertStringNotContainsString('/icons/', $array['portrait_url']);
     }
 
+    // ==================== absence list scope ====================
+
+    #[Test]
+    public function for_absence_list_returns_only_id_name_slug_portrait_and_class(): void
+    {
+        $character = Character::factory()->create();
+
+        $array = CharacterResource::forAbsenceList($character->load('playableClass'))->resolve(new Request);
+
+        $this->assertSame(['id', 'name', 'slug', 'portrait_url', 'playable_class'], array_keys($array));
+        $this->assertNull($array['portrait_url']);
+    }
+
     // ==================== linked characters relation ====================
 
     #[Test]

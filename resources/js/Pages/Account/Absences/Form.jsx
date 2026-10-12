@@ -68,6 +68,7 @@ function AccountCharacterPicker({ gameVersion, value, onChange, invalid }) {
                         </p>
                     )}
                     <CharacterSearch
+                        refreshPortrait
                         id="character"
                         characters={characters}
                         disabled={onlyCharacterId !== null}

@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Characters\RefreshCharacterPortrait;
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
-use App\Contracts\HasCharacterMedia;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
-use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Http\Middleware\RemembersCurrentGameVersion;
 use App\Http\Requests\UpdateCharacterRequest;
@@ -15,7 +14,6 @@ use App\Http\Resources\GuildRosterMemberCollection;
 use App\Http\Resources\PlayableClassResource;
 use App\Http\Resources\PlayableRaceResource;
 use App\Http\Resources\PlayableSpecializationResource;
-use App\Jobs\AttachPortraitToCharacter;
 use App\Models\Character;
 use App\Models\GameVersion;
 use Illuminate\Http\RedirectResponse;
@@ -77,25 +75,8 @@ class CharacterController extends Controller
         $character->load(['gameVersion', 'playableClass', 'playableRace', 'rank', 'specializations', 'linkedCharacters.playableClass', 'linkedCharacters.rank']);
 
         $gameVersion = $character->gameVersion;
-        $realmSlug = $gameVersion?->realm_slug;
 
-        if ($realmSlug !== null && ! $character->hasMedia(HasCharacterMedia::MEDIA_COLLECTION)) {
-            try {
-                $dto = $this->blizzard->send(new GetCharacterMediaRequest(
-                    $realmSlug,
-                    $character->name,
-                    $gameVersion->blizzard_namespace,
-                ))->dto();
-
-                $avatarAsset = collect($dto->assets)->first(fn ($asset) => $asset->key === 'avatar');
-
-                if ($avatarAsset !== null) {
-                    AttachPortraitToCharacter::dispatch($character->id, $avatarAsset->value);
-                }
-            } catch (\Throwable) {
-                // Blizzard outage must not break the page render.
-            }
-        }
+        RefreshCharacterPortrait::dispatch($character);
 
         return Inertia::render('Roster/Characters/Show', [
             'character' => (new CharacterResource($character))->resolve($request),

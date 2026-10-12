@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Jobs;
 
+use App\Actions\Characters\RefreshCharacterPortrait;
 use App\Contracts\HasCharacterMedia;
 use App\Enums\Gender;
 use App\Events\Broadcasts\CharacterPortraitAttached;
@@ -168,6 +169,27 @@ class AttachPortraitToCharacterTest extends TestCase
 
         $this->assertSame(1, $character->fresh()->getMedia(HasCharacterMedia::MEDIA_COLLECTION)->count());
         Saloon::assertSentCount(3);
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_replaces_a_stale_portrait_with_the_new_one(): void
+    {
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => Gender::MALE]);
+        $stalePortrait = $character->addMediaFromString('OLD')
+            ->usingFileName('old-avatar.jpg')
+            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION);
+        $this->travel(RefreshCharacterPortrait::STALE_AFTER_SECONDS)->seconds();
+
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        (new AttachPortraitToCharacter($character->id, self::PORTRAIT_URL))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
+
+        $portraits = $character->fresh()->getMedia(HasCharacterMedia::MEDIA_COLLECTION);
+        $this->assertCount(1, $portraits);
+        $this->assertSame('51042439-avatar.jpg', $portraits->first()->file_name);
+        $this->assertModelMissing($stalePortrait);
     }
 
     #[Group('error-handling')]

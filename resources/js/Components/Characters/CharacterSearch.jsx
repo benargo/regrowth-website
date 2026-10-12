@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { router, usePage } from "@inertiajs/react";
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from "@headlessui/react";
 import Icon from "@/Components/FontAwesome/Icon";
 import Pill from "@/Components/Pill";
@@ -6,11 +7,42 @@ import CharacterPortrait from "@/Components/Characters/CharacterPortrait";
 import ClassPill from "@/Components/Characters/ClassPill";
 import { controlClassName } from "@/Components/FormControls";
 import normaliseCharacterName from "@/Helpers/NormaliseCharacterName";
+import useCharacterPortraitChannel from "@/Hooks/useCharacterPortraitChannel";
+
+/**
+ * Reload the page's optional `character_portrait` prop, which queues a fresh
+ * portrait for the character if theirs is missing or stale.
+ */
+function reloadCharacterPortrait(characterId) {
+    router.reload({
+        only: ["character_portrait"],
+        data: { character_portrait: characterId },
+        preserveUrl: true,
+    });
+}
+
+/**
+ * Refreshes the picked character's portrait, then reloads it again once the
+ * portrait job broadcasts. A separate component so the channel is only joined
+ * while a character is picked.
+ */
+function PortraitRefresher({ characterId }) {
+    useEffect(() => {
+        reloadCharacterPortrait(characterId);
+    }, [characterId]);
+
+    useCharacterPortraitChannel(characterId, () => reloadCharacterPortrait(characterId));
+
+    return null;
+}
 
 /**
  * A searchable drop-down for picking one character by ID. The search ignores
  * case and diacritics, so "deo" finds "Déo". Once a character is picked, their
  * portrait replaces the search icon and their class follows their name.
+ * With `refreshPortrait`, picking a character also refreshes their portrait
+ * through the page's optional `character_portrait` prop, which the page's
+ * controller shares via the SharesCharacterPortrait concern.
  * Put it in a FormRow, which labels it and shows any error.
  */
 export default function CharacterSearch({
@@ -22,10 +54,16 @@ export default function CharacterSearch({
     name,
     disabled = false,
     emptyMessage = "No characters match your search.",
+    refreshPortrait = false,
 }) {
     const [query, setQuery] = useState("");
+    const refreshedPortrait = usePage().props.character_portrait;
 
     const selectedCharacter = value ? (characters.find((character) => character.id === value) ?? null) : null;
+    const selectedPortraitCharacter =
+        selectedCharacter && refreshedPortrait?.id === selectedCharacter.id && refreshedPortrait.portrait_url
+            ? { ...selectedCharacter, portrait_url: refreshedPortrait.portrait_url }
+            : selectedCharacter;
 
     const filtered = useMemo(() => {
         if (!query) {
@@ -66,10 +104,12 @@ export default function CharacterSearch({
             invalid={invalid}
             immediate
         >
+            {refreshPortrait && selectedCharacter && <PortraitRefresher characterId={selectedCharacter.id} />}
+
             <div className="relative">
                 <span className="pointer-events-none absolute inset-y-0 left-2 flex items-center">
                     {selectedCharacter ? (
-                        <CharacterPortrait character={selectedCharacter} className="size-7" />
+                        <CharacterPortrait character={selectedPortraitCharacter} className="size-7" />
                     ) : (
                         // Font Awesome swaps the <i> for an <svg>, so React must unmount a wrapper it owns instead.
                         <span>

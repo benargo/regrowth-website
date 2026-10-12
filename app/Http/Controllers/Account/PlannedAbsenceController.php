@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Account;
 
 use App\Actions\Characters\FetchBattleNetAccountCharacters;
+use App\Actions\Characters\RefreshCharacterPortrait;
 use App\Actions\Characters\ResolveSelectableAccountCharacters;
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Contracts\Http\SharesBattleNetSession;
 use App\Data\PlannedAbsenceReasonData;
+use App\Http\Controllers\Concerns\SharesCharacterPortrait;
 use App\Http\Controllers\Controller;
 use App\Http\Integrations\Blizzard\Exceptions\ApiException;
 use App\Http\Middleware\RemembersCurrentGameVersion;
@@ -15,6 +17,7 @@ use App\Http\Requests\UpdateAccountPlannedAbsenceRequest;
 use App\Http\Resources\CharacterResource;
 use App\Http\Resources\GameVersionResource;
 use App\Http\Resources\PlannedAbsenceResource;
+use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\PlannedAbsence;
 use Illuminate\Http\RedirectResponse;
@@ -33,6 +36,8 @@ use Saloon\Exceptions\Request\FatalRequestException;
 #[Middleware('auth')]
 class PlannedAbsenceController extends Controller
 {
+    use SharesCharacterPortrait;
+
     /**
      * Show the form for logging an absence against one of the member's own
      * characters in their current game version.
@@ -54,6 +59,7 @@ class PlannedAbsenceController extends Controller
             'account_characters' => Inertia::defer(fn (): array => $this->accountCharacters($request, $accessToken, $gameVersion)),
             'action' => route('account.absences.store'),
             'reasons' => PlannedAbsenceReasonData::options(),
+            'character_portrait' => Inertia::optional(fn (): array => $this->characterPortrait($request)),
         ]);
     }
 
@@ -153,7 +159,9 @@ class PlannedAbsenceController extends Controller
             return ['characters' => [], 'mains_only' => true, 'error' => 'unavailable'];
         }
 
-        $characters = ResolveSelectableAccountCharacters::run($accountCharacters);
+        $characters = ResolveSelectableAccountCharacters::run($accountCharacters)->load('media');
+
+        $characters->each(fn (Character $character) => RefreshCharacterPortrait::dispatch($character));
 
         return [
             'characters' => CharacterResource::collection($characters)->resolve($request),

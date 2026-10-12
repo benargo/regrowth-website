@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
+use Illuminate\Support\Facades\Storage;
 use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
@@ -125,6 +126,39 @@ class PlannedAbsenceResourceTest extends TestCase
         $this->assertIsArray($array['character']);
         $this->assertArrayHasKey('playable_class', $array['character']);
         $this->assertNull($array['character']['playable_class']);
+    }
+
+    // ==================== officer list scope ====================
+
+    #[Test]
+    public function for_officer_list_embeds_character_with_portrait_url(): void
+    {
+        $this->mockRequestUser();
+        Storage::fake('public');
+
+        $character = Character::factory()->create();
+        $character->addMediaFromString('BINARY')
+            ->usingFileName('character_15678.jpg')
+            ->toMediaCollection(Character::MEDIA_COLLECTION);
+        $absence = PlannedAbsence::factory()->create(['character_id' => $character->id]);
+        $absence->load('character.media', 'character.playableClass');
+
+        $array = PlannedAbsenceResource::forOfficerList($absence)->resolve(new Request);
+
+        $this->assertSame($character->getFirstMediaUrl(Character::MEDIA_COLLECTION), $array['character']['portrait_url']);
+    }
+
+    #[Test]
+    public function default_scope_still_embeds_character_summary(): void
+    {
+        $this->mockRequestUser();
+
+        $absence = PlannedAbsence::factory()->withCharacter()->create();
+        $absence->load('character');
+
+        $array = (new PlannedAbsenceResource($absence))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('portrait_url', $array['character']);
     }
 
     // ==================== user relation ====================

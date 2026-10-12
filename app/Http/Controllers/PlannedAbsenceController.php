@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Characters\RefreshCharacterPortrait;
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Data\PlannedAbsenceReasonData;
+use App\Http\Controllers\Concerns\SharesCharacterPortrait;
 use App\Http\Middleware\RemembersCurrentGameVersion;
 use App\Http\Requests\StorePlannedAbsenceRequest;
 use App\Http\Requests\UpdatePlannedAbsenceRequest;
@@ -30,6 +32,8 @@ use Inertia\Response;
 #[Middleware('auth')]
 class PlannedAbsenceController extends Controller
 {
+    use SharesCharacterPortrait;
+
     public function __construct(
         protected Discord $discord
     ) {}
@@ -48,15 +52,18 @@ class PlannedAbsenceController extends Controller
     {
         return Inertia::render('Raiding/Absences/Index', [
             'planned_absences' => Inertia::defer(function () use ($request) {
-                return Cache::tags(['attendance'])->remember('planned_absences:with_trashed', now()->addDay(), function () use ($request) {
-                    return PlannedAbsenceResource::collection(
-                        PlannedAbsence::query()
-                            ->withTrashed()
-                            ->with(['character.playableRace', 'createdBy'])
-                            ->orderBy('start_date')
-                            ->get()
-                    )->resolve($request);
-                });
+                $absences = PlannedAbsence::query()
+                    ->withTrashed()
+                    ->with(['character.media', 'character.playableClass', 'createdBy'])
+                    ->orderBy('start_date')
+                    ->get();
+
+                $absences
+                    ->filter(fn (PlannedAbsence $absence) => ! $absence->trashed() && ($absence->end_date ?? $absence->start_date)->gte(today()))
+                    ->pluck('character')->filter()->unique('id')
+                    ->each(fn (Character $character) => RefreshCharacterPortrait::dispatch($character));
+
+                return PlannedAbsenceResource::collectionForOfficerList($absences)->map->resolve($request)->all();
             }),
         ]);
     }
@@ -85,6 +92,7 @@ class PlannedAbsenceController extends Controller
             'action' => route('raiding.absences.store'),
             'reasons' => PlannedAbsenceReasonData::options(),
             'discord_members' => Inertia::optional(fn (): array => $this->searchDiscordMembers($request)),
+            'character_portrait' => Inertia::optional(fn (): array => $this->characterPortrait($request)),
         ]);
     }
 
@@ -136,6 +144,7 @@ class PlannedAbsenceController extends Controller
             'action' => route('raiding.absences.update', $plannedAbsence),
             'reasons' => PlannedAbsenceReasonData::options(),
             'discord_members' => Inertia::optional(fn (): array => $this->searchDiscordMembers($request)),
+            'character_portrait' => Inertia::optional(fn (): array => $this->characterPortrait($request)),
         ]);
     }
 

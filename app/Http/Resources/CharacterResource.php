@@ -5,9 +5,21 @@ namespace App\Http\Resources;
 use App\Models\Character;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Collection;
 
+/**
+ * Eager-loading requirements differ per scope:
+ *   - default:        whichever optional relations the consumer needs
+ *   - forAbsenceList: $character->load('media', 'playableClass')
+ */
 class CharacterResource extends JsonResource
 {
+    protected const SCOPE_DEFAULT = 'default';
+
+    protected const SCOPE_ABSENCE_LIST = 'absence_list';
+
+    protected string $scope = self::SCOPE_DEFAULT;
+
     /**
      * The resource that this resource collects.
      *
@@ -16,12 +28,47 @@ class CharacterResource extends JsonResource
     public $collects = Character::class;
 
     /**
+     * The narrow shape used by the officer planned absences table.
+     */
+    public static function forAbsenceList(mixed $resource): static
+    {
+        return static::withScope($resource, self::SCOPE_ABSENCE_LIST);
+    }
+
+    /**
+     * @param  iterable<int, Character>  $resources
+     * @return Collection<int, static>
+     */
+    public static function collectionForAbsenceList(iterable $resources): Collection
+    {
+        return collect($resources)->map(fn ($character) => static::forAbsenceList($character));
+    }
+
+    protected static function withScope(mixed $resource, string $scope): static
+    {
+        $instance = new static($resource);
+        $instance->scope = $scope;
+
+        return $instance;
+    }
+
+    /**
      * Transform the resource into an array.
      *
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {
+        if ($this->scope === self::SCOPE_ABSENCE_LIST) {
+            return [
+                'id' => $this->id,
+                'name' => $this->name,
+                'slug' => $this->slug,
+                'portrait_url' => $this->getFirstMediaUrl('character_portraits') ?: null,
+                'playable_class' => $this->whenLoaded('playableClass', fn () => (new PlayableClassResource($this->playableClass))->resolve($request)),
+            ];
+        }
+
         return [
             'id' => $this->id,
             'name' => $this->name,

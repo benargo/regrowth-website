@@ -1,8 +1,5 @@
 import { Fieldset, Input, Legend } from "@headlessui/react";
-import { Description, Label } from "@/Components/Catalyst/fieldset";
-import { Radio, RadioField, RadioGroup } from "@/Components/Catalyst/radio";
-import Icon from "@/Components/FontAwesome/Icon";
-import { FormRow, FormSection, controlClassName } from "@/Components/FormControls";
+import { FormRow, FormSection, RadioCardGroup, controlClassName } from "@/Components/FormControls";
 import MarkdownEditor from "@/Components/MarkdownEditor";
 
 const ALLOWED_FORMATS = ["bold", "italic", "underline", "bulletList", "numberedList"];
@@ -13,7 +10,15 @@ const ALLOWED_FORMATS = ["bold", "italic", "underline", "bulletList", "numberedL
  * `clearErrors` of an Inertia `useForm`. Pass `isOfficer` to word the hints
  * for someone logging an absence on another member's behalf.
  */
-export default function AbsenceDetailsFields({ data, setData, errors, clearErrors, reasons, canBackdate = false, isOfficer = false }) {
+export default function AbsenceDetailsFields({
+    data,
+    setData,
+    errors,
+    clearErrors,
+    reasons,
+    canBackdate = false,
+    isOfficer = false,
+}) {
     const awaySubject = isOfficer ? "they'll" : "you'll";
     const isOtherReason = data.reason === "Other";
 
@@ -76,9 +81,11 @@ export default function AbsenceDetailsFields({ data, setData, errors, clearError
                     </span>
                 </Legend>
                 <p className="text-secondary-300 text-sm">
-                    {isOfficer ? "Pick the closest match." : "Pick the closest match. You can add more detail in the notes."}
+                    {isOfficer
+                        ? "Pick the closest match."
+                        : "Pick the closest match. You can add more detail in the notes."}
                 </p>
-                <RadioGroup
+                <RadioCardGroup
                     id="reason"
                     name="reason"
                     value={data.reason}
@@ -86,26 +93,15 @@ export default function AbsenceDetailsFields({ data, setData, errors, clearError
                         setField("reason", value);
                         clearErrors("notes");
                     }}
-                    aria-invalid={errors.reason ? true : undefined}
-                    className="grid scroll-mt-48 grid-cols-1 gap-3 space-y-0! sm:grid-cols-2 lg:scroll-mt-28"
-                >
-                    {reasons.map((reason) => (
-                        <RadioField
-                            key={reason.key}
-                            className={
-                                "border-ink-600 bg-ground-800 has-data-hover:border-ink-400 has-data-checked:border-ink-300 " +
-                                "has-data-checked:bg-ink-600/30 rounded border p-3"
-                            }
-                        >
-                            <Radio value={reason.key} color="sky" />
-                            <Label className="flex items-center gap-2">
-                                <Icon icon={reason.icon} style="solid" className="w-4 text-center text-sky-400" aria-hidden="true" />
-                                {reason.label}
-                            </Label>
-                            <Description>{reason.description}</Description>
-                        </RadioField>
-                    ))}
-                </RadioGroup>
+                    options={reasons.map((reason) => ({
+                        value: reason.key,
+                        label: reason.label,
+                        description: reason.description,
+                        icon: reason.icon,
+                    }))}
+                    invalid={Boolean(errors.reason)}
+                    className="grid scroll-mt-48 grid-cols-1 gap-3 sm:grid-cols-2 lg:scroll-mt-28 lg:grid-cols-3"
+                />
                 {errors.reason && <p className="text-sm text-red-300">{errors.reason}</p>}
             </Fieldset>
 
@@ -115,7 +111,7 @@ export default function AbsenceDetailsFields({ data, setData, errors, clearError
                 required={isOtherReason}
                 hint={
                     isOtherReason
-                        ? "Required for Other. A short note is enough, such as which officer you told."
+                        ? "Required for Other. A short note is enough, such as being at a concert."
                         : "Optional. Anything else officers should know."
                 }
                 error={errors.notes}
