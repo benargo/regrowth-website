@@ -31,7 +31,7 @@ class BlizzardIconPathGenerator implements HasBlizzardIcons, PathGenerator
             return $this->default->getPath($media);
         }
 
-        return $this->directory($media).$media->file_name;
+        return $this->directory($media);
     }
 
     public function getPathForConversions(Media $media): string
