@@ -50,7 +50,7 @@ class PlannedAbsenceController extends Controller
         $gameVersion = ResolveCurrentGameVersion::run($selectable);
         $accessToken = $this->battleNetAccessToken();
 
-        session()->put(SharesBattleNetSession::INTENDED_URL_KEY, $request->fullUrl());
+        session()->put(SharesBattleNetSession::INTENDED_URL_KEY, $request->fullUrlWithoutQuery(['character_portrait']));
 
         return Inertia::render('Account/Absences/Form', [
             'game_versions' => GameVersionResource::collection($selectable)->resolve($request),

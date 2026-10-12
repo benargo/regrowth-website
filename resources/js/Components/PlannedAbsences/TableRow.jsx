@@ -8,6 +8,7 @@ import formatDate from "@/Helpers/FormatDate";
 import Pill from "@/Components/Pill";
 import { TableRow, TableCell } from "@/Components/Table";
 import { ActionMenu, ActionMenuLink, ActionMenuButton } from "@/Components/ActionMenu";
+import { usePermission } from "@/Hooks/usePermission";
 
 /**
  * The short weekday the character is back on: the day after their absence ends.
@@ -24,12 +25,16 @@ function returnWeekday(endDate) {
  */
 export default function PlannedAbsenceTableRow({ absence, isCurrent = false, canDelete = false }) {
     const { auth } = usePage().props;
+    const canManage = usePermission("manage-planned-absences");
     const [confirmingDelete, setConfirmingDelete] = useState(false);
 
     const character = absence.character;
     const characterName = character?.name ?? "Unknown Character";
     const isDeleted = Boolean(absence.deleted_at);
     const canRestore = auth.user?.admin ?? false;
+    // The edit route needs manage-planned-absences and doesn't resolve deleted absences.
+    const canEdit = canManage && !isDeleted;
+    const hasActions = canEdit || (!isDeleted && canDelete) || (isDeleted && canRestore);
     const startLabel = formatDate(absence.start_date).medium;
     const endLabel = absence.end_date ? formatDate(absence.end_date).medium : "Open-ended";
     const returnLabel = isCurrent && absence.end_date ? `back ${returnWeekday(absence.end_date)}` : null;
@@ -91,21 +96,25 @@ export default function PlannedAbsenceTableRow({ absence, isCurrent = false, can
                 )}
             </TableCell>
             <TableCell className="text-right">
-                <ActionMenu label={`Actions for ${characterName}`}>
-                    <ActionMenuLink href={route("raiding.absences.edit", absence.id)} icon="pen">
-                        Edit
-                    </ActionMenuLink>
-                    {!isDeleted && canDelete && (
-                        <ActionMenuButton onClick={() => setConfirmingDelete(true)} icon="trash">
-                            Delete
-                        </ActionMenuButton>
-                    )}
-                    {isDeleted && canRestore && (
-                        <ActionMenuButton onClick={restoreAbsence} icon="trash-restore">
-                            Restore
-                        </ActionMenuButton>
-                    )}
-                </ActionMenu>
+                {hasActions && (
+                    <ActionMenu label={`Actions for ${characterName}`}>
+                        {canEdit && (
+                            <ActionMenuLink href={route("raiding.absences.edit", absence.id)} icon="pen">
+                                Edit
+                            </ActionMenuLink>
+                        )}
+                        {!isDeleted && canDelete && (
+                            <ActionMenuButton onClick={() => setConfirmingDelete(true)} icon="trash">
+                                Delete
+                            </ActionMenuButton>
+                        )}
+                        {isDeleted && canRestore && (
+                            <ActionMenuButton onClick={restoreAbsence} icon="trash-restore">
+                                Restore
+                            </ActionMenuButton>
+                        )}
+                    </ActionMenu>
+                )}
                 <ConfirmationModal
                     show={confirmingDelete}
                     onClose={() => setConfirmingDelete(false)}

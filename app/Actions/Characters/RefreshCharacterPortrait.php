@@ -7,13 +7,15 @@ use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterMediaRequest;
 use App\Jobs\AttachPortraitToCharacter;
 use App\Models\Character;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 /**
  * Queues a fresh Blizzard portrait for a character that has none, or whose
- * portrait is older than the refresh period.
+ * portrait is older than the refresh period. Unique per character while
+ * queued, so repeated page loads don't stack refreshes for the same character.
  */
-class RefreshCharacterPortrait
+class RefreshCharacterPortrait implements ShouldBeUnique
 {
     use AsAction;
 
@@ -21,6 +23,11 @@ class RefreshCharacterPortrait
      * How long a stored portrait stays fresh: three days.
      */
     public const int STALE_AFTER_SECONDS = 259200;
+
+    /**
+     * Release the uniqueness lock after this many seconds even if the job never runs.
+     */
+    public int $jobUniqueFor = 3600;
 
     public function __construct(
         private BlizzardConnector $blizzard,
@@ -49,6 +56,14 @@ class RefreshCharacterPortrait
         } catch (\Throwable) {
             // Blizzard outage must not break the page render.
         }
+    }
+
+    /**
+     * One queued refresh per character.
+     */
+    public function getJobUniqueId(Character $character): string
+    {
+        return (string) $character->id;
     }
 
     /**

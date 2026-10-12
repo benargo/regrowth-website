@@ -134,7 +134,7 @@ class PlannedAbsenceController extends Controller
     #[Authorize('update', 'plannedAbsence')]
     public function edit(Request $request, PlannedAbsence $plannedAbsence): Response
     {
-        $plannedAbsence->load(['character.playableRace', 'character.gameVersion', 'createdBy']);
+        $plannedAbsence->load(['character.playableRace', 'character.gameVersion', 'user', 'createdBy']);
 
         $gameVersion = $plannedAbsence->character?->gameVersion
             ?? ResolveCurrentGameVersion::run($this->selectableGameVersions());
@@ -271,7 +271,7 @@ class PlannedAbsenceController extends Controller
 
         // Cache plain arrays: cache.serializable_classes is false, so cached objects can't be unserialized.
         return Cache::tags(['discord'])->remember(
-            'discord:members:search:'.mb_strtolower($query),
+            "discord:members:search:{$limit}:".mb_strtolower($query),
             now()->addMinutes(5),
             fn (): array => $this->discord->searchGuildMembers($query, $limit)
                 ->map(fn ($member): array => [
