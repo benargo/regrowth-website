@@ -30,6 +30,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 #[Middleware('auth')]
+#[Authorize('viewAny', PlannedAbsence::class)]
 class PlannedAbsenceController extends Controller
 {
     use SharesCharacterPortrait;
@@ -47,7 +48,6 @@ class PlannedAbsenceController extends Controller
     /**
      * Display a listing of the resource.
      */
-    #[Authorize('viewAny', PlannedAbsence::class)]
     public function index(): Response
     {
         return Inertia::render('Raiding/Absences/Index', [
@@ -68,30 +68,27 @@ class PlannedAbsenceController extends Controller
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Create & Store
-    |--------------------------------------------------------------------------
-    */
-
     /**
      * Show the form for logging an absence for any main character in the
      * officer's current game version.
      */
-    #[Authorize('viewAny', PlannedAbsence::class)]
     #[Authorize('create', PlannedAbsence::class)]
     #[Middleware(RemembersCurrentGameVersion::class)]
     public function create(Request $request): Response
     {
-        $selectable = $this->selectableGameVersions();
-        $gameVersion = ResolveCurrentGameVersion::run($selectable);
+        $selectable = function () use (&$selectableVersions): Collection {
+            return $selectableVersions ??= $this->selectableGameVersions();
+        };
+        $gameVersion = function () use (&$resolvedVersion, $selectable): ?GameVersion {
+            return $resolvedVersion ??= ResolveCurrentGameVersion::run($selectable());
+        };
 
         return Inertia::render('Raiding/Absences/Form', [
-            'game_versions' => GameVersionResource::collection($selectable),
-            'game_version' => $gameVersion ? new GameVersionResource($gameVersion) : null,
-            'characters' => $this->pickerCharacters($gameVersion),
+            'game_versions' => fn () => GameVersionResource::collection($selectable()),
+            'game_version' => fn () => $gameVersion() ? new GameVersionResource($gameVersion()) : null,
+            'characters' => fn () => $this->pickerCharacters($gameVersion()),
             'action' => route('raiding.absences.store'),
-            'reasons' => PlannedAbsenceReasonData::options(),
+            'reasons' => fn () => PlannedAbsenceReasonData::options(),
             'discord_members' => Inertia::optional(fn (): array => $this->searchDiscordMembers($request)),
             'character_portrait' => Inertia::optional(fn (): array => $this->characterPortrait($request)),
         ]);
@@ -100,7 +97,6 @@ class PlannedAbsenceController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    #[Authorize('viewAny', PlannedAbsence::class)]
     #[Authorize('create', PlannedAbsence::class)]
     public function store(StorePlannedAbsenceRequest $request): RedirectResponse
     {
@@ -121,31 +117,27 @@ class PlannedAbsenceController extends Controller
         return to_route('raiding.absences.index')->with('success', 'Planned absence created successfully.');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Edit & Update
-    |--------------------------------------------------------------------------
-    */
-
     /**
      * Show the form for editing the specified resource. The picker is limited
      * to the version of the absence's character.
      */
-    #[Authorize('viewAny', PlannedAbsence::class)]
     #[Authorize('update', 'plannedAbsence')]
     public function edit(Request $request, PlannedAbsence $plannedAbsence): Response
     {
-        $plannedAbsence->load(['character.playableRace', 'character.gameVersion', 'user', 'createdBy']);
-
-        $gameVersion = $plannedAbsence->character?->gameVersion
-            ?? ResolveCurrentGameVersion::run($this->selectableGameVersions());
+        $loadedAbsence = function () use (&$loaded, $plannedAbsence): PlannedAbsence {
+            return $loaded ??= $plannedAbsence->load(['character.playableRace', 'character.gameVersion', 'user', 'createdBy']);
+        };
+        $gameVersion = function () use (&$resolvedVersion, $loadedAbsence): ?GameVersion {
+            return $resolvedVersion ??= $loadedAbsence()->character?->gameVersion
+                ?? ResolveCurrentGameVersion::run($this->selectableGameVersions());
+        };
 
         return Inertia::render('Raiding/Absences/Form', [
-            'planned_absence' => new PlannedAbsenceResource($plannedAbsence),
-            'game_version' => $gameVersion ? new GameVersionResource($gameVersion) : null,
-            'characters' => $this->pickerCharacters($gameVersion),
+            'planned_absence' => fn () => new PlannedAbsenceResource($loadedAbsence()),
+            'game_version' => fn () => $gameVersion() ? new GameVersionResource($gameVersion()) : null,
+            'characters' => fn () => $this->pickerCharacters($gameVersion()),
             'action' => route('raiding.absences.update', $plannedAbsence),
-            'reasons' => PlannedAbsenceReasonData::options(),
+            'reasons' => fn () => PlannedAbsenceReasonData::options(),
             'discord_members' => Inertia::optional(fn (): array => $this->searchDiscordMembers($request)),
             'character_portrait' => Inertia::optional(fn (): array => $this->characterPortrait($request)),
         ]);
@@ -154,7 +146,6 @@ class PlannedAbsenceController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    #[Authorize('viewAny', PlannedAbsence::class)]
     #[Authorize('update', 'plannedAbsence')]
     public function update(UpdatePlannedAbsenceRequest $request, PlannedAbsence $plannedAbsence): RedirectResponse
     {
@@ -173,16 +164,9 @@ class PlannedAbsenceController extends Controller
         return to_route('raiding.absences.index')->with('success', 'Planned absence updated successfully.');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Destroy & Restore
-    |--------------------------------------------------------------------------
-    */
-
     /**
      * Remove the specified resource from storage.
      */
-    #[Authorize('viewAny', PlannedAbsence::class)]
     #[Authorize('delete', 'plannedAbsence')]
     public function destroy(PlannedAbsence $plannedAbsence): RedirectResponse
     {

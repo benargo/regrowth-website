@@ -26,6 +26,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -46,18 +47,24 @@ class PlannedAbsenceController extends Controller
     #[Middleware(RemembersCurrentGameVersion::class)]
     public function create(Request $request, BattleNetSession $battleNet): Response
     {
-        $selectable = GameVersion::currentRosters()->values();
-        $gameVersion = ResolveCurrentGameVersion::run($selectable);
-
-        $battleNet->rememberIntendedUrl($request->fullUrlWithoutQuery(['character_portrait']));
+        $selectable = function () use (&$selectableVersions): Collection {
+            return $selectableVersions ??= GameVersion::currentRosters()->values();
+        };
+        $gameVersion = function () use (&$resolvedVersion, $selectable): ?GameVersion {
+            return $resolvedVersion ??= ResolveCurrentGameVersion::run($selectable());
+        };
 
         return Inertia::render('Account/Absences/Form', [
-            'game_versions' => GameVersionResource::collection($selectable),
-            'game_version' => $gameVersion ? new GameVersionResource($gameVersion) : null,
-            'battle_net' => ['connected' => $battleNet->isConnected()],
-            'account_characters' => Inertia::defer(fn (): array => $this->accountCharacters($battleNet, $gameVersion)),
+            'game_versions' => fn () => GameVersionResource::collection($selectable()),
+            'game_version' => fn () => $gameVersion() ? new GameVersionResource($gameVersion()) : null,
+            'battle_net' => function () use ($battleNet, $request): array {
+                $battleNet->rememberIntendedUrl($request->fullUrlWithoutQuery(['character_portrait']));
+
+                return ['connected' => $battleNet->isConnected()];
+            },
+            'account_characters' => Inertia::defer(fn (): array => $this->accountCharacters($battleNet, $gameVersion())),
             'action' => route('account.absences.store'),
-            'reasons' => PlannedAbsenceReasonData::options(),
+            'reasons' => fn () => PlannedAbsenceReasonData::options(),
             'character_portrait' => Inertia::optional(fn (): array => $this->characterPortrait($request)),
         ]);
     }
@@ -88,12 +95,10 @@ class PlannedAbsenceController extends Controller
     #[Authorize('update', 'plannedAbsence')]
     public function edit(PlannedAbsence $plannedAbsence): Response
     {
-        $plannedAbsence->load(['character.playableRace', 'createdBy']);
-
         return Inertia::render('Account/Absences/Form', [
-            'planned_absence' => new PlannedAbsenceResource($plannedAbsence),
+            'planned_absence' => fn () => new PlannedAbsenceResource($plannedAbsence->load(['character.playableRace', 'createdBy'])),
             'action' => route('account.absences.update', $plannedAbsence),
-            'reasons' => PlannedAbsenceReasonData::options(),
+            'reasons' => fn () => PlannedAbsenceReasonData::options(),
         ]);
     }
 
