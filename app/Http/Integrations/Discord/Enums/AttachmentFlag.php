@@ -17,5 +17,5 @@ enum AttachmentFlag: int
     case IsSpoiler = 1 << 3;
 
     /** This attachment is an animated image. */
-    case IsAnimated = 1 << 4;
+    case IsAnimated = 1 << 5;
 }

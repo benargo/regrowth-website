@@ -76,4 +76,24 @@ class MessageTypeTest extends TestCase
             'PollResult' => [46, MessageType::PollResult],
         ];
     }
+
+    #[Test]
+    #[DataProvider('coreWireValues')]
+    public function it_resolves_core_discord_message_types(int $value, MessageType $expected): void
+    {
+        $this->assertSame($expected, MessageType::from($value));
+    }
+
+    /**
+     * @return array<string, array{int, MessageType}>
+     */
+    public static function coreWireValues(): array
+    {
+        return [
+            'Default' => [0, MessageType::Default],
+            'Reply' => [19, MessageType::Reply],
+            'ChatInputCommand' => [20, MessageType::ChatInputCommand],
+            'ContextMenuCommand' => [23, MessageType::ContextMenuCommand],
+        ];
+    }
 }

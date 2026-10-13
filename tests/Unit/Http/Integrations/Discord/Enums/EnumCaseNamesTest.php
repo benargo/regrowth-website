@@ -5,6 +5,7 @@ namespace Tests\Unit\Http\Integrations\Discord\Enums;
 use App\Http\Integrations\Discord\Enums\AttachmentFlag;
 use App\Http\Integrations\Discord\Enums\ChannelType;
 use App\Http\Integrations\Discord\Enums\MessageFlag;
+use App\Http\Integrations\Discord\Enums\MessageReferenceType;
 use App\Http\Integrations\Discord\Enums\PremiumType;
 use App\Http\Integrations\Discord\Enums\UserFlag;
 use BackedEnum;
@@ -40,13 +41,16 @@ class EnumCaseNamesTest extends TestCase
                 'GuildStageVoice' => 13, 'GuildDirectory' => 14, 'GuildForum' => 15, 'GuildMedia' => 16,
             ]],
             'AttachmentFlag' => [AttachmentFlag::class, [
-                'IsClip' => 1, 'IsThumbnail' => 2, 'IsRemix' => 4, 'IsSpoiler' => 8, 'IsAnimated' => 16,
+                'IsClip' => 1, 'IsThumbnail' => 2, 'IsRemix' => 4, 'IsSpoiler' => 8, 'IsAnimated' => 32,
             ]],
             'MessageFlag' => [MessageFlag::class, [
                 'Crossposted' => 1, 'IsCrosspost' => 2, 'SuppressEmbeds' => 4, 'SourceMessageDeleted' => 8,
                 'Urgent' => 16, 'HasThread' => 32, 'Ephemeral' => 64, 'Loading' => 128,
                 'FailedToMentionSomeRolesInThread' => 256, 'SuppressNotifications' => 4096,
                 'IsVoiceMessage' => 8192, 'HasSnapshot' => 16384, 'IsComponentsV2' => 32768,
+            ]],
+            'MessageReferenceType' => [MessageReferenceType::class, [
+                'Default' => 0, 'Forward' => 1,
             ]],
             'PremiumType' => [PremiumType::class, [
                 'None' => 0, 'NitroClassic' => 1, 'Nitro' => 2, 'NitroBasic' => 3,

@@ -11,4 +11,5 @@ enum EmbedType: string
     case Article = 'article';
     case Link = 'link';
     case PollResult = 'poll_result';
+    case Components = 'components';
 }
