@@ -1,9 +1,9 @@
 <?php
 
-namespace Tests\Unit\Services\Discord\Stubs;
+namespace Tests\Unit\Http\Integrations\Discord\Data\Channels;
 
-use App\Services\Discord\Contracts\Resources\Channel as ChannelContract;
-use App\Services\Discord\Stubs\ChannelStub;
+use App\Http\Integrations\Discord\Contracts\Channel as ChannelContract;
+use App\Http\Integrations\Discord\Data\Channels\ChannelStub;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;

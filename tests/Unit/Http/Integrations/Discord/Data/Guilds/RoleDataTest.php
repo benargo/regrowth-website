@@ -1,10 +1,12 @@
 <?php
 
-namespace Tests\Unit\Services\Discord\Resources;
+namespace Tests\Unit\Http\Integrations\Discord\Data\Guilds;
 
-use App\Services\Discord\Resources\Role;
-use App\Services\Discord\Resources\RoleColors;
-use App\Services\Discord\Resources\RoleTags;
+use App\Http\Integrations\Discord\Data\Guilds\RoleColorsData;
+use App\Http\Integrations\Discord\Data\Guilds\RoleData;
+use App\Http\Integrations\Discord\Data\Guilds\RoleTagsData;
+use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
@@ -13,67 +15,67 @@ use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
 #[Group('discord-integration')]
-class RoleTest extends TestCase
+class RoleDataTest extends TestCase
 {
     #[Test]
     public function role_colors_can_be_constructed_directly(): void
     {
-        $colors = new RoleColors(
-            primary_color: 16711680,
-            secondary_color: Optional::create(),
-            tertiary_color: Optional::create(),
+        $colors = new RoleColorsData(
+            primaryColor: 16711680,
+            secondaryColor: Optional::create(),
+            tertiaryColor: Optional::create(),
         );
 
-        $this->assertSame(16711680, $colors->primary_color);
-        $this->assertInstanceOf(Optional::class, $colors->secondary_color);
-        $this->assertInstanceOf(Optional::class, $colors->tertiary_color);
+        $this->assertSame(16711680, $colors->primaryColor);
+        $this->assertInstanceOf(Optional::class, $colors->secondaryColor);
+        $this->assertInstanceOf(Optional::class, $colors->tertiaryColor);
     }
 
     #[Test]
     public function role_colors_constructs_with_only_primary_color(): void
     {
-        $colors = RoleColors::from(['primary_color' => 16711680]);
+        $colors = RoleColorsData::from(['primary_color' => 16711680]);
 
-        $this->assertSame(16711680, $colors->primary_color);
-        $this->assertInstanceOf(Optional::class, $colors->secondary_color);
-        $this->assertInstanceOf(Optional::class, $colors->tertiary_color);
+        $this->assertSame(16711680, $colors->primaryColor);
+        $this->assertInstanceOf(Optional::class, $colors->secondaryColor);
+        $this->assertInstanceOf(Optional::class, $colors->tertiaryColor);
     }
 
     #[Test]
     public function role_colors_constructs_with_gradient_colors(): void
     {
-        $colors = RoleColors::from([
+        $colors = RoleColorsData::from([
             'primary_color' => 16711680,
             'secondary_color' => 65280,
         ]);
 
-        $this->assertSame(16711680, $colors->primary_color);
-        $this->assertSame(65280, $colors->secondary_color);
-        $this->assertInstanceOf(Optional::class, $colors->tertiary_color);
+        $this->assertSame(16711680, $colors->primaryColor);
+        $this->assertSame(65280, $colors->secondaryColor);
+        $this->assertInstanceOf(Optional::class, $colors->tertiaryColor);
     }
 
     #[Test]
     public function role_colors_constructs_with_holographic_colors(): void
     {
-        $colors = RoleColors::from([
+        $colors = RoleColorsData::from([
             'primary_color' => 16711680,
             'secondary_color' => 65280,
             'tertiary_color' => 255,
         ]);
 
-        $this->assertSame(16711680, $colors->primary_color);
-        $this->assertSame(65280, $colors->secondary_color);
-        $this->assertSame(255, $colors->tertiary_color);
+        $this->assertSame(16711680, $colors->primaryColor);
+        $this->assertSame(65280, $colors->secondaryColor);
+        $this->assertSame(255, $colors->tertiaryColor);
     }
 
     #[Test]
     public function role_colors_properties_are_readonly(): void
     {
-        $colors = RoleColors::from(['primary_color' => 0]);
+        $colors = RoleColorsData::from(['primary_color' => 0]);
         $reflection = new ReflectionClass($colors);
 
         foreach ($reflection->getProperties(ReflectionProperty::IS_PUBLIC) as $property) {
-            if ($property->getDeclaringClass()->getName() !== RoleColors::class) {
+            if ($property->getDeclaringClass()->getName() !== RoleColorsData::class) {
                 continue;
             }
 
@@ -89,90 +91,90 @@ class RoleTest extends TestCase
     #[Test]
     public function role_tags_can_be_constructed_directly(): void
     {
-        $tags = new RoleTags(
-            bot_id: Optional::create(),
-            integration_id: Optional::create(),
-            premium_subscriber: Optional::create(),
-            subscription_listing_id: Optional::create(),
-            available_for_purchase: Optional::create(),
-            guild_connections: Optional::create(),
+        $tags = new RoleTagsData(
+            botId: Optional::create(),
+            integrationId: Optional::create(),
+            premiumSubscriber: Optional::create(),
+            subscriptionListingId: Optional::create(),
+            availableForPurchase: Optional::create(),
+            guildConnections: Optional::create(),
         );
 
-        $this->assertInstanceOf(Optional::class, $tags->bot_id);
-        $this->assertInstanceOf(Optional::class, $tags->integration_id);
-        $this->assertInstanceOf(Optional::class, $tags->premium_subscriber);
-        $this->assertInstanceOf(Optional::class, $tags->subscription_listing_id);
-        $this->assertInstanceOf(Optional::class, $tags->available_for_purchase);
-        $this->assertInstanceOf(Optional::class, $tags->guild_connections);
+        $this->assertInstanceOf(Optional::class, $tags->botId);
+        $this->assertInstanceOf(Optional::class, $tags->integrationId);
+        $this->assertInstanceOf(Optional::class, $tags->premiumSubscriber);
+        $this->assertInstanceOf(Optional::class, $tags->subscriptionListingId);
+        $this->assertInstanceOf(Optional::class, $tags->availableForPurchase);
+        $this->assertInstanceOf(Optional::class, $tags->guildConnections);
     }
 
     #[Test]
     public function role_tags_constructs_with_all_defaults(): void
     {
-        $tags = RoleTags::from([]);
+        $tags = RoleTagsData::from([]);
 
-        $this->assertInstanceOf(Optional::class, $tags->bot_id);
-        $this->assertInstanceOf(Optional::class, $tags->integration_id);
-        $this->assertInstanceOf(Optional::class, $tags->premium_subscriber);
-        $this->assertInstanceOf(Optional::class, $tags->subscription_listing_id);
-        $this->assertInstanceOf(Optional::class, $tags->available_for_purchase);
-        $this->assertInstanceOf(Optional::class, $tags->guild_connections);
+        $this->assertInstanceOf(Optional::class, $tags->botId);
+        $this->assertInstanceOf(Optional::class, $tags->integrationId);
+        $this->assertInstanceOf(Optional::class, $tags->premiumSubscriber);
+        $this->assertInstanceOf(Optional::class, $tags->subscriptionListingId);
+        $this->assertInstanceOf(Optional::class, $tags->availableForPurchase);
+        $this->assertInstanceOf(Optional::class, $tags->guildConnections);
     }
 
     #[Test]
     public function role_tags_constructs_for_a_bot_role(): void
     {
-        $tags = RoleTags::from(['bot_id' => '123456789']);
+        $tags = RoleTagsData::from(['bot_id' => '123456789']);
 
-        $this->assertSame('123456789', $tags->bot_id);
-        $this->assertInstanceOf(Optional::class, $tags->integration_id);
+        $this->assertSame('123456789', $tags->botId);
+        $this->assertInstanceOf(Optional::class, $tags->integrationId);
     }
 
     #[Test]
     public function role_tags_constructs_for_an_integration_role(): void
     {
-        $tags = RoleTags::from(['integration_id' => '987654321']);
+        $tags = RoleTagsData::from(['integration_id' => '987654321']);
 
-        $this->assertInstanceOf(Optional::class, $tags->bot_id);
-        $this->assertSame('987654321', $tags->integration_id);
+        $this->assertInstanceOf(Optional::class, $tags->botId);
+        $this->assertSame('987654321', $tags->integrationId);
     }
 
     #[Test]
     public function role_tags_constructs_for_a_booster_role(): void
     {
-        $tags = RoleTags::from(['premium_subscriber' => null]);
+        $tags = RoleTagsData::from(['premium_subscriber' => null]);
 
-        $this->assertNull($tags->premium_subscriber);
+        $this->assertNull($tags->premiumSubscriber);
     }
 
     #[Test]
     public function role_tags_constructs_for_a_purchasable_role(): void
     {
-        $tags = RoleTags::from([
+        $tags = RoleTagsData::from([
             'subscription_listing_id' => '111222333',
             'available_for_purchase' => null,
         ]);
 
-        $this->assertSame('111222333', $tags->subscription_listing_id);
-        $this->assertNull($tags->available_for_purchase);
+        $this->assertSame('111222333', $tags->subscriptionListingId);
+        $this->assertNull($tags->availableForPurchase);
     }
 
     #[Test]
     public function role_tags_constructs_for_a_linked_role(): void
     {
-        $tags = RoleTags::from(['guild_connections' => null]);
+        $tags = RoleTagsData::from(['guild_connections' => null]);
 
-        $this->assertNull($tags->guild_connections);
+        $this->assertNull($tags->guildConnections);
     }
 
     #[Test]
     public function role_tags_properties_are_readonly(): void
     {
-        $tags = RoleTags::from([]);
+        $tags = RoleTagsData::from([]);
         $reflection = new ReflectionClass($tags);
 
         foreach ($reflection->getProperties(ReflectionProperty::IS_PUBLIC) as $property) {
-            if ($property->getDeclaringClass()->getName() !== RoleTags::class) {
+            if ($property->getDeclaringClass()->getName() !== RoleTagsData::class) {
                 continue;
             }
 
@@ -188,9 +190,9 @@ class RoleTest extends TestCase
     #[Test]
     public function role_can_be_constructed_directly(): void
     {
-        $colors = RoleColors::from(['primary_color' => 0]);
+        $colors = RoleColorsData::from(['primary_color' => 0]);
 
-        $role = new Role(
+        $role = new RoleData(
             id: '41771983423143937',
             name: 'WE DEM BOYZZ!!!!!!',
             colors: $colors,
@@ -201,7 +203,7 @@ class RoleTest extends TestCase
             mentionable: false,
             flags: 0,
             icon: Optional::create(),
-            unicode_emoji: Optional::create(),
+            unicodeEmoji: Optional::create(),
             tags: Optional::create(),
         );
 
@@ -215,14 +217,14 @@ class RoleTest extends TestCase
         $this->assertFalse($role->mentionable);
         $this->assertSame(0, $role->flags);
         $this->assertInstanceOf(Optional::class, $role->icon);
-        $this->assertInstanceOf(Optional::class, $role->unicode_emoji);
+        $this->assertInstanceOf(Optional::class, $role->unicodeEmoji);
         $this->assertInstanceOf(Optional::class, $role->tags);
     }
 
     #[Test]
     public function role_constructs_from_minimal_required_fields(): void
     {
-        $role = Role::from([
+        $role = RoleData::from([
             'id' => '41771983423143937',
             'name' => 'WE DEM BOYZZ!!!!!!',
             'colors' => ['primary_color' => 0],
@@ -236,8 +238,8 @@ class RoleTest extends TestCase
 
         $this->assertSame('41771983423143937', $role->id);
         $this->assertSame('WE DEM BOYZZ!!!!!!', $role->name);
-        $this->assertInstanceOf(RoleColors::class, $role->colors);
-        $this->assertSame(0, $role->colors->primary_color);
+        $this->assertInstanceOf(RoleColorsData::class, $role->colors);
+        $this->assertSame(0, $role->colors->primaryColor);
         $this->assertFalse($role->hoist);
         $this->assertSame(0, $role->position);
         $this->assertSame('104324160', $role->permissions);
@@ -245,14 +247,14 @@ class RoleTest extends TestCase
         $this->assertFalse($role->mentionable);
         $this->assertSame(0, $role->flags);
         $this->assertInstanceOf(Optional::class, $role->icon);
-        $this->assertInstanceOf(Optional::class, $role->unicode_emoji);
+        $this->assertInstanceOf(Optional::class, $role->unicodeEmoji);
         $this->assertInstanceOf(Optional::class, $role->tags);
     }
 
     #[Test]
     public function role_constructs_with_all_optional_fields(): void
     {
-        $role = Role::from([
+        $role = RoleData::from([
             'id' => '41771983423143937',
             'name' => 'Admins',
             'colors' => ['primary_color' => 16711680, 'secondary_color' => 65280],
@@ -269,24 +271,24 @@ class RoleTest extends TestCase
 
         $this->assertSame('41771983423143937', $role->id);
         $this->assertSame('Admins', $role->name);
-        $this->assertSame(16711680, $role->colors->primary_color);
-        $this->assertSame(65280, $role->colors->secondary_color);
+        $this->assertSame(16711680, $role->colors->primaryColor);
+        $this->assertSame(65280, $role->colors->secondaryColor);
         $this->assertTrue($role->hoist);
         $this->assertSame('abc123hash', $role->icon);
-        $this->assertNull($role->unicode_emoji);
+        $this->assertNull($role->unicodeEmoji);
         $this->assertSame(3, $role->position);
         $this->assertSame('8', $role->permissions);
         $this->assertFalse($role->managed);
         $this->assertTrue($role->mentionable);
-        $this->assertInstanceOf(RoleTags::class, $role->tags);
-        $this->assertSame('999', $role->tags->bot_id);
+        $this->assertInstanceOf(RoleTagsData::class, $role->tags);
+        $this->assertSame('999', $role->tags->botId);
         $this->assertSame(1, $role->flags);
     }
 
     #[Test]
     public function it_stores_null_for_nullable_optional_fields(): void
     {
-        $role = Role::from([
+        $role = RoleData::from([
             'id' => '41771983423143937',
             'name' => 'WE DEM BOYZZ!!!!!!',
             'colors' => ['primary_color' => 0],
@@ -305,7 +307,7 @@ class RoleTest extends TestCase
     #[Test]
     public function role_constructs_with_unicode_emoji(): void
     {
-        $role = Role::from([
+        $role = RoleData::from([
             'id' => '41771983423143937',
             'name' => 'Emoji Role',
             'colors' => ['primary_color' => 0],
@@ -318,14 +320,14 @@ class RoleTest extends TestCase
             'flags' => 0,
         ]);
 
-        $this->assertSame('🔥', $role->unicode_emoji);
+        $this->assertSame('🔥', $role->unicodeEmoji);
         $this->assertInstanceOf(Optional::class, $role->icon);
     }
 
     #[Test]
     public function role_constructs_with_nested_tags(): void
     {
-        $role = Role::from([
+        $role = RoleData::from([
             'id' => '41771983423143937',
             'name' => 'Booster',
             'colors' => ['primary_color' => 16007990],
@@ -339,14 +341,14 @@ class RoleTest extends TestCase
         ]);
 
         $this->assertTrue($role->managed);
-        $this->assertInstanceOf(RoleTags::class, $role->tags);
-        $this->assertNull($role->tags->premium_subscriber);
+        $this->assertInstanceOf(RoleTagsData::class, $role->tags);
+        $this->assertNull($role->tags->premiumSubscriber);
     }
 
     #[Test]
     public function role_properties_are_readonly(): void
     {
-        $role = Role::from([
+        $role = RoleData::from([
             'id' => '1',
             'name' => 'Test',
             'colors' => ['primary_color' => 0],
@@ -360,7 +362,7 @@ class RoleTest extends TestCase
         $reflection = new ReflectionClass($role);
 
         foreach ($reflection->getProperties(ReflectionProperty::IS_PUBLIC) as $property) {
-            if ($property->getDeclaringClass()->getName() !== Role::class) {
+            if ($property->getDeclaringClass()->getName() !== RoleData::class) {
                 continue;
             }
 
@@ -369,5 +371,52 @@ class RoleTest extends TestCase
                 "Property \${$property->getName()} should be readonly."
             );
         }
+    }
+
+    #[Test]
+    public function it_maps_snake_case_keys_to_camel_case_properties_and_back(): void
+    {
+        $role = RoleData::from([
+            'id' => '111111111111111111',
+            'name' => 'Officer',
+            'colors' => ['primary_color' => 3447003, 'secondary_color' => null],
+            'hoist' => true,
+            'position' => 10,
+            'permissions' => '0',
+            'managed' => false,
+            'mentionable' => true,
+            'flags' => 0,
+            'unicode_emoji' => '🛡️',
+            'tags' => ['bot_id' => '333333333333333333', 'premium_subscriber' => null],
+        ]);
+
+        $this->assertSame('🛡️', $role->unicodeEmoji);
+        $this->assertSame(3447003, $role->colors->primaryColor);
+        $this->assertSame('333333333333333333', $role->tags->botId);
+
+        $array = $role->toArray();
+
+        $this->assertSame('🛡️', $array['unicode_emoji']);
+        $this->assertSame(3447003, $array['colors']['primary_color']);
+        $this->assertSame('333333333333333333', $array['tags']['bot_id']);
+        $this->assertArrayNotHasKey('unicodeEmoji', $array);
+    }
+
+    #[Test]
+    #[Group('validation')]
+    #[DataProvider('nonNullableOptionalFields')]
+    public function it_rejects_null_for_fields_that_can_only_be_absent(string $field): void
+    {
+        $this->expectException(ValidationException::class);
+
+        RoleTagsData::validate([$field => null]);
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function nonNullableOptionalFields(): array
+    {
+        return collect(['bot_id', 'integration_id', 'subscription_listing_id'])->mapWithKeys(fn (string $field) => [$field => [$field]])->all();
     }
 }
