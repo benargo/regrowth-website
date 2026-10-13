@@ -62,19 +62,17 @@ function MatrixSkeleton() {
 
 function AttendanceCell({ value, names, plannedAbsence }) {
     if (value === 0 && plannedAbsence) {
-        const icon = <Icon icon="umbrella-beach" style="solid" className="text-sky-400" />;
         return (
             <Tooltip
                 body={
-                    plannedAbsence.reason ? (
-                        <FormattedMarkdown>{plannedAbsence.reason}</FormattedMarkdown>
-                    ) : (
-                        "Planned Absence"
-                    )
+                    <div className="flex flex-col gap-1">
+                        <span className="font-semibold">{plannedAbsence.reason.label}</span>
+                        {plannedAbsence.notes && <FormattedMarkdown>{plannedAbsence.notes}</FormattedMarkdown>}
+                    </div>
                 }
                 position="bottom"
             >
-                {icon}
+                <Icon icon={plannedAbsence.reason.icon} style="solid" className="text-sky-400" aria-label={plannedAbsence.reason.label} />
             </Tooltip>
         );
     }

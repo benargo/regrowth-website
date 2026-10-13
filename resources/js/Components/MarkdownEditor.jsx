@@ -188,6 +188,7 @@ function generatePlaceholder(formatKeys) {
  * @param {function} [props.onValidationChange] - Callback when validation state changes (receives error or null)
  * @param {string} [props.className] - Additional className for the container
  * @param {boolean} [props.autoFocus] - Focus the textarea on mount
+ * @param {string} [props.id] - The textarea's id, so a label can point to it
  */
 export default function MarkdownEditor({
     value,
@@ -200,6 +201,7 @@ export default function MarkdownEditor({
     onValidationChange,
     className = "",
     autoFocus = false,
+    id,
 }) {
     const textareaRef = useRef(null);
     const [validationError, setValidationError] = useState(null);
@@ -443,13 +445,14 @@ export default function MarkdownEditor({
                 )}
                 <textarea
                     ref={textareaRef}
+                    id={id}
                     value={value}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     placeholder={computedPlaceholder}
                     rows={rows}
                     autoFocus={autoFocus}
-                    className="w-full resize-none border-none bg-ground-800 p-2 text-white placeholder-gray-500 focus:outline-hidden focus:ring-0"
+                    className="block w-full resize-none border-none bg-ground-800 p-2 text-white placeholder-gray-500 focus:outline-hidden focus:ring-0"
                 />
             </div>
             <div>

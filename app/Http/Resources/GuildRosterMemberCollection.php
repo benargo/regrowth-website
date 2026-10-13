@@ -13,8 +13,6 @@ use Illuminate\Support\Str;
 /** @property-read Collection<int, GuildRosterMemberData> $collection */
 class GuildRosterMemberCollection extends ResourceCollection
 {
-    public static $wrap = null;
-
     /** @var Collection<int, Character> */
     private Collection $knownCharacters;
 

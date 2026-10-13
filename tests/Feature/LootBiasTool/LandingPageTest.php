@@ -133,7 +133,7 @@ class LandingPageTest extends TestCase
         $cached = Cache::tags(['lootcouncil'])->get('loot:stats');
         $this->assertEquals(1, $cached['items_count']);
 
-        Item::factory()->count(1)->create();
+        Item::factory()->count(1)->createQuietly();
 
         $response = $this->actingAs($user)->get('/loot');
 

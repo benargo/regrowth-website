@@ -4,7 +4,6 @@ use App\Http\Controllers\Api\AttendanceNamesController;
 use App\Http\Controllers\Api\BlizzardMediaController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\CommentReactionController;
-use App\Http\Controllers\Api\Discord\GuildResourceController;
 use App\Http\Controllers\Api\Event\PublishAssignmentsController;
 use App\Http\Controllers\Api\EventAssignmentController;
 use App\Http\Controllers\Api\EventGroupController;
@@ -19,9 +18,6 @@ Route::get('/attendance/names', AttendanceNamesController::class)
     ->name('api.attendance.names');
 
 Route::get('/blizzard/media', BlizzardMediaController::class)->name('api.blizzard.media');
-
-Route::get('/discord/guild/members/search', [GuildResourceController::class, 'searchMembers'])
-    ->name('api.discord.guild.members.search');
 
 Route::get('/search', SearchController::class)->name('api.search');
 

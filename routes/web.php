@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Account\AccountController;
+use App\Http\Controllers\Account\PlannedAbsenceController as AccountPlannedAbsenceController;
 use App\Http\Controllers\AttendanceDashboardController;
 use App\Http\Controllers\AttendanceGraphsController;
 use App\Http\Controllers\AttendanceMatrixController;
@@ -40,6 +41,13 @@ Route::get('/search', SearchController::class)->name('search');
  */
 Route::group(['prefix' => 'account', 'as' => 'account.', 'middleware' => ['auth']], function () {
     Route::get('/', AccountController::class)->name('index');
+
+    // Self-service planned absences
+    Route::get('/absences/create', [AccountPlannedAbsenceController::class, 'create'])->name('absences.create');
+    Route::post('/absences', [AccountPlannedAbsenceController::class, 'store'])->name('absences.store');
+    Route::get('/absences/{plannedAbsence}/edit', [AccountPlannedAbsenceController::class, 'edit'])->name('absences.edit');
+    Route::patch('/absences/{plannedAbsence}', [AccountPlannedAbsenceController::class, 'update'])->name('absences.update');
+    Route::delete('/absences/{plannedAbsence}', [AccountPlannedAbsenceController::class, 'destroy'])->name('absences.destroy');
 });
 
 /**

@@ -10,6 +10,7 @@ use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
+use App\Http\Integrations\Blizzard\Support\BattleNetSession;
 use App\Http\Integrations\Blizzard\Support\MirrorPaths;
 use App\Support\MediaLibrary\BlizzardIconPathGenerator;
 use App\Support\MediaLibrary\CharacterMediaPathGenerator;
@@ -37,6 +38,11 @@ class BlizzardServiceProvider extends ServiceProvider
                 redirectUri: route('battlenet.callback'),
                 eagerlyMirrorAssets: $app->make(EagerlyMirrorAssets::class),
             );
+        });
+
+        // Scoped so each request gets a helper wrapping its own session.
+        $this->app->scoped(BattleNetSession::class, function (Application $app) {
+            return new BattleNetSession($app->make('session.store'));
         });
 
         $this->app->bind(CharacterMediaPathGenerator::class, function () use ($config) {
@@ -92,6 +98,7 @@ class BlizzardServiceProvider extends ServiceProvider
     public function provides(): array
     {
         return [
+            BattleNetSession::class,
             BlizzardConnector::class,
             CharacterMediaPathGenerator::class,
             MirrorPaths::class,

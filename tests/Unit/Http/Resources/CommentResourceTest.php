@@ -745,6 +745,10 @@ class CommentResourceTest extends TestCase
             ->with(['blizzard', 'api-auth'])
             ->andReturn($blizzardAuthStore);
 
+        Cache::shouldReceive('tags')
+            ->with(['lootcouncil'])
+            ->andReturn($realStore->tags(['lootcouncil']));
+
         Cache::shouldReceive('store')
             ->andReturn($realStore);
     }

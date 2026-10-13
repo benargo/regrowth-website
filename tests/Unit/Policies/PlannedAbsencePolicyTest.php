@@ -102,67 +102,143 @@ class PlannedAbsencePolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_allows_create_for_others_with_manage_permission(): void
+    public function it_allows_backdate_with_backdate_permission(): void
     {
-        $user = $this->userWithPermission('manage-planned-absences');
+        $user = $this->userWithPermission('backdate-planned-absences');
 
-        $this->assertTrue($this->policy->createForOthers($user));
+        $this->assertTrue($this->policy->backdate($user));
     }
 
     #[Test]
-    public function it_denies_create_for_others_without_permission(): void
+    public function it_denies_backdate_without_permission(): void
     {
         $user = $this->userWithoutPermission();
 
-        $this->assertFalse($this->policy->createForOthers($user));
-    }
-
-    #[Test]
-    public function it_allows_create_backdated_with_manage_permission(): void
-    {
-        $user = $this->userWithPermission('manage-planned-absences');
-
-        $this->assertTrue($this->policy->createBackdated($user));
+        $this->assertFalse($this->policy->backdate($user));
     }
 
     // ==================== update ====================
 
     #[Test]
-    public function it_allows_update_with_permission(): void
+    public function it_allows_update_for_the_creator_before_the_absence_starts(): void
     {
-        $user = $this->userWithPermission('update-planned-absences');
-        $absence = PlannedAbsence::factory()->create();
+        $this->freezeTime();
+        $user = $this->userWithoutPermission();
+        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id, 'start_date' => today()->addDay()]);
 
         $this->assertTrue($this->policy->update($user, $absence));
     }
 
     #[Test]
-    public function it_allows_update_when_user_is_creator(): void
+    public function it_allows_update_for_the_creator_on_the_start_date(): void
     {
+        $this->freezeTime();
         $user = $this->userWithoutPermission();
-        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id]);
+        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id, 'start_date' => today()]);
 
         $this->assertTrue($this->policy->update($user, $absence));
+    }
+
+    #[Test]
+    public function it_denies_update_for_the_creator_once_the_absence_has_started(): void
+    {
+        $this->freezeTime();
+        $user = $this->userWithoutPermission();
+        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id, 'start_date' => today()->subDay()]);
+
+        $this->assertFalse($this->policy->update($user, $absence));
+    }
+
+    #[Test]
+    public function it_allows_update_for_a_non_creator_with_update_permission(): void
+    {
+        $this->freezeTime();
+        $user = $this->userWithPermission('update-planned-absences');
+        $absence = PlannedAbsence::factory()->create(['start_date' => today()->addDay()]);
+
+        $this->assertTrue($this->policy->update($user, $absence));
+    }
+
+    #[Test]
+    public function it_allows_update_with_permission_after_the_absence_has_started(): void
+    {
+        $this->freezeTime();
+        $user = $this->userWithPermission('update-planned-absences');
+        $absence = PlannedAbsence::factory()->create(['start_date' => today()->subDay()]);
+
+        $this->assertTrue($this->policy->update($user, $absence));
+    }
+
+    #[Test]
+    public function it_denies_update_for_a_non_creator_without_permission(): void
+    {
+        $this->freezeTime();
+        $user = $this->userWithoutPermission();
+        $absence = PlannedAbsence::factory()->create(['start_date' => today()->addDay()]);
+
+        $this->assertFalse($this->policy->update($user, $absence));
     }
 
     // ==================== delete ====================
 
     #[Test]
-    public function it_allows_delete_with_permission(): void
+    public function it_allows_delete_for_the_creator_before_the_absence_starts(): void
     {
-        $user = $this->userWithPermission('delete-planned-absences');
-        $absence = PlannedAbsence::factory()->create();
+        $this->freezeTime();
+        $user = $this->userWithoutPermission();
+        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id, 'start_date' => today()->addDay()]);
 
         $this->assertTrue($this->policy->delete($user, $absence));
     }
 
     #[Test]
-    public function it_allows_delete_when_user_is_creator(): void
+    public function it_allows_delete_for_the_creator_on_the_start_date(): void
     {
+        $this->freezeTime();
         $user = $this->userWithoutPermission();
-        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id]);
+        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id, 'start_date' => today()]);
 
         $this->assertTrue($this->policy->delete($user, $absence));
+    }
+
+    #[Test]
+    public function it_denies_delete_for_the_creator_once_the_absence_has_started(): void
+    {
+        $this->freezeTime();
+        $user = $this->userWithoutPermission();
+        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id, 'start_date' => today()->subDay()]);
+
+        $this->assertFalse($this->policy->delete($user, $absence));
+    }
+
+    #[Test]
+    public function it_allows_delete_for_a_non_creator_with_delete_permission(): void
+    {
+        $this->freezeTime();
+        $user = $this->userWithPermission('delete-planned-absences');
+        $absence = PlannedAbsence::factory()->create(['start_date' => today()->addDay()]);
+
+        $this->assertTrue($this->policy->delete($user, $absence));
+    }
+
+    #[Test]
+    public function it_allows_delete_with_permission_after_the_absence_has_started(): void
+    {
+        $this->freezeTime();
+        $user = $this->userWithPermission('delete-planned-absences');
+        $absence = PlannedAbsence::factory()->create(['start_date' => today()->subDay()]);
+
+        $this->assertTrue($this->policy->delete($user, $absence));
+    }
+
+    #[Test]
+    public function it_denies_delete_for_a_non_creator_without_permission(): void
+    {
+        $this->freezeTime();
+        $user = $this->userWithoutPermission();
+        $absence = PlannedAbsence::factory()->create(['start_date' => today()->addDay()]);
+
+        $this->assertFalse($this->policy->delete($user, $absence));
     }
 
     // ==================== restore ====================
@@ -183,6 +259,18 @@ class PlannedAbsencePolicyTest extends TestCase
         $absence = PlannedAbsence::factory()->create();
 
         $this->assertFalse($this->policy->restore($user, $absence));
+    }
+
+    #[Test]
+    public function it_allows_class_level_restore_for_admins(): void
+    {
+        $this->assertTrue(User::factory()->admin()->create()->can('restore', PlannedAbsence::class));
+    }
+
+    #[Test]
+    public function it_denies_class_level_restore_for_non_admins(): void
+    {
+        $this->assertFalse(User::factory()->create()->can('restore', PlannedAbsence::class));
     }
 
     // ==================== force delete ====================

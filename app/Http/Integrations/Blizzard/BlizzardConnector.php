@@ -9,7 +9,6 @@ use App\Http\Integrations\Blizzard\Exceptions\InvalidRaceException;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\Exceptions\XmlException;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
-use App\Http\Integrations\Blizzard\Requests\OAuth\GetAuthorizationCodeTokenRequest;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use InvalidArgumentException;
@@ -106,7 +105,8 @@ class BlizzardConnector extends Connector
             ->setClientId($this->clientId)
             ->setClientSecret($this->clientSecret)
             ->setAllowBaseUrlOverride(true)
-            ->setTokenEndpoint($this->region->tokenUrl());
+            ->setTokenEndpoint($this->region->tokenUrl())
+            ->setRedirectUri($this->redirectUri);
     }
 
     /**
@@ -175,20 +175,6 @@ class BlizzardConnector extends Connector
             'scope' => 'openid wow.profile',
             'state' => $state,
         ], encoding_type: PHP_QUERY_RFC3986);
-    }
-
-    /**
-     * Exchange an authorization code for a user access token (24 hours, not refreshable).
-     */
-    public function getUserAccessToken(#[\SensitiveParameter] string $code): AccessTokenAuthenticator
-    {
-        return $this->send(new GetAuthorizationCodeTokenRequest(
-            code: $code,
-            clientId: $this->clientId,
-            clientSecret: $this->clientSecret,
-            tokenUrl: $this->region->tokenUrl(),
-            redirectUri: $this->redirectUri,
-        ))->dto();
     }
 
     /**

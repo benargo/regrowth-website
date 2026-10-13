@@ -1,5 +1,17 @@
 import { useState } from "react";
-import { Button, Checkbox, Description, Field, Fieldset, Input, Label, Legend, Select } from "@headlessui/react";
+import {
+    Button,
+    Checkbox,
+    Description,
+    Field,
+    Fieldset,
+    Input,
+    Label,
+    Legend,
+    Radio,
+    RadioGroup,
+    Select,
+} from "@headlessui/react";
 import Icon from "@/Components/FontAwesome/Icon";
 import Tooltip from "@/Components/Tooltip";
 import slugify from "@/Helpers/Slugify";
@@ -134,6 +146,62 @@ export function CheckboxInput({ name, id = name, checked, onChange, invalid }) {
 }
 
 /**
+ * A HeadlessUI radio group drawn as selectable cards, each with an optional
+ * icon and description. `options` is `[{ value, label, description, icon }]`;
+ * onChange receives the chosen value. Pass layout classes, such as a grid,
+ * through `className`.
+ */
+export function RadioCardGroup({ id, name, value, onChange, options, invalid, className = "" }) {
+    return (
+        <RadioGroup
+            id={id}
+            name={name}
+            value={value}
+            onChange={onChange}
+            aria-invalid={invalid ? true : undefined}
+            className={className}
+        >
+            {options.map((option) => (
+                <Field
+                    key={option.value}
+                    className={
+                        "border-ink-600 bg-ground-800 has-data-checked:border-ink-300 has-data-checked:bg-ink-600/30 " +
+                        "has-data-focus:outline-ink-400 has-data-hover:border-ink-400 grid grid-cols-[1.125rem_1fr] " +
+                        "content-start items-center gap-x-3 gap-y-1 rounded border p-3 has-data-focus:outline-2 has-data-focus:outline-offset-2"
+                    }
+                >
+                    <Radio
+                        value={option.value}
+                        className={
+                            "group border-ink-500 bg-ground-900 flex size-4.5 cursor-pointer data-checked:border-sky-400 " +
+                            "items-center justify-center rounded-full border focus:outline-none"
+                        }
+                    >
+                        <span className="invisible size-2 rounded-full bg-sky-400 group-data-checked:visible" />
+                    </Radio>
+                    <Label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-white">
+                        {option.icon && (
+                            <Icon
+                                icon={option.icon}
+                                style="solid"
+                                className="w-4 text-center text-sky-400"
+                                aria-hidden="true"
+                            />
+                        )}
+                        {option.label}
+                    </Label>
+                    {option.description && (
+                        <Description className="text-secondary-300 col-start-2 text-sm">
+                            {option.description}
+                        </Description>
+                    )}
+                </Field>
+            ))}
+        </RadioGroup>
+    );
+}
+
+/**
  * A text input that only ever holds a slug: "tHe Burning CruSade" shows as
  * "the-burning-crusade" as it's typed. The DOM value and caret are rewritten
  * in the change handler, before React renders, so the raw text never appears
@@ -193,9 +261,16 @@ export function SlugInput({ name, id = name, value, onChange, onBlur, maxLength,
     );
 }
 
-export function FormSection({ legend, children }) {
+/**
+ * A titled group of form rows. Give it an `id` to link to it from an
+ * "On this page" sidebar.
+ */
+export function FormSection({ id, legend, children }) {
     return (
-        <Fieldset className="border-ink-600/40 flex flex-col gap-6 border-t pt-6 first:border-t-0 first:pt-0">
+        <Fieldset
+            id={id}
+            className="border-ink-600/40 flex scroll-mt-48 flex-col gap-6 border-t pt-6 first:border-t-0 first:pt-0 lg:scroll-mt-28"
+        >
             <Legend className="font-serif text-xl text-white">{legend}</Legend>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">{children}</div>
         </Fieldset>

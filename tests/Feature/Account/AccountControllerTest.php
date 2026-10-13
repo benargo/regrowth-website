@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Account;
 
+use App\Enums\PlannedAbsenceReason;
 use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\PlannedAbsence;
@@ -131,7 +132,7 @@ class AccountControllerTest extends TestCase
             'user_id' => $user->id,
             'character_id' => $character->id,
             'start_date' => '2026-04-01',
-            'reason' => 'Holiday.',
+            'reason' => PlannedAbsenceReason::Holiday,
         ]);
 
         $response = $this->actingAs($user)->get(route('account.index'));
@@ -145,10 +146,49 @@ class AccountControllerTest extends TestCase
                 ->where('character.name', 'Aragorn')
                 ->has('start_date')
                 ->has('end_date')
-                ->has('reason')
-                ->has('discord_message_id')
+                ->has('reason', fn (Assert $reason) => $reason->hasAll(['key', 'label', 'description', 'icon']))
+                ->has('notes')
                 ->has('created_at')
+                ->has('updated_at')
+                ->has('deleted_at')
+                ->has('meta')
+                ->missing('permissions')
             )
+            ->has('planned_absences.permissions', fn (Assert $permissions) => $permissions->hasAll(['edit', 'delete']))
         );
+    }
+
+    #[Test]
+    public function index_marks_only_the_absences_the_user_can_delete(): void
+    {
+        $this->freezeTime();
+        $user = User::factory()->create();
+        $officer = User::factory()->create();
+        $upcoming = PlannedAbsence::factory()->withCharacter()->create(['user_id' => $user->id, 'created_by' => $user->id, 'start_date' => today()->addWeek()]);
+        PlannedAbsence::factory()->withCharacter()->create(['user_id' => $user->id, 'created_by' => $user->id, 'start_date' => today()->subDay()]);
+        PlannedAbsence::factory()->withCharacter()->create(['user_id' => $user->id, 'created_by' => $officer->id, 'start_date' => today()->addWeek()]);
+
+        $this->actingAs($user)
+            ->get(route('account.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('planned_absences.permissions.delete', fn ($flags) => collect($flags)->count() === 3 && collect($flags)->filter()->keys()->all() === [$upcoming->id])
+            );
+    }
+
+    #[Test]
+    public function index_marks_only_the_absences_the_user_can_edit(): void
+    {
+        $this->freezeTime();
+        $user = User::factory()->create();
+        $officer = User::factory()->create();
+        $upcoming = PlannedAbsence::factory()->withCharacter()->create(['user_id' => $user->id, 'created_by' => $user->id, 'start_date' => today()->addWeek()]);
+        PlannedAbsence::factory()->withCharacter()->create(['user_id' => $user->id, 'created_by' => $user->id, 'start_date' => today()->subDay()]);
+        PlannedAbsence::factory()->withCharacter()->create(['user_id' => $user->id, 'created_by' => $officer->id, 'start_date' => today()->addWeek()]);
+
+        $this->actingAs($user)
+            ->get(route('account.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('planned_absences.permissions.edit', fn ($flags) => collect($flags)->count() === 3 && collect($flags)->filter()->keys()->all() === [$upcoming->id])
+            );
     }
 }

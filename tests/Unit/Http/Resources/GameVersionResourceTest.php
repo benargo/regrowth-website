@@ -220,6 +220,19 @@ class GameVersionResourceTest extends TestCase
         $this->assertArrayNotHasKey('characters_count', $array);
     }
 
+    #[Test]
+    public function the_management_scope_includes_links_only_when_they_are_attached(): void
+    {
+        $gameVersion = GameVersion::factory()->make();
+        $links = ['edit' => 'https://example.test/edit'];
+
+        $withoutLinks = GameVersionResource::forManagement($gameVersion)->resolve(new Request);
+        $withLinks = GameVersionResource::forManagement($gameVersion)->withLinks($links)->resolve(new Request);
+
+        $this->assertArrayNotHasKey('links', $withoutLinks);
+        $this->assertSame($links, $withLinks['links']);
+    }
+
     // ==================== metadata ====================
 
     #[Test]

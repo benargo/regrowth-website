@@ -154,8 +154,18 @@ function IndexSkeleton() {
     );
 }
 
-export default function Index(props) {
-    return <RosterContent key={props.gameVersion.slug} {...props} />;
+export default function Index({ gameVersion, gameVersions, characters, classes, ranks, races }) {
+    return (
+        <RosterContent
+            key={gameVersion.data.slug}
+            gameVersion={gameVersion.data}
+            gameVersions={gameVersions.data}
+            characters={characters?.data}
+            classes={classes.data}
+            ranks={ranks}
+            races={races.data}
+        />
+    );
 }
 
 function RosterContent({ gameVersion, gameVersions, characters, classes, ranks, races }) {

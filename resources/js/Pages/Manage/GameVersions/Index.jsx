@@ -45,7 +45,7 @@ function GameVersionCard({ gameVersion, onDelete }) {
     );
 }
 
-export default function Index({ gameVersions, routes }) {
+export default function Index({ gameVersions: { data: gameVersions }, routes }) {
     const deletion = useRecordDeletion();
 
     return (

@@ -22,7 +22,13 @@ class GetAuthorizationCodeTokenRequestTest extends BlizzardTestCase
             ]),
         ]);
 
-        $authenticator = $this->makeConnector()->getUserAccessToken('the-code');
+        $authenticator = $this->makeConnector()->send(new GetAuthorizationCodeTokenRequest(
+            code: 'the-code',
+            clientId: 'test_id',
+            clientSecret: 'test_secret',
+            tokenUrl: 'https://eu.battle.net/oauth/token',
+            redirectUri: 'https://regrowth.test/auth/battlenet/callback',
+        ))->dto();
 
         $this->assertSame('user-token', $authenticator->getAccessToken());
         $this->assertNull($authenticator->getExpiresAt());

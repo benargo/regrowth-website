@@ -22,7 +22,7 @@ function GuildCard({ guild }) {
     );
 }
 
-export default function Index({ guilds }) {
+export default function Index({ guilds: { data: guilds } }) {
     const hasCreatePermission = usePermission("create-warcraft-logs-guilds");
 
     return (

@@ -13,10 +13,11 @@ export default function TabNav({ tabs, currentTab }) {
                         <TabElement
                             key={tab.name}
                             {...elementProps}
+                            style={tab.style}
                             className={
                                 'inline-flex items-center gap-2 py-2 px-1 border-b-2 text-sm font-medium transition-colors ' +
                                 (currentTab === tab.name
-                                    ? 'border-primary text-primary'
+                                    ? tab.activeClassName || 'border-primary text-primary'
                                     : 'border-transparent text-secondary-200 hover:text-primary hover:border-primary')
                             }
                         >

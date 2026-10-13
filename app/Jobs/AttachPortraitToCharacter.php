@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Actions\Characters\RefreshCharacterPortrait;
 use App\Contracts\HasCharacterMedia;
 use App\Enums\Gender;
 use App\Events\Broadcasts\CharacterPortraitAttached;
@@ -67,7 +68,7 @@ class AttachPortraitToCharacter implements HasCharacterMedia, ShouldQueue
 
         $this->syncGender($character, $blizzardConnector);
 
-        if ($character->hasMedia(self::MEDIA_COLLECTION)) {
+        if (! RefreshCharacterPortrait::isStale($character)) {
             return;
         }
 

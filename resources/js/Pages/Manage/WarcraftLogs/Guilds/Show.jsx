@@ -179,7 +179,7 @@ function DeleteGuild({ guild }) {
     );
 }
 
-export default function Show({ guild, namespaces }) {
+export default function Show({ guild: { data: guild }, namespaces }) {
     const hasUpdateTagsPermission = usePermission("update-warcraft-logs-tags");
     const title = `Warcraft Logs guild ${guild.id}`;
 

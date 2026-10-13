@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Jobs;
 
+use App\Actions\Characters\RefreshCharacterPortrait;
 use App\Contracts\HasCharacterMedia;
 use App\Enums\Gender;
 use App\Events\Broadcasts\CharacterPortraitAttached;
-use App\Events\CharacterUpdated;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Region;
@@ -13,12 +13,14 @@ use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchCharacterMediaRequest;
 use App\Jobs\AttachPortraitToCharacter;
+use App\Jobs\BuildAddonExportFile;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\PlayableRace;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Uri;
@@ -167,6 +169,27 @@ class AttachPortraitToCharacterTest extends TestCase
 
         $this->assertSame(1, $character->fresh()->getMedia(HasCharacterMedia::MEDIA_COLLECTION)->count());
         Saloon::assertSentCount(3);
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_replaces_a_stale_portrait_with_the_new_one(): void
+    {
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => Gender::MALE]);
+        $stalePortrait = $character->addMediaFromString('OLD')
+            ->usingFileName('old-avatar.jpg')
+            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION);
+        $this->travel(RefreshCharacterPortrait::STALE_AFTER_SECONDS)->seconds();
+
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        (new AttachPortraitToCharacter($character->id, self::PORTRAIT_URL))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
+
+        $portraits = $character->fresh()->getMedia(HasCharacterMedia::MEDIA_COLLECTION);
+        $this->assertCount(1, $portraits);
+        $this->assertSame('51042439-avatar.jpg', $portraits->first()->file_name);
+        $this->assertModelMissing($stalePortrait);
     }
 
     #[Group('error-handling')]
@@ -421,9 +444,9 @@ class AttachPortraitToCharacterTest extends TestCase
 
     #[Group('happy-path')]
     #[Test]
-    public function it_does_not_fire_character_updated_event_when_saving_gender(): void
+    public function it_does_not_schedule_addon_export_build_when_saving_gender(): void
     {
-        Event::fake([CharacterUpdated::class]);
+        Bus::fake([BuildAddonExportFile::class]);
 
         $character = Character::factory()->for($this->gameVersion)->create(['gender' => null]);
 
@@ -436,7 +459,7 @@ class AttachPortraitToCharacterTest extends TestCase
         (new AttachPortraitToCharacter($character->id, $assetUrl))
             ->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
-        Event::assertNotDispatched(CharacterUpdated::class);
+        Bus::assertNotDispatched(BuildAddonExportFile::class);
     }
 
     // ==================== fallback URL ====================

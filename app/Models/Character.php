@@ -4,10 +4,10 @@ namespace App\Models;
 
 use App\Contracts\HasCharacterMedia;
 use App\Enums\Gender;
-use App\Events\CharacterDeleted;
-use App\Events\CharacterUpdated;
+use App\Observers\CharacterObserver;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,6 +20,7 @@ use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
+#[ObservedBy([CharacterObserver::class])]
 #[Fillable(['id', 'game_version_id', 'name', 'level', 'rank_id', 'playable_class_id', 'playable_race_id', 'gender', 'is_main', 'is_loot_councillor'])]
 #[Hidden(['created_at', 'updated_at'])]
 class Character extends Model implements HasCharacterMedia, HasMedia
@@ -33,16 +34,6 @@ class Character extends Model implements HasCharacterMedia, HasMedia
      */
     protected $attributes = [
         'is_loot_councillor' => false,
-    ];
-
-    /**
-     * The event map for the model.
-     *
-     * @var array<string, string>
-     */
-    protected $dispatchesEvents = [
-        'updated' => CharacterUpdated::class,
-        'deleted' => CharacterDeleted::class,
     ];
 
     /**

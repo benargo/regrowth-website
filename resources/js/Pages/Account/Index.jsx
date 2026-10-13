@@ -52,7 +52,7 @@ export default function Index() {
                     </DisplayHeading>
                     <Can permission="create-planned-absences">
                         <Link
-                            href={route("raiding.absences.create")}
+                            href={route("account.absences.create")}
                             className="bg-ink-600 hover:bg-ink-700 focus:bg-ink-700 focus:ring-ink-500 active:bg-ink-800 mt-3 inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:outline-hidden md:mt-0"
                         >
                             <Icon icon="plus" style="solid" className="mr-1.5 h-4" />
@@ -70,7 +70,13 @@ export default function Index() {
                 ) : (
                     <div className="flex flex-col gap-2">
                         {planned_absences.data.map((absence) => (
-                            <PlannedAbsenceRow key={absence.id} absence={absence} showCreatedBy />
+                            <PlannedAbsenceRow
+                                key={absence.id}
+                                absence={absence}
+                                showCreatedBy
+                                canEdit={Boolean(planned_absences.permissions.edit[absence.id])}
+                                canDelete={Boolean(planned_absences.permissions.delete[absence.id])}
+                            />
                         ))}
                     </div>
                 )}

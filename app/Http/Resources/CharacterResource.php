@@ -2,10 +2,14 @@
 
 namespace App\Http\Resources;
 
+use App\Contracts\HasCharacterMedia;
 use App\Models\Character;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * `portrait_url` is only included when `media` is loaded.
+ */
 class CharacterResource extends JsonResource
 {
     /**
@@ -29,7 +33,7 @@ class CharacterResource extends JsonResource
             'level' => $this->level,
             'is_main' => $this->is_main,
             'is_loot_councillor' => $this->is_loot_councillor,
-            'portrait_url' => $this->getFirstMediaUrl('character_portraits') ?: null,
+            'portrait_url' => $this->whenLoaded('media', fn () => $this->getFirstMediaUrl(HasCharacterMedia::MEDIA_COLLECTION) ?: null),
             'planned_absences' => $this->whenLoaded('plannedAbsences', fn () => PlannedAbsenceResource::collection($this->plannedAbsences)),
             'playable_class' => $this->whenLoaded('playableClass', fn () => (new PlayableClassResource($this->playableClass))->resolve($request)),
             'playable_race' => $this->whenLoaded('playableRace', fn () => (new PlayableRaceResource($this->playableRace))->resolve($request)),

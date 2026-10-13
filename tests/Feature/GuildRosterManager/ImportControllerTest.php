@@ -126,7 +126,7 @@ class ImportControllerTest extends DashboardTestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Manage/GRM/Create')
-            ->where('gameVersion.slug', 'newer')
+            ->where('gameVersion.data.slug', 'newer')
         );
     }
 
@@ -140,7 +140,7 @@ class ImportControllerTest extends DashboardTestCase
 
         $response->assertRedirect(route('management.grm.create'));
         $response->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, 'older');
-        $this->get(route('management.grm.create'))->assertInertia(fn (Assert $page) => $page->where('gameVersion.slug', 'older'));
+        $this->get(route('management.grm.create'))->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', 'older'));
     }
 
     #[Test]
@@ -153,7 +153,7 @@ class ImportControllerTest extends DashboardTestCase
             ->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'older'])
             ->get(route('management.grm.create'));
 
-        $response->assertInertia(fn (Assert $page) => $page->where('gameVersion.slug', 'older'));
+        $response->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', 'older'));
     }
 
     #[Test]
@@ -168,9 +168,9 @@ class ImportControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->get(route('management.grm.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('gameVersions', 2)
-            ->where('gameVersions.0.title', 'Newer')
-            ->where('gameVersions.1.title', 'Older')
+            ->has('gameVersions.data', 2)
+            ->where('gameVersions.data.0.title', 'Newer')
+            ->where('gameVersions.data.1.title', 'Older')
         );
     }
 
@@ -181,7 +181,7 @@ class ImportControllerTest extends DashboardTestCase
 
         $response = $this->actingAs($this->officer)->followingRedirects()->get(route('management.grm.create', ['game_version' => 'nope']));
 
-        $response->assertInertia(fn (Assert $page) => $page->where('gameVersion.slug', 'tbc'));
+        $response->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', 'tbc'));
     }
 
     #[Test]
@@ -192,7 +192,7 @@ class ImportControllerTest extends DashboardTestCase
 
         $response = $this->actingAs($this->officer)->followingRedirects()->get(route('management.grm.create', ['game_version' => 'older']));
 
-        $response->assertInertia(fn (Assert $page) => $page->where('gameVersion.slug', 'newer'));
+        $response->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', 'newer'));
     }
 
     #[Test]
@@ -205,7 +205,7 @@ class ImportControllerTest extends DashboardTestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->where('gameVersion', null)
-            ->has('gameVersions', 0)
+            ->has('gameVersions.data', 0)
             ->where('lastUploadTimestamp', null)
         );
     }

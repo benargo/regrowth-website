@@ -2,6 +2,7 @@ import { Deferred, Link } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
+import Tooltip from "@/Components/Tooltip";
 import PageContainer from "@/Components/PageContainer";
 
 function formatAbsenceDate(isoDate) {
@@ -136,6 +137,11 @@ function UpcomingAbsencesBox({ icon, absences }) {
                                     />
                                 )}
                                 {absence.character?.name ?? "Unknown"}
+                                {absence.reason && (
+                                    <Tooltip body={absence.reason.label} position="bottom">
+                                        <Icon icon={absence.reason.icon} style="solid" className="text-sky-400" aria-label={absence.reason.label} />
+                                    </Tooltip>
+                                )}
                             </span>
                             <span className="text-xs text-secondary-400">
                                 {absence.end_date && absence.end_date !== absence.start_date

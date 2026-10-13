@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Contracts\HasCharacterMedia;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,6 +19,7 @@ class CharacterSummaryResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'level' => $this->level,
+            'portrait_url' => $this->whenLoaded('media', fn () => $this->getFirstMediaUrl(HasCharacterMedia::MEDIA_COLLECTION) ?: null),
             'rank' => $this->whenLoaded('rank', fn () => new GuildRankResource($this->rank)->toArray($request)),
             'playable_class' => $this->whenLoaded('playableClass', fn () => $this->playableClass ? (new PlayableClassResource($this->playableClass))->toArray($request) : null),
         ];
