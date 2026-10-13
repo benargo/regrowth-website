@@ -69,17 +69,17 @@ final class UserData extends Data
         #[Nullable, StringType]
         public readonly string|Optional|null $email,
 
-        /** @var int Bitfield of the user's account flags */
+        /** @var int|Optional Bitfield of the user's account flags */
         #[IntegerType, Min(0)]
-        public readonly int $flags,
+        public readonly int|Optional $flags,
 
         /** @var int|Optional The type of Nitro subscription on a user's account */
         #[IntegerType, Min(0)]
         public readonly int|Optional $premiumType,
 
-        /** @var int Bitfield of the user's publicly visible account flags */
+        /** @var int|Optional Bitfield of the user's publicly visible account flags */
         #[IntegerType, Min(0)]
-        public readonly int $publicFlags,
+        public readonly int|Optional $publicFlags,
 
         /** @var array<string, mixed>|Optional|null Data for the user's avatar decoration */
         #[Nullable, ArrayType]

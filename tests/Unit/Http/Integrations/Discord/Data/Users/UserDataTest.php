@@ -240,6 +240,19 @@ class UserDataTest extends TestCase
     }
 
     #[Test]
+    public function it_treats_missing_flag_fields_as_optional(): void
+    {
+        $user = UserData::from([
+            'id' => '1234',
+            'username' => 'Thrall',
+            'discriminator' => '0001',
+        ]);
+
+        $this->assertInstanceOf(Optional::class, $user->flags);
+        $this->assertInstanceOf(Optional::class, $user->publicFlags);
+    }
+
+    #[Test]
     public function it_marks_a_bot_user(): void
     {
         $user = UserData::from([
@@ -319,6 +332,6 @@ class UserDataTest extends TestCase
      */
     public static function nonNullableOptionalFields(): array
     {
-        return collect(['bot', 'system', 'mfa_enabled', 'locale', 'verified', 'premium_type'])->mapWithKeys(fn (string $field) => [$field => [$field]])->all();
+        return collect(['bot', 'system', 'mfa_enabled', 'locale', 'verified', 'flags', 'premium_type', 'public_flags'])->mapWithKeys(fn (string $field) => [$field => [$field]])->all();
     }
 }

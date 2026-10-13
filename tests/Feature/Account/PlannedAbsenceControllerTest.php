@@ -144,8 +144,8 @@ class PlannedAbsenceControllerTest extends TestCase
     public function create_refreshes_the_portraits_of_the_selectable_account_characters(): void
     {
         $gameVersion = GameVersion::factory()->fetchableRoster()->create();
-        $mine = Character::factory()->main()->forGameVersion($gameVersion)->create(['id' => 52963250]);
-        Character::factory()->forGameVersion($gameVersion)->create(['id' => 79938434, 'is_main' => false]);
+        $mine = Character::factory()->main()->forGameVersion($gameVersion)->create(['id' => 52963250, 'name' => 'Auburn']);
+        Character::factory()->forGameVersion($gameVersion)->create(['id' => 79938434, 'name' => 'Noonian', 'is_main' => false]);
         $this->fakeAccount([52963250, 79938434]);
         Queue::fake();
 

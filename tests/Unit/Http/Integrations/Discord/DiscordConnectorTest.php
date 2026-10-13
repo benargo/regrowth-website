@@ -17,11 +17,10 @@ use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Request;
 use Saloon\Http\Response;
 use Saloon\Laravel\Facades\Saloon;
-use Tests\TestCase;
 use Throwable;
 
 #[Group('discord-integration')]
-class DiscordConnectorTest extends TestCase
+class DiscordConnectorTest extends DiscordTestCase
 {
     #[Test]
     public function it_targets_the_discord_v10_api(): void
@@ -262,13 +261,6 @@ class DiscordConnectorTest extends TestCase
         $this->assertInstanceOf(ApiException::class, $exception);
         $this->assertNull($exception->getDiscordBody());
         $this->assertNull($exception->getDiscordCode());
-    }
-
-    // ==================== helpers ====================
-
-    private function makeConnector(): DiscordConnector
-    {
-        return new DiscordConnector('test-token', 'DiscordBot (https://regrowth.test, 1.0)');
     }
 
     private function sendProbe(MockResponse $mockResponse): Response
