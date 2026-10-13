@@ -2,12 +2,14 @@
 
 namespace App\Jobs;
 
+use App\Http\Integrations\Discord\DiscordConnector;
+use App\Http\Integrations\Discord\Exceptions\UserNotInGuildException;
+use App\Http\Integrations\Discord\Requests\Guilds\GetGuildMemberRequest;
+use App\Jobs\Middleware\ReleaseWhenDiscordRateLimited;
 use App\Models\DiscordRole;
 use App\Models\User;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Exceptions\RateLimitedException;
-use App\Services\Discord\Exceptions\UserNotInGuildException;
 use Illuminate\Bus\Batchable;
+use Illuminate\Container\Attributes\Config;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\Backoff;
@@ -32,10 +34,11 @@ class SyncDiscordUser implements ShouldQueue
         return [
             new SkipIfBatchCancelled,
             (new WithoutOverlapping)->dontRelease(),
+            new ReleaseWhenDiscordRateLimited,
         ];
     }
 
-    public function handle(Discord $discord): void
+    public function handle(DiscordConnector $discord, #[Config('services.discord.server_id')] string $serverId): void
     {
         $user = User::find($this->id);
 
@@ -46,7 +49,7 @@ class SyncDiscordUser implements ShouldQueue
         }
 
         try {
-            $member = $discord->getGuildMember($user->id);
+            $member = $discord->send(new GetGuildMemberRequest($serverId, $user->id))->dto();
 
             $user->update([
                 'nickname' => $member->nick,
@@ -58,14 +61,6 @@ class SyncDiscordUser implements ShouldQueue
             $user->discordRoles()->sync($recognizedRoleIds);
         } catch (UserNotInGuildException) {
             $user->delete();
-        } catch (RateLimitedException $e) {
-            Log::warning('SyncDiscordUser: Discord rate limited.', [
-                'user_id' => $this->id,
-                'endpoint' => $e->endpoint,
-                'retry_after' => $e->retryAfter,
-                'scope' => $e->scope,
-            ]);
-            $this->release($e->retryAfter);
         }
     }
 

@@ -2,24 +2,27 @@
 
 namespace Tests\Feature\Jobs;
 
+use App\Http\Integrations\Discord\Exceptions\ApiException;
+use App\Http\Integrations\Discord\Requests\Guilds\GetGuildMemberRequest;
 use App\Jobs\SyncDiscordUser;
 use App\Models\DiscordRole;
 use App\Models\User;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Exceptions\RateLimitedException;
-use App\Services\Discord\Exceptions\UserNotInGuildException;
-use App\Services\Discord\Resources\GuildMember;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Facades\Bus;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Http\Request;
+use Saloon\Laravel\Facades\Saloon;
+use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
 #[Group('auth')]
 #[Group('discord-integration')]
 class SyncDiscordUserTest extends TestCase
 {
+    use MocksDiscordService;
     use RefreshDatabase;
 
     #[Test]
@@ -33,20 +36,12 @@ class SyncDiscordUserTest extends TestCase
 
         $user = User::factory()->create(['id' => '100000000000000000']);
 
-        $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getGuildMember')
-                ->with('100000000000000000')
-                ->once()
-                ->andReturn(GuildMember::from([
-                    'nick' => 'TestNick',
-                    'avatar' => 'avatar_hash',
-                    'banner' => 'banner_hash',
-                    'roles' => ['111111111111111111'],
-                    'deaf' => false,
-                    'mute' => false,
-                    'flags' => 0,
-                ]));
-        });
+        $this->fakeGuildMember([
+            'nick' => 'TestNick',
+            'avatar' => 'avatar_hash',
+            'banner' => 'banner_hash',
+            'roles' => ['111111111111111111'],
+        ]);
 
         SyncDiscordUser::dispatchSync('100000000000000000');
 
@@ -55,6 +50,9 @@ class SyncDiscordUserTest extends TestCase
         $this->assertSame('avatar_hash', $user->guild_avatar);
         $this->assertSame('banner_hash', $user->banner);
         $this->assertTrue($user->discordRoles->contains($role));
+
+        Saloon::assertSent(fn (Request $request): bool => $request instanceof GetGuildMemberRequest
+            && str_ends_with($request->resolveEndpoint(), '/members/100000000000000000'));
     }
 
     #[Test]
@@ -67,20 +65,11 @@ class SyncDiscordUserTest extends TestCase
             'banner' => 'old_banner',
         ]);
 
-        $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getGuildMember')
-                ->with('100000000000000000')
-                ->once()
-                ->andReturn(GuildMember::from([
-                    'nick' => 'NewNick',
-                    'avatar' => 'new_avatar',
-                    'banner' => 'new_banner',
-                    'roles' => [],
-                    'deaf' => false,
-                    'mute' => false,
-                    'flags' => 0,
-                ]));
-        });
+        $this->fakeGuildMember([
+            'nick' => 'NewNick',
+            'avatar' => 'new_avatar',
+            'banner' => 'new_banner',
+        ]);
 
         SyncDiscordUser::dispatchSync('100000000000000000');
 
@@ -101,20 +90,7 @@ class SyncDiscordUserTest extends TestCase
 
         $user = User::factory()->create(['id' => '100000000000000000']);
 
-        $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getGuildMember')
-                ->with('100000000000000000')
-                ->once()
-                ->andReturn(GuildMember::from([
-                    'nick' => 'ValidUser',
-                    'avatar' => null,
-                    'banner' => null,
-                    'roles' => ['111111111111111111'],
-                    'deaf' => false,
-                    'mute' => false,
-                    'flags' => 0,
-                ]));
-        });
+        $this->fakeGuildMember(['nick' => 'ValidUser', 'roles' => ['111111111111111111']]);
 
         SyncDiscordUser::dispatchSync('100000000000000000');
 
@@ -128,19 +104,30 @@ class SyncDiscordUserTest extends TestCase
     {
         User::factory()->create(['id' => '100000000000000000']);
 
-        $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getGuildMember')
-                ->with('100000000000000000')
-                ->once()
-                ->andThrow(new UserNotInGuildException('User not in guild'));
-        });
+        Saloon::fake([GetGuildMemberRequest::class => $this->makeDiscordErrorResponse(404, 10007, 'Unknown Member')]);
 
         SyncDiscordUser::dispatchSync('100000000000000000');
 
         $this->assertDatabaseMissing('users', ['id' => '100000000000000000']);
     }
 
-    // ==================== batch cancellation ====================
+    #[Test]
+    #[Group('error-handling')]
+    public function it_keeps_the_user_when_the_guild_is_unknown(): void
+    {
+        User::factory()->create(['id' => '100000000000000000']);
+
+        Saloon::fake([GetGuildMemberRequest::class => $this->makeDiscordErrorResponse(404, 10004, 'Unknown Guild')]);
+
+        try {
+            SyncDiscordUser::dispatchSync('100000000000000000');
+            $this->fail('Expected an ApiException for an unknown guild.');
+        } catch (ApiException $exception) {
+            $this->assertSame(10004, $exception->getDiscordCode());
+        }
+
+        $this->assertDatabaseHas('users', ['id' => '100000000000000000']);
+    }
 
     #[Test]
     public function it_skips_execution_when_batch_is_cancelled(): void
@@ -148,13 +135,11 @@ class SyncDiscordUserTest extends TestCase
         $batch = Bus::batch([])->dispatch();
         $batch->cancel();
 
-        $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldNotReceive('getGuildMember');
-        });
-
         $job = new SyncDiscordUser('100000000000000000');
         $job->batchId = $batch->id;
         dispatch_sync($job);
+
+        Saloon::assertNothingSent();
     }
 
     #[Test]
@@ -168,20 +153,7 @@ class SyncDiscordUserTest extends TestCase
 
         $user = User::factory()->create(['id' => '100000000000000000']);
 
-        $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getGuildMember')
-                ->with('100000000000000000')
-                ->once()
-                ->andReturn(GuildMember::from([
-                    'nick' => null,
-                    'avatar' => null,
-                    'banner' => null,
-                    'roles' => ['111111111111111111', '999999999999999999'],
-                    'deaf' => false,
-                    'mute' => false,
-                    'flags' => 0,
-                ]));
-        });
+        $this->fakeGuildMember(['roles' => ['111111111111111111', '999999999999999999']]);
 
         SyncDiscordUser::dispatchSync('100000000000000000');
 
@@ -191,21 +163,41 @@ class SyncDiscordUserTest extends TestCase
     }
 
     #[Test]
+    #[Group('error-handling')]
     public function it_releases_itself_when_discord_is_rate_limited(): void
     {
         User::factory()->create(['id' => '100000000000000000']);
 
-        $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getGuildMember')
-                ->with('100000000000000000')
-                ->once()
-                ->andThrow(new RateLimitedException('guilds/123/members/100000000000000000', 10.0, 'user'));
-        });
+        Saloon::fake([GetGuildMemberRequest::class => $this->makeDiscordRateLimitResponse(10.0)]);
 
         $job = new SyncDiscordUser('100000000000000000');
         $job->withFakeQueueInteractions();
-        $job->handle(app(Discord::class));
+        $this->runJobThroughMiddleware($job);
 
-        $job->assertReleased(10.0);
+        $job->assertReleased(10);
+        Saloon::mockClient()->assertSentCount(1, GetGuildMemberRequest::class);
+    }
+
+    // ==================== helpers ====================
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     */
+    private function fakeGuildMember(array $overrides): void
+    {
+        Saloon::fake([
+            GetGuildMemberRequest::class => MockResponse::make($this->makeDiscordGuildMemberResponse($overrides)),
+        ]);
+    }
+
+    /**
+     * Run the job through its middleware() and then call handle() through the container.
+     */
+    private function runJobThroughMiddleware(SyncDiscordUser $job): void
+    {
+        (new Pipeline($this->app))
+            ->send($job)
+            ->through($job->middleware())
+            ->then(fn (SyncDiscordUser $job) => $this->app->call([$job, 'handle']));
     }
 }

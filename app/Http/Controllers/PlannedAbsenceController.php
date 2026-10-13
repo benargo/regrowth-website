@@ -8,6 +8,11 @@ use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Contracts\HasCharacterMedia;
 use App\Data\PlannedAbsenceReasonData;
 use App\Http\Controllers\Concerns\SharesCharacterPortrait;
+use App\Http\Integrations\Discord\Data\Users\UserData;
+use App\Http\Integrations\Discord\DiscordConnector;
+use App\Http\Integrations\Discord\Exceptions\ApiException;
+use App\Http\Integrations\Discord\Exceptions\UserNotInGuildException;
+use App\Http\Integrations\Discord\Requests\Guilds\GetGuildMemberRequest;
 use App\Http\Middleware\RemembersCurrentGameVersion;
 use App\Http\Requests\StorePlannedAbsenceRequest;
 use App\Http\Requests\UpdatePlannedAbsenceRequest;
@@ -19,8 +24,7 @@ use App\Models\DiscordRole;
 use App\Models\GameVersion;
 use App\Models\PlannedAbsence;
 use App\Models\User;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Exceptions\UserNotInGuildException;
+use Illuminate\Container\Attributes\Config;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,10 +41,6 @@ use Inertia\Response;
 class PlannedAbsenceController extends Controller
 {
     use SharesCharacterPortrait;
-
-    public function __construct(
-        protected Discord $discord
-    ) {}
 
     /**
      * Display a listing of the resource.
@@ -150,10 +150,13 @@ class PlannedAbsenceController extends Controller
      * Store a newly created resource in storage.
      */
     #[Authorize('create', PlannedAbsence::class)]
-    public function store(StorePlannedAbsenceRequest $request): RedirectResponse
-    {
+    public function store(
+        StorePlannedAbsenceRequest $request,
+        DiscordConnector $discord,
+        #[Config('services.discord.server_id')] string $serverId,
+    ): RedirectResponse {
         if ($request->has('user')) {
-            $user = $this->resolveUser($request->input('user'));
+            $user = $this->resolveUser($request->input('user'), $discord, $serverId);
         }
 
         PlannedAbsence::create([
@@ -198,8 +201,12 @@ class PlannedAbsenceController extends Controller
      * Update the specified resource in storage.
      */
     #[Authorize('update', 'plannedAbsence')]
-    public function update(UpdatePlannedAbsenceRequest $request, PlannedAbsence $plannedAbsence): RedirectResponse
-    {
+    public function update(
+        UpdatePlannedAbsenceRequest $request,
+        PlannedAbsence $plannedAbsence,
+        DiscordConnector $discord,
+        #[Config('services.discord.server_id')] string $serverId,
+    ): RedirectResponse {
         $updates = $request->safe()->only(['start_date', 'end_date', 'reason', 'notes']);
 
         if ($request->has('character')) {
@@ -207,7 +214,7 @@ class PlannedAbsenceController extends Controller
         }
 
         if ($request->has('user')) {
-            $updates['user_id'] = $this->resolveUser($request->input('user'))->id;
+            $updates['user_id'] = $this->resolveUser($request->input('user'), $discord, $serverId)->id;
         }
 
         $plannedAbsence->update($updates);
@@ -249,9 +256,9 @@ class PlannedAbsenceController extends Controller
      * Find a user by ID, or create one from their Discord guild member data.
      *
      * @throws UserNotInGuildException
-     * @throws \Exception
+     * @throws ApiException
      */
-    private function resolveUser(string $userIdentifier): User
+    private function resolveUser(string $userIdentifier, DiscordConnector $discord, string $serverId): User
     {
         $user = User::find($userIdentifier);
 
@@ -260,15 +267,16 @@ class PlannedAbsenceController extends Controller
         }
 
         // If the user doesn't exist in our database, attempt to fetch them from the Discord API
-        $member = $this->discord->getGuildMember($userIdentifier);
+        $member = $discord->send(new GetGuildMemberRequest($serverId, $userIdentifier))->dto();
+        $discordUser = $member->user instanceof UserData ? $member->user : null;
 
         // If we successfully fetch the guild member data, create a new user record in our database
         $user = User::create([
             'id' => $userIdentifier,
-            'username' => $member->user?->username,
-            'discriminator' => $member->user?->discriminator ?? '0',
+            'username' => $discordUser?->username,
+            'discriminator' => $discordUser?->discriminator ?? '0',
             'nickname' => $member->nick,
-            'avatar' => $member->user?->avatar,
+            'avatar' => $discordUser?->avatar,
             'guild_avatar' => $member->avatar,
             'banner' => $member->banner,
         ]);

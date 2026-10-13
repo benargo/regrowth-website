@@ -3,20 +3,18 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Integrations\Discord\DiscordConnector;
+use App\Http\Integrations\Discord\Exceptions\UserNotInGuildException;
+use App\Http\Integrations\Discord\Requests\Guilds\GetGuildMemberRequest;
 use App\Models\DiscordRole;
 use App\Models\User;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Exceptions\UserNotInGuildException;
+use Illuminate\Container\Attributes\Config;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
 
 class DiscordController extends Controller
 {
-    public function __construct(
-        protected Discord $discord
-    ) {}
-
     /**
      * Redirect to Discord OAuth.
      */
@@ -30,8 +28,10 @@ class DiscordController extends Controller
     /**
      * Handle Discord OAuth callback.
      */
-    public function callback(): RedirectResponse
-    {
+    public function callback(
+        DiscordConnector $discord,
+        #[Config('services.discord.server_id')] string $serverId,
+    ): RedirectResponse {
         try {
             $discordUser = Socialite::driver('discord')->user();
         } catch (\Exception $e) {
@@ -43,7 +43,7 @@ class DiscordController extends Controller
 
         // Fetch guild member data
         try {
-            $member = $this->discord->getGuildMember($discordId);
+            $member = $discord->send(new GetGuildMemberRequest($serverId, $discordId))->dto();
         } catch (UserNotInGuildException $e) {
             return redirect('/')
                 ->with('error', 'You must be a member of the Regrowth Discord server to log in.');

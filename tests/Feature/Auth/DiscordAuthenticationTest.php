@@ -2,22 +2,25 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Http\Integrations\Discord\Requests\Guilds\GetGuildMemberRequest;
 use App\Models\DiscordRole;
 use App\Models\User;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Exceptions\UserNotInGuildException;
-use App\Services\Discord\Resources\GuildMember;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as SocialiteUser;
 use Mockery;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\DashboardTestCase;
+use Tests\Support\Discord\MocksDiscordService;
 
 #[Group('auth')]
 #[Group('discord-integration')]
 class DiscordAuthenticationTest extends DashboardTestCase
 {
+    use MocksDiscordService;
+
     #[Test]
     public function login_redirects_to_discord(): void
     {
@@ -34,7 +37,7 @@ class DiscordAuthenticationTest extends DashboardTestCase
             DiscordRole::factory()->member()->create();
 
         $this->mockDiscordOAuth();
-        $this->mockDiscordGuildService();
+        $this->fakeDiscordGuildMember();
 
         $response = $this->get('/auth/discord/callback?code=test_code');
 
@@ -67,7 +70,7 @@ class DiscordAuthenticationTest extends DashboardTestCase
         $user->discordRoles()->attach($guest->id);
 
         $this->mockDiscordOAuth();
-        $this->mockDiscordGuildService([
+        $this->fakeDiscordGuildMember([
             'nick' => 'NewNickname',
             'roles' => [$officer->id], // New Officer role from Discord API
         ]);
@@ -92,10 +95,7 @@ class DiscordAuthenticationTest extends DashboardTestCase
     {
         $this->mockDiscordOAuth();
 
-        $this->mock(Discord::class, function ($mock) {
-            $mock->shouldReceive('getGuildMember')
-                ->andThrow(new UserNotInGuildException('User is not a member of the guild'));
-        });
+        Saloon::fake([GetGuildMemberRequest::class => $this->makeDiscordErrorResponse(404, 10007, 'Unknown Member')]);
 
         $response = $this->get('/auth/discord/callback?code=test_code');
 
@@ -109,10 +109,7 @@ class DiscordAuthenticationTest extends DashboardTestCase
     {
         $this->mockDiscordOAuth();
 
-        $this->mock(Discord::class, function ($mock) {
-            $mock->shouldReceive('getGuildMember')
-                ->andThrow(new \RuntimeException('API Error'));
-        });
+        Saloon::fake([GetGuildMemberRequest::class => $this->makeDiscordErrorResponse(403, 50001, 'Missing Access')]);
 
         $response = $this->get('/auth/discord/callback?code=test_code');
 
@@ -204,21 +201,16 @@ class DiscordAuthenticationTest extends DashboardTestCase
             ->andReturn($socialiteUser);
     }
 
-    private function mockDiscordGuildService(array $overrides = []): void
+    /**
+     * @param  array<string, mixed>  $overrides
+     */
+    private function fakeDiscordGuildMember(array $overrides = []): void
     {
-        $defaultData = [
+        Saloon::fake([GetGuildMemberRequest::class => MockResponse::make($this->makeDiscordGuildMemberResponse([
             'nick' => 'TestNickname',
             'avatar' => 'guild_avatar_hash',
-            'banner' => null,
             'roles' => ['829022020301094922'],
-            'deaf' => false,
-            'mute' => false,
-            'flags' => 0,
-        ];
-
-        $this->mock(Discord::class, function ($mock) use ($defaultData, $overrides) {
-            $mock->shouldReceive('getGuildMember')
-                ->andReturn(GuildMember::from(array_merge($defaultData, $overrides)));
-        });
+            ...$overrides,
+        ]))]);
     }
 }

@@ -7,7 +7,11 @@ use App\Services\Discord\Enums\MessageType;
 use App\Services\Discord\Resources\Channel;
 use App\Services\Discord\Resources\Message;
 use Mockery\MockInterface;
+use Saloon\Http\Faking\MockResponse;
 
+/**
+ * Discord service mocks and Discord API response bodies for use with Saloon::fake().
+ */
 trait MocksDiscordService
 {
     /**
@@ -54,5 +58,60 @@ trait MocksDiscordService
             'pinned' => false,
             'type' => MessageType::Default->value,
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    protected function makeDiscordGuildMemberResponse(array $overrides = []): array
+    {
+        return array_merge([
+            'user' => [
+                'id' => '123456789012345678',
+                'username' => 'testuser',
+                'discriminator' => '0',
+                'avatar' => null,
+                'flags' => 0,
+                'public_flags' => 0,
+            ],
+            'nick' => null,
+            'avatar' => null,
+            'banner' => null,
+            'roles' => [],
+            'deaf' => false,
+            'mute' => false,
+            'flags' => 0,
+        ], $overrides);
+    }
+
+    /**
+     * A guild member response for the given user id, username and nickname.
+     *
+     * @return array<string, mixed>
+     */
+    protected function makeDiscordGuildMemberWithUser(string $userId, string $username, ?string $nickname = null): array
+    {
+        return $this->makeDiscordGuildMemberResponse([
+            'user' => ['id' => $userId, 'username' => $username, 'discriminator' => '0', 'avatar' => null, 'flags' => 0, 'public_flags' => 0],
+            'nick' => $nickname,
+        ]);
+    }
+
+    /**
+     * A Discord JSON error response, e.g. (404, 10007, 'Unknown Member').
+     */
+    protected function makeDiscordErrorResponse(int $status, int $code, string $message): MockResponse
+    {
+        return MockResponse::make(['message' => $message, 'code' => $code], $status);
+    }
+
+    protected function makeDiscordRateLimitResponse(float $retryAfter): MockResponse
+    {
+        return MockResponse::make(
+            ['message' => 'You are being rate limited.', 'retry_after' => $retryAfter, 'global' => false],
+            429,
+            ['X-RateLimit-Scope' => 'user'],
+        );
     }
 }

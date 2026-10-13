@@ -2,8 +2,11 @@
 
 namespace App\Actions\Discord;
 
-use App\Services\Discord\Discord;
-use App\Services\Discord\Resources\GuildMember;
+use App\Http\Integrations\Discord\Data\Guilds\GuildMemberData;
+use App\Http\Integrations\Discord\Data\Users\UserData;
+use App\Http\Integrations\Discord\DiscordConnector;
+use App\Http\Integrations\Discord\Requests\Guilds\SearchGuildMembersRequest;
+use Illuminate\Container\Attributes\Config;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 use Lorisleiva\Actions\Concerns\AsAction;
@@ -18,7 +21,8 @@ class SearchGuildMembers
     use AsAction;
 
     public function __construct(
-        protected Discord $discord
+        protected DiscordConnector $discord,
+        #[Config('services.discord.server_id')] protected string $serverId,
     ) {}
 
     /**
@@ -41,12 +45,18 @@ class SearchGuildMembers
         return Cache::tags(['discord'])->remember(
             "discord:members:search:{$limit}:".mb_strtolower($query),
             now()->addMinutes(5),
-            fn (): array => $this->discord->searchGuildMembers($query, $limit)
-                ->map(fn (GuildMember $member): array => [
-                    'id' => $member->user?->id,
-                    'nickname' => $member->nick,
-                    'username' => $member->user?->username,
-                ])
+            fn (): array => $this->discord
+                ->send(new SearchGuildMembersRequest($this->serverId, $query, $limit))
+                ->dto()
+                ->map(function (GuildMemberData $member): array {
+                    $user = $member->user instanceof UserData ? $member->user : null;
+
+                    return [
+                        'id' => $user?->id,
+                        'nickname' => $member->nick,
+                        'username' => $user?->username,
+                    ];
+                })
                 ->all()
         );
     }

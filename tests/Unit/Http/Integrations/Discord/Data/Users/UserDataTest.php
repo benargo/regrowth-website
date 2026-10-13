@@ -22,8 +22,8 @@ class UserDataTest extends TestCase
             id: '80351110224678912',
             username: 'Nelly',
             discriminator: '1337',
-            globalName: Optional::create(),
-            avatar: Optional::create(),
+            globalName: null,
+            avatar: null,
             bot: Optional::create(),
             system: Optional::create(),
             mfaEnabled: Optional::create(),
@@ -43,8 +43,8 @@ class UserDataTest extends TestCase
         $this->assertSame('80351110224678912', $user->id);
         $this->assertSame('Nelly', $user->username);
         $this->assertSame('1337', $user->discriminator);
-        $this->assertInstanceOf(Optional::class, $user->globalName);
-        $this->assertInstanceOf(Optional::class, $user->avatar);
+        $this->assertNull($user->globalName);
+        $this->assertNull($user->avatar);
         $this->assertInstanceOf(Optional::class, $user->bot);
         $this->assertInstanceOf(Optional::class, $user->system);
         $this->assertInstanceOf(Optional::class, $user->mfaEnabled);
@@ -75,8 +75,8 @@ class UserDataTest extends TestCase
         $this->assertSame('80351110224678912', $user->id);
         $this->assertSame('Nelly', $user->username);
         $this->assertSame('1337', $user->discriminator);
-        $this->assertInstanceOf(Optional::class, $user->globalName);
-        $this->assertInstanceOf(Optional::class, $user->avatar);
+        $this->assertNull($user->globalName);
+        $this->assertNull($user->avatar);
         $this->assertInstanceOf(Optional::class, $user->bot);
         $this->assertInstanceOf(Optional::class, $user->system);
         $this->assertInstanceOf(Optional::class, $user->mfaEnabled);

@@ -29,13 +29,13 @@ final class UserData extends Data
         #[StringType]
         public readonly string $discriminator,
 
-        /** @var string|Optional|null The user's display name, if set */
+        /** @var string|null The user's display name, if set */
         #[Nullable, StringType]
-        public readonly string|Optional|null $globalName,
+        public readonly ?string $globalName,
 
-        /** @var string|Optional|null The user's avatar hash */
+        /** @var string|null The user's avatar hash */
         #[Nullable, StringType]
-        public readonly string|Optional|null $avatar,
+        public readonly ?string $avatar,
 
         /** @var bool|Optional Whether the user belongs to an OAuth2 application */
         #[BooleanType]
