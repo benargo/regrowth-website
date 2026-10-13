@@ -12,7 +12,8 @@
         "spatie/laravel-medialibrary",
         "spatie/laravel-query-builder",
         "saloonphp/laravel-plugin",
-        "lorisleiva/laravel-actions"
+        "lorisleiva/laravel-actions",
+        "benargo/saloon-graphql"
     ],
     "sail": true,
     "skills": [
@@ -22,9 +23,8 @@
         "configuring-horizon",
         "socialite-development",
         "inertia-react-development",
-        "echo-react-development",
-        "echo-development",
         "tailwindcss-development",
+        "saloon-graphql-development",
         "laravel-actions",
         "saloon-development",
         "medialibrary-development",
