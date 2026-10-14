@@ -21,7 +21,7 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 #[ObservedBy([CharacterObserver::class])]
-#[Fillable(['id', 'game_version_id', 'name', 'level', 'rank_id', 'playable_class_id', 'playable_race_id', 'gender', 'is_main', 'is_loot_councillor'])]
+#[Fillable(['id', 'game_version_id', 'name', 'level', 'rank_id', 'playable_class_id', 'playable_race_id', 'gender', 'user_id', 'is_main', 'is_loot_councillor'])]
 #[Hidden(['created_at', 'updated_at'])]
 class Character extends Model implements HasCharacterMedia, HasMedia
 {
@@ -83,19 +83,29 @@ class Character extends Model implements HasCharacterMedia, HasMedia
     // ========== Relationships ============
 
     /**
-     * Get the guild rank associated with the character.
-     */
-    public function rank(): BelongsTo
-    {
-        return $this->belongsTo(GuildRank::class, 'rank_id');
-    }
-
-    /**
      * Get the game version this character belongs to.
      */
     public function gameVersion(): BelongsTo
     {
         return $this->belongsTo(GameVersion::class);
+    }
+
+    /**
+     * Get the characters linked to this character, via `character_links` rows whose
+     * `linked_character_id` is this character. Links are one-directional; a two-way
+     * link requires a row in each direction.
+     */
+    public function linkedCharacters(): BelongsToMany
+    {
+        return $this->belongsToMany(self::class, 'character_links', 'linked_character_id', 'character_id');
+    }
+
+    /**
+     * Get the planned absences for the character.
+     */
+    public function plannedAbsences(): HasMany
+    {
+        return $this->hasMany(PlannedAbsence::class);
     }
 
     /**
@@ -115,21 +125,11 @@ class Character extends Model implements HasCharacterMedia, HasMedia
     }
 
     /**
-     * Get the characters linked to this character.
-     *
-     * This relationship is defined in both directions to allow for easy retrieval of linked characters regardless of the direction of the link.
+     * Get the guild rank associated with the character.
      */
-    public function linkedCharacters(): BelongsToMany
+    public function rank(): BelongsTo
     {
-        return $this->belongsToMany(self::class, 'character_links', 'linked_character_id', 'character_id');
-    }
-
-    /**
-     * Get the planned absences for the character.
-     */
-    public function plannedAbsences(): HasMany
-    {
-        return $this->hasMany(PlannedAbsence::class);
+        return $this->belongsTo(GuildRank::class, 'rank_id');
     }
 
     /**
@@ -140,6 +140,16 @@ class Character extends Model implements HasCharacterMedia, HasMedia
         return $this->belongsToMany(PlayableSpecialization::class, 'pivot_character_specializations', 'character_id', 'playable_specialization_id')
             ->withPivot('is_raid_spec')
             ->withTimestamps();
+    }
+
+    /**
+     * Get the Discord user who owns the character.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     /**

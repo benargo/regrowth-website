@@ -9,6 +9,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * `portrait_url` is only included when `media` is loaded.
+ * `user` is only included when `user` is loaded; load `user.discordRoles` with it.
  */
 class CharacterResource extends JsonResource
 {
@@ -47,6 +48,7 @@ class CharacterResource extends JsonResource
             // Recursive self-reference: never eager-load linkedCharacters.linkedCharacters
             // or this will infinite-loop. Use a separate summary resource for nested cases.
             'linked_characters' => $this->whenLoaded('linkedCharacters', fn () => CharacterResource::collection($this->linkedCharacters)->resolve($request)),
+            'user' => $this->whenLoaded('user', fn () => $this->user?->toResource()),
         ];
     }
 }

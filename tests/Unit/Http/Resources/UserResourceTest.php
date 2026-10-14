@@ -2,8 +2,12 @@
 
 namespace Tests\Unit\Http\Resources;
 
+use App\Http\Resources\CharacterResource;
+use App\Http\Resources\EventResource;
 use App\Http\Resources\UserResource;
+use App\Models\Character;
 use App\Models\DiscordRole;
+use App\Models\Event;
 use App\Models\PlannedAbsence;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -11,11 +15,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
 #[Group('auth')]
 class UserResourceTest extends TestCase
 {
+    use MocksDiscordService;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -24,6 +30,21 @@ class UserResourceTest extends TestCase
 
         Config::set('services.discord.server_id', '123456789');
     }
+
+    #[Test]
+    public function it_returns_exactly_the_expected_keys_when_no_relations_are_loaded(): void
+    {
+        $user = User::factory()->create();
+
+        $array = (new UserResource($user))->resolve(new Request);
+
+        $this->assertSame(
+            ['id', 'username', 'discriminator', 'nickname', 'display_name', 'avatar', 'banner', 'roles', 'highest_role', 'admin'],
+            array_keys($array),
+        );
+    }
+
+    // ==================== id ====================
 
     #[Test]
     public function it_returns_id(): void
@@ -154,7 +175,7 @@ class UserResourceTest extends TestCase
     public function it_returns_default_avatar_url_when_no_avatar(): void
     {
         $user = User::factory()->create([
-            'id' => '123456789012345678',
+            'id' => '175928847299117063',
             'guild_avatar' => null,
             'avatar' => null,
         ]);
@@ -162,12 +183,7 @@ class UserResourceTest extends TestCase
         $resource = new UserResource($user);
         $array = $resource->toArray(new Request);
 
-        // The default avatar index is based on (id >> 22) % 6
-        $expectedIndex = ((int) '123456789012345678' >> 22) % 6;
-        $this->assertSame(
-            "https://cdn.discordapp.com/embed/avatars/{$expectedIndex}.png",
-            $array['avatar']
-        );
+        $this->assertSame('https://cdn.discordapp.com/embed/avatars/2.png', $array['avatar']);
     }
 
     // ==================== banner url ====================
@@ -216,9 +232,7 @@ class UserResourceTest extends TestCase
         $resource = new UserResource($user->fresh()->load('discordRoles'));
         $array = $resource->toArray(new Request);
 
-        $this->assertContains($officer->id, $array['roles']);
-        $this->assertContains($member->id, $array['roles']);
-        $this->assertCount(2, $array['roles']);
+        $this->assertEqualsCanonicalizing([$officer->id, $member->id], $array['roles']);
     }
 
     #[Test]
@@ -311,26 +325,99 @@ class UserResourceTest extends TestCase
         $this->assertSame('Officer', $array['highest_role']);
     }
 
-    // ==================== full resource shape ====================
+    // ==================== admin ====================
 
     #[Test]
-    public function it_returns_all_expected_keys(): void
+    public function it_returns_admin_true_for_admin_users(): void
+    {
+        $user = User::factory()->admin()->create();
+
+        $array = (new UserResource($user))->toArray(new Request);
+
+        $this->assertTrue($array['admin']);
+    }
+
+    #[Test]
+    public function it_returns_admin_false_for_non_admin_users(): void
+    {
+        $user = User::factory()->create();
+
+        $array = (new UserResource($user))->toArray(new Request);
+
+        $this->assertFalse($array['admin']);
+    }
+
+    // ==================== characters ====================
+
+    #[Test]
+    public function it_omits_characters_when_not_loaded(): void
+    {
+        $user = User::factory()->withCharacters()->create();
+
+        $array = (new UserResource($user))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('characters', $array);
+    }
+
+    #[Test]
+    public function it_returns_characters_when_loaded(): void
+    {
+        $characters = Character::factory()->count(2)->create();
+        $user = User::factory()->withCharacters($characters->all())->create();
+
+        $request = new Request;
+        $array = (new UserResource($user->fresh()->load('characters')))->resolve($request);
+
+        $this->assertEqualsCanonicalizing(
+            $characters->pluck('id')->all(),
+            $array['characters']->map(fn (CharacterResource $character) => $character->resolve($request)['id'])->all(),
+        );
+    }
+
+    // ==================== events ====================
+
+    #[Test]
+    public function it_omits_events_when_not_loaded(): void
     {
         $user = User::factory()->create();
 
         $resource = new UserResource($user);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
-        $this->assertArrayHasKey('id', $array);
-        $this->assertArrayHasKey('username', $array);
-        $this->assertArrayHasKey('discriminator', $array);
-        $this->assertArrayHasKey('nickname', $array);
-        $this->assertArrayHasKey('display_name', $array);
-        $this->assertArrayHasKey('avatar', $array);
-        $this->assertArrayHasKey('banner', $array);
-        $this->assertArrayHasKey('roles', $array);
-        $this->assertArrayHasKey('highest_role', $array);
-        $this->assertArrayHasKey('admin', $array);
+        $this->assertArrayNotHasKey('events', $array);
+    }
+
+    #[Test]
+    public function it_returns_events_when_loaded(): void
+    {
+        $this->fakeDiscordChannel();
+        $events = Event::factory()->count(2)->create();
+        $user = User::factory()->withEvents($events->all())->create();
+
+        $request = new Request;
+        $resource = new UserResource($user->fresh()->load('events'));
+        $array = $resource->resolve($request);
+
+        $this->assertArrayHasKey('events', $array);
+        $this->assertEqualsCanonicalizing(
+            $events->pluck('id')->all(),
+            $array['events']->map(fn (EventResource $event) => $event->resolve($request)['id'])->all(),
+        );
+    }
+
+    #[Test]
+    public function it_returns_events_in_the_member_shape(): void
+    {
+        $this->fakeDiscordChannel();
+        $user = User::factory()->withEvents()->create();
+
+        $request = new Request;
+        $event = (new UserResource($user->fresh()->load('events')))->resolve($request)['events']->first()->resolve($request);
+
+        $this->assertArrayHasKey('channel', $event);
+        $this->assertArrayNotHasKey('composition', $event);
+        $this->assertArrayNotHasKey('raids', $event);
+        $this->assertArrayNotHasKey('users', $event);
     }
 
     // ==================== planned absences ====================

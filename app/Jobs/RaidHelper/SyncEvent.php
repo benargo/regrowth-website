@@ -2,25 +2,35 @@
 
 namespace App\Jobs\RaidHelper;
 
+use App\Actions\Discord\FetchGuildMember;
+use App\Actions\Discord\UpsertUserFromGuildMember;
 use App\Actions\EventBossResolver;
 use App\Actions\Events\RefreshEventGameVersion;
 use App\Enums\SignupStatus;
 use App\Events\Broadcasts\CompositionChanged;
+use App\Http\Integrations\Discord\Exceptions\DiscordRequestException;
+use App\Http\Integrations\Discord\Exceptions\RateLimitedException;
+use App\Http\Integrations\Discord\Exceptions\UserNotInGuildException;
 use App\Http\Integrations\RaidHelper\Data\Events\EventData;
+use App\Http\Integrations\RaidHelper\Data\Events\SignUpData;
 use App\Http\Integrations\RaidHelper\Data\Zones\ZoneData;
 use App\Http\Resources\EventCompositionResource;
+use App\Jobs\AttachCharactersToUser;
 use App\Jobs\Concerns\ResolvesCharacterNames;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\Raid;
+use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Saloon\Exceptions\Request\FatalRequestException;
 
 class SyncEvent implements ShouldQueue
 {
@@ -39,8 +49,14 @@ class SyncEvent implements ShouldQueue
 
     private Event $event;
 
+    /** @var array<int|string, array<int, int>> */
+    private array $characterIdsByUser = [];
+
     /** @var array<int, int> */
     private array $signedUpCharacterIds;
+
+    /** @var Collection<int, string> */
+    private Collection $syncedUserIds;
 
     public function __construct(public readonly EventData $data)
     {
@@ -82,6 +98,8 @@ class SyncEvent implements ShouldQueue
         $this->upsertEvent();
         $this->syncRaidsAndBosses();
         $this->syncBench();
+        $this->syncUsers();
+        $this->attachSignedUpCharactersToUsers();
 
         $this->broadcastComposition();
         Cache::tags(['events'])->flush();
@@ -202,22 +220,31 @@ class SyncEvent implements ShouldQueue
 
     /**
      * Resolve the characters of every sign-up who isn't absent, among the
-     * event's game version. Bench, Late and Tentative sign-ups are included so
-     * they are on the event before an officer slots them. Anyone not placed in
-     * the composition is benched.
+     * event's game version, and record the characters each sign-up user
+     * resolved to. Bench, Late and Tentative sign-ups are included so they are
+     * on the event before an officer slots them. Anyone not placed in the
+     * composition is benched.
      */
     private function resolveSignedUpCharacters(GameVersion $gameVersion): void
     {
-        $signUpNames = collect($this->data->signUps ?? [])
-            ->where('className', '!==', 'Absence')
-            ->pluck('name');
+        $signUps = $this->nonAbsentSignUps();
 
-        $this->signedUpCharacterIds = $this->resolveCharacterIds(
+        $characterIdsByName = $this->resolveCharacterIds(
             $gameVersion,
-            $signUpNames,
+            $signUps->pluck('name'),
             Character::whereBelongsTo($gameVersion)->get(['id', 'name']),
             'raidhelper.signups',
-        )
+        );
+
+        foreach ($signUps as $signUp) {
+            $characterId = $characterIdsByName->get($signUp->name);
+
+            if ($characterId !== null) {
+                data_set($this->characterIdsByUser, "{$signUp->userId}.{$characterId}", $characterId);
+            }
+        }
+
+        $this->signedUpCharacterIds = $characterIdsByName
             ->unique()
             ->values()
             ->all();
@@ -261,6 +288,99 @@ class SyncEvent implements ShouldQueue
         if (! empty($benchedNoLongerSignedUp)) {
             $this->event->characters()->detach($benchedNoLongerSignedUp);
         }
+    }
+
+    /**
+     * Sync the event's users to the Discord users of every sign-up who isn't
+     * absent, attaching new sign-ups and detaching users no longer signed up.
+     * Users missing from the database are imported from Discord first; any
+     * that can't be imported are left off the event.
+     */
+    private function syncUsers(): void
+    {
+        $signedUpUserIds = $this->nonAbsentSignUps()
+            ->pluck('userId')
+            ->unique()
+            ->values();
+
+        $this->importMissingUsers($signedUpUserIds);
+
+        $this->syncedUserIds = User::whereIn('id', $signedUpUserIds)->pluck('id');
+
+        $this->event->users()->sync($this->syncedUserIds->all());
+    }
+
+    /**
+     * Fetch each of the given users missing from the database from the Discord
+     * server and store them, skipping any whose lookup fails.
+     *
+     * @param  Collection<int, string>  $userIds
+     */
+    private function importMissingUsers(Collection $userIds): void
+    {
+        $missingUserIds = $userIds->diff(User::whereIn('id', $userIds)->pluck('id'));
+        $fetchMemberAction = FetchGuildMember::make();
+        $upsertUserAction = UpsertUserFromGuildMember::make();
+
+        foreach ($missingUserIds as $userId) {
+            try {
+                $upsertUserAction->handle($fetchMemberAction->handle($userId));
+            } catch (UserNotInGuildException) {
+                Log::info('SyncEvent: skipped a sign-up whose user is not in the Discord server.', [
+                    'raid_helper_event_id' => $this->data->id,
+                    'user_id' => $userId,
+                ]);
+            } catch (DiscordRequestException|RateLimitedException|FatalRequestException $exception) {
+                report($exception);
+            }
+        }
+    }
+
+    /**
+     * Queue linking each signed-up user to the characters their sign-ups
+     * resolved to, among characters with no user yet. A character resolved
+     * from more than one user's sign-ups is logged and left unlinked.
+     */
+    private function attachSignedUpCharactersToUsers(): void
+    {
+        $claimedCharacterIds = collect($this->characterIdsByUser)->flatten();
+        $contestedCharacterIds = $claimedCharacterIds->duplicates()->unique()->values();
+
+        foreach ($contestedCharacterIds as $characterId) {
+            Log::info('SyncEvent: skipped linking a character signed up by more than one user.', [
+                'raid_helper_event_id' => $this->data->id,
+                'character_id' => $characterId,
+                'user_ids' => collect($this->characterIdsByUser)
+                    ->filter(fn (array $characterIds): bool => isset($characterIds[$characterId]))
+                    ->keys()
+                    ->map(fn (int|string $userId): string => (string) $userId)
+                    ->all(),
+            ]);
+        }
+
+        $unlinkedCharacters = Character::whereKey($claimedCharacterIds->diff($contestedCharacterIds)->all())
+            ->whereNull('user_id')
+            ->get(['id']);
+
+        foreach (Arr::only($this->characterIdsByUser, $this->syncedUserIds->all()) as $userId => $characterIds) {
+            $characters = $unlinkedCharacters->only($characterIds);
+
+            if ($characters->isNotEmpty()) {
+                AttachCharactersToUser::dispatch((string) $userId, $characters, onlyUnlinked: true);
+            }
+        }
+    }
+
+    /**
+     * Get the sign-ups whose class isn't Absence.
+     *
+     * @return Collection<int, SignUpData>
+     */
+    private function nonAbsentSignUps(): Collection
+    {
+        return collect($this->data->signUps ?? [])
+            ->where('className', '!==', 'Absence')
+            ->values();
     }
 
     /**

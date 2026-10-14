@@ -71,7 +71,11 @@ class RaidAssignmentsPublished extends DiscordMessage implements ShouldBroadcast
         /** @var Event $event */
         $event = $this->hydrateOrFail($this->relatedModel(Event::class));
 
+        /** @var string */
+        $content = $event->slottedUsers()->pluck('users.id')->map(fn (string $id): string => "<@{$id}>")->implode(' ');
+
         return MessagePayloadData::from([
+            'content' => $content,
             'embeds' => [EmbedData::from([
                 'title' => 'Assignments posted for tonight!',
                 'type' => EmbedType::Rich,

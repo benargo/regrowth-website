@@ -11,6 +11,7 @@ use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\Phase;
 use App\Models\Raid;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
@@ -100,6 +101,20 @@ class EventFactory extends Factory
             foreach ($raids as $index => $raid) {
                 $event->raids()->attach($raid->id, ['sort_order' => $index + 1]);
             }
+        });
+    }
+
+    /**
+     * Attach users to the event.
+     *
+     * @param  array<int, User>|null  $users
+     */
+    public function withUsers(?array $users = null, int $count = 1): static
+    {
+        return $this->afterCreating(function (Event $event) use ($users, $count) {
+            $users ??= User::factory()->count($count)->create()->all();
+
+            $event->users()->attach(collect($users)->pluck('id'));
         });
     }
 

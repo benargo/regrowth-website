@@ -2,7 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\Character;
 use App\Models\DiscordRole;
+use App\Models\Event;
 use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -97,6 +99,38 @@ class UserFactory extends Factory
     {
         return $this->afterCreating(function ($user) use ($roleIds) {
             $user->discordRoles()->syncWithoutDetaching($roleIds);
+        });
+    }
+
+    /**
+     * Assign characters to the user.
+     *
+     * @param  array<int, Character>|null  $characters
+     */
+    public function withCharacters(?array $characters = null, int $count = 1): static
+    {
+        return $this->afterCreating(function (User $user) use ($characters, $count) {
+            if ($characters === null) {
+                Character::factory()->count($count)->for($user)->create();
+
+                return;
+            }
+
+            $user->characters()->saveMany($characters);
+        });
+    }
+
+    /**
+     * Attach events to the user.
+     *
+     * @param  array<int, Event>|null  $events
+     */
+    public function withEvents(?array $events = null, int $count = 1): static
+    {
+        return $this->afterCreating(function (User $user) use ($events, $count) {
+            $events ??= Event::factory()->count($count)->create()->all();
+
+            $user->events()->attach(collect($events)->pluck('id'));
         });
     }
 
