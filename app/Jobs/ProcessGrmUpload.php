@@ -13,12 +13,12 @@ use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
 use App\Http\Integrations\Blizzard\Exceptions\CharacterNotFoundException;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterStatusRequest;
+use App\Http\Integrations\Discord\Data\Channels\ChannelStub;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\User;
 use App\Notifications\GrmUploadCompleted;
 use App\Notifications\GrmUploadFailed;
-use App\Services\Discord\Notifications\NotifiableChannel;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\Backoff;
@@ -157,7 +157,7 @@ class ProcessGrmUpload implements RequiresMinimumCharacterLevel, ShouldQueue
      */
     private function notifyOfficers(): void
     {
-        $channel = NotifiableChannel::stubFromConfig('officer');
+        $channel = new ChannelStub(config('services.discord.channels.officer'));
 
         if ($this->errorCount > 0) {
             $channel->notify(new GrmUploadFailed($this->processedCount, $this->errorCount, $this->errors));
@@ -402,7 +402,7 @@ class ProcessGrmUpload implements RequiresMinimumCharacterLevel, ShouldQueue
         GrmUploadFailedBroadcast::dispatch($this->userId, $exception->getMessage());
 
         try {
-            NotifiableChannel::stubFromConfig('officer')->notify(
+            (new ChannelStub(config('services.discord.channels.officer')))->notify(
                 new GrmUploadFailed(0, 1, [], $exception->getMessage())
             );
         } catch (\Exception $e) {

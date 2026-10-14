@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Http\Controllers;
 
+use App\Http\Integrations\Discord\Data\Channels\ChannelStub;
 use App\Models\DailyQuest;
 use App\Models\DiscordNotification;
 use App\Models\DiscordRole;
@@ -9,8 +10,6 @@ use App\Models\Item;
 use App\Models\Permission;
 use App\Models\User;
 use App\Notifications\DailyQuestsMessage;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Resources\Channel as ChannelResource;
 use Carbon\Carbon;
 use Illuminate\Notifications\SendQueuedNotifications;
 use Illuminate\Support\Facades\Queue;
@@ -18,9 +17,11 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\DashboardTestCase;
 
 #[Group('daily-quests')]
+#[Group('discord-integration')]
 class DailyQuestsControllerTest extends DashboardTestCase
 {
     protected function setUp(): void
@@ -158,11 +159,9 @@ class DailyQuestsControllerTest extends DashboardTestCase
     public function store_creates_daily_quest_notification(): void
     {
         Queue::fake();
+        Saloon::fake([]);
 
-        $this->mock(Discord::class)
-            ->shouldReceive('getChannel')
-            ->once()
-            ->andReturn(ChannelResource::from(['id' => '123456789']));
+        config(['services.discord.channels.daily_quests' => '000000000000000002']);
 
         $response = $this->actingAs($this->officer)->post(route('management.daily-quests.store'), [
             'cooking_quest_id' => DailyQuest::factory()->cooking()->create()->id,
@@ -175,7 +174,10 @@ class DailyQuestsControllerTest extends DashboardTestCase
         $response->assertRedirect();
         $response->assertSessionHas('success', 'Daily quests set and posted to Discord!');
 
-        Queue::assertPushed(SendQueuedNotifications::class, fn ($job) => $job->notification instanceof DailyQuestsMessage);
+        Queue::assertPushed(SendQueuedNotifications::class, fn ($job) => $job->notification instanceof DailyQuestsMessage
+            && $job->notifiables->first() instanceof ChannelStub
+            && $job->notifiables->first()->id === '000000000000000002');
+        Saloon::assertNothingSent();
     }
 
     #[Group('validation')]
