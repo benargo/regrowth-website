@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 
 #[Fillable(['id', 'raid_helper_event_id', 'title', 'start_time', 'end_time', 'background_css_class', 'color', 'channel_id', 'is_template'])]
 #[Hidden(['channel_id', 'is_template'])]
@@ -172,5 +173,21 @@ class Event extends PrunableModel
     {
         return $this->belongsToMany(User::class, 'pivot_events_users', 'event_id', 'user_id')
             ->withTimestamps();
+    }
+
+    /**
+     * Get the event's users who own at least one character slotted in this event.
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function slottedUsers(): BelongsToMany
+    {
+        return $this->users()->whereExists(function (QueryBuilder $query): void {
+            $query->from('pivot_events_characters')
+                ->join('characters', 'characters.id', '=', 'pivot_events_characters.character_id')
+                ->whereColumn('pivot_events_characters.event_id', 'pivot_events_users.event_id')
+                ->whereColumn('characters.user_id', 'users.id')
+                ->whereNotNull('pivot_events_characters.slot_number');
+        });
     }
 }

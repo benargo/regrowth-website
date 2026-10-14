@@ -3,6 +3,7 @@
 namespace Tests\Unit\Notifications;
 
 use App\Http\Integrations\Discord\Data\Channels\ChannelData;
+use App\Models\Character;
 use App\Models\Event;
 use App\Models\User;
 use App\Notifications\Discord\DiscordChannel;
@@ -103,6 +104,36 @@ class RaidAssignmentsPublishedTest extends TestCase
         $event = Event::factory()->make();
 
         $this->assertSame('AssignmentsPublished', (new RaidAssignmentsPublished($event))->broadcastType());
+    }
+
+    // ==================== message content ====================
+
+    #[Test]
+    public function it_mentions_each_slotted_user_in_the_message_content(): void
+    {
+        $event = Event::factory()->create();
+        [$firstSlotted, $secondSlotted, $unslotted] = User::factory()->count(3)->create()->all();
+        $event->users()->attach([$firstSlotted->id, $secondSlotted->id, $unslotted->id]);
+        $event->characters()->attach(Character::factory()->create(['user_id' => $firstSlotted->id])->id, ['slot_number' => 1]);
+        $event->characters()->attach(Character::factory()->create(['user_id' => $secondSlotted->id])->id, ['slot_number' => 2]);
+        $event->characters()->attach(Character::factory()->create(['user_id' => $unslotted->id])->id, ['slot_number' => null]);
+
+        $content = (new RaidAssignmentsPublished($event))->toMessage()->content;
+
+        $this->assertEqualsCanonicalizing(
+            ["<@{$firstSlotted->id}>", "<@{$secondSlotted->id}>"],
+            explode(' ', $content),
+        );
+    }
+
+    #[Test]
+    public function it_has_empty_message_content_when_no_users_are_slotted(): void
+    {
+        $event = Event::factory()->create();
+
+        $content = (new RaidAssignmentsPublished($event))->toMessage()->content;
+
+        $this->assertSame('', $content);
     }
 
     // ==================== message embed ====================

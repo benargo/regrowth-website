@@ -747,4 +747,51 @@ class EventTest extends ModelTestCase
 
         $this->assertCount(3, $event->users);
     }
+
+    // slottedUsers
+
+    #[Test]
+    public function slotted_users_returns_belongs_to_many_relationship(): void
+    {
+        $model = new Event;
+
+        $this->assertInstanceOf(BelongsToMany::class, $model->slottedUsers());
+    }
+
+    #[Test]
+    public function slotted_users_returns_only_attached_users_with_a_slotted_character(): void
+    {
+        $event = $this->create();
+        [$slotted, $unslotted, $unattached, $multiSlotted] = User::factory()->count(4)->create()->all();
+        $event->users()->attach([$slotted->id, $unslotted->id, $multiSlotted->id]);
+
+        $event->characters()->attach(Character::factory()->create(['user_id' => $slotted->id])->id, ['slot_number' => 1]);
+        $event->characters()->attach(Character::factory()->create(['user_id' => $unslotted->id])->id, ['slot_number' => null]);
+        $event->characters()->attach(Character::factory()->create(['user_id' => $unattached->id])->id, ['slot_number' => 2]);
+        $event->characters()->attach(Character::factory()->create(['user_id' => $multiSlotted->id])->id, ['slot_number' => 3]);
+        $event->characters()->attach(Character::factory()->create(['user_id' => $multiSlotted->id])->id, ['slot_number' => 4]);
+
+        $this->assertEqualsCanonicalizing(
+            [$slotted->id, $multiSlotted->id],
+            $event->slottedUsers->pluck('id')->all(),
+        );
+    }
+
+    #[Test]
+    public function slotted_users_is_scoped_per_event_when_eager_loaded(): void
+    {
+        $slottedEvent = $this->create();
+        $unslottedEvent = $this->create();
+        $user = User::factory()->create();
+        $character = Character::factory()->create(['user_id' => $user->id]);
+        $slottedEvent->users()->attach($user->id);
+        $unslottedEvent->users()->attach($user->id);
+        $slottedEvent->characters()->attach($character->id, ['slot_number' => 1]);
+        $unslottedEvent->characters()->attach($character->id, ['slot_number' => null]);
+
+        $events = Event::with('slottedUsers')->whereKey([$slottedEvent->id, $unslottedEvent->id])->get()->keyBy('id');
+
+        $this->assertSame([$user->id], $events[$slottedEvent->id]->slottedUsers->pluck('id')->all());
+        $this->assertCount(0, $events[$unslottedEvent->id]->slottedUsers);
+    }
 }
