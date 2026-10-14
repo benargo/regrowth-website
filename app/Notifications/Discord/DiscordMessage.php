@@ -27,8 +27,6 @@ abstract class DiscordMessage extends BaseNotification implements ShouldQueue
     /**
      * The related model references to store in the database, if any.
      *
-     * Stored as lightweight identifier arrays (model id and type) rather than full models.
-     *
      * @var list<array{model_id: int|string, model_type: class-string<Model>}>|null
      */
     public ?array $relatedModels = null;
@@ -91,8 +89,6 @@ abstract class DiscordMessage extends BaseNotification implements ShouldQueue
     /**
      * Set the related models for this notification.
      *
-     * Each model is reduced to an identifier array (model id and type).
-     *
      * @param  iterable<array-key, Model>  $related
      */
     public function withRelatedModels(iterable $related): static
@@ -111,9 +107,6 @@ abstract class DiscordMessage extends BaseNotification implements ShouldQueue
     /**
      * Hydrate a model from a stored reference.
      *
-     * Resolves a stored identifier array back into its model. Returns null for a null
-     * reference or a missing record.
-     *
      * @param  array{model_id: int|string, model_type: class-string<Model>}|null  $reference
      */
     protected function hydrate(?array $reference): ?Model
@@ -128,11 +121,9 @@ abstract class DiscordMessage extends BaseNotification implements ShouldQueue
     /**
      * Hydrate a model from a stored reference, failing if it cannot be resolved.
      *
-     * Throws a ModelNotFoundException when the reference is null or the record is missing.
-     *
      * @param  array{model_id: int|string, model_type: class-string<Model>}|null  $reference
      *
-     * @throws ModelNotFoundException
+     * @throws ModelNotFoundException when the reference is null or the record is missing.
      */
     protected function hydrateOrFail(?array $reference): Model
     {
