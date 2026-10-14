@@ -2,15 +2,26 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Http\Integrations\Discord\Exceptions\ApiException;
+use App\Http\Integrations\Discord\Exceptions\RateLimitedException;
 use App\Http\Integrations\Discord\Requests\Guilds\GetGuildMemberRequest;
 use App\Models\DiscordRole;
 use App\Models\User;
-use Laravel\Socialite\Facades\Socialite;
+use Exception;
+use Illuminate\Auth\SessionGuard;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Exceptions;
+use Laravel\Socialite\Contracts\Factory;
+use Laravel\Socialite\Contracts\Provider;
 use Laravel\Socialite\Two\User as SocialiteUser;
-use Mockery;
+use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
+use Saloon\Exceptions\Request\FatalRequestException;
 use Saloon\Http\Faking\MockResponse;
+use Saloon\Http\PendingRequest;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\DashboardTestCase;
 use Tests\Support\Discord\MocksDiscordService;
@@ -21,6 +32,8 @@ class DiscordAuthenticationTest extends DashboardTestCase
 {
     use MocksDiscordService;
 
+    // ==================== redirect ====================
+
     #[Test]
     public function login_redirects_to_discord(): void
     {
@@ -29,6 +42,19 @@ class DiscordAuthenticationTest extends DashboardTestCase
         $response->assertRedirect();
         $this->assertStringContainsString('discord.com', $response->headers->get('Location'));
     }
+
+    #[Test]
+    public function login_requests_the_identify_and_guild_member_scopes(): void
+    {
+        $response = $this->get('/login');
+
+        parse_str((string) parse_url($response->headers->get('Location'), PHP_URL_QUERY), $query);
+        $scopes = explode(' ', $query['scope']);
+        $this->assertContains('identify', $scopes);
+        $this->assertContains('guilds.members.read', $scopes);
+    }
+
+    // ==================== callback ====================
 
     #[Test]
     public function discord_callback_creates_new_user(): void
@@ -45,6 +71,10 @@ class DiscordAuthenticationTest extends DashboardTestCase
         $this->assertDatabaseHas('users', [
             'id' => '123456789012345678',
             'username' => 'testuser',
+            'discriminator' => '0',
+            'nickname' => 'TestNickname',
+            'avatar' => 'user_avatar_hash',
+            'guild_avatar' => 'guild_avatar_hash',
         ]);
 
         $user = User::find('123456789012345678');
@@ -54,26 +84,89 @@ class DiscordAuthenticationTest extends DashboardTestCase
     }
 
     #[Test]
+    public function discord_callback_remembers_the_login(): void
+    {
+        $this->mockDiscordOAuth();
+        $this->fakeDiscordGuildMember();
+
+        $response = $this->get('/auth/discord/callback?code=test_code');
+
+        $guard = Auth::guard();
+        $this->assertInstanceOf(SessionGuard::class, $guard);
+        $response->assertCookie($guard->getRecallerName());
+    }
+
+    #[Test]
+    public function discord_callback_redirects_to_the_intended_url(): void
+    {
+        $this->mockDiscordOAuth();
+        $this->fakeDiscordGuildMember();
+
+        $response = $this->withSession(['url.intended' => route('management.dashboard')])
+            ->get('/auth/discord/callback?code=test_code');
+
+        $response->assertRedirect(route('management.dashboard'));
+    }
+
+    #[Test]
+    public function discord_callback_prefers_the_guild_banner_over_the_user_banner(): void
+    {
+        $this->mockDiscordOAuth(['banner' => 'user_banner_hash']);
+        $this->fakeDiscordGuildMember(['banner' => 'guild_banner_hash']);
+
+        $this->get('/auth/discord/callback?code=test_code');
+
+        $this->assertDatabaseHas('users', [
+            'id' => '123456789012345678',
+            'banner' => 'guild_banner_hash',
+        ]);
+    }
+
+    #[Test]
+    public function discord_callback_falls_back_to_the_user_banner_when_the_member_has_none(): void
+    {
+        $this->mockDiscordOAuth(['banner' => 'user_banner_hash']);
+        $this->fakeDiscordGuildMember(['banner' => null]);
+
+        $this->get('/auth/discord/callback?code=test_code');
+
+        $this->assertDatabaseHas('users', [
+            'id' => '123456789012345678',
+            'banner' => 'user_banner_hash',
+        ]);
+    }
+
+    #[Test]
+    public function discord_callback_resets_the_discriminator_when_the_oauth_payload_omits_it(): void
+    {
+        User::factory()->create([
+            'id' => '123456789012345678',
+            'discriminator' => '1234',
+        ]);
+
+        $this->mockDiscordOAuth(omit: ['discriminator']);
+        $this->fakeDiscordGuildMember();
+
+        $this->get('/auth/discord/callback?code=test_code');
+
+        $this->assertDatabaseHas('users', [
+            'id' => '123456789012345678',
+            'discriminator' => '0',
+        ]);
+    }
+
+    #[Test]
     public function discord_callback_updates_existing_user(): void
     {
-        $guest = DiscordRole::find('829022292590985226') ??
-            DiscordRole::factory()->guest()->create();
-        $officer = DiscordRole::find('829021769448816691') ??
-            DiscordRole::factory()->officer()->create();
-
-        $user = User::factory()->create([
+        User::factory()->create([
             'id' => '123456789012345678',
             'username' => 'oldusername',
             'discriminator' => '1234',
             'nickname' => 'OldNick',
         ]);
-        $user->discordRoles()->attach($guest->id);
 
         $this->mockDiscordOAuth();
-        $this->fakeDiscordGuildMember([
-            'nick' => 'NewNickname',
-            'roles' => [$officer->id], // New Officer role from Discord API
-        ]);
+        $this->fakeDiscordGuildMember(['nick' => 'NewNickname']);
 
         $response = $this->get('/auth/discord/callback?code=test_code');
 
@@ -83,11 +176,54 @@ class DiscordAuthenticationTest extends DashboardTestCase
             'username' => 'testuser', // Updated from OAuth
             'nickname' => 'NewNickname',
         ]);
-
-        $updatedUser = User::find('123456789012345678');
-        $this->assertTrue($updatedUser->discordRoles->contains('name', 'Officer'));
-        $this->assertFalse($updatedUser->discordRoles->contains('name', 'Guest'));
         $response->assertRedirect('/');
+    }
+
+    #[Test]
+    public function discord_callback_stores_null_profile_fields_when_the_member_payload_omits_them(): void
+    {
+        $this->mockDiscordOAuth();
+
+        Saloon::fake([GetGuildMemberRequest::class => MockResponse::make(
+            Arr::except($this->makeDiscordGuildMemberResponse(), ['nick', 'avatar', 'banner']),
+        )]);
+
+        $this->get('/auth/discord/callback?code=test_code');
+
+        $this->assertAuthenticated();
+        $this->assertDatabaseHas('users', [
+            'id' => '123456789012345678',
+            'nickname' => null,
+            'guild_avatar' => null,
+            'banner' => null,
+        ]);
+    }
+
+    #[Test]
+    public function discord_callback_keeps_existing_profile_fields_when_the_member_payload_omits_them(): void
+    {
+        User::factory()->create([
+            'id' => '123456789012345678',
+            'nickname' => 'OldNick',
+            'guild_avatar' => 'old_guild_avatar',
+            'banner' => 'old_banner',
+        ]);
+
+        $this->mockDiscordOAuth(['banner' => 'profile_banner']);
+
+        Saloon::fake([GetGuildMemberRequest::class => MockResponse::make(
+            Arr::except($this->makeDiscordGuildMemberResponse(), ['nick', 'avatar', 'banner']),
+        )]);
+
+        $this->get('/auth/discord/callback?code=test_code');
+
+        $this->assertAuthenticated();
+        $this->assertDatabaseHas('users', [
+            'id' => '123456789012345678',
+            'nickname' => 'OldNick',
+            'guild_avatar' => 'old_guild_avatar',
+            'banner' => 'profile_banner',
+        ]);
     }
 
     #[Test]
@@ -107,6 +243,7 @@ class DiscordAuthenticationTest extends DashboardTestCase
     #[Test]
     public function discord_callback_fails_on_guild_api_error(): void
     {
+        Exceptions::fake();
         $this->mockDiscordOAuth();
 
         Saloon::fake([GetGuildMemberRequest::class => $this->makeDiscordErrorResponse(403, 50001, 'Missing Access')]);
@@ -116,16 +253,51 @@ class DiscordAuthenticationTest extends DashboardTestCase
         $this->assertGuest();
         $response->assertRedirect('/');
         $response->assertSessionHas('error', 'Failed to verify your Discord server membership. Please try again.');
+        Exceptions::assertReported(fn (ApiException $exception): bool => $exception->getDiscordCode() === 50001);
+    }
+
+    #[Test]
+    public function discord_callback_fails_when_discord_rate_limits_the_member_lookup(): void
+    {
+        Exceptions::fake();
+        $this->mockDiscordOAuth();
+
+        Saloon::fake([GetGuildMemberRequest::class => $this->makeDiscordRateLimitResponse(5.0)]);
+
+        $response = $this->get('/auth/discord/callback?code=test_code');
+
+        $this->assertGuest();
+        $response->assertRedirect('/');
+        $response->assertSessionHas('error', 'Failed to verify your Discord server membership. Please try again.');
+        Exceptions::assertReported(RateLimitedException::class);
+    }
+
+    #[Test]
+    public function discord_callback_fails_when_the_member_lookup_cannot_connect(): void
+    {
+        Exceptions::fake();
+        $this->mockDiscordOAuth();
+
+        Saloon::fake([
+            GetGuildMemberRequest::class => MockResponse::make()->throw(
+                fn (PendingRequest $pendingRequest): FatalRequestException => new FatalRequestException(new RuntimeException('Connection refused'), $pendingRequest),
+            ),
+        ]);
+
+        $response = $this->get('/auth/discord/callback?code=test_code');
+
+        $this->assertGuest();
+        $response->assertRedirect('/');
+        $response->assertSessionHas('error', 'Failed to verify your Discord server membership. Please try again.');
+        Exceptions::assertReported(FatalRequestException::class);
     }
 
     #[Test]
     public function discord_callback_handles_oauth_failure(): void
     {
-        Socialite::shouldReceive('driver')
-            ->with('discord')
-            ->andReturnSelf();
-        Socialite::shouldReceive('user')
-            ->andThrow(new \Exception('OAuth failed'));
+        $this->mockSocialiteProvider()
+            ->shouldReceive('user')
+            ->andThrow(new Exception('OAuth failed'));
 
         $response = $this->get('/auth/discord/callback?code=test_code');
 
@@ -134,10 +306,12 @@ class DiscordAuthenticationTest extends DashboardTestCase
         $response->assertSessionHas('error', 'Failed to authenticate with Discord. Please try again.');
     }
 
+    // ==================== logout ====================
+
     #[Test]
     public function users_can_logout(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->createOne();
 
         $response = $this->actingAs($user)->post('/logout');
 
@@ -146,9 +320,23 @@ class DiscordAuthenticationTest extends DashboardTestCase
     }
 
     #[Test]
+    public function logout_invalidates_the_session(): void
+    {
+        $user = User::factory()->createOne();
+
+        $response = $this->actingAs($user)
+            ->withSession(['previous_value' => 'stale'])
+            ->post('/logout');
+
+        $response->assertSessionMissing('previous_value');
+    }
+
+    // ==================== access ====================
+
+    #[Test]
     public function authenticated_user_can_access_dashboard(): void
     {
-        $user = User::factory()->officer()->create([
+        $user = User::factory()->officer()->createOne([
             'id' => '123456789012345678',
             'username' => 'testuser',
             'discriminator' => '0',
@@ -170,35 +358,50 @@ class DiscordAuthenticationTest extends DashboardTestCase
     #[Test]
     public function authenticated_user_is_redirected_away_from_login(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->createOne();
 
         $response = $this->actingAs($user)->get('/login');
 
         $response->assertRedirect('/');
     }
 
-    private function mockDiscordOAuth(): void
-    {
-        $socialiteUser = Mockery::mock(SocialiteUser::class);
-        $socialiteUser->shouldReceive('getId')->andReturn('123456789012345678');
-        $socialiteUser->shouldReceive('getNickname')->andReturn('testuser');
-        $socialiteUser->shouldReceive('getRaw')->andReturn([
-            'id' => '123456789012345678',
-            'username' => 'testuser',
-            'discriminator' => '0',
-            'avatar' => 'user_avatar_hash',
-            'banner' => null,
-        ]);
+    // ==================== helpers ====================
 
-        Socialite::shouldReceive('driver')
-            ->with('discord')
-            ->andReturnSelf();
-        Socialite::shouldReceive('scopes')
-            ->andReturnSelf();
-        Socialite::shouldReceive('redirect')
-            ->andReturn(redirect('https://discord.com/oauth2/authorize'));
-        Socialite::shouldReceive('user')
+    /**
+     * @param  array<string, mixed>  $rawOverrides
+     * @param  list<string>  $omit
+     */
+    private function mockDiscordOAuth(array $rawOverrides = [], array $omit = []): void
+    {
+        $socialiteUser = (new SocialiteUser)
+            ->setRaw(Arr::except([
+                'id' => '123456789012345678',
+                'username' => 'testuser',
+                'discriminator' => '0',
+                'avatar' => 'user_avatar_hash',
+                'banner' => null,
+                ...$rawOverrides,
+            ], $omit))
+            ->map(['id' => '123456789012345678', 'nickname' => 'testuser']);
+
+        $this->mockSocialiteProvider()
+            ->shouldReceive('user')
             ->andReturn($socialiteUser);
+    }
+
+    /**
+     * Bind a Socialite factory whose `discord` driver is the returned provider mock.
+     */
+    private function mockSocialiteProvider(): MockInterface
+    {
+        $provider = $this->mock(Provider::class);
+
+        $this->mock(Factory::class)
+            ->shouldReceive('driver')
+            ->with('discord')
+            ->andReturn($provider);
+
+        return $provider;
     }
 
     /**

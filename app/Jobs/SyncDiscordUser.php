@@ -2,23 +2,27 @@
 
 namespace App\Jobs;
 
+use App\Actions\Discord\SyncUserDiscordRoles;
 use App\Http\Integrations\Discord\DiscordConnector;
 use App\Http\Integrations\Discord\Exceptions\UserNotInGuildException;
 use App\Http\Integrations\Discord\Requests\Guilds\GetGuildMemberRequest;
 use App\Jobs\Middleware\ReleaseWhenDiscordRateLimited;
-use App\Models\DiscordRole;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Bus\Batchable;
 use Illuminate\Container\Attributes\Config;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\Backoff;
-use Illuminate\Queue\Attributes\Tries;
+use Illuminate\Queue\Attributes\MaxExceptions;
 use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
+use Spatie\LaravelData\Optional;
+use Throwable;
 
-#[Tries(3)]
+#[MaxExceptions(3)]
 #[Backoff(60)]
 class SyncDiscordUser implements ShouldQueue
 {
@@ -27,13 +31,21 @@ class SyncDiscordUser implements ShouldQueue
     public function __construct(public string $id) {}
 
     /**
+     * Rate-limit releases keep the job alive until this deadline.
+     */
+    public function retryUntil(): CarbonInterface
+    {
+        return now()->addHour();
+    }
+
+    /**
      * @return array<int, object>
      */
     public function middleware(): array
     {
         return [
             new SkipIfBatchCancelled,
-            (new WithoutOverlapping)->dontRelease(),
+            (new WithoutOverlapping($this->id))->dontRelease()->expireAfter(120),
             new ReleaseWhenDiscordRateLimited,
         ];
     }
@@ -51,20 +63,19 @@ class SyncDiscordUser implements ShouldQueue
         try {
             $member = $discord->send(new GetGuildMemberRequest($serverId, $user->id))->dto();
 
-            $user->update([
+            $user->update(Arr::reject([
                 'nickname' => $member->nick,
                 'guild_avatar' => $member->avatar,
                 'banner' => $member->banner,
-            ]);
+            ], fn (mixed $value): bool => $value instanceof Optional));
 
-            $recognizedRoleIds = DiscordRole::whereIn('id', $member->roles)->pluck('id')->toArray();
-            $user->discordRoles()->sync($recognizedRoleIds);
+            SyncUserDiscordRoles::run($user, $member->roles);
         } catch (UserNotInGuildException) {
             $user->delete();
         }
     }
 
-    public function failed(\Throwable $exception): void
+    public function failed(Throwable $exception): void
     {
         Log::error('SyncDiscordUser: job failed.', [
             'user_id' => $this->id,
