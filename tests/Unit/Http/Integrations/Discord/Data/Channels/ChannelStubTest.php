@@ -4,6 +4,8 @@ namespace Tests\Unit\Http\Integrations\Discord\Data\Channels;
 
 use App\Http\Integrations\Discord\Contracts\Channel as ChannelContract;
 use App\Http\Integrations\Discord\Data\Channels\ChannelStub;
+use Illuminate\Notifications\Notification as BaseNotification;
+use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
@@ -31,6 +33,37 @@ class ChannelStubTest extends TestCase
         );
 
         $this->assertInstanceOf(ChannelContract::class, $stub);
+    }
+
+    #[Test]
+    public function channel_stub_key_is_its_id(): void
+    {
+        $stub = new ChannelStub(
+            id: '290926798999357250',
+        );
+
+        $this->assertSame('290926798999357250', $stub->getKey());
+    }
+
+    #[Test]
+    public function channel_stub_can_be_notified(): void
+    {
+        Notification::fake();
+
+        $stub = new ChannelStub(
+            id: '290926798999357250',
+        );
+        $notification = new class extends BaseNotification
+        {
+            public function via(object $notifiable): array
+            {
+                return ['mail'];
+            }
+        };
+
+        $stub->notify($notification);
+
+        Notification::assertSentTo(new ChannelStub('290926798999357250'), $notification::class);
     }
 
     #[Test]

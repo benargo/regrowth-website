@@ -5,6 +5,8 @@ namespace Tests\Unit\Http\Integrations\Discord\Data\Channels;
 use App\Http\Integrations\Discord\Contracts\Channel as ChannelContract;
 use App\Http\Integrations\Discord\Data\Channels\ChannelData;
 use App\Http\Integrations\Discord\Enums\ChannelType;
+use Illuminate\Notifications\Notification as BaseNotification;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
@@ -398,6 +400,35 @@ class ChannelDataTest extends TestCase
             'managed', 'video_quality_mode', 'message_count', 'member_count', 'default_auto_archive_duration',
             'permissions', 'flags', 'total_message_sent', 'default_forum_layout', 'default_thread_rate_limit_per_user',
         ])->mapWithKeys(fn (string $field) => [$field => [$field]])->all();
+    }
+
+    // ==================== notifiable ====================
+
+    #[Test]
+    public function its_key_is_its_id(): void
+    {
+        $channel = ChannelData::from($this->minimalPayload());
+
+        $this->assertSame($channel->id, $channel->getKey());
+    }
+
+    #[Test]
+    public function it_can_be_notified(): void
+    {
+        Notification::fake();
+
+        $channel = ChannelData::from($this->minimalPayload());
+        $notification = new class extends BaseNotification
+        {
+            public function via(object $notifiable): array
+            {
+                return ['mail'];
+            }
+        };
+
+        $channel->notify($notification);
+
+        Notification::assertSentTo($channel, $notification::class);
     }
 
     // ==================== readonly properties ====================
