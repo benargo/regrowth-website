@@ -303,28 +303,35 @@ class SyncEvent implements ShouldQueue
             ->unique()
             ->values();
 
-        $this->importMissingUsers($signedUpUserIds);
+        $existingUserIds = User::whereIn('id', $signedUpUserIds)->pluck('id');
 
-        $this->syncedUserIds = User::whereIn('id', $signedUpUserIds)->pluck('id');
+        $this->syncedUserIds = $existingUserIds->merge(
+            $this->importUsers($signedUpUserIds->diff($existingUserIds)),
+        );
 
         $this->event->users()->sync($this->syncedUserIds->all());
     }
 
     /**
-     * Fetch each of the given users missing from the database from the Discord
-     * server and store them, skipping any whose lookup fails.
+     * Fetch each of the given users from the Discord server and store them,
+     * skipping any whose lookup fails, and return the ids of the stored users.
      *
      * @param  Collection<int, string>  $userIds
+     * @return Collection<int, string>
      */
-    private function importMissingUsers(Collection $userIds): void
+    private function importUsers(Collection $userIds): Collection
     {
-        $missingUserIds = $userIds->diff(User::whereIn('id', $userIds)->pluck('id'));
         $fetchMemberAction = FetchGuildMember::make();
         $upsertUserAction = UpsertUserFromGuildMember::make();
+        $importedUserIds = collect();
 
-        foreach ($missingUserIds as $userId) {
+        foreach ($userIds as $userId) {
             try {
-                $upsertUserAction->handle($fetchMemberAction->handle($userId));
+                $user = $upsertUserAction->handle($fetchMemberAction->handle($userId));
+
+                if ($user) {
+                    $importedUserIds->push($user->id);
+                }
             } catch (UserNotInGuildException) {
                 Log::info('SyncEvent: skipped a sign-up whose user is not in the Discord server.', [
                     'raid_helper_event_id' => $this->data->id,
@@ -334,6 +341,8 @@ class SyncEvent implements ShouldQueue
                 report($exception);
             }
         }
+
+        return $importedUserIds;
     }
 
     /**

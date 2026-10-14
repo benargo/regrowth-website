@@ -98,8 +98,6 @@ class DailyQuestsMessage extends DiscordMessage implements ShouldUpdateExisting
      */
     protected function constrainExisting(Builder $query): Builder
     {
-        return $query
-            ->where('created_at', '>=', today()->subDay()->setTime(4, 0, 0))
-            ->where('created_at', '<=', today()->addDay()->setTime(3, 59, 59));
+        return $query->postedInDailyResetWindow();
     }
 }

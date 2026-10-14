@@ -9,7 +9,6 @@ use App\Http\Integrations\Discord\Exceptions\MessageNotFoundException;
 use App\Http\Integrations\Discord\Exceptions\NotFoundException;
 use App\Http\Integrations\Discord\Exceptions\RateLimitedException;
 use App\Http\Integrations\Discord\Exceptions\UserNotInGuildException;
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -61,15 +60,6 @@ class DiscordConnectorTest extends DiscordTestCase
 
         $this->assertEquals(3, $response->getPendingRequest()->config()->get('connect_timeout'));
         $this->assertEquals(10, $response->getPendingRequest()->config()->get('timeout'));
-    }
-
-    #[Test]
-    #[Group('error-handling')]
-    public function it_rejects_an_empty_token(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-
-        new DiscordConnector('', 'DiscordBot (https://regrowth.test, 1.0)');
     }
 
     // ==================== getRequestException — rate limits ====================

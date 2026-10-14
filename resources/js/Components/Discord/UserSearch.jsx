@@ -46,9 +46,9 @@ export default function UserSearch({ id, value, onSelect, invalid = false }) {
         `App.Models.User.${userId}`,
         ".DiscordMembersSearched",
         (payload) => {
-            const pending = pendingRef.current;
+            const pendingQuery = pendingRef.current;
 
-            if (payload.query !== pending?.query || payload.limit !== pending?.limit) {
+            if (payload.query !== pendingQuery || payload.limit !== MEMBER_LIMIT) {
                 return;
             }
 
@@ -57,14 +57,14 @@ export default function UserSearch({ id, value, onSelect, invalid = false }) {
                 return;
             }
 
-            reloadMembers(pending.query);
+            reloadMembers(pendingQuery);
         },
         [userId],
     );
 
     function reloadMembers(search) {
         cancelTokenRef.current?.cancel();
-        pendingRef.current = { query: search, limit: MEMBER_LIMIT };
+        pendingRef.current = search;
 
         router.reload({
             only: ["discord_members"],

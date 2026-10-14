@@ -8,8 +8,6 @@ use App\Http\Integrations\Discord\Exceptions\RateLimitedException;
 use App\Http\Integrations\Discord\Exceptions\UserNotInGuildException;
 use App\Http\Integrations\Discord\Middleware\GuardRateLimits;
 use App\Http\Integrations\Discord\Middleware\RecordRateLimits;
-use Illuminate\Support\Facades\Cache;
-use InvalidArgumentException;
 use Saloon\Contracts\Authenticator;
 use Saloon\Enums\PipeOrder;
 use Saloon\Http\Auth\TokenAuthenticator;
@@ -47,19 +45,13 @@ class DiscordConnector extends Connector
     protected int $requestTimeout = 10;
 
     /**
-     * Registers the rate-limit middleware, using the default cache store when no rate-limit cache is given.
+     * Registers the rate-limit middleware backed by the given rate-limit cache.
      */
     public function __construct(
         protected string $token,
         protected string $userAgent,
-        ?RateLimitCache $rateLimits = null,
+        RateLimitCache $rateLimits,
     ) {
-        if ($this->token === '') {
-            throw new InvalidArgumentException('Discord bot token must not be empty.');
-        }
-
-        $rateLimits ??= new RateLimitCache(Cache::store());
-
         $this->middleware()->onRequest(new GuardRateLimits($rateLimits), 'discordGuardRateLimits', PipeOrder::FIRST);
         $this->middleware()->onResponse(new RecordRateLimits($rateLimits), 'discordRecordRateLimits', PipeOrder::FIRST);
     }

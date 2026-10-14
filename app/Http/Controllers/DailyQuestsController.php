@@ -34,8 +34,7 @@ class DailyQuestsController extends Controller
     {
         $hasNotification = Cache::tags(['dailyquests'])->remember('daily_quests:today:exists', $this->resetTime(), function () {
             return DiscordNotification::where('type', DailyQuestsMessage::class)
-                ->where('created_at', '>=', Carbon::yesterday()->setTime(4, 0, 0))
-                ->where('created_at', '<=', Carbon::tomorrow()->setTime(3, 59, 59))
+                ->postedInDailyResetWindow()
                 ->exists();
         });
 
@@ -125,8 +124,7 @@ class DailyQuestsController extends Controller
     private function getExistingNotification(): ?DiscordNotification
     {
         return DiscordNotification::where('type', DailyQuestsMessage::class)
-            ->where('created_at', '>=', Carbon::yesterday()->setTime(4, 0, 0))
-            ->where('created_at', '<=', Carbon::tomorrow()->setTime(3, 59, 59))
+            ->postedInDailyResetWindow()
             ->latest()
             ->first();
     }
@@ -238,8 +236,7 @@ class DailyQuestsController extends Controller
         try {
             return Cache::tags(['dailyquests'])->remember('daily_quests:today', $this->resetTime(), function () {
                 $notification = DiscordNotification::where('type', DailyQuestsMessage::class)
-                    ->where('created_at', '>=', Carbon::yesterday()->setTime(4, 0, 0))
-                    ->where('created_at', '<=', Carbon::tomorrow()->setTime(3, 59, 59))
+                    ->postedInDailyResetWindow()
                     ->with('relatedModels')
                     ->latest()
                     ->firstOrFail();
