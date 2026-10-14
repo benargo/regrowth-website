@@ -2,86 +2,88 @@
 
 namespace App\Jobs;
 
+use App\Http\Integrations\Discord\Data\Guilds\RoleData;
+use App\Http\Integrations\Discord\DiscordConnector;
+use App\Http\Integrations\Discord\Requests\Guilds\GetGuildRolesRequest;
+use App\Jobs\Middleware\ReleaseWhenDiscordRateLimited;
 use App\Models\DiscordRole;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Exceptions\RateLimitedException;
+use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Bus\Batchable;
+use Illuminate\Container\Attributes\Config;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Attributes\Backoff;
+use Illuminate\Queue\Attributes\MaxExceptions;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
+#[MaxExceptions(3)]
+#[Backoff(60)]
 class SyncDiscordRoles implements ShouldQueue
 {
     use Batchable, Queueable;
 
-    public int $tries = 3;
-
-    public int $backoff = 60;
+    /**
+     * Rate-limit releases keep the job alive until this deadline; three real errors still fail it.
+     */
+    public function retryUntil(): CarbonInterface
+    {
+        return now()->addHour();
+    }
 
     /**
-     * Define the middleware for the job.
-     *
      * @return array<int, object>
      */
     public function middleware(): array
     {
         return [
             (new WithoutOverlapping)->dontRelease(),
+            new ReleaseWhenDiscordRateLimited,
         ];
     }
 
     /**
-     * Execute the job.
+     * Sync the guild's roles, then dispatch a batch of SyncDiscordUser jobs, one per user.
      */
-    public function handle(Discord $discord): void
+    public function handle(DiscordConnector $discord, #[Config('services.discord.server_id')] string $serverId): void
     {
-        try {
-            $roles = $discord->getGuildRoles()->filter(fn ($role) => $role->position !== 0);
+        $roles = $discord->send(new GetGuildRolesRequest($serverId))
+            ->dto()
+            ->filter(fn (RoleData $role): bool => $role->position !== 0);
 
-            $syncedIds = $roles->map(fn ($role) => (string) $role->id)->values()->all();
+        $syncedIds = $roles->map(fn (RoleData $role): string => $role->id)->values()->all();
 
-            DB::transaction(function () use ($roles, $syncedIds) {
-                $deleted = DiscordRole::whereNotIn('id', $syncedIds)->delete();
+        DB::transaction(function () use ($roles, $syncedIds): void {
+            $deleted = DiscordRole::whereNotIn('id', $syncedIds)->delete();
 
-                foreach ($roles as $role) {
-                    DiscordRole::updateOrCreate(
-                        ['id' => (string) $role->id],
-                        ['name' => $role->name, 'position' => $role->position],
-                    );
-                }
+            foreach ($roles as $role) {
+                DiscordRole::updateOrCreate(
+                    ['id' => $role->id],
+                    ['name' => $role->name, 'position' => $role->position],
+                );
+            }
 
-                Log::info('Synchronising Discord roles job completed.', [
-                    'synced' => count($roles),
-                    'deleted' => $deleted,
-                ]);
-            });
-        } catch (RateLimitedException $e) {
-            Log::warning('SyncDiscordRoles: Discord rate limited, releasing job.', [
-                'endpoint' => $e->endpoint,
-                'retry_after' => $e->retryAfter,
-                'scope' => $e->scope,
+            Log::info('Synchronising Discord roles job completed.', [
+                'synced' => count($roles),
+                'deleted' => $deleted,
             ]);
-            $this->release($e->retryAfter);
+        });
 
-            return;
-        }
+        Bus::batch(User::pluck('id')->map(fn (string $id): SyncDiscordUser => new SyncDiscordUser($id)))->dispatch();
     }
 
-    /**
-     * Handle a job failure.
-     */
-    public function failed(\Throwable $exception): void
+    public function failed(?Throwable $exception): void
     {
         Log::error('Synchronising Discord roles job failed.', [
-            'error' => $exception->getMessage(),
+            'error' => $exception?->getMessage(),
         ]);
     }
 
     /**
-     * Get the tags that should be assigned to the job.
-     *
      * @return array<int, string>
      */
     public function tags(): array

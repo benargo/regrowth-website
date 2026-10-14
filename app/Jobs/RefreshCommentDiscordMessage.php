@@ -2,24 +2,23 @@
 
 namespace App\Jobs;
 
+use App\Http\Integrations\Discord\DiscordConnector;
+use App\Jobs\Middleware\ReleaseWhenDiscordRateLimited;
 use App\Models\Comment;
 use App\Models\DiscordNotification;
+use App\Notifications\Discord\NotifiableChannel;
 use App\Notifications\NewLootCouncilComment;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Notifications\NotifiableChannel;
+use DateTimeInterface;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Attributes\MaxExceptions;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Log;
 
+#[MaxExceptions(3)]
 class RefreshCommentDiscordMessage implements ShouldQueue
 {
     use Queueable;
-
-    /**
-     * The number of times the job may be attempted.
-     */
-    public int $tries = 3;
 
     /**
      * The number of seconds to wait before retrying the job.
@@ -31,7 +30,15 @@ class RefreshCommentDiscordMessage implements ShouldQueue
     ) {}
 
     /**
-     * Prevent two syncs for the same thread from racing each other's Discord edit.
+     * Rate-limit releases (ReleaseWhenDiscordRateLimited) keep the job alive until this deadline.
+     */
+    public function retryUntil(): DateTimeInterface
+    {
+        return now()->addHour();
+    }
+
+    /**
+     * Skip a sync while another for the same thread runs, and release the job on a Discord rate limit.
      *
      * @return array<int, object>
      */
@@ -39,6 +46,7 @@ class RefreshCommentDiscordMessage implements ShouldQueue
     {
         return [
             (new WithoutOverlapping("comment-reply-count-sync:{$this->root->getKey()}"))->dontRelease(),
+            new ReleaseWhenDiscordRateLimited,
         ];
     }
 
@@ -50,7 +58,7 @@ class RefreshCommentDiscordMessage implements ShouldQueue
      * predates this feature, or its message was deleted. This must never post
      * a fresh message for a comment whose original notification is gone.
      */
-    public function handle(Discord $discord): void
+    public function handle(DiscordConnector $discord): void
     {
         $record = $this->existingNotification();
 

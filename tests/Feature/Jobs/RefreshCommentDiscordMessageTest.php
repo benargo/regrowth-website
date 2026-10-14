@@ -2,19 +2,21 @@
 
 namespace Tests\Feature\Jobs;
 
+use App\Http\Integrations\Discord\Data\Channels\ChannelData;
+use App\Http\Integrations\Discord\Requests\Channels\GetChannelRequest;
 use App\Jobs\RefreshCommentDiscordMessage;
 use App\Models\Comment;
 use App\Models\DiscordNotification;
 use App\Models\DiscordNotificationRelatedModel;
+use App\Notifications\Discord\NotifiableChannel;
 use App\Notifications\NewLootCouncilComment;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Notifications\NotifiableChannel;
-use App\Services\Discord\Resources\Channel as DiscordChannel;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Queue\Attributes\MaxExceptions;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
@@ -33,7 +35,8 @@ class RefreshCommentDiscordMessageTest extends TestCase
 
         $this->mockGetItem();
         $this->applyBlizzardMocks();
-        $this->mockDiscordChannel()->shouldReceive('createMessage')->andReturn($this->makeDiscordMessage());
+        $this->fakeDiscordChannel();
+        $this->fakeDiscordMessageCreated();
     }
 
     #[Test]
@@ -66,7 +69,7 @@ class RefreshCommentDiscordMessageTest extends TestCase
         $root = Comment::factory()->create();
         Comment::factory()->replyTo($root)->create();
 
-        (new RefreshCommentDiscordMessage($root))->handle(app(Discord::class));
+        $this->runJobThroughMiddleware(new RefreshCommentDiscordMessage($root));
 
         Notification::assertNothingSent();
     }
@@ -80,10 +83,10 @@ class RefreshCommentDiscordMessageTest extends TestCase
         Comment::factory()->replyTo($root)->create();
         $this->notificationFor($root);
 
-        (new RefreshCommentDiscordMessage($root))->handle(app(Discord::class));
+        $this->runJobThroughMiddleware(new RefreshCommentDiscordMessage($root));
 
         Notification::assertSentTo(
-            new NotifiableChannel(DiscordChannel::from(['id' => '123456789'])),
+            new NotifiableChannel(ChannelData::from(['id' => '123456789'])),
             NewLootCouncilComment::class
         );
     }
@@ -99,10 +102,10 @@ class RefreshCommentDiscordMessageTest extends TestCase
         $deleted->delete();
         $this->notificationFor($root);
 
-        (new RefreshCommentDiscordMessage($root))->handle(app(Discord::class));
+        $this->runJobThroughMiddleware(new RefreshCommentDiscordMessage($root));
 
         Notification::assertSentTo(
-            new NotifiableChannel(DiscordChannel::from(['id' => '123456789'])),
+            new NotifiableChannel(ChannelData::from(['id' => '123456789'])),
             function (NewLootCouncilComment $notification): bool {
                 $embed = $notification->toMessage()->toArray()['embeds'][0];
                 $field = collect($embed['fields'] ?? [])->firstWhere('name', 'Replies');
@@ -125,7 +128,28 @@ class RefreshCommentDiscordMessageTest extends TestCase
         $this->assertEmpty(collect($embed['fields'] ?? [])->firstWhere('name', 'Replies'));
     }
 
-    // ↓ Helpers
+    #[Test]
+    #[Group('error-handling')]
+    public function it_releases_itself_without_spending_a_retry_when_discord_is_rate_limited(): void
+    {
+        Notification::fake();
+
+        $root = Comment::factory()->create();
+        $this->notificationFor($root);
+        $this->fakeDiscord([GetChannelRequest::class => $this->makeDiscordRateLimitResponse(20.0)]);
+
+        $job = new RefreshCommentDiscordMessage($root);
+        $job->withFakeQueueInteractions();
+        $this->runJobThroughMiddleware($job);
+
+        $job->assertReleased(20);
+        $this->assertTrue($job->retryUntil()->isFuture());
+        $this->assertSame(3, (new \ReflectionClass($job))->getAttributes(MaxExceptions::class)[0]->newInstance()->maxExceptions);
+        Notification::assertNothingSent();
+        Saloon::mockClient()->assertSentCount(1, GetChannelRequest::class);
+    }
+
+    // ==================== helpers ====================
 
     /**
      * Create a DiscordNotification record standing in for the root's posted message.
