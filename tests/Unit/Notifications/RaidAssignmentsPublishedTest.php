@@ -3,6 +3,7 @@
 namespace Tests\Unit\Notifications;
 
 use App\Http\Integrations\Discord\Data\Channels\ChannelData;
+use App\Models\DiscordNotification;
 use App\Models\Event;
 use App\Models\User;
 use App\Notifications\Discord\DiscordChannel;
@@ -300,5 +301,40 @@ class RaidAssignmentsPublishedTest extends TestCase
             json_encode(['command' => $serialized], JSON_UNESCAPED_UNICODE),
             'Queue payload must be JSON-encodable: '.json_last_error_msg(),
         );
+    }
+
+    // ==================== existingNotification ====================
+
+    #[Test]
+    public function it_finds_the_message_posted_for_the_same_event(): void
+    {
+        $event = Event::factory()->create();
+        $posted = $this->postedMessageFor($event);
+
+        $found = (new RaidAssignmentsPublished($event))->existingNotification($this->notifiable);
+
+        $this->assertTrue($found->is($posted));
+    }
+
+    #[Test]
+    public function it_ignores_a_message_posted_for_another_event(): void
+    {
+        $this->postedMessageFor(Event::factory()->create());
+
+        $found = (new RaidAssignmentsPublished(Event::factory()->create()))->existingNotification($this->notifiable);
+
+        $this->assertNull($found);
+    }
+
+    // ==================== helpers ====================
+
+    private function postedMessageFor(Event $event): DiscordNotification
+    {
+        return DiscordNotification::factory()
+            ->withRelatedModels([['model_type' => Event::class, 'model_id' => $event->getKey()]])
+            ->create([
+                'type' => RaidAssignmentsPublished::class,
+                'channel_id' => $this->notifiable->id,
+            ]);
     }
 }

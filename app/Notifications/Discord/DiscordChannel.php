@@ -9,7 +9,10 @@ use App\Http\Integrations\Discord\Requests\Messages\CreateMessageRequest;
 use App\Http\Integrations\Discord\Requests\Messages\EditMessageRequest;
 use App\Http\Integrations\Discord\Requests\Messages\GetMessageRequest;
 use App\Models\DiscordNotification;
+use App\Notifications\Attributes\RepostsIfOriginalDeleted;
+use App\Notifications\Contracts\ShouldUpdateExisting;
 use Illuminate\Support\Facades\DB;
+use ReflectionClass;
 
 /**
  * Laravel notification channel that posts or edits a DiscordMessage in a Discord channel and records it as a DiscordNotification.
@@ -31,8 +34,12 @@ class DiscordChannel
      */
     public function send(Channel $notifiable, DiscordMessage $notification): void
     {
-        if (property_exists($notification, 'updates') && $notification->updates?->message_id) {
-            $this->updateMessage($notifiable, $notification);
+        $existing = $notification instanceof ShouldUpdateExisting
+            ? $notification->existingNotification($notifiable)
+            : null;
+
+        if ($existing?->message_id) {
+            $this->updateMessage($notifiable, $notification, $existing);
 
             return;
         }
@@ -41,13 +48,13 @@ class DiscordChannel
     }
 
     /**
-     * Edit an existing Discord message and update its database record.
-     * Falls through to createMessage() if the Discord message no longer exists.
+     * Edit an existing Discord message and update its database record. When the Discord message
+     * no longer exists, delete the record and, for #[RepostsIfOriginalDeleted] notifications, post a new message.
      */
-    private function updateMessage(Channel $notifiable, DiscordMessage $notification): void
+    private function updateMessage(Channel $notifiable, DiscordMessage $notification, DiscordNotification $existing): void
     {
         $channelId = $notifiable->id;
-        $messageId = $notification->updates->message_id;
+        $messageId = $existing->message_id;
 
         try {
             $this->discord->send(new GetMessageRequest($channelId, $messageId));
@@ -56,8 +63,8 @@ class DiscordChannel
             $this->discord->send(new EditMessageRequest($channelId, $messageId, $payload));
 
             // Update the record without firing model events.
-            $notification->updates->withoutEvents(function () use ($notification, $payload) {
-                $notification->updates->update([
+            $existing->withoutEvents(function () use ($existing, $notification, $payload) {
+                $existing->update([
                     'payload' => $payload->toArray(),
                     'created_by_user_id' => $notification->sender()?->id,
                 ]);
@@ -65,15 +72,17 @@ class DiscordChannel
 
             // Sync related models only when relatedModels is non-null; null leaves existing pivot rows unchanged.
             if ($notification->relatedModels !== null) {
-                $this->syncRelatedModels($notification->updates, $notification->mapRelatedModels());
+                $this->syncRelatedModels($existing, $notification->mapRelatedModels());
             }
-        } catch (MessageNotFoundException $e) {
-            // The Discord message no longer exists: delete the record without model events and create a new message.
-            $notification->updates->withoutEvents(function () use ($notification) {
-                $notification->updates->delete();
+        } catch (MessageNotFoundException) {
+            // The Discord message no longer exists: delete the record without model events.
+            $existing->withoutEvents(function () use ($existing) {
+                $existing->delete();
             });
 
-            $this->createMessage($notifiable, $notification);
+            if ($this->repostsIfOriginalDeleted($notification)) {
+                $this->createMessage($notifiable, $notification);
+            }
         }
     }
 
@@ -93,6 +102,14 @@ class DiscordChannel
         $record = DiscordNotification::create($data);
 
         $this->syncRelatedModels($record, $notification->mapRelatedModels());
+    }
+
+    /**
+     * Determine whether the notification's class is marked #[RepostsIfOriginalDeleted].
+     */
+    private function repostsIfOriginalDeleted(DiscordMessage $notification): bool
+    {
+        return (new ReflectionClass($notification))->getAttributes(RepostsIfOriginalDeleted::class) !== [];
     }
 
     /**

@@ -2,25 +2,33 @@
 
 namespace Tests\Feature\Api\Event;
 
+use App\Http\Integrations\Discord\Requests\Channels\GetChannelRequest;
+use App\Http\Integrations\Discord\Requests\Messages\CreateMessageRequest;
+use App\Http\Integrations\Discord\Requests\Messages\GetMessageRequest;
 use App\Models\DiscordNotification;
 use App\Models\DiscordRole;
 use App\Models\Event;
 use App\Models\Permission;
 use App\Models\User;
 use App\Notifications\RaidAssignmentsPublished;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Resources\Channel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\SendQueuedNotifications;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Http\Request;
+use Saloon\Laravel\Facades\Saloon;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
 #[Group('raiding')]
+#[Group('discord-integration')]
 class PublishAssignmentsControllerTest extends TestCase
 {
+    use MocksDiscordService;
     use RefreshDatabase;
 
     protected User $editor;
@@ -56,11 +64,7 @@ class PublishAssignmentsControllerTest extends TestCase
     {
         Queue::fake();
 
-        $this->mock(Discord::class)
-            ->shouldReceive('getChannel')
-            ->once()
-            ->with($this->event->channel_id)
-            ->andReturn(Channel::from(['id' => $this->event->channel_id]));
+        $this->fakeDiscordChannel($this->event->channel_id);
 
         $response = $this->actingAs($this->editor)
             ->postJson(route('api.events.publish-assignments', $this->event));
@@ -70,56 +74,36 @@ class PublishAssignmentsControllerTest extends TestCase
         Queue::assertPushed(SendQueuedNotifications::class, function ($job) {
             return $job->notification instanceof RaidAssignmentsPublished;
         });
+
+        Saloon::assertSent(fn (Request $request): bool => $request instanceof GetChannelRequest
+            && $request->resolveEndpoint() === '/channels/123456789012345678');
+        Saloon::mockClient()->assertSentCount(1, GetChannelRequest::class);
     }
 
     #[Test]
-    public function it_targets_an_existing_notification_for_the_same_event(): void
+    public function republishing_after_the_discord_message_was_deleted_posts_nothing(): void
     {
-        Queue::fake();
-
-        $this->mock(Discord::class)
-            ->shouldReceive('getChannel')
-            ->once()
-            ->with($this->event->channel_id)
-            ->andReturn(Channel::from(['id' => $this->event->channel_id]));
-
-        $existing = DiscordNotification::factory()
+        Storage::fake('public');
+        $stale = DiscordNotification::factory()
             ->withRelatedModels([['model_type' => Event::class, 'model_id' => $this->event->getKey()]])
-            ->create(['type' => RaidAssignmentsPublished::class]);
+            ->create([
+                'type' => RaidAssignmentsPublished::class,
+                'channel_id' => $this->event->channel_id,
+                'message_id' => '343434343434343434',
+            ]);
+
+        $this->fakeDiscord([
+            GetChannelRequest::class => MockResponse::make($this->makeDiscordChannelResponse($this->event->channel_id)),
+            GetMessageRequest::class => $this->makeDiscordErrorResponse(404, 10008, 'Unknown Message'),
+            CreateMessageRequest::class => MockResponse::make($this->makeDiscordMessageResponse('565656565656565656', $this->event->channel_id)),
+        ]);
 
         $this->actingAs($this->editor)
             ->postJson(route('api.events.publish-assignments', $this->event))
             ->assertNoContent();
 
-        $pushed = Queue::pushed(SendQueuedNotifications::class)->first();
-        $this->assertNotNull($pushed, 'No SendQueuedNotifications job was pushed');
-        $this->assertInstanceOf(RaidAssignmentsPublished::class, $pushed->notification);
-        $this->assertSame($existing->id, $pushed->notification->updates()?->id);
-    }
-
-    #[Test]
-    public function it_does_not_target_a_notification_for_a_different_event(): void
-    {
-        Queue::fake();
-
-        $this->mock(Discord::class)
-            ->shouldReceive('getChannel')
-            ->once()
-            ->with($this->event->channel_id)
-            ->andReturn(Channel::from(['id' => $this->event->channel_id]));
-
-        $otherEvent = Event::factory()->create();
-        DiscordNotification::factory()
-            ->withRelatedModels([['model_type' => Event::class, 'model_id' => $otherEvent->getKey()]])
-            ->create(['type' => RaidAssignmentsPublished::class]);
-
-        $this->actingAs($this->editor)
-            ->postJson(route('api.events.publish-assignments', $this->event));
-
-        Queue::assertPushed(SendQueuedNotifications::class, function ($job) {
-            return $job->notification instanceof RaidAssignmentsPublished
-                && $job->notification->updates() === null;
-        });
+        $this->assertSoftDeleted($stale);
+        Saloon::assertNotSent(CreateMessageRequest::class);
     }
 
     #[Group('authorization')]

@@ -10,14 +10,16 @@ use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
 use App\Http\Integrations\Discord\Enums\EmbedType;
 use App\Models\Event;
 use App\Notifications\Concerns\UpdatesExisting;
+use App\Notifications\Contracts\ShouldUpdateExisting;
 use App\Notifications\Discord\DiscordChannel;
 use App\Notifications\Discord\DiscordMessage;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Support\Facades\Storage;
 
-class RaidAssignmentsPublished extends DiscordMessage implements ShouldBroadcast
+class RaidAssignmentsPublished extends DiscordMessage implements ShouldBroadcast, ShouldUpdateExisting
 {
     use UpdatesExisting;
 
@@ -94,6 +96,14 @@ class RaidAssignmentsPublished extends DiscordMessage implements ShouldBroadcast
             'payload' => $this->toMessage()->toArray(),
             'created_by_user_id' => $this->sender()?->id,
         ];
+    }
+
+    /**
+     * Narrow the stored-notification lookup to this notification's event.
+     */
+    protected function constrainExisting(Builder $query): Builder
+    {
+        return $query->relatedTo(Event::class, $this->relatedModel(Event::class)['model_id']);
     }
 
     /**

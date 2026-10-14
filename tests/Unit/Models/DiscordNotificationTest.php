@@ -4,7 +4,9 @@ namespace Tests\Unit\Models;
 
 use App\Casts\AsClassName;
 use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
+use App\Models\Comment;
 use App\Models\DiscordNotification;
+use App\Models\Event;
 use App\Models\User;
 use App\Notifications\DailyQuestsMessage;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -246,5 +248,37 @@ class DiscordNotificationTest extends ModelTestCase
 
         $this->assertSame('https://regrowth.test/a.png', $stored['embeds'][0]['footer']['icon_url']);
         $this->assertArrayNotHasKey('iconUrl', $stored['embeds'][0]['footer']);
+    }
+
+    // ==================== relatedTo scope ====================
+
+    #[Test]
+    public function related_to_matches_notifications_linked_to_the_given_model(): void
+    {
+        $event = Event::factory()->create();
+        $linked = DiscordNotification::factory()
+            ->withRelatedModels([['model_type' => Event::class, 'model_id' => $event->getKey()]])
+            ->create();
+        DiscordNotification::factory()
+            ->withRelatedModels([['model_type' => Event::class, 'model_id' => Event::factory()->create()->getKey()]])
+            ->create();
+        DiscordNotification::factory()->create();
+
+        $matched = DiscordNotification::relatedTo(Event::class, $event->getKey())->pluck('id')->all();
+
+        $this->assertSame([$linked->id], $matched);
+    }
+
+    #[Test]
+    public function related_to_ignores_a_different_model_type_with_the_same_id(): void
+    {
+        $event = Event::factory()->create();
+        DiscordNotification::factory()
+            ->withRelatedModels([['model_type' => Comment::class, 'model_id' => $event->getKey()]])
+            ->create();
+
+        $matched = DiscordNotification::relatedTo(Event::class, $event->getKey())->exists();
+
+        $this->assertFalse($matched);
     }
 }

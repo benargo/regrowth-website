@@ -3,14 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Enums\DailyQuestType;
+use App\Http\Integrations\Discord\Data\Channels\ChannelStub;
 use App\Http\Requests\StoreDailyQuestsRequest;
 use App\Http\Resources\DailyQuestResource;
 use App\Models\DailyQuest;
 use App\Models\DiscordNotification;
 use App\Models\DiscordNotificationRelatedModel;
 use App\Notifications\DailyQuestsMessage;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Notifications\NotifiableChannel;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\RedirectResponse;
@@ -22,10 +21,6 @@ use Inertia\Response;
 
 class DailyQuestsController extends Controller
 {
-    public function __construct(
-        private Discord $discord,
-    ) {}
-
     /*
     |--------------------------------------------------------------------------
     | Index
@@ -95,7 +90,6 @@ class DailyQuestsController extends Controller
 
         $this->channel()->notify(
             (new DailyQuestsMessage($quests))
-                ->updatesExisting($this->getExistingNotification())
                 ->withSender($request->user())
                 ->withRelatedModels(array_filter($quests))
         );
@@ -112,9 +106,9 @@ class DailyQuestsController extends Controller
     /**
      * Get the Discord channel instance for daily quests notifications.
      */
-    private function channel(): NotifiableChannel
+    private function channel(): ChannelStub
     {
-        return NotifiableChannel::fromConfig('daily_quests', $this->discord);
+        return new ChannelStub(config('services.discord.channels.daily_quests'));
     }
 
     /**

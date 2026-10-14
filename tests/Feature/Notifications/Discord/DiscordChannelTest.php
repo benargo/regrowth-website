@@ -13,11 +13,16 @@ use App\Http\Integrations\Discord\Requests\Messages\EditMessageRequest;
 use App\Http\Integrations\Discord\Requests\Messages\GetMessageRequest;
 use App\Models\DiscordNotification;
 use App\Models\User;
+use App\Notifications\Attributes\RepostsIfOriginalDeleted;
+use App\Notifications\Concerns\UpdatesExisting;
+use App\Notifications\Contracts\ShouldUpdateExisting;
 use App\Notifications\DailyQuestsMessage;
 use App\Notifications\Discord\DiscordChannel;
 use App\Notifications\Discord\DiscordMessage;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
+use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
@@ -25,6 +30,36 @@ use Saloon\Http\Request;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
+
+abstract class UpdatingMessageFixture extends DiscordMessage implements ShouldUpdateExisting
+{
+    use UpdatesExisting;
+
+    public function toMessage(): MessagePayloadData
+    {
+        return MessagePayloadData::from(['content' => 'Reposted!']);
+    }
+
+    public function toDatabase(ChannelContract $notifiable): array
+    {
+        return [
+            'type' => static::class,
+            'channel_id' => $notifiable->id,
+            'payload' => $this->toMessage()->toArray(),
+            'created_by_user_id' => null,
+        ];
+    }
+
+    protected function constrainExisting(Builder $query): Builder
+    {
+        return $query;
+    }
+}
+
+#[RepostsIfOriginalDeleted]
+class RepostingMessageFixture extends UpdatingMessageFixture {}
+
+class EditOnlyMessageFixture extends UpdatingMessageFixture {}
 
 #[Group('discord-integration')]
 class DiscordChannelTest extends TestCase
@@ -54,7 +89,6 @@ class DiscordChannelTest extends TestCase
         $payload = MessagePayloadData::from(['content' => 'Hello!']);
 
         $notification = Mockery::mock(DiscordMessage::class);
-        $notification->updates = null;
         $notification->expects('toMessage')->once()->andReturn($payload);
         $notification->expects('toDatabase')->once()->with($this->notifiable)->andReturn($this->databaseRow($payload));
         $notification->expects('mapRelatedModels')->once()->andReturn([]);
@@ -74,6 +108,24 @@ class DiscordChannelTest extends TestCase
             && $request->body()->all() === ['content' => 'Hello!']);
     }
 
+    #[Test]
+    public function it_creates_a_new_message_when_an_updating_notification_has_no_stored_message(): void
+    {
+        $payload = MessagePayloadData::from(['content' => 'First post!']);
+
+        $notification = $this->updatingMessage(null);
+        $notification->expects('toMessage')->once()->andReturn($payload);
+        $notification->expects('toDatabase')->once()->with($this->notifiable)->andReturn($this->databaseRow($payload));
+        $notification->expects('mapRelatedModels')->once()->andReturn([]);
+
+        $this->fakeCreatedMessage('131313131313131313');
+
+        $this->driver->send($this->notifiable, $notification);
+
+        $this->assertDatabaseHas('discord_notifications', ['message_id' => '131313131313131313']);
+        Saloon::assertNotSent(GetMessageRequest::class);
+    }
+
     // ==================== send — edit ====================
 
     #[Test]
@@ -82,8 +134,7 @@ class DiscordChannelTest extends TestCase
         $payload = MessagePayloadData::from(['content' => 'Updated!']);
         $existingNotification = $this->storedNotification('222222222222222222');
 
-        $notification = Mockery::mock(DiscordMessage::class);
-        $notification->updates = $existingNotification;
+        $notification = $this->updatingMessage($existingNotification);
         $notification->expects('toMessage')->once()->andReturn($payload);
         $notification->expects('sender')->once()->andReturnNull();
         $notification->expects('mapRelatedModels')->never();
@@ -111,8 +162,7 @@ class DiscordChannelTest extends TestCase
         $payload = MessagePayloadData::from(['content' => 'Edited by user']);
         $existingNotification = $this->storedNotification('333333333333333333');
 
-        $notification = Mockery::mock(DiscordMessage::class);
-        $notification->updates = $existingNotification;
+        $notification = $this->updatingMessage($existingNotification);
         $notification->expects('toMessage')->once()->andReturn($payload);
         $notification->expects('sender')->once()->andReturn($user);
         $notification->expects('mapRelatedModels')->never();
@@ -132,8 +182,7 @@ class DiscordChannelTest extends TestCase
     {
         $payload = MessagePayloadData::from(['content' => 'No create needed']);
 
-        $notification = Mockery::mock(DiscordMessage::class);
-        $notification->updates = $this->storedNotification('666666666666666666');
+        $notification = $this->updatingMessage($this->storedNotification('666666666666666666'));
         $notification->expects('toMessage')->once()->andReturn($payload);
         $notification->expects('sender')->once()->andReturnNull();
         $notification->expects('mapRelatedModels')->never();
@@ -152,8 +201,7 @@ class DiscordChannelTest extends TestCase
         $payload = MessagePayloadData::from(['content' => 'Edited with related models']);
         $existingNotification = $this->storedNotification('123456789012345678');
 
-        $notification = Mockery::mock(DiscordMessage::class);
-        $notification->updates = $existingNotification;
+        $notification = $this->updatingMessage($existingNotification);
         $notification->relatedModels = []; // non-null: sync should run
         $notification->expects('toMessage')->once()->andReturn($payload);
         $notification->expects('sender')->once()->andReturnNull();
@@ -183,8 +231,7 @@ class DiscordChannelTest extends TestCase
     {
         $payload = MessagePayloadData::from(['content' => 'Edit, no model change']);
 
-        $notification = Mockery::mock(DiscordMessage::class);
-        $notification->updates = $this->storedNotification('112233445566778899');
+        $notification = $this->updatingMessage($this->storedNotification('112233445566778899'));
         $notification->relatedModels = null; // null: skip sync entirely
         $notification->expects('toMessage')->once()->andReturn($payload);
         $notification->expects('sender')->once()->andReturnNull();
@@ -195,27 +242,19 @@ class DiscordChannelTest extends TestCase
         $this->driver->send($this->notifiable, $notification);
     }
 
-    // ==================== send — fallback to create ====================
+    // ==================== send — original deleted ====================
 
     #[Test]
-    public function it_deletes_the_stale_db_record_and_creates_a_new_message_when_the_discord_message_no_longer_exists(): void
+    public function it_deletes_the_stale_record_and_reposts_when_the_discord_message_no_longer_exists(): void
     {
-        $payload = MessagePayloadData::from(['content' => 'Recovered!']);
-        $staleNotification = $this->storedNotification('444444444444444444');
-
-        $notification = Mockery::mock(DiscordMessage::class);
-        $notification->updates = $staleNotification;
-        $notification->expects('toMessage')->once()->andReturn($payload);
-        $notification->expects('toDatabase')->once()->with($this->notifiable)->andReturn($this->databaseRow($payload));
-        $notification->expects('mapRelatedModels')->once()->andReturn([]);
-        $notification->expects('sender')->never();
+        $stale = $this->storedNotification('444444444444444444', RepostingMessageFixture::class);
 
         $this->fakeDiscord([GetMessageRequest::class => $this->makeDiscordErrorResponse(404, 10008, 'Unknown Message')]);
         $this->fakeCreatedMessage('555555555555555555');
 
-        $this->driver->send($this->notifiable, $notification);
+        $this->driver->send($this->notifiable, new RepostingMessageFixture);
 
-        $this->assertSoftDeleted('discord_notifications', ['id' => $staleNotification->id]);
+        $this->assertSoftDeleted('discord_notifications', ['id' => $stale->id]);
         $this->assertDatabaseHas('discord_notifications', [
             'message_id' => '555555555555555555',
             'channel_id' => $this->channel->id,
@@ -224,17 +263,9 @@ class DiscordChannelTest extends TestCase
     }
 
     #[Test]
-    public function send_falls_through_to_create_when_edit_message_throws_message_not_found_exception(): void
+    public function it_reposts_when_the_edit_request_reports_the_message_missing(): void
     {
-        $payload = MessagePayloadData::from(['content' => 'Recovered via edit failure!']);
-        $staleNotification = $this->storedNotification('777777777777777777');
-
-        $notification = Mockery::mock(DiscordMessage::class);
-        $notification->updates = $staleNotification;
-        $notification->expects('toMessage')->twice()->andReturn($payload);
-        $notification->expects('toDatabase')->once()->with($this->notifiable)->andReturn($this->databaseRow($payload));
-        $notification->expects('mapRelatedModels')->once()->andReturn([]);
-        $notification->expects('sender')->never();
+        $stale = $this->storedNotification('777777777777777777', RepostingMessageFixture::class);
 
         $this->fakeDiscord([
             GetMessageRequest::class => MockResponse::make($this->makeDiscordMessageResponse('777777777777777777', $this->channel->id)),
@@ -242,13 +273,44 @@ class DiscordChannelTest extends TestCase
         ]);
         $this->fakeCreatedMessage('888888888888888888');
 
-        $this->driver->send($this->notifiable, $notification);
+        $this->driver->send($this->notifiable, new RepostingMessageFixture);
 
-        $this->assertSoftDeleted('discord_notifications', ['id' => $staleNotification->id]);
+        $this->assertSoftDeleted('discord_notifications', ['id' => $stale->id]);
         $this->assertDatabaseHas('discord_notifications', [
             'message_id' => '888888888888888888',
             'channel_id' => $this->channel->id,
         ]);
+    }
+
+    #[Test]
+    public function it_deletes_the_stale_record_without_reposting_when_the_notification_does_not_repost(): void
+    {
+        $stale = $this->storedNotification('454545454545454545', EditOnlyMessageFixture::class);
+
+        $this->fakeDiscord([GetMessageRequest::class => $this->makeDiscordErrorResponse(404, 10008, 'Unknown Message')]);
+        $this->fakeCreatedMessage('565656565656565656');
+
+        $this->driver->send($this->notifiable, new EditOnlyMessageFixture);
+
+        $this->assertSoftDeleted('discord_notifications', ['id' => $stale->id]);
+        Saloon::assertNotSent(CreateMessageRequest::class);
+    }
+
+    #[Test]
+    public function a_daily_quests_message_reposts_when_its_original_was_deleted(): void
+    {
+        $stale = $this->storedNotification('676767676767676767', DailyQuestsMessage::class);
+
+        $this->fakeDiscord([GetMessageRequest::class => $this->makeDiscordErrorResponse(404, 10008, 'Unknown Message')]);
+        $this->fakeCreatedMessage('787878787878787878');
+
+        $this->driver->send(
+            $this->notifiable,
+            new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]),
+        );
+
+        $this->assertSoftDeleted('discord_notifications', ['id' => $stale->id]);
+        Saloon::assertSent(CreateMessageRequest::class);
     }
 
     // ==================== related models ====================
@@ -260,7 +322,6 @@ class DiscordChannelTest extends TestCase
         $payload = MessagePayloadData::from(['content' => 'With related models']);
 
         $notification = Mockery::mock(DiscordMessage::class);
-        $notification->updates = null;
         $notification->expects('toMessage')->once()->andReturn($payload);
         $notification->expects('toDatabase')->once()->with($this->notifiable)->andReturn($this->databaseRow($payload));
         $notification->expects('mapRelatedModels')->once()->andReturn([
@@ -293,7 +354,6 @@ class DiscordChannelTest extends TestCase
         $payload = MessagePayloadData::from(['content' => 'Related model isolation test']);
 
         $firstNotification = Mockery::mock(DiscordMessage::class);
-        $firstNotification->updates = null;
         $firstNotification->expects('toMessage')->once()->andReturn($payload);
         $firstNotification->expects('toDatabase')->once()->with($this->notifiable)->andReturn($this->databaseRow($payload));
         $firstNotification->expects('mapRelatedModels')->once()->andReturn([
@@ -305,7 +365,6 @@ class DiscordChannelTest extends TestCase
         $this->driver->send($this->notifiable, $firstNotification);
 
         $secondNotification = Mockery::mock(DiscordMessage::class);
-        $secondNotification->updates = null;
         $secondNotification->expects('toMessage')->once()->andReturn($payload);
         $secondNotification->expects('toDatabase')->once()->with($this->notifiable)->andReturn($this->databaseRow($payload));
         $secondNotification->expects('mapRelatedModels')->once()->andReturn([
@@ -339,8 +398,7 @@ class DiscordChannelTest extends TestCase
             'model_id' => (string) $user->id,
         ]);
 
-        $notification = Mockery::mock(DiscordMessage::class);
-        $notification->updates = $existingNotification;
+        $notification = $this->updatingMessage($existingNotification);
         $notification->relatedModels = [['model_id' => $user->id, 'model_type' => User::class]];
         $notification->expects('toMessage')->once()->andReturn($payload);
         $notification->expects('sender')->once()->andReturnNull();
@@ -368,8 +426,7 @@ class DiscordChannelTest extends TestCase
         $payload = MessagePayloadData::from(['content' => 'Will fail on edit']);
         $existingNotification = $this->storedNotification('999999999999999999');
 
-        $notification = Mockery::mock(DiscordMessage::class);
-        $notification->updates = $existingNotification;
+        $notification = $this->updatingMessage($existingNotification);
         $notification->expects('toMessage')->once()->andReturn($payload);
 
         $this->fakeDiscord([
@@ -394,8 +451,7 @@ class DiscordChannelTest extends TestCase
     {
         $existingNotification = $this->storedNotification('121212121212121212');
 
-        $notification = Mockery::mock(DiscordMessage::class);
-        $notification->updates = $existingNotification;
+        $notification = $this->updatingMessage($existingNotification);
         $notification->expects('toMessage')->never();
 
         $this->fakeDiscord([GetMessageRequest::class => $this->makeDiscordErrorResponse(404, 10003, 'Unknown Channel')]);
@@ -413,12 +469,24 @@ class DiscordChannelTest extends TestCase
 
     // ==================== helpers ====================
 
-    private function storedNotification(string $messageId): DiscordNotification
+    private function storedNotification(string $messageId, string $type = DailyQuestsMessage::class): DiscordNotification
     {
         return DiscordNotification::factory()->create([
+            'type' => $type,
             'channel_id' => $this->channel->id,
             'message_id' => $messageId,
         ]);
+    }
+
+    /**
+     * Mock a DiscordMessage whose stored-notification lookup returns the given record.
+     */
+    private function updatingMessage(?DiscordNotification $existing): MockInterface
+    {
+        $notification = Mockery::mock(DiscordMessage::class.', '.ShouldUpdateExisting::class);
+        $notification->expects('existingNotification')->with($this->notifiable)->andReturn($existing);
+
+        return $notification;
     }
 
     /**

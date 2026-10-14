@@ -18,6 +18,7 @@ use Tests\TestCase;
 #[Group('comments')]
 #[Group('blizzard-integration')]
 #[Group('loot')]
+#[Group('discord-integration')]
 class CommentsCacheTest extends TestCase
 {
     use MocksBlizzardServices;
@@ -30,7 +31,7 @@ class CommentsCacheTest extends TestCase
 
         Queue::fake();
 
-        $this->mockDiscordChannel();
+        $this->fakeDiscordChannel();
 
         $this->mockGetItem();
         $this->applyBlizzardMocks();

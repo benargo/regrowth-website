@@ -223,24 +223,37 @@ class DailyQuestsMessageTest extends TestCase
         $this->assertSame($user->id, $data['created_by_user_id']);
     }
 
-    // ==================== updates and sender ====================
+    // ==================== existing notification and sender ====================
 
     #[Test]
-    public function it_returns_null_for_updates_when_none_provided(): void
+    public function it_finds_the_message_posted_since_yesterdays_reset(): void
     {
-        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]);
+        $this->travelTo('2026-10-14 12:00:00');
+        $posted = DiscordNotification::factory()->create([
+            'type' => DailyQuestsMessage::class,
+            'channel_id' => $this->notifiable->id,
+        ]);
 
-        $this->assertNull($notification->updates());
+        $found = (new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]))
+            ->existingNotification($this->notifiable);
+
+        $this->assertTrue($found->is($posted));
     }
 
     #[Test]
-    public function it_returns_the_discord_notification_instance_to_update(): void
+    public function it_ignores_a_message_posted_before_yesterdays_reset(): void
     {
-        $existing = DiscordNotification::factory()->create();
-        $notification = (new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]))
-            ->updatesExisting($existing);
+        $this->travelTo('2026-10-12 12:00:00');
+        DiscordNotification::factory()->create([
+            'type' => DailyQuestsMessage::class,
+            'channel_id' => $this->notifiable->id,
+        ]);
+        $this->travelTo('2026-10-14 12:00:00');
 
-        $this->assertSame($existing->id, $notification->updates()->id);
+        $found = (new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]))
+            ->existingNotification($this->notifiable);
+
+        $this->assertNull($found);
     }
 
     #[Test]

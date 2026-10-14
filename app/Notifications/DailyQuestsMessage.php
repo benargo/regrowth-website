@@ -10,10 +10,15 @@ use App\Http\Integrations\Discord\Data\Messages\EmbedFooterData;
 use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
 use App\Models\DailyQuest;
 use App\Models\DiscordRole;
+use App\Notifications\Attributes\RepostsIfOriginalDeleted;
 use App\Notifications\Concerns\UpdatesExisting;
+use App\Notifications\Contracts\ShouldUpdateExisting;
 use App\Notifications\Discord\DiscordMessage;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 
-class DailyQuestsMessage extends DiscordMessage
+#[RepostsIfOriginalDeleted]
+class DailyQuestsMessage extends DiscordMessage implements ShouldUpdateExisting
 {
     use UpdatesExisting;
 
@@ -101,5 +106,15 @@ class DailyQuestsMessage extends DiscordMessage
             'payload' => $this->toMessage()->toArray(),
             'created_by_user_id' => $this->sender()?->id,
         ];
+    }
+
+    /**
+     * Narrow the stored-notification lookup to messages posted between yesterday's and tomorrow's reset.
+     */
+    protected function constrainExisting(Builder $query): Builder
+    {
+        return $query
+            ->where('created_at', '>=', Carbon::yesterday()->setTime(4, 0, 0))
+            ->where('created_at', '<=', Carbon::tomorrow()->setTime(3, 59, 59));
     }
 }
