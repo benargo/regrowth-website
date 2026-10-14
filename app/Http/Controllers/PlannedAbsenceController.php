@@ -3,16 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Characters\RefreshCharacterPortrait;
-use App\Actions\Discord\SearchGuildMembers;
+use App\Actions\Discord\LookUpGuildMembers;
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Contracts\HasCharacterMedia;
 use App\Data\PlannedAbsenceReasonData;
 use App\Http\Controllers\Concerns\SharesCharacterPortrait;
-use App\Http\Integrations\Discord\Data\Users\UserData;
-use App\Http\Integrations\Discord\DiscordConnector;
-use App\Http\Integrations\Discord\Exceptions\ApiException;
-use App\Http\Integrations\Discord\Exceptions\UserNotInGuildException;
-use App\Http\Integrations\Discord\Requests\Guilds\GetGuildMemberRequest;
 use App\Http\Middleware\RemembersCurrentGameVersion;
 use App\Http\Requests\StorePlannedAbsenceRequest;
 use App\Http\Requests\UpdatePlannedAbsenceRequest;
@@ -20,11 +15,9 @@ use App\Http\Resources\CharacterResource;
 use App\Http\Resources\GameVersionResource;
 use App\Http\Resources\PlannedAbsenceResource;
 use App\Models\Character;
-use App\Models\DiscordRole;
 use App\Models\GameVersion;
 use App\Models\PlannedAbsence;
 use App\Models\User;
-use Illuminate\Container\Attributes\Config;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -141,7 +134,7 @@ class PlannedAbsenceController extends Controller
             'characters' => fn () => $this->pickerCharacters($gameVersion()),
             'action' => route('raiding.absences.store'),
             'reasons' => fn () => PlannedAbsenceReasonData::options(),
-            'discord_members' => Inertia::optional(fn (): array => SearchGuildMembers::run($request->only(['member_search', 'member_limit']))),
+            'discord_members' => Inertia::optional(fn (): array => LookUpGuildMembers::run($request->only(['member_search', 'member_limit']), $request->user())),
             'character_portrait' => Inertia::optional(fn (): array => $this->characterPortrait($request)),
         ]);
     }
@@ -150,18 +143,11 @@ class PlannedAbsenceController extends Controller
      * Store a newly created resource in storage.
      */
     #[Authorize('create', PlannedAbsence::class)]
-    public function store(
-        StorePlannedAbsenceRequest $request,
-        DiscordConnector $discord,
-        #[Config('services.discord.server_id')] string $serverId,
-    ): RedirectResponse {
-        if ($request->has('user')) {
-            $user = $this->resolveUser($request->input('user'), $discord, $serverId);
-        }
-
+    public function store(StorePlannedAbsenceRequest $request): RedirectResponse
+    {
         PlannedAbsence::create([
             'character_id' => $request->integer('character'),
-            'user_id' => $user->id ?? null,
+            'user_id' => $request->input('user'),
             'start_date' => $request->input('start_date'),
             'end_date' => $request->input('end_date', null),
             'reason' => $request->input('reason'),
@@ -192,7 +178,7 @@ class PlannedAbsenceController extends Controller
             'characters' => fn () => $this->pickerCharacters($gameVersion()),
             'action' => route('raiding.absences.update', $plannedAbsence),
             'reasons' => fn () => PlannedAbsenceReasonData::options(),
-            'discord_members' => Inertia::optional(fn (): array => SearchGuildMembers::run($request->only(['member_search', 'member_limit']))),
+            'discord_members' => Inertia::optional(fn (): array => LookUpGuildMembers::run($request->only(['member_search', 'member_limit']), $request->user())),
             'character_portrait' => Inertia::optional(fn (): array => $this->characterPortrait($request)),
         ]);
     }
@@ -201,12 +187,8 @@ class PlannedAbsenceController extends Controller
      * Update the specified resource in storage.
      */
     #[Authorize('update', 'plannedAbsence')]
-    public function update(
-        UpdatePlannedAbsenceRequest $request,
-        PlannedAbsence $plannedAbsence,
-        DiscordConnector $discord,
-        #[Config('services.discord.server_id')] string $serverId,
-    ): RedirectResponse {
+    public function update(UpdatePlannedAbsenceRequest $request, PlannedAbsence $plannedAbsence): RedirectResponse
+    {
         $updates = $request->safe()->only(['start_date', 'end_date', 'reason', 'notes']);
 
         if ($request->has('character')) {
@@ -214,7 +196,7 @@ class PlannedAbsenceController extends Controller
         }
 
         if ($request->has('user')) {
-            $updates['user_id'] = $this->resolveUser($request->input('user'), $discord, $serverId)->id;
+            $updates['user_id'] = $request->input('user');
         }
 
         $plannedAbsence->update($updates);
@@ -250,42 +232,6 @@ class PlannedAbsenceController extends Controller
         $plannedAbsence->restore();
 
         return back()->with('success', 'Planned absence restored successfully.');
-    }
-
-    /**
-     * Find a user by ID, or create one from their Discord guild member data.
-     *
-     * @throws UserNotInGuildException
-     * @throws ApiException
-     */
-    private function resolveUser(string $userIdentifier, DiscordConnector $discord, string $serverId): User
-    {
-        $user = User::find($userIdentifier);
-
-        if ($user) {
-            return $user;
-        }
-
-        // If the user doesn't exist in our database, attempt to fetch them from the Discord API
-        $member = $discord->send(new GetGuildMemberRequest($serverId, $userIdentifier))->dto();
-        $discordUser = $member->user instanceof UserData ? $member->user : null;
-
-        // If we successfully fetch the guild member data, create a new user record in our database
-        $user = User::create([
-            'id' => $userIdentifier,
-            'username' => $discordUser?->username,
-            'discriminator' => $discordUser?->discriminator ?? '0',
-            'nickname' => $member->nick,
-            'avatar' => $discordUser?->avatar,
-            'guild_avatar' => $member->avatar,
-            'banner' => $member->banner,
-        ]);
-
-        $incomingRoleIds = $member->roles;
-        $recognizedRoleIds = DiscordRole::whereIn('id', $incomingRoleIds)->pluck('id')->toArray();
-        $user->discordRoles()->sync($recognizedRoleIds);
-
-        return $user;
     }
 
     /**

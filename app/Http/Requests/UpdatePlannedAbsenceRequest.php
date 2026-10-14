@@ -38,7 +38,7 @@ class UpdatePlannedAbsenceRequest extends FormRequest
                     ->where('game_version_id', $this->integer('game_version'))
                     ->where('is_main', true),
             ],
-            'user' => ['sometimes', 'nullable', 'string'],
+            'user' => ['sometimes', 'nullable', 'string', Rule::exists('users', 'id')],
             ...$this->updateAbsenceDetailRules($plannedAbsence),
         ];
     }
@@ -56,6 +56,7 @@ class UpdatePlannedAbsenceRequest extends FormRequest
             'character.integer' => 'The character ID must be an integer.',
             'character.min' => 'The character ID must be at least 1.',
             'character.exists' => 'Choose a main character.',
+            'user.exists' => 'Pick a Discord member and wait for them to finish loading.',
             ...$this->absenceDetailMessages(),
         ];
     }
