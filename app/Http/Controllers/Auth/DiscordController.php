@@ -50,6 +50,11 @@ class DiscordController extends Controller
 
         $user = UpsertUserFromGuildMember::run($member);
 
+        if ($user === null) {
+            return redirect('/')
+                ->with('error', 'Failed to verify your Discord server membership. Please try again.');
+        }
+
         Auth::login($user, remember: true);
 
         return redirect()->intended('/');

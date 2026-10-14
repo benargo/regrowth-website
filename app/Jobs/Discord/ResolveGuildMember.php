@@ -56,7 +56,13 @@ class ResolveGuildMember implements ShouldQueue
                 return;
             }
 
-            DB::transaction(fn (): ?User => UpsertUserFromGuildMember::run($member));
+            $user = DB::transaction(fn (): ?User => UpsertUserFromGuildMember::run($member));
+
+            if ($user === null) {
+                DiscordMemberResolved::dispatch($this->requestedBy, $this->memberId, 'failed');
+
+                return;
+            }
         }
 
         DiscordMemberResolved::dispatch($this->requestedBy, $this->memberId, 'ready');

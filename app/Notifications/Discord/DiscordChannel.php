@@ -103,11 +103,17 @@ class DiscordChannel
     }
 
     /**
-     * Determine whether the notification's class is marked #[RepostsIfOriginalDeleted].
+     * Determine whether the notification's class, or one of its parents, is marked #[RepostsIfOriginalDeleted].
      */
     private function repostsIfOriginalDeleted(DiscordMessage $notification): bool
     {
-        return (new ReflectionClass($notification))->getAttributes(RepostsIfOriginalDeleted::class) !== [];
+        for ($class = new ReflectionClass($notification); $class !== false; $class = $class->getParentClass()) {
+            if ($class->getAttributes(RepostsIfOriginalDeleted::class) !== []) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

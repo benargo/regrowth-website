@@ -8,6 +8,7 @@ use Saloon\Http\PendingRequest;
 
 /**
  * Throws RateLimitedException before sending while the route, or every route, is rate limited.
+ * Requests already answered by a fake response, such as a cached one, pass through.
  */
 final class GuardRateLimits
 {
@@ -17,6 +18,10 @@ final class GuardRateLimits
 
     public function __invoke(PendingRequest $pendingRequest): void
     {
+        if ($pendingRequest->hasFakeResponse()) {
+            return;
+        }
+
         $method = $pendingRequest->getMethod()->value;
         $endpoint = ltrim($pendingRequest->getRequest()->resolveEndpoint(), '/');
 

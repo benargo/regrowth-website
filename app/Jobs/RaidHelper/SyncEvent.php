@@ -314,7 +314,8 @@ class SyncEvent implements ShouldQueue
 
     /**
      * Fetch each of the given users from the Discord server and store them,
-     * skipping any whose lookup fails, and return the ids of the stored users.
+     * skipping any whose lookup fails and stopping once Discord rate limits the
+     * lookups, and return the ids of the stored users.
      *
      * @param  Collection<int, string>  $userIds
      * @return Collection<int, string>
@@ -337,7 +338,11 @@ class SyncEvent implements ShouldQueue
                     'raid_helper_event_id' => $this->data->id,
                     'user_id' => $userId,
                 ]);
-            } catch (DiscordRequestException|RateLimitedException|FatalRequestException $exception) {
+            } catch (RateLimitedException $exception) {
+                report($exception);
+
+                break;
+            } catch (DiscordRequestException|FatalRequestException $exception) {
                 report($exception);
             }
         }

@@ -405,7 +405,7 @@ class ProcessGrmUpload implements RequiresMinimumCharacterLevel, ShouldQueue
             (new ChannelStub(config('services.discord.channels.officer')))->notify(
                 new GrmUploadFailed(0, 1, [], $exception->getMessage())
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('GRM Upload: Failed to send failure notification', [
                 'error' => $e->getMessage(),
             ]);

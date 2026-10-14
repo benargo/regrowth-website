@@ -231,6 +231,23 @@ class DiscordConnectorTest extends DiscordTestCase
         Saloon::assertSentCount(2);
     }
 
+    #[Test]
+    #[Group('error-handling')]
+    public function it_serves_a_cached_response_while_the_route_is_rate_limited(): void
+    {
+        Saloon::fake([
+            MockResponse::make([], 200),
+            MockResponse::make(['message' => 'You are being rate limited.', 'retry_after' => 30, 'global' => false], 429),
+        ]);
+        $connector = $this->makeConnector();
+
+        $connector->send(new CacheableDiscordProbeRequest);
+        $this->sendExpectingException($connector, new DiscordProbeRequest);
+
+        $this->assertTrue($connector->send(new CacheableDiscordProbeRequest)->isCached());
+        Saloon::assertSentCount(2);
+    }
+
     // ==================== getRequestException — not found ====================
 
     #[Test]
