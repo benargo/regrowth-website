@@ -16,8 +16,6 @@ use App\Models\EventRaid;
 use App\Models\GameVersion;
 use App\Models\Phase;
 use App\Models\Raid;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Resources\Channel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -233,52 +231,6 @@ class EventTest extends ModelTestCase
         ]);
 
         $this->assertEquals(7200, $event->duration);
-    }
-
-    #[Test]
-    public function channel_attribute_returns_discord_channel(): void
-    {
-        $channelId = '123456789';
-        $channel = Channel::from(['id' => $channelId]);
-
-        $discord = $this->createMock(Discord::class);
-        $discord->expects($this->once())
-            ->method('getChannel')
-            ->with($channelId)
-            ->willReturn($channel);
-
-        $this->app->instance(Discord::class, $discord);
-
-        $event = Event::factory()->make(['channel_id' => $channelId]);
-
-        $this->assertSame($channel, $event->channel);
-    }
-
-    #[Test]
-    public function channel_attribute_is_cached(): void
-    {
-        $channelId = '123456789';
-        $channel = Channel::from(['id' => $channelId]);
-
-        $discord = $this->createMock(Discord::class);
-        $discord->expects($this->once())
-            ->method('getChannel')
-            ->willReturn($channel);
-
-        $this->app->instance(Discord::class, $discord);
-
-        $event = Event::factory()->make(['channel_id' => $channelId]);
-
-        $event->channel;
-        $event->channel;
-    }
-
-    #[Test]
-    public function channel_attribute_returns_null_when_channel_id_is_null(): void
-    {
-        $event = Event::factory()->make(['channel_id' => null]);
-
-        $this->assertNull($event->channel);
     }
 
     #[Test]

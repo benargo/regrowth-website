@@ -17,6 +17,7 @@ use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 #[Group('raiding')]
 class EventTemplateControllerTest extends TestCase
 {
@@ -46,7 +47,7 @@ class EventTemplateControllerTest extends TestCase
         $this->officer = User::factory()->create();
         $this->officer->discordRoles()->attach($this->officerRole->id);
 
-        $this->mockDiscordChannel(name: 'raids', position: 1, byDefault: true);
+        $this->fakeDiscordChannel(name: 'raids', position: 1);
     }
 
     // ==================== index ====================

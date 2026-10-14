@@ -15,6 +15,7 @@ use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 #[Group('raiding')]
 class ApplyTemplateTest extends TestCase
 {
@@ -43,7 +44,7 @@ class ApplyTemplateTest extends TestCase
         $this->officer = User::factory()->create();
         $this->officer->discordRoles()->attach($this->officerRole->id);
 
-        $this->mockDiscordChannel(name: 'raids', position: 1, byDefault: true);
+        $this->fakeDiscordChannel(name: 'raids', position: 1);
     }
 
     #[Test]

@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Casts\AsBinaryColor;
 use App\Enums\RaidBackground;
-use App\Services\Discord\Discord;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -80,22 +79,6 @@ class Event extends PrunableModel
     // ========== Custom attributes ============
 
     /**
-     * Get the Discord channel associated with the event.
-     */
-    protected function channel(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if (is_null($this->channel_id)) {
-                    return null;
-                }
-
-                return app(Discord::class)->getChannel($this->channel_id);
-            },
-        )->shouldCache();
-    }
-
-    /**
      * Get the duration of the event in seconds.
      */
     protected function duration(): Attribute
@@ -117,9 +100,7 @@ class Event extends PrunableModel
         return $this->belongsTo(GameVersion::class);
     }
 
-    /**
-     * @return BelongsToMany<Boss, $this>
-     */
+    /** @return BelongsToMany<Boss, $this> */
     public function bosses(): BelongsToMany
     {
         return $this->belongsToMany(Boss::class, 'pivot_events_bosses', 'event_id', 'boss_id')
@@ -129,9 +110,7 @@ class Event extends PrunableModel
             ->orderByPivot('sort_order');
     }
 
-    /**
-     * @return BelongsToMany<Character, $this>
-     */
+    /** @return BelongsToMany<Character, $this> */
     public function characters(): BelongsToMany
     {
         return $this->belongsToMany(Character::class, 'pivot_events_characters', 'event_id', 'character_id')
@@ -140,33 +119,25 @@ class Event extends PrunableModel
             ->withTimestamps();
     }
 
-    /**
-     * @return BelongsToMany<Character, $this>
-     */
+    /** @return BelongsToMany<Character, $this> */
     public function leaders(): BelongsToMany
     {
         return $this->characters()->wherePivot('is_leader', true);
     }
 
-    /**
-     * @return BelongsToMany<Character, $this>
-     */
+    /** @return BelongsToMany<Character, $this> */
     public function lootCouncillors(): BelongsToMany
     {
         return $this->characters()->wherePivot('is_loot_councillor', true);
     }
 
-    /**
-     * @return BelongsToMany<Character, $this>
-     */
+    /** @return BelongsToMany<Character, $this> */
     public function lootMasters(): BelongsToMany
     {
         return $this->characters()->wherePivot('is_loot_master', true);
     }
 
-    /**
-     * @return BelongsToMany<Raid, $this>
-     */
+    /** @return BelongsToMany<Raid, $this> */
     public function raids(): BelongsToMany
     {
         return $this->belongsToMany(Raid::class, 'pivot_events_raids', 'event_id', 'raid_id')
@@ -176,17 +147,13 @@ class Event extends PrunableModel
             ->orderByPivot('sort_order');
     }
 
-    /**
-     * @return HasMany<EventAssignmentGroup, $this>
-     */
+    /** @return HasMany<EventAssignmentGroup, $this> */
     public function assignmentGroups(): HasMany
     {
         return $this->hasMany(EventAssignmentGroup::class);
     }
 
-    /**
-     * @return HasMany<EventAssignment, $this>
-     */
+    /** @return HasMany<EventAssignment, $this> */
     public function assignments(): HasMany
     {
         return $this->hasMany(EventAssignment::class);

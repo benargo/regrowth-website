@@ -4,23 +4,28 @@ namespace Tests\Unit\Http\Resources;
 
 use App\Enums\RaidBackground;
 use App\Enums\SignupStatus;
+use App\Http\Integrations\Discord\Exceptions\ApiException;
+use App\Http\Integrations\Discord\Requests\Channels\GetChannelRequest;
 use App\Http\Resources\EventResource;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\EventAssignment;
 use App\Models\Raid;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Resources\Channel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Exceptions;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Laravel\Facades\Saloon;
+use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 #[Group('raiding')]
 class EventResourceTest extends TestCase
 {
+    use MocksDiscordService;
     use RefreshDatabase;
 
     #[Test]
@@ -132,15 +137,17 @@ class EventResourceTest extends TestCase
     #[Test]
     public function it_omits_channel_when_discord_api_fails(): void
     {
-        $discord = $this->createStub(Discord::class);
-        $discord->method('getChannel')->willThrowException(new \Exception('Discord unavailable'));
-        $this->app->instance(Discord::class, $discord);
+        Exceptions::fake();
+        $this->fakeDiscord([GetChannelRequest::class => $this->makeDiscordErrorResponse(403, 50001, 'Missing Access')]);
 
         $event = Event::factory()->create();
 
         $array = $this->makeResource($event);
 
         $this->assertArrayNotHasKey('channel', $array);
+        Exceptions::assertReported(fn (ApiException $exception): bool => $exception->getDiscordCode() === 50001);
+
+        Saloon::mockClient()->assertSentCount(1, GetChannelRequest::class);
     }
 
     #[Test]
@@ -184,6 +191,18 @@ class EventResourceTest extends TestCase
         $array = $this->makeResource($event);
 
         $this->assertNull($array['channel']);
+    }
+
+    #[Test]
+    public function it_does_not_call_discord_when_channel_id_is_null(): void
+    {
+        $this->fakeDiscord([]);
+
+        $event = Event::factory()->template()->create(['channel_id' => null, 'start_time' => null, 'end_time' => null]);
+
+        $this->makeResource($event);
+
+        Saloon::assertNothingSent();
     }
 
     // ==================== assignments ====================
@@ -537,13 +556,13 @@ class EventResourceTest extends TestCase
     #[Test]
     public function the_member_scope_omits_channel_when_discord_api_fails(): void
     {
-        $discord = $this->createStub(Discord::class);
-        $discord->method('getChannel')->willThrowException(new \Exception('Discord unavailable'));
-        $this->app->instance(Discord::class, $discord);
+        $this->fakeDiscord([GetChannelRequest::class => $this->makeDiscordErrorResponse(403, 50001, 'Missing Access')]);
 
         $event = Event::factory()->create();
 
         $this->assertArrayNotHasKey('channel', $this->makeMemberResource($event));
+
+        Saloon::mockClient()->assertSentCount(1, GetChannelRequest::class);
     }
 
     #[Test]
@@ -596,13 +615,11 @@ class EventResourceTest extends TestCase
     #[Test]
     public function the_visitor_scope_never_calls_the_discord_api(): void
     {
-        // No Discord stub is bound: if the visitor scope reached the channel
-        // lookup the container would resolve the real client and this would fail.
-        $discord = $this->createMock(Discord::class);
-        $discord->expects($this->never())->method('getChannel');
-        $this->app->instance(Discord::class, $discord);
+        $this->fakeDiscord([]);
 
         $this->makeVisitorResource(Event::factory()->live()->create());
+
+        Saloon::assertNothingSent();
     }
 
     #[Test]
@@ -638,15 +655,9 @@ class EventResourceTest extends TestCase
 
     // ==================== helpers ====================
 
-    private function mockChannel(string $id = '111222333', ?string $name = 'general', ?int $position = 0): Channel
+    private function mockChannel(string $id = '111222333', ?string $name = 'general', ?int $position = 0): void
     {
-        $channel = Channel::from(['id' => $id, 'name' => $name, 'position' => $position]);
-
-        $discord = $this->createStub(Discord::class);
-        $discord->method('getChannel')->willReturn($channel);
-        $this->app->instance(Discord::class, $discord);
-
-        return $channel;
+        $this->fakeDiscordChannel($id, $name, $position);
     }
 
     private function makeResource(Event $event): array

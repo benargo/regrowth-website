@@ -13,6 +13,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 #[Group('raiding')]
 class IndexTest extends TestCase
 {
@@ -64,7 +65,7 @@ class IndexTest extends TestCase
     #[Test]
     public function upcoming_events_within_the_next_week_are_returned(): void
     {
-        $this->mockDiscordChannel(name: 'raid-events', position: 1);
+        $this->fakeDiscordChannel(name: 'raid-events', position: 1);
 
         $user = User::factory()->create();
 
@@ -87,7 +88,7 @@ class IndexTest extends TestCase
     #[Test]
     public function template_events_are_excluded_from_upcoming_events(): void
     {
-        $this->mockDiscordChannel(name: 'raid-events', position: 1);
+        $this->fakeDiscordChannel(name: 'raid-events', position: 1);
 
         $user = User::factory()->create();
 
@@ -108,7 +109,7 @@ class IndexTest extends TestCase
     #[Test]
     public function upcoming_events_are_ordered_by_start_time_ascending(): void
     {
-        $this->mockDiscordChannel(name: 'raid-events', position: 1);
+        $this->fakeDiscordChannel(name: 'raid-events', position: 1);
 
         $user = User::factory()->create();
 
