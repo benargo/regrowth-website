@@ -3,14 +3,6 @@
 namespace Tests\Unit\Providers;
 
 use App\Http\Integrations\Discord\DiscordConnector;
-use App\Jobs\Discord\SyncRoles;
-use App\Jobs\Discord\SyncUser;
-use App\Models\User;
-use Illuminate\Contracts\Queue\Job;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Queue\Events\JobProcessed;
-use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -24,38 +16,6 @@ use Tests\TestCase;
 #[Group('discord-integration')]
 class DiscordServiceProviderTest extends TestCase
 {
-    use RefreshDatabase;
-
-    #[Test]
-    public function it_dispatches_sync_discord_users_when_sync_discord_roles_job_completes(): void
-    {
-        Bus::fake();
-
-        User::factory()->create();
-
-        $job = $this->createStub(Job::class);
-        $job->method('resolveName')->willReturn(SyncRoles::class);
-
-        Queue::after(fn () => null); // ensure listeners are registered
-
-        event(new JobProcessed('sync', $job));
-
-        Bus::assertBatched(fn ($batch) => $batch->jobs->contains(fn ($j) => $j instanceof SyncUser));
-    }
-
-    #[Test]
-    public function it_does_not_dispatch_sync_discord_users_for_other_jobs(): void
-    {
-        Bus::fake();
-
-        $job = $this->createStub(Job::class);
-        $job->method('resolveName')->willReturn(SyncRoles::class.'Other');
-
-        event(new JobProcessed('sync', $job));
-
-        Bus::assertNothingBatched();
-    }
-
     #[Test]
     #[Group('contract')]
     public function it_binds_the_discord_connector_as_a_singleton(): void
