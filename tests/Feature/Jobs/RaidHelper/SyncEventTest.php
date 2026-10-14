@@ -6,6 +6,7 @@ use App\Actions\Characters\MatchCharacterName;
 use App\Actions\EventBossResolver;
 use App\Enums\SignupStatus;
 use App\Events\Broadcasts\CompositionChanged;
+use App\Http\Integrations\Discord\Requests\Guilds\GetGuildMemberRequest;
 use App\Http\Integrations\RaidHelper\Data\Events\EventData;
 use App\Jobs\RaidHelper\FetchComposition;
 use App\Jobs\RaidHelper\SyncEvent;
@@ -15,6 +16,7 @@ use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\Phase;
 use App\Models\Raid;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -24,13 +26,21 @@ use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Http\PendingRequest;
+use Saloon\Http\Request;
+use Saloon\Laravel\Facades\Saloon;
+use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
 #[Group('raiding')]
 #[Group('raidhelper-integration')]
 class SyncEventTest extends TestCase
 {
+    use MocksDiscordService;
     use RefreshDatabase;
+
+    private const string SIGN_UP_USER_ID = '300000000000000001';
 
     private GameVersion $gameVersion;
 
@@ -43,6 +53,8 @@ class SyncEventTest extends TestCase
         Queue::fake([FetchComposition::class]);
 
         $this->gameVersion = GameVersion::factory()->create();
+
+        User::factory()->create(['id' => self::SIGN_UP_USER_ID]);
     }
 
     // ==================== event upsert ====================
@@ -767,6 +779,187 @@ class SyncEventTest extends TestCase
         $this->assertFalse($event->characters()->whereKey($oldArthas->id)->exists());
     }
 
+    // ==================== user sync ====================
+
+    #[Test]
+    #[Group('happy-path')]
+    public function it_attaches_signed_up_users_already_in_the_database(): void
+    {
+        Saloon::fake([]);
+        $other = User::factory()->create(['id' => '300000000000000002']);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'signUps' => [
+                $this->minimalSignUpPayload(),
+                $this->minimalSignUpPayload(['id' => 2, 'userId' => $other->id, 'name' => 'Jaina']),
+            ],
+        ])));
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+        $this->assertEqualsCanonicalizing([self::SIGN_UP_USER_ID, $other->id], $event->users()->pluck('users.id')->all());
+        Saloon::assertNothingSent();
+    }
+
+    #[Test]
+    public function it_detaches_users_who_are_no_longer_signed_up(): void
+    {
+        $removed = User::factory()->create(['id' => '300000000000000002']);
+        $event = Event::factory()->create(['raid_helper_event_id' => '111222333444555001']);
+        $event->users()->attach([self::SIGN_UP_USER_ID, $removed->id]);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'signUps' => [$this->minimalSignUpPayload()],
+        ])));
+
+        $this->assertSame([self::SIGN_UP_USER_ID], $event->users()->pluck('users.id')->all());
+    }
+
+    #[Test]
+    public function it_excludes_absence_sign_ups_from_users(): void
+    {
+        $event = Event::factory()->create(['raid_helper_event_id' => '111222333444555001']);
+        $event->users()->attach(self::SIGN_UP_USER_ID);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'signUps' => [$this->minimalSignUpPayload(['className' => 'Absence'])],
+        ])));
+
+        $this->assertCount(0, $event->users);
+    }
+
+    #[Test]
+    public function it_attaches_a_user_signed_up_twice_once(): void
+    {
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'signUps' => [
+                $this->minimalSignUpPayload(),
+                $this->minimalSignUpPayload(['id' => 2, 'name' => 'Alt']),
+            ],
+        ])));
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+        $this->assertSame([self::SIGN_UP_USER_ID], $event->users()->pluck('users.id')->all());
+    }
+
+    #[Test]
+    public function it_syncs_users_when_the_event_has_no_game_version(): void
+    {
+        Log::spy();
+        $versionlessRaid = Raid::factory()->for(Phase::factory())->create();
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'description' => $this->zonePayload([['id' => $versionlessRaid->id, 'name' => $versionlessRaid->name]]),
+            'signUps' => [$this->minimalSignUpPayload()],
+        ])));
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+        $this->assertNull($event->game_version_id);
+        $this->assertSame([self::SIGN_UP_USER_ID], $event->users()->pluck('users.id')->all());
+    }
+
+    #[Test]
+    #[Group('happy-path')]
+    public function it_imports_and_attaches_a_signed_up_user_missing_from_the_database(): void
+    {
+        $this->fakeDiscord([
+            GetGuildMemberRequest::class => MockResponse::make($this->makeDiscordGuildMemberWithUser('300000000000000002', 'newraider', 'New Raider')),
+        ]);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'signUps' => [
+                $this->minimalSignUpPayload(),
+                $this->minimalSignUpPayload(['id' => 2, 'userId' => '300000000000000002', 'name' => 'Jaina']),
+            ],
+        ])));
+
+        $this->assertDatabaseHas('users', ['id' => '300000000000000002', 'username' => 'newraider', 'nickname' => 'New Raider']);
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+        $this->assertEqualsCanonicalizing([self::SIGN_UP_USER_ID, '300000000000000002'], $event->users()->pluck('users.id')->all());
+        Saloon::assertSentCount(1);
+        Saloon::assertSent(fn (Request $request): bool => $request instanceof GetGuildMemberRequest
+            && str_ends_with($request->resolveEndpoint(), '/members/300000000000000002'));
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_skips_a_sign_up_whose_user_is_not_in_the_discord_server(): void
+    {
+        $this->fakeDiscord([
+            GetGuildMemberRequest::class => $this->makeDiscordErrorResponse(404, 10007, 'Unknown Member'),
+        ]);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'signUps' => [
+                $this->minimalSignUpPayload(),
+                $this->minimalSignUpPayload(['id' => 2, 'userId' => '300000000000000002', 'name' => 'Jaina']),
+            ],
+        ])));
+
+        $this->assertDatabaseMissing('users', ['id' => '300000000000000002']);
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+        $this->assertSame([self::SIGN_UP_USER_ID], $event->users()->pluck('users.id')->all());
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_skips_a_sign_up_whose_member_lookup_fails(): void
+    {
+        $this->fakeDiscord([
+            GetGuildMemberRequest::class => $this->makeDiscordErrorResponse(403, 50001, 'Missing Access'),
+        ]);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'signUps' => [
+                $this->minimalSignUpPayload(),
+                $this->minimalSignUpPayload(['id' => 2, 'userId' => '300000000000000002', 'name' => 'Jaina']),
+            ],
+        ])));
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+        $this->assertSame([self::SIGN_UP_USER_ID], $event->users()->pluck('users.id')->all());
+        Queue::assertPushed(FetchComposition::class);
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_skips_a_sign_up_when_discord_rate_limits_the_lookup(): void
+    {
+        $this->fakeDiscord([
+            GetGuildMemberRequest::class => $this->makeDiscordRateLimitResponse(1.5),
+        ]);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'signUps' => [
+                $this->minimalSignUpPayload(),
+                $this->minimalSignUpPayload(['id' => 2, 'userId' => '300000000000000002', 'name' => 'Jaina']),
+            ],
+        ])));
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+        $this->assertSame([self::SIGN_UP_USER_ID], $event->users()->pluck('users.id')->all());
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_imports_the_remaining_users_after_one_lookup_fails(): void
+    {
+        $this->fakeDiscord([
+            GetGuildMemberRequest::class => fn (PendingRequest $pendingRequest): MockResponse => str_ends_with($pendingRequest->getRequest()->resolveEndpoint(), '/members/300000000000000002')
+                ? $this->makeDiscordErrorResponse(404, 10007, 'Unknown Member')
+                : MockResponse::make($this->makeDiscordGuildMemberWithUser('300000000000000003', 'thrall')),
+        ]);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'signUps' => [
+                $this->minimalSignUpPayload(['id' => 2, 'userId' => '300000000000000002', 'name' => 'Jaina']),
+                $this->minimalSignUpPayload(['id' => 3, 'userId' => '300000000000000003', 'name' => 'Thrall']),
+            ],
+        ])));
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+        $this->assertSame(['300000000000000003'], $event->users()->pluck('users.id')->all());
+    }
+
     // ==================== channel filtering ====================
 
     #[Test]
@@ -912,7 +1105,7 @@ class SyncEventTest extends TestCase
     {
         return array_merge([
             'id' => '300000000000000001',
-            'userId' => '300000000000000001',
+            'userId' => self::SIGN_UP_USER_ID,
             'name' => 'SomeCharacter',
             'className' => 'Warrior',
             'specName' => 'Arms',

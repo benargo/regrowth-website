@@ -2,11 +2,17 @@
 
 namespace App\Jobs\RaidHelper;
 
+use App\Actions\Discord\FetchGuildMember;
+use App\Actions\Discord\UpsertUserFromGuildMember;
 use App\Actions\EventBossResolver;
 use App\Actions\Events\RefreshEventGameVersion;
 use App\Enums\SignupStatus;
 use App\Events\Broadcasts\CompositionChanged;
+use App\Http\Integrations\Discord\Exceptions\DiscordRequestException;
+use App\Http\Integrations\Discord\Exceptions\RateLimitedException;
+use App\Http\Integrations\Discord\Exceptions\UserNotInGuildException;
 use App\Http\Integrations\RaidHelper\Data\Events\EventData;
+use App\Http\Integrations\RaidHelper\Data\Events\SignUpData;
 use App\Http\Integrations\RaidHelper\Data\Zones\ZoneData;
 use App\Http\Resources\EventCompositionResource;
 use App\Jobs\Concerns\ResolvesCharacterNames;
@@ -15,12 +21,14 @@ use App\Models\Character;
 use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\Raid;
+use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Saloon\Exceptions\Request\FatalRequestException;
 
 class SyncEvent implements ShouldQueue
 {
@@ -82,6 +90,7 @@ class SyncEvent implements ShouldQueue
         $this->upsertEvent();
         $this->syncRaidsAndBosses();
         $this->syncBench();
+        $this->syncUsers();
 
         $this->broadcastComposition();
         Cache::tags(['events'])->flush();
@@ -208,9 +217,7 @@ class SyncEvent implements ShouldQueue
      */
     private function resolveSignedUpCharacters(GameVersion $gameVersion): void
     {
-        $signUpNames = collect($this->data->signUps ?? [])
-            ->where('className', '!==', 'Absence')
-            ->pluck('name');
+        $signUpNames = $this->nonAbsentSignUps()->pluck('name');
 
         $this->signedUpCharacterIds = $this->resolveCharacterIds(
             $gameVersion,
@@ -261,6 +268,64 @@ class SyncEvent implements ShouldQueue
         if (! empty($benchedNoLongerSignedUp)) {
             $this->event->characters()->detach($benchedNoLongerSignedUp);
         }
+    }
+
+    /**
+     * Sync the event's users to the Discord users of every sign-up who isn't
+     * absent, attaching new sign-ups and detaching users no longer signed up.
+     * Users missing from the database are imported from Discord first; any
+     * that can't be imported are left off the event.
+     */
+    private function syncUsers(): void
+    {
+        $signedUpUserIds = $this->nonAbsentSignUps()
+            ->pluck('userId')
+            ->unique()
+            ->values();
+
+        $this->importMissingUsers($signedUpUserIds);
+
+        $this->event->users()->sync(
+            User::whereIn('id', $signedUpUserIds)->pluck('id')->all()
+        );
+    }
+
+    /**
+     * Fetch each of the given users missing from the database from the Discord
+     * server and store them, skipping any whose lookup fails.
+     *
+     * @param  Collection<int, string>  $userIds
+     */
+    private function importMissingUsers(Collection $userIds): void
+    {
+        $missingUserIds = $userIds->diff(User::whereIn('id', $userIds)->pluck('id'));
+        $fetchMemberAction = FetchGuildMember::make();
+        $upsertUserAction = UpsertUserFromGuildMember::make();
+
+        foreach ($missingUserIds as $userId) {
+            try {
+                $upsertUserAction->handle($fetchMemberAction->handle($userId));
+            } catch (UserNotInGuildException) {
+                Log::info('SyncEvent: skipped a sign-up whose user is not in the Discord server.', [
+                    'raid_helper_event_id' => $this->data->id,
+                    'user_id' => $userId,
+                ]);
+            } catch (DiscordRequestException|RateLimitedException|FatalRequestException $exception) {
+                report($exception);
+            }
+        }
+    }
+
+    /**
+     * Get the sign-ups whose class isn't Absence.
+     *
+     * @return Collection<int, SignUpData>
+     */
+    private function nonAbsentSignUps(): Collection
+    {
+        return collect($this->data->signUps ?? [])
+            ->where('className', '!==', 'Absence')
+            ->values();
     }
 
     /**
