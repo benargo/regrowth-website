@@ -4,6 +4,7 @@ namespace Tests\Unit\Http\Integrations\Discord\Data\Guilds;
 
 use App\Http\Integrations\Discord\Data\Guilds\GuildMemberData;
 use App\Http\Integrations\Discord\Data\Users\UserData;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
@@ -16,6 +17,8 @@ use Tests\TestCase;
 #[Group('discord-integration')]
 class GuildMemberDataTest extends TestCase
 {
+    // ==================== hydration ====================
+
     #[Test]
     public function guild_member_can_be_constructed_directly(): void
     {
@@ -25,7 +28,7 @@ class GuildMemberDataTest extends TestCase
             avatar: Optional::create(),
             banner: Optional::create(),
             roles: [],
-            joinedAt: Optional::create(),
+            joinedAt: null,
             premiumSince: Optional::create(),
             deaf: false,
             mute: false,
@@ -42,7 +45,7 @@ class GuildMemberDataTest extends TestCase
         $this->assertInstanceOf(Optional::class, $member->avatar);
         $this->assertInstanceOf(Optional::class, $member->banner);
         $this->assertSame([], $member->roles);
-        $this->assertInstanceOf(Optional::class, $member->joinedAt);
+        $this->assertNull($member->joinedAt);
         $this->assertInstanceOf(Optional::class, $member->premiumSince);
         $this->assertFalse($member->deaf);
         $this->assertFalse($member->mute);
@@ -55,16 +58,16 @@ class GuildMemberDataTest extends TestCase
     }
 
     #[Test]
-    public function it_constructs_from_empty_payload(): void
+    public function it_constructs_from_minimal_payload(): void
     {
-        $member = GuildMemberData::from(['roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0]);
+        $member = GuildMemberData::from($this->minimalPayload());
 
         $this->assertInstanceOf(Optional::class, $member->user);
         $this->assertInstanceOf(Optional::class, $member->nick);
         $this->assertInstanceOf(Optional::class, $member->avatar);
         $this->assertInstanceOf(Optional::class, $member->banner);
         $this->assertSame([], $member->roles);
-        $this->assertInstanceOf(Optional::class, $member->joinedAt);
+        $this->assertSame('2026-01-01T00:00:00+00:00', $member->joinedAt);
         $this->assertInstanceOf(Optional::class, $member->premiumSince);
         $this->assertFalse($member->deaf);
         $this->assertFalse($member->mute);
@@ -144,10 +147,7 @@ class GuildMemberDataTest extends TestCase
         $collectibles = ['nameplate' => ['asset' => 'nameplate_hash', 'label' => 'Gold']];
 
         $member = GuildMemberData::from([
-            'roles' => [],
-            'deaf' => false,
-            'mute' => false,
-            'flags' => 0,
+            ...$this->minimalPayload(),
             'avatar_decoration_data' => $decoration,
             'collectibles' => $collectibles,
         ]);
@@ -185,7 +185,7 @@ class GuildMemberDataTest extends TestCase
     #[Test]
     public function all_properties_are_readonly(): void
     {
-        $member = GuildMemberData::from(['roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0]);
+        $member = GuildMemberData::from($this->minimalPayload());
         $reflection = new ReflectionClass($member);
 
         foreach ($reflection->getProperties(ReflectionProperty::IS_PUBLIC) as $property) {
@@ -224,10 +224,24 @@ class GuildMemberDataTest extends TestCase
         $this->assertArrayNotHasKey('joinedAt', $array);
     }
 
-    /** @return array<string, mixed> */
-    private function minimalPayload(): array
+    // ==================== validation ====================
+
+    #[Test]
+    #[Group('validation')]
+    public function it_rejects_a_payload_without_joined_at(): void
     {
-        return ['roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0];
+        $this->expectException(ValidationException::class);
+
+        GuildMemberData::validate(Arr::except([...$this->minimalPayload(), 'roles' => ['1']], 'joined_at'));
+    }
+
+    #[Test]
+    #[Group('validation')]
+    public function it_accepts_null_joined_at(): void
+    {
+        $member = GuildMemberData::validateAndCreate([...$this->minimalPayload(), 'roles' => ['1'], 'joined_at' => null]);
+
+        $this->assertNull($member->joinedAt);
     }
 
     #[Test]
@@ -240,11 +254,21 @@ class GuildMemberDataTest extends TestCase
         GuildMemberData::validate([...$this->minimalPayload(), 'roles' => ['1'], $field => null]);
     }
 
+    // ==================== data providers ====================
+
     /**
      * @return array<string, array{string}>
      */
     public static function nonNullableOptionalFields(): array
     {
         return collect(['user', 'pending', 'permissions'])->mapWithKeys(fn (string $field) => [$field => [$field]])->all();
+    }
+
+    // ==================== helpers ====================
+
+    /** @return array<string, mixed> */
+    private function minimalPayload(): array
+    {
+        return ['roles' => [], 'joined_at' => '2026-01-01T00:00:00+00:00', 'deaf' => false, 'mute' => false, 'flags' => 0];
     }
 }

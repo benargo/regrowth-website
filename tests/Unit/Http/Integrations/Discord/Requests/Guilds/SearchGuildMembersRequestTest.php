@@ -20,7 +20,7 @@ class SearchGuildMembersRequestTest extends DiscordTestCase
     public function it_searches_guild_members_by_query(): void
     {
         Saloon::fake([SearchGuildMembersRequest::class => MockResponse::make([
-            ['user' => ['id' => '111111111111111111', 'username' => 'thrall', 'discriminator' => '0', 'flags' => 0, 'public_flags' => 0], 'nick' => null, 'roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0],
+            ['user' => ['id' => '111111111111111111', 'username' => 'thrall', 'discriminator' => '0', 'flags' => 0, 'public_flags' => 0], 'nick' => null, 'roles' => [], 'joined_at' => '2026-01-01T00:00:00+00:00', 'deaf' => false, 'mute' => false, 'flags' => 0],
         ])]);
 
         $members = $this->makeConnector()

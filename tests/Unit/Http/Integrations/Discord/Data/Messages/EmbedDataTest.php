@@ -126,6 +126,17 @@ class EmbedDataTest extends TestCase
         $this->assertSame(EmbedType::Components, EmbedData::from(['type' => 'components'])->type);
     }
 
+    #[Test]
+    #[Group('contract')]
+    public function it_hydrates_an_explicit_null_footer_and_image_as_optional(): void
+    {
+        $embed = EmbedData::from(['title' => 'Daily', 'footer' => null, 'image' => null]);
+
+        $this->assertInstanceOf(Optional::class, $embed->footer);
+        $this->assertInstanceOf(Optional::class, $embed->image);
+        $this->assertSame(['title' => 'Daily'], $embed->toArray());
+    }
+
     // ==================== validate ====================
 
     #[Test]

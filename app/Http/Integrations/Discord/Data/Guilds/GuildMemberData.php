@@ -10,6 +10,7 @@ use Spatie\LaravelData\Attributes\Validation\DateFormat;
 use Spatie\LaravelData\Attributes\Validation\IntegerType;
 use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
+use Spatie\LaravelData\Attributes\Validation\Present;
 use Spatie\LaravelData\Attributes\Validation\StringType;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\SnakeCaseMapper;
@@ -38,9 +39,9 @@ final class GuildMemberData extends Data
         #[ArrayType]
         public readonly array $roles,
 
-        /** @var string|Optional|null ISO8601 timestamp of when the user joined the guild */
-        #[Nullable, StringType, DateFormat('Y-m-d\TH:i:s\Z', 'Y-m-d\TH:i:sP', 'Y-m-d\TH:i:s.uP')]
-        public readonly string|Optional|null $joinedAt,
+        /** @var string|null ISO8601 timestamp of when the user joined the guild; null for guest members */
+        #[Present, Nullable, StringType, DateFormat('Y-m-d\TH:i:s\Z', 'Y-m-d\TH:i:sP', 'Y-m-d\TH:i:s.uP')]
+        public readonly ?string $joinedAt,
 
         /** @var string|Optional|null ISO8601 timestamp of when the user started boosting the guild */
         #[Nullable, StringType, DateFormat('Y-m-d\TH:i:s\Z', 'Y-m-d\TH:i:sP', 'Y-m-d\TH:i:s.uP')]

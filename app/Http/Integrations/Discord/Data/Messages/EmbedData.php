@@ -66,4 +66,21 @@ final class EmbedData extends Data
         #[IntegerType, Min(0)]
         public readonly int|Optional $flags,
     ) {}
+
+    /**
+     * Drop an explicit null footer or image from the input so it hydrates as Optional.
+     *
+     * @param  array<string, mixed>  $properties
+     * @return array<string, mixed>
+     */
+    public static function prepareForPipeline(array $properties): array
+    {
+        foreach (['footer', 'image'] as $key) {
+            if (array_key_exists($key, $properties) && $properties[$key] === null) {
+                unset($properties[$key]);
+            }
+        }
+
+        return $properties;
+    }
 }

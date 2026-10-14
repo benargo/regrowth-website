@@ -23,6 +23,7 @@ class GetGuildMemberRequestTest extends DiscordTestCase
             'user' => ['id' => '111111111111111111', 'username' => 'thrall', 'discriminator' => '0', 'flags' => 0, 'public_flags' => 0],
             'nick' => 'Warchief',
             'roles' => ['222222222222222222'],
+            'joined_at' => '2026-01-01T00:00:00+00:00',
             'deaf' => false,
             'mute' => false,
             'flags' => 0,

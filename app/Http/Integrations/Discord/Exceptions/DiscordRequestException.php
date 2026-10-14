@@ -5,7 +5,7 @@ namespace App\Http\Integrations\Discord\Exceptions;
 use Throwable;
 
 /**
- * Implemented by every exception the Discord connector throws.
+ * Implemented by every exception for a failed Discord response.
  */
 interface DiscordRequestException extends Throwable
 {
