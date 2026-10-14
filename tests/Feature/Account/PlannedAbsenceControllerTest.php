@@ -11,6 +11,7 @@ use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\Requests\Account\GetAccountProfileSummaryRequest;
 use App\Http\Integrations\Blizzard\Support\BattleNetSession;
+use App\Jobs\AttachCharactersToUser;
 use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\GameVersion;
@@ -157,6 +158,45 @@ class PlannedAbsenceControllerTest extends TestCase
 
         RefreshCharacterPortrait::assertPushed(1);
         RefreshCharacterPortrait::assertPushed(fn (RefreshCharacterPortrait $action, array $parameters): bool => $parameters[0]->is($mine));
+    }
+
+    #[Test]
+    public function create_links_every_account_character_to_the_signed_in_user(): void
+    {
+        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
+        Character::factory()->main()->forGameVersion($gameVersion)->create(['id' => 52963250, 'name' => 'Auburn']);
+        Character::factory()->forGameVersion($gameVersion)->create(['id' => 79938434, 'name' => 'Noonian', 'is_main' => false]);
+        $this->fakeAccount([52963250, 79938434]);
+        $member = $this->member();
+        Queue::fake([AttachCharactersToUser::class]);
+
+        $this->actingAs($member)
+            ->withSession($this->battleNetSession())
+            ->get(route('account.absences.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload->has('account_characters.characters.data', 1)));
+
+        Queue::assertPushed(AttachCharactersToUser::class, 1);
+        Queue::assertPushed(AttachCharactersToUser::class, fn (AttachCharactersToUser $job): bool => $job->userId === $member->id
+            && $job->characterIds === [52963250, 79938434]);
+    }
+
+    #[Test]
+    public function create_does_not_link_characters_the_user_already_owns(): void
+    {
+        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
+        $member = $this->member();
+        Character::factory()->main()->forGameVersion($gameVersion)->forUser($member)->create(['id' => 52963250, 'name' => 'Auburn']);
+        $this->fakeAccount([52963250]);
+        Queue::fake([AttachCharactersToUser::class]);
+
+        $this->actingAs($member)
+            ->withSession($this->battleNetSession())
+            ->get(route('account.absences.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload->has('account_characters.characters.data', 1)));
+
+        Queue::assertNotPushed(AttachCharactersToUser::class);
     }
 
     #[Test]

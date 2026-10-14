@@ -15,6 +15,7 @@ use App\Http\Integrations\RaidHelper\Data\Events\EventData;
 use App\Http\Integrations\RaidHelper\Data\Events\SignUpData;
 use App\Http\Integrations\RaidHelper\Data\Zones\ZoneData;
 use App\Http\Resources\EventCompositionResource;
+use App\Jobs\AttachCharactersToUser;
 use App\Jobs\Concerns\ResolvesCharacterNames;
 use App\Models\Boss;
 use App\Models\Character;
@@ -24,6 +25,7 @@ use App\Models\Raid;
 use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -47,8 +49,14 @@ class SyncEvent implements ShouldQueue
 
     private Event $event;
 
+    /** @var array<int|string, array<int, int>> */
+    private array $characterIdsByUser = [];
+
     /** @var array<int, int> */
     private array $signedUpCharacterIds;
+
+    /** @var Collection<int, string> */
+    private Collection $syncedUserIds;
 
     public function __construct(public readonly EventData $data)
     {
@@ -91,6 +99,7 @@ class SyncEvent implements ShouldQueue
         $this->syncRaidsAndBosses();
         $this->syncBench();
         $this->syncUsers();
+        $this->attachSignedUpCharactersToUsers();
 
         $this->broadcastComposition();
         Cache::tags(['events'])->flush();
@@ -211,20 +220,31 @@ class SyncEvent implements ShouldQueue
 
     /**
      * Resolve the characters of every sign-up who isn't absent, among the
-     * event's game version. Bench, Late and Tentative sign-ups are included so
-     * they are on the event before an officer slots them. Anyone not placed in
-     * the composition is benched.
+     * event's game version, and record the characters each sign-up user
+     * resolved to. Bench, Late and Tentative sign-ups are included so they are
+     * on the event before an officer slots them. Anyone not placed in the
+     * composition is benched.
      */
     private function resolveSignedUpCharacters(GameVersion $gameVersion): void
     {
-        $signUpNames = $this->nonAbsentSignUps()->pluck('name');
+        $signUps = $this->nonAbsentSignUps();
 
-        $this->signedUpCharacterIds = $this->resolveCharacterIds(
+        $characterIdsByName = $this->resolveCharacterIds(
             $gameVersion,
-            $signUpNames,
+            $signUps->pluck('name'),
             Character::whereBelongsTo($gameVersion)->get(['id', 'name']),
             'raidhelper.signups',
-        )
+        );
+
+        foreach ($signUps as $signUp) {
+            $characterId = $characterIdsByName->get($signUp->name);
+
+            if ($characterId !== null) {
+                data_set($this->characterIdsByUser, "{$signUp->userId}.{$characterId}", $characterId);
+            }
+        }
+
+        $this->signedUpCharacterIds = $characterIdsByName
             ->unique()
             ->values()
             ->all();
@@ -285,9 +305,9 @@ class SyncEvent implements ShouldQueue
 
         $this->importMissingUsers($signedUpUserIds);
 
-        $this->event->users()->sync(
-            User::whereIn('id', $signedUpUserIds)->pluck('id')->all()
-        );
+        $this->syncedUserIds = User::whereIn('id', $signedUpUserIds)->pluck('id');
+
+        $this->event->users()->sync($this->syncedUserIds->all());
     }
 
     /**
@@ -312,6 +332,41 @@ class SyncEvent implements ShouldQueue
                 ]);
             } catch (DiscordRequestException|RateLimitedException|FatalRequestException $exception) {
                 report($exception);
+            }
+        }
+    }
+
+    /**
+     * Queue linking each signed-up user to the characters their sign-ups
+     * resolved to, among characters with no user yet. A character resolved
+     * from more than one user's sign-ups is logged and left unlinked.
+     */
+    private function attachSignedUpCharactersToUsers(): void
+    {
+        $claimedCharacterIds = collect($this->characterIdsByUser)->flatten();
+        $contestedCharacterIds = $claimedCharacterIds->duplicates()->unique()->values();
+
+        foreach ($contestedCharacterIds as $characterId) {
+            Log::info('SyncEvent: skipped linking a character signed up by more than one user.', [
+                'raid_helper_event_id' => $this->data->id,
+                'character_id' => $characterId,
+                'user_ids' => collect($this->characterIdsByUser)
+                    ->filter(fn (array $characterIds): bool => isset($characterIds[$characterId]))
+                    ->keys()
+                    ->map(fn (int|string $userId): string => (string) $userId)
+                    ->all(),
+            ]);
+        }
+
+        $unlinkedCharacters = Character::whereKey($claimedCharacterIds->diff($contestedCharacterIds)->all())
+            ->whereNull('user_id')
+            ->get(['id']);
+
+        foreach (Arr::only($this->characterIdsByUser, $this->syncedUserIds->all()) as $userId => $characterIds) {
+            $characters = $unlinkedCharacters->only($characterIds);
+
+            if ($characters->isNotEmpty()) {
+                AttachCharactersToUser::dispatch((string) $userId, $characters, onlyUnlinked: true);
             }
         }
     }

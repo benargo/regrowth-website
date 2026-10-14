@@ -18,9 +18,11 @@ use App\Http\Requests\UpdateAccountPlannedAbsenceRequest;
 use App\Http\Resources\CharacterResource;
 use App\Http\Resources\GameVersionResource;
 use App\Http\Resources\PlannedAbsenceResource;
+use App\Jobs\AttachCharactersToUser;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\PlannedAbsence;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -61,7 +63,7 @@ class PlannedAbsenceController extends Controller
 
                 return ['connected' => $battleNet->isConnected()];
             },
-            'account_characters' => Inertia::defer(fn (): array => $this->accountCharacters($battleNet, $gameVersion())),
+            'account_characters' => Inertia::defer(fn (): array => $this->accountCharacters($battleNet, $gameVersion(), $request->user())),
             'action' => route('account.absences.store'),
             'reasons' => fn () => PlannedAbsenceReasonData::options(),
             'character_portrait' => Inertia::optional(fn (): array => $this->characterPortrait($request)),
@@ -127,7 +129,7 @@ class PlannedAbsenceController extends Controller
      *
      * @return array{characters: AnonymousResourceCollection, mains_only: bool, error: array{code: BattleNetSessionError, message: string}|null}
      */
-    private function accountCharacters(BattleNetSession $battleNet, ?GameVersion $gameVersion): array
+    private function accountCharacters(BattleNetSession $battleNet, ?GameVersion $gameVersion, User $user): array
     {
         if (! $battleNet->isConnected() || $gameVersion === null) {
             return ['characters' => CharacterResource::collection(collect()), 'mains_only' => true, 'error' => null];
@@ -142,6 +144,10 @@ class PlannedAbsenceController extends Controller
                 'error' => ['code' => $exception->error, 'message' => $exception->error->message()],
             ];
         }
+
+        $hasUnlinkedCharacters = $accountCharacters->contains(fn (Character $character): bool => $character->user_id !== $user->id);
+
+        AttachCharactersToUser::dispatchIf($hasUnlinkedCharacters, $user->id, $accountCharacters);
 
         $characters = ResolveSelectableAccountCharacters::run($accountCharacters)->load('media');
 
