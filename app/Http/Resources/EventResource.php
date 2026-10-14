@@ -19,6 +19,7 @@ use Illuminate\Support\Collection;
  *
  * Relations each scope expects to be loaded:
  *   - default:      $event->load('raids.bosses.media', 'bosses.media', 'assignments.group', 'characters.rank')
+ *                   and optionally 'users'
  *   - forMembers:   nothing
  *   - forVisitors:  $event->load('raids')
  *
@@ -111,6 +112,7 @@ class EventResource extends JsonResource
             $data['assignments'] = (new EventAssignmentsCollection($eventAssignments))->resolve($request);
             $data['composition'] = $this->buildComposition($request);
             $data['raids'] = $this->buildRaids($bossByIdAssignments, $request);
+            $data['users'] = $this->whenLoaded('users', fn () => $this->users->toResourceCollection());
         }
 
         try {

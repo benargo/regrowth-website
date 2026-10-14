@@ -102,6 +102,27 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the Discord roles the user holds.
+     *
+     * @return BelongsToMany<DiscordRole, $this>
+     */
+    public function discordRoles(): BelongsToMany
+    {
+        return $this->belongsToMany(DiscordRole::class, 'discord_role_user', 'user_id', 'discord_role_id');
+    }
+
+    /**
+     * Get the events the user is associated with.
+     *
+     * @return BelongsToMany<Event, $this>
+     */
+    public function events(): BelongsToMany
+    {
+        return $this->belongsToMany(Event::class, 'pivot_events_users', 'user_id', 'event_id')
+            ->withTimestamps();
+    }
+
+    /**
      * Get the notifications associated with the user.
      *
      * @return HasMany<DiscordNotification, $this>
@@ -129,16 +150,6 @@ class User extends Authenticatable
     public function plannedAbsencesCreated(): HasMany
     {
         return $this->hasMany(PlannedAbsence::class, 'created_by');
-    }
-
-    /**
-     * Get the Discord roles the user holds.
-     *
-     * @return BelongsToMany<DiscordRole, $this>
-     */
-    public function discordRoles(): BelongsToMany
-    {
-        return $this->belongsToMany(DiscordRole::class, 'discord_role_user', 'user_id', 'discord_role_id');
     }
 
     /**

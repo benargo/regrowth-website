@@ -15,6 +15,7 @@ use App\Models\EventCharacter;
 use App\Models\EventRaid;
 use App\Models\GameVersion;
 use App\Models\Raid;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -105,6 +106,14 @@ class EventTest extends ModelTestCase
         $this->assertFalse($model->is_template);
     }
 
+    #[Test]
+    public function template_factory_state_sets_is_template_true(): void
+    {
+        $event = Event::factory()->template()->make();
+
+        $this->assertTrue($event->is_template);
+    }
+
     // ==================== background_css_class ====================
 
     #[Test]
@@ -133,14 +142,6 @@ class EventTest extends ModelTestCase
 
         $this->assertNull($event->color);
         $this->assertModelExists($event);
-    }
-
-    #[Test]
-    public function color_getter_returns_hex_string(): void
-    {
-        $event = $this->create(['color' => '8b7ed0']);
-
-        $this->assertSame('8b7ed0', $event->color);
     }
 
     #[Test]
@@ -184,54 +185,6 @@ class EventTest extends ModelTestCase
         $this->create(['color' => 'not-a-color']);
     }
 
-    // ==================== is_template ====================
-
-    #[Test]
-    public function template_factory_state_sets_is_template_true(): void
-    {
-        $event = Event::factory()->template()->make();
-
-        $this->assertTrue($event->is_template);
-    }
-
-    #[Test]
-    public function templates_scope_returns_only_template_events(): void
-    {
-        $template = $this->create(['is_template' => true]);
-        $regular = $this->create(['is_template' => false]);
-
-        $ids = Event::templates()->pluck('id')->toArray();
-
-        $this->assertContains($template->id, $ids);
-        $this->assertNotContains($regular->id, $ids);
-    }
-
-    #[Test]
-    public function live_scope_returns_only_non_template_events(): void
-    {
-        $template = $this->create(['is_template' => true]);
-        $regular = $this->create(['is_template' => false]);
-
-        $ids = Event::live()->pluck('id')->toArray();
-
-        $this->assertNotContains($template->id, $ids);
-        $this->assertContains($regular->id, $ids);
-    }
-
-    #[Test]
-    public function duration_returns_difference_in_seconds(): void
-    {
-        $startTime = now();
-        $endTime = $startTime->copy()->addHours(2);
-
-        $event = Event::factory()->make([
-            'start_time' => $startTime,
-            'end_time' => $endTime,
-        ]);
-
-        $this->assertEquals(7200, $event->duration);
-    }
-
     #[Test]
     public function it_can_be_created(): void
     {
@@ -256,290 +209,6 @@ class EventTest extends ModelTestCase
         $this->create(['raid_helper_event_id' => 'unique-123']);
 
         $this->assertUniqueConstraint(fn () => $this->create(['raid_helper_event_id' => 'unique-123']));
-    }
-
-    // characters
-
-    #[Test]
-    public function characters_returns_belongs_to_many_relationship(): void
-    {
-        $model = new Event;
-
-        $this->assertInstanceOf(BelongsToMany::class, $model->characters());
-    }
-
-    #[Test]
-    public function it_can_attach_characters(): void
-    {
-        $event = $this->create();
-        $character = Character::factory()->create();
-
-        $event->characters()->attach($character->id);
-
-        $this->assertCount(1, $event->characters);
-        $this->assertSame($character->id, $event->characters->first()->id);
-    }
-
-    #[Test]
-    public function characters_returns_empty_collection_when_none_attached(): void
-    {
-        $event = $this->create();
-
-        $this->assertCount(0, $event->characters);
-    }
-
-    #[Test]
-    public function characters_use_event_character_pivot(): void
-    {
-        $event = $this->create();
-        $character = Character::factory()->create();
-
-        $event->characters()->attach($character->id, [
-            'slot_number' => 3,
-            'group_number' => 1,
-            'signup_status' => SignupStatus::Confirmed->value,
-        ]);
-
-        $pivot = $event->characters->first()->pivot;
-
-        $this->assertInstanceOf(EventCharacter::class, $pivot);
-        $this->assertSame(3, $pivot->slot_number);
-        $this->assertSame(1, $pivot->group_number);
-        $this->assertSame(SignupStatus::Confirmed, $pivot->signup_status);
-    }
-
-    #[Test]
-    public function deleting_event_cascades_to_pivot(): void
-    {
-        $event = $this->create();
-        $character = Character::factory()->create();
-        $event->characters()->attach($character->id);
-
-        $event->delete();
-
-        $this->assertDatabaseMissing('pivot_events_characters', [
-            'event_id' => $event->id,
-        ]);
-    }
-
-    // leaders
-
-    #[Test]
-    public function leaders_returns_belongs_to_many_relationship(): void
-    {
-        $model = new Event;
-
-        $this->assertInstanceOf(BelongsToMany::class, $model->leaders());
-    }
-
-    #[Test]
-    public function leaders_returns_only_characters_with_is_leader_true(): void
-    {
-        $event = $this->factory()->withLeader()->create();
-        $nonLeader = Character::factory()->create();
-        $event->characters()->attach($nonLeader->id, ['is_leader' => false]);
-
-        $this->assertCount(1, $event->leaders);
-        $this->assertTrue($event->leaders->first()->pivot->is_leader);
-    }
-
-    #[Test]
-    public function leaders_returns_empty_when_no_leaders_attached(): void
-    {
-        $event = $this->create();
-        $character = Character::factory()->create();
-        $event->characters()->attach($character->id, ['is_leader' => false]);
-
-        $this->assertCount(0, $event->leaders);
-    }
-
-    // lootCouncillors
-
-    #[Test]
-    public function loot_councillors_returns_belongs_to_many_relationship(): void
-    {
-        $model = new Event;
-
-        $this->assertInstanceOf(BelongsToMany::class, $model->lootCouncillors());
-    }
-
-    #[Test]
-    public function loot_councillors_returns_only_characters_with_is_loot_councillor_true(): void
-    {
-        $event = $this->factory()->withLootCouncillor()->create();
-        $regular = Character::factory()->create();
-        $event->characters()->attach($regular->id, ['is_loot_councillor' => false]);
-
-        $this->assertCount(1, $event->lootCouncillors);
-        $this->assertTrue($event->lootCouncillors->first()->pivot->is_loot_councillor);
-    }
-
-    #[Test]
-    public function loot_councillors_returns_empty_when_none_attached(): void
-    {
-        $event = $this->create();
-
-        $this->assertCount(0, $event->lootCouncillors);
-    }
-
-    // raids
-
-    #[Test]
-    public function raids_returns_belongs_to_many_relationship(): void
-    {
-        $model = new Event;
-
-        $this->assertInstanceOf(BelongsToMany::class, $model->raids());
-    }
-
-    #[Test]
-    public function it_can_attach_raids(): void
-    {
-        $event = $this->create();
-        $raid = Raid::factory()->create();
-
-        $event->raids()->attach($raid->id);
-
-        $this->assertCount(1, $event->raids);
-        $this->assertSame($raid->id, $event->raids->first()->id);
-    }
-
-    #[Test]
-    public function raids_returns_empty_collection_when_none_attached(): void
-    {
-        $event = $this->create();
-
-        $this->assertCount(0, $event->raids);
-    }
-
-    #[Test]
-    public function raids_use_the_event_raid_pivot(): void
-    {
-        $event = $this->create();
-        $raid = Raid::factory()->create();
-
-        $event->raids()->attach($raid->id);
-
-        $pivot = $event->raids->first()->pivot;
-
-        $this->assertInstanceOf(EventRaid::class, $pivot);
-        $this->assertNotNull($pivot->sort_order);
-    }
-
-    #[Test]
-    public function raids_are_ordered_by_pivot_sort_order(): void
-    {
-        $event = $this->create();
-
-        // Created in reverse so id order and pivot order differ.
-        $third = Raid::factory()->create();
-        $second = Raid::factory()->create();
-        $first = Raid::factory()->create();
-
-        // The pivot does not number itself on create, so each row's position
-        // comes from the sort_order passed to attach().
-        $event->raids()->attach($first->id, ['sort_order' => 1]);
-        $event->raids()->attach($second->id, ['sort_order' => 2]);
-        $event->raids()->attach($third->id, ['sort_order' => 3]);
-
-        $this->assertSame(
-            [$first->id, $second->id, $third->id],
-            $event->raids->pluck('id')->all(),
-        );
-    }
-
-    #[Test]
-    public function deleting_event_cascades_to_raids_pivot(): void
-    {
-        $event = $this->create();
-        $raid = Raid::factory()->create();
-        $event->raids()->attach($raid->id);
-
-        $event->delete();
-
-        $this->assertDatabaseMissing('pivot_events_raids', [
-            'event_id' => $event->id,
-        ]);
-    }
-
-    // bosses
-
-    #[Test]
-    public function bosses_returns_belongs_to_many_relationship(): void
-    {
-        $model = new Event;
-
-        $this->assertInstanceOf(BelongsToMany::class, $model->bosses());
-    }
-
-    #[Test]
-    public function it_can_attach_bosses(): void
-    {
-        $event = $this->create();
-        $boss = Boss::factory()->create();
-
-        $event->bosses()->attach($boss->id);
-
-        $this->assertCount(1, $event->bosses);
-        $this->assertSame($boss->id, $event->bosses->first()->id);
-    }
-
-    #[Test]
-    public function bosses_returns_empty_collection_when_none_attached(): void
-    {
-        $event = $this->create();
-
-        $this->assertCount(0, $event->bosses);
-    }
-
-    #[Test]
-    public function bosses_use_the_event_boss_pivot(): void
-    {
-        $event = $this->create();
-        $boss = Boss::factory()->create();
-
-        $event->bosses()->attach($boss->id);
-
-        $pivot = $event->bosses->first()->pivot;
-
-        $this->assertInstanceOf(EventBoss::class, $pivot);
-        $this->assertNotNull($pivot->sort_order);
-    }
-
-    #[Test]
-    public function bosses_are_ordered_by_pivot_sort_order(): void
-    {
-        $event = $this->create();
-
-        // Created in reverse so id order and pivot order differ.
-        $third = Boss::factory()->create();
-        $second = Boss::factory()->create();
-        $first = Boss::factory()->create();
-
-        // The pivot does not number itself on create, so each row's position
-        // comes from the sort_order passed to attach().
-        $event->bosses()->attach($first->id, ['sort_order' => 1]);
-        $event->bosses()->attach($second->id, ['sort_order' => 2]);
-        $event->bosses()->attach($third->id, ['sort_order' => 3]);
-
-        $this->assertSame(
-            [$first->id, $second->id, $third->id],
-            $event->bosses->pluck('id')->all(),
-        );
-    }
-
-    #[Test]
-    public function deleting_event_cascades_to_bosses_pivot(): void
-    {
-        $event = $this->create();
-        $boss = Boss::factory()->create();
-        $event->bosses()->attach($boss->id);
-
-        $event->delete();
-
-        $this->assertDatabaseMissing('pivot_events_bosses', [
-            'event_id' => $event->id,
-        ]);
     }
 
     // prunable
@@ -628,16 +297,49 @@ class EventTest extends ModelTestCase
         $this->assertContains($event->id, $ids);
     }
 
-    #[Test]
-    public function it_has_many_assignments(): void
-    {
-        $event = $this->create();
-        EventAssignment::factory()->count(2)->create(['event_id' => $event->id]);
+    // scopes
 
-        $this->assertInstanceOf(HasMany::class, $event->assignments());
-        $this->assertCount(2, $event->assignments);
-        $this->assertInstanceOf(EventAssignment::class, $event->assignments->first());
+    #[Test]
+    public function live_scope_returns_only_non_template_events(): void
+    {
+        $template = $this->create(['is_template' => true]);
+        $regular = $this->create(['is_template' => false]);
+
+        $ids = Event::live()->pluck('id')->toArray();
+
+        $this->assertNotContains($template->id, $ids);
+        $this->assertContains($regular->id, $ids);
     }
+
+    #[Test]
+    public function templates_scope_returns_only_template_events(): void
+    {
+        $template = $this->create(['is_template' => true]);
+        $regular = $this->create(['is_template' => false]);
+
+        $ids = Event::templates()->pluck('id')->toArray();
+
+        $this->assertContains($template->id, $ids);
+        $this->assertNotContains($regular->id, $ids);
+    }
+
+    // duration
+
+    #[Test]
+    public function duration_returns_difference_in_seconds(): void
+    {
+        $startTime = now();
+        $endTime = $startTime->copy()->addHours(2);
+
+        $event = Event::factory()->make([
+            'start_time' => $startTime,
+            'end_time' => $endTime,
+        ]);
+
+        $this->assertEquals(7200, $event->duration);
+    }
+
+    // assignmentGroups
 
     #[Test]
     public function it_has_many_assignment_groups(): void
@@ -650,7 +352,164 @@ class EventTest extends ModelTestCase
         $this->assertInstanceOf(EventAssignmentGroup::class, $event->assignmentGroups->first());
     }
 
-    // ==================== gameVersion ====================
+    // assignments
+
+    #[Test]
+    public function it_has_many_assignments(): void
+    {
+        $event = $this->create();
+        EventAssignment::factory()->count(2)->create(['event_id' => $event->id]);
+
+        $this->assertInstanceOf(HasMany::class, $event->assignments());
+        $this->assertCount(2, $event->assignments);
+        $this->assertInstanceOf(EventAssignment::class, $event->assignments->first());
+    }
+
+    // bosses
+
+    #[Test]
+    public function bosses_returns_belongs_to_many_relationship(): void
+    {
+        $model = new Event;
+
+        $this->assertInstanceOf(BelongsToMany::class, $model->bosses());
+    }
+
+    #[Test]
+    public function it_can_attach_bosses(): void
+    {
+        $event = $this->create();
+        $boss = Boss::factory()->create();
+
+        $event->bosses()->attach($boss->id);
+
+        $this->assertCount(1, $event->bosses);
+        $this->assertSame($boss->id, $event->bosses->first()->id);
+    }
+
+    #[Test]
+    public function bosses_returns_empty_collection_when_none_attached(): void
+    {
+        $event = $this->create();
+
+        $this->assertCount(0, $event->bosses);
+    }
+
+    #[Test]
+    public function bosses_use_the_event_boss_pivot(): void
+    {
+        $event = $this->create();
+        $boss = Boss::factory()->create();
+
+        $event->bosses()->attach($boss->id);
+
+        $pivot = $event->bosses->first()->pivot;
+
+        $this->assertInstanceOf(EventBoss::class, $pivot);
+        $this->assertNotNull($pivot->sort_order);
+    }
+
+    #[Test]
+    public function bosses_are_ordered_by_pivot_sort_order(): void
+    {
+        $event = $this->create();
+
+        // Created in reverse so id order and pivot order differ.
+        $third = Boss::factory()->create();
+        $second = Boss::factory()->create();
+        $first = Boss::factory()->create();
+
+        // The pivot does not number itself on create, so each row's position
+        // comes from the sort_order passed to attach().
+        $event->bosses()->attach($first->id, ['sort_order' => 1]);
+        $event->bosses()->attach($second->id, ['sort_order' => 2]);
+        $event->bosses()->attach($third->id, ['sort_order' => 3]);
+
+        $this->assertSame(
+            [$first->id, $second->id, $third->id],
+            $event->bosses->pluck('id')->all(),
+        );
+    }
+
+    #[Test]
+    public function deleting_event_cascades_to_bosses_pivot(): void
+    {
+        $event = $this->create();
+        $boss = Boss::factory()->create();
+        $event->bosses()->attach($boss->id);
+
+        $event->delete();
+
+        $this->assertDatabaseMissing('pivot_events_bosses', [
+            'event_id' => $event->id,
+        ]);
+    }
+
+    // characters
+
+    #[Test]
+    public function characters_returns_belongs_to_many_relationship(): void
+    {
+        $model = new Event;
+
+        $this->assertInstanceOf(BelongsToMany::class, $model->characters());
+    }
+
+    #[Test]
+    public function it_can_attach_characters(): void
+    {
+        $event = $this->create();
+        $character = Character::factory()->create();
+
+        $event->characters()->attach($character->id);
+
+        $this->assertCount(1, $event->characters);
+        $this->assertSame($character->id, $event->characters->first()->id);
+    }
+
+    #[Test]
+    public function characters_returns_empty_collection_when_none_attached(): void
+    {
+        $event = $this->create();
+
+        $this->assertCount(0, $event->characters);
+    }
+
+    #[Test]
+    public function characters_use_event_character_pivot(): void
+    {
+        $event = $this->create();
+        $character = Character::factory()->create();
+
+        $event->characters()->attach($character->id, [
+            'slot_number' => 3,
+            'group_number' => 1,
+            'signup_status' => SignupStatus::Confirmed->value,
+        ]);
+
+        $pivot = $event->characters->first()->pivot;
+
+        $this->assertInstanceOf(EventCharacter::class, $pivot);
+        $this->assertSame(3, $pivot->slot_number);
+        $this->assertSame(1, $pivot->group_number);
+        $this->assertSame(SignupStatus::Confirmed, $pivot->signup_status);
+    }
+
+    #[Test]
+    public function deleting_event_cascades_to_pivot(): void
+    {
+        $event = $this->create();
+        $character = Character::factory()->create();
+        $event->characters()->attach($character->id);
+
+        $event->delete();
+
+        $this->assertDatabaseMissing('pivot_events_characters', [
+            'event_id' => $event->id,
+        ]);
+    }
+
+    // gameVersion
 
     #[Test]
     public function it_belongs_to_a_game_version(): void
@@ -669,5 +528,223 @@ class EventTest extends ModelTestCase
 
         $this->assertSame($gameVersion->id, $event->raids->sole()->phase->game_version_id);
         $this->assertSame($gameVersion->id, $event->fresh()->game_version_id);
+    }
+
+    // leaders
+
+    #[Test]
+    public function leaders_returns_belongs_to_many_relationship(): void
+    {
+        $model = new Event;
+
+        $this->assertInstanceOf(BelongsToMany::class, $model->leaders());
+    }
+
+    #[Test]
+    public function leaders_returns_only_characters_with_is_leader_true(): void
+    {
+        $event = $this->factory()->withLeader()->create();
+        $nonLeader = Character::factory()->create();
+        $event->characters()->attach($nonLeader->id, ['is_leader' => false]);
+
+        $this->assertCount(1, $event->leaders);
+        $this->assertTrue($event->leaders->first()->pivot->is_leader);
+    }
+
+    #[Test]
+    public function leaders_returns_empty_when_no_leaders_attached(): void
+    {
+        $event = $this->create();
+        $character = Character::factory()->create();
+        $event->characters()->attach($character->id, ['is_leader' => false]);
+
+        $this->assertCount(0, $event->leaders);
+    }
+
+    // lootCouncillors
+
+    #[Test]
+    public function loot_councillors_returns_belongs_to_many_relationship(): void
+    {
+        $model = new Event;
+
+        $this->assertInstanceOf(BelongsToMany::class, $model->lootCouncillors());
+    }
+
+    #[Test]
+    public function loot_councillors_returns_only_characters_with_is_loot_councillor_true(): void
+    {
+        $event = $this->factory()->withLootCouncillor()->create();
+        $regular = Character::factory()->create();
+        $event->characters()->attach($regular->id, ['is_loot_councillor' => false]);
+
+        $this->assertCount(1, $event->lootCouncillors);
+        $this->assertTrue($event->lootCouncillors->first()->pivot->is_loot_councillor);
+    }
+
+    #[Test]
+    public function loot_councillors_returns_empty_when_none_attached(): void
+    {
+        $event = $this->create();
+
+        $this->assertCount(0, $event->lootCouncillors);
+    }
+
+    // lootMasters
+
+    #[Test]
+    public function loot_masters_returns_only_characters_with_is_loot_master_true(): void
+    {
+        $event = $this->create();
+        $master = Character::factory()->create();
+        $regular = Character::factory()->create();
+        $event->characters()->attach($master->id, ['is_loot_master' => true]);
+        $event->characters()->attach($regular->id, ['is_loot_master' => false]);
+
+        $masterIds = $event->lootMasters->pluck('id')->all();
+
+        $this->assertSame([$master->id], $masterIds);
+    }
+
+    // raids
+
+    #[Test]
+    public function raids_returns_belongs_to_many_relationship(): void
+    {
+        $model = new Event;
+
+        $this->assertInstanceOf(BelongsToMany::class, $model->raids());
+    }
+
+    #[Test]
+    public function it_can_attach_raids(): void
+    {
+        $event = $this->create();
+        $raid = Raid::factory()->create();
+
+        $event->raids()->attach($raid->id);
+
+        $this->assertCount(1, $event->raids);
+        $this->assertSame($raid->id, $event->raids->first()->id);
+    }
+
+    #[Test]
+    public function raids_returns_empty_collection_when_none_attached(): void
+    {
+        $event = $this->create();
+
+        $this->assertCount(0, $event->raids);
+    }
+
+    #[Test]
+    public function raids_use_the_event_raid_pivot(): void
+    {
+        $event = $this->create();
+        $raid = Raid::factory()->create();
+
+        $event->raids()->attach($raid->id);
+
+        $pivot = $event->raids->first()->pivot;
+
+        $this->assertInstanceOf(EventRaid::class, $pivot);
+        $this->assertNotNull($pivot->sort_order);
+    }
+
+    #[Test]
+    public function raids_are_ordered_by_pivot_sort_order(): void
+    {
+        $event = $this->create();
+
+        // Created in reverse so id order and pivot order differ.
+        $third = Raid::factory()->create();
+        $second = Raid::factory()->create();
+        $first = Raid::factory()->create();
+
+        // The pivot does not number itself on create, so each row's position
+        // comes from the sort_order passed to attach().
+        $event->raids()->attach($first->id, ['sort_order' => 1]);
+        $event->raids()->attach($second->id, ['sort_order' => 2]);
+        $event->raids()->attach($third->id, ['sort_order' => 3]);
+
+        $this->assertSame(
+            [$first->id, $second->id, $third->id],
+            $event->raids->pluck('id')->all(),
+        );
+    }
+
+    #[Test]
+    public function deleting_event_cascades_to_raids_pivot(): void
+    {
+        $event = $this->create();
+        $raid = Raid::factory()->create();
+        $event->raids()->attach($raid->id);
+
+        $event->delete();
+
+        $this->assertDatabaseMissing('pivot_events_raids', [
+            'event_id' => $event->id,
+        ]);
+    }
+
+    // users
+
+    #[Test]
+    public function users_returns_belongs_to_many_relationship(): void
+    {
+        $model = new Event;
+
+        $this->assertInstanceOf(BelongsToMany::class, $model->users());
+    }
+
+    #[Test]
+    public function it_can_attach_users(): void
+    {
+        $event = $this->create();
+        $user = User::factory()->create();
+
+        $event->users()->attach($user->id);
+
+        $this->assertCount(1, $event->users);
+        $this->assertSame($user->id, $event->users->first()->id);
+    }
+
+    #[Test]
+    public function users_returns_empty_collection_when_none_attached(): void
+    {
+        $event = $this->create();
+
+        $this->assertCount(0, $event->users);
+    }
+
+    #[Test]
+    public function deleting_event_cascades_to_users_pivot(): void
+    {
+        $event = $this->create();
+        $user = User::factory()->create();
+        $event->users()->attach($user->id);
+
+        $event->delete();
+
+        $this->assertDatabaseMissing('pivot_events_users', [
+            'event_id' => $event->id,
+        ]);
+    }
+
+    #[Test]
+    public function with_users_factory_state_attaches_given_users(): void
+    {
+        $users = User::factory()->count(2)->create();
+
+        $event = Event::factory()->withUsers($users->all())->create();
+
+        $this->assertEqualsCanonicalizing($users->pluck('id')->all(), $event->users->pluck('id')->all());
+    }
+
+    #[Test]
+    public function with_users_factory_state_creates_users_when_none_given(): void
+    {
+        $event = Event::factory()->withUsers(count: 3)->create();
+
+        $this->assertCount(3, $event->users);
     }
 }
