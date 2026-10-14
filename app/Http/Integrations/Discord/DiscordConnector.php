@@ -10,7 +10,6 @@ use App\Http\Integrations\Discord\Middleware\GuardRateLimits;
 use App\Http\Integrations\Discord\Middleware\RecordRateLimits;
 use Illuminate\Support\Facades\Cache;
 use InvalidArgumentException;
-use JsonException;
 use Saloon\Contracts\Authenticator;
 use Saloon\Enums\PipeOrder;
 use Saloon\Http\Auth\TokenAuthenticator;
@@ -97,18 +96,16 @@ class DiscordConnector extends Connector
         $method = $pendingRequest->getMethod()->value;
         $endpoint = ltrim($pendingRequest->getRequest()->resolveEndpoint(), '/');
         $status = $response->status();
-        $body = $this->decodeBody($response);
+        $body = RecordRateLimits::body($response);
         $code = isset($body['code']) && is_numeric($body['code']) ? (int) $body['code'] : null;
 
         if ($status === 429) {
-            $scope = RecordRateLimits::scope($response);
-
             return new RateLimitedException(
                 $method,
                 $endpoint,
                 retryAfter: RecordRateLimits::retryAfter($response, $body),
-                scope: $scope,
-                global: ($body['global'] ?? false) === true || $scope === 'global',
+                scope: RecordRateLimits::scope($response),
+                global: RecordRateLimits::isGlobal($response, $body),
                 response: $response,
                 previous: $senderException,
             );
@@ -119,21 +116,5 @@ class DiscordConnector extends Connector
             $status === 404 && $code === self::UNKNOWN_MEMBER => new UserNotInGuildException($response, $method, $endpoint, $code, $body, $senderException),
             default => new ApiException($response, $method, $endpoint, $code, $body, $senderException),
         };
-    }
-
-    /**
-     * Decode the JSON response body, or null when it is not JSON.
-     *
-     * @return array<string, mixed>|null
-     */
-    private function decodeBody(Response $response): ?array
-    {
-        try {
-            $body = $response->json();
-        } catch (JsonException) {
-            return null;
-        }
-
-        return is_array($body) ? $body : null;
     }
 }

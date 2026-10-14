@@ -31,13 +31,13 @@ class ResolveDiscordMemberControllerTest extends TestCase
         DiscordRole::factory()->officer()->create()
             ->givePermissionTo(Permission::firstOrCreate(['name' => 'create-planned-absences', 'guard_name' => 'web']));
 
-        Queue::fake();
+        Queue::fake([ResolveGuildMember::class]);
         $this->fakeDiscord([]);
     }
 
     #[Test]
     #[Group('happy-path')]
-    public function it_reports_ready_when_the_member_already_has_a_user(): void
+    public function it_returns_200_ready_when_the_member_already_has_a_user(): void
     {
         User::factory()->create(['id' => '999999999999999999']);
 
@@ -50,7 +50,7 @@ class ResolveDiscordMemberControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_queues_a_high_priority_resolution_for_an_unknown_member(): void
+    public function it_queues_a_high_priority_resolution_and_returns_202_for_an_unknown_member(): void
     {
         $officer = User::factory()->officer()->create();
 
@@ -66,7 +66,7 @@ class ResolveDiscordMemberControllerTest extends TestCase
 
     #[Test]
     #[Group('authorization')]
-    public function it_forbids_users_who_cannot_create_planned_absences(): void
+    public function it_returns_403_for_users_who_cannot_create_planned_absences(): void
     {
         $this->actingAs(User::factory()->raider()->create())
             ->postJson(route('api.discord.members.resolve', '999999999999999999'))
@@ -77,7 +77,7 @@ class ResolveDiscordMemberControllerTest extends TestCase
 
     #[Test]
     #[Group('authorization')]
-    public function it_rejects_guests(): void
+    public function it_returns_401_for_guests(): void
     {
         $this->postJson(route('api.discord.members.resolve', '999999999999999999'))
             ->assertUnauthorized();
@@ -87,7 +87,7 @@ class ResolveDiscordMemberControllerTest extends TestCase
 
     #[Test]
     #[Group('validation')]
-    public function it_rejects_a_non_numeric_member_id(): void
+    public function it_returns_404_for_a_non_numeric_member_id(): void
     {
         $this->actingAs(User::factory()->officer()->create())
             ->postJson('/api/discord/members/abc/resolve')

@@ -12,12 +12,10 @@ use Illuminate\Console\Command;
 class SyncDiscord extends Command
 {
     /**
-     * Execute the console command.
+     * Dispatch SyncRoles, which syncs the guild's roles and then batches a SyncUser job per user.
      */
     public function handle(): void
     {
-        // SyncUsers is dispatched automatically by DiscordServiceProvider
-        // once SyncRoles completes.
         SyncRoles::dispatch();
     }
 }

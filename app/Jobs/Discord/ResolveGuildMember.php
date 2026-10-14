@@ -2,22 +2,18 @@
 
 namespace App\Jobs\Discord;
 
-use App\Actions\Discord\SyncUserDiscordRoles;
+use App\Actions\Discord\FetchGuildMember;
+use App\Actions\Discord\UpsertUserFromGuildMember;
 use App\Events\Broadcasts\DiscordMemberResolved;
-use App\Http\Integrations\Discord\Data\Users\UserData;
-use App\Http\Integrations\Discord\DiscordConnector;
 use App\Http\Integrations\Discord\Exceptions\UserNotInGuildException;
-use App\Http\Integrations\Discord\Requests\Guilds\GetGuildMemberRequest;
 use App\Jobs\Middleware\ReleaseWhenDiscordRateLimited;
 use App\Models\User;
 use Carbon\CarbonInterface;
-use Illuminate\Container\Attributes\Config;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\MaxExceptions;
 use Illuminate\Queue\Attributes\Queue;
 use Illuminate\Support\Facades\DB;
-use Spatie\LaravelData\Optional;
 use Throwable;
 
 /**
@@ -49,31 +45,18 @@ class ResolveGuildMember implements ShouldQueue
         return [new ReleaseWhenDiscordRateLimited];
     }
 
-    public function handle(DiscordConnector $discord, #[Config('services.discord.server_id')] string $serverId): void
+    public function handle(): void
     {
         if (! User::whereKey($this->memberId)->exists()) {
             try {
-                $member = $discord->send(new GetGuildMemberRequest($serverId, $this->memberId))->dto();
+                $member = FetchGuildMember::run($this->memberId);
             } catch (UserNotInGuildException) {
                 DiscordMemberResolved::dispatch($this->requestedBy, $this->memberId, 'not_in_guild');
 
                 return;
             }
 
-            $discordUser = $member->user instanceof UserData ? $member->user : null;
-
-            DB::transaction(function () use ($member, $discordUser): void {
-                $user = User::createOrFirst(['id' => $this->memberId], array_filter([
-                    'username' => $discordUser?->username,
-                    'discriminator' => $discordUser?->discriminator ?? '0',
-                    'nickname' => $member->nick,
-                    'avatar' => $discordUser?->avatar,
-                    'guild_avatar' => $member->avatar,
-                    'banner' => $member->banner,
-                ], fn (mixed $value): bool => ! $value instanceof Optional));
-
-                SyncUserDiscordRoles::run($user, $member->roles);
-            });
+            DB::transaction(fn (): ?User => UpsertUserFromGuildMember::run($member));
         }
 
         DiscordMemberResolved::dispatch($this->requestedBy, $this->memberId, 'ready');

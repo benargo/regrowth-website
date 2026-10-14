@@ -4,7 +4,7 @@ namespace Tests\Feature\Comments;
 
 use App\Http\Integrations\Discord\Data\Channels\ChannelStub;
 use App\Http\Integrations\Discord\Requests\Messages\CreateMessageRequest;
-use App\Http\Integrations\Discord\Requests\Messages\GetMessageRequest;
+use App\Http\Integrations\Discord\Requests\Messages\EditMessageRequest;
 use App\Models\Comment;
 use App\Models\DiscordNotification;
 use App\Models\DiscordRole;
@@ -103,7 +103,7 @@ class CommentReplyDiscordTest extends TestCase
         $stale = $this->postedMessageFor($root);
 
         $this->fakeDiscord([
-            GetMessageRequest::class => $this->makeDiscordErrorResponse(404, 10008, 'Unknown Message'),
+            EditMessageRequest::class => $this->makeDiscordErrorResponse(404, 10008, 'Unknown Message'),
             CreateMessageRequest::class => MockResponse::make($this->makeDiscordMessageResponse('565656565656565656', '123456789')),
         ]);
 

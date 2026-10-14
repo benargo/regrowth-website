@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Notifications\Discord;
 
-use App\Http\Integrations\Discord\Contracts\Channel;
 use App\Http\Integrations\Discord\Data\Channels\ChannelData;
 use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
 use App\Jobs\Middleware\ReleaseWhenDiscordRateLimited;
@@ -39,11 +38,6 @@ class ConcreteNotification extends DiscordMessage
     public function toMessage(): MessagePayloadData
     {
         return MessagePayloadData::from([]);
-    }
-
-    public function toDatabase(Channel $notifiable): array
-    {
-        return [];
     }
 
     /**

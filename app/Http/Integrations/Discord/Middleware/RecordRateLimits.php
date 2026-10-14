@@ -7,8 +7,9 @@ use JsonException;
 use Saloon\Http\Response;
 
 /**
- * Records the rate limits Discord reports. A 429 blocks its route (or every route when
- * global) for `retry_after`; an exhausted bucket blocks its route until `X-RateLimit-Reset-After`.
+ * Records the rate limits Discord reports on live responses, ignoring responses served from
+ * the cache. A 429 blocks its route (or every route when global) for `retry_after`; an
+ * exhausted bucket blocks its route until `X-RateLimit-Reset-After`.
  */
 final class RecordRateLimits
 {
@@ -18,6 +19,10 @@ final class RecordRateLimits
 
     public function __invoke(Response $response): void
     {
+        if ($response->isCached()) {
+            return;
+        }
+
         $pendingRequest = $response->getPendingRequest();
         $route = self::route(
             $pendingRequest->getMethod()->value,
@@ -50,11 +55,11 @@ final class RecordRateLimits
 
     private function recordTooManyRequests(Response $response, string $route): void
     {
-        $body = $this->decodeBody($response);
+        $body = self::body($response);
         $retryAfter = self::retryAfter($response, $body);
         $scope = self::scope($response);
 
-        if (($body['global'] ?? false) === true || $scope === 'global') {
+        if (self::isGlobal($response, $body)) {
             $this->rateLimits->blockGlobally($retryAfter);
 
             return;
@@ -86,9 +91,21 @@ final class RecordRateLimits
     }
 
     /**
+     * Whether the 429 applies to every route, from the body's `global` flag or a `global` scope.
+     *
+     * @param  array<string, mixed>|null  $body
+     */
+    public static function isGlobal(Response $response, ?array $body): bool
+    {
+        return ($body['global'] ?? false) === true || self::scope($response) === 'global';
+    }
+
+    /**
+     * The decoded JSON response body, or null when it is not a JSON object.
+     *
      * @return array<string, mixed>|null
      */
-    private function decodeBody(Response $response): ?array
+    public static function body(Response $response): ?array
     {
         try {
             $body = $response->json();

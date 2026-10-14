@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Http\Integrations\Discord;
 
+use App\Http\Integrations\Discord\Concerns\HasCaching;
 use App\Http\Integrations\Discord\DiscordConnector;
 use App\Http\Integrations\Discord\Exceptions\ApiException;
 use App\Http\Integrations\Discord\Exceptions\MessageNotFoundException;
@@ -12,6 +13,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
+use Saloon\CachePlugin\Contracts\Cacheable;
 use Saloon\Enums\Method;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Request;
@@ -168,6 +170,27 @@ class DiscordConnectorTest extends DiscordTestCase
 
     #[Test]
     #[Group('error-handling')]
+    public function it_blocks_every_route_when_only_the_scope_header_reports_a_global_limit(): void
+    {
+        Saloon::fake([MockResponse::make(
+            ['message' => 'You are being rate limited.', 'retry_after' => 5, 'global' => false],
+            429,
+            ['X-RateLimit-Scope' => 'global'],
+        )]);
+        $connector = $this->makeConnector();
+
+        $limited = $this->sendExpectingException($connector, new DiscordProbeRequest('/channels/111'));
+        $blocked = $this->sendExpectingException($connector, new DiscordProbeRequest('/guilds/222/roles'));
+
+        $this->assertInstanceOf(RateLimitedException::class, $limited);
+        $this->assertTrue($limited->global);
+        $this->assertInstanceOf(RateLimitedException::class, $blocked);
+        $this->assertTrue($blocked->global);
+        Saloon::assertSentCount(1);
+    }
+
+    #[Test]
+    #[Group('error-handling')]
     public function it_keys_routes_on_the_top_level_resource_and_groups_minor_ids(): void
     {
         Saloon::fake([
@@ -197,6 +220,25 @@ class DiscordConnectorTest extends DiscordTestCase
         $this->assertInstanceOf(RateLimitedException::class, $blocked);
         $this->assertLessThanOrEqual(1.5, $blocked->retryAfter);
         Saloon::assertSentCount(1);
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_ignores_the_rate_limit_headers_of_a_cached_response(): void
+    {
+        $this->freezeTime();
+        Saloon::fake([
+            MockResponse::make([], 200, ['X-RateLimit-Remaining' => '0', 'X-RateLimit-Reset-After' => '1']),
+            MockResponse::make([], 200),
+        ]);
+        $connector = $this->makeConnector();
+
+        $connector->send(new CacheableDiscordProbeRequest);
+        $this->travel(2)->seconds();
+
+        $this->assertTrue($connector->send(new CacheableDiscordProbeRequest)->isCached());
+        $this->assertSame(200, $connector->send(new DiscordProbeRequest)->status());
+        Saloon::assertSentCount(2);
     }
 
     // ==================== getRequestException — not found ====================
@@ -307,5 +349,25 @@ class DiscordProbeRequest extends Request
     public function resolveEndpoint(): string
     {
         return $this->endpoint;
+    }
+}
+
+/**
+ * Minimal cacheable request used only to exercise the connector with cached responses.
+ */
+class CacheableDiscordProbeRequest extends Request implements Cacheable
+{
+    use HasCaching;
+
+    protected Method $method = Method::GET;
+
+    public function resolveEndpoint(): string
+    {
+        return '/probe';
+    }
+
+    public function cacheExpiryInSeconds(): int
+    {
+        return 3600;
     }
 }

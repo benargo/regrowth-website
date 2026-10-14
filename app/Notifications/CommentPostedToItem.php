@@ -2,7 +2,6 @@
 
 namespace App\Notifications;
 
-use App\Http\Integrations\Discord\Contracts\Channel;
 use App\Http\Integrations\Discord\Data\Messages\EmbedData;
 use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
 use App\Models\Comment;
@@ -24,6 +23,11 @@ class CommentPostedToItem extends DiscordMessage implements ShouldUpdateExisting
      * Whether this notification only edits the thread's posted message, sending nothing when there is none.
      */
     protected bool $onlyUpdatesExisting = false;
+
+    /**
+     * This notification's comment, once loaded.
+     */
+    private ?Comment $loadedComment = null;
 
     public function __construct(Comment $comment)
     {
@@ -125,19 +129,6 @@ class CommentPostedToItem extends DiscordMessage implements ShouldUpdateExisting
     }
 
     /**
-     * Get the array of data to store in the database for this notification.
-     */
-    public function toDatabase(Channel $notifiable): array
-    {
-        return [
-            'type' => self::class,
-            'channel_id' => $notifiable->id,
-            'payload' => $this->toMessage()->toArray(),
-            'created_by_user_id' => $this->sender()?->id,
-        ];
-    }
-
-    /**
      * Log a failed send with the comment's id.
      */
     public function failed(Throwable $exception): void
@@ -162,6 +153,6 @@ class CommentPostedToItem extends DiscordMessage implements ShouldUpdateExisting
      */
     protected function comment(): Comment
     {
-        return Comment::withTrashed()->findOrFail($this->relatedModel(Comment::class)['model_id']);
+        return $this->loadedComment ??= Comment::withTrashed()->findOrFail($this->relatedModel(Comment::class)['model_id']);
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Notifications;
 
 use App\Enums\DailyQuestType;
-use App\Http\Integrations\Discord\Contracts\Channel;
 use App\Http\Integrations\Discord\Data\Messages\EmbedData;
 use App\Http\Integrations\Discord\Data\Messages\EmbedFieldData;
 use App\Http\Integrations\Discord\Data\Messages\EmbedFooterData;
@@ -14,7 +13,6 @@ use App\Notifications\Attributes\RepostsIfOriginalDeleted;
 use App\Notifications\Concerns\UpdatesExisting;
 use App\Notifications\Contracts\ShouldUpdateExisting;
 use App\Notifications\Discord\DiscordMessage;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 
 #[RepostsIfOriginalDeleted]
@@ -96,25 +94,12 @@ class DailyQuestsMessage extends DiscordMessage implements ShouldUpdateExisting
     }
 
     /**
-     * Get the array of data to store in the database for this notification.
-     */
-    public function toDatabase(Channel $notifiable): array
-    {
-        return [
-            'type' => self::class,
-            'channel_id' => $notifiable->id,
-            'payload' => $this->toMessage()->toArray(),
-            'created_by_user_id' => $this->sender()?->id,
-        ];
-    }
-
-    /**
      * Narrow the stored-notification lookup to messages posted between yesterday's and tomorrow's reset.
      */
     protected function constrainExisting(Builder $query): Builder
     {
         return $query
-            ->where('created_at', '>=', Carbon::yesterday()->setTime(4, 0, 0))
-            ->where('created_at', '<=', Carbon::tomorrow()->setTime(3, 59, 59));
+            ->where('created_at', '>=', today()->subDay()->setTime(4, 0, 0))
+            ->where('created_at', '<=', today()->addDay()->setTime(3, 59, 59));
     }
 }

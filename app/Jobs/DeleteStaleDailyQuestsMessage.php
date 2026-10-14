@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Http\Integrations\Discord\DiscordConnector;
+use App\Http\Integrations\Discord\Exceptions\MessageNotFoundException;
 use App\Http\Integrations\Discord\Requests\Messages\DeleteMessageRequest;
 use App\Jobs\Middleware\ReleaseWhenDiscordRateLimited;
 use App\Models\DiscordNotification;
@@ -42,7 +43,11 @@ class DeleteStaleDailyQuestsMessage implements ShouldQueue
             ->get();
 
         foreach ($stale as $notification) {
-            $discord->send(new DeleteMessageRequest($notification->channel_id, $notification->message_id));
+            try {
+                $discord->send(new DeleteMessageRequest($notification->channel_id, $notification->message_id));
+            } catch (MessageNotFoundException) {
+                // The Discord message is already gone: delete the record only.
+            }
 
             $notification->delete();
         }

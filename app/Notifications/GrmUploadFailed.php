@@ -2,7 +2,6 @@
 
 namespace App\Notifications;
 
-use App\Http\Integrations\Discord\Contracts\Channel;
 use App\Http\Integrations\Discord\Data\Messages\EmbedData;
 use App\Http\Integrations\Discord\Data\Messages\EmbedFieldData;
 use App\Http\Integrations\Discord\Data\Messages\EmbedMediaData;
@@ -56,17 +55,5 @@ class GrmUploadFailed extends DiscordMessage
                 'timestamp' => now()->toIso8601String(),
             ])],
         ]);
-    }
-
-    /**
-     * Get the array of data to store in the database for this notification.
-     */
-    public function toDatabase(Channel $notifiable): array
-    {
-        return [
-            'type' => self::class,
-            'channel_id' => $notifiable->id,
-            'payload' => $this->toMessage()->toArray(),
-        ];
     }
 }

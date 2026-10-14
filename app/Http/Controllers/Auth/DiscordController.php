@@ -4,17 +4,16 @@ namespace App\Http\Controllers\Auth;
 
 use App\Actions\Discord\FetchGuildMember;
 use App\Actions\Discord\RetrieveOAuthUser;
-use App\Actions\Discord\SyncUserDiscordRoles;
+use App\Actions\Discord\UpsertUserFromGuildMember;
 use App\Http\Controllers\Controller;
 use App\Http\Integrations\Discord\Exceptions\DiscordRequestException;
 use App\Http\Integrations\Discord\Exceptions\RateLimitedException;
 use App\Http\Integrations\Discord\Exceptions\UserNotInGuildException;
-use App\Models\User;
+use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
 use Saloon\Exceptions\Request\FatalRequestException;
-use Spatie\LaravelData\Optional;
 
 class DiscordController extends Controller
 {
@@ -44,27 +43,12 @@ class DiscordController extends Controller
 
             return redirect('/')
                 ->with('error', 'Failed to verify your Discord server membership. Please try again.');
-        } catch (\Exception) {
+        } catch (Exception) {
             return redirect('/')
                 ->with('error', 'Failed to authenticate with Discord. Please try again.');
         }
 
-        $rawData = $discordUser->getRaw();
-
-        // Create or update user
-        $user = User::updateOrCreate(
-            ['id' => $discordUser->getId()],
-            array_filter([
-                'username' => $rawData['username'],
-                'discriminator' => $rawData['discriminator'] ?? '0',
-                'nickname' => $member->nick,
-                'avatar' => $rawData['avatar'] ?? null,
-                'guild_avatar' => $member->avatar,
-                'banner' => is_string($member->banner) ? $member->banner : ($rawData['banner'] ?? null),
-            ], fn (mixed $value): bool => ! $value instanceof Optional)
-        );
-
-        SyncUserDiscordRoles::run($user, $member->roles);
+        $user = UpsertUserFromGuildMember::run($member);
 
         Auth::login($user, remember: true);
 

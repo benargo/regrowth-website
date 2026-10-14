@@ -39,14 +39,13 @@ class CommentController extends Controller
 
         if ($root !== null) {
             $comment->parent()->associate($root)->save();
-            $this->lootCouncilChannel()->notify(CommentPostedToItem::refresh($root));
         }
 
         $comment->load(['user', 'commentable', 'reactions.user']);
 
-        if ($root === null) {
-            $this->lootCouncilChannel()->notify(new CommentPostedToItem($comment));
-        }
+        $this->lootCouncilChannel()->notify(
+            $root !== null ? CommentPostedToItem::refresh($root) : new CommentPostedToItem($comment),
+        );
 
         broadcast(new CommentPosted($comment))->toOthers();
 

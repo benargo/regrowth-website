@@ -7,7 +7,6 @@ use App\Http\Integrations\Discord\DiscordConnector;
 use App\Http\Integrations\Discord\Exceptions\MessageNotFoundException;
 use App\Http\Integrations\Discord\Requests\Messages\CreateMessageRequest;
 use App\Http\Integrations\Discord\Requests\Messages\EditMessageRequest;
-use App\Http\Integrations\Discord\Requests\Messages\GetMessageRequest;
 use App\Models\DiscordNotification;
 use App\Notifications\Attributes\RepostsIfOriginalDeleted;
 use App\Notifications\Contracts\ShouldUpdateExisting;
@@ -57,13 +56,11 @@ class DiscordChannel
         $messageId = $existing->message_id;
 
         try {
-            $this->discord->send(new GetMessageRequest($channelId, $messageId));
             $payload = $notification->toMessage();
 
             $this->discord->send(new EditMessageRequest($channelId, $messageId, $payload));
 
-            // Update the record without firing model events.
-            $existing->withoutEvents(function () use ($existing, $notification, $payload) {
+            $existing->withoutEvents(function () use ($existing, $notification, $payload): void {
                 $existing->update([
                     'payload' => $payload->toArray(),
                     'created_by_user_id' => $notification->sender()?->id,
@@ -75,8 +72,7 @@ class DiscordChannel
                 $this->syncRelatedModels($existing, $notification->mapRelatedModels());
             }
         } catch (MessageNotFoundException) {
-            // The Discord message no longer exists: delete the record without model events.
-            $existing->withoutEvents(function () use ($existing) {
+            $existing->withoutEvents(function () use ($existing): void {
                 $existing->delete();
             });
 
@@ -91,11 +87,13 @@ class DiscordChannel
      */
     private function createMessage(Channel $notifiable, DiscordMessage $notification): void
     {
+        $payload = $notification->toMessage();
+
         $message = $this->discord
-            ->send(new CreateMessageRequest($notifiable->id, $notification->toMessage()))
+            ->send(new CreateMessageRequest($notifiable->id, $payload))
             ->dto();
 
-        $data = array_merge($notification->toDatabase($notifiable), [
+        $data = array_merge($notification->toDatabase($notifiable, $payload), [
             'message_id' => $message->id,
         ]);
 
@@ -119,13 +117,13 @@ class DiscordChannel
      */
     protected function syncRelatedModels(DiscordNotification $record, array $relatedModels): void
     {
-        $desired = array_map(fn ($entry) => [
+        $desired = array_map(fn (array $entry): array => [
             'discord_notification_id' => $record->id,
             'model_type' => $entry['model_type'],
             'model_id' => (string) $entry['model_id'],
         ], $relatedModels);
 
-        DB::transaction(function () use ($record, $desired) {
+        DB::transaction(function () use ($record, $desired): void {
             if ($desired === []) {
                 $record->relatedModels()->delete();
 

@@ -81,7 +81,10 @@ export default function UserSearch({ id, value, onSelect, invalid = false }) {
         const search = val.trim();
         setQuery(val);
         setHasSearchFailed(false);
-        onSelect(null);
+
+        if (value) {
+            onSelect(null);
+        }
 
         clearTimeout(debounceRef.current);
         cancelTokenRef.current?.cancel();

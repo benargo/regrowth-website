@@ -15,7 +15,7 @@ class SyncDiscordTest extends TestCase
     #[Test]
     public function it_exits_successfully(): void
     {
-        Bus::fake();
+        Bus::fake([SyncRoles::class, SyncUser::class]);
 
         $this->artisan('sync:discord')
             ->assertSuccessful();
@@ -24,7 +24,7 @@ class SyncDiscordTest extends TestCase
     #[Test]
     public function it_dispatches_sync_discord_roles(): void
     {
-        Bus::fake();
+        Bus::fake([SyncRoles::class, SyncUser::class]);
 
         $this->artisan('sync:discord');
 
@@ -34,7 +34,7 @@ class SyncDiscordTest extends TestCase
     #[Test]
     public function it_does_not_dispatch_sync_discord_users(): void
     {
-        Bus::fake();
+        Bus::fake([SyncRoles::class, SyncUser::class]);
 
         $this->artisan('sync:discord');
 

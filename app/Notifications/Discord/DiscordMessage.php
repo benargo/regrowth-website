@@ -70,11 +70,19 @@ abstract class DiscordMessage extends BaseNotification implements ShouldQueue
     abstract public function toMessage(): MessagePayloadData;
 
     /**
-     * Get the array of data to store in the database for this notification.
+     * Get the array of data to store in the database for this notification, using the given payload when provided.
      *
-     * @return array<string, mixed>
+     * @return array{type: class-string<static>, channel_id: string, payload: array<string, mixed>, created_by_user_id: int|string|null}
      */
-    abstract public function toDatabase(Channel $notifiable): array;
+    public function toDatabase(Channel $notifiable, ?MessagePayloadData $payload = null): array
+    {
+        return [
+            'type' => static::class,
+            'channel_id' => $notifiable->id,
+            'payload' => ($payload ?? $this->toMessage())->toArray(),
+            'created_by_user_id' => $this->sender()?->id,
+        ];
+    }
 
     /**
      * Map the related models for this notification.

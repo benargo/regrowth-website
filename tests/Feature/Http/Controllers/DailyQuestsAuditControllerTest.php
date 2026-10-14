@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Http\Controllers;
 
-use App\Http\Integrations\Discord\Contracts\Channel;
 use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
 use App\Models\DiscordNotification;
 use App\Models\DiscordRole;
@@ -19,11 +18,6 @@ class OtherDiscordNotification extends DiscordMessage
     public function toMessage(): MessagePayloadData
     {
         return MessagePayloadData::from([]);
-    }
-
-    public function toDatabase(Channel $notifiable): array
-    {
-        return [];
     }
 }
 

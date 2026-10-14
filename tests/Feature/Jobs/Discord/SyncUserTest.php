@@ -110,6 +110,9 @@ class SyncUserTest extends TestCase
     #[Test]
     public function it_skips_execution_when_batch_is_cancelled(): void
     {
+        User::factory()->create(['id' => '100000000000000000']);
+        $this->fakeGuildMember([]);
+
         $batch = Bus::batch([])->dispatch();
         $batch->cancel();
 
@@ -118,6 +121,17 @@ class SyncUserTest extends TestCase
         dispatch_sync($job);
 
         Saloon::assertNothingSent();
+    }
+
+    #[Test]
+    public function it_does_not_call_discord_when_the_user_no_longer_exists(): void
+    {
+        $this->fakeGuildMember([]);
+
+        SyncUser::dispatchSync('100000000000000000');
+
+        Saloon::assertNothingSent();
+        $this->assertDatabaseCount('users', 0);
     }
 
     #[Test]

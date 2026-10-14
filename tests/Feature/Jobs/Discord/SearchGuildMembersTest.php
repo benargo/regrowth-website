@@ -87,7 +87,7 @@ class SearchGuildMembersTest extends TestCase
     #[Group('contract')]
     public function it_runs_on_the_high_queue(): void
     {
-        Queue::fake();
+        Queue::fake([SearchGuildMembers::class]);
 
         SearchGuildMembers::dispatch('test', 5, '100000000000000003');
 

@@ -100,6 +100,24 @@ class DeleteStaleDailyQuestsMessageTest extends TestCase
 
     #[Test]
     #[Group('error-handling')]
+    public function it_deletes_the_record_when_the_discord_message_is_already_gone(): void
+    {
+        $stale = DiscordNotification::factory()->count(2)->create([
+            'type' => DailyQuestsMessage::class,
+            'created_at' => now()->subDays(3),
+        ]);
+
+        $this->fakeDiscord([DeleteMessageRequest::class => $this->makeDiscordErrorResponse(404, 10008, 'Unknown Message')]);
+
+        (new DeleteStaleDailyQuestsMessage)->handle($this->discord());
+
+        foreach ($stale as $notification) {
+            $this->assertSoftDeleted($notification);
+        }
+    }
+
+    #[Test]
+    #[Group('error-handling')]
     public function it_releases_itself_when_discord_is_rate_limited(): void
     {
         $this->freezeTime();

@@ -68,7 +68,11 @@ final class MessagePayloadData extends Data
             'nonce' => ['sometimes', function (string $attribute, mixed $value, Closure $fail): void {
                 if (! is_int($value) && ! is_string($value)) {
                     $fail('The :attribute must be an integer or a string.');
-                } elseif (is_string($value) && mb_strlen($value) > 25) {
+
+                    return;
+                }
+
+                if (is_string($value) && mb_strlen($value) > 25) {
                     $fail('The :attribute may not be greater than 25 characters.');
                 }
             }],

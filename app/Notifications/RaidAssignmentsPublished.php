@@ -2,7 +2,6 @@
 
 namespace App\Notifications;
 
-use App\Http\Integrations\Discord\Contracts\Channel;
 use App\Http\Integrations\Discord\Data\Messages\EmbedData;
 use App\Http\Integrations\Discord\Data\Messages\EmbedFooterData;
 use App\Http\Integrations\Discord\Data\Messages\EmbedMediaData;
@@ -87,19 +86,6 @@ class RaidAssignmentsPublished extends DiscordMessage implements ShouldBroadcast
                 'timestamp' => now()->toIso8601String(),
             ])],
         ]);
-    }
-
-    /**
-     * Get the array of data to store in the database for this notification.
-     */
-    public function toDatabase(Channel $notifiable): array
-    {
-        return [
-            'type' => self::class,
-            'channel_id' => $notifiable->id,
-            'payload' => $this->toMessage()->toArray(),
-            'created_by_user_id' => $this->sender()?->id,
-        ];
     }
 
     /**
