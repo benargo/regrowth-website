@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Casts\AsClassName;
-use App\Services\Discord\Payloads\MessagePayload;
+use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -27,7 +27,7 @@ class DiscordNotification extends Model
     {
         return [
             'type' => AsClassName::class,
-            'payload' => MessagePayload::class,
+            'payload' => MessagePayloadData::class,
         ];
     }
 

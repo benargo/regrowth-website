@@ -1,23 +1,25 @@
 <?php
 
-namespace Tests\Unit\Services\Discord\Notifications;
+namespace Tests\Feature\Notifications\Discord;
 
+use App\Http\Integrations\Discord\Contracts\Channel;
+use App\Http\Integrations\Discord\Data\Channels\ChannelData;
+use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
+use App\Jobs\Middleware\ReleaseWhenDiscordRateLimited;
 use App\Models\User;
-use App\Services\Discord\Notifications\Driver;
-use App\Services\Discord\Notifications\NotifiableChannel;
-use App\Services\Discord\Notifications\Notification;
-use App\Services\Discord\Payloads\MessagePayload;
-use App\Services\Discord\Resources\Channel;
+use App\Notifications\Discord\DiscordChannel;
+use App\Notifications\Discord\DiscordMessage;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Notifications\SendQueuedNotifications;
+use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
-#[Group('discord-integration')]
 class StubModelA extends Model
 {
     protected $table = 'stub_a';
@@ -32,14 +34,14 @@ class StubModelB extends Model
     public $incrementing = false;
 }
 
-class ConcreteNotification extends Notification
+class ConcreteNotification extends DiscordMessage
 {
-    public function toMessage(): MessagePayload
+    public function toMessage(): MessagePayloadData
     {
-        return MessagePayload::from([]);
+        return MessagePayloadData::from([]);
     }
 
-    public function toDatabase(object $notifiable): array
+    public function toDatabase(Channel $notifiable): array
     {
         return [];
     }
@@ -75,26 +77,27 @@ class ConcreteNotification extends Notification
     }
 }
 
-class NotificationTest extends TestCase
+#[Group('discord-integration')]
+class DiscordMessageTest extends TestCase
 {
     use RefreshDatabase;
 
-    private NotifiableChannel $notifiable;
+    private ChannelData $notifiable;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $channel = Channel::from(['id' => '123456789012345678', 'type' => 0]);
-        $this->notifiable = new NotifiableChannel($channel);
+        $channel = ChannelData::from(['id' => '123456789012345678', 'type' => 0]);
+        $this->notifiable = $channel;
     }
 
     #[Test]
-    public function it_routes_through_the_discord_driver(): void
+    public function it_routes_through_the_discord_channel(): void
     {
         $notification = new ConcreteNotification;
 
-        $this->assertContains(Driver::class, $notification->via($this->notifiable));
+        $this->assertContains(DiscordChannel::class, $notification->via($this->notifiable));
     }
 
     // ==================== withRelatedModels ====================
@@ -376,5 +379,22 @@ class NotificationTest extends TestCase
         $notification = new ConcreteNotification;
 
         $this->assertInstanceOf(ShouldQueue::class, $notification);
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_releases_its_queued_job_on_a_discord_rate_limit_without_spending_a_retry(): void
+    {
+        Queue::fake();
+
+        ChannelData::from(['id' => '111222333444555666'])->notify(new ConcreteNotification);
+
+        $job = Queue::pushed(SendQueuedNotifications::class)->first();
+
+        $this->assertCount(1, $job->middleware);
+        $this->assertInstanceOf(ReleaseWhenDiscordRateLimited::class, $job->middleware[0]);
+        $this->assertSame(3, $job->maxExceptions);
+        $this->assertSame(30, $job->backoff());
+        $this->assertTrue($job->retryUntil()->isFuture());
     }
 }

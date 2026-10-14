@@ -2,14 +2,13 @@
 
 namespace Tests\Unit\Notifications;
 
+use App\Http\Integrations\Discord\Data\Channels\ChannelData;
+use App\Http\Integrations\Discord\Data\Messages\EmbedFieldData;
 use App\Models\Comment;
 use App\Models\Item;
 use App\Models\Raid;
+use App\Notifications\Discord\DiscordChannel;
 use App\Notifications\NewLootCouncilComment;
-use App\Services\Discord\Notifications\Driver as DiscordDriver;
-use App\Services\Discord\Notifications\NotifiableChannel;
-use App\Services\Discord\Resources\Channel;
-use App\Services\Discord\Resources\EmbedField;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -28,7 +27,7 @@ class NewLootCouncilCommentTest extends TestCase
         $comment = Comment::factory()->create();
         $notification = new NewLootCouncilComment($comment);
 
-        $this->assertContains(DiscordDriver::class, $notification->via($this->makeNotifiable()));
+        $this->assertContains(DiscordChannel::class, $notification->via($this->makeNotifiable()));
     }
 
     #[Test]
@@ -82,7 +81,7 @@ class NewLootCouncilCommentTest extends TestCase
 
         $this->assertIsArray($fields);
         $this->assertCount(1, $fields);
-        $this->assertInstanceOf(EmbedField::class, $fields[0]);
+        $this->assertInstanceOf(EmbedFieldData::class, $fields[0]);
         $this->assertSame('Replies', $fields[0]->name);
         $this->assertSame('3', $fields[0]->value);
         $this->assertTrue($fields[0]->inline);
@@ -208,8 +207,8 @@ class NewLootCouncilCommentTest extends TestCase
 
     // ==================== helpers ====================
 
-    private function makeNotifiable(): NotifiableChannel
+    private function makeNotifiable(): ChannelData
     {
-        return new NotifiableChannel(Channel::from(['id' => '123456789']));
+        return ChannelData::from(['id' => '123456789']);
     }
 }

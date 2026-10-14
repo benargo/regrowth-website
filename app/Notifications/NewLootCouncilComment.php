@@ -2,15 +2,16 @@
 
 namespace App\Notifications;
 
+use App\Http\Integrations\Discord\Contracts\Channel;
+use App\Http\Integrations\Discord\Data\Messages\EmbedData;
+use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
 use App\Models\Comment;
 use App\Models\Item;
 use App\Notifications\Concerns\UpdatesExisting;
-use App\Services\Discord\Notifications\Notification;
-use App\Services\Discord\Payloads\MessagePayload;
-use App\Services\Discord\Resources\Embed;
+use App\Notifications\Discord\DiscordMessage;
 use LogicException;
 
-class NewLootCouncilComment extends Notification
+class NewLootCouncilComment extends DiscordMessage
 {
     use UpdatesExisting;
 
@@ -40,7 +41,7 @@ class NewLootCouncilComment extends Notification
      *
      * @throws LogicException if the comment's commentable is not an Item.
      */
-    public function toMessage(): MessagePayload
+    public function toMessage(): MessagePayloadData
     {
         /** @var Comment $comment */
         $comment = $this->hydrateOrFail($this->relatedModel(Comment::class));
@@ -80,8 +81,8 @@ class NewLootCouncilComment extends Notification
             ]];
         }
 
-        return MessagePayload::from([
-            'embeds' => [Embed::from($embed)],
+        return MessagePayloadData::from([
+            'embeds' => [EmbedData::from($embed)],
         ]);
     }
 
@@ -99,11 +100,11 @@ class NewLootCouncilComment extends Notification
     /**
      * Get the array of data to store in the database for this notification.
      */
-    public function toDatabase(object $notifiable): array
+    public function toDatabase(Channel $notifiable): array
     {
         return [
             'type' => self::class,
-            'channel_id' => $notifiable->channel()->id,
+            'channel_id' => $notifiable->id,
             'payload' => $this->toMessage()->toArray(),
             'created_by_user_id' => $this->sender()?->id,
         ];

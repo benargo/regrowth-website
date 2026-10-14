@@ -1,28 +1,35 @@
 <?php
 
-namespace App\Services\Discord\Notifications;
+namespace App\Notifications\Discord;
 
+use App\Http\Integrations\Discord\Contracts\Channel;
+use App\Http\Integrations\Discord\DiscordConnector;
+use App\Http\Integrations\Discord\Exceptions\MessageNotFoundException;
+use App\Http\Integrations\Discord\Requests\Messages\CreateMessageRequest;
+use App\Http\Integrations\Discord\Requests\Messages\EditMessageRequest;
+use App\Http\Integrations\Discord\Requests\Messages\GetMessageRequest;
 use App\Models\DiscordNotification;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Exceptions\MessageNotFoundException;
 use Illuminate\Support\Facades\DB;
 
-class Driver
+/**
+ * Laravel notification channel that posts or edits a DiscordMessage in a Discord channel and records it as a DiscordNotification.
+ */
+class DiscordChannel
 {
     /**
-     * Create a new driver instance.
+     * Create a new channel instance.
      */
     public function __construct(
-        private readonly Discord $discord
+        private readonly DiscordConnector $discord,
     ) {}
 
     /**
      * Send the given notification, routing to update or create as appropriate.
      *
-     * @param  object  $notifiable  The notifiable entity (e.g., a user or a channel wrapper)
-     * @param  Notification  $notification  The notification instance to send
+     * @param  Channel  $notifiable  The Discord channel to post to
+     * @param  DiscordMessage  $notification  The notification instance to send
      */
-    public function send(object $notifiable, Notification $notification): void
+    public function send(Channel $notifiable, DiscordMessage $notification): void
     {
         if (property_exists($notification, 'updates') && $notification->updates?->message_id) {
             $this->updateMessage($notifiable, $notification);
@@ -37,15 +44,18 @@ class Driver
      * Edit an existing Discord message and update its database record.
      * Falls through to createMessage() if the Discord message no longer exists.
      */
-    private function updateMessage(object $notifiable, Notification $notification): void
+    private function updateMessage(Channel $notifiable, DiscordMessage $notification): void
     {
+        $channelId = $notifiable->id;
+        $messageId = $notification->updates->message_id;
+
         try {
-            $existingMessage = $this->discord->getChannelMessage($notifiable->channel(), $notification->updates->message_id);
+            $this->discord->send(new GetMessageRequest($channelId, $messageId));
             $payload = $notification->toMessage();
 
-            $this->discord->editMessage($existingMessage, $payload);
+            $this->discord->send(new EditMessageRequest($channelId, $messageId, $payload));
 
-            // Update without model events to avoid re-triggering observers on a routine payload refresh.
+            // Update the record without firing model events.
             $notification->updates->withoutEvents(function () use ($notification, $payload) {
                 $notification->updates->update([
                     'payload' => $payload->toArray(),
@@ -53,13 +63,12 @@ class Driver
                 ]);
             });
 
-            // Only sync related models if the caller explicitly provided them (non-null).
-            // A null relatedModels means "don't change existing pivot rows".
+            // Sync related models only when relatedModels is non-null; null leaves existing pivot rows unchanged.
             if ($notification->relatedModels !== null) {
                 $this->syncRelatedModels($notification->updates, $notification->mapRelatedModels());
             }
         } catch (MessageNotFoundException $e) {
-            // Stale message_id (e.g. manually deleted in Discord) — drop the record and fall through to create.
+            // The Discord message no longer exists: delete the record without model events and create a new message.
             $notification->updates->withoutEvents(function () use ($notification) {
                 $notification->updates->delete();
             });
@@ -71,9 +80,11 @@ class Driver
     /**
      * Post a new Discord message and persist the database record with related models.
      */
-    private function createMessage(object $notifiable, Notification $notification): void
+    private function createMessage(Channel $notifiable, DiscordMessage $notification): void
     {
-        $message = $this->discord->createMessage($notifiable->channel(), $notification->toMessage());
+        $message = $this->discord
+            ->send(new CreateMessageRequest($notifiable->id, $notification->toMessage()))
+            ->dto();
 
         $data = array_merge($notification->toDatabase($notifiable), [
             'message_id' => $message->id,
@@ -104,17 +115,14 @@ class Driver
                 return;
             }
 
-            // Update a unique-by column to itself: Eloquent's upsert() treats an
-            // empty $update list as "just insert" rather than a true no-op upsert,
-            // which throws a duplicate-key error when a row already exists.
+            // Upsert the desired pivot rows, rewriting the unique-by column to itself.
             $record->relatedModels()->upsert(
                 $desired,
                 ['discord_notification_id', 'model_type', 'model_id'],
                 ['discord_notification_id'],
             );
 
-            // Delete any existing pivot rows that are not part of the desired model pairs.
-            // Use the query builder instead of raw row-value tuple SQL for portability.
+            // Delete existing pivot rows that are not in the desired model pairs.
             $keepIds = $record->relatedModels()
                 ->where(function ($query) use ($desired) {
                     foreach ($desired as $row) {

@@ -3,16 +3,17 @@
 namespace App\Notifications;
 
 use App\Enums\DailyQuestType;
+use App\Http\Integrations\Discord\Contracts\Channel;
+use App\Http\Integrations\Discord\Data\Messages\EmbedData;
+use App\Http\Integrations\Discord\Data\Messages\EmbedFieldData;
+use App\Http\Integrations\Discord\Data\Messages\EmbedFooterData;
+use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
 use App\Models\DailyQuest;
 use App\Models\DiscordRole;
 use App\Notifications\Concerns\UpdatesExisting;
-use App\Services\Discord\Notifications\Notification;
-use App\Services\Discord\Payloads\MessagePayload;
-use App\Services\Discord\Resources\Embed;
-use App\Services\Discord\Resources\EmbedField;
-use App\Services\Discord\Resources\EmbedFooter;
+use App\Notifications\Discord\DiscordMessage;
 
-class DailyQuestsMessage extends Notification
+class DailyQuestsMessage extends DiscordMessage
 {
     use UpdatesExisting;
 
@@ -52,7 +53,7 @@ class DailyQuestsMessage extends Notification
     /**
      * Get the payload to send to Discord for this notification.
      */
-    public function toMessage(): MessagePayload
+    public function toMessage(): MessagePayloadData
     {
         $embedFields = collect([]);
 
@@ -63,11 +64,11 @@ class DailyQuestsMessage extends Notification
                 continue;
             }
 
-            $embedFields->push(new EmbedField($label, $quest->display_name, false));
+            $embedFields->push(new EmbedFieldData($label, $quest->display_name, false));
         }
 
         if ($this->sender()) {
-            $footer = EmbedFooter::from([
+            $footer = EmbedFooterData::from([
                 'text' => 'Posted by '.$this->sender()->nickname.'.',
                 'icon_url' => $this->sender()->avatarUrl,
             ]);
@@ -75,9 +76,9 @@ class DailyQuestsMessage extends Notification
 
         $now = now();
 
-        return MessagePayload::from([
+        return MessagePayloadData::from([
             'content' => $this->subscribersRole ? "<@&{$this->subscribersRole->id}>" : '',
-            'embeds' => [Embed::from([
+            'embeds' => [EmbedData::from([
                 'title' => '📜 Today\'s Daily Quests',
                 'description' => 'Here are the daily quests for '.$now->format('l, d F Y').'.',
                 'url' => route('daily-quests.index'),
@@ -92,11 +93,11 @@ class DailyQuestsMessage extends Notification
     /**
      * Get the array of data to store in the database for this notification.
      */
-    public function toDatabase(object $notifiable): array
+    public function toDatabase(Channel $notifiable): array
     {
         return [
             'type' => self::class,
-            'channel_id' => $notifiable->channel()->id,
+            'channel_id' => $notifiable->id,
             'payload' => $this->toMessage()->toArray(),
             'created_by_user_id' => $this->sender()?->id,
         ];

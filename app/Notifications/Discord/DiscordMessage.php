@@ -1,25 +1,33 @@
 <?php
 
-namespace App\Services\Discord\Notifications;
+namespace App\Notifications\Discord;
 
-use App\Services\Discord\Payloads\MessagePayload;
+use App\Http\Integrations\Discord\Contracts\Channel;
+use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
+use App\Jobs\Middleware\ReleaseWhenDiscordRateLimited;
+use DateTimeInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Notifications\Notification as BaseNotification;
+use Illuminate\Queue\Attributes\Backoff;
+use Illuminate\Queue\Attributes\MaxExceptions;
 
-abstract class Notification extends BaseNotification implements ShouldQueue
+/**
+ * Base class for queued notifications that post a message to Discord through the DiscordChannel.
+ */
+#[MaxExceptions(3)]
+#[Backoff(30)]
+abstract class DiscordMessage extends BaseNotification implements ShouldQueue
 {
     use Queueable;
 
     /**
      * The related model references to store in the database, if any.
      *
-     * Stored as lightweight identifier arrays rather than full models so the
-     * notification stays JSON-encodable when queued, even if a related model
-     * carries binary (non-UTF-8) attributes such as a varbinary color column.
+     * Stored as lightweight identifier arrays (model id and type) rather than full models.
      *
      * @var list<array{model_id: int|string, model_type: class-string<Model>}>|null
      */
@@ -31,24 +39,44 @@ abstract class Notification extends BaseNotification implements ShouldQueue
     public ?Authenticatable $sender = null;
 
     /**
+     * Get the time after which the queued notification stops being retried.
+     */
+    public function retryUntil(): DateTimeInterface
+    {
+        return now()->addHour();
+    }
+
+    /**
+     * Get the job middleware the queued notification passes through.
+     *
+     * @return array<int, object>
+     */
+    public function middleware(object $notifiable, string $channel): array
+    {
+        return [new ReleaseWhenDiscordRateLimited];
+    }
+
+    /**
      * Get the notification channels.
      *
-     * @return array<int, string> The notification channels to send the message through (e.g. a custom DiscordChannel class)
+     * @return array<int, class-string>
      */
     public function via(object $notifiable): array
     {
-        return [Driver::class];
+        return [DiscordChannel::class];
     }
 
     /**
      * Get the payload to send to Discord for this notification.
      */
-    abstract public function toMessage(): MessagePayload;
+    abstract public function toMessage(): MessagePayloadData;
 
     /**
      * Get the array of data to store in the database for this notification.
+     *
+     * @return array<string, mixed>
      */
-    abstract public function toDatabase(object $notifiable): array;
+    abstract public function toDatabase(Channel $notifiable): array;
 
     /**
      * Map the related models for this notification.
@@ -63,13 +91,11 @@ abstract class Notification extends BaseNotification implements ShouldQueue
     /**
      * Set the related models for this notification.
      *
-     * Models are reduced to lightweight identifier arrays immediately so the
-     * notification never holds a full model (and its potentially binary
-     * attributes) once queued.
+     * Each model is reduced to an identifier array (model id and type).
      *
-     * @param  iterable<Model>  $related
+     * @param  iterable<array-key, Model>  $related
      */
-    public function withRelatedModels(iterable $related): self
+    public function withRelatedModels(iterable $related): static
     {
         $this->relatedModels = collect($related)
             ->map(fn (Model $model) => [
@@ -85,10 +111,8 @@ abstract class Notification extends BaseNotification implements ShouldQueue
     /**
      * Hydrate a model from a stored reference.
      *
-     * Notifications store related models as lightweight identifier arrays so the
-     * queue payload stays JSON-encodable. Use this to resolve a reference back
-     * into its model when the full record is needed (e.g. while building the
-     * message). Returns null for a null reference or a missing record.
+     * Resolves a stored identifier array back into its model. Returns null for a null
+     * reference or a missing record.
      *
      * @param  array{model_id: int|string, model_type: class-string<Model>}|null  $reference
      */
@@ -104,8 +128,7 @@ abstract class Notification extends BaseNotification implements ShouldQueue
     /**
      * Hydrate a model from a stored reference, failing if it cannot be resolved.
      *
-     * Use this when the message cannot be built without the related record, to
-     * preserve the loud-failure behaviour of Laravel's model serialization.
+     * Throws a ModelNotFoundException when the reference is null or the record is missing.
      *
      * @param  array{model_id: int|string, model_type: class-string<Model>}|null  $reference
      *
@@ -145,7 +168,7 @@ abstract class Notification extends BaseNotification implements ShouldQueue
     /**
      * Set the user who sent this notification.
      */
-    public function withSender(Authenticatable $user): self
+    public function withSender(Authenticatable $user): static
     {
         $this->sender = $user;
 

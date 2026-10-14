@@ -2,11 +2,10 @@
 
 namespace Tests\Unit\Notifications;
 
+use App\Http\Integrations\Discord\Data\Channels\ChannelData;
+use App\Http\Integrations\Discord\Data\Messages\EmbedData;
+use App\Notifications\Discord\DiscordChannel;
 use App\Notifications\GrmUploadCompleted;
-use App\Services\Discord\Notifications\Driver as DiscordDriver;
-use App\Services\Discord\Notifications\NotifiableChannel;
-use App\Services\Discord\Resources\Channel as ChannelResource;
-use App\Services\Discord\Resources\Embed;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -15,11 +14,11 @@ use Tests\TestCase;
 #[Group('discord-integration')]
 class GrmUploadCompletedTest extends TestCase
 {
-    private function makeNotifiable(): NotifiableChannel
+    private function makeNotifiable(): ChannelData
     {
-        $channel = ChannelResource::from(['id' => '1407688195386114119', 'type' => 0]);
+        $channel = ChannelData::from(['id' => '1407688195386114119', 'type' => 0]);
 
-        return new NotifiableChannel($channel);
+        return $channel;
     }
 
     #[Test]
@@ -27,7 +26,7 @@ class GrmUploadCompletedTest extends TestCase
     {
         $notification = new GrmUploadCompleted(processedCount: 5);
 
-        $this->assertContains(DiscordDriver::class, $notification->via($this->makeNotifiable()));
+        $this->assertContains(DiscordChannel::class, $notification->via($this->makeNotifiable()));
     }
 
     #[Test]
@@ -37,7 +36,7 @@ class GrmUploadCompletedTest extends TestCase
         $payload = $notification->toMessage();
 
         $embed = $payload->embeds[0];
-        $this->assertInstanceOf(Embed::class, $embed);
+        $this->assertInstanceOf(EmbedData::class, $embed);
         $this->assertSame('GRM Upload Processing Completed', $embed->title);
         $this->assertSame(5763719, $embed->color);
         $this->assertCount(1, $embed->fields);

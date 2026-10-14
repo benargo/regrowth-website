@@ -2,13 +2,14 @@
 
 namespace App\Notifications;
 
-use App\Services\Discord\Notifications\Notification;
-use App\Services\Discord\Payloads\MessagePayload;
-use App\Services\Discord\Resources\Embed;
-use App\Services\Discord\Resources\EmbedField;
-use App\Services\Discord\Resources\EmbedMedia;
+use App\Http\Integrations\Discord\Contracts\Channel;
+use App\Http\Integrations\Discord\Data\Messages\EmbedData;
+use App\Http\Integrations\Discord\Data\Messages\EmbedFieldData;
+use App\Http\Integrations\Discord\Data\Messages\EmbedMediaData;
+use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
+use App\Notifications\Discord\DiscordMessage;
 
-class GrmUploadFailed extends Notification
+class GrmUploadFailed extends DiscordMessage
 {
     /**
      * @param  array<int, string>  $errors
@@ -23,11 +24,11 @@ class GrmUploadFailed extends Notification
     /**
      * Get the payload to send to Discord for this notification.
      */
-    public function toMessage(): MessagePayload
+    public function toMessage(): MessagePayloadData
     {
         if ($this->exceptionMessage) {
-            return MessagePayload::from([
-                'embeds' => [Embed::from([
+            return MessagePayloadData::from([
+                'embeds' => [EmbedData::from([
                     'title' => 'GRM Upload Processing Failed',
                     'description' => "The GRM upload job failed completely after all retry attempts.\n\n**Error:** {$this->exceptionMessage}",
                     'color' => 15158332,
@@ -42,15 +43,15 @@ class GrmUploadFailed extends Notification
             $errorText .= "\n... and ".(count($this->errors) - 10).' more errors';
         }
 
-        return MessagePayload::from([
-            'embeds' => [Embed::from([
+        return MessagePayloadData::from([
+            'embeds' => [EmbedData::from([
                 'title' => 'GRM Upload Processing Completed with Errors',
                 'description' => "**Errors:**\n{$errorText}",
                 'color' => 15158332,
-                'image' => EmbedMedia::from(['url' => config('app.url').'/images/jaina_broken.webp']),
+                'image' => EmbedMediaData::from(['url' => config('app.url').'/images/jaina_broken.webp']),
                 'fields' => [
-                    new EmbedField('Processed', (string) $this->processedCount, true),
-                    new EmbedField('Errors', (string) $this->errorCount, true),
+                    new EmbedFieldData('Processed', (string) $this->processedCount, true),
+                    new EmbedFieldData('Errors', (string) $this->errorCount, true),
                 ],
                 'timestamp' => now()->toIso8601String(),
             ])],
@@ -60,11 +61,11 @@ class GrmUploadFailed extends Notification
     /**
      * Get the array of data to store in the database for this notification.
      */
-    public function toDatabase(object $notifiable): array
+    public function toDatabase(Channel $notifiable): array
     {
         return [
             'type' => self::class,
-            'channel_id' => $notifiable->channel()->id,
+            'channel_id' => $notifiable->id,
             'payload' => $this->toMessage()->toArray(),
         ];
     }

@@ -2,31 +2,33 @@
 
 namespace Tests\Feature\Http\Controllers;
 
+use App\Http\Integrations\Discord\Contracts\Channel;
+use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
 use App\Models\DiscordNotification;
 use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\User;
 use App\Notifications\DailyQuestsMessage;
-use App\Services\Discord\Notifications\Notification;
-use App\Services\Discord\Payloads\MessagePayload;
+use App\Notifications\Discord\DiscordMessage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
-class OtherDiscordNotification extends Notification
+class OtherDiscordNotification extends DiscordMessage
 {
-    public function toMessage(): MessagePayload
+    public function toMessage(): MessagePayloadData
     {
-        return MessagePayload::from([]);
+        return MessagePayloadData::from([]);
     }
 
-    public function toDatabase(object $notifiable): array
+    public function toDatabase(Channel $notifiable): array
     {
         return [];
     }
 }
 
 #[Group('daily-quests')]
+#[Group('discord-integration')]
 class DailyQuestsAuditControllerTest extends DashboardTestCase
 {
     protected function setUp(): void

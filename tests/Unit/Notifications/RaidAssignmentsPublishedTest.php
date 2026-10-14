@@ -2,18 +2,18 @@
 
 namespace Tests\Unit\Notifications;
 
+use App\Http\Integrations\Discord\Data\Channels\ChannelData;
 use App\Models\Event;
 use App\Models\User;
+use App\Notifications\Discord\DiscordChannel;
 use App\Notifications\RaidAssignmentsPublished;
-use App\Services\Discord\Notifications\Driver as DiscordDriver;
-use App\Services\Discord\Notifications\NotifiableChannel;
-use App\Services\Discord\Resources\Channel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
 #[Group('raiding')]
@@ -22,14 +22,14 @@ class RaidAssignmentsPublishedTest extends TestCase
 {
     use RefreshDatabase;
 
-    private NotifiableChannel $notifiable;
+    private ChannelData $notifiable;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $channel = Channel::from(['id' => '123456789012345678', 'type' => 0]);
-        $this->notifiable = new NotifiableChannel($channel);
+        $channel = ChannelData::from(['id' => '123456789012345678', 'type' => 0]);
+        $this->notifiable = $channel;
     }
 
     #[Test]
@@ -39,7 +39,7 @@ class RaidAssignmentsPublishedTest extends TestCase
 
         $notification = new RaidAssignmentsPublished($event);
 
-        $this->assertContains(DiscordDriver::class, $notification->via($this->notifiable));
+        $this->assertContains(DiscordChannel::class, $notification->via($this->notifiable));
     }
 
     // ==================== broadcasting ====================
@@ -174,7 +174,7 @@ class RaidAssignmentsPublishedTest extends TestCase
 
         $embed = (new RaidAssignmentsPublished($event))->toMessage()->embeds[0];
 
-        $this->assertNull($embed->footer);
+        $this->assertInstanceOf(Optional::class, $embed->footer);
     }
 
     #[Test]
@@ -228,7 +228,7 @@ class RaidAssignmentsPublishedTest extends TestCase
         $data = (new RaidAssignmentsPublished($event))->toDatabase($this->notifiable);
 
         $this->assertSame(RaidAssignmentsPublished::class, $data['type']);
-        $this->assertSame($this->notifiable->channel()->id, $data['channel_id']);
+        $this->assertSame($this->notifiable->id, $data['channel_id']);
         $this->assertArrayHasKey('payload', $data);
         $this->assertNull($data['created_by_user_id']);
     }
