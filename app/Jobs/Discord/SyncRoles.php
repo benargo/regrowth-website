@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs;
+namespace App\Jobs\Discord;
 
 use App\Http\Integrations\Discord\Data\Guilds\RoleData;
 use App\Http\Integrations\Discord\DiscordConnector;
@@ -23,7 +23,7 @@ use Throwable;
 
 #[MaxExceptions(3)]
 #[Backoff(60)]
-class SyncDiscordRoles implements ShouldQueue
+class SyncRoles implements ShouldQueue
 {
     use Batchable, Queueable;
 
@@ -47,7 +47,7 @@ class SyncDiscordRoles implements ShouldQueue
     }
 
     /**
-     * Sync the guild's roles, then dispatch a batch of SyncDiscordUser jobs, one per user.
+     * Sync the guild's roles, then dispatch a batch of SyncUser jobs, one per user.
      */
     public function handle(DiscordConnector $discord, #[Config('services.discord.server_id')] string $serverId): void
     {
@@ -73,7 +73,7 @@ class SyncDiscordRoles implements ShouldQueue
             ]);
         });
 
-        Bus::batch(User::pluck('id')->map(fn (string $id): SyncDiscordUser => new SyncDiscordUser($id)))->dispatch();
+        Bus::batch(User::pluck('id')->map(fn (string $id): SyncUser => new SyncUser($id)))->dispatch();
     }
 
     public function failed(?Throwable $exception): void

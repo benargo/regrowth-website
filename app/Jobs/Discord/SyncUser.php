@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs;
+namespace App\Jobs\Discord;
 
 use App\Actions\Discord\SyncUserDiscordRoles;
 use App\Http\Integrations\Discord\DiscordConnector;
@@ -24,7 +24,7 @@ use Throwable;
 
 #[MaxExceptions(3)]
 #[Backoff(60)]
-class SyncDiscordUser implements ShouldQueue
+class SyncUser implements ShouldQueue
 {
     use Batchable, Queueable;
 
@@ -55,7 +55,7 @@ class SyncDiscordUser implements ShouldQueue
         $user = User::find($this->id);
 
         if (! $user) {
-            Log::warning('SyncDiscordUser: user not found.', ['user_id' => $this->id]);
+            Log::warning('SyncUser: user not found.', ['user_id' => $this->id]);
 
             return;
         }
@@ -77,7 +77,7 @@ class SyncDiscordUser implements ShouldQueue
 
     public function failed(Throwable $exception): void
     {
-        Log::error('SyncDiscordUser: job failed.', [
+        Log::error('SyncUser: job failed.', [
             'user_id' => $this->id,
             'error' => $exception->getMessage(),
         ]);

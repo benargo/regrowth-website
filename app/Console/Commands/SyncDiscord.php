@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\SyncDiscordRoles;
+use App\Jobs\Discord\SyncRoles;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -16,8 +16,8 @@ class SyncDiscord extends Command
      */
     public function handle(): void
     {
-        // SyncDiscordUsers is dispatched automatically by DiscordServiceProvider
-        // once SyncDiscordRoles completes.
-        SyncDiscordRoles::dispatch();
+        // SyncUsers is dispatched automatically by DiscordServiceProvider
+        // once SyncRoles completes.
+        SyncRoles::dispatch();
     }
 }

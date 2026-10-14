@@ -1,10 +1,10 @@
 <?php
 
-namespace Tests\Feature\Jobs;
+namespace Tests\Feature\Jobs\Discord;
 
 use App\Http\Integrations\Discord\Exceptions\ApiException;
 use App\Http\Integrations\Discord\Requests\Guilds\GetGuildMemberRequest;
-use App\Jobs\SyncDiscordUser;
+use App\Jobs\Discord\SyncUser;
 use App\Models\DiscordRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,7 +26,7 @@ use Tests\TestCase;
 
 #[Group('auth')]
 #[Group('discord-integration')]
-class SyncDiscordUserTest extends TestCase
+class SyncUserTest extends TestCase
 {
     use MocksDiscordService;
     use RefreshDatabase;
@@ -44,7 +44,7 @@ class SyncDiscordUserTest extends TestCase
 
         $this->fakeGuildMember(['roles' => ['111111111111111111']]);
 
-        SyncDiscordUser::dispatchSync('100000000000000000');
+        SyncUser::dispatchSync('100000000000000000');
 
         $user->refresh();
         $this->assertTrue($user->discordRoles->contains($role));
@@ -69,7 +69,7 @@ class SyncDiscordUserTest extends TestCase
             'banner' => 'new_banner',
         ]);
 
-        SyncDiscordUser::dispatchSync('100000000000000000');
+        SyncUser::dispatchSync('100000000000000000');
 
         $user = User::find('100000000000000000');
         $this->assertSame('NewNick', $user->nickname);
@@ -84,7 +84,7 @@ class SyncDiscordUserTest extends TestCase
 
         Saloon::fake([GetGuildMemberRequest::class => $this->makeDiscordErrorResponse(404, 10007, 'Unknown Member')]);
 
-        SyncDiscordUser::dispatchSync('100000000000000000');
+        SyncUser::dispatchSync('100000000000000000');
 
         $this->assertDatabaseMissing('users', ['id' => '100000000000000000']);
     }
@@ -98,7 +98,7 @@ class SyncDiscordUserTest extends TestCase
         Saloon::fake([GetGuildMemberRequest::class => $this->makeDiscordErrorResponse(404, 10004, 'Unknown Guild')]);
 
         try {
-            SyncDiscordUser::dispatchSync('100000000000000000');
+            SyncUser::dispatchSync('100000000000000000');
             $this->fail('Expected an ApiException for an unknown guild.');
         } catch (ApiException $exception) {
             $this->assertSame(10004, $exception->getDiscordCode());
@@ -113,7 +113,7 @@ class SyncDiscordUserTest extends TestCase
         $batch = Bus::batch([])->dispatch();
         $batch->cancel();
 
-        $job = new SyncDiscordUser('100000000000000000');
+        $job = new SyncUser('100000000000000000');
         $job->batchId = $batch->id;
         dispatch_sync($job);
 
@@ -128,13 +128,13 @@ class SyncDiscordUserTest extends TestCase
 
         Saloon::fake([GetGuildMemberRequest::class => $this->makeDiscordRateLimitResponse(10.0)]);
 
-        $job = new SyncDiscordUser('100000000000000000');
+        $job = new SyncUser('100000000000000000');
         $job->withFakeQueueInteractions();
         $this->runJobThroughMiddleware($job);
 
         $job->assertReleased(10);
         $this->assertTrue($job->retryUntil()->isFuture());
-        $class = new ReflectionClass(SyncDiscordUser::class);
+        $class = new ReflectionClass(SyncUser::class);
         $this->assertSame(3, $class->getAttributes(MaxExceptions::class)[0]->newInstance()->maxExceptions);
         $this->assertSame(60, $class->getAttributes(Backoff::class)[0]->newInstance()->backoff);
         $this->assertEmpty($class->getAttributes(Tries::class));
@@ -149,12 +149,12 @@ class SyncDiscordUserTest extends TestCase
 
         $this->fakeGuildMember([]);
 
-        $syncing = new SyncDiscordUser('100000000000000000');
+        $syncing = new SyncUser('100000000000000000');
         $overlap = collect($syncing->middleware())->first(fn (object $middleware): bool => $middleware instanceof WithoutOverlapping);
         Cache::lock($overlap->getLockKey($syncing), 120)->get();
 
-        $this->runJobThroughMiddleware(new SyncDiscordUser('100000000000000000'));
-        $this->runJobThroughMiddleware(new SyncDiscordUser('200000000000000000'));
+        $this->runJobThroughMiddleware(new SyncUser('100000000000000000'));
+        $this->runJobThroughMiddleware(new SyncUser('200000000000000000'));
 
         Saloon::mockClient()->assertSentCount(1, GetGuildMemberRequest::class);
         Saloon::assertSent(fn (Request $request): bool => $request instanceof GetGuildMemberRequest
@@ -177,7 +177,7 @@ class SyncDiscordUserTest extends TestCase
             ),
         ]);
 
-        SyncDiscordUser::dispatchSync('100000000000000000');
+        SyncUser::dispatchSync('100000000000000000');
 
         $user = User::find('100000000000000000');
         $this->assertSame('OldNick', $user->nickname);
@@ -197,7 +197,7 @@ class SyncDiscordUserTest extends TestCase
 
         $this->fakeGuildMember(['nick' => null, 'avatar' => null, 'banner' => null]);
 
-        SyncDiscordUser::dispatchSync('100000000000000000');
+        SyncUser::dispatchSync('100000000000000000');
 
         $user = User::find('100000000000000000');
         $this->assertNull($user->nickname);

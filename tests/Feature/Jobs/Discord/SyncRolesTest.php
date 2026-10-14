@@ -1,17 +1,19 @@
 <?php
 
-namespace Tests\Feature\Jobs;
+namespace Tests\Feature\Jobs\Discord;
 
 use App\Http\Integrations\Discord\Requests\Guilds\GetGuildRolesRequest;
-use App\Jobs\SyncDiscordRoles;
-use App\Jobs\SyncDiscordUser;
+use App\Jobs\Discord\SyncRoles;
+use App\Jobs\Discord\SyncUser;
 use App\Models\DiscordRole;
 use App\Models\User;
 use Illuminate\Bus\PendingBatch;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
@@ -22,17 +24,27 @@ use Tests\TestCase;
 
 #[Group('auth')]
 #[Group('discord-integration')]
-class SyncDiscordRolesTest extends TestCase
+class SyncRolesTest extends TestCase
 {
     use MocksDiscordService;
     use RefreshDatabase;
+
+    /**
+     * Remove the queue's JobProcessed listeners so only the job itself dispatches user sync batches.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Event::forget(JobProcessed::class);
+    }
 
     #[Test]
     public function it_creates_new_roles_from_discord(): void
     {
         $this->fakeGuildRoles();
 
-        SyncDiscordRoles::dispatchSync();
+        SyncRoles::dispatchSync();
 
         $this->assertDatabaseCount('discord_roles', 3);
         $this->assertDatabaseHas('discord_roles', ['id' => '111111111111111111', 'name' => 'Officer', 'position' => 10]);
@@ -54,7 +66,7 @@ class SyncDiscordRolesTest extends TestCase
 
         $this->fakeGuildRoles();
 
-        SyncDiscordRoles::dispatchSync();
+        SyncRoles::dispatchSync();
 
         $this->assertDatabaseHas('discord_roles', [
             'id' => '111111111111111111',
@@ -74,7 +86,7 @@ class SyncDiscordRolesTest extends TestCase
 
         $this->fakeGuildRoles();
 
-        SyncDiscordRoles::dispatchSync();
+        SyncRoles::dispatchSync();
 
         $this->assertDatabaseMissing('discord_roles', ['id' => '999999999999999999']);
     }
@@ -84,7 +96,7 @@ class SyncDiscordRolesTest extends TestCase
     {
         $this->fakeGuildRoles();
 
-        SyncDiscordRoles::dispatchSync();
+        SyncRoles::dispatchSync();
 
         $this->assertDatabaseMissing('discord_roles', ['id' => '000000000000000000']);
     }
@@ -100,7 +112,7 @@ class SyncDiscordRolesTest extends TestCase
 
         $this->fakeGuildRoles();
 
-        SyncDiscordRoles::dispatchSync();
+        SyncRoles::dispatchSync();
 
         $this->assertDatabaseHas('discord_roles', [
             'id' => '111111111111111111',
@@ -111,29 +123,29 @@ class SyncDiscordRolesTest extends TestCase
     #[Test]
     public function it_dispatches_a_user_sync_batch_after_syncing_roles(): void
     {
-        Bus::fake([SyncDiscordUser::class]);
+        Bus::fake([SyncUser::class]);
         $user = User::factory()->create();
         $this->fakeGuildRoles();
 
-        SyncDiscordRoles::dispatchSync();
+        SyncRoles::dispatchSync();
 
         Bus::assertBatched(fn (PendingBatch $batch): bool => $batch->jobs->count() === 1
-            && $batch->jobs->first() instanceof SyncDiscordUser
+            && $batch->jobs->first() instanceof SyncUser
             && $batch->jobs->first()->id === $user->id);
     }
 
     #[Test]
     public function it_does_not_dispatch_a_user_sync_batch_when_a_duplicate_is_skipped(): void
     {
-        Bus::fake([SyncDiscordUser::class]);
+        Bus::fake([SyncUser::class]);
         User::factory()->create();
         $this->fakeGuildRoles();
 
-        $running = new SyncDiscordRoles;
+        $running = new SyncRoles;
         $overlap = collect($running->middleware())->first(fn (object $middleware): bool => $middleware instanceof WithoutOverlapping);
         Cache::lock($overlap->getLockKey($running), 120)->get();
 
-        SyncDiscordRoles::dispatchSync();
+        SyncRoles::dispatchSync();
 
         Bus::assertNothingBatched();
         Saloon::assertNothingSent();
@@ -143,11 +155,11 @@ class SyncDiscordRolesTest extends TestCase
     #[Group('error-handling')]
     public function it_releases_itself_when_discord_is_rate_limited(): void
     {
-        Bus::fake([SyncDiscordUser::class]);
+        Bus::fake([SyncUser::class]);
         User::factory()->create();
         $this->fakeDiscord([GetGuildRolesRequest::class => $this->makeDiscordRateLimitResponse(30.0)]);
 
-        $job = new SyncDiscordRoles;
+        $job = new SyncRoles;
         $job->withFakeQueueInteractions();
         $this->runJobThroughMiddleware($job);
 

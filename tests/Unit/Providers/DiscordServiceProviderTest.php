@@ -3,8 +3,8 @@
 namespace Tests\Unit\Providers;
 
 use App\Http\Integrations\Discord\DiscordConnector;
-use App\Jobs\SyncDiscordRoles;
-use App\Jobs\SyncDiscordUser;
+use App\Jobs\Discord\SyncRoles;
+use App\Jobs\Discord\SyncUser;
 use App\Models\User;
 use Illuminate\Contracts\Queue\Job;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -34,13 +34,13 @@ class DiscordServiceProviderTest extends TestCase
         User::factory()->create();
 
         $job = $this->createStub(Job::class);
-        $job->method('resolveName')->willReturn(SyncDiscordRoles::class);
+        $job->method('resolveName')->willReturn(SyncRoles::class);
 
         Queue::after(fn () => null); // ensure listeners are registered
 
         event(new JobProcessed('sync', $job));
 
-        Bus::assertBatched(fn ($batch) => $batch->jobs->contains(fn ($j) => $j instanceof SyncDiscordUser));
+        Bus::assertBatched(fn ($batch) => $batch->jobs->contains(fn ($j) => $j instanceof SyncUser));
     }
 
     #[Test]
@@ -49,7 +49,7 @@ class DiscordServiceProviderTest extends TestCase
         Bus::fake();
 
         $job = $this->createStub(Job::class);
-        $job->method('resolveName')->willReturn(SyncDiscordRoles::class.'Other');
+        $job->method('resolveName')->willReturn(SyncRoles::class.'Other');
 
         event(new JobProcessed('sync', $job));
 

@@ -4,8 +4,8 @@ namespace App\Providers;
 
 use App\Http\Integrations\Discord\DiscordConnector;
 use App\Http\Integrations\Discord\RateLimitCache;
-use App\Jobs\SyncDiscordRoles;
-use App\Jobs\SyncDiscordUser;
+use App\Jobs\Discord\SyncRoles;
+use App\Jobs\Discord\SyncUser;
 use App\Models\User;
 use App\Services\Discord\Discord;
 use App\Services\Discord\DiscordClient;
@@ -78,8 +78,8 @@ class DiscordServiceProvider extends ServiceProvider
         });
 
         Queue::after(function (JobProcessed $event) {
-            if ($event->job->resolveName() === SyncDiscordRoles::class) {
-                $jobs = User::all()->map(fn (User $user) => new SyncDiscordUser($user->id));
+            if ($event->job->resolveName() === SyncRoles::class) {
+                $jobs = User::all()->map(fn (User $user) => new SyncUser($user->id));
                 Bus::batch($jobs)->dispatch();
             }
         });
