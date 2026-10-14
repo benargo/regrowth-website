@@ -25,6 +25,7 @@ class UserResource extends JsonResource
             'roles' => $this->discordRoles->pluck('id')->values()->toArray(),
             'highest_role' => $this->highestRole()?->name,
             'admin' => $this->is_admin,
+            'characters' => $this->whenLoaded('characters', fn () => $this->characters->toResourceCollection()),
             'events' => $this->whenLoaded('events', fn () => EventResource::collectionForMembers($this->events)),
             'planned_absences' => $this->whenLoaded('plannedAbsences'),
             'planned_absences_created' => $this->whenLoaded('plannedAbsencesCreated'),

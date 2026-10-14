@@ -102,6 +102,16 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the characters the user owns.
+     *
+     * @return HasMany<Character, $this>
+     */
+    public function characters(): HasMany
+    {
+        return $this->hasMany(Character::class);
+    }
+
+    /**
      * Get the Discord roles the user holds.
      *
      * @return BelongsToMany<DiscordRole, $this>

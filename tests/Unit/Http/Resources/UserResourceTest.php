@@ -2,8 +2,10 @@
 
 namespace Tests\Unit\Http\Resources;
 
+use App\Http\Resources\CharacterResource;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\UserResource;
+use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\Event;
 use App\Models\PlannedAbsence;
@@ -343,6 +345,33 @@ class UserResourceTest extends TestCase
         $array = (new UserResource($user))->toArray(new Request);
 
         $this->assertFalse($array['admin']);
+    }
+
+    // ==================== characters ====================
+
+    #[Test]
+    public function it_omits_characters_when_not_loaded(): void
+    {
+        $user = User::factory()->withCharacters()->create();
+
+        $array = (new UserResource($user))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('characters', $array);
+    }
+
+    #[Test]
+    public function it_returns_characters_when_loaded(): void
+    {
+        $characters = Character::factory()->count(2)->create();
+        $user = User::factory()->withCharacters($characters->all())->create();
+
+        $request = new Request;
+        $array = (new UserResource($user->fresh()->load('characters')))->resolve($request);
+
+        $this->assertEqualsCanonicalizing(
+            $characters->pluck('id')->all(),
+            $array['characters']->map(fn (CharacterResource $character) => $character->resolve($request)['id'])->all(),
+        );
     }
 
     // ==================== events ====================

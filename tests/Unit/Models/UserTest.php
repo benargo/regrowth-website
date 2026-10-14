@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Models;
 
+use App\Models\Character;
 use App\Models\DiscordNotification;
 use App\Models\DiscordRole;
 use App\Models\Event;
@@ -227,6 +228,59 @@ class UserTest extends ModelTestCase
     }
 
     // ==================== relationships ====================
+
+    #[Test]
+    public function characters_returns_has_many_relationship(): void
+    {
+        $model = new User;
+
+        $this->assertInstanceOf(HasMany::class, $model->characters());
+    }
+
+    #[Test]
+    public function characters_returns_characters_belonging_to_user(): void
+    {
+        $user = User::factory()->create();
+        $character = Character::factory()->forUser($user)->create();
+
+        $this->assertCount(1, $user->characters);
+        $this->assertTrue($user->characters->first()->is($character));
+    }
+
+    #[Test]
+    public function characters_does_not_return_characters_of_other_users(): void
+    {
+        $user = User::factory()->create();
+        Character::factory()->forUser()->create();
+
+        $this->assertCount(0, $user->characters);
+    }
+
+    #[Test]
+    public function characters_returns_empty_collection_when_none_owned(): void
+    {
+        $user = User::factory()->create();
+
+        $this->assertCount(0, $user->characters);
+    }
+
+    #[Test]
+    public function with_characters_factory_state_attaches_given_characters(): void
+    {
+        $characters = Character::factory()->count(2)->create();
+
+        $user = User::factory()->withCharacters($characters->all())->create();
+
+        $this->assertEqualsCanonicalizing($characters->pluck('id')->all(), $user->characters->pluck('id')->all());
+    }
+
+    #[Test]
+    public function with_characters_factory_state_creates_characters_when_none_given(): void
+    {
+        $user = User::factory()->withCharacters(count: 3)->create();
+
+        $this->assertCount(3, $user->characters);
+    }
 
     #[Test]
     public function discord_roles_returns_belongs_to_many_relationship(): void
