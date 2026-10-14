@@ -14,7 +14,6 @@ use App\Models\EventBoss;
 use App\Models\EventCharacter;
 use App\Models\EventRaid;
 use App\Models\GameVersion;
-use App\Models\Phase;
 use App\Models\Raid;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -654,55 +653,11 @@ class EventTest extends ModelTestCase
     // ==================== gameVersion ====================
 
     #[Test]
-    public function refresh_game_version_stores_the_version_its_raids_share(): void
-    {
-        $gameVersion = GameVersion::factory()->create();
-        $event = $this->factory()->withRaids([
-            Raid::factory()->for(Phase::factory()->forGameVersion($gameVersion))->create(),
-            Raid::factory()->for(Phase::factory()->forGameVersion($gameVersion))->create(),
-        ])->create();
-
-        $event->refreshGameVersion();
-
-        $this->assertRelation($event, 'gameVersion', BelongsTo::class);
-        $this->assertTrue($event->fresh()->gameVersion->is($gameVersion));
-    }
-
-    #[Test]
-    public function refresh_game_version_stores_null_without_raids(): void
+    public function it_belongs_to_a_game_version(): void
     {
         $event = $this->factory()->forGameVersion(GameVersion::factory()->create())->create();
-        $event->raids()->detach();
 
-        $event->refreshGameVersion();
-
-        $this->assertNull($event->fresh()->game_version_id);
-    }
-
-    #[Test]
-    public function refresh_game_version_stores_null_when_its_raids_span_game_versions(): void
-    {
-        $event = $this->factory()->withRaids([
-            Raid::factory()->for(Phase::factory()->forGameVersion(GameVersion::factory()->create()))->create(),
-            Raid::factory()->for(Phase::factory()->forGameVersion(GameVersion::factory()->create()))->create(),
-        ])->create();
-
-        $event->refreshGameVersion();
-
-        $this->assertNull($event->fresh()->game_version_id);
-    }
-
-    #[Test]
-    public function refresh_game_version_stores_null_when_a_raids_phase_has_no_game_version(): void
-    {
-        $event = $this->factory()->withRaids([
-            Raid::factory()->for(Phase::factory()->forGameVersion(GameVersion::factory()->create()))->create(),
-            Raid::factory()->for(Phase::factory())->create(),
-        ])->create();
-
-        $event->refreshGameVersion();
-
-        $this->assertNull($event->fresh()->game_version_id);
+        $this->assertRelation($event, 'gameVersion', BelongsTo::class);
     }
 
     #[Test]

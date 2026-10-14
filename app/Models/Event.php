@@ -158,21 +158,4 @@ class Event extends PrunableModel
     {
         return $this->hasMany(EventAssignment::class);
     }
-
-    // ========== Game version ============
-
-    /**
-     * Store the game version this event's raids share, or null when it has no
-     * raids, its raids span several game versions, or a raid's phase has none.
-     */
-    public function refreshGameVersion(): void
-    {
-        $gameVersionIds = Phase::whereIn('id', $this->raids()->reorder()->select('raids.phase_id'))
-            ->pluck('game_version_id')
-            ->unique();
-
-        $this->gameVersion()
-            ->associate($gameVersionIds->containsOneItem() ? $gameVersionIds->first() : null)
-            ->save();
-    }
 }

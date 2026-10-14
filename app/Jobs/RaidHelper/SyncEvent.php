@@ -3,6 +3,7 @@
 namespace App\Jobs\RaidHelper;
 
 use App\Actions\EventBossResolver;
+use App\Actions\Events\RefreshEventGameVersion;
 use App\Enums\SignupStatus;
 use App\Events\Broadcasts\CompositionChanged;
 use App\Http\Integrations\RaidHelper\Data\Events\EventData;
@@ -172,7 +173,7 @@ class SyncEvent implements ShouldQueue
                 ])->all()
             );
 
-            $this->event->refreshGameVersion();
+            RefreshEventGameVersion::run($this->event);
         });
     }
 

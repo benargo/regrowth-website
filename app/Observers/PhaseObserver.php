@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Actions\Events\RefreshEventGameVersion;
 use App\Jobs\BuildAddonExportFile;
 use App\Jobs\WarcraftLogs\RefreshGuildReports;
 use App\Models\Event;
@@ -39,9 +40,11 @@ class PhaseObserver
             return;
         }
 
-        Event::whereHas('raids', fn (Builder $query) => $query->whereBelongsTo($phase))
-            ->lazyById()
-            ->each->refreshGameVersion();
+        $events = Event::whereHas('raids', fn (Builder $query) => $query->whereBelongsTo($phase))->lazyById();
+
+        foreach ($events as $event) {
+            RefreshEventGameVersion::run($event);
+        }
     }
 
     /**

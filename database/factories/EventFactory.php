@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Actions\Events\RefreshEventGameVersion;
 use App\Enums\RaidBackground;
 use App\Enums\SignupStatus;
 use App\Models\Boss;
@@ -111,7 +112,7 @@ class EventFactory extends Factory
             $raid = Raid::factory()->for(Phase::factory()->forGameVersion($gameVersion))->create();
 
             $event->raids()->attach($raid->id, ['sort_order' => 1]);
-            $event->refreshGameVersion();
+            RefreshEventGameVersion::run($event);
         });
     }
 
