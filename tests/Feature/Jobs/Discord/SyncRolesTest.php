@@ -5,15 +5,13 @@ namespace Tests\Feature\Jobs\Discord;
 use App\Http\Integrations\Discord\Requests\Guilds\GetGuildRolesRequest;
 use App\Jobs\Discord\SyncRoles;
 use App\Jobs\Discord\SyncUser;
+use App\Jobs\Discord\SyncUsers;
 use App\Models\DiscordRole;
 use App\Models\User;
-use Illuminate\Bus\PendingBatch;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
@@ -28,16 +26,6 @@ class SyncRolesTest extends TestCase
 {
     use MocksDiscordService;
     use RefreshDatabase;
-
-    /**
-     * Remove the queue's JobProcessed listeners so only the job itself dispatches user sync batches.
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        Event::forget(JobProcessed::class);
-    }
 
     #[Test]
     public function it_creates_new_roles_from_discord(): void
@@ -121,24 +109,22 @@ class SyncRolesTest extends TestCase
     }
 
     #[Test]
-    public function it_dispatches_a_user_sync_batch_after_syncing_roles(): void
+    public function it_does_not_dispatch_any_user_sync_jobs(): void
     {
-        Bus::fake([SyncUser::class]);
-        $user = User::factory()->create();
+        Bus::fake([SyncUser::class, SyncUsers::class]);
+        User::factory()->create();
         $this->fakeGuildRoles();
 
         SyncRoles::dispatchSync();
 
-        Bus::assertBatched(fn (PendingBatch $batch): bool => $batch->jobs->count() === 1
-            && $batch->jobs->first() instanceof SyncUser
-            && $batch->jobs->first()->id === $user->id);
+        Bus::assertNothingBatched();
+        Bus::assertNotDispatched(SyncUser::class);
+        Bus::assertNotDispatched(SyncUsers::class);
     }
 
     #[Test]
-    public function it_does_not_dispatch_a_user_sync_batch_when_a_duplicate_is_skipped(): void
+    public function it_does_nothing_when_a_duplicate_is_skipped(): void
     {
-        Bus::fake([SyncUser::class]);
-        User::factory()->create();
         $this->fakeGuildRoles();
 
         $running = new SyncRoles;
@@ -147,16 +133,14 @@ class SyncRolesTest extends TestCase
 
         SyncRoles::dispatchSync();
 
-        Bus::assertNothingBatched();
         Saloon::assertNothingSent();
+        $this->assertDatabaseCount('discord_roles', 0);
     }
 
     #[Test]
     #[Group('error-handling')]
     public function it_releases_itself_when_discord_is_rate_limited(): void
     {
-        Bus::fake([SyncUser::class]);
-        User::factory()->create();
         $this->fakeDiscord([GetGuildRolesRequest::class => $this->makeDiscordRateLimitResponse(30.0)]);
 
         $job = new SyncRoles;
@@ -165,7 +149,6 @@ class SyncRolesTest extends TestCase
 
         $job->assertReleased(30);
         $this->assertDatabaseCount('discord_roles', 0);
-        Bus::assertNothingBatched();
     }
 
     // ==================== helpers ====================

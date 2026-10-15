@@ -3,14 +3,18 @@
 use App\Jobs\BuildAddonExportFile;
 use App\Jobs\DeleteStaleDailyQuestsMessage;
 use App\Jobs\Discord\SyncRoles as SyncDiscordRoles;
+use App\Jobs\Discord\SyncUsers as SyncDiscordUsers;
 use App\Jobs\FetchGuildRosters;
 use App\Jobs\RaidHelper\FetchEvents as FetchRaidHelperEvents;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Schedule;
 
 /**
- * Synchronise Discord roles every hour to ensure we have the latest roles and permissions.
+ * Synchronise Discord roles, then every user's profile and roles, every hour.
  */
-Schedule::job(new SyncDiscordRoles)->hourly()->name('sync-discord-roles');
+Schedule::call(fn () => Bus::chain([new SyncDiscordRoles, new SyncDiscordUsers])->dispatch())
+    ->hourly()
+    ->name('sync-discord');
 
 /**
  * Reconcile events with the Raid Helper API every six hours as a backstop for missed webhooks.
