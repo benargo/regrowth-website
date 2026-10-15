@@ -11,6 +11,7 @@ use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\Requests\Account\GetAccountProfileSummaryRequest;
 use App\Http\Integrations\Blizzard\Support\BattleNetSession;
+use App\Http\Integrations\ServedFromCache;
 use App\Jobs\AttachCharactersToUser;
 use App\Models\Character;
 use App\Models\DiscordRole;
@@ -49,6 +50,7 @@ class PlannedAbsenceControllerTest extends TestCase
             locale: Region::EU->defaultLocale(),
             redirectUri: 'https://regrowth.test/auth/battlenet/callback',
             eagerlyMirrorAssets: $this->app->make(EagerlyMirrorAssets::class),
+            servedFromCache: $this->app->make(ServedFromCache::class),
         ));
 
         $officerRole = DiscordRole::firstOrCreate(

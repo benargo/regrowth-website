@@ -9,9 +9,12 @@ use App\Http\Integrations\Blizzard\Exceptions\InvalidRaceException;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\Exceptions\XmlException;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
+use App\Http\Integrations\Concerns\HasCacheAwareRateLimits;
+use App\Http\Integrations\ServedFromCache;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use InvalidArgumentException;
+use Saloon\Enums\PipeOrder;
 use Saloon\Helpers\OAuth2\OAuthConfig;
 use Saloon\Http\Auth\AccessTokenAuthenticator;
 use Saloon\Http\Connector;
@@ -21,7 +24,6 @@ use Saloon\Http\Response;
 use Saloon\RateLimitPlugin\Contracts\RateLimitStore;
 use Saloon\RateLimitPlugin\Limit;
 use Saloon\RateLimitPlugin\Stores\LaravelCacheStore;
-use Saloon\RateLimitPlugin\Traits\HasRateLimits;
 use Saloon\Traits\OAuth2\ClientCredentialsBasicAuthGrant;
 use Saloon\Traits\Plugins\AcceptsJson;
 use Saloon\Traits\Plugins\AlwaysThrowOnErrors;
@@ -36,7 +38,7 @@ class BlizzardConnector extends Connector
     use AcceptsJson;
     use AlwaysThrowOnErrors;
     use ClientCredentialsBasicAuthGrant;
-    use HasRateLimits;
+    use HasCacheAwareRateLimits;
 
     public function __construct(
         protected string $clientId,
@@ -45,6 +47,7 @@ class BlizzardConnector extends Connector
         protected string $locale,
         protected string $redirectUri,
         EagerlyMirrorAssets $eagerlyMirrorAssets,
+        private readonly ServedFromCache $servedFromCache,
     ) {
         if (! $this->region->supportsLocale($this->locale)) {
             throw new InvalidArgumentException(sprintf(
@@ -54,6 +57,8 @@ class BlizzardConnector extends Connector
                 implode(', ', $this->region->locales()),
             ));
         }
+
+        $this->middleware()->onRequest($servedFromCache, 'servedFromCache', PipeOrder::FIRST);
 
         $this->middleware()->onResponse(
             $eagerlyMirrorAssets,
@@ -245,6 +250,11 @@ class BlizzardConnector extends Connector
             Limit::allow(100)->everySeconds(1)->sleep(),
             Limit::allow(36000)->everyHour(),
         ];
+    }
+
+    protected function servedFromCache(): ServedFromCache
+    {
+        return $this->servedFromCache;
     }
 
     /**

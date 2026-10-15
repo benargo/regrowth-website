@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Providers;
 
+use App\Http\Integrations\ServedFromCache;
 use App\Jobs\FetchGuildRoster;
 use App\Models\DiscordRole;
 use App\Models\Permission;
@@ -55,6 +56,13 @@ class AppServiceProviderTest extends TestCase
         $second = $this->app->make(HighestPriorityStats::class);
 
         $this->assertSame($first, $second);
+    }
+
+    #[Test]
+    public function it_binds_served_from_cache_as_a_singleton(): void
+    {
+        $this->assertTrue($this->app->isShared(ServedFromCache::class));
+        $this->assertSame($this->app->make(ServedFromCache::class), $this->app->make(ServedFromCache::class));
     }
 
     // ==================== authorization gates ====================

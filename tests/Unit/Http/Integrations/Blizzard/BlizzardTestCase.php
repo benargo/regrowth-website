@@ -6,6 +6,7 @@ use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
+use App\Http\Integrations\ServedFromCache;
 use Illuminate\Support\Facades\Storage;
 use Saloon\Http\Faking\MockResponse;
 use Tests\TestCase;
@@ -25,6 +26,7 @@ abstract class BlizzardTestCase extends TestCase
             locale: $region->defaultLocale(),
             redirectUri: 'https://regrowth.test/auth/battlenet/callback',
             eagerlyMirrorAssets: new EagerlyMirrorAssets($renderConnector),
+            servedFromCache: app(ServedFromCache::class),
         );
     }
 

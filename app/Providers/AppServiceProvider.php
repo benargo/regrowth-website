@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Actions\EventBossResolver;
+use App\Http\Integrations\ServedFromCache;
 use App\Http\Resources\PermissionGroupsResource;
 use App\Jobs\FetchGuildRoster;
 use App\Models\User;
@@ -34,6 +35,11 @@ class AppServiceProvider extends ServiceProvider
          * Loot priorities
          */
         $this->app->singleton(HighestPriorityStats::class);
+
+        /**
+         * Saloon response cache hits
+         */
+        $this->app->singleton(ServedFromCache::class);
 
         /**
          * Event boss resolution

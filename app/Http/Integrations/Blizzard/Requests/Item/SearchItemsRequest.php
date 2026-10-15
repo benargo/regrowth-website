@@ -4,7 +4,7 @@ namespace App\Http\Integrations\Blizzard\Requests\Item;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
-use App\Http\Integrations\Blizzard\Concerns\HasCaching;
+use App\Http\Integrations\Blizzard\Concerns\CachesBlizzardResponses;
 use App\Http\Integrations\Blizzard\Pagination\SearchPaginator;
 use Saloon\CachePlugin\Contracts\Cacheable;
 use Saloon\Enums\Method;
@@ -17,7 +17,7 @@ use Saloon\PaginationPlugin\Paginator;
 
 class SearchItemsRequest extends Request implements Cacheable, HasRequestPagination, Paginatable
 {
-    use HasCaching;
+    use CachesBlizzardResponses;
 
     protected Method $method = Method::GET;
 

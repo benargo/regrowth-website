@@ -7,6 +7,7 @@ use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\Requests\OAuth\GetAuthorizationCodeTokenRequest;
 use App\Http\Integrations\Blizzard\Support\BattleNetSession;
+use App\Http\Integrations\ServedFromCache;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
@@ -38,6 +39,7 @@ class BattleNetControllerTest extends TestCase
             locale: Region::EU->defaultLocale(),
             redirectUri: 'https://regrowth.test/auth/battlenet/callback',
             eagerlyMirrorAssets: $this->app->make(EagerlyMirrorAssets::class),
+            servedFromCache: $this->app->make(ServedFromCache::class),
         ));
     }
 

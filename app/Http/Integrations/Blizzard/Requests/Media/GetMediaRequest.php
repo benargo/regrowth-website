@@ -4,7 +4,7 @@ namespace App\Http\Integrations\Blizzard\Requests\Media;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
-use App\Http\Integrations\Blizzard\Concerns\HasCaching;
+use App\Http\Integrations\Blizzard\Concerns\CachesBlizzardResponses;
 use App\Http\Integrations\Blizzard\Responses\GetMediaResponse;
 use InvalidArgumentException;
 use Saloon\CachePlugin\Contracts\Cacheable;
@@ -14,7 +14,7 @@ use Saloon\Http\Request;
 
 class GetMediaRequest extends Request implements Cacheable
 {
-    use HasCaching;
+    use CachesBlizzardResponses;
 
     protected ?string $response = GetMediaResponse::class;
 

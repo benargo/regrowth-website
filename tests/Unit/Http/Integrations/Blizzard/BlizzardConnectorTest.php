@@ -16,6 +16,7 @@ use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceRequest;
+use App\Http\Integrations\ServedFromCache;
 use Illuminate\Support\Facades\Cache;
 use Mockery;
 use PHPUnit\Framework\Attributes\Group;
@@ -61,6 +62,7 @@ class BlizzardConnectorTest extends TestCase
             locale: 'ko_KR',
             redirectUri: 'https://regrowth.test/auth/battlenet/callback',
             eagerlyMirrorAssets: $this->createStub(EagerlyMirrorAssets::class),
+            servedFromCache: app(ServedFromCache::class),
         );
     }
 
@@ -357,6 +359,28 @@ class BlizzardConnectorTest extends TestCase
         $this->assertFalse($hourly->getShouldSleep(), 'Expected the 36,000/hour limit to throw.');
     }
 
+    #[Test]
+    #[Group('error-handling')]
+    public function it_serves_a_cached_response_while_a_limit_is_exceeded(): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => $this->tokenMock(),
+            'eu.api.blizzard.com/data/wow/item/1*' => MockResponse::make(['id' => 1], 200),
+            'eu.api.blizzard.com/data/wow/item/2*' => MockResponse::make(['type' => 'BLZWEBAPI00000429'], 429, ['Retry-After' => '60']),
+        ]);
+        $connector = $this->makeConnector();
+
+        $connector->send(new GetItemRequest(1));
+
+        try {
+            $connector->send(new GetItemRequest(2));
+        } catch (RateLimitReachedException) {
+            // Expected: the 429 marks the limit exceeded.
+        }
+
+        $this->assertTrue($connector->send(new GetItemRequest(1))->isCached());
+    }
+
     // ==================== helpers ====================
 
     private function requestWithOwnToken(?string $token): Request
@@ -418,6 +442,7 @@ class BlizzardConnectorTest extends TestCase
             locale: $region->defaultLocale(),
             redirectUri: 'https://regrowth.test/auth/battlenet/callback',
             eagerlyMirrorAssets: $this->createStub(EagerlyMirrorAssets::class),
+            servedFromCache: app(ServedFromCache::class),
         );
     }
 
