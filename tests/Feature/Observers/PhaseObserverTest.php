@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Observers;
 
+use App\Actions\Events\RefreshEventGameVersion;
 use App\Jobs\BuildAddonExportFile;
 use App\Models\Event;
 use App\Models\GameVersion;
@@ -75,7 +76,7 @@ class PhaseObserverTest extends TestCase
     {
         $phase = Phase::factory()->forGameVersion(GameVersion::factory()->create())->create();
         $event = Event::factory()->withRaids([Raid::factory()->for($phase)->create()])->create();
-        $event->refreshGameVersion();
+        RefreshEventGameVersion::run($event);
         $newVersion = GameVersion::factory()->create();
 
         $phase->update(['game_version_id' => $newVersion->id]);
@@ -89,7 +90,7 @@ class PhaseObserverTest extends TestCase
         [$gameVersion, $report] = $this->versionWithReport('2026-02-12 19:30:00');
         $phase = Phase::factory()->forGameVersion($gameVersion)->create(['start_date' => '2026-01-01 00:00:00']);
         $event = Event::factory()->withRaids([Raid::factory()->for($phase)->create()])->create();
-        $event->refreshGameVersion();
+        RefreshEventGameVersion::run($event);
 
         $phase->update(['game_version_id' => null]);
 

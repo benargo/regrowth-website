@@ -4,7 +4,7 @@ namespace App\Http\Integrations\Blizzard\Requests\Character;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
-use App\Http\Integrations\Blizzard\Concerns\HasCaching;
+use App\Http\Integrations\Blizzard\Concerns\CachesBlizzardResponses;
 use App\Http\Integrations\Blizzard\Data\Characters\CharacterMediaData;
 use App\Http\Integrations\Blizzard\Support\NameSlug;
 use Illuminate\Support\Str;
@@ -16,7 +16,7 @@ use Saloon\Http\Response;
 
 class GetCharacterMediaRequest extends Request implements Cacheable
 {
-    use HasCaching;
+    use CachesBlizzardResponses;
 
     protected Method $method = Method::GET;
 

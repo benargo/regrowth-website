@@ -14,6 +14,7 @@ import FormPageLayout, { FormPageSection } from "@/Components/FormPage";
 import AbsenceForm, { ABSENCE_SECTIONS } from "@/Components/PlannedAbsences/AbsenceForm";
 import AbsenceDetailsFields from "@/Components/PlannedAbsences/AbsenceDetailsFields";
 import normaliseCharacterName from "@/Helpers/NormaliseCharacterName";
+import useDiscordMemberResolution from "@/Hooks/useDiscordMemberResolution";
 
 /**
  * Find the one main whose name matches the Discord nickname, either its first
@@ -39,6 +40,7 @@ function OfficerAbsenceForm({ gameVersion, characters, plannedAbsence, action, r
         reason: plannedAbsence?.reason?.key ?? "",
         notes: plannedAbsence?.notes ?? "",
     });
+    const { resolve, isResolving, resolutionError } = useDiscordMemberResolution();
 
     // A legacy absence may belong to a character that is no longer a main; keep it selectable as the current value.
     const selectableCharacters = useMemo(() => {
@@ -53,6 +55,7 @@ function OfficerAbsenceForm({ gameVersion, characters, plannedAbsence, action, r
 
     function handleUserSelect(member) {
         setData("user", member?.id ?? null);
+        resolve(member ?? null);
 
         if (!member?.nickname || data.character) {
             return;
@@ -84,7 +87,7 @@ function OfficerAbsenceForm({ gameVersion, characters, plannedAbsence, action, r
             data={data}
             setError={setError}
             errors={errors}
-            processing={processing}
+            processing={processing || isResolving}
             onSubmit={submit}
             submitLabel={isEditing ? "Save changes" : "Log absence"}
             cancelHref={route("raiding.absences.index")}
@@ -94,13 +97,13 @@ function OfficerAbsenceForm({ gameVersion, characters, plannedAbsence, action, r
                     htmlFor="user"
                     label="Discord user"
                     hint="Picking someone also picks their main, if their nickname matches one."
-                    error={errors.user}
+                    error={resolutionError ?? errors.user}
                 >
                     <UserSearch
                         id="user"
                         value={data.user}
                         onSelect={handleUserSelect}
-                        invalid={Boolean(errors.user)}
+                        invalid={Boolean(resolutionError ?? errors.user)}
                     />
                 </FormRow>
 

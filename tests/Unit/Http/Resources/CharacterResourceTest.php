@@ -5,6 +5,7 @@ namespace Tests\Unit\Http\Resources;
 use App\Enums\Gender;
 use App\Http\Resources\CharacterResource;
 use App\Http\Resources\PlannedAbsenceResource;
+use App\Http\Resources\UserResource;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
@@ -12,6 +13,7 @@ use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\PlayableSpecialization;
 use App\Models\Report;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -29,36 +31,41 @@ class CharacterResourceTest extends TestCase
     #[Test]
     public function it_returns_all_expected_keys(): void
     {
-        $playableRace = PlayableRace::factory()->create();
-        $character = Character::factory()->withPlayableRace($playableRace)->create();
+        $character = Character::factory()->create();
 
-        $array = (new CharacterResource($character->load('playableRace')))->toArray(new Request);
+        $array = (new CharacterResource($character))->toArray(new Request);
 
-        $this->assertArrayHasKey('id', $array);
-        $this->assertArrayHasKey('name', $array);
-        $this->assertArrayHasKey('slug', $array);
-        $this->assertArrayHasKey('level', $array);
-        $this->assertArrayHasKey('is_main', $array);
-        $this->assertArrayHasKey('is_loot_councillor', $array);
-        $this->assertArrayHasKey('planned_absences', $array);
-        $this->assertArrayHasKey('playable_class', $array);
-        $this->assertArrayHasKey('playable_race', $array);
-        $this->assertArrayHasKey('pivot', $array);
-        $this->assertArrayHasKey('rank', $array);
-        $this->assertArrayHasKey('portrait_url', $array);
+        $this->assertSame([
+            'id',
+            'name',
+            'slug',
+            'level',
+            'is_main',
+            'is_loot_councillor',
+            'portrait_url',
+            'planned_absences',
+            'playable_class',
+            'playable_race',
+            'gender',
+            'pivot',
+            'rank',
+            'specializations',
+            'linked_characters',
+            'user',
+        ], array_keys($array));
     }
 
     #[Test]
     public function it_returns_correct_scalar_fields(): void
     {
-        $character = Character::factory()->main()->create(['name' => 'Arthas']);
+        $character = Character::factory()->main()->create(['name' => 'Arthas', 'level' => 70]);
 
         $array = (new CharacterResource($character))->toArray(new Request);
 
         $this->assertSame($character->id, $array['id']);
         $this->assertSame('Arthas', $array['name']);
         $this->assertSame('arthas', $array['slug']);
-        $this->assertSame($character->level, $array['level']);
+        $this->assertSame(70, $array['level']);
         $this->assertTrue($array['is_main']);
         $this->assertFalse($array['is_loot_councillor']);
     }
@@ -66,13 +73,13 @@ class CharacterResourceTest extends TestCase
     // ==================== gender ====================
 
     #[Test]
-    public function it_includes_gender_key(): void
+    public function it_returns_null_gender_when_unset(): void
     {
-        $character = Character::factory()->create();
+        $character = Character::factory()->create(['gender' => null]);
 
         $array = (new CharacterResource($character))->toArray(new Request);
 
-        $this->assertArrayHasKey('gender', $array);
+        $this->assertNull($array['gender']);
     }
 
     #[Test]
@@ -108,7 +115,6 @@ class CharacterResourceTest extends TestCase
         $this->assertSame($playableClass->id, $array['playable_class']['id']);
         $this->assertSame('Warrior', $array['playable_class']['name']);
         $this->assertSame('warrior', $array['playable_class']['slug']);
-        $this->assertArrayHasKey('icon_url', $array['playable_class']);
         $this->assertNull($array['playable_class']['icon_url']);
     }
 
@@ -173,6 +179,20 @@ class CharacterResourceTest extends TestCase
         $this->assertInstanceOf(MissingValue::class, $array['pivot']);
     }
 
+    #[Test]
+    public function it_includes_presence_pivot_when_loaded_via_report(): void
+    {
+        $report = Report::factory()->withoutGuildTag()->create();
+        $character = Character::factory()->create();
+        $report->characters()->attach($character, ['presence' => 3]);
+
+        $loadedCharacter = $report->load('characters')->characters->first();
+
+        $array = (new CharacterResource($loadedCharacter))->toArray(new Request);
+
+        $this->assertSame(['presence' => 3, 'is_loot_councillor' => false], $array['pivot']);
+    }
+
     // ==================== rank relation ====================
 
     #[Test]
@@ -193,26 +213,7 @@ class CharacterResourceTest extends TestCase
 
         $array = (new CharacterResource($character->load('rank')))->toArray(new Request);
 
-        $this->assertIsArray($array['rank']);
-        $this->assertArrayHasKey('id', $array['rank']);
         $this->assertSame($rank->id, $array['rank']['id']);
-    }
-
-    // ==================== presence pivot via report ====================
-
-    #[Test]
-    public function it_includes_presence_pivot_when_loaded_via_report(): void
-    {
-        $report = Report::factory()->withoutGuildTag()->create();
-        $character = Character::factory()->create();
-        $report->characters()->attach($character, ['presence' => 3]);
-
-        $loadedReport = $report->load('characters');
-        $loadedCharacter = $loadedReport->characters->first();
-
-        $array = (new CharacterResource($loadedCharacter))->toArray(new Request);
-
-        $this->assertSame(['presence' => 3, 'is_loot_councillor' => false], $array['pivot']);
     }
 
     // ==================== specializations relation ====================
@@ -231,15 +232,18 @@ class CharacterResourceTest extends TestCase
     public function it_includes_specializations_as_array_when_loaded(): void
     {
         $class = PlayableClass::factory()->create();
-        $specs = PlayableSpecialization::factory()->count(2)->for($class, 'playableClass')->create();
+        [$raidSpec, $offSpec] = PlayableSpecialization::factory()->count(2)->for($class, 'playableClass')->create()->all();
         $character = Character::factory()->withPlayableClass($class)->create();
-        $character->specializations()->attach($specs->first(), ['is_raid_spec' => true]);
-        $character->specializations()->attach($specs->last(), ['is_raid_spec' => false]);
+        $character->specializations()->attach($raidSpec, ['is_raid_spec' => true]);
+        $character->specializations()->attach($offSpec, ['is_raid_spec' => false]);
 
         $array = (new CharacterResource($character->load('specializations')))->toArray(new Request);
 
-        $this->assertIsArray($array['specializations']);
-        $this->assertCount(2, $array['specializations']);
+        $isRaidSpecById = array_column($array['specializations'], 'is_raid_spec', 'id');
+        ksort($isRaidSpecById);
+        $expected = [$raidSpec->id => true, $offSpec->id => false];
+        ksort($expected);
+        $this->assertSame($expected, $isRaidSpecById);
     }
 
     // ==================== portrait url ====================
@@ -277,7 +281,6 @@ class CharacterResourceTest extends TestCase
 
         $array = (new CharacterResource($character->load('media')))->toArray(new Request);
 
-        $this->assertNotNull($array['portrait_url']);
         $this->assertStringContainsString('/storage/', $array['portrait_url']);
         $this->assertStringContainsString('character_15678.jpg', $array['portrait_url']);
         $this->assertStringNotContainsString('/icons/', $array['portrait_url']);
@@ -298,13 +301,47 @@ class CharacterResourceTest extends TestCase
     #[Test]
     public function it_includes_linked_characters_as_array_when_loaded(): void
     {
-        $main = Character::factory()->main()->create(['name' => 'MainChar']);
-        $alt = Character::factory()->create(['name' => 'AltChar']);
+        $main = Character::factory()->create();
+        $alt = Character::factory()->create();
         $alt->linkedCharacters()->attach($main->id);
 
         $array = (new CharacterResource($alt->load('linkedCharacters')))->toArray(new Request);
 
-        $this->assertIsArray($array['linked_characters']);
-        $this->assertCount(1, $array['linked_characters']);
+        $this->assertSame([$main->id], array_column($array['linked_characters'], 'id'));
+    }
+
+    // ==================== user relation ====================
+
+    #[Test]
+    public function it_omits_user_when_not_loaded(): void
+    {
+        $character = Character::factory()->forUser()->create();
+
+        $array = (new CharacterResource($character))->toArray(new Request);
+
+        $this->assertInstanceOf(MissingValue::class, $array['user']);
+    }
+
+    #[Test]
+    public function it_includes_user_when_loaded(): void
+    {
+        $user = User::factory()->create();
+        $character = Character::factory()->forUser($user)->create();
+
+        $request = new Request;
+        $array = (new CharacterResource($character->load('user.discordRoles')))->toArray($request);
+
+        $this->assertInstanceOf(UserResource::class, $array['user']);
+        $this->assertSame($user->id, $array['user']->resolve($request)['id']);
+    }
+
+    #[Test]
+    public function it_returns_null_user_when_loaded_but_unassigned(): void
+    {
+        $character = Character::factory()->create();
+
+        $array = (new CharacterResource($character->load('user')))->toArray(new Request);
+
+        $this->assertNull($array['user']);
     }
 }

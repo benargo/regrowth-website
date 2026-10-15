@@ -2,24 +2,27 @@
 
 namespace Tests\Feature\Jobs;
 
+use App\Http\Integrations\Discord\DiscordConnector;
+use App\Http\Integrations\Discord\Requests\Messages\DeleteMessageRequest;
 use App\Jobs\DeleteStaleDailyQuestsMessage;
 use App\Models\DiscordNotification;
 use App\Notifications\DailyQuestsMessage;
-use App\Services\Discord\Contracts\Resources\Message as MessageContract;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Exceptions\RateLimitedException;
 use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Http\Request;
+use Saloon\Laravel\Facades\Saloon;
+use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
 #[Group('daily-quests')]
 #[Group('discord-integration')]
 class DeleteStaleDailyQuestsMessageTest extends TestCase
 {
+    use MocksDiscordService;
     use RefreshDatabase;
 
     #[Test]
@@ -27,8 +30,9 @@ class DeleteStaleDailyQuestsMessageTest extends TestCase
     {
         $job = new DeleteStaleDailyQuestsMessage;
 
-        $this->assertSame(2, $job->tries);
+        $this->assertSame(2, $job->maxExceptions);
         $this->assertSame(30, $job->backoff);
+        $this->assertTrue($job->retryUntil()->isFuture(), 'Rate-limit releases must not spend a retry.');
     }
 
     #[Test]
@@ -40,6 +44,8 @@ class DeleteStaleDailyQuestsMessageTest extends TestCase
     #[Test]
     public function it_deletes_stale_notifications_from_discord_and_database(): void
     {
+        $this->freezeTime();
+
         $staleNotification = DiscordNotification::factory()->create([
             'type' => DailyQuestsMessage::class,
             'channel_id' => '111111111111111111',
@@ -47,33 +53,30 @@ class DeleteStaleDailyQuestsMessageTest extends TestCase
             'created_at' => Carbon::yesterday()->setTime(4, 0, 0)->subSecond(),
         ]);
 
-        $discord = $this->mock(Discord::class, function (MockInterface $mock) use ($staleNotification) {
-            $mock->shouldReceive('deleteMessage')
-                ->once()
-                ->with(\Mockery::on(function (MessageContract $stub) use ($staleNotification) {
-                    return $stub->id === $staleNotification->message_id
-                        && $stub->channel_id === $staleNotification->channel_id;
-                }));
-        });
+        $this->fakeDiscord([DeleteMessageRequest::class => MockResponse::make('', 204)]);
 
-        (new DeleteStaleDailyQuestsMessage)->handle($discord);
+        (new DeleteStaleDailyQuestsMessage)->handle($this->discord());
 
         $this->assertSoftDeleted($staleNotification);
+
+        Saloon::assertSent(fn (Request $request): bool => $request instanceof DeleteMessageRequest
+            && $request->resolveEndpoint() === '/channels/111111111111111111/messages/222222222222222222');
     }
 
     #[Test]
     public function it_does_not_delete_todays_notifications(): void
     {
-        DiscordNotification::factory()->create([
+        $this->freezeTime();
+
+        $todaysNotification = DiscordNotification::factory()->create([
             'type' => DailyQuestsMessage::class,
             'created_at' => Carbon::yesterday()->setTime(4, 0, 0),
         ]);
 
-        $discord = $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('deleteMessage')->never();
-        });
+        (new DeleteStaleDailyQuestsMessage)->handle($this->discord());
 
-        (new DeleteStaleDailyQuestsMessage)->handle($discord);
+        $this->assertNotSoftDeleted($todaysNotification);
+        Saloon::assertNothingSent();
     }
 
     #[Test]
@@ -81,14 +84,32 @@ class DeleteStaleDailyQuestsMessageTest extends TestCase
     {
         $stale = DiscordNotification::factory()->count(3)->create([
             'type' => DailyQuestsMessage::class,
-            'created_at' => Carbon::now()->subDays(3),
+            'created_at' => now()->subDays(3),
         ]);
 
-        $discord = $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('deleteMessage')->times(3);
-        });
+        $this->fakeDiscord([DeleteMessageRequest::class => MockResponse::make('', 204)]);
 
-        (new DeleteStaleDailyQuestsMessage)->handle($discord);
+        (new DeleteStaleDailyQuestsMessage)->handle($this->discord());
+
+        foreach ($stale as $notification) {
+            $this->assertSoftDeleted($notification);
+        }
+
+        Saloon::mockClient()->assertSentCount(3, DeleteMessageRequest::class);
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_deletes_the_record_when_the_discord_message_is_already_gone(): void
+    {
+        $stale = DiscordNotification::factory()->count(2)->create([
+            'type' => DailyQuestsMessage::class,
+            'created_at' => now()->subDays(3),
+        ]);
+
+        $this->fakeDiscord([DeleteMessageRequest::class => $this->makeDiscordErrorResponse(404, 10008, 'Unknown Message')]);
+
+        (new DeleteStaleDailyQuestsMessage)->handle($this->discord());
 
         foreach ($stale as $notification) {
             $this->assertSoftDeleted($notification);
@@ -96,24 +117,30 @@ class DeleteStaleDailyQuestsMessageTest extends TestCase
     }
 
     #[Test]
+    #[Group('error-handling')]
     public function it_releases_itself_when_discord_is_rate_limited(): void
     {
+        $this->freezeTime();
+
         DiscordNotification::factory()->create([
             'type' => DailyQuestsMessage::class,
             'created_at' => Carbon::yesterday()->setTime(4, 0, 0)->subSecond(),
         ]);
 
-        $discord = $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('deleteMessage')
-                ->once()
-                ->andThrow(new RateLimitedException('channels/123/messages/456', 5.0, 'user'));
-        });
+        $this->fakeDiscord([DeleteMessageRequest::class => $this->makeDiscordRateLimitResponse(5.0)]);
 
         $job = new DeleteStaleDailyQuestsMessage;
         $job->withFakeQueueInteractions();
-        $job->handle($discord);
+        $this->runJobThroughMiddleware($job);
 
-        $job->assertReleased(5.0);
+        $job->assertReleased(5);
         $this->assertDatabaseCount('discord_notifications', 1);
+    }
+
+    // ==================== helpers ====================
+
+    private function discord(): DiscordConnector
+    {
+        return $this->app->make(DiscordConnector::class);
     }
 }

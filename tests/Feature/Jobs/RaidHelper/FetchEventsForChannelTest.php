@@ -4,6 +4,7 @@ namespace Tests\Feature\Jobs\RaidHelper;
 
 use App\Http\Integrations\RaidHelper\RaidHelperConnector;
 use App\Http\Integrations\RaidHelper\Requests\GetEventsRequest;
+use App\Http\Integrations\ServedFromCache;
 use App\Jobs\RaidHelper\FetchEventsForChannel;
 use App\Jobs\RaidHelper\SyncEvent;
 use Carbon\Carbon;
@@ -29,7 +30,7 @@ class FetchEventsForChannelTest extends TestCase
     {
         parent::setUp();
 
-        $this->connector = new RaidHelperConnector(token: 'test-token', serverId: '111222333444555666');
+        $this->connector = new RaidHelperConnector(token: 'test-token', serverId: '111222333444555666', servedFromCache: app(ServedFromCache::class));
         $this->app->instance(RaidHelperConnector::class, $this->connector);
     }
 

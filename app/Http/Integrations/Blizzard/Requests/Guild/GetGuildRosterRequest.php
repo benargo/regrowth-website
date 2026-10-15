@@ -4,7 +4,7 @@ namespace App\Http\Integrations\Blizzard\Requests\Guild;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
-use App\Http\Integrations\Blizzard\Concerns\HasCaching;
+use App\Http\Integrations\Blizzard\Concerns\CachesBlizzardResponses;
 use App\Http\Integrations\Blizzard\Concerns\RequiresRealm;
 use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterData;
 use App\Http\Integrations\Blizzard\Support\NameSlug;
@@ -16,7 +16,7 @@ use Saloon\Http\Response;
 
 class GetGuildRosterRequest extends Request implements Cacheable
 {
-    use HasCaching, RequiresRealm;
+    use CachesBlizzardResponses, RequiresRealm;
 
     protected Method $method = Method::GET;
 

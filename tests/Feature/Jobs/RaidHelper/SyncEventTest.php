@@ -6,7 +6,9 @@ use App\Actions\Characters\MatchCharacterName;
 use App\Actions\EventBossResolver;
 use App\Enums\SignupStatus;
 use App\Events\Broadcasts\CompositionChanged;
+use App\Http\Integrations\Discord\Requests\Guilds\GetGuildMemberRequest;
 use App\Http\Integrations\RaidHelper\Data\Events\EventData;
+use App\Jobs\AttachCharactersToUser;
 use App\Jobs\RaidHelper\FetchComposition;
 use App\Jobs\RaidHelper\SyncEvent;
 use App\Models\Boss;
@@ -15,6 +17,7 @@ use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\Phase;
 use App\Models\Raid;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -24,13 +27,21 @@ use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Http\PendingRequest;
+use Saloon\Http\Request;
+use Saloon\Laravel\Facades\Saloon;
+use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
 #[Group('raiding')]
 #[Group('raidhelper-integration')]
 class SyncEventTest extends TestCase
 {
+    use MocksDiscordService;
     use RefreshDatabase;
+
+    private const string SIGN_UP_USER_ID = '300000000000000001';
 
     private GameVersion $gameVersion;
 
@@ -40,9 +51,11 @@ class SyncEventTest extends TestCase
 
         config()->set('services.raidhelper.channel_ids', ['100000000000000001']);
 
-        Queue::fake([FetchComposition::class]);
+        Queue::fake([FetchComposition::class, AttachCharactersToUser::class]);
 
         $this->gameVersion = GameVersion::factory()->create();
+
+        User::factory()->create(['id' => self::SIGN_UP_USER_ID]);
     }
 
     // ==================== event upsert ====================
@@ -767,6 +780,330 @@ class SyncEventTest extends TestCase
         $this->assertFalse($event->characters()->whereKey($oldArthas->id)->exists());
     }
 
+    // ==================== user sync ====================
+
+    #[Test]
+    #[Group('happy-path')]
+    public function it_attaches_signed_up_users_already_in_the_database(): void
+    {
+        Saloon::fake([]);
+        $other = User::factory()->create(['id' => '300000000000000002']);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'signUps' => [
+                $this->minimalSignUpPayload(),
+                $this->minimalSignUpPayload(['id' => 2, 'userId' => $other->id, 'name' => 'Jaina']),
+            ],
+        ])));
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+        $this->assertEqualsCanonicalizing([self::SIGN_UP_USER_ID, $other->id], $event->users()->pluck('users.id')->all());
+        Saloon::assertNothingSent();
+    }
+
+    #[Test]
+    public function it_detaches_users_who_are_no_longer_signed_up(): void
+    {
+        $removed = User::factory()->create(['id' => '300000000000000002']);
+        $event = Event::factory()->create(['raid_helper_event_id' => '111222333444555001']);
+        $event->users()->attach([self::SIGN_UP_USER_ID, $removed->id]);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'signUps' => [$this->minimalSignUpPayload()],
+        ])));
+
+        $this->assertSame([self::SIGN_UP_USER_ID], $event->users()->pluck('users.id')->all());
+    }
+
+    #[Test]
+    public function it_excludes_absence_sign_ups_from_users(): void
+    {
+        $event = Event::factory()->create(['raid_helper_event_id' => '111222333444555001']);
+        $event->users()->attach(self::SIGN_UP_USER_ID);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'signUps' => [$this->minimalSignUpPayload(['className' => 'Absence'])],
+        ])));
+
+        $this->assertCount(0, $event->users);
+    }
+
+    #[Test]
+    public function it_attaches_a_user_signed_up_twice_once(): void
+    {
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'signUps' => [
+                $this->minimalSignUpPayload(),
+                $this->minimalSignUpPayload(['id' => 2, 'name' => 'Alt']),
+            ],
+        ])));
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+        $this->assertSame([self::SIGN_UP_USER_ID], $event->users()->pluck('users.id')->all());
+    }
+
+    #[Test]
+    public function it_syncs_users_when_the_event_has_no_game_version(): void
+    {
+        Log::spy();
+        $versionlessRaid = Raid::factory()->for(Phase::factory())->create();
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'description' => $this->zonePayload([['id' => $versionlessRaid->id, 'name' => $versionlessRaid->name]]),
+            'signUps' => [$this->minimalSignUpPayload()],
+        ])));
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+        $this->assertNull($event->game_version_id);
+        $this->assertSame([self::SIGN_UP_USER_ID], $event->users()->pluck('users.id')->all());
+    }
+
+    #[Test]
+    #[Group('happy-path')]
+    public function it_imports_and_attaches_a_signed_up_user_missing_from_the_database(): void
+    {
+        $this->fakeDiscord([
+            GetGuildMemberRequest::class => MockResponse::make($this->makeDiscordGuildMemberWithUser('300000000000000002', 'newraider', 'New Raider')),
+        ]);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'signUps' => [
+                $this->minimalSignUpPayload(),
+                $this->minimalSignUpPayload(['id' => 2, 'userId' => '300000000000000002', 'name' => 'Jaina']),
+            ],
+        ])));
+
+        $this->assertDatabaseHas('users', ['id' => '300000000000000002', 'username' => 'newraider', 'nickname' => 'New Raider']);
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+        $this->assertEqualsCanonicalizing([self::SIGN_UP_USER_ID, '300000000000000002'], $event->users()->pluck('users.id')->all());
+        Saloon::assertSentCount(1);
+        Saloon::assertSent(fn (Request $request): bool => $request instanceof GetGuildMemberRequest
+            && str_ends_with($request->resolveEndpoint(), '/members/300000000000000002'));
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_skips_a_sign_up_whose_user_is_not_in_the_discord_server(): void
+    {
+        $this->fakeDiscord([
+            GetGuildMemberRequest::class => $this->makeDiscordErrorResponse(404, 10007, 'Unknown Member'),
+        ]);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'signUps' => [
+                $this->minimalSignUpPayload(),
+                $this->minimalSignUpPayload(['id' => 2, 'userId' => '300000000000000002', 'name' => 'Jaina']),
+            ],
+        ])));
+
+        $this->assertDatabaseMissing('users', ['id' => '300000000000000002']);
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+        $this->assertSame([self::SIGN_UP_USER_ID], $event->users()->pluck('users.id')->all());
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_skips_a_sign_up_whose_member_lookup_fails(): void
+    {
+        $this->fakeDiscord([
+            GetGuildMemberRequest::class => $this->makeDiscordErrorResponse(403, 50001, 'Missing Access'),
+        ]);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'signUps' => [
+                $this->minimalSignUpPayload(),
+                $this->minimalSignUpPayload(['id' => 2, 'userId' => '300000000000000002', 'name' => 'Jaina']),
+            ],
+        ])));
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+        $this->assertSame([self::SIGN_UP_USER_ID], $event->users()->pluck('users.id')->all());
+        Queue::assertPushed(FetchComposition::class);
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_skips_a_sign_up_when_discord_rate_limits_the_lookup(): void
+    {
+        $this->fakeDiscord([
+            GetGuildMemberRequest::class => $this->makeDiscordRateLimitResponse(1.5),
+        ]);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'signUps' => [
+                $this->minimalSignUpPayload(),
+                $this->minimalSignUpPayload(['id' => 2, 'userId' => '300000000000000002', 'name' => 'Jaina']),
+            ],
+        ])));
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+        $this->assertSame([self::SIGN_UP_USER_ID], $event->users()->pluck('users.id')->all());
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_imports_the_remaining_users_after_one_lookup_fails(): void
+    {
+        $this->fakeDiscord([
+            GetGuildMemberRequest::class => fn (PendingRequest $pendingRequest): MockResponse => str_ends_with($pendingRequest->getRequest()->resolveEndpoint(), '/members/300000000000000002')
+                ? $this->makeDiscordErrorResponse(404, 10007, 'Unknown Member')
+                : MockResponse::make($this->makeDiscordGuildMemberWithUser('300000000000000003', 'thrall')),
+        ]);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'signUps' => [
+                $this->minimalSignUpPayload(['id' => 2, 'userId' => '300000000000000002', 'name' => 'Jaina']),
+                $this->minimalSignUpPayload(['id' => 3, 'userId' => '300000000000000003', 'name' => 'Thrall']),
+            ],
+        ])));
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+        $this->assertSame(['300000000000000003'], $event->users()->pluck('users.id')->all());
+    }
+
+    // ==================== character linking ====================
+
+    #[Test]
+    #[Group('happy-path')]
+    public function it_links_all_of_a_users_sign_up_characters_in_one_job(): void
+    {
+        $arthas = Character::factory()->forGameVersion($this->gameVersion)->create(['name' => 'Arthas']);
+        $jaina = Character::factory()->forGameVersion($this->gameVersion)->create(['name' => 'Jaina']);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'description' => $this->descriptionInVersion($this->gameVersion),
+            'signUps' => [
+                $this->minimalSignUpPayload(['id' => 1, 'name' => 'Arthas']),
+                $this->minimalSignUpPayload(['id' => 2, 'name' => 'Jaina']),
+                $this->minimalSignUpPayload(['id' => 3, 'name' => 'Arthas']),
+            ],
+        ])));
+
+        Queue::assertPushed(AttachCharactersToUser::class, 1);
+        Queue::assertPushed(AttachCharactersToUser::class, function (AttachCharactersToUser $job) use ($arthas, $jaina): bool {
+            $this->assertSame(self::SIGN_UP_USER_ID, $job->userId);
+            $this->assertEqualsCanonicalizing([$arthas->id, $jaina->id], $job->characterIds);
+            $this->assertTrue($job->onlyUnlinked);
+
+            return true;
+        });
+    }
+
+    #[Test]
+    public function it_links_characters_for_each_sign_up_user_separately(): void
+    {
+        $otherUser = User::factory()->create(['id' => '300000000000000002']);
+        $arthas = Character::factory()->forGameVersion($this->gameVersion)->create(['name' => 'Arthas']);
+        $jaina = Character::factory()->forGameVersion($this->gameVersion)->create(['name' => 'Jaina']);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'description' => $this->descriptionInVersion($this->gameVersion),
+            'signUps' => [
+                $this->minimalSignUpPayload(['id' => 1, 'name' => 'Arthas']),
+                $this->minimalSignUpPayload(['id' => 2, 'userId' => $otherUser->id, 'name' => 'Jaina']),
+            ],
+        ])));
+
+        Queue::assertPushed(AttachCharactersToUser::class, 2);
+        Queue::assertPushed(AttachCharactersToUser::class, fn (AttachCharactersToUser $job): bool => $job->userId === self::SIGN_UP_USER_ID && $job->characterIds === [$arthas->id]);
+        Queue::assertPushed(AttachCharactersToUser::class, fn (AttachCharactersToUser $job): bool => $job->userId === $otherUser->id && $job->characterIds === [$jaina->id]);
+    }
+
+    #[Test]
+    public function it_only_links_characters_without_a_user(): void
+    {
+        $arthas = Character::factory()->forGameVersion($this->gameVersion)->create(['name' => 'Arthas']);
+        Character::factory()->forGameVersion($this->gameVersion)->forUser()->create(['name' => 'Jaina']);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'description' => $this->descriptionInVersion($this->gameVersion),
+            'signUps' => [
+                $this->minimalSignUpPayload(['id' => 1, 'name' => 'Arthas']),
+                $this->minimalSignUpPayload(['id' => 2, 'name' => 'Jaina']),
+            ],
+        ])));
+
+        Queue::assertPushed(AttachCharactersToUser::class, fn (AttachCharactersToUser $job): bool => $job->characterIds === [$arthas->id]);
+    }
+
+    #[Test]
+    public function it_does_not_link_when_every_signed_up_character_has_a_user(): void
+    {
+        Character::factory()->forGameVersion($this->gameVersion)->forUser()->create(['name' => 'Arthas']);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'description' => $this->descriptionInVersion($this->gameVersion),
+            'signUps' => [$this->minimalSignUpPayload(['name' => 'Arthas'])],
+        ])));
+
+        Queue::assertNotPushed(AttachCharactersToUser::class);
+    }
+
+    #[Test]
+    public function it_does_not_link_absence_sign_ups(): void
+    {
+        Character::factory()->forGameVersion($this->gameVersion)->create(['name' => 'Arthas']);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'description' => $this->descriptionInVersion($this->gameVersion),
+            'signUps' => [$this->minimalSignUpPayload(['name' => 'Arthas', 'className' => 'Absence'])],
+        ])));
+
+        Queue::assertNotPushed(AttachCharactersToUser::class);
+    }
+
+    #[Test]
+    public function it_does_not_link_when_the_event_has_no_game_version(): void
+    {
+        Character::factory()->forGameVersion($this->gameVersion)->create(['name' => 'Arthas']);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'signUps' => [$this->minimalSignUpPayload(['name' => 'Arthas'])],
+        ])));
+
+        Queue::assertNotPushed(AttachCharactersToUser::class);
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_does_not_link_a_sign_up_whose_user_could_not_be_imported(): void
+    {
+        $this->fakeDiscord([
+            GetGuildMemberRequest::class => $this->makeDiscordErrorResponse(404, 10007, 'Unknown Member'),
+        ]);
+        Character::factory()->forGameVersion($this->gameVersion)->create(['name' => 'Arthas']);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'description' => $this->descriptionInVersion($this->gameVersion),
+            'signUps' => [$this->minimalSignUpPayload(['userId' => '300000000000000009', 'name' => 'Arthas'])],
+        ])));
+
+        Queue::assertNotPushed(AttachCharactersToUser::class);
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_skips_and_logs_a_character_claimed_by_several_sign_up_users(): void
+    {
+        Log::spy();
+        $otherUser = User::factory()->create(['id' => '300000000000000002']);
+        $arthas = Character::factory()->forGameVersion($this->gameVersion)->create(['name' => 'Arthas']);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'description' => $this->descriptionInVersion($this->gameVersion),
+            'signUps' => [
+                $this->minimalSignUpPayload(['id' => 1, 'name' => 'Arthas']),
+                $this->minimalSignUpPayload(['id' => 2, 'userId' => $otherUser->id, 'name' => 'Arthas']),
+            ],
+        ])));
+
+        Queue::assertNotPushed(AttachCharactersToUser::class);
+        Log::shouldHaveReceived('info')->once()->withArgs(
+            fn (string $message, array $context): bool => $context['character_id'] === $arthas->id
+                && $context['user_ids'] === [self::SIGN_UP_USER_ID, $otherUser->id]
+        );
+    }
+
     // ==================== channel filtering ====================
 
     #[Test]
@@ -912,7 +1249,7 @@ class SyncEventTest extends TestCase
     {
         return array_merge([
             'id' => '300000000000000001',
-            'userId' => '300000000000000001',
+            'userId' => self::SIGN_UP_USER_ID,
             'name' => 'SomeCharacter',
             'className' => 'Warrior',
             'specName' => 'Arms',

@@ -2,10 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
 use App\Models\DiscordNotification;
 use App\Models\User;
 use App\Notifications\DailyQuestsMessage;
-use App\Services\Discord\Payloads\MessagePayload;
 use Illuminate\Database\Eloquent\Factories\Attributes\UseModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -23,7 +23,7 @@ class DiscordNotificationFactory extends Factory
             'type' => DailyQuestsMessage::class,
             'channel_id' => fake()->numerify('##################'),
             'message_id' => fake()->unique()->numerify('##################'),
-            'payload' => MessagePayload::from([
+            'payload' => MessagePayloadData::from([
                 'content' => fake()->sentence(),
             ]),
             'created_by_user_id' => null,

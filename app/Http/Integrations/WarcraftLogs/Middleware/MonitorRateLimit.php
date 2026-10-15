@@ -2,6 +2,7 @@
 
 namespace App\Http\Integrations\WarcraftLogs\Middleware;
 
+use App\Http\Integrations\ServedFromCache;
 use App\Http\Integrations\WarcraftLogs\Exceptions\WarcraftLogsRequestException;
 use App\Http\Integrations\WarcraftLogs\RateLimitResetCache;
 use App\Http\Integrations\WarcraftLogs\Requests\GetRateLimitDataRequest;
@@ -30,11 +31,12 @@ final class MonitorRateLimit
 
     public function __construct(
         private readonly RateLimitResetCache $rateLimitReset,
+        private readonly ServedFromCache $servedFromCache,
     ) {}
 
     public function __invoke(Response $response): void
     {
-        if ($response->isCached()) {
+        if ($this->servedFromCache->check($response)) {
             return;
         }
 

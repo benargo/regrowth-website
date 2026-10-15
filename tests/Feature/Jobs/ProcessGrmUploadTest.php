@@ -9,6 +9,8 @@ use App\Events\Broadcasts\GrmUploadStarted;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterStatusRequest;
+use App\Http\Integrations\Discord\Data\Channels\ChannelStub;
+use App\Http\Integrations\Discord\Requests\Messages\CreateMessageRequest;
 use App\Jobs\FetchGuildRoster;
 use App\Jobs\ProcessGrmUpload;
 use App\Models\Character;
@@ -17,14 +19,11 @@ use App\Models\GuildRank;
 use App\Models\User;
 use App\Notifications\GrmUploadCompleted;
 use App\Notifications\GrmUploadFailed;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Notifications\NotifiableChannel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Assert as PHPUnit;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -36,6 +35,7 @@ use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
 #[Group('characters')]
+#[Group('discord-integration')]
 class ProcessGrmUploadTest extends TestCase
 {
     use MocksDiscordService;
@@ -59,10 +59,8 @@ class ProcessGrmUploadTest extends TestCase
         $this->gameVersion = GameVersion::factory()->create();
 
         // The test queue is sync, so the queued officer notification is delivered
-        // inline; stand in for Discord so it never leaves the process.
-        $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('createMessage')->andReturn($this->makeDiscordMessage(id: '9999999999999999999', channelId: '1407688195386114119'));
-        });
+        // inline; fake Discord's create message endpoint.
+        $this->fakeDiscordMessageCreated(id: '9999999999999999999', channelId: '1407688195386114119');
     }
 
     // ==================== character creation ====================
@@ -288,7 +286,7 @@ class ProcessGrmUploadTest extends TestCase
         $job->handle(app(BlizzardConnector::class));
 
         Notification::assertSentTo(
-            NotifiableChannel::stubFromConfig('officer'),
+            new ChannelStub('1407688195386114119'),
             GrmUploadCompleted::class,
             fn (GrmUploadCompleted $notification) => $notification->processedCount === 0
                 && $notification->warningCount === 1,
@@ -313,13 +311,13 @@ class ProcessGrmUploadTest extends TestCase
         $job->handle(app(BlizzardConnector::class));
 
         Notification::assertSentTo(
-            NotifiableChannel::stubFromConfig('officer'),
+            new ChannelStub('1407688195386114119'),
             GrmUploadFailed::class,
             fn (GrmUploadFailed $notification) => $notification->processedCount === 0
                 && $notification->errorCount === 1
                 && str_starts_with($notification->errors[0], 'TestChar: '),
         );
-        Notification::assertNotSentTo(NotifiableChannel::stubFromConfig('officer'), GrmUploadCompleted::class);
+        Notification::assertNotSentTo(new ChannelStub('1407688195386114119'), GrmUploadCompleted::class);
     }
 
     #[Test]
@@ -340,7 +338,7 @@ class ProcessGrmUploadTest extends TestCase
         $job->handle(app(BlizzardConnector::class));
 
         Notification::assertSentTo(
-            NotifiableChannel::stubFromConfig('officer'),
+            new ChannelStub('1407688195386114119'),
             GrmUploadCompleted::class,
             fn (GrmUploadCompleted $notification) => $notification->processedCount === 0
                 && $notification->skippedCount === 1,
@@ -366,7 +364,7 @@ class ProcessGrmUploadTest extends TestCase
         $job->handle(app(BlizzardConnector::class));
 
         Notification::assertSentTo(
-            NotifiableChannel::stubFromConfig('officer'),
+            new ChannelStub('1407688195386114119'),
             GrmUploadCompleted::class,
             fn (GrmUploadCompleted $notification) => $notification->processedCount === 1,
         );
@@ -639,7 +637,7 @@ class ProcessGrmUploadTest extends TestCase
         $job->failed(new \RuntimeException('boom'));
 
         Notification::assertSentTo(
-            NotifiableChannel::stubFromConfig('officer'),
+            new ChannelStub('1407688195386114119'),
             GrmUploadFailed::class,
             fn (GrmUploadFailed $notification) => $notification->exceptionMessage === 'boom',
         );
@@ -812,10 +810,16 @@ class ProcessGrmUploadTest extends TestCase
         $versionA = GameVersion::factory()->create();
         $versionB = GameVersion::factory()->create();
 
-        $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('createMessage')
-                ->andReturnUsing(fn () => $this->makeDiscordMessage(id: (string) fake()->unique()->numerify('99999999999999#####'), channelId: '1407688195386114119'));
-        });
+        $messageNumber = 0;
+
+        $this->fakeDiscord([
+            CreateMessageRequest::class => function () use (&$messageNumber): MockResponse {
+                $messageNumber++;
+                $messageId = '99999999999999'.str_pad((string) $messageNumber, 5, '0', STR_PAD_LEFT);
+
+                return MockResponse::make($this->makeDiscordMessageResponse($messageId, '1407688195386114119'));
+            },
+        ]);
 
         $firstRun = new ProcessGrmUpload([
             'delimiter' => ',',
@@ -874,8 +878,8 @@ class ProcessGrmUploadTest extends TestCase
         $this->assertDatabaseHas('character_links', ['character_id' => 11111, 'linked_character_id' => 22222]);
         $this->assertDatabaseHas('character_links', ['character_id' => 33333, 'linked_character_id' => 44444]);
         $this->assertDatabaseHas('character_links', ['character_id' => 33333, 'linked_character_id' => 55555]);
-        Notification::assertSentTo(NotifiableChannel::stubFromConfig('officer'), GrmUploadCompleted::class);
-        Notification::assertNotSentTo(NotifiableChannel::stubFromConfig('officer'), GrmUploadFailed::class);
+        Notification::assertSentTo(new ChannelStub('1407688195386114119'), GrmUploadCompleted::class);
+        Notification::assertNotSentTo(new ChannelStub('1407688195386114119'), GrmUploadFailed::class);
     }
 
     // ==================== helpers ====================

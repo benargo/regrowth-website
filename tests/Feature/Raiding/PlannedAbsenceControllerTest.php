@@ -6,28 +6,34 @@ use App\Actions\Characters\RefreshCharacterPortrait;
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Data\PlannedAbsenceReasonData;
 use App\Enums\PlannedAbsenceReason;
+use App\Events\Broadcasts\DiscordMembersSearched;
+use App\Http\Integrations\Discord\Requests\Guilds\SearchGuildMembersRequest;
+use App\Jobs\Discord\SearchGuildMembers;
 use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\GameVersion;
 use App\Models\Permission;
 use App\Models\PlannedAbsence;
 use App\Models\User;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Resources\GuildMember;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Laravel\Facades\Saloon;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
 #[Group('raiding')]
+#[Group('discord-integration')]
 class PlannedAbsenceControllerTest extends TestCase
 {
+    use MocksDiscordService;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -1398,39 +1404,52 @@ class PlannedAbsenceControllerTest extends TestCase
     }
 
     #[Test]
-    public function store_creates_user_from_discord_and_assigns_absence_when_user_not_in_database(): void
+    public function update_clears_the_user_when_user_is_null(): void
     {
-        $this->mock(Discord::class, function (MockInterface $mock): void {
-            $mock->shouldReceive('getGuildMember')->once()->andReturn(GuildMember::from([
-                'user' => ['id' => '999999999999999999', 'username' => 'discorduser', 'discriminator' => '0', 'avatar' => null, 'flags' => 0, 'public_flags' => 0],
-                'nick' => 'DiscordNick',
-                'avatar' => null,
-                'banner' => null,
-                'roles' => [],
-                'deaf' => false,
-                'mute' => false,
-                'flags' => 0,
-            ]));
-        });
+        $absence = PlannedAbsence::factory()->withCharacter()->create(['user_id' => User::factory()->create()->id]);
 
-        $officer = User::factory()->officer()->create();
+        $this->actingAs($this->officer())
+            ->patch(route('raiding.absences.update', $absence), ['user' => null])
+            ->assertRedirectToRoute('raiding.absences.index');
+
+        $this->assertNull($absence->fresh()->user_id);
+    }
+
+    #[Test]
+    #[Group('validation')]
+    public function store_rejects_a_discord_user_without_a_users_row(): void
+    {
         $character = $this->mainInReleasedVersion();
-        $unknownUserId = '999999999999999999';
 
-        $response = $this->actingAs($officer)->post(route('raiding.absences.store'), [
-            'game_version' => $character->game_version_id,
-            'character' => $character->id,
-            'user' => $unknownUserId,
-            'start_date' => now()->addDay()->format('Y-m-d'),
-            'reason' => PlannedAbsenceReason::Holiday->value,
-        ]);
+        $this->actingAs($this->officer())
+            ->post(route('raiding.absences.store'), [
+                'game_version' => $character->game_version_id,
+                'character' => $character->id,
+                'user' => '999999999999999999',
+                'start_date' => now()->addDay()->format('Y-m-d'),
+                'reason' => PlannedAbsenceReason::Holiday->value,
+            ])
+            ->assertSessionHasErrors(['user' => 'Pick a Discord member and wait for them to finish loading.']);
 
-        $response->assertRedirectToRoute('raiding.absences.index');
-        $this->assertDatabaseHas('users', ['id' => $unknownUserId, 'username' => 'discorduser']);
-        $this->assertDatabaseHas('planned_absences', [
-            'character_id' => $character->id,
-            'user_id' => $unknownUserId,
-        ]);
+        Saloon::assertNothingSent();
+        $this->assertDatabaseCount('planned_absences', 0);
+        $this->assertDatabaseMissing('users', ['id' => '999999999999999999']);
+    }
+
+    #[Test]
+    #[Group('validation')]
+    public function update_rejects_a_discord_user_without_a_users_row(): void
+    {
+        $absence = PlannedAbsence::factory()->withCharacter()->create();
+        $originalUserId = $absence->user_id;
+
+        $this->actingAs($this->officer())
+            ->patch(route('raiding.absences.update', $absence), ['user' => '999999999999999999'])
+            ->assertSessionHasErrors(['user' => 'Pick a Discord member and wait for them to finish loading.']);
+
+        Saloon::assertNothingSent();
+        $this->assertSame($originalUserId, $absence->fresh()->user_id);
+        $this->assertDatabaseMissing('users', ['id' => '999999999999999999']);
     }
 
     // ==================== discord_members: Optional Prop ====================
@@ -1438,11 +1457,11 @@ class PlannedAbsenceControllerTest extends TestCase
     #[Test]
     public function create_does_not_search_discord_members_on_a_full_load(): void
     {
-        $this->mock(Discord::class)->shouldNotReceive('searchGuildMembers');
-
         $this->actingAs($this->officer())
             ->get(route('raiding.absences.create', ['member_search' => 'test']))
             ->assertInertia(fn (Assert $page) => $page->missing('discord_members'));
+
+        Saloon::assertNotSent(SearchGuildMembersRequest::class);
     }
 
     #[Test]
@@ -1515,49 +1534,78 @@ class PlannedAbsenceControllerTest extends TestCase
     #[Test]
     public function create_returns_discord_members_on_a_partial_reload(): void
     {
-        $this->mock(Discord::class)
-            ->shouldReceive('searchGuildMembers')
-            ->once()
-            ->with('test', 1)
-            ->andReturn(collect([
-                $this->fakeGuildMember('111111111111111111', 'testuser', 'TestNick'),
-                $this->fakeGuildMember('333333333333333333', 'nonick'),
-            ]));
+        $members = [
+            ['id' => '111111111111111111', 'nickname' => 'TestNick', 'username' => 'testuser'],
+            ['id' => '333333333333333333', 'nickname' => null, 'username' => 'nonick'],
+        ];
+        Cache::tags(['discord'])->put(SearchGuildMembers::cacheKey('829020506907869214', 1, 'test'), $members, now()->addMinutes(5));
 
         $this->actingAs($this->officer())
             ->get(route('raiding.absences.create', ['member_search' => 'test']))
             ->assertInertia(fn (Assert $page) => $page
                 ->reloadOnly('discord_members', fn (Assert $reload) => $reload
-                    ->where('discord_members', [
-                        ['id' => '111111111111111111', 'nickname' => 'TestNick', 'username' => 'testuser'],
-                        ['id' => '333333333333333333', 'nickname' => null, 'username' => 'nonick'],
-                    ])
+                    ->where('discord_members', ['status' => 'ready', 'members' => $members])
                 )
             );
+
+        Saloon::assertNothingSent();
+    }
+
+    #[Test]
+    public function create_queues_a_member_search_on_a_cache_miss(): void
+    {
+        Queue::fake();
+
+        $this->actingAs($this->officer())
+            ->get(route('raiding.absences.create', ['member_search' => 'test']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->reloadOnly('discord_members', fn (Assert $reload) => $reload
+                    ->where('discord_members', ['status' => 'pending', 'members' => []])
+                )
+            );
+
+        Queue::assertPushedOn('high', SearchGuildMembers::class);
+        Saloon::assertNothingSent();
     }
 
     #[Test]
     public function create_passes_the_member_limit_to_discord(): void
     {
-        $this->mock(Discord::class)
-            ->shouldReceive('searchGuildMembers')
-            ->once()
-            ->with('test', 5)
-            ->andReturn(collect());
+        Queue::fake();
+        $officer = $this->officer();
 
-        $this->actingAs($this->officer())
+        $this->actingAs($officer)
             ->get(route('raiding.absences.create', ['member_search' => 'test', 'member_limit' => 5]))
             ->assertInertia(fn (Assert $page) => $page
-                ->reloadOnly('discord_members', fn (Assert $reload) => $reload->where('discord_members', []))
+                ->reloadOnly('discord_members', fn (Assert $reload) => $reload
+                    ->where('discord_members', ['status' => 'pending', 'members' => []])
+                )
             );
+
+        Queue::assertPushedOn('high', SearchGuildMembers::class, fn (SearchGuildMembers $job): bool => $job->query === 'test' && $job->limit === 5 && $job->requestedBy === $officer->id);
+    }
+
+    #[Test]
+    public function create_queues_the_member_search_with_surrounding_whitespace_trimmed(): void
+    {
+        Queue::fake();
+        $officer = $this->officer();
+
+        $this->actingAs($officer)
+            ->get(route('raiding.absences.create', ['member_search' => ' test ', 'member_limit' => 5]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->reloadOnly('discord_members', fn (Assert $reload) => $reload
+                    ->where('discord_members', ['status' => 'pending', 'members' => []])
+                )
+            );
+
+        Queue::assertPushedOn('high', SearchGuildMembers::class, fn (SearchGuildMembers $job): bool => $job->query === 'test' && $job->limit === 5 && $job->requestedBy === $officer->id);
     }
 
     #[Test]
     #[Group('validation')]
     public function create_requires_a_member_search_when_reloading_discord_members(): void
     {
-        $this->mock(Discord::class)->shouldNotReceive('searchGuildMembers');
-
         $officer = $this->officer();
         $version = $this->actingAs($officer)->get(route('raiding.absences.create'))->viewData('page')['version'];
 
@@ -1570,6 +1618,8 @@ class PlannedAbsenceControllerTest extends TestCase
             ])
             ->get(route('raiding.absences.create'))
             ->assertSessionHasErrors('member_search');
+
+        Saloon::assertNotSent(SearchGuildMembersRequest::class);
     }
 
     #[Test]
@@ -1579,55 +1629,46 @@ class PlannedAbsenceControllerTest extends TestCase
         config(['cache.stores.array.serialize' => true]);
         Cache::forgetDriver('array');
 
-        $this->mock(Discord::class)
-            ->shouldReceive('searchGuildMembers')
-            ->once()
-            ->andReturn(collect([$this->fakeGuildMember('444444444444444444', 'cacheduser', 'Cached')]));
+        Event::fake([DiscordMembersSearched::class]);
+        Saloon::fake([SearchGuildMembersRequest::class => MockResponse::make([$this->makeDiscordGuildMemberWithUser('444444444444444444', 'cacheduser', 'Cached')])]);
 
         $officer = $this->officer();
-        $expected = [['id' => '444444444444444444', 'nickname' => 'Cached', 'username' => 'cacheduser']];
+        $expected = [
+            ['status' => 'pending', 'members' => []],
+            ['status' => 'ready', 'members' => [['id' => '444444444444444444', 'nickname' => 'Cached', 'username' => 'cacheduser']]],
+        ];
 
-        foreach (range(1, 2) as $attempt) {
+        foreach ($expected as $lookup) {
             $this->actingAs($officer)
                 ->get(route('raiding.absences.create', ['member_search' => 'cach']))
                 ->assertInertia(fn (Assert $page) => $page
-                    ->reloadOnly('discord_members', fn (Assert $reload) => $reload->where('discord_members', $expected))
+                    ->reloadOnly('discord_members', fn (Assert $reload) => $reload->where('discord_members', $lookup))
                 );
         }
+
+        Saloon::mockClient()->assertSentCount(1, SearchGuildMembersRequest::class);
+        Event::assertDispatchedTimes(DiscordMembersSearched::class, 1);
     }
 
     #[Test]
     public function edit_returns_discord_members_on_a_partial_reload(): void
     {
         $absence = PlannedAbsence::factory()->withCharacter()->create();
-
-        $this->mock(Discord::class)
-            ->shouldReceive('searchGuildMembers')
-            ->once()
-            ->andReturn(collect([$this->fakeGuildMember('222222222222222222', 'guildofficer', 'Guild Officer')]));
+        $members = [['id' => '222222222222222222', 'nickname' => 'Guild Officer', 'username' => 'guildofficer']];
+        Cache::tags(['discord'])->put(SearchGuildMembers::cacheKey('829020506907869214', 1, 'officer'), $members, now()->addMinutes(5));
 
         $this->actingAs($this->officer())
             ->get(route('raiding.absences.edit', [$absence, 'member_search' => 'officer']))
             ->assertInertia(fn (Assert $page) => $page
-                ->reloadOnly('discord_members', fn (Assert $reload) => $reload->where('discord_members', [
-                    ['id' => '222222222222222222', 'nickname' => 'Guild Officer', 'username' => 'guildofficer'],
-                ]))
+                ->reloadOnly('discord_members', fn (Assert $reload) => $reload
+                    ->where('discord_members', ['status' => 'ready', 'members' => $members])
+                )
             );
+
+        Saloon::assertNothingSent();
     }
 
     // ==================== helpers ====================
-
-    private function fakeGuildMember(string $userId, string $username, ?string $nickname = null): GuildMember
-    {
-        return GuildMember::from([
-            'user' => ['id' => $userId, 'username' => $username, 'discriminator' => '0', 'flags' => 0, 'public_flags' => 0],
-            'nick' => $nickname,
-            'roles' => [],
-            'deaf' => false,
-            'mute' => false,
-            'flags' => 0,
-        ]);
-    }
 
     /**
      * @param  array{update: bool, delete: bool, restore: bool}  $expected

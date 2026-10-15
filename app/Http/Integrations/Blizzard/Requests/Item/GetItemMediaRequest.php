@@ -4,7 +4,7 @@ namespace App\Http\Integrations\Blizzard\Requests\Item;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
-use App\Http\Integrations\Blizzard\Concerns\HasCaching;
+use App\Http\Integrations\Blizzard\Concerns\CachesBlizzardResponses;
 use App\Http\Integrations\Blizzard\Responses\GetItemMediaResponse;
 use Saloon\CachePlugin\Contracts\Cacheable;
 use Saloon\Enums\Method;
@@ -13,7 +13,7 @@ use Saloon\Http\Request;
 
 class GetItemMediaRequest extends Request implements Cacheable
 {
-    use HasCaching;
+    use CachesBlizzardResponses;
 
     protected ?string $response = GetItemMediaResponse::class;
 

@@ -3,6 +3,8 @@
 namespace Tests\Unit\Http\Integrations\RaidHelper;
 
 use App\Http\Integrations\RaidHelper\RaidHelperConnector;
+use App\Http\Integrations\RaidHelper\Requests\GetEventRequest;
+use App\Http\Integrations\ServedFromCache;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -97,6 +99,30 @@ class RaidHelperConnectorTest extends TestCase
         $this->makeConnector()->send(new ConnectorProbeRequest);
     }
 
+    #[Group('error-handling')]
+    #[Test]
+    public function it_serves_a_cached_response_while_a_limit_is_exceeded(): void
+    {
+        Saloon::fake([
+            GetEventRequest::class => MockResponse::make(['id' => '1'], 200),
+            ConnectorProbeRequest::class => MockResponse::make([], 429, ['Retry-After' => '60']),
+        ]);
+        $connector = $this->makeConnector();
+
+        $connector->send(new GetEventRequest('1'));
+
+        try {
+            $connector->send(new ConnectorProbeRequest);
+        } catch (RateLimitReachedException) {
+            // Expected: the 429 marks the limit exceeded.
+        }
+
+        $response = $connector->send(new GetEventRequest('1'));
+
+        $this->assertTrue($response->isCached());
+        Saloon::assertSentCount(2);
+    }
+
     #[Test]
     public function its_default_store_does_not_leak_exceeded_state_between_instances(): void
     {
@@ -163,7 +189,7 @@ class RaidHelperConnectorTest extends TestCase
 
     private function makeConnector(): RaidHelperConnector
     {
-        return new RaidHelperConnector(token: 'test-token', serverId: '111222333444555666');
+        return new RaidHelperConnector(token: 'test-token', serverId: '111222333444555666', servedFromCache: app(ServedFromCache::class));
     }
 
     /**
@@ -186,7 +212,7 @@ class RaidHelperConnectorTest extends TestCase
                 private readonly int $tierLimit,
                 private readonly int $tierSeconds,
             ) {
-                parent::__construct($token, $serverId, $memoryStore);
+                parent::__construct($token, $serverId, app(ServedFromCache::class), $memoryStore);
             }
 
             protected function resolveLimits(): array

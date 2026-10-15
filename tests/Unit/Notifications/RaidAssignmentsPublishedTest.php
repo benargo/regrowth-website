@@ -2,18 +2,20 @@
 
 namespace Tests\Unit\Notifications;
 
+use App\Http\Integrations\Discord\Data\Channels\ChannelData;
+use App\Models\Character;
+use App\Models\DiscordNotification;
 use App\Models\Event;
 use App\Models\User;
+use App\Notifications\Discord\DiscordChannel;
 use App\Notifications\RaidAssignmentsPublished;
-use App\Services\Discord\Notifications\Driver as DiscordDriver;
-use App\Services\Discord\Notifications\NotifiableChannel;
-use App\Services\Discord\Resources\Channel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
 #[Group('raiding')]
@@ -22,14 +24,14 @@ class RaidAssignmentsPublishedTest extends TestCase
 {
     use RefreshDatabase;
 
-    private NotifiableChannel $notifiable;
+    private ChannelData $notifiable;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $channel = Channel::from(['id' => '123456789012345678', 'type' => 0]);
-        $this->notifiable = new NotifiableChannel($channel);
+        $channel = ChannelData::from(['id' => '123456789012345678', 'type' => 0]);
+        $this->notifiable = $channel;
     }
 
     #[Test]
@@ -39,7 +41,7 @@ class RaidAssignmentsPublishedTest extends TestCase
 
         $notification = new RaidAssignmentsPublished($event);
 
-        $this->assertContains(DiscordDriver::class, $notification->via($this->notifiable));
+        $this->assertContains(DiscordChannel::class, $notification->via($this->notifiable));
     }
 
     // ==================== broadcasting ====================
@@ -103,6 +105,36 @@ class RaidAssignmentsPublishedTest extends TestCase
         $event = Event::factory()->make();
 
         $this->assertSame('AssignmentsPublished', (new RaidAssignmentsPublished($event))->broadcastType());
+    }
+
+    // ==================== message content ====================
+
+    #[Test]
+    public function it_mentions_each_slotted_user_in_the_message_content(): void
+    {
+        $event = Event::factory()->create();
+        [$firstSlotted, $secondSlotted, $unslotted] = User::factory()->count(3)->create()->all();
+        $event->users()->attach([$firstSlotted->id, $secondSlotted->id, $unslotted->id]);
+        $event->characters()->attach(Character::factory()->create(['user_id' => $firstSlotted->id])->id, ['slot_number' => 1]);
+        $event->characters()->attach(Character::factory()->create(['user_id' => $secondSlotted->id])->id, ['slot_number' => 2]);
+        $event->characters()->attach(Character::factory()->create(['user_id' => $unslotted->id])->id, ['slot_number' => null]);
+
+        $content = (new RaidAssignmentsPublished($event))->toMessage()->content;
+
+        $this->assertEqualsCanonicalizing(
+            ["<@{$firstSlotted->id}>", "<@{$secondSlotted->id}>"],
+            explode(' ', $content),
+        );
+    }
+
+    #[Test]
+    public function it_has_empty_message_content_when_no_users_are_slotted(): void
+    {
+        $event = Event::factory()->create();
+
+        $content = (new RaidAssignmentsPublished($event))->toMessage()->content;
+
+        $this->assertSame('', $content);
     }
 
     // ==================== message embed ====================
@@ -174,7 +206,7 @@ class RaidAssignmentsPublishedTest extends TestCase
 
         $embed = (new RaidAssignmentsPublished($event))->toMessage()->embeds[0];
 
-        $this->assertNull($embed->footer);
+        $this->assertInstanceOf(Optional::class, $embed->footer);
     }
 
     #[Test]
@@ -228,7 +260,7 @@ class RaidAssignmentsPublishedTest extends TestCase
         $data = (new RaidAssignmentsPublished($event))->toDatabase($this->notifiable);
 
         $this->assertSame(RaidAssignmentsPublished::class, $data['type']);
-        $this->assertSame($this->notifiable->channel()->id, $data['channel_id']);
+        $this->assertSame($this->notifiable->id, $data['channel_id']);
         $this->assertArrayHasKey('payload', $data);
         $this->assertNull($data['created_by_user_id']);
     }
@@ -300,5 +332,40 @@ class RaidAssignmentsPublishedTest extends TestCase
             json_encode(['command' => $serialized], JSON_UNESCAPED_UNICODE),
             'Queue payload must be JSON-encodable: '.json_last_error_msg(),
         );
+    }
+
+    // ==================== existingNotification ====================
+
+    #[Test]
+    public function it_finds_the_message_posted_for_the_same_event(): void
+    {
+        $event = Event::factory()->create();
+        $posted = $this->postedMessageFor($event);
+
+        $found = (new RaidAssignmentsPublished($event))->existingNotification($this->notifiable);
+
+        $this->assertTrue($found->is($posted));
+    }
+
+    #[Test]
+    public function it_ignores_a_message_posted_for_another_event(): void
+    {
+        $this->postedMessageFor(Event::factory()->create());
+
+        $found = (new RaidAssignmentsPublished(Event::factory()->create()))->existingNotification($this->notifiable);
+
+        $this->assertNull($found);
+    }
+
+    // ==================== helpers ====================
+
+    private function postedMessageFor(Event $event): DiscordNotification
+    {
+        return DiscordNotification::factory()
+            ->withRelatedModels([['model_type' => Event::class, 'model_id' => $event->getKey()]])
+            ->create([
+                'type' => RaidAssignmentsPublished::class,
+                'channel_id' => $this->notifiable->id,
+            ]);
     }
 }

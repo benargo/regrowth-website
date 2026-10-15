@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Casts\AsBinaryColor;
 use App\Enums\RaidBackground;
-use App\Services\Discord\Discord;
+use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -15,12 +15,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 
 #[Fillable(['id', 'raid_helper_event_id', 'title', 'start_time', 'end_time', 'background_css_class', 'color', 'channel_id', 'is_template'])]
 #[Hidden(['channel_id', 'is_template'])]
 class Event extends PrunableModel
 {
-    use HasFactory, HasUuids;
+    /** @use HasFactory<EventFactory> */
+    use HasFactory;
+
+    use HasUuids;
 
     /**
      * The model's default values for attributes.
@@ -51,6 +55,8 @@ class Event extends PrunableModel
 
     /**
      * Get the prunable model query.
+     *
+     * @return Builder<static>
      */
     public function prunable(): Builder
     {
@@ -80,32 +86,49 @@ class Event extends PrunableModel
     // ========== Custom attributes ============
 
     /**
-     * Get the Discord channel associated with the event.
-     */
-    protected function channel(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if (is_null($this->channel_id)) {
-                    return null;
-                }
-
-                return app(Discord::class)->getChannel($this->channel_id);
-            },
-        )->shouldCache();
-    }
-
-    /**
      * Get the duration of the event in seconds.
+     *
+     * @return Attribute<float>
      */
     protected function duration(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->start_time->diffInSeconds($this->end_time),
+            get: fn (): float => $this->start_time->diffInSeconds($this->end_time),
         );
     }
 
     // ========== Relationships ============
+
+    /** @return HasMany<EventAssignmentGroup, $this> */
+    public function assignmentGroups(): HasMany
+    {
+        return $this->hasMany(EventAssignmentGroup::class);
+    }
+
+    /** @return HasMany<EventAssignment, $this> */
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(EventAssignment::class);
+    }
+
+    /** @return BelongsToMany<Boss, $this> */
+    public function bosses(): BelongsToMany
+    {
+        return $this->belongsToMany(Boss::class, 'pivot_events_bosses', 'event_id', 'boss_id')
+            ->using(EventBoss::class)
+            ->withPivot('sort_order')
+            ->withTimestamps()
+            ->orderByPivot('sort_order');
+    }
+
+    /** @return BelongsToMany<Character, $this> */
+    public function characters(): BelongsToMany
+    {
+        return $this->belongsToMany(Character::class, 'pivot_events_characters', 'event_id', 'character_id')
+            ->using(EventCharacter::class)
+            ->withPivot(['slot_number', 'group_number', 'signup_status', 'is_leader', 'is_loot_councillor', 'is_loot_master', 'is_benched'])
+            ->withTimestamps();
+    }
 
     /**
      * Get the game version shared by this event's raids.
@@ -117,56 +140,25 @@ class Event extends PrunableModel
         return $this->belongsTo(GameVersion::class);
     }
 
-    /**
-     * @return BelongsToMany<Boss, $this>
-     */
-    public function bosses(): BelongsToMany
-    {
-        return $this->belongsToMany(Boss::class, 'pivot_events_bosses', 'event_id', 'boss_id')
-            ->using(EventBoss::class)
-            ->withPivot('sort_order')
-            ->withTimestamps()
-            ->orderByPivot('sort_order');
-    }
-
-    /**
-     * @return BelongsToMany<Character, $this>
-     */
-    public function characters(): BelongsToMany
-    {
-        return $this->belongsToMany(Character::class, 'pivot_events_characters', 'event_id', 'character_id')
-            ->using(EventCharacter::class)
-            ->withPivot(['slot_number', 'group_number', 'signup_status', 'is_leader', 'is_loot_councillor', 'is_loot_master', 'is_benched'])
-            ->withTimestamps();
-    }
-
-    /**
-     * @return BelongsToMany<Character, $this>
-     */
+    /** @return BelongsToMany<Character, $this> */
     public function leaders(): BelongsToMany
     {
         return $this->characters()->wherePivot('is_leader', true);
     }
 
-    /**
-     * @return BelongsToMany<Character, $this>
-     */
+    /** @return BelongsToMany<Character, $this> */
     public function lootCouncillors(): BelongsToMany
     {
         return $this->characters()->wherePivot('is_loot_councillor', true);
     }
 
-    /**
-     * @return BelongsToMany<Character, $this>
-     */
+    /** @return BelongsToMany<Character, $this> */
     public function lootMasters(): BelongsToMany
     {
         return $this->characters()->wherePivot('is_loot_master', true);
     }
 
-    /**
-     * @return BelongsToMany<Raid, $this>
-     */
+    /** @return BelongsToMany<Raid, $this> */
     public function raids(): BelongsToMany
     {
         return $this->belongsToMany(Raid::class, 'pivot_events_raids', 'event_id', 'raid_id')
@@ -176,36 +168,26 @@ class Event extends PrunableModel
             ->orderByPivot('sort_order');
     }
 
-    /**
-     * @return HasMany<EventAssignmentGroup, $this>
-     */
-    public function assignmentGroups(): HasMany
+    /** @return BelongsToMany<User, $this> */
+    public function users(): BelongsToMany
     {
-        return $this->hasMany(EventAssignmentGroup::class);
+        return $this->belongsToMany(User::class, 'pivot_events_users', 'event_id', 'user_id')
+            ->withTimestamps();
     }
 
     /**
-     * @return HasMany<EventAssignment, $this>
+     * Get the event's users who own at least one character slotted in this event.
+     *
+     * @return BelongsToMany<User, $this>
      */
-    public function assignments(): HasMany
+    public function slottedUsers(): BelongsToMany
     {
-        return $this->hasMany(EventAssignment::class);
-    }
-
-    // ========== Game version ============
-
-    /**
-     * Store the game version this event's raids share, or null when it has no
-     * raids, its raids span several game versions, or a raid's phase has none.
-     */
-    public function refreshGameVersion(): void
-    {
-        $gameVersionIds = Phase::whereIn('id', $this->raids()->reorder()->select('raids.phase_id'))
-            ->pluck('game_version_id')
-            ->unique();
-
-        $this->gameVersion()
-            ->associate($gameVersionIds->containsOneItem() ? $gameVersionIds->first() : null)
-            ->save();
+        return $this->users()->whereExists(function (QueryBuilder $query): void {
+            $query->from('pivot_events_characters')
+                ->join('characters', 'characters.id', '=', 'pivot_events_characters.character_id')
+                ->whereColumn('pivot_events_characters.event_id', 'pivot_events_users.event_id')
+                ->whereColumn('characters.user_id', 'users.id')
+                ->whereNotNull('pivot_events_characters.slot_number');
+        });
     }
 }

@@ -33,6 +33,7 @@ class RefreshCharacterPortraitTest extends TestCase
     {
         parent::setUp();
 
+        $this->freezeSecond();
         Bus::fake([AttachPortraitToCharacter::class]);
         Storage::fake('public');
 

@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AttendanceNamesController;
 use App\Http\Controllers\Api\BlizzardMediaController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\CommentReactionController;
+use App\Http\Controllers\Api\Discord\ResolveDiscordMemberController;
 use App\Http\Controllers\Api\Event\PublishAssignmentsController;
 use App\Http\Controllers\Api\EventAssignmentController;
 use App\Http\Controllers\Api\EventGroupController;
@@ -48,6 +49,12 @@ Route::middleware(['auth:sanctum'])->prefix('/comments')->group(function () {
     Route::delete('/{comment}', [CommentController::class, 'destroy'])
         ->whereNumber('comment')
         ->name('api.comments.destroy');
+});
+
+Route::middleware(['auth:sanctum'])->prefix('/discord')->group(function () {
+    Route::post('/members/{member}/resolve', ResolveDiscordMemberController::class)
+        ->whereNumber('member')
+        ->name('api.discord.members.resolve');
 });
 
 Route::middleware(['auth:sanctum'])->prefix('/events/{event}')->group(function () {

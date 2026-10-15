@@ -2,17 +2,17 @@
 
 namespace Tests\Unit\Notifications;
 
+use App\Http\Integrations\Discord\Data\Channels\ChannelData;
 use App\Models\DailyQuest;
 use App\Models\DiscordNotification;
 use App\Models\DiscordRole;
 use App\Models\User;
 use App\Notifications\DailyQuestsMessage;
-use App\Services\Discord\Notifications\Driver as DiscordDriver;
-use App\Services\Discord\Notifications\NotifiableChannel;
-use App\Services\Discord\Resources\Channel;
+use App\Notifications\Discord\DiscordChannel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
 #[Group('daily-quests')]
@@ -21,14 +21,14 @@ class DailyQuestsMessageTest extends TestCase
 {
     use RefreshDatabase;
 
-    private NotifiableChannel $notifiable;
+    private ChannelData $notifiable;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $channel = Channel::from(['id' => '123456789012345678', 'type' => 0]);
-        $this->notifiable = new NotifiableChannel($channel);
+        $channel = ChannelData::from(['id' => '123456789012345678', 'type' => 0]);
+        $this->notifiable = $channel;
 
         DiscordRole::factory()->create(['name' => 'Daily Quests Subscribers', 'id' => '999000111222333444']);
         config(['services.discord.roles.daily_quest_subscribers' => '999000111222333444']);
@@ -39,7 +39,7 @@ class DailyQuestsMessageTest extends TestCase
     {
         $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]);
 
-        $this->assertContains(DiscordDriver::class, $notification->via($this->notifiable));
+        $this->assertContains(DiscordChannel::class, $notification->via($this->notifiable));
     }
 
     // ==================== message content and embed ====================
@@ -180,7 +180,7 @@ class DailyQuestsMessageTest extends TestCase
 
         $embed = $notification->toMessage()->embeds[0];
 
-        $this->assertNull($embed->footer);
+        $this->assertInstanceOf(Optional::class, $embed->footer);
     }
 
     #[Test]
@@ -206,7 +206,7 @@ class DailyQuestsMessageTest extends TestCase
         $data = $notification->toDatabase($this->notifiable);
 
         $this->assertSame(DailyQuestsMessage::class, $data['type']);
-        $this->assertSame($this->notifiable->channel()->id, $data['channel_id']);
+        $this->assertSame($this->notifiable->id, $data['channel_id']);
         $this->assertArrayHasKey('payload', $data);
         $this->assertNull($data['created_by_user_id']);
     }
@@ -223,24 +223,37 @@ class DailyQuestsMessageTest extends TestCase
         $this->assertSame($user->id, $data['created_by_user_id']);
     }
 
-    // ==================== updates and sender ====================
+    // ==================== existing notification and sender ====================
 
     #[Test]
-    public function it_returns_null_for_updates_when_none_provided(): void
+    public function it_finds_the_message_posted_since_yesterdays_reset(): void
     {
-        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]);
+        $this->travelTo('2026-10-14 12:00:00');
+        $posted = DiscordNotification::factory()->create([
+            'type' => DailyQuestsMessage::class,
+            'channel_id' => $this->notifiable->id,
+        ]);
 
-        $this->assertNull($notification->updates());
+        $found = (new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]))
+            ->existingNotification($this->notifiable);
+
+        $this->assertTrue($found->is($posted));
     }
 
     #[Test]
-    public function it_returns_the_discord_notification_instance_to_update(): void
+    public function it_ignores_a_message_posted_before_yesterdays_reset(): void
     {
-        $existing = DiscordNotification::factory()->create();
-        $notification = (new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]))
-            ->updatesExisting($existing);
+        $this->travelTo('2026-10-12 12:00:00');
+        DiscordNotification::factory()->create([
+            'type' => DailyQuestsMessage::class,
+            'channel_id' => $this->notifiable->id,
+        ]);
+        $this->travelTo('2026-10-14 12:00:00');
 
-        $this->assertSame($existing->id, $notification->updates()->id);
+        $found = (new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]))
+            ->existingNotification($this->notifiable);
+
+        $this->assertNull($found);
     }
 
     #[Test]

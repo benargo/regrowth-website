@@ -9,6 +9,7 @@ use App\Http\Integrations\Blizzard\Exceptions\ApiException;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\Requests\Account\GetAccountProfileSummaryRequest;
+use App\Http\Integrations\ServedFromCache;
 use App\Models\Character;
 use App\Models\GameVersion;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -37,6 +38,7 @@ class FetchBattleNetAccountCharactersTest extends TestCase
             locale: Region::EU->defaultLocale(),
             redirectUri: 'https://regrowth.test/auth/battlenet/callback',
             eagerlyMirrorAssets: $this->app->make(EagerlyMirrorAssets::class),
+            servedFromCache: $this->app->make(ServedFromCache::class),
         ));
     }
 

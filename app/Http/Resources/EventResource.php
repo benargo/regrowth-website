@@ -2,26 +2,29 @@
 
 namespace App\Http\Resources;
 
+use App\Actions\Discord\FetchChannel;
+use App\Enums\SignupStatus;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
+use App\Models\EventAssignment;
 use App\Models\Raid;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
 
 /**
- * A scoped view of an event. The scope is chosen by audience, not by detail
- * level — which is why forMembers() may attach Discord channel data and
- * forVisitors() may not.
+ * Transform an event into one of three scoped shapes: full (default),
+ * members, or visitors.
  *
- * Eager-loading requirements differ per scope:
+ * Relations each scope expects to be loaded:
  *   - default:      $event->load('raids.bosses.media', 'bosses.media', 'assignments.group', 'characters.rank')
+ *                   and optionally 'users'
  *   - forMembers:   nothing
  *   - forVisitors:  $event->load('raids')
  *
- * The bosses relation (the event's own pivot selection) drives the is_visible flag
- * on each boss nested under raids.bosses rather than a top-level key.
+ * Each boss under raids.bosses has an is_visible flag, true when the boss is
+ * attached to the event through the bosses relation.
  */
 class EventResource extends JsonResource
 {
@@ -34,8 +37,8 @@ class EventResource extends JsonResource
     protected string $scope = self::SCOPE_FULL;
 
     /**
-     * The dashboard list shape for authenticated members. Includes Discord
-     * channel data, which anonymous visitors must never receive.
+     * Create a resource with the members shape: id, title, start and end
+     * times, duration, and the Discord channel.
      */
     public static function forMembers(mixed $resource): static
     {
@@ -43,8 +46,8 @@ class EventResource extends JsonResource
     }
 
     /**
-     * The minimal public-safe shape for anonymous visitors. Makes no Discord
-     * API call. Requires the raids relation: $event->load('raids').
+     * Create a resource with the visitors shape: id, title, start and end
+     * times, and raid names.
      */
     public static function forVisitors(mixed $resource): static
     {
@@ -109,20 +112,21 @@ class EventResource extends JsonResource
             $data['assignments'] = (new EventAssignmentsCollection($eventAssignments))->resolve($request);
             $data['composition'] = $this->buildComposition($request);
             $data['raids'] = $this->buildRaids($bossByIdAssignments, $request);
+            $data['users'] = $this->whenLoaded('users', fn () => $this->users->toResourceCollection());
         }
 
         try {
-            $data['channel'] = $this->channel?->only('id', 'name', 'position')->toArray();
+            $data['channel'] = $this->channel_id
+                ? FetchChannel::run($this->channel_id)->only('id', 'name', 'position')->toArray()
+                : null;
         } catch (\Exception $e) {
-            // Discord API unavailable — omit channel
+            report($e);
         }
 
         return $data;
     }
 
-    /**
-     * @return array{groups: array<int, mixed>, bench: array<int, mixed>}
-     */
+    /** @return array{groups: array<int, array<string, mixed>>, bench: array<int, array<string, mixed>>} */
     protected function buildComposition(Request $request): array
     {
         return [
@@ -132,7 +136,21 @@ class EventResource extends JsonResource
     }
 
     /**
-     * @return array<int, mixed>
+     * @return array<int, array{
+     *     group_number: int,
+     *     is_team: bool,
+     *     characters: array<int, array{
+     *         id: int,
+     *         name: string,
+     *         playable_class: array<string, mixed>|null,
+     *         rank: array{name: ?string, sort_order: ?int},
+     *         slot_number: int,
+     *         signup_status: SignupStatus,
+     *         is_leader: bool,
+     *         is_loot_councillor: bool,
+     *         is_loot_master: bool
+     *     }>
+     * }>
      */
     protected function buildGroups(Request $request): array
     {
@@ -172,7 +190,12 @@ class EventResource extends JsonResource
     }
 
     /**
-     * @return array<int, mixed>
+     * @return array<int, array{
+     *     id: int,
+     *     name: string,
+     *     playable_class: array<string, mixed>|null,
+     *     rank: array{name: ?string, sort_order: ?int}
+     * }>
      */
     protected function buildBench(Request $request): array
     {
@@ -192,8 +215,15 @@ class EventResource extends JsonResource
     }
 
     /**
-     * @param  Collection<int|string, mixed>  $bossByIdAssignments
-     * @return array<int, mixed>
+     * @param  Collection<int, Collection<int, EventAssignment>>  $bossByIdAssignments
+     * @return array<int, array{
+     *     id: int,
+     *     name: string,
+     *     slug: string,
+     *     max_players: int,
+     *     sort_order: int,
+     *     bosses: array<int, array<string, mixed>>
+     * }>
      */
     protected function buildRaids(Collection $bossByIdAssignments, Request $request): array
     {
@@ -213,9 +243,18 @@ class EventResource extends JsonResource
     }
 
     /**
-     * @param  Collection<int|string, mixed>  $bossByIdAssignments
-     * @param  Collection<int|string, int>  $visibleBossIds  Boss ids attached to the event via the pivot.
-     * @return array<string, mixed>
+     * @param  Collection<int, Collection<int, EventAssignment>>  $bossByIdAssignments
+     * @param  Collection<int, int>  $visibleBossIds  Boss ids attached to the event via the pivot.
+     * @return array{
+     *     id: int,
+     *     name: string,
+     *     slug: string,
+     *     sort_order: int,
+     *     images: array<int, string>,
+     *     notes: ?string,
+     *     is_visible: bool,
+     *     assignments: array<int, mixed>
+     * }
      */
     protected function buildBoss(Boss $boss, Collection $bossByIdAssignments, Collection $visibleBossIds, Request $request): array
     {

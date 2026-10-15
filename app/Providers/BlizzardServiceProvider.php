@@ -12,6 +12,7 @@ use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Support\BattleNetSession;
 use App\Http\Integrations\Blizzard\Support\MirrorPaths;
+use App\Http\Integrations\ServedFromCache;
 use App\Support\MediaLibrary\BlizzardIconPathGenerator;
 use App\Support\MediaLibrary\CharacterMediaPathGenerator;
 use Illuminate\Contracts\Foundation\Application;
@@ -37,6 +38,7 @@ class BlizzardServiceProvider extends ServiceProvider
                 locale: data_get($config, 'locale'),
                 redirectUri: route('battlenet.callback'),
                 eagerlyMirrorAssets: $app->make(EagerlyMirrorAssets::class),
+                servedFromCache: $app->make(ServedFromCache::class),
             );
         });
 

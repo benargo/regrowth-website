@@ -3,15 +3,19 @@
 namespace Tests\Unit\Models;
 
 use App\Casts\AsClassName;
+use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
+use App\Models\Comment;
 use App\Models\DiscordNotification;
+use App\Models\Event;
 use App\Models\User;
 use App\Notifications\DailyQuestsMessage;
-use App\Services\Discord\Payloads\MessagePayload;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\LaravelData\Optional;
 use Tests\Support\ModelTestCase;
 
 #[Group('discord-integration')]
@@ -57,7 +61,7 @@ class DiscordNotificationTest extends ModelTestCase
 
         $this->assertCasts($model, [
             'type' => AsClassName::class,
-            'payload' => MessagePayload::class,
+            'payload' => MessagePayloadData::class,
         ]);
     }
 
@@ -197,10 +201,84 @@ class DiscordNotificationTest extends ModelTestCase
     public function payload_is_cast_to_message_payload(): void
     {
         $notification = $this->create([
-            'payload' => MessagePayload::from(['content' => 'Hello, world!']),
+            'payload' => MessagePayloadData::from(['content' => 'Hello, world!']),
         ]);
 
-        $this->assertInstanceOf(MessagePayload::class, $notification->fresh()->payload);
+        $this->assertInstanceOf(MessagePayloadData::class, $notification->fresh()->payload);
         $this->assertSame('Hello, world!', $notification->fresh()->payload->content);
+    }
+
+    #[Test]
+    #[Group('contract')]
+    public function payload_cast_hydrates_a_legacy_snake_case_row(): void
+    {
+        $notification = DiscordNotification::factory()->create();
+
+        DB::table('discord_notifications')->where('id', $notification->id)->update([
+            'payload' => json_encode([
+                'content' => 'Hi',
+                'embeds' => [[
+                    'title' => 'Daily',
+                    'footer' => null,
+                    'image' => ['url' => 'https://regrowth.test/i.webp', 'content_type' => 'image/webp'],
+                    'fields' => [['name' => 'Cooking', 'value' => 'Soup', 'inline' => false]],
+                ]],
+            ]),
+        ]);
+
+        $payload = $notification->fresh()->payload;
+
+        $this->assertInstanceOf(MessagePayloadData::class, $payload);
+        $this->assertInstanceOf(Optional::class, $payload->embeds[0]->footer);
+        $this->assertSame('image/webp', $payload->embeds[0]->image->contentType);
+        $this->assertSame('Soup', $payload->embeds[0]->fields[0]->value);
+    }
+
+    #[Test]
+    #[Group('contract')]
+    public function payload_cast_persists_snake_case_json(): void
+    {
+        $notification = DiscordNotification::factory()->create([
+            'payload' => MessagePayloadData::from([
+                'embeds' => [['title' => 't', 'footer' => ['text' => 'f', 'icon_url' => 'https://regrowth.test/a.png']]],
+            ]),
+        ]);
+
+        $stored = json_decode(DB::table('discord_notifications')->where('id', $notification->id)->value('payload'), true);
+
+        $this->assertSame('https://regrowth.test/a.png', $stored['embeds'][0]['footer']['icon_url']);
+        $this->assertArrayNotHasKey('iconUrl', $stored['embeds'][0]['footer']);
+    }
+
+    // ==================== relatedTo scope ====================
+
+    #[Test]
+    public function related_to_matches_notifications_linked_to_the_given_model(): void
+    {
+        $event = Event::factory()->create();
+        $linked = DiscordNotification::factory()
+            ->withRelatedModels([['model_type' => Event::class, 'model_id' => $event->getKey()]])
+            ->create();
+        DiscordNotification::factory()
+            ->withRelatedModels([['model_type' => Event::class, 'model_id' => Event::factory()->create()->getKey()]])
+            ->create();
+        DiscordNotification::factory()->create();
+
+        $matched = DiscordNotification::relatedTo(Event::class, $event->getKey())->pluck('id')->all();
+
+        $this->assertSame([$linked->id], $matched);
+    }
+
+    #[Test]
+    public function related_to_ignores_a_different_model_type_with_the_same_id(): void
+    {
+        $event = Event::factory()->create();
+        DiscordNotification::factory()
+            ->withRelatedModels([['model_type' => Comment::class, 'model_id' => $event->getKey()]])
+            ->create();
+
+        $matched = DiscordNotification::relatedTo(Event::class, $event->getKey())->exists();
+
+        $this->assertFalse($matched);
     }
 }

@@ -2,33 +2,48 @@
 
 namespace App\Notifications\Concerns;
 
+use App\Http\Integrations\Discord\Contracts\Channel;
 use App\Models\DiscordNotification;
+use Illuminate\Database\Eloquent\Builder;
 
+/**
+ * Finds the stored Discord message a notification edits, when the notification is sent.
+ */
 trait UpdatesExisting
 {
     /**
-     * The notification instance this notification will update, if any.
+     * The stored notification found by the lookup.
+     */
+    private ?DiscordNotification $existingNotification = null;
+
+    /**
+     * Whether the lookup has run.
+     */
+    private bool $hasResolvedExistingNotification = false;
+
+    /**
+     * Get the latest stored notification of this type in the given channel that matches
+     * constrainExisting(), if any. The lookup runs on first call and the result is reused.
+     */
+    public function existingNotification(Channel $notifiable): ?DiscordNotification
+    {
+        if (! $this->hasResolvedExistingNotification) {
+            $this->existingNotification = $this->constrainExisting(
+                DiscordNotification::where('type', static::class)
+                    ->where('channel_id', $notifiable->id),
+            )->latest()->first();
+
+            $this->hasResolvedExistingNotification = true;
+        }
+
+        return $this->existingNotification;
+    }
+
+    /**
+     * Narrow the query for the stored notification this notification edits.
      *
-     * This allows the notification to update an existing Discord message instead of creating a new one,
-     * which is useful for notifications related to the same event or model that may be updated multiple times.
+     * @param  Builder<DiscordNotification>  $query
+     * @return Builder<DiscordNotification>
      */
-    public ?DiscordNotification $updates = null;
-
-    /**
-     * Get the notification instance this notification will update, if any.
-     */
-    public function updates(): ?DiscordNotification
-    {
-        return $this->updates;
-    }
-
-    /**
-     * Set the notification instance this notification will update.
-     */
-    public function updatesExisting(?DiscordNotification $notification): self
-    {
-        $this->updates = $notification;
-
-        return $this;
-    }
+    abstract protected function constrainExisting(Builder $query): Builder;
 }

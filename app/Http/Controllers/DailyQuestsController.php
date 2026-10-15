@@ -3,14 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Enums\DailyQuestType;
+use App\Http\Integrations\Discord\Data\Channels\ChannelStub;
 use App\Http\Requests\StoreDailyQuestsRequest;
 use App\Http\Resources\DailyQuestResource;
 use App\Models\DailyQuest;
 use App\Models\DiscordNotification;
 use App\Models\DiscordNotificationRelatedModel;
 use App\Notifications\DailyQuestsMessage;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Notifications\NotifiableChannel;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\RedirectResponse;
@@ -22,10 +21,6 @@ use Inertia\Response;
 
 class DailyQuestsController extends Controller
 {
-    public function __construct(
-        private Discord $discord,
-    ) {}
-
     /*
     |--------------------------------------------------------------------------
     | Index
@@ -39,8 +34,7 @@ class DailyQuestsController extends Controller
     {
         $hasNotification = Cache::tags(['dailyquests'])->remember('daily_quests:today:exists', $this->resetTime(), function () {
             return DiscordNotification::where('type', DailyQuestsMessage::class)
-                ->where('created_at', '>=', Carbon::yesterday()->setTime(4, 0, 0))
-                ->where('created_at', '<=', Carbon::tomorrow()->setTime(3, 59, 59))
+                ->postedInDailyResetWindow()
                 ->exists();
         });
 
@@ -95,7 +89,6 @@ class DailyQuestsController extends Controller
 
         $this->channel()->notify(
             (new DailyQuestsMessage($quests))
-                ->updatesExisting($this->getExistingNotification())
                 ->withSender($request->user())
                 ->withRelatedModels(array_filter($quests))
         );
@@ -112,9 +105,9 @@ class DailyQuestsController extends Controller
     /**
      * Get the Discord channel instance for daily quests notifications.
      */
-    private function channel(): NotifiableChannel
+    private function channel(): ChannelStub
     {
-        return NotifiableChannel::fromConfig('daily_quests', $this->discord);
+        return new ChannelStub(config('services.discord.channels.daily_quests'));
     }
 
     /**
@@ -131,8 +124,7 @@ class DailyQuestsController extends Controller
     private function getExistingNotification(): ?DiscordNotification
     {
         return DiscordNotification::where('type', DailyQuestsMessage::class)
-            ->where('created_at', '>=', Carbon::yesterday()->setTime(4, 0, 0))
-            ->where('created_at', '<=', Carbon::tomorrow()->setTime(3, 59, 59))
+            ->postedInDailyResetWindow()
             ->latest()
             ->first();
     }
@@ -244,8 +236,7 @@ class DailyQuestsController extends Controller
         try {
             return Cache::tags(['dailyquests'])->remember('daily_quests:today', $this->resetTime(), function () {
                 $notification = DiscordNotification::where('type', DailyQuestsMessage::class)
-                    ->where('created_at', '>=', Carbon::yesterday()->setTime(4, 0, 0))
-                    ->where('created_at', '<=', Carbon::tomorrow()->setTime(3, 59, 59))
+                    ->postedInDailyResetWindow()
                     ->with('relatedModels')
                     ->latest()
                     ->firstOrFail();

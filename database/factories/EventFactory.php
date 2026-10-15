@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Actions\Events\RefreshEventGameVersion;
 use App\Enums\RaidBackground;
 use App\Enums\SignupStatus;
 use App\Models\Boss;
@@ -10,6 +11,7 @@ use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\Phase;
 use App\Models\Raid;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
@@ -103,6 +105,20 @@ class EventFactory extends Factory
     }
 
     /**
+     * Attach users to the event.
+     *
+     * @param  array<int, User>|null  $users
+     */
+    public function withUsers(?array $users = null, int $count = 1): static
+    {
+        return $this->afterCreating(function (Event $event) use ($users, $count) {
+            $users ??= User::factory()->count($count)->create()->all();
+
+            $event->users()->attach(collect($users)->pluck('id'));
+        });
+    }
+
+    /**
      * Attach a raid in the given game version, and store that game version.
      */
     public function forGameVersion(GameVersion $gameVersion): static
@@ -111,7 +127,7 @@ class EventFactory extends Factory
             $raid = Raid::factory()->for(Phase::factory()->forGameVersion($gameVersion))->create();
 
             $event->raids()->attach($raid->id, ['sort_order' => 1]);
-            $event->refreshGameVersion();
+            RefreshEventGameVersion::run($event);
         });
     }
 

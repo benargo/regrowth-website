@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -12,7 +13,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Config;
 use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['id', 'username', 'discriminator', 'nickname', 'avatar', 'guild_avatar', 'banner'])]
@@ -21,7 +21,10 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     use HasApiTokens;
+
+    /** @use HasFactory<UserFactory> */
     use HasFactory;
+
     use Notifiable;
 
     /**
@@ -48,70 +51,101 @@ class User extends Authenticatable
 
     /**
      * Get the user's display name (nickname or username).
+     *
+     * @return Attribute<string>
      */
     protected function displayName(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->nickname ?? $this->username
+            get: fn (): string => $this->nickname ?? $this->username,
         );
     }
 
     /**
-     * Get the user's Discord avatar URL.
+     * Get the user's Discord avatar URL: the server avatar, then the user avatar, then Discord's default avatar for the user ID.
+     *
+     * @return Attribute<string>
      */
     protected function avatarUrl(): Attribute
     {
         return Attribute::make(
-            get: function () {
+            get: function (): string {
                 if ($this->guild_avatar) {
-                    $guild_id = Config::get('services.discord.server_id');
+                    $serverId = config('services.discord.server_id');
 
-                    return "https://cdn.discordapp.com/guilds/{$guild_id}/users/{$this->id}/avatars/{$this->guild_avatar}.webp";
-                } elseif ($this->avatar) {
+                    return "https://cdn.discordapp.com/guilds/{$serverId}/users/{$this->id}/avatars/{$this->guild_avatar}.webp";
+                }
+
+                if ($this->avatar) {
                     return "https://cdn.discordapp.com/avatars/{$this->id}/{$this->avatar}.webp";
                 }
-                // Default Discord avatar based on user ID
+
                 $defaultIndex = ((int) $this->id >> 22) % 6;
 
                 return "https://cdn.discordapp.com/embed/avatars/{$defaultIndex}.png";
-            }
+            },
         );
     }
 
     /**
      * Get the user's Discord banner URL.
+     *
+     * @return Attribute<string|null>
      */
     protected function bannerUrl(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->banner
+            get: fn (): ?string => $this->banner
                 ? "https://cdn.discordapp.com/banners/{$this->id}/{$this->banner}.webp"
-                : null
+                : null,
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Notifications
-    |--------------------------------------------------------------------------
-    */
+    /**
+     * Get the characters the user owns.
+     *
+     * @return HasMany<Character, $this>
+     */
+    public function characters(): HasMany
+    {
+        return $this->hasMany(Character::class);
+    }
+
+    /**
+     * Get the Discord roles the user holds.
+     *
+     * @return BelongsToMany<DiscordRole, $this>
+     */
+    public function discordRoles(): BelongsToMany
+    {
+        return $this->belongsToMany(DiscordRole::class, 'discord_role_user', 'user_id', 'discord_role_id');
+    }
+
+    /**
+     * Get the events the user is associated with.
+     *
+     * @return BelongsToMany<Event, $this>
+     */
+    public function events(): BelongsToMany
+    {
+        return $this->belongsToMany(Event::class, 'pivot_events_users', 'user_id', 'event_id')
+            ->withTimestamps();
+    }
 
     /**
      * Get the notifications associated with the user.
+     *
+     * @return HasMany<DiscordNotification, $this>
      */
     public function notificationsCreated(): HasMany
     {
         return $this->hasMany(DiscordNotification::class, 'created_by_user_id');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Planned Absences
-    |--------------------------------------------------------------------------
-    */
-
     /**
      * Get the planned absences associated with the user.
+     *
+     * @return HasMany<PlannedAbsence, $this>
      */
     public function plannedAbsences(): HasMany
     {
@@ -120,21 +154,12 @@ class User extends Authenticatable
 
     /**
      * Get the planned absences created by the user.
+     *
+     * @return HasMany<PlannedAbsence, $this>
      */
     public function plannedAbsencesCreated(): HasMany
     {
         return $this->hasMany(PlannedAbsence::class, 'created_by');
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Discord Roles
-    |--------------------------------------------------------------------------
-    */
-
-    public function discordRoles(): BelongsToMany
-    {
-        return $this->belongsToMany(DiscordRole::class, 'discord_role_user', 'user_id', 'discord_role_id');
     }
 
     /**
@@ -178,18 +203,12 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the user's highest role.
+     * Get the user's highest visible role.
      */
     public function highestRole(): ?DiscordRole
     {
-        return $this->discordRoles->where('is_visible', true)->sortByDesc('position')->first() ?: null;
+        return $this->discordRoles->where('is_visible', true)->sortByDesc('position')->first();
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Administrators
-    |--------------------------------------------------------------------------
-    */
 
     /**
      * Check if the user is an admin.
@@ -199,35 +218,29 @@ class User extends Authenticatable
         return $this->is_admin;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Permissions
-    |--------------------------------------------------------------------------
-    */
-
     /**
      * Get a query builder for all permissions the user has access to via their highest Discord role.
+     *
+     * @return Builder<Permission>
      */
     public function permissions(): Builder
     {
         $highestRoleId = $this->highestRole()?->id;
 
-        return Permission::query()
-            ->join('discord_role_has_permissions', 'discord_role_has_permissions.permission_id', '=', 'permissions.id')
+        return Permission::join('discord_role_has_permissions', 'discord_role_has_permissions.permission_id', '=', 'permissions.id')
             ->where('discord_role_has_permissions.discord_role_id', $highestRoleId)
             ->select('permissions.*');
     }
 
     /**
-     * Check if the user has a permission via any of their Discord roles.
+     * Check if the user has a permission via any of their Discord roles. Admins have every permission.
      */
     public function isAuthorizedTo(string $permission): bool
     {
-        // Admin users have all permissions
-        if ($this->is_admin) {
+        if ($this->isAdmin()) {
             return true;
         }
 
-        return $this->discordRoles->contains(fn (DiscordRole $role) => $role->hasPermissionTo($permission));
+        return $this->discordRoles->contains(fn (DiscordRole $role): bool => $role->hasPermissionTo($permission));
     }
 }

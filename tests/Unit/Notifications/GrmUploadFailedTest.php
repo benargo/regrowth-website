@@ -2,11 +2,10 @@
 
 namespace Tests\Unit\Notifications;
 
+use App\Http\Integrations\Discord\Data\Channels\ChannelData;
+use App\Http\Integrations\Discord\Data\Messages\EmbedData;
+use App\Notifications\Discord\DiscordChannel;
 use App\Notifications\GrmUploadFailed;
-use App\Services\Discord\Notifications\Driver as DiscordDriver;
-use App\Services\Discord\Notifications\NotifiableChannel;
-use App\Services\Discord\Resources\Channel as ChannelResource;
-use App\Services\Discord\Resources\Embed;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\LaravelData\Optional;
@@ -16,11 +15,11 @@ use Tests\TestCase;
 #[Group('discord-integration')]
 class GrmUploadFailedTest extends TestCase
 {
-    private function makeNotifiable(): NotifiableChannel
+    private function makeNotifiable(): ChannelData
     {
-        $channel = ChannelResource::from(['id' => '1407688195386114119', 'type' => 0]);
+        $channel = ChannelData::from(['id' => '1407688195386114119', 'type' => 0]);
 
-        return new NotifiableChannel($channel);
+        return $channel;
     }
 
     #[Test]
@@ -28,7 +27,7 @@ class GrmUploadFailedTest extends TestCase
     {
         $notification = new GrmUploadFailed(processedCount: 3, errorCount: 2);
 
-        $this->assertContains(DiscordDriver::class, $notification->via($this->makeNotifiable()));
+        $this->assertContains(DiscordChannel::class, $notification->via($this->makeNotifiable()));
     }
 
     #[Test]
@@ -41,7 +40,7 @@ class GrmUploadFailedTest extends TestCase
         );
         $embed = $notification->toMessage()->embeds[0];
 
-        $this->assertInstanceOf(Embed::class, $embed);
+        $this->assertInstanceOf(EmbedData::class, $embed);
         $this->assertSame('GRM Upload Processing Failed', $embed->title);
         $this->assertSame(15158332, $embed->color);
         $this->assertStringContainsString('Connection timed out', $embed->description);

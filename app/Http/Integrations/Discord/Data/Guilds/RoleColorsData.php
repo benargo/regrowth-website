@@ -1,0 +1,28 @@
+<?php
+
+namespace App\Http\Integrations\Discord\Data\Guilds;
+
+use Spatie\LaravelData\Attributes\MapName;
+use Spatie\LaravelData\Attributes\Validation\IntegerType;
+use Spatie\LaravelData\Attributes\Validation\Nullable;
+use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Mappers\SnakeCaseMapper;
+use Spatie\LaravelData\Optional;
+
+#[MapName(SnakeCaseMapper::class)]
+final class RoleColorsData extends Data
+{
+    public function __construct(
+        /** @var int The primary color for the role */
+        #[IntegerType]
+        public readonly int $primaryColor,
+
+        /** @var int|Optional|null The secondary color for the role; makes the role a gradient */
+        #[Nullable, IntegerType]
+        public readonly int|Optional|null $secondaryColor,
+
+        /** @var int|Optional|null The tertiary color for the role; turns the gradient into a holographic style */
+        #[Nullable, IntegerType]
+        public readonly int|Optional|null $tertiaryColor,
+    ) {}
+}

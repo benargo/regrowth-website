@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Casts\AsClassName;
-use App\Services\Discord\Payloads\MessagePayload;
+use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,7 +29,7 @@ class DiscordNotification extends Model
     {
         return [
             'type' => AsClassName::class,
-            'payload' => MessagePayload::class,
+            'payload' => MessagePayloadData::class,
         ];
     }
 
@@ -47,5 +49,29 @@ class DiscordNotification extends Model
     public function relatedModels(): HasMany
     {
         return $this->hasMany(DiscordNotificationRelatedModel::class);
+    }
+
+    /**
+     * Scope to notifications linked to the given model through their related-model rows.
+     */
+    #[Scope]
+    protected function relatedTo(Builder $query, string $modelType, int|string $modelId): void
+    {
+        $query->whereHas('relatedModels', fn (Builder $related) => $related
+            ->where('model_type', $modelType)
+            ->where('model_id', (string) $modelId)
+        );
+    }
+
+    /**
+     * Scope to notifications posted between yesterday's 04:00 reset and 03:59:59 tomorrow.
+     */
+    #[Scope]
+    protected function postedInDailyResetWindow(Builder $query): void
+    {
+        $query->whereBetween('created_at', [
+            today()->subDay()->setTime(4, 0, 0),
+            today()->addDay()->setTime(3, 59, 59),
+        ]);
     }
 }

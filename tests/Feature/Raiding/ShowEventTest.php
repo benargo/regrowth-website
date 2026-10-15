@@ -20,6 +20,7 @@ use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 #[Group('raiding')]
 class ShowEventTest extends TestCase
 {
@@ -42,7 +43,7 @@ class ShowEventTest extends TestCase
         ]);
         $this->memberRole->givePermissionTo(Permission::firstOrCreate(['name' => 'manage-raid-plans', 'guard_name' => 'web']));
 
-        $this->mockDiscordChannel(name: 'raids', position: 1, byDefault: true);
+        $this->fakeDiscordChannel(name: 'raids', position: 1);
     }
 
     #[Test]

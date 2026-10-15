@@ -2,15 +2,17 @@
 
 namespace App\Http\Integrations\RaidHelper;
 
+use App\Http\Integrations\Concerns\HasCacheAwareRateLimits;
+use App\Http\Integrations\ServedFromCache;
 use Illuminate\Support\Facades\Cache;
 use Saloon\Contracts\Authenticator;
+use Saloon\Enums\PipeOrder;
 use Saloon\Http\Auth\TokenAuthenticator;
 use Saloon\Http\Connector;
 use Saloon\Http\Response;
 use Saloon\RateLimitPlugin\Contracts\RateLimitStore;
 use Saloon\RateLimitPlugin\Limit;
 use Saloon\RateLimitPlugin\Stores\LaravelCacheStore;
-use Saloon\RateLimitPlugin\Traits\HasRateLimits;
 use Saloon\Traits\Plugins\AcceptsJson;
 use Saloon\Traits\Plugins\AlwaysThrowOnErrors;
 
@@ -25,13 +27,16 @@ class RaidHelperConnector extends Connector
 {
     use AcceptsJson;
     use AlwaysThrowOnErrors;
-    use HasRateLimits;
+    use HasCacheAwareRateLimits;
 
     public function __construct(
         protected string $token,
         protected string $serverId,
+        private readonly ServedFromCache $servedFromCache,
         private ?RateLimitStore $store = null,
-    ) {}
+    ) {
+        $this->middleware()->onRequest($servedFromCache, 'servedFromCache', PipeOrder::FIRST);
+    }
 
     /**
      * The single base URL for the Raid Helper API.
@@ -74,6 +79,11 @@ class RaidHelperConnector extends Connector
             Limit::allow(200)->everySeconds(3600)->name('200_per_3600s'),
             Limit::allow(1000)->everySeconds(86400)->name('1000_per_86400s'),
         ];
+    }
+
+    protected function servedFromCache(): ServedFromCache
+    {
+        return $this->servedFromCache;
     }
 
     /**

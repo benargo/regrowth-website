@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Actions\Events\RefreshEventGameVersion;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\GameVersion;
@@ -162,7 +163,7 @@ class BackfillGameVersions extends Command
         $updated = 0;
 
         foreach (Event::lazyById() as $event) {
-            $event->refreshGameVersion();
+            RefreshEventGameVersion::run($event);
 
             if ($event->wasChanged('game_version_id')) {
                 $updated++;

@@ -2,20 +2,23 @@
 
 namespace Tests\Feature\Comments;
 
-use App\Jobs\RefreshCommentDiscordMessage;
+use App\Http\Integrations\Discord\Data\Channels\ChannelStub;
+use App\Http\Integrations\Discord\Requests\Messages\CreateMessageRequest;
+use App\Http\Integrations\Discord\Requests\Messages\EditMessageRequest;
 use App\Models\Comment;
+use App\Models\DiscordNotification;
 use App\Models\DiscordRole;
 use App\Models\Item;
 use App\Models\Permission;
 use App\Models\User;
-use App\Notifications\NewLootCouncilComment;
-use App\Services\Discord\Notifications\NotifiableChannel;
-use App\Services\Discord\Resources\Channel as DiscordChannel;
+use App\Notifications\CommentPostedToItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Laravel\Facades\Saloon;
+use Spatie\LaravelData\Optional;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
@@ -33,7 +36,8 @@ class CommentReplyDiscordTest extends TestCase
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $this->mockDiscordChannel()->shouldReceive('createMessage')->andReturn($this->makeDiscordMessage());
+        config(['services.discord.channels.lootcouncil' => '123456789']);
+        $this->fakeDiscordMessageCreated();
 
         $commentOnLootItems = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
         $raiderRole = DiscordRole::factory()->raider()->create();
@@ -55,37 +59,60 @@ class CommentReplyDiscordTest extends TestCase
             ->assertCreated();
 
         Notification::assertSentTo(
-            new NotifiableChannel(DiscordChannel::from(['id' => '123456789'])),
-            NewLootCouncilComment::class
+            new ChannelStub('123456789'),
+            CommentPostedToItem::class
         );
     }
 
     #[Test]
-    public function a_reply_dispatches_a_sync_instead_of_posting(): void
+    public function a_reply_refreshes_the_root_message_with_its_reply_count(): void
     {
-        $item = Item::factory()->create();
-        $root = Comment::factory()->create([
-            'commentable_id' => $item->id,
-            'commentable_type' => Item::class,
-        ]);
+        $root = $this->rootOnItem();
+        $this->postedMessageFor($root);
 
-        Bus::fake();
         Notification::fake();
 
         $this->actingAs(User::factory()->raider()->create())
-            ->postJson(route('api.comments.store'), [
-                'commentable_type' => Item::class,
-                'commentable_id' => (string) $item->id,
-                'body' => 'A reply.',
-                'parent_id' => $root->id,
-            ])
+            ->postJson(route('api.comments.store'), $this->replyPayload($root))
             ->assertCreated();
 
-        Bus::assertDispatched(
-            RefreshCommentDiscordMessage::class,
-            fn (RefreshCommentDiscordMessage $job) => $job->root->id === $root->id,
+        Notification::assertSentTo(
+            new ChannelStub('123456789'),
+            fn (CommentPostedToItem $notification): bool => $notification->toMessage()->embeds[0]->fields[0]->value === '1',
         );
+    }
+
+    #[Test]
+    public function a_reply_to_a_root_without_a_posted_message_sends_nothing(): void
+    {
+        $root = $this->rootOnItem();
+
+        Notification::fake();
+
+        $this->actingAs(User::factory()->raider()->create())
+            ->postJson(route('api.comments.store'), $this->replyPayload($root))
+            ->assertCreated();
+
         Notification::assertNothingSent();
+    }
+
+    #[Test]
+    public function a_reply_whose_root_message_was_deleted_in_discord_posts_nothing(): void
+    {
+        $root = $this->rootOnItem();
+        $stale = $this->postedMessageFor($root);
+
+        $this->fakeDiscord([
+            EditMessageRequest::class => $this->makeDiscordErrorResponse(404, 10008, 'Unknown Message'),
+            CreateMessageRequest::class => MockResponse::make($this->makeDiscordMessageResponse('565656565656565656', '123456789')),
+        ]);
+
+        $this->actingAs(User::factory()->raider()->create())
+            ->postJson(route('api.comments.store'), $this->replyPayload($root))
+            ->assertCreated();
+
+        $this->assertSoftDeleted($stale);
+        Saloon::assertNotSent(CreateMessageRequest::class);
     }
 
     #[Test]
@@ -99,7 +126,6 @@ class CommentReplyDiscordTest extends TestCase
         $reply = Comment::factory()->replyTo($root)->create();
         $root->delete();
 
-        Bus::fake();
         Notification::fake();
 
         $this->actingAs(User::factory()->raider()->create())
@@ -112,74 +138,99 @@ class CommentReplyDiscordTest extends TestCase
             ->assertNotFound();
 
         $this->assertSame(2, Comment::withTrashed()->where('commentable_id', $item->id)->count());
-        Bus::assertNotDispatched(RefreshCommentDiscordMessage::class);
         Notification::assertNothingSent();
     }
 
     #[Test]
-    public function deleting_a_reply_dispatches_a_sync_for_its_root(): void
+    public function deleting_a_reply_refreshes_its_root_message(): void
     {
-        $item = Item::factory()->create();
-        $root = Comment::factory()->create([
-            'commentable_id' => $item->id,
-            'commentable_type' => Item::class,
-        ]);
+        $root = $this->rootOnItem();
+        $this->postedMessageFor($root);
         $author = User::factory()->raider()->create();
         $reply = Comment::factory()->replyTo($root)->create(['user_id' => $author->id]);
 
-        Bus::fake();
+        Notification::fake();
 
         $this->actingAs($author)
             ->deleteJson(route('api.comments.destroy', ['comment' => $reply->id]))
             ->assertNoContent();
 
-        Bus::assertDispatched(
-            RefreshCommentDiscordMessage::class,
-            fn (RefreshCommentDiscordMessage $job) => $job->root->id === $root->id,
+        Notification::assertSentTo(
+            new ChannelStub('123456789'),
+            fn (CommentPostedToItem $notification): bool => $notification->toMessage()->embeds[0]->fields instanceof Optional,
         );
     }
 
     #[Test]
-    public function deleting_a_reply_under_a_tombstoned_root_still_dispatches_a_sync(): void
+    public function deleting_a_reply_under_a_tombstoned_root_still_refreshes_the_root_message(): void
     {
-        $item = Item::factory()->create();
-        $root = Comment::factory()->create([
-            'commentable_id' => $item->id,
-            'commentable_type' => Item::class,
-        ]);
+        $root = $this->rootOnItem();
+        $this->postedMessageFor($root);
         $author = User::factory()->raider()->create();
         $reply = Comment::factory()->replyTo($root)->create(['user_id' => $author->id]);
         $root->delete();
 
-        Bus::fake();
+        Notification::fake();
 
         $this->actingAs($author)
             ->deleteJson(route('api.comments.destroy', ['comment' => $reply->id]))
             ->assertNoContent();
 
-        Bus::assertDispatched(
-            RefreshCommentDiscordMessage::class,
-            fn (RefreshCommentDiscordMessage $job) => $job->root->id === $root->id,
-        );
+        Notification::assertSentTo(new ChannelStub('123456789'), CommentPostedToItem::class);
     }
 
     #[Test]
-    public function deleting_a_root_does_not_dispatch_a_sync(): void
+    public function deleting_a_root_sends_nothing(): void
     {
-        $item = Item::factory()->create();
         $author = User::factory()->raider()->create();
-        $root = Comment::factory()->create([
-            'commentable_id' => $item->id,
-            'commentable_type' => Item::class,
-            'user_id' => $author->id,
-        ]);
+        $root = $this->rootOnItem(['user_id' => $author->id]);
+        $this->postedMessageFor($root);
 
-        Bus::fake();
+        Notification::fake();
 
         $this->actingAs($author)
             ->deleteJson(route('api.comments.destroy', ['comment' => $root->id]))
             ->assertNoContent();
 
-        Bus::assertNotDispatched(RefreshCommentDiscordMessage::class);
+        Notification::assertNothingSent();
+    }
+
+    // ==================== helpers ====================
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function rootOnItem(array $attributes = []): Comment
+    {
+        $item = Item::factory()->create();
+
+        return Comment::factory()->create([
+            'commentable_id' => $item->id,
+            'commentable_type' => Item::class,
+            ...$attributes,
+        ]);
+    }
+
+    private function postedMessageFor(Comment $root): DiscordNotification
+    {
+        return DiscordNotification::factory()
+            ->withRelatedModels([['model_type' => Comment::class, 'model_id' => $root->getKey()]])
+            ->create([
+                'type' => CommentPostedToItem::class,
+                'channel_id' => '123456789',
+            ]);
+    }
+
+    /**
+     * @return array<string, string|int>
+     */
+    private function replyPayload(Comment $root): array
+    {
+        return [
+            'commentable_type' => Item::class,
+            'commentable_id' => (string) $root->commentable_id,
+            'body' => 'A reply.',
+            'parent_id' => $root->id,
+        ];
     }
 }

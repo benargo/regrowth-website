@@ -2,9 +2,9 @@
 
 use App\Jobs\BuildAddonExportFile;
 use App\Jobs\DeleteStaleDailyQuestsMessage;
+use App\Jobs\Discord\SyncRoles as SyncDiscordRoles;
 use App\Jobs\FetchGuildRosters;
 use App\Jobs\RaidHelper\FetchEvents as FetchRaidHelperEvents;
-use App\Jobs\SyncDiscordRoles;
 use Illuminate\Support\Facades\Schedule;
 
 /**

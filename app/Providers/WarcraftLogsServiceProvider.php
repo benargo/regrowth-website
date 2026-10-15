@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Http\Integrations\ServedFromCache;
 use App\Http\Integrations\WarcraftLogs\Middleware\MonitorRateLimit;
 use App\Http\Integrations\WarcraftLogs\RateLimitResetCache;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsConnector;
@@ -33,6 +34,7 @@ class WarcraftLogsServiceProvider extends ServiceProvider implements DeferrableP
                 rateLimitReset: $app->make(RateLimitResetCache::class),
                 monitorRateLimit: $app->make(MonitorRateLimit::class),
                 store: new LaravelCacheStore($this->rateLimitRepository()),
+                servedFromCache: $app->make(ServedFromCache::class),
             );
         });
     }
