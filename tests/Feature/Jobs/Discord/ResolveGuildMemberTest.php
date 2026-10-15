@@ -81,7 +81,7 @@ class ResolveGuildMemberTest extends TestCase
     }
 
     #[Test]
-    public function it_keeps_the_user_another_job_created_first(): void
+    public function it_updates_the_user_another_job_created_first(): void
     {
         $this->fakeDiscord([GetGuildMemberRequest::class => fn (): MockResponse => tap(
             MockResponse::make($this->guildMemberResponse()),
@@ -91,7 +91,7 @@ class ResolveGuildMemberTest extends TestCase
         ResolveGuildMember::dispatchSync('999999999999999999', '100000000000000003');
 
         $this->assertDatabaseCount('users', 1);
-        $this->assertDatabaseHas('users', ['id' => '999999999999999999', 'username' => 'firstjob']);
+        $this->assertDatabaseHas('users', ['id' => '999999999999999999', 'username' => 'discorduser']);
         $this->assertBroadcastStatus('ready');
     }
 

@@ -258,7 +258,7 @@ class DiscordChannelTest extends TestCase
             'message_id' => '555555555555555555',
             'channel_id' => $this->channel->id,
         ]);
-        Saloon::assertNotSent(EditMessageRequest::class);
+        Saloon::assertSent(CreateMessageRequest::class);
     }
 
     #[Test]
