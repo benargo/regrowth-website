@@ -109,34 +109,6 @@ class DiscordAuthenticationTest extends DashboardTestCase
     }
 
     #[Test]
-    public function discord_callback_prefers_the_guild_banner_over_the_user_banner(): void
-    {
-        $this->mockDiscordOAuth();
-        $this->fakeDiscordGuildMember(['banner' => 'guild_banner_hash'], ['banner' => 'user_banner_hash']);
-
-        $this->get('/auth/discord/callback?code=test_code');
-
-        $this->assertDatabaseHas('users', [
-            'id' => '123456789012345678',
-            'banner' => 'guild_banner_hash',
-        ]);
-    }
-
-    #[Test]
-    public function discord_callback_falls_back_to_the_user_banner_when_the_member_has_none(): void
-    {
-        $this->mockDiscordOAuth();
-        $this->fakeDiscordGuildMember(['banner' => null], ['banner' => 'user_banner_hash']);
-
-        $this->get('/auth/discord/callback?code=test_code');
-
-        $this->assertDatabaseHas('users', [
-            'id' => '123456789012345678',
-            'banner' => 'user_banner_hash',
-        ]);
-    }
-
-    #[Test]
     public function discord_callback_resets_the_discriminator_when_the_oauth_payload_omits_it(): void
     {
         User::factory()->create([
@@ -195,7 +167,6 @@ class DiscordAuthenticationTest extends DashboardTestCase
             'id' => '123456789012345678',
             'nickname' => null,
             'guild_avatar' => null,
-            'banner' => null,
         ]);
     }
 
@@ -206,7 +177,6 @@ class DiscordAuthenticationTest extends DashboardTestCase
             'id' => '123456789012345678',
             'nickname' => 'OldNick',
             'guild_avatar' => 'old_guild_avatar',
-            'banner' => 'old_banner',
         ]);
 
         $this->mockDiscordOAuth();
@@ -222,7 +192,6 @@ class DiscordAuthenticationTest extends DashboardTestCase
             'id' => '123456789012345678',
             'nickname' => 'OldNick',
             'guild_avatar' => 'old_guild_avatar',
-            'banner' => 'old_banner',
         ]);
     }
 
@@ -406,15 +375,13 @@ class DiscordAuthenticationTest extends DashboardTestCase
 
     /**
      * @param  array<string, mixed>  $overrides
-     * @param  array<string, mixed>  $userOverrides
      */
-    private function fakeDiscordGuildMember(array $overrides = [], array $userOverrides = []): void
+    private function fakeDiscordGuildMember(array $overrides = []): void
     {
         Saloon::fake([GetGuildMemberRequest::class => MockResponse::make($this->makeDiscordGuildMemberResponse([
             'user' => [
                 ...$this->makeDiscordGuildMemberResponse()['user'],
                 'avatar' => 'user_avatar_hash',
-                ...$userOverrides,
             ],
             'nick' => 'TestNickname',
             'avatar' => 'guild_avatar_hash',

@@ -60,13 +60,11 @@ class SyncUserTest extends TestCase
             'id' => '100000000000000000',
             'nickname' => 'OldNick',
             'guild_avatar' => 'old_avatar',
-            'banner' => 'old_banner',
         ]);
 
         $this->fakeGuildMember([
             'nick' => 'NewNick',
             'avatar' => 'new_avatar',
-            'banner' => 'new_banner',
         ]);
 
         SyncUser::dispatchSync('100000000000000000');
@@ -74,7 +72,6 @@ class SyncUserTest extends TestCase
         $user = User::find('100000000000000000');
         $this->assertSame('NewNick', $user->nickname);
         $this->assertSame('new_avatar', $user->guild_avatar);
-        $this->assertSame('new_banner', $user->banner);
     }
 
     #[Test]
@@ -182,7 +179,6 @@ class SyncUserTest extends TestCase
             'id' => '100000000000000000',
             'nickname' => 'OldNick',
             'guild_avatar' => 'old_avatar',
-            'banner' => 'old_banner',
         ]);
 
         Saloon::fake([
@@ -196,7 +192,6 @@ class SyncUserTest extends TestCase
         $user = User::find('100000000000000000');
         $this->assertSame('OldNick', $user->nickname);
         $this->assertSame('old_avatar', $user->guild_avatar);
-        $this->assertSame('old_banner', $user->banner);
     }
 
     #[Test]
@@ -206,7 +201,6 @@ class SyncUserTest extends TestCase
             'id' => '100000000000000000',
             'nickname' => 'OldNick',
             'guild_avatar' => 'old_avatar',
-            'banner' => 'old_banner',
         ]);
 
         $this->fakeGuildMember(['nick' => null, 'avatar' => null, 'banner' => null]);
@@ -216,7 +210,6 @@ class SyncUserTest extends TestCase
         $user = User::find('100000000000000000');
         $this->assertNull($user->nickname);
         $this->assertNull($user->guild_avatar);
-        $this->assertNull($user->banner);
     }
 
     // ==================== helpers ====================

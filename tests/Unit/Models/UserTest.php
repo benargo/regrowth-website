@@ -45,7 +45,6 @@ class UserTest extends ModelTestCase
             'nickname',
             'avatar',
             'guild_avatar',
-            'banner',
         ]);
     }
 
@@ -61,7 +60,6 @@ class UserTest extends ModelTestCase
             'nickname',
             'avatar',
             'guild_avatar',
-            'banner',
         ]);
     }
 
@@ -181,35 +179,6 @@ class UserTest extends ModelTestCase
         ]);
 
         $this->assertSame('https://cdn.discordapp.com/embed/avatars/2.png', $user->avatar_url);
-    }
-
-    #[Test]
-    public function banner_url_returns_cdn_url_when_banner_set(): void
-    {
-        $user = $this->create([
-            'id' => '123456789012345690',
-            'username' => 'testuser',
-            'discriminator' => '0',
-            'banner' => 'banner123',
-        ]);
-
-        $this->assertSame(
-            'https://cdn.discordapp.com/banners/123456789012345690/banner123.webp',
-            $user->banner_url
-        );
-    }
-
-    #[Test]
-    public function banner_url_returns_null_when_banner_is_null(): void
-    {
-        $user = $this->create([
-            'id' => '123456789012345691',
-            'username' => 'testuser',
-            'discriminator' => '0',
-            'banner' => null,
-        ]);
-
-        $this->assertNull($user->banner_url);
     }
 
     // ==================== persistence ====================

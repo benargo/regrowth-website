@@ -15,7 +15,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['id', 'username', 'discriminator', 'nickname', 'avatar', 'guild_avatar', 'banner'])]
+#[Fillable(['id', 'username', 'discriminator', 'nickname', 'avatar', 'guild_avatar'])]
 #[Hidden(['username', 'discriminator', 'remember_token', 'is_admin', 'created_at', 'updated_at'])]
 #[Table(keyType: 'string', incrementing: false)]
 class User extends Authenticatable
@@ -84,20 +84,6 @@ class User extends Authenticatable
 
                 return "https://cdn.discordapp.com/embed/avatars/{$defaultIndex}.png";
             },
-        );
-    }
-
-    /**
-     * Get the user's Discord banner URL.
-     *
-     * @return Attribute<string|null>
-     */
-    protected function bannerUrl(): Attribute
-    {
-        return Attribute::make(
-            get: fn (): ?string => $this->banner
-                ? "https://cdn.discordapp.com/banners/{$this->id}/{$this->banner}.webp"
-                : null,
         );
     }
 

@@ -21,7 +21,6 @@ class UserResource extends JsonResource
             'nickname' => $this->nickname,
             'display_name' => $this->display_name,
             'avatar' => $this->avatar_url,
-            'banner' => $this->banner_url,
             'roles' => $this->discordRoles->pluck('id')->values()->toArray(),
             'highest_role' => $this->highestRole()?->name,
             'admin' => $this->is_admin,
