@@ -9,13 +9,11 @@ use App\Http\Integrations\Discord\Requests\Guilds\GetGuildMemberRequest;
 use App\Jobs\Middleware\ReleaseWhenDiscordRateLimited;
 use App\Models\User;
 use Carbon\CarbonInterface;
-use Illuminate\Bus\Batchable;
 use Illuminate\Container\Attributes\Config;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\Backoff;
 use Illuminate\Queue\Attributes\MaxExceptions;
-use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
@@ -26,7 +24,7 @@ use Throwable;
 #[Backoff(60)]
 class SyncUser implements ShouldQueue
 {
-    use Batchable, Queueable;
+    use Queueable;
 
     public function __construct(public string $id) {}
 
@@ -44,7 +42,6 @@ class SyncUser implements ShouldQueue
     public function middleware(): array
     {
         return [
-            new SkipIfBatchCancelled,
             (new WithoutOverlapping($this->id))->dontRelease()->expireAfter(120),
             new ReleaseWhenDiscordRateLimited,
         ];

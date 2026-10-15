@@ -13,7 +13,6 @@ use Illuminate\Queue\Attributes\MaxExceptions;
 use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -102,22 +101,6 @@ class SyncUserTest extends TestCase
         }
 
         $this->assertDatabaseHas('users', ['id' => '100000000000000000']);
-    }
-
-    #[Test]
-    public function it_skips_execution_when_batch_is_cancelled(): void
-    {
-        User::factory()->create(['id' => '100000000000000000']);
-        $this->fakeGuildMember([]);
-
-        $batch = Bus::batch([])->dispatch();
-        $batch->cancel();
-
-        $job = new SyncUser('100000000000000000');
-        $job->batchId = $batch->id;
-        dispatch_sync($job);
-
-        Saloon::assertNothingSent();
     }
 
     #[Test]

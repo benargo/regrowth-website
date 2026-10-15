@@ -7,16 +7,13 @@ use App\Http\Integrations\Discord\DiscordConnector;
 use App\Http\Integrations\Discord\Requests\Guilds\GetGuildRolesRequest;
 use App\Jobs\Middleware\ReleaseWhenDiscordRateLimited;
 use App\Models\DiscordRole;
-use App\Models\User;
 use Carbon\CarbonInterface;
-use Illuminate\Bus\Batchable;
 use Illuminate\Container\Attributes\Config;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\Backoff;
 use Illuminate\Queue\Attributes\MaxExceptions;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
-use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -25,7 +22,7 @@ use Throwable;
 #[Backoff(60)]
 class SyncRoles implements ShouldQueue
 {
-    use Batchable, Queueable;
+    use Queueable;
 
     /**
      * Rate-limit releases keep the job alive until this deadline; three real errors still fail it.
@@ -47,7 +44,7 @@ class SyncRoles implements ShouldQueue
     }
 
     /**
-     * Sync the guild's roles, then dispatch a batch of SyncUser jobs, one per user.
+     * Sync the guild's roles, deleting any no longer in Discord and skipping @everyone.
      */
     public function handle(DiscordConnector $discord, #[Config('services.discord.server_id')] string $serverId): void
     {
@@ -72,8 +69,6 @@ class SyncRoles implements ShouldQueue
                 'deleted' => $deleted,
             ]);
         });
-
-        Bus::batch(User::pluck('id')->map(fn (string $id): SyncUser => new SyncUser($id)))->dispatch();
     }
 
     public function failed(?Throwable $exception): void
