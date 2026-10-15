@@ -39,7 +39,7 @@ class UserResourceTest extends TestCase
         $array = (new UserResource($user))->resolve(new Request);
 
         $this->assertSame(
-            ['id', 'username', 'discriminator', 'nickname', 'display_name', 'avatar', 'banner', 'roles', 'highest_role', 'admin'],
+            ['id', 'username', 'discriminator', 'nickname', 'display_name', 'avatar', 'roles', 'highest_role', 'admin'],
             array_keys($array),
         );
     }
@@ -184,36 +184,6 @@ class UserResourceTest extends TestCase
         $array = $resource->toArray(new Request);
 
         $this->assertSame('https://cdn.discordapp.com/embed/avatars/2.png', $array['avatar']);
-    }
-
-    // ==================== banner url ====================
-
-    #[Test]
-    public function it_returns_banner_url_when_banner_is_set(): void
-    {
-        $user = User::factory()->create([
-            'id' => '123456789012345678',
-            'banner' => 'banner123',
-        ]);
-
-        $resource = new UserResource($user);
-        $array = $resource->toArray(new Request);
-
-        $this->assertSame(
-            'https://cdn.discordapp.com/banners/123456789012345678/banner123.webp',
-            $array['banner']
-        );
-    }
-
-    #[Test]
-    public function it_returns_null_banner_when_not_set(): void
-    {
-        $user = User::factory()->create(['banner' => null]);
-
-        $resource = new UserResource($user);
-        $array = $resource->toArray(new Request);
-
-        $this->assertNull($array['banner']);
     }
 
     // ==================== roles ====================

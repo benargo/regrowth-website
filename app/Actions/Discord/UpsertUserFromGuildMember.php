@@ -34,7 +34,6 @@ class UpsertUserFromGuildMember
                 'nickname' => $member->nick,
                 'avatar' => $member->user->avatar,
                 'guild_avatar' => $member->avatar,
-                'banner' => is_string($member->banner) ? $member->banner : $member->user->banner,
             ], fn (mixed $value): bool => $value instanceof Optional),
         );
 

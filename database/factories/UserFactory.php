@@ -29,7 +29,6 @@ class UserFactory extends Factory
             'nickname' => fake()->optional(0.7)->firstName(),
             'avatar' => fake()->optional(0.8)->md5(),
             'guild_avatar' => fake()->optional(0.8)->md5(),
-            'banner' => null,
             'is_admin' => false,
             'remember_token' => Str::random(10),
         ];

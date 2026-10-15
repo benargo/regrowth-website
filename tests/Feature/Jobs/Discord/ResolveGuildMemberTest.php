@@ -64,7 +64,6 @@ class ResolveGuildMemberTest extends TestCase
             'id' => '999999999999999999',
             'nickname' => null,
             'guild_avatar' => null,
-            'banner' => null,
         ]);
     }
 

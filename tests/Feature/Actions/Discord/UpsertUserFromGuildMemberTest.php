@@ -46,7 +46,6 @@ class UpsertUserFromGuildMemberTest extends TestCase
             'nickname' => 'New Raider',
             'avatar' => 'useravatarhash',
             'guild_avatar' => 'guildavatarhash',
-            'banner' => 'guildbannerhash',
         ]);
     }
 
@@ -78,19 +77,6 @@ class UpsertUserFromGuildMemberTest extends TestCase
         ));
 
         $this->assertSame([$role->id], $user->discordRoles()->pluck('id')->all());
-    }
-
-    #[Test]
-    public function it_falls_back_to_the_users_banner_when_the_member_has_none(): void
-    {
-        app(UpsertUserFromGuildMember::class)->handle(GuildMemberData::from(
-            $this->makeDiscordGuildMemberResponse([
-                'user' => ['id' => '400000000000000001', 'username' => 'newraider', 'discriminator' => '0', 'avatar' => null, 'banner' => 'userbannerhash', 'flags' => 0, 'public_flags' => 0],
-                'banner' => null,
-            ]),
-        ));
-
-        $this->assertDatabaseHas('users', ['id' => '400000000000000001', 'banner' => 'userbannerhash']);
     }
 
     #[Test]
