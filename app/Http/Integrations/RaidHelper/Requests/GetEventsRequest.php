@@ -2,7 +2,7 @@
 
 namespace App\Http\Integrations\RaidHelper\Requests;
 
-use App\Http\Integrations\RaidHelper\Concerns\HasCaching;
+use App\Http\Integrations\RaidHelper\Concerns\CachesRaidHelperResponses;
 use App\Http\Integrations\RaidHelper\Data\Events\EventData;
 use Carbon\CarbonInterface;
 use Saloon\CachePlugin\Contracts\Cacheable;
@@ -13,7 +13,7 @@ use Saloon\PaginationPlugin\Contracts\Paginatable;
 
 class GetEventsRequest extends Request implements Cacheable, Paginatable
 {
-    use HasCaching;
+    use CachesRaidHelperResponses;
 
     protected Method $method = Method::GET;
 

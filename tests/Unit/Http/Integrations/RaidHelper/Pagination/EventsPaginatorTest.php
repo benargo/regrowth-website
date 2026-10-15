@@ -4,6 +4,7 @@ namespace Tests\Unit\Http\Integrations\RaidHelper\Pagination;
 
 use App\Http\Integrations\RaidHelper\Pagination\EventsPaginator;
 use App\Http\Integrations\RaidHelper\RaidHelperConnector;
+use App\Http\Integrations\ServedFromCache;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Enums\Method;
@@ -103,7 +104,7 @@ class EventsPaginatorTest extends TestCase
 
     private function makeConnector(): RaidHelperConnector
     {
-        return new RaidHelperConnector(token: 'test-token', serverId: '111222333444555666');
+        return new RaidHelperConnector(token: 'test-token', serverId: '111222333444555666', servedFromCache: app(ServedFromCache::class));
     }
 
     private function page1Response(): MockResponse

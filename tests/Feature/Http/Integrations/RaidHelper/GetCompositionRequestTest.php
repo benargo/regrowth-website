@@ -6,6 +6,7 @@ use App\Enums\SignupStatus;
 use App\Http\Integrations\RaidHelper\Data\Compositions\CompositionData;
 use App\Http\Integrations\RaidHelper\RaidHelperConnector;
 use App\Http\Integrations\RaidHelper\Requests\GetCompositionRequest;
+use App\Http\Integrations\ServedFromCache;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Exceptions\Request\Statuses\NotFoundException;
@@ -46,7 +47,7 @@ class GetCompositionRequestTest extends TestCase
 
     private function connector(): RaidHelperConnector
     {
-        return new RaidHelperConnector(token: 'test-token', serverId: '111222333444555666');
+        return new RaidHelperConnector(token: 'test-token', serverId: '111222333444555666', servedFromCache: app(ServedFromCache::class));
     }
 
     private function compositionPayload(): array

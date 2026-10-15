@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Http\Integrations\RaidHelper\RaidHelperConnector;
+use App\Http\Integrations\ServedFromCache;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\ServiceProvider;
@@ -20,6 +21,7 @@ class RaidHelperServiceProvider extends ServiceProvider
             return new RaidHelperConnector(
                 token: config('services.raidhelper.token'),
                 serverId: config('services.raidhelper.server_id'),
+                servedFromCache: $app->make(ServedFromCache::class),
                 store: new LaravelCacheStore(
                     Cache::store()->tags(['raidhelper', 'raidhelper-rate-limit'])
                 ),
