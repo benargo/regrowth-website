@@ -2,7 +2,7 @@
 
 namespace App\Http\Integrations\WarcraftLogs\Requests;
 
-use App\Http\Integrations\WarcraftLogs\Concerns\HasCaching;
+use App\Http\Integrations\WarcraftLogs\Concerns\CachesWarcraftLogsResponses;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use Saloon\CachePlugin\Contracts\Cacheable;
 use Saloon\GraphQL\GraphQLRequest;
@@ -16,7 +16,7 @@ use Saloon\GraphQL\GraphQLRequest;
  */
 abstract class WarcraftLogsRequest extends GraphQLRequest implements Cacheable
 {
-    use HasCaching;
+    use CachesWarcraftLogsResponses;
 
     /**
      * Saloon v4 refuses absolute endpoints unless the request opts in.

@@ -267,6 +267,24 @@ class WarcraftLogsConnectorTest extends WarcraftLogsTestCase
     }
 
     #[Test]
+    #[Group('error-handling')]
+    public function it_serves_a_cached_query_during_the_cooldown(): void
+    {
+        Saloon::fake([
+            GetClientCredentialsTokenBasicAuthRequest::class => $this->tokenMock(),
+            ProbeRequest::class => fn (PendingRequest $pendingRequest): MockResponse => $pendingRequest->body()->all()['variables']['page'] === 1
+                ? MockResponse::make(['data' => ['probe' => true]])
+                : MockResponse::make(['error' => 'Too Many Requests'], 429),
+        ]);
+        $connector = $this->makeConnector();
+
+        $connector->send(new ProbeRequest(WarcraftLogsNamespace::Anniversary, ['page' => 1]));
+        $this->assertThrows(fn () => $connector->send(new ProbeRequest(WarcraftLogsNamespace::Anniversary, ['page' => 2])), RateLimitReachedException::class);
+
+        $this->assertTrue($connector->send(new ProbeRequest(WarcraftLogsNamespace::Anniversary, ['page' => 1]))->isCached());
+    }
+
+    #[Test]
     public function flushing_the_rate_limit_tag_lifts_the_cooldown(): void
     {
         $this->fakeTooManyAttempts();

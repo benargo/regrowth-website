@@ -2,22 +2,24 @@
 
 namespace App\Http\Integrations\WarcraftLogs\Concerns;
 
-use Illuminate\Support\Facades\Cache;
-use Saloon\CachePlugin\Contracts\Driver;
-use Saloon\CachePlugin\Drivers\LaravelCacheDriver;
-use Saloon\CachePlugin\Traits\HasCaching as HasSaloonCaching;
+use App\Http\Integrations\Concerns\CachesResponses;
 use Saloon\Enums\Method;
 use Saloon\Http\PendingRequest;
 
-trait HasCaching
+/**
+ * Caches Warcraft Logs responses, including GraphQL POSTs, under the `warcraftlogs` and
+ * `warcraftlogs-api-response` tags.
+ */
+trait CachesWarcraftLogsResponses
 {
-    use HasSaloonCaching;
+    use CachesResponses;
 
-    public function resolveCacheDriver(): Driver
+    /**
+     * @return array<int, string>
+     */
+    protected function cacheTags(): array
     {
-        return new LaravelCacheDriver(
-            Cache::store()->tags(['warcraftlogs', 'warcraftlogs-api-response'])
-        );
+        return ['warcraftlogs', 'warcraftlogs-api-response'];
     }
 
     /**

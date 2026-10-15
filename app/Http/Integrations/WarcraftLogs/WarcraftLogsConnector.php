@@ -2,12 +2,15 @@
 
 namespace App\Http\Integrations\WarcraftLogs;
 
+use App\Http\Integrations\Concerns\HasCacheAwareRateLimits;
+use App\Http\Integrations\ServedFromCache;
 use App\Http\Integrations\WarcraftLogs\Exceptions\ApiException;
 use App\Http\Integrations\WarcraftLogs\Exceptions\GraphQLException;
 use App\Http\Integrations\WarcraftLogs\Middleware\MonitorRateLimit;
 use DateTimeImmutable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
+use Saloon\Enums\PipeOrder;
 use Saloon\Exceptions\Request\FatalRequestException;
 use Saloon\Exceptions\Request\RequestException;
 use Saloon\GraphQL\Traits\HandlesGraphQLErrors;
@@ -22,7 +25,6 @@ use Saloon\PaginationPlugin\Contracts\HasPagination;
 use Saloon\PaginationPlugin\PagedPaginator;
 use Saloon\RateLimitPlugin\Contracts\RateLimitStore;
 use Saloon\RateLimitPlugin\Limit;
-use Saloon\RateLimitPlugin\Traits\HasRateLimits;
 use Saloon\Traits\OAuth2\ClientCredentialsBasicAuthGrant;
 use Saloon\Traits\Plugins\AcceptsJson;
 use Saloon\Traits\Plugins\AlwaysThrowOnErrors;
@@ -42,7 +44,7 @@ class WarcraftLogsConnector extends Connector implements HasPagination
     use HandlesGraphQLErrors {
         getRequestException as getGraphQLRequestException;
     }
-    use HasRateLimits;
+    use HasCacheAwareRateLimits;
 
     private const string TOKEN_CACHE_KEY = 'warcraftlogs:access_token';
 
@@ -52,7 +54,7 @@ class WarcraftLogsConnector extends Connector implements HasPagination
     public ?int $tries = 2;
 
     /**
-     * The store is named $store because HasRateLimits already declares $rateLimitStore.
+     * The store is named $store because HasCacheAwareRateLimits already declares $rateLimitStore.
      */
     public function __construct(
         protected string $clientId,
@@ -60,7 +62,9 @@ class WarcraftLogsConnector extends Connector implements HasPagination
         private readonly RateLimitResetCache $rateLimitReset,
         MonitorRateLimit $monitorRateLimit,
         private readonly RateLimitStore $store,
+        private readonly ServedFromCache $servedFromCache,
     ) {
+        $this->middleware()->onRequest($servedFromCache, 'servedFromCache', PipeOrder::FIRST);
         $this->middleware()->onResponse($monitorRateLimit, 'monitorRateLimit');
     }
 
@@ -173,6 +177,11 @@ class WarcraftLogsConnector extends Connector implements HasPagination
     protected function resolveLimits(): array
     {
         return [];
+    }
+
+    protected function servedFromCache(): ServedFromCache
+    {
+        return $this->servedFromCache;
     }
 
     /**
