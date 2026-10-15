@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Http\Integrations\Discord;
 
-use App\Http\Integrations\Discord\Concerns\HasCaching;
+use App\Http\Integrations\Discord\Concerns\CachesDiscordResponses;
 use App\Http\Integrations\Discord\DiscordConnector;
 use App\Http\Integrations\Discord\Exceptions\ApiException;
 use App\Http\Integrations\Discord\Exceptions\MessageNotFoundException;
@@ -364,7 +364,7 @@ class DiscordProbeRequest extends Request
  */
 class CacheableDiscordProbeRequest extends Request implements Cacheable
 {
-    use HasCaching;
+    use CachesDiscordResponses;
 
     protected Method $method = Method::GET;
 

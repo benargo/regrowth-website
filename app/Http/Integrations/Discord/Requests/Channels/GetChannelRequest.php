@@ -2,7 +2,7 @@
 
 namespace App\Http\Integrations\Discord\Requests\Channels;
 
-use App\Http\Integrations\Discord\Concerns\HasCaching;
+use App\Http\Integrations\Discord\Concerns\CachesDiscordResponses;
 use App\Http\Integrations\Discord\Data\Channels\ChannelData;
 use Saloon\CachePlugin\Contracts\Cacheable;
 use Saloon\Enums\Method;
@@ -14,7 +14,7 @@ use Saloon\Http\Response;
  */
 final class GetChannelRequest extends Request implements Cacheable
 {
-    use HasCaching;
+    use CachesDiscordResponses;
 
     protected Method $method = Method::GET;
 

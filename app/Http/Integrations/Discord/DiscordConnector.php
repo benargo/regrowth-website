@@ -8,6 +8,7 @@ use App\Http\Integrations\Discord\Exceptions\RateLimitedException;
 use App\Http\Integrations\Discord\Exceptions\UserNotInGuildException;
 use App\Http\Integrations\Discord\Middleware\GuardRateLimits;
 use App\Http\Integrations\Discord\Middleware\RecordRateLimits;
+use App\Http\Integrations\ServedFromCache;
 use Saloon\Contracts\Authenticator;
 use Saloon\Enums\PipeOrder;
 use Saloon\Http\Auth\TokenAuthenticator;
@@ -45,15 +46,17 @@ class DiscordConnector extends Connector
     protected int $requestTimeout = 10;
 
     /**
-     * Registers the rate-limit middleware backed by the given rate-limit cache.
+     * Registers the cache-hit marker and the rate-limit middleware backed by the given rate-limit cache.
      */
     public function __construct(
         protected string $token,
         protected string $userAgent,
         RateLimitCache $rateLimits,
+        ServedFromCache $servedFromCache,
     ) {
-        $this->middleware()->onRequest(new GuardRateLimits($rateLimits), 'discordGuardRateLimits', PipeOrder::FIRST);
-        $this->middleware()->onResponse(new RecordRateLimits($rateLimits), 'discordRecordRateLimits', PipeOrder::FIRST);
+        $this->middleware()->onRequest($servedFromCache, 'servedFromCache', PipeOrder::FIRST);
+        $this->middleware()->onRequest(new GuardRateLimits($rateLimits, $servedFromCache), 'discordGuardRateLimits', PipeOrder::FIRST);
+        $this->middleware()->onResponse(new RecordRateLimits($rateLimits, $servedFromCache), 'discordRecordRateLimits', PipeOrder::FIRST);
     }
 
     public function resolveBaseUrl(): string

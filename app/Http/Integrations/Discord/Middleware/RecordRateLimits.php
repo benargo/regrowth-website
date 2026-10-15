@@ -3,6 +3,7 @@
 namespace App\Http\Integrations\Discord\Middleware;
 
 use App\Http\Integrations\Discord\RateLimitCache;
+use App\Http\Integrations\ServedFromCache;
 use JsonException;
 use Saloon\Http\Response;
 
@@ -15,11 +16,12 @@ final class RecordRateLimits
 {
     public function __construct(
         private readonly RateLimitCache $rateLimits,
+        private readonly ServedFromCache $servedFromCache,
     ) {}
 
     public function __invoke(Response $response): void
     {
-        if ($response->isCached()) {
+        if ($this->servedFromCache->check($response)) {
             return;
         }
 

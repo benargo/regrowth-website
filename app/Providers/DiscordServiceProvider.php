@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Http\Integrations\Discord\DiscordConnector;
 use App\Http\Integrations\Discord\RateLimitCache;
+use App\Http\Integrations\ServedFromCache;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\ServiceProvider;
 use RuntimeException;
@@ -20,7 +22,7 @@ class DiscordServiceProvider extends ServiceProvider
         /**
          * Saloon connector for the Discord API. Throws when the bot token or server id is not configured.
          */
-        $this->app->singleton(DiscordConnector::class, function (): DiscordConnector {
+        $this->app->singleton(DiscordConnector::class, function (Application $app): DiscordConnector {
             $token = (string) config('services.discord.token');
 
             if ($token === '') {
@@ -37,6 +39,7 @@ class DiscordServiceProvider extends ServiceProvider
                 $token,
                 "DiscordBot ({$appUrl}, 1.0)",
                 new RateLimitCache(Cache::store()->tags(['discord', 'discord-rate-limit'])),
+                $app->make(ServedFromCache::class),
             );
         });
     }
