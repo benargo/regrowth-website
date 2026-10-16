@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { router } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
+import GameVersionSelector from "@/Components/GameVersions/GameVersionSelector";
 import Icon from "@/Components/FontAwesome/Icon";
 import DateFilterButton from "@/Components/DateFilterButton";
 import normaliseCharacterName from "@/Helpers/NormaliseCharacterName";
@@ -95,12 +96,7 @@ function AttendanceCell({ value, names, plannedAbsence }) {
     return icon;
 }
 
-function MatrixTable({ raids, rows, ranks, plannedAbsences, fetchAttendanceNames, attendanceNamesCache }) {
-    const rankMap = Object.fromEntries(ranks.map((r) => [r.id, r]));
-    const absenceMap = useMemo(
-        () => Object.fromEntries((plannedAbsences ?? []).map((a) => [a.id, a])),
-        [plannedAbsences],
-    );
+function MatrixTable({ raids, rows }) {
     if (rows.length === 0) {
         return (
             <div className="py-16 text-center text-secondary-400">
@@ -129,9 +125,14 @@ function MatrixTable({ raids, rows, ranks, plannedAbsences, fetchAttendanceNames
                                 key={raid.id}
                                 className="px-3 py-3 text-center text-sm font-semibold whitespace-nowrap text-ink-500"
                             >
-                                <Tooltip body={raid.zoneName} position="bottom">
-                                    <p>{raid.dayOfWeek}</p>
-                                    <p>{raid.date}</p>
+                                <Tooltip body={raid.zone_name} position="bottom">
+                                    <p>{new Date(raid.start_time).toLocaleDateString("en-GB", { weekday: "short" })}</p>
+                                    <p>
+                                        {new Date(raid.start_time).toLocaleDateString("en-GB", {
+                                            day: "2-digit",
+                                            month: "2-digit",
+                                        })}
+                                    </p>
                                 </Tooltip>
                             </th>
                         ))}
@@ -139,29 +140,25 @@ function MatrixTable({ raids, rows, ranks, plannedAbsences, fetchAttendanceNames
                 </thead>
                 <tbody className="divide-ink-600 divide-y">
                     {rows.map((row) => {
-                        const cachedNames = attendanceNamesCache.current[row.id];
+                        const { character } = row;
                         return (
-                            <tr
-                                key={row.name}
-                                className="hover:bg-ground-800/50 transition-colors"
-                                onMouseEnter={() => fetchAttendanceNames(row.id)}
-                            >
+                            <tr key={character.id} className="hover:bg-ground-800/50 transition-colors">
                                 <td className="bg-ground-900 px-4 py-2 text-sm font-medium text-white md:sticky md:z-10">
                                     <div className="flex flex-col gap-1 lg:flex-row lg:gap-2">
                                         <p className="flex grow-0 flex-row items-center font-semibold">
-                                            {row.playable_class && (
+                                            {character.playable_class && (
                                                 <img
-                                                    src={row.playable_class.icon_url}
-                                                    alt={row.playable_class.name}
+                                                    src={character.playable_class.icon_url}
+                                                    alt={character.playable_class.name}
                                                     className="mr-2 hidden inline-block h-4 w-4 rounded-xs md:inline-flex"
                                                 />
                                             )}
-                                            {row.name}
+                                            {character.name}
                                         </p>
                                     </div>
                                 </td>
                                 <td className="bg-ground-900 hidden px-4 py-2 text-right text-sm whitespace-nowrap text-secondary-300 md:table-cell lg:sticky lg:z-10">
-                                    <RankLabel rank={rankMap[row.rank_id]} />
+                                    {character.rank && <RankLabel rank={character.rank} />}
                                 </td>
                                 <td className="bg-ground-900 px-4 py-2 text-right text-sm whitespace-nowrap text-secondary-300 lg:sticky lg:z-10">
                                     <span className="hidden md:inline">{row.percentage.toFixed(2)}%</span>
@@ -171,12 +168,8 @@ function MatrixTable({ raids, rows, ranks, plannedAbsences, fetchAttendanceNames
                                     <td key={idx} className="px-3 py-2 text-center">
                                         <AttendanceCell
                                             value={value}
-                                            names={cachedNames?.[idx] ?? []}
-                                            plannedAbsence={
-                                                row.planned_absences?.[idx]
-                                                    ? absenceMap[row.planned_absences[idx]]
-                                                    : null
-                                            }
+                                            names={row.attendance_names?.[idx] ?? []}
+                                            plannedAbsence={row.planned_absences[idx]}
                                         />
                                     </td>
                                 ))}
@@ -191,7 +184,7 @@ function MatrixTable({ raids, rows, ranks, plannedAbsences, fetchAttendanceNames
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-export default function Matrix({ matrix, ranks, zones, guildTags, filters, earliestDate }) {
+export default function Matrix({ matrix, ranks: { data: ranks }, zones: { data: zones }, guildTags: { data: guildTags }, filters, earliestDate, gameVersion, gameVersions }) {
     // ── Client-side filter state (no server reload) ──────────────────────────
     const [characterName, setCharacterName] = useState(filters.character?.name ?? "");
     // null = "all selected" (initial state before matrix loads or after explicit reset)
@@ -208,7 +201,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
         const seen = new Set();
         const result = [];
         for (const row of matrix.rows) {
-            const cls = row.playable_class;
+            const cls = row.character.playable_class;
             if (cls != null && !seen.has(cls.id)) {
                 seen.add(cls.id);
                 result.push(cls);
@@ -238,44 +231,6 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
 
     const [isReloading, setIsReloading] = useState(false);
 
-    // Keyed by character id → array<array<string>>|null (null = pending fetch)
-    const attendanceNamesCache = useRef({});
-    const [, forceUpdate] = useState(0);
-
-    const fetchAttendanceNames = useCallback(
-        (characterId) => {
-            if (attendanceNamesCache.current[characterId] !== undefined) return;
-            attendanceNamesCache.current[characterId] = null; // mark pending
-
-            const params = new URLSearchParams(
-                Object.fromEntries(
-                    Object.entries({ ...buildServerFilters(), character_id: characterId }).filter(
-                        ([, v]) => v !== undefined,
-                    ),
-                ),
-            );
-
-            fetch(`${route("api.attendance.names")}?${params}`, {
-                headers: {
-                    Accept: "application/json",
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.content ?? "",
-                    "X-Requested-With": "XMLHttpRequest",
-                },
-            })
-                .then((r) => (r.ok ? r.json() : null))
-                .then((data) => {
-                    attendanceNamesCache.current[characterId] = data ?? null;
-                    forceUpdate((n) => n + 1);
-                })
-                .catch(() => {
-                    attendanceNamesCache.current[characterId] = null;
-                    forceUpdate((n) => n + 1);
-                });
-        },
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [selectedZoneIds, selectedGuildTagIds, selectedRankIds, sinceDate, beforeDate, includeLinkedCharacters],
-    );
-
     // ── Server-side reload ───────────────────────────────────────────────────
     const buildServerFilters = () => ({
         rank_ids: encodeFilter(selectedRankIds, ranks),
@@ -287,6 +242,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
     });
 
     const reloadMatrix = (filterData) => {
+        router.cancelAll({ sync: false, prefetch: false });
         setIsReloading(true);
         router.reload({
             only: ["matrix"],
@@ -323,9 +279,9 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
     // ── Client-side row filtering ────────────────────────────────────────────
     const filteredRows = (matrix?.rows ?? [])
         .filter(
-            (row) => !characterName || normaliseCharacterName(row.name).includes(normaliseCharacterName(characterName)),
+            (row) => !characterName || normaliseCharacterName(row.character.name).includes(normaliseCharacterName(characterName)),
         )
-        .filter((row) => selectedClassIds === null || selectedClassIds.includes(row.playable_class?.id ?? null));
+        .filter((row) => selectedClassIds === null || selectedClassIds.includes(row.character.playable_class?.id ?? null));
 
     const showSkeleton = !hasEmptyFilter && (isReloading || !matrix);
 
@@ -333,6 +289,13 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
         <Master title="Attendance Matrix">
             <SharedHeader title="Attendance Matrix" backgroundClass="bg-illidan" />
             <PageContainer>
+                {gameVersion && (
+                    <GameVersionSelector
+                        gameVersions={gameVersions.data}
+                        currentGameVersion={gameVersion.data}
+                        href={(version) => route("raiding.attendance.matrix", { game_version: version.slug })}
+                    />
+                )}
                 {/* Filter controls */}
                 <div className="mb-6 space-y-3">
                     {/* Row 1: Client-side filters */}
@@ -385,16 +348,12 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
                 {showSkeleton ? (
                     <MatrixSkeleton />
                 ) : hasEmptyFilter ? (
-                    <MatrixTable key="empty" raids={[]} rows={[]} ranks={ranks} />
+                    <MatrixTable key="empty" raids={[]} rows={[]} />
                 ) : (
                     <MatrixTable
                         key={filteredRows.length === 0 ? "empty" : "data"}
-                        raids={matrix?.raids ?? []}
+                        raids={matrix?.columns ?? []}
                         rows={filteredRows}
-                        ranks={ranks}
-                        plannedAbsences={matrix?.planned_absences}
-                        fetchAttendanceNames={fetchAttendanceNames}
-                        attendanceNamesCache={attendanceNamesCache}
                     />
                 )}
             </PageContainer>

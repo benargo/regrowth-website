@@ -10,15 +10,18 @@ import modelColor from "@/Helpers/ModelColor";
  *
  * The selected tab is drawn in its version's colour.
  *
+ * With `href`, each tab is a link to `href(gameVersion)`, a full visit that drops the current page's state.
+ *
  * Renders nothing when there is at most one version to choose from.
  */
-export default function GameVersionSelector({ gameVersions, currentGameVersion, indicator }) {
+export default function GameVersionSelector({ gameVersions, currentGameVersion, indicator, href }) {
     if (gameVersions.length <= 1) {
         return null;
     }
 
     return (
         <TabNav
+            ariaLabel="Game version"
             currentTab={currentGameVersion?.slug}
             tabs={gameVersions.map((gameVersion) => {
                 // A version without a colour falls back to TabNav's default selected style.
@@ -30,14 +33,18 @@ export default function GameVersionSelector({ gameVersions, currentGameVersion, 
                     indicator: indicator?.(gameVersion),
                     activeClassName: className,
                     style,
-                    // A synchronous visit, unlike router.reload(), cancels an earlier switch still in
-                    // flight, so rapid clicks can't land out of order.
-                    onClick: () =>
-                        router.get(
-                            window.location.href,
-                            { game_version: gameVersion.slug },
-                            { preserveState: true, preserveScroll: true, replace: true },
-                        ),
+                    ...(href
+                        ? { href: href(gameVersion) }
+                        : {
+                            // A synchronous visit, unlike router.reload(), cancels an earlier switch still in
+                            // flight, so rapid clicks can't land out of order.
+                            onClick: () =>
+                                router.get(
+                                    window.location.href,
+                                    { game_version: gameVersion.slug },
+                                    { preserveState: true, preserveScroll: true, replace: true },
+                                ),
+                          }),
                 };
             })}
         />

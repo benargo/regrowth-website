@@ -2,177 +2,156 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\CharacterSummaryResource;
+use App\Actions\Attendance\AverageAttendance;
+use App\Actions\Attendance\BuildAttendanceMatrix;
+use App\Actions\Attendance\FindDroppingOffCharacters;
+use App\Actions\Attendance\FindPickingUpCharacters;
+use App\Actions\Attendance\FindReportDateRange;
+use App\Actions\Attendance\ListBenchedCharacters;
+use App\Actions\Attendance\ListStartedPhases;
+use App\Actions\Attendance\ListUpcomingAbsences;
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Data\Attendance\AttendanceDashboardStatsData;
+use App\Data\Attendance\BenchedCharacterData;
+use App\Data\Attendance\CharacterAttendanceData;
+use App\Http\Middleware\RemembersCurrentGameVersion;
+use App\Http\Resources\CharacterResource;
+use App\Http\Resources\GameVersionResource;
 use App\Http\Resources\PlannedAbsenceResource;
+use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\Phase;
-use App\Models\PlannedAbsence;
-use App\Models\Report;
-use App\Services\Attendance\Calculator;
-use App\Services\Attendance\CharacterAttendanceRowData;
-use App\Services\Attendance\DataTable;
-use App\Services\Attendance\FiltersData;
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
 #[Middleware('auth')]
+#[Middleware(RemembersCurrentGameVersion::class)]
 #[Authorize('view-attendance')]
 class AttendanceDashboardController extends Controller
 {
-    private Request $request;
-
-    public function __construct(
-        private readonly Calculator $calculator,
-        private DataTable $table,
-    ) {}
+    private ?GameVersion $gameVersion;
 
     /**
-     * Display the attendance dashboard.
+     * Display the attendance dashboard of the current game version.
      */
-    public function __invoke(Request $request): Response
+    public function __invoke(): Response
     {
-        $this->request = $request;
+        $gameVersions = GameVersion::withCountedAttendance()->get();
+        $this->gameVersion = ResolveCurrentGameVersion::run($gameVersions);
 
         return Inertia::render('Raiding/Attendance/Dashboard', [
-            'latestReportDate' => $this->latestReportDate(),
-            'stats' => Inertia::defer(fn () => [
-                ...$this->stats(),
-                'upcomingAbsences' => PlannedAbsenceResource::collection($this->upcomingAbsences())
-                    ->toResponse($this->request)
-                    ->getData(true)['data'],
-            ]),
+            'gameVersion' => $this->gameVersion === null ? null : new GameVersionResource($this->gameVersion),
+            'gameVersions' => GameVersionResource::collection($gameVersions),
+            'latestReportDate' => $this->gameVersion === null ? null : FindReportDateRange::run($this->gameVersion)->latest?->toDateString(),
+            'stats' => Inertia::defer(fn (): AttendanceDashboardStatsData => $this->stats()),
         ]);
     }
 
     /**
-     * The date of the most recent report, formatted for display.
+     * Build the attendance statistics of the given game version.
      */
-    private function latestReportDate(): ?string
+    private function stats(): AttendanceDashboardStatsData
     {
-        $raw = Cache::tags(['attendance', 'reports'])->remember(
-            'reports:latest_date',
-            now()->addDay(),
-            fn () => Report::max('start_time'),
-        );
-
-        return $raw ? Carbon::parse($raw)->format('d M Y') : null;
-    }
-
-    /**
-     * Build the full stats payload for the attendance dashboard.
-     *
-     * @return array{above80: array<int, array{name: string, playable_class: array|null}>, between50and80: array<int, array{name: string, playable_class: array|null}>, droppingOff: array<int, array{name: string, playable_class: array|null}>, pickingUp: array<int, array{name: string, playable_class: array|null}>, totalPlayers: int, phaseAttendance: float|null, previousPhaseAttendance: float|null, benchedLastWeek: array<string, array<int, array{name: string, playable_class: mixed}>>}
-     */
-    private function stats(): array
-    {
-        $rows = $this->table->rows();
-
-        $percentageGroups = $rows
-            ->filter(fn (CharacterAttendanceRowData $r) => $r->character->is_main)
-            ->groupBy(fn (CharacterAttendanceRowData $r) => match (true) {
-                $r->percentage >= 80 => '>=80',
-                $r->percentage >= 50 => '50-80',
-                default => '<50',
-            })->map(fn ($group) => $group->map(fn (CharacterAttendanceRowData $r) => $this->toPlayer($r))->values()->all());
-
-        $phases = $this->phases();
+        $rows = $this->gameVersion === null ? collect() : BuildAttendanceMatrix::run($this->gameVersion)->rows;
+        $phases = $this->gameVersion === null ? collect() : ListStartedPhases::run($this->gameVersion);
         $currentPhase = $phases->first();
         $previousPhase = $phases->get(1);
 
-        $phaseAttendance = $currentPhase
-            ? $this->averageAttendanceForRange($currentPhase->start_date, null)
-            : null;
-
-        $previousPhaseAttendance = $previousPhase
-            ? $this->averageAttendanceForRange($previousPhase->start_date, $currentPhase->start_date)
-            : null;
-
-        $droppingOff = collect($this->calculator->findDroppingOff($rows->all()))
-            ->map(fn (CharacterAttendanceRowData $r) => $this->toPlayer($r))
-            ->values()
-            ->all();
-
-        $pickingUp = collect($this->calculator->findPickingUp($rows->all()))
-            ->map(fn (CharacterAttendanceRowData $r) => $this->toPlayer($r))
-            ->values()
-            ->all();
-
-        return [
-            'percentageGroups' => $percentageGroups,
-            'droppingOff' => $droppingOff,
-            'pickingUp' => $pickingUp,
-            'totalPlayers' => $rows->count(),
-            'totalMains' => $rows->filter(fn (CharacterAttendanceRowData $r) => $r->character->is_main)->count(),
-            'totalLinkedCharacters' => $rows->filter(fn (CharacterAttendanceRowData $r) => ! $r->character->is_main)->count(),
-            'phaseAttendance' => $phaseAttendance,
-            'previousPhaseAttendance' => $previousPhaseAttendance,
-            'benchedLastWeek' => $this->calculator->benchedLastWeek(),
-        ];
-    }
-
-    /**
-     * Average the per-character attendance percentages for the given date range.
-     */
-    private function averageAttendanceForRange(?Carbon $since, ?Carbon $before): ?float
-    {
-        $rows = (new DataTable(
-            $this->calculator,
-            new FiltersData(sinceDate: $since, beforeDate: $before),
-        ))->rows()->all();
-
-        return $this->calculator->averageAttendance($rows);
-    }
-
-    /**
-     * Started phases, ordered newest first. Cached to midnight — new phases going live today become visible the next day.
-     *
-     * @return Collection<int, Phase>
-     */
-    private function phases(): Collection
-    {
-        return Phase::hydrate(
-            Cache::tags(['attendance'])->remember(
-                'phases:where_started',
-                now()->endOfDay(),
-                function () {
-                    return Phase::query()
-                        ->whereNotNull('start_date')
-                        ->where('start_date', '<=', now())
-                        ->orderByDesc('start_date')
-                        ->get()
-                        ->toArray();
-                }
-            )
+        return new AttendanceDashboardStatsData(
+            percentageGroups: $rows
+                ->filter(fn (CharacterAttendanceData $row): bool => $row->character->is_main)
+                ->groupBy(fn (CharacterAttendanceData $row): string => match (true) {
+                    $row->percentage >= 80 => '>=80',
+                    $row->percentage >= 50 => '50-80',
+                    default => '<50',
+                })
+                ->map($this->toCharacterResources(...)),
+            droppingOff: $this->toCharacterResources(FindDroppingOffCharacters::run($rows)),
+            pickingUp: $this->toCharacterResources(FindPickingUpCharacters::run($rows)),
+            totalPlayers: $rows->count(),
+            totalMains: $rows->filter(fn (CharacterAttendanceData $row): bool => $row->character->is_main)->count(),
+            totalLinkedCharacters: $rows->reject(fn (CharacterAttendanceData $row): bool => $row->character->is_main)->count(),
+            phaseAttendance: $this->currentPhaseAttendance($currentPhase),
+            previousPhaseAttendance: $this->previousPhaseAttendance($previousPhase, $currentPhase),
+            benchedLastWeek: $this->benchedLastWeek(),
+            upcomingAbsences: $this->upcomingAbsences(),
         );
     }
 
     /**
-     * The next four planned absences starting today or later, with the `character` relation eager-loaded.
+     * Calculate the average attendance for the current phase, or null when no phase is active.
      *
-     * @return Collection<int, PlannedAbsence>
+     * @return float|null the average attendance percentage, or null when no phase is active
      */
-    private function upcomingAbsences(): Collection
+    private function currentPhaseAttendance(?Phase $phase): ?float
     {
-        return PlannedAbsence::query()
-            ->with(['character:id,name,playable_class_id', 'character.playableClass'])
-            ->where('start_date', '>=', now()->startOfDay())
-            ->orderBy('start_date')
-            ->limit(4)
-            ->get();
+        if ($phase === null) {
+            return null;
+        }
+
+        return AverageAttendance::run(
+            BuildAttendanceMatrix::run($this->gameVersion, since: $phase->start_date->subDay())->rows
+        );
     }
 
     /**
-     * Shape a matrix row down to the minimal player payload the dashboard cards render.
+     * Calculate the average attendance for the previous phase, or null when no previous phase exists.
      *
-     * @return array{name: string, playable_class: mixed}
+     * @return float|null the average attendance percentage, or null when no previous phase exists
      */
-    private function toPlayer(CharacterAttendanceRowData $row): array
+    private function previousPhaseAttendance(?Phase $phase, ?Phase $currentPhase): ?float
     {
-        return $row->character?->load('playableClass')->toResource(CharacterSummaryResource::class)->resolve($this->request);
+        if ($phase === null) {
+            return null;
+        }
+
+        return AverageAttendance::run(
+            BuildAttendanceMatrix::run($this->gameVersion, since: $phase->start_date->subDay(), before: $currentPhase?->start_date)->rows
+        );
+    }
+
+    /**
+     * Get the characters that have been benched in the last week, or an empty collection when no game version is active.
+     *
+     * @return Collection<string, Collection<int, BenchedCharacterData>> keyed by guild tag name
+     */
+    private function benchedLastWeek(): Collection
+    {
+        if ($this->gameVersion === null) {
+            return collect();
+        }
+
+        return ListBenchedCharacters::run($this->gameVersion, now()->subDays(7));
+    }
+
+    /**
+     * Get the upcoming absences of the current game version, or an empty collection when no game version is active.
+     *
+     * @return AnonymousResourceCollection<int, PlannedAbsenceResource>
+     */
+    private function upcomingAbsences(): AnonymousResourceCollection
+    {
+        if ($this->gameVersion === null) {
+            return PlannedAbsenceResource::collection([]);
+        }
+
+        return PlannedAbsenceResource::collection(ListUpcomingAbsences::run($this->gameVersion));
+    }
+
+    /**
+     * Convert attendance rows into a collection of character resources with only their playable classes.
+     *
+     * @param  Collection<int, CharacterAttendanceData>  $rows
+     * @return AnonymousResourceCollection<int, CharacterResource>
+     */
+    private function toCharacterResources(Collection $rows): AnonymousResourceCollection
+    {
+        return CharacterResource::collection($rows
+            ->map(fn (CharacterAttendanceData $row): Character => $row->character->withoutRelations()->setRelation('playableClass', $row->character->playableClass))
+            ->values());
     }
 }

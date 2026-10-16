@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Api\AttendanceNamesController;
 use App\Http\Controllers\Api\BlizzardMediaController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\CommentReactionController;
@@ -14,9 +13,6 @@ use App\Http\Controllers\Api\RaidHelper\UpdateCompositionController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\SpellController;
 use Illuminate\Support\Facades\Route;
-
-Route::get('/attendance/names', AttendanceNamesController::class)
-    ->name('api.attendance.names');
 
 Route::get('/blizzard/media', BlizzardMediaController::class)->name('api.blizzard.media');
 

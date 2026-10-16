@@ -95,7 +95,7 @@ Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
 
     // Attendance routes
     Route::get('/attendance', AttendanceDashboardController::class)->name('attendance.dashboard');
-    Route::get('/attendance/graphs', [AttendanceGraphsController::class, 'index'])->name('attendance.graphs.index');
+    Route::get('/attendance/graphs', AttendanceGraphsController::class)->name('attendance.graphs.index');
     Route::get('/attendance/matrix', AttendanceMatrixController::class)->name('attendance.matrix');
 
     // Upcoming events comps and plans routes

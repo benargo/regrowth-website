@@ -2,27 +2,34 @@
 
 namespace Tests\Feature\Raiding;
 
-use App\Models\Character;
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Enums\Presence;
 use App\Models\DiscordRole;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\Permission;
 use App\Models\PlannedAbsence;
 use App\Models\PlayableClass;
-use App\Models\Report;
 use App\Models\User;
-use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\Concerns\BuildsAttendanceFixtures;
 use Tests\TestCase;
 
 #[Group('raiding')]
 class AttendanceGraphsControllerTest extends TestCase
 {
+    use BuildsAttendanceFixtures;
     use RefreshDatabase;
+
+    private GameVersion $gameVersion;
+
+    private GuildRank $rank;
 
     protected function setUp(): void
     {
@@ -37,12 +44,15 @@ class AttendanceGraphsControllerTest extends TestCase
             ['name' => 'Officer', 'position' => 5, 'is_visible' => true]
         );
         $officerRole->givePermissionTo($permission);
+
+        $this->gameVersion = $this->makeAttendanceVersion();
+        $this->rank = $this->makeRank($this->gameVersion);
     }
 
-    // ==================== index: Access Control ====================
+    // ==================== invoke: Access Control ====================
 
     #[Test]
-    public function index_requires_authentication(): void
+    public function invoke_requires_authentication(): void
     {
         $response = $this->get(route('raiding.attendance.graphs.index'));
 
@@ -51,7 +61,7 @@ class AttendanceGraphsControllerTest extends TestCase
 
     #[Group('authorization')]
     #[Test]
-    public function index_forbids_guest_users(): void
+    public function invoke_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
 
@@ -62,7 +72,7 @@ class AttendanceGraphsControllerTest extends TestCase
 
     #[Group('authorization')]
     #[Test]
-    public function index_forbids_member_users(): void
+    public function invoke_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
 
@@ -73,7 +83,7 @@ class AttendanceGraphsControllerTest extends TestCase
 
     #[Group('authorization')]
     #[Test]
-    public function index_forbids_raider_users(): void
+    public function invoke_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
 
@@ -84,7 +94,7 @@ class AttendanceGraphsControllerTest extends TestCase
 
     #[Group('authorization')]
     #[Test]
-    public function index_forbids_loot_councillor_users(): void
+    public function invoke_forbids_loot_councillor_users(): void
     {
         $user = User::factory()->lootCouncillor()->create();
 
@@ -94,7 +104,7 @@ class AttendanceGraphsControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_allows_officer_users(): void
+    public function invoke_allows_officer_users(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -103,10 +113,10 @@ class AttendanceGraphsControllerTest extends TestCase
         $response->assertOk();
     }
 
-    // ==================== index: scatterPoints ====================
+    // ==================== invoke: scatterPoints ====================
 
     #[Test]
-    public function index_scatter_points_prop_is_deferred_and_not_in_initial_response(): void
+    public function invoke_scatter_points_prop_is_deferred_and_not_in_initial_response(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -118,14 +128,10 @@ class AttendanceGraphsControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_scatter_points_returns_one_entry_per_player_with_expected_keys(): void
+    public function invoke_scatter_points_returns_one_entry_per_player_with_expected_keys(): void
     {
-        $rank = GuildRank::factory()->create();
-        $character = Character::factory()->main()->create(['name' => 'Illidan', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->create();
-
-        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(2)]);
-        $report->characters()->attach($character->id, ['presence' => 1]);
+        $character = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Illidan', 'is_main' => true]);
+        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $character);
 
         $user = User::factory()->officer()->create();
 
@@ -147,20 +153,14 @@ class AttendanceGraphsControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_scatter_points_counts_benched_and_other_absences(): void
+    public function invoke_scatter_points_counts_benched_and_other_absences(): void
     {
-        $rank = GuildRank::factory()->create();
-        $character = Character::factory()->main()->create(['name' => 'Maiev', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->create();
+        $character = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Maiev', 'is_main' => true]);
+        $tag = $this->makeTag($this->gameVersion);
 
-        $r1 = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(5)]);
-        $r1->characters()->attach($character->id, ['presence' => 1]);
-
-        $r2 = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(4)]);
-        $r2->characters()->attach($character->id, ['presence' => 2]);
-
-        $r3 = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(3)]);
-        $r3->characters()->attach($character->id, ['presence' => 0]);
+        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00', $tag), $character);
+        $this->attend($this->makeReport($this->gameVersion, '2025-01-02 20:00', $tag), $character, Presence::Benched);
+        $this->attend($this->makeReport($this->gameVersion, '2025-01-03 20:00', $tag), $character, Presence::Absent);
 
         $user = User::factory()->officer()->create();
 
@@ -177,22 +177,18 @@ class AttendanceGraphsControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_scatter_points_counts_planned_absences_covering_raids(): void
+    public function invoke_scatter_points_counts_planned_absences_covering_raids(): void
     {
-        $rank = GuildRank::factory()->create();
-        $character = Character::factory()->main()->create(['name' => 'Tyrande', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->create();
+        $character = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Tyrande', 'is_main' => true]);
+        $tag = $this->makeTag($this->gameVersion);
 
-        $attendedReport = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(10)]);
-        $attendedReport->characters()->attach($character->id, ['presence' => 1]);
-
-        $coveredReport = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(3)]);
-        $coveredReport->characters()->attach($character->id, ['presence' => 0]);
+        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00', $tag), $character);
+        $this->attend($this->makeReport($this->gameVersion, '2025-01-08 20:00', $tag), $character, Presence::Absent);
 
         PlannedAbsence::factory()->create([
             'character_id' => $character->id,
-            'start_date' => now()->subDays(4),
-            'end_date' => now()->subDays(2),
+            'start_date' => '2025-01-07',
+            'end_date' => '2025-01-09',
         ]);
 
         $user = User::factory()->officer()->create();
@@ -208,14 +204,11 @@ class AttendanceGraphsControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_scatter_points_include_playable_class(): void
+    public function invoke_scatter_points_include_playable_class(): void
     {
-        $rank = GuildRank::factory()->create();
         $playableClass = PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
-        $character = Character::factory()->main()->withPlayableClass($playableClass)->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->create();
-        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(3)]);
-        $report->characters()->attach($character->id, ['presence' => 1]);
+        $character = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true, 'playable_class_id' => $playableClass->id]);
+        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $character);
         $user = User::factory()->officer()->create();
 
         $this->actingAs($user)
@@ -230,7 +223,7 @@ class AttendanceGraphsControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_scatter_points_returns_empty_array_when_no_data(): void
+    public function invoke_scatter_points_returns_empty_array_when_no_data(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -241,5 +234,75 @@ class AttendanceGraphsControllerTest extends TestCase
                 ->where('scatterPoints', [])
             )
         );
+    }
+
+    #[Test]
+    public function invoke_scatter_character_carries_an_unwrapped_playable_class(): void
+    {
+        $character = $this->makeCharacter($this->gameVersion, $this->rank, ['playable_class_id' => PlayableClass::factory()->create(['name' => 'Hunter'])->id]);
+        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $character);
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.graphs.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->where('scatterPoints.0.character.playable_class.name', 'Hunter')
+                    ->has('scatterPoints.0.character.playable_class.icon_url')
+                    ->missing('scatterPoints.0.character.rank')));
+    }
+
+    #[Test]
+    public function invoke_renders_empty_scatter_points_without_a_game_version(): void
+    {
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.graphs.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('gameVersion', null)
+                ->loadDeferredProps(fn (Assert $reload) => $reload->where('scatterPoints', [])));
+    }
+
+    #[Test]
+    public function invoke_uses_the_session_game_version(): void
+    {
+        $newer = $this->makeAttendanceVersion(['release_date' => '2024-06-01']);
+        $this->makeReport($newer, '2025-01-01 20:00');
+        $this->makeReport($this->gameVersion, '2025-01-01 20:00');
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $this->gameVersion->slug])
+            ->get(route('raiding.attendance.graphs.index'))
+            ->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', $this->gameVersion->slug));
+    }
+
+    #[Test]
+    public function invoke_payload_query_count_does_not_grow_with_rows(): void
+    {
+        $report = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
+        $this->attend($report, $this->makeCharacter($this->gameVersion, $this->rank));
+        $user = User::factory()->officer()->create();
+        $this->countDeferredQueries($user, 'raiding.attendance.graphs.index', 'scatterPoints');
+        Cache::tags(['attendance'])->flush();
+        $oneRow = $this->countDeferredQueries($user, 'raiding.attendance.graphs.index', 'scatterPoints');
+
+        foreach (range(1, 3) as $ignored) {
+            $this->attend($report, $this->makeCharacter($this->gameVersion, $this->rank));
+        }
+        Cache::tags(['attendance'])->flush();
+
+        $this->assertSame($oneRow, $this->countDeferredQueries($user, 'raiding.attendance.graphs.index', 'scatterPoints'));
+    }
+
+    // ==================== helpers ====================
+
+    private function countDeferredQueries(User $user, string $routeName, string $prop): int
+    {
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $this->actingAs($user)->get(route($routeName))
+            ->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload->has($prop)));
+        DB::disableQueryLog();
+
+        return count(DB::getQueryLog());
     }
 }

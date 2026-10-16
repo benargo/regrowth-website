@@ -4,7 +4,7 @@ namespace Tests\Feature\Data\Attendance;
 
 use App\Actions\Attendance\BuildAttendanceMatrix;
 use App\Data\Attendance\AttendanceScatterPointData;
-use App\Data\Attendance\CharacterAttendanceRowData;
+use App\Data\Attendance\CharacterAttendanceData;
 use App\Enums\Presence;
 use App\Models\Character;
 use App\Models\PlannedAbsence;
@@ -112,9 +112,9 @@ class AttendanceScatterPointDataTest extends TestCase
      * @param  array<int, Presence|null>  $attendance
      * @param  array<int, PlannedAbsence|null>|null  $plannedAbsences
      */
-    private function row(?Character $character = null, float $percentage = 0.0, array $attendance = [], ?array $plannedAbsences = null): CharacterAttendanceRowData
+    private function row(?Character $character = null, float $percentage = 0.0, array $attendance = [], ?array $plannedAbsences = null): CharacterAttendanceData
     {
-        return new CharacterAttendanceRowData(
+        return new CharacterAttendanceData(
             character: $character ?? Character::factory()->create()->load('playableClass'),
             firstAttendance: Carbon::parse('2025-01-01 19:00', 'UTC'),
             totalReports: 0,
