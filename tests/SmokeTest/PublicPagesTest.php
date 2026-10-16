@@ -83,14 +83,4 @@ class PublicPagesTest extends TestCase
         $response->assertOk();
         $response->assertSee('Regrowth');
     }
-
-    #[Group('happy-path')]
-    #[Test]
-    public function daily_quests_page_loads(): void
-    {
-        $response = $this->get(route('daily-quests.index'));
-
-        $response->assertOk();
-        $response->assertSee('Regrowth');
-    }
 }

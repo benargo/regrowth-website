@@ -41,8 +41,6 @@ class DashboardPagesTest extends TestCase
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'view-officer-dashboard', 'guard_name' => 'web']));
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'edit-datasets', 'guard_name' => 'web']));
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'manage-boss-strategies', 'guard_name' => 'web']));
-        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'set-daily-quests', 'guard_name' => 'web']));
-        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'audit-daily-quests', 'guard_name' => 'web']));
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'update-characters', 'guard_name' => 'web']));
 
         Storage::fake('public');
@@ -162,43 +160,6 @@ class DashboardPagesTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Regrowth');
-    }
-
-    // ==================== daily quests pages ====================
-
-    #[Group('happy-path')]
-    #[Test]
-    public function daily_quests_form_page_loads(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('management.daily-quests.form'));
-
-        $response->assertOk();
-        $response->assertSee('Regrowth');
-    }
-
-    #[Group('happy-path')]
-    #[Test]
-    public function daily_quests_audit_page_loads(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('management.daily-quests.audit'));
-
-        $response->assertOk();
-        $response->assertSee('Regrowth');
-    }
-
-    #[Group('authorization')]
-    #[Test]
-    public function daily_quests_audit_page_requires_officer(): void
-    {
-        $user = User::factory()->member()->create();
-
-        $response = $this->actingAs($user)->get(route('management.daily-quests.audit'));
-
-        $response->assertForbidden();
     }
 
     // ==================== permissions pages ====================

@@ -8,8 +8,6 @@ use App\Http\Controllers\AttendanceMatrixController;
 use App\Http\Controllers\BossStrategyController;
 use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\CommentController;
-use App\Http\Controllers\DailyQuestsAuditController;
-use App\Http\Controllers\DailyQuestsController;
 use App\Http\Controllers\Dashboard\AddonController;
 use App\Http\Controllers\Dashboard\AddonSchemaController;
 use App\Http\Controllers\Dashboard\AddonSettingsController;
@@ -140,13 +138,6 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::patch('/boss-strategies/{boss}', [BossStrategyController::class, 'update'])->name('boss-strategies.update');
 
     /**
-     * Daily quests
-     */
-    Route::get('/daily-quests', [DailyQuestsController::class, 'form'])->name('daily-quests.form');
-    Route::post('/daily-quests', [DailyQuestsController::class, 'store'])->name('daily-quests.store');
-    Route::get('/daily-quests/audit', DailyQuestsAuditController::class)->name('daily-quests.audit');
-
-    /**
      * Event templates
      */
     Route::get('/event-templates', [EventTemplateController::class, 'index'])->name('event-templates.index');
@@ -201,15 +192,6 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
             ->scopeBindings()
             ->name('tags.toggle-attendance');
     });
-});
-
-/**
- * Daily quests
- */
-Route::group(['prefix' => 'daily-quests', 'as' => 'daily-quests.'], function () {
-    Route::get('/', [DailyQuestsController::class, 'index'])->name('index');
-    // Route::get('/edit', [DailyQuestsController::class, 'form'])->name('form')->middleware('auth');
-    // Route::post('/store', [DailyQuestsController::class, 'store'])->name('store')->middleware('auth');
 });
 
 /**

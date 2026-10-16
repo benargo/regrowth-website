@@ -91,28 +91,8 @@ export default function Dashboard({ discordRoles }) {
                 </div>
             </Section>
 
-            {/* Daily Quests */}
-            <Section tone="mid" edge="bottom" edgeTone="deep">
-                <div className="container mx-auto px-4">
-                    <DisplayHeading level={2} eyebrow="Daily Quests" className="mb-4">
-                        TBC Selections
-                    </DisplayHeading>
-                    <p className="text-ink-400 mb-4">Manage TBC daily quest selections.</p>
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                        <DashboardCard href={route("management.daily-quests.form")} icon="scroll">
-                            <h3 className="text-md">Set daily quests</h3>
-                            <p className="mb-1 text-sm">Choose today&rsquo;s daily quests and post them to Discord.</p>
-                        </DashboardCard>
-                        <DashboardCard href={route("management.daily-quests.audit")} icon="clipboard-list">
-                            <h3 className="text-md">Audit log</h3>
-                            <p className="mb-1 text-sm">View who posted, updated, or deleted daily quests.</p>
-                        </DashboardCard>
-                    </div>
-                </div>
-            </Section>
-
             {/* Site Management */}
-            <Section tone="deep">
+            <Section tone="mid">
                 <div className="container mx-auto px-4">
                     <DisplayHeading level={2} eyebrow="Site Management" className="mb-4">
                         Settings &amp; Datasets

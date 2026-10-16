@@ -12,10 +12,8 @@ use App\Http\Integrations\Discord\Requests\Messages\CreateMessageRequest;
 use App\Http\Integrations\Discord\Requests\Messages\EditMessageRequest;
 use App\Models\DiscordNotification;
 use App\Models\User;
-use App\Notifications\Attributes\RepostsIfOriginalDeleted;
 use App\Notifications\Concerns\UpdatesExisting;
 use App\Notifications\Contracts\ShouldUpdateExisting;
-use App\Notifications\DailyQuestsMessage;
 use App\Notifications\Discord\DiscordChannel;
 use App\Notifications\Discord\DiscordMessage;
 use Illuminate\Database\Eloquent\Builder;
@@ -44,9 +42,6 @@ abstract class UpdatingMessageFixture extends DiscordMessage implements ShouldUp
         return $query;
     }
 }
-
-#[RepostsIfOriginalDeleted]
-class RepostingMessageFixture extends UpdatingMessageFixture {}
 
 class EditOnlyMessageFixture extends UpdatingMessageFixture {}
 
@@ -244,25 +239,7 @@ class DiscordChannelTest extends TestCase
     // ==================== send — original deleted ====================
 
     #[Test]
-    public function it_deletes_the_stale_record_and_reposts_when_the_discord_message_no_longer_exists(): void
-    {
-        $stale = $this->storedNotification('444444444444444444', RepostingMessageFixture::class);
-
-        $this->fakeDiscord([EditMessageRequest::class => $this->makeDiscordErrorResponse(404, 10008, 'Unknown Message')]);
-        $this->fakeCreatedMessage('555555555555555555');
-
-        $this->driver->send($this->notifiable, new RepostingMessageFixture);
-
-        $this->assertSoftDeleted('discord_notifications', ['id' => $stale->id]);
-        $this->assertDatabaseHas('discord_notifications', [
-            'message_id' => '555555555555555555',
-            'channel_id' => $this->channel->id,
-        ]);
-        Saloon::assertSent(CreateMessageRequest::class);
-    }
-
-    #[Test]
-    public function it_deletes_the_stale_record_without_reposting_when_the_notification_does_not_repost(): void
+    public function it_deletes_the_stale_record_without_reposting_when_the_discord_message_no_longer_exists(): void
     {
         $stale = $this->storedNotification('454545454545454545', EditOnlyMessageFixture::class);
 
@@ -273,23 +250,6 @@ class DiscordChannelTest extends TestCase
 
         $this->assertSoftDeleted('discord_notifications', ['id' => $stale->id]);
         Saloon::assertNotSent(CreateMessageRequest::class);
-    }
-
-    #[Test]
-    public function a_daily_quests_message_reposts_when_its_original_was_deleted(): void
-    {
-        $stale = $this->storedNotification('676767676767676767', DailyQuestsMessage::class);
-
-        $this->fakeDiscord([EditMessageRequest::class => $this->makeDiscordErrorResponse(404, 10008, 'Unknown Message')]);
-        $this->fakeCreatedMessage('787878787878787878');
-
-        $this->driver->send(
-            $this->notifiable,
-            new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]),
-        );
-
-        $this->assertSoftDeleted('discord_notifications', ['id' => $stale->id]);
-        Saloon::assertSent(CreateMessageRequest::class);
     }
 
     // ==================== related models ====================
@@ -447,7 +407,7 @@ class DiscordChannelTest extends TestCase
 
     // ==================== helpers ====================
 
-    private function storedNotification(string $messageId, string $type = DailyQuestsMessage::class): DiscordNotification
+    private function storedNotification(string $messageId, string $type = EditOnlyMessageFixture::class): DiscordNotification
     {
         return DiscordNotification::factory()->create([
             'type' => $type,
@@ -488,7 +448,7 @@ class DiscordChannelTest extends TestCase
     private function databaseRow(MessagePayloadData $payload): array
     {
         return [
-            'type' => DailyQuestsMessage::class,
+            'type' => EditOnlyMessageFixture::class,
             'channel_id' => $this->channel->id,
             'payload' => $payload->toArray(),
             'created_by_user_id' => null,

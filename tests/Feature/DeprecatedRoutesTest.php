@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\DashboardTestCase;
 
 #[Group('platform')]
@@ -91,5 +92,52 @@ class DeprecatedRoutesTest extends DashboardTestCase
 
         $response->assertGone();
         $this->assertFalse($guildTag->fresh()->count_attendance);
+    }
+
+    #[Test]
+    #[Group('deprecated')]
+    public function public_daily_quests_page_is_gone(): void
+    {
+        $this->get('/daily-quests')->assertGone();
+    }
+
+    #[Test]
+    #[Group('deprecated')]
+    public function daily_quests_form_is_gone(): void
+    {
+        $this->actingAs($this->officer)->get('/manage/daily-quests')->assertGone();
+    }
+
+    #[Test]
+    #[Group('deprecated')]
+    public function daily_quests_form_is_gone_for_guests(): void
+    {
+        $this->get('/manage/daily-quests')->assertGone();
+    }
+
+    #[Test]
+    #[Group('deprecated')]
+    public function daily_quests_store_endpoint_is_gone(): void
+    {
+        Saloon::fake([]);
+
+        $this->actingAs($this->officer)->post('/manage/daily-quests', ['cooking_quest_id' => 1])->assertGone();
+
+        Saloon::assertNothingSent();
+        $this->assertDatabaseCount('discord_notifications', 0);
+    }
+
+    #[Test]
+    #[Group('deprecated')]
+    public function daily_quests_audit_page_is_gone(): void
+    {
+        $this->actingAs($this->officer)->get('/manage/daily-quests/audit')->assertGone();
+    }
+
+    #[Test]
+    #[Group('deprecated')]
+    public function daily_quests_audit_page_is_gone_for_guests(): void
+    {
+        $this->get('/manage/daily-quests/audit')->assertGone();
     }
 }

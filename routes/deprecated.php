@@ -25,3 +25,9 @@ Route::put('/manage/phases/{phase}/guild-tags', fn () => abort(410));
 
 // Old guild tag attendance toggle, now scoped to its guild under /manage/warcraftlogs/guilds.
 Route::patch('/datasets/guild-tags/{guildTag}/count-attendance', fn () => abort(410));
+
+// Daily quests were retired with the move to Forever, now return 410 Gone
+Route::get('/daily-quests', fn () => abort(410));
+Route::get('/manage/daily-quests', fn () => abort(410));
+Route::post('/manage/daily-quests', fn () => abort(410));
+Route::get('/manage/daily-quests/audit', fn () => abort(410));

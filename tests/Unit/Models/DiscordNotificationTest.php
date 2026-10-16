@@ -8,7 +8,7 @@ use App\Models\Comment;
 use App\Models\DiscordNotification;
 use App\Models\Event;
 use App\Models\User;
-use App\Notifications\DailyQuestsMessage;
+use App\Notifications\RaidAssignmentsPublished;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -192,9 +192,9 @@ class DiscordNotificationTest extends ModelTestCase
     #[Test]
     public function type_is_stored_and_retrieved_as_fully_qualified_class_name(): void
     {
-        $notification = $this->create(['type' => DailyQuestsMessage::class]);
+        $notification = $this->create(['type' => RaidAssignmentsPublished::class]);
 
-        $this->assertSame(DailyQuestsMessage::class, $notification->fresh()->type);
+        $this->assertSame(RaidAssignmentsPublished::class, $notification->fresh()->type);
     }
 
     #[Test]

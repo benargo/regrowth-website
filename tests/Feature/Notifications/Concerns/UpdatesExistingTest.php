@@ -4,9 +4,9 @@ namespace Tests\Feature\Notifications\Concerns;
 
 use App\Http\Integrations\Discord\Data\Channels\ChannelStub;
 use App\Models\DiscordNotification;
+use App\Notifications\CommentPostedToItem;
 use App\Notifications\Concerns\UpdatesExisting;
 use App\Notifications\Contracts\ShouldUpdateExisting;
-use App\Notifications\DailyQuestsMessage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
@@ -52,7 +52,7 @@ class UpdatesExistingTest extends TestCase
     #[Test]
     public function it_ignores_notifications_of_another_type(): void
     {
-        $this->storedNotification('111111111111111111', type: DailyQuestsMessage::class);
+        $this->storedNotification('111111111111111111', type: CommentPostedToItem::class);
 
         $found = (new UpdatesExistingFixture)->existingNotification(new ChannelStub(self::CHANNEL_ID));
 
