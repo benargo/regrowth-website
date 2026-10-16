@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
     Button,
-    Checkbox,
+    Checkbox as HeadlessCheckbox,
     Description,
     Field,
     Fieldset,
@@ -14,6 +14,7 @@ import {
 } from "@headlessui/react";
 import Icon from "@/Components/FontAwesome/Icon";
 import Tooltip from "@/Components/Tooltip";
+import cn from "@/Helpers/cn";
 import slugify from "@/Helpers/Slugify";
 
 export const controlClassName =
@@ -21,14 +22,24 @@ export const controlClassName =
     "data-focus:border-ink-400 data-focus:outline-2 data-focus:outline-offset-2 data-focus:outline-ink-400 " +
     "data-invalid:border-red-400";
 
-export const buttonClassName =
-    "bg-ink-800 data-focus:outline-ink-400 data-hover:bg-ink-900 inline-flex items-center gap-2 rounded-md px-4 py-2 " +
-    "text-sm font-semibold text-white data-disabled:opacity-50 data-focus:outline-2 data-focus:outline-offset-2";
+const buttonLayoutClassName = "inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold";
 
-/** A Link styled like buttonClassName, such as Edit or Finish. */
+const buttonBaseClassName = `${buttonLayoutClassName} data-disabled:opacity-50 data-focus:outline-2 data-focus:outline-offset-2`;
+
+const buttonClassName = `bg-ink-800 data-hover:bg-ink-900 data-focus:outline-ink-400 text-white ${buttonBaseClassName}`;
+
+/** A quieter button beside a primary one, such as Cancel or Clear. */
+const secondaryButtonClassName =
+    `bg-ground-800 text-secondary-200 inset-ring inset-ring-ink-600 data-hover:bg-ground-700 data-hover:text-white ` +
+    `data-focus:outline-ink-400 ${buttonBaseClassName}`;
+
+/** A button for a destructive action, such as confirming a delete. */
+const dangerButtonClassName = `bg-red-700 data-hover:bg-red-800 data-focus:outline-red-400 text-white ${buttonBaseClassName}`;
+
+/** A Link styled like PrimaryButton, such as Edit or Finish. */
 export const linkButtonClassName =
-    "bg-ink-800 hover:bg-ink-900 focus-visible:outline-ink-400 inline-flex items-center gap-2 rounded-md px-4 py-2 " +
-    "text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2";
+    `bg-ink-800 hover:bg-ink-900 focus-visible:outline-ink-400 text-white focus-visible:outline-2 ` +
+    `focus-visible:outline-offset-2 ${buttonLayoutClassName}`;
 
 /** A quiet text link beside a form's buttons, such as Cancel, Back or Skip. */
 export const linkClassName =
@@ -40,17 +51,14 @@ export const linkClassName =
  * so the control's aria-describedby announces them. With `hintAsTooltip`,
  * the hint is screen-reader-only and sighted users see it in a tooltip
  * beside the label instead.
+ *
+ * `htmlFor` is optional. Without it, the label points at a HeadlessUI
+ * control inside the field that has no `id` of its own, such as a TextInput.
+ * Pass `htmlFor`, matching the control's `id`, when the control sets an `id`
+ * (OptionSelect, SlugInput and CheckboxInput default theirs to `name`) or is
+ * not a HeadlessUI control, such as Autocomplete, DateFilterButton or Checkbox.
  */
-export function FormRow({
-    htmlFor,
-    label,
-    required = false,
-    hint,
-    hintAsTooltip = false,
-    error,
-    className = "",
-    children,
-}) {
+export function FormRow({ htmlFor, label, required = false, hint, hintAsTooltip = false, error, className, children }) {
     const labelContent = (
         <>
             {label}
@@ -63,7 +71,7 @@ export function FormRow({
     );
 
     return (
-        <Field className={`flex flex-col gap-1.5 ${className}`}>
+        <Field className={cn("flex flex-col gap-1.5", className)}>
             <Label htmlFor={htmlFor} className="text-secondary-300 text-sm font-medium">
                 {hint && hintAsTooltip ? (
                     <Tooltip as="span" body={hint}>
@@ -96,18 +104,104 @@ export function RequiredFieldsNote() {
     );
 }
 
-export function OptionSelect({ name, id = name, value, onChange, options, placeholder, invalid, required = false }) {
+/** A validation message shown outside a FormRow. Renders nothing without a message. */
+export function FieldError({ message, id, className }) {
+    if (!message) {
+        return null;
+    }
+
+    return (
+        <p id={id} className={cn("text-sm text-red-300", className)}>
+            {message}
+        </p>
+    );
+}
+
+/**
+ * A HeadlessUI text input with the shared control styling. Other props,
+ * including `ref`, `type`, `invalid` and `autoFocus`, pass through to the
+ * input. `className` is merged over controlClassName.
+ */
+export function TextInput({ className, ...props }) {
+    return <Input {...props} className={cn(controlClassName, className)} />;
+}
+
+const checkboxClassName =
+    "size-4 shrink-0 cursor-pointer rounded border-ink-600 bg-ground-800 checked:bg-ink-600 indeterminate:bg-ink-600 " +
+    "focus:ring-0 focus:ring-offset-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-400 " +
+    "aria-invalid:border-red-400 disabled:cursor-not-allowed disabled:opacity-50";
+
+/**
+ * A native checkbox with the shared styling, for use beside its own
+ * <label>. `checked` and `onChange(event)` are the native ones; `ref`
+ * reaches the input, so callers can set `indeterminate`. `className` is
+ * merged over the shared styling.
+ */
+export function Checkbox({ className, ...props }) {
+    return <input {...props} type="checkbox" className={cn(checkboxClassName, className)} />;
+}
+
+function ActionButton({ variantClassName, processing, disabled, className, children, ...props }) {
+    return (
+        <Button
+            {...props}
+            disabled={disabled || processing}
+            aria-busy={processing || undefined}
+            className={cn(variantClassName, className)}
+        >
+            {children}
+        </Button>
+    );
+}
+
+/**
+ * The main action of a form or dialog. It is `type="button"` unless given
+ * `type="submit"`, and it is disabled while `processing`.
+ */
+export function PrimaryButton(props) {
+    return <ActionButton variantClassName={buttonClassName} {...props} />;
+}
+
+/** A secondary action, such as Cancel. Same props as PrimaryButton. */
+export function SecondaryButton(props) {
+    return <ActionButton variantClassName={secondaryButtonClassName} {...props} />;
+}
+
+/** A destructive action, such as Delete. Same props as PrimaryButton. */
+export function DangerButton(props) {
+    return <ActionButton variantClassName={dangerButtonClassName} {...props} />;
+}
+
+/**
+ * A HeadlessUI select built from `options` (`[{ value, label }]`). The empty
+ * placeholder option renders only when `placeholder` is given. onChange
+ * receives the chosen value as a string. `className` is merged over
+ * controlClassName.
+ */
+export function OptionSelect({
+    name,
+    id = name,
+    value,
+    onChange,
+    options,
+    placeholder,
+    invalid,
+    required = false,
+    className,
+    ...props
+}) {
     return (
         <Select
+            {...props}
             id={id}
             name={name}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             invalid={invalid}
             required={required}
-            className={controlClassName}
+            className={cn(controlClassName, className)}
         >
-            <option value="">{placeholder}</option>
+            {placeholder !== undefined && <option value="">{placeholder}</option>}
             {options.map((option) => (
                 <option key={option.value} value={option.value}>
                     {option.label}
@@ -123,7 +217,7 @@ export function OptionSelect({ name, id = name, value, onChange, options, placeh
  */
 export function CheckboxInput({ name, id = name, checked, onChange, invalid }) {
     return (
-        <Checkbox
+        <HeadlessCheckbox
             id={id}
             name={name}
             checked={checked}
@@ -141,7 +235,7 @@ export function CheckboxInput({ name, id = name, checked, onChange, invalid }) {
             >
                 <path d="M3 8L6 11L11 3.5" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-        </Checkbox>
+        </HeadlessCheckbox>
     );
 }
 
@@ -214,7 +308,7 @@ export function RadioCardGroup({ id, name, value, onChange, options, invalid, cl
  * maxLength (optional) applies to the converted slug, not the native
  * attribute, which would cut the raw text short before it was converted.
  */
-export function SlugInput({ name, id = name, value, onChange, onBlur, maxLength, invalid, ...props }) {
+export function SlugInput({ name, id = name, value, onChange, onBlur, maxLength, invalid, className, ...props }) {
     const [draft, setDraft] = useState(value ?? "");
     const [previousValue, setPreviousValue] = useState(value);
 
@@ -255,8 +349,8 @@ export function SlugInput({ name, id = name, value, onChange, onBlur, maxLength,
             autoComplete="off"
             autoCapitalize="none"
             spellCheck={false}
-            className={controlClassName}
             {...props}
+            className={cn(controlClassName, className)}
         />
     );
 }
@@ -328,9 +422,9 @@ export function firstError(errors, field) {
 export function SaveButton({ processing, label, processingLabel = "Saving…" }) {
     return (
         <div>
-            <Button type="submit" disabled={processing} className={buttonClassName}>
+            <PrimaryButton type="submit" processing={processing}>
                 {processing ? processingLabel : label}
-            </Button>
+            </PrimaryButton>
         </div>
     );
 }
