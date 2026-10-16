@@ -10,7 +10,7 @@ import SpecIcon from "@/Components/Characters/SpecIcon";
 import SpecBadge from "@/Components/Characters/SpecBadge";
 import CharacterPortrait from "@/Components/Characters/CharacterPortrait";
 import EmptyState from "@/Components/EmptyState";
-import ToolNav from "@/Components/ToolNav";
+import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import raidSpec from "@/Helpers/RaidSpec";
 import useCharacterPortraitChannel from "@/Hooks/useCharacterPortraitChannel";
 
@@ -95,13 +95,12 @@ export default function Show({ character: { data: character }, roster_url, recen
 
             <ToolNav>
                 <div className="flex-initial space-x-4">
-                    <Link
+                    <ToolNavLink
                         href={roster_url}
-                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-ground-800 active:border-primary"
                     >
                         <Icon icon="arrow-left" style="solid" className="mr-2" />
                         <span>Roster</span>
-                    </Link>
+                    </ToolNavLink>
                 </div>
             </ToolNav>
 

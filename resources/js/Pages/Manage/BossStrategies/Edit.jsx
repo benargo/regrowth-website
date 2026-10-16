@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { useForm, Link, router } from "@inertiajs/react";
+import { useForm, router } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
+import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import MarkdownEditor from "@/Components/MarkdownEditor";
 import ImageManager from "@/Components/ImageManager";
 import Icon from "@/Components/FontAwesome/Icon";
@@ -145,21 +146,12 @@ export default function EditBossStrategy({ boss }) {
     return (
         <Master title={`Edit Strategy — ${boss.name}`}>
             <SharedHeader title={boss.name} backgroundClass={boss.raid.background ?? "bg-officer-meeting"} />
-            <nav className="bg-ground-900 shadow">
-                <div className="container mx-auto max-w-4xl px-4">
-                    <div className="flex min-h-12 flex-col items-center justify-between md:flex-row">
-                        <div className="flex-initial space-x-4">
-                            <Link
-                                href={route("management.boss-strategies.index")}
-                                className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-ground-800 active:border-primary"
-                            >
-                                <Icon icon="arrow-left" style="solid" className="mr-2" />
-                                <span>Back to {boss.raid.name} strategies</span>
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </nav>
+            <ToolNav>
+                <ToolNavLink href={route("management.boss-strategies.index")}>
+                    <Icon icon="arrow-left" style="solid" className="mr-2" />
+                    <span>Back to {boss.raid.name} strategies</span>
+                </ToolNavLink>
+            </ToolNav>
             <PageContainer>
                 <p className="text-md mb-6">
                     Use the editor below to write strategy notes for this boss. You can also upload images to illustrate

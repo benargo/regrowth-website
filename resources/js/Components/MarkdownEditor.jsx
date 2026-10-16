@@ -1,10 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import FormatButton from "@/Components/FormatButton";
 import Icon from "@/Components/FontAwesome/Icon";
-import InputError from "@/Components/InputError";
+import { FieldError, FormRow, PrimaryButton, SecondaryButton, TextInput } from "@/Components/FormControls";
 import Modal from "@/Components/Modal";
-import PrimaryButton from "@/Components/PrimaryButton";
-import SecondaryButton from "@/Components/SecondaryButton";
 
 /**
  * All available format button configurations
@@ -456,7 +454,7 @@ export default function MarkdownEditor({
                 />
             </div>
             <div>
-                <InputError message={validationError || error} className="mt-2" />
+                <FieldError message={validationError || error} className="mt-2" />
             </div>
 
             <Modal show={showWowheadModal} onClose={handleWowheadCancel} maxWidth="md">
@@ -465,29 +463,29 @@ export default function MarkdownEditor({
                     <p className="mt-1 text-sm text-secondary-400">Paste a Wowhead URL for an item or spell.</p>
 
                     <div className="mt-4">
-                        <input
-                            type="text"
-                            value={wowheadUrl}
-                            onChange={(e) => {
-                                setWowheadUrl(e.target.value);
-                                setWowheadError(null);
-                            }}
-                            placeholder="https://www.wowhead.com/tbc/item=28438/dragonmaw"
-                            className="w-full rounded-md border-ink-500 bg-ground-800 text-white placeholder-gray-400 focus:border-primary focus:ring-primary"
-                            autoFocus
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    handleWowheadConfirm();
-                                }
-                            }}
-                        />
-                        <InputError message={wowheadError} className="mt-2" />
+                        <FormRow label="Wowhead URL" error={wowheadError}>
+                            <TextInput
+                                value={wowheadUrl}
+                                onChange={(e) => {
+                                    setWowheadUrl(e.target.value);
+                                    setWowheadError(null);
+                                }}
+                                placeholder="https://www.wowhead.com/tbc/item=28438/dragonmaw"
+                                invalid={!!wowheadError}
+                                autoFocus
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        handleWowheadConfirm();
+                                    }
+                                }}
+                            />
+                        </FormRow>
                     </div>
 
                     <div className="mt-6 flex justify-end gap-3">
                         <SecondaryButton onClick={handleWowheadCancel}>Cancel</SecondaryButton>
-                        <PrimaryButton onClick={handleWowheadConfirm}>Insert Link</PrimaryButton>
+                        <PrimaryButton onClick={handleWowheadConfirm}>Insert link</PrimaryButton>
                     </div>
                 </div>
             </Modal>
@@ -498,35 +496,29 @@ export default function MarkdownEditor({
                     <p className="mt-1 text-sm text-secondary-400">Enter a URL and optional display text.</p>
 
                     <div className="mt-4 space-y-4">
-                        <div>
-                            <label htmlFor="link-url" className="block text-sm font-medium text-secondary-300">
-                                URL
-                            </label>
-                            <input
-                                id="link-url"
-                                type="text"
+                        <FormRow label="URL" error={linkError}>
+                            <TextInput
                                 value={linkUrl}
                                 onChange={(e) => {
                                     setLinkUrl(e.target.value);
                                     setLinkError(null);
                                 }}
                                 placeholder="https://example.com"
-                                className="mt-1 w-full rounded-md border-ink-500 bg-ground-800 text-white placeholder-gray-400 focus:border-primary focus:ring-primary"
+                                invalid={!!linkError}
                                 autoFocus
                             />
-                            <InputError message={linkError} className="mt-2" />
-                        </div>
-                        <div>
-                            <label htmlFor="link-text" className="block text-sm font-medium text-secondary-300">
-                                Display Text <span className="text-secondary-500">(optional)</span>
-                            </label>
-                            <input
-                                id="link-text"
-                                type="text"
+                        </FormRow>
+                        <FormRow
+                            label={
+                                <>
+                                    Display text <span className="text-secondary-500">(optional)</span>
+                                </>
+                            }
+                        >
+                            <TextInput
                                 value={linkText}
                                 onChange={(e) => setLinkText(e.target.value)}
                                 placeholder="Click here"
-                                className="mt-1 w-full rounded-md border-ink-500 bg-ground-800 text-white placeholder-gray-400 focus:border-primary focus:ring-primary"
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter") {
                                         e.preventDefault();
@@ -534,12 +526,12 @@ export default function MarkdownEditor({
                                     }
                                 }}
                             />
-                        </div>
+                        </FormRow>
                     </div>
 
                     <div className="mt-6 flex justify-end gap-3">
                         <SecondaryButton onClick={handleLinkCancel}>Cancel</SecondaryButton>
-                        <PrimaryButton onClick={handleLinkConfirm}>Insert Link</PrimaryButton>
+                        <PrimaryButton onClick={handleLinkConfirm}>Insert link</PrimaryButton>
                     </div>
                 </div>
             </Modal>

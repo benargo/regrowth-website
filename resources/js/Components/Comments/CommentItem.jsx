@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { usePage } from "@inertiajs/react";
 import { usePermission } from "@/Components/Authorizable";
-import Checkbox from "@/Components/Checkbox";
+import { Checkbox } from "@/Components/FormControls";
 import CommentForm from "@/Components/Comments/CommentForm";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
@@ -171,7 +171,7 @@ export default function CommentItem({
                                         id={`resolve-${comment.id}`}
                                         checked={comment.is_resolved}
                                         onChange={handleResolveToggle}
-                                        className="cursor-pointer checked:bg-green-400 hover:checked:bg-green-600"
+                                        className="checked:bg-green-400 hover:checked:bg-green-600"
                                     />
                                     <label
                                         htmlFor={`resolve-${comment.id}`}

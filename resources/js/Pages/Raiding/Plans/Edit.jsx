@@ -12,7 +12,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Link, router, usePage } from "@inertiajs/react";
+import { router, usePage } from "@inertiajs/react";
 import { useEchoNotification } from "@laravel/echo-react";
 import FlashMessage from "@/Components/FlashMessage";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
@@ -23,8 +23,9 @@ import { BenchedTable, GroupTable } from "@/Components/Events/GroupTable";
 import MetaCard, { MetaItem } from "@/Components/MetaCard";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
+import { PrimaryButton, SecondaryButton } from "@/Components/FormControls";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
-import ToolNav from "@/Components/ToolNav";
+import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import PageContainer from "@/Components/PageContainer";
 import formatDate from "@/Helpers/FormatDate";
 import formatDuration from "@/Helpers/FormatDuration";
@@ -644,26 +645,15 @@ function ApplyTemplateModal({ eventId, templates, onClose }) {
                                         ))}
                                     </div>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={() => handleApply(template)}
-                                    disabled={!!applying}
-                                    className="shrink-0 rounded bg-ink-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-ink-500 disabled:opacity-50"
-                                >
+                                <PrimaryButton onClick={() => handleApply(template)} processing={applying === template.id} disabled={!!applying} className="shrink-0">
                                     {applying === template.id ? "Applying…" : "Apply"}
-                                </button>
+                                </PrimaryButton>
                             </div>
                         ))}
                     </div>
                 )}
                 <div className="mt-6 flex justify-end">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="rounded border border-secondary-600 px-4 py-2 text-sm text-secondary-300 transition-colors hover:bg-secondary-600/20"
-                    >
-                        Cancel
-                    </button>
+                    <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
                 </div>
             </div>
         </Modal>
@@ -1360,14 +1350,10 @@ export default function Edit({ event, targetMarkers, templates }) {
             <SharedHeader title={event.title} backgroundClass={event.background} />
             <ToolNav>
                 <div className="flex-initial space-x-4">
-                    <Link
-                        href={route("raiding.plans.show", event.id)}
-                        preserveScroll
-                        className="hover:border-primary hover:bg-ground-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
-                    >
+                    <ToolNavLink href={route("raiding.plans.show", event.id)} preserveScroll>
                         <Icon icon="arrow-left" style="solid" className="mr-1 text-xs" />
                         Back to {event.title}
-                    </Link>
+                    </ToolNavLink>
                 </div>
                 <div className="flex items-center space-x-4">
                     <AutoSaveLabel saving={saving > 0} />

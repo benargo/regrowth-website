@@ -16,9 +16,8 @@ import {
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import Checkbox from "@/Components/Checkbox";
 import Icon from "@/Components/FontAwesome/Icon";
-import { buttonClassName, controlClassName } from "@/Components/FormControls";
+import { Checkbox, PrimaryButton, TextInput } from "@/Components/FormControls";
 
 /**
  * The rank's in-game colour, from the --color-guild-rank-{slug} theme
@@ -165,9 +164,8 @@ function AddRankRow({ onAdd }) {
             <label htmlFor="guild-rank-new-name" className="sr-only">
                 New rank name
             </label>
-            <input
+            <TextInput
                 id="guild-rank-new-name"
-                type="text"
                 value={name}
                 maxLength={255}
                 placeholder="Rank name"
@@ -178,12 +176,12 @@ function AddRankRow({ onAdd }) {
                         add();
                     }
                 }}
-                className={`${controlClassName} min-w-0 flex-1 basis-48`}
+                className="min-w-0 flex-1 basis-48"
             />
-            <button type="button" onClick={add} className={buttonClassName}>
-                <Icon icon="plus" className="mr-2" />
+            <PrimaryButton onClick={add}>
+                <Icon icon="plus" />
                 Add rank
-            </button>
+            </PrimaryButton>
         </div>
     );
 }

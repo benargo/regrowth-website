@@ -7,7 +7,7 @@ import Pagination from "@/Components/Pagination";
 import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
 import ItemIcon from "@/Components/Items/ItemIcon";
-import ToolNav from "@/Components/ToolNav";
+import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import useExpandedThreads from "@/Hooks/useExpandedThreads";
 
 export default function Comments({ comments, replies }) {
@@ -87,13 +87,10 @@ export default function Comments({ comments, replies }) {
             <SharedHeader backgroundClass="bg-vashj-and-kaelthas" title="Loot Bias" />
 
             <ToolNav>
-                <Link
-                    href={route("loot.index")}
-                    className="hover:border-primary hover:bg-ground-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
-                >
+                <ToolNavLink href={route("loot.index")}>
                     <Icon icon="arrow-left" style="solid" className="mr-2" />
                     <span>Back to loot biases</span>
-                </Link>
+                </ToolNavLink>
             </ToolNav>
 
             {/* Content */}

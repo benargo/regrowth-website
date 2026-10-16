@@ -1,9 +1,8 @@
-import { Link } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
 import Icon from "@/Components/FontAwesome/Icon";
-import ToolNav from "@/Components/ToolNav";
+import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import BossStrategy from "@/Components/Bosses/BossStrategy";
 
 export default function ShowBossStrategy({ boss }) {
@@ -13,13 +12,10 @@ export default function ShowBossStrategy({ boss }) {
         <Master title={boss.name}>
             <SharedHeader title={boss.name} backgroundClass={boss.raid.background ?? "bg-officer-meeting"} />
             <ToolNav>
-                <Link
-                    href={route("raiding.boss-strategies.index")}
-                    className="hover:border-primary hover:bg-ground-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
-                >
+                <ToolNavLink href={route("raiding.boss-strategies.index")}>
                     <Icon icon="arrow-left" style="solid" className="mr-2" />
                     <span>Back to {boss.raid.name} strategies</span>
-                </Link>
+                </ToolNavLink>
             </ToolNav>
             <PageContainer>
                 <div className="grid grid-cols-2">

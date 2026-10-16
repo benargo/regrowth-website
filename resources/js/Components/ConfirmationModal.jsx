@@ -1,7 +1,5 @@
 import Modal from '@/Components/Modal';
-import DangerButton from '@/Components/DangerButton';
-import PrimaryButton from '@/Components/PrimaryButton';
-import SecondaryButton from '@/Components/SecondaryButton';
+import { DangerButton, PrimaryButton, SecondaryButton } from '@/Components/FormControls';
 
 export default function ConfirmationModal({
     show = false,
@@ -24,10 +22,10 @@ export default function ConfirmationModal({
                 <h2 className="mb-2 text-lg font-semibold">{title}</h2>
                 <div className="mb-6 text-sm text-secondary-400">{children}</div>
                 <div className="flex justify-end gap-3">
-                    <SecondaryButton type="button" onClick={onClose} disabled={processing}>
+                    <SecondaryButton onClick={onClose} disabled={processing}>
                         {cancelLabel}
                     </SecondaryButton>
-                    <ConfirmButton type="button" onClick={onConfirm} disabled={processing}>
+                    <ConfirmButton onClick={onConfirm} processing={processing}>
                         {processing ? processingLabel : confirmLabel}
                     </ConfirmButton>
                 </div>

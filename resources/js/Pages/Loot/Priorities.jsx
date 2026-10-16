@@ -1,9 +1,9 @@
 import { Fragment } from "react";
-import { Deferred, Link } from "@inertiajs/react";
+import { Deferred } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
-import ToolNav from "@/Components/ToolNav";
+import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import Icon from "@/Components/FontAwesome/Icon";
 import useLocalStorage from "@/Hooks/useLocalStorage";
 import useLootPrioritiesChannel from "@/Hooks/useLootPrioritiesChannel";
@@ -286,13 +286,10 @@ export default function Priorities({ phases, table }) {
             <SharedHeader backgroundClass="bg-vashj-and-kaelthas" title="Highest priority stats" />
             <ToolNav>
                 <div className="flex items-center space-x-4">
-                    <Link
-                        href={route("loot.index")}
-                        className="hover:border-primary hover:bg-ground-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
-                    >
+                    <ToolNavLink href={route("loot.index")}>
                         <Icon icon="arrow-left" style="solid" className="mr-2" />
                         <span>Back to loot bias tool</span>
-                    </Link>
+                    </ToolNavLink>
                 </div>
             </ToolNav>
             <PageContainer>

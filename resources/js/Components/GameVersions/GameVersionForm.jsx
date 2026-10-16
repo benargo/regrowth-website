@@ -1,6 +1,5 @@
-import { Input } from "@headlessui/react";
 import DetailsForm from "@/Components/Datasets/DetailsForm";
-import { FormRow, FormSection, controlClassName } from "@/Components/FormControls";
+import { FormRow, FormSection, TextInput } from "@/Components/FormControls";
 
 const FIELD_LABELS = {
     title: "Title",
@@ -68,7 +67,7 @@ export default function GameVersionForm({ form, options, gameVersion = null, ...
                                 label={FIELD_LABELS.slug}
                                 hint="Set when the game version was created. It can't be changed."
                             >
-                                <Input id="slug" value={gameVersion.slug} disabled className={controlClassName} />
+                                <TextInput id="slug" value={gameVersion.slug} disabled />
                             </FormRow>
                         )}
                         <FormRow

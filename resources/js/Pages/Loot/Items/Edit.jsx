@@ -12,17 +12,18 @@ import {
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useDroppable } from "@dnd-kit/core";
-import { Link, router, useForm } from "@inertiajs/react";
+import { router, useForm } from "@inertiajs/react";
 import { useSocketId } from "@laravel/echo-react";
 import useItemChannel from "@/Hooks/useItemChannel";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Icon from "@/Components/FontAwesome/Icon";
+import { PrimaryButton } from "@/Components/FormControls";
 import CommentsSection from "@/Components/Comments/CommentsSection";
 import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
 import MarkdownEditor from "@/Components/MarkdownEditor";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
-import ToolNav from "@/Components/ToolNav";
+import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import Master from "@/Layouts/Master";
 import getItemRaid from "@/Helpers/GetItemRaid";
 
@@ -353,14 +354,10 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
         return (
             <div className="py-8 text-center">
                 <p className="mb-4 text-secondary-400">No biases assigned to this item.</p>
-                <button
-                    type="button"
-                    onClick={() => handleAddNewWeight(0)}
-                    className="inline-flex items-center gap-2 rounded-md bg-ink-600 px-4 py-2 text-white transition-colors hover:bg-ink-700"
-                >
+                <PrimaryButton onClick={() => handleAddNewWeight(0)}>
                     <Icon icon="plus" style="solid" />
                     Add first bias level
-                </button>
+                </PrimaryButton>
                 <PriorityPickerModal
                     isOpen={showPicker}
                     onClose={() => {
@@ -556,13 +553,10 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
             {/* Tool navigation */}
             <ToolNav>
                 <div className="flex-initial space-x-4">
-                    <Link
-                        href={route("loot.items.show", { item: item.data.id, slug: item.data.slug })}
-                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-ground-800 active:border-primary"
-                    >
+                    <ToolNavLink href={route("loot.items.show", { item: item.data.id, slug: item.data.slug })}>
                         <Icon icon="arrow-left" style="solid" className="mr-2" />
                         <span>Finish editing {item.data.name}</span>
-                    </Link>
+                    </ToolNavLink>
                 </div>
                 <div className="flex space-x-4">
                     <AutoSaveLabel processing={saving} />

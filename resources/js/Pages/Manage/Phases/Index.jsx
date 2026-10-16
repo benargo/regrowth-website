@@ -3,14 +3,10 @@ import { useState } from "react";
 import Master from "@/Layouts/Master";
 import Collapsible from "@/Components/Collapsible";
 import Icon from "@/Components/FontAwesome/Icon";
-import InputError from "@/Components/InputError";
-import InputLabel from "@/Components/InputLabel";
+import { FormRow, PrimaryButton, SecondaryButton, TextInput } from "@/Components/FormControls";
 import Modal from "@/Components/Modal";
 import SharedHeader from "@/Components/SharedHeader";
-import TextInput from "@/Components/TextInput";
 import PageContainer from "@/Components/PageContainer";
-import PrimaryButton from "@/Components/PrimaryButton";
-import SecondaryButton from "@/Components/SecondaryButton";
 
 export default function ManagePhases({ phases, current_phase }) {
     const [editingPhase, setEditingPhase] = useState(null);
@@ -167,22 +163,20 @@ export default function ManagePhases({ phases, current_phase }) {
                         Enter the start date and time in Europe/Paris timezone (server time).
                     </p>
                     <div className="mt-4">
-                        <InputLabel htmlFor="start_date" value="Start Date (Europe/Paris)" className="text-secondary-400" />
-                        <TextInput
-                            id="start_date"
-                            type="datetime-local"
-                            value={data.start_date}
-                            onChange={(e) => setData("start_date", e.target.value)}
-                            className="bg-ground-800/50 mt-1 block w-full text-white"
-                        />
-                        <InputError message={errors.start_date} className="mt-2" />
+                        <FormRow label="Start date (Europe/Paris)" error={errors.start_date}>
+                            <TextInput
+                                type="datetime-local"
+                                value={data.start_date}
+                                onChange={(e) => setData("start_date", e.target.value)}
+                                invalid={!!errors.start_date}
+                                className="scheme-dark"
+                            />
+                        </FormRow>
                     </div>
                     <div className="mt-6 flex justify-end gap-3">
-                        <SecondaryButton type="button" onClick={closeModal}>
-                            Cancel
-                        </SecondaryButton>
+                        <SecondaryButton onClick={closeModal}>Cancel</SecondaryButton>
                         <PrimaryButton type="submit" processing={processing}>
-                            {processing ? "Saving..." : "Save"}
+                            {processing ? "Saving…" : "Save"}
                         </PrimaryButton>
                     </div>
                 </form>
