@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback } from "react";
 import Master from "@/Layouts/Master";
-import { Link } from "@inertiajs/react";
 import useItemChannel from "@/Hooks/useItemChannel";
 import CommentsSection from "@/Components/Comments/CommentsSection";
 import Icon from "@/Components/FontAwesome/Icon";
@@ -8,7 +7,7 @@ import SharedHeader from "@/Components/SharedHeader";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import { Can } from "@/Components/Authorizable";
 import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
-import ToolNav from "@/Components/ToolNav";
+import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import PageContainer from "@/Components/PageContainer";
 import getItemRaid from "@/Helpers/GetItemRaid";
 
@@ -110,24 +109,18 @@ export default function Show({ item, comments, replies }) {
             <ToolNav>
                 {raid && (
                     <div className="flex-initial space-x-4">
-                        <Link
-                            href={route("loot.raids.show", { raid: raid.id, name: raid.slug })}
-                            className="hover:border-primary hover:bg-ground-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
-                        >
+                        <ToolNavLink href={route("loot.raids.show", { raid: raid.id, name: raid.slug })}>
                             <Icon icon="arrow-left" style="solid" className="mr-2" />
                             <span>Back to {raid.name} loot</span>
-                        </Link>
+                        </ToolNavLink>
                     </div>
                 )}
                 <div className="flex items-center space-x-4">
                     <Can permission="edit-items">
-                        <Link
-                            href={route("loot.items.edit", { item: item.data.id, slug: item.data.slug })}
-                            className="hover:border-primary hover:bg-ground-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
-                        >
+                        <ToolNavLink href={route("loot.items.edit", { item: item.data.id, slug: item.data.slug })}>
                             <Icon icon="edit" style="solid" className="mr-2" />
                             <span>Edit this item</span>
-                        </Link>
+                        </ToolNavLink>
                     </Can>
                 </div>
             </ToolNav>

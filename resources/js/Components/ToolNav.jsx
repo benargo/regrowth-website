@@ -1,6 +1,7 @@
 import { Link } from "@inertiajs/react";
 import { useEffect, useRef } from "react";
 import Icon from "@/Components/FontAwesome/Icon";
+import cn from "@/Helpers/cn";
 
 export function ToolNavSteps({ label = "Progress", steps, currentKey }) {
     const firstSegmentShape = "[clip-path:polygon(0_0,calc(100%-12px)_0,100%_50%,calc(100%-12px)_100%,0_100%)]";
@@ -67,10 +68,13 @@ export function ToolNavSteps({ label = "Progress", steps, currentKey }) {
     );
 }
 
-export function ToolNavLink({ as: Component = Link, className = "", children, ...props }) {
+export function ToolNavLink({ as: Component = Link, className, children, ...props }) {
     return (
         <Component
-            className={`hover:border-primary hover:bg-ground-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white ${className}`}
+            className={cn(
+                "hover:border-primary hover:bg-ground-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white",
+                className,
+            )}
             {...props}
         >
             {children}

@@ -3,7 +3,7 @@ import { Link, router } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import SharedHeader from "@/Components/SharedHeader";
-import ToolNav from "@/Components/ToolNav";
+import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import Master from "@/Layouts/Master";
 import PageContainer from "@/Components/PageContainer";
 
@@ -70,13 +70,10 @@ export default function Index({ templates, raidGroups }) {
             <SharedHeader backgroundClass="bg-vashj-and-kaelthas" title="Event Templates" />
             <ToolNav>
                 <div className="flex-initial space-x-4">
-                    <Link
-                        href={route("management.dashboard")}
-                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-ground-800 active:border-primary"
-                    >
+                    <ToolNavLink href={route("management.dashboard")}>
                         <Icon icon="arrow-left" style="solid" className="mr-1 text-xs" />
                         Back to officers' dashboard
-                    </Link>
+                    </ToolNavLink>
                 </div>
             </ToolNav>
 

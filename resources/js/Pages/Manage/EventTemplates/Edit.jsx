@@ -12,7 +12,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Link, router, useForm } from "@inertiajs/react";
+import { router, useForm } from "@inertiajs/react";
 import FilterDropdown from "@/Components/FilterDropdown";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Collapsible from "@/Components/Collapsible";
@@ -22,7 +22,7 @@ import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import Tooltip from "@/Components/Tooltip";
-import ToolNav from "@/Components/ToolNav";
+import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import Master from "@/Layouts/Master";
 import PageContainer from "@/Components/PageContainer";
 import { labelFromSide, storageFromSide, colorClassFromSide, textClassFromSide } from "@/Helpers/AssignmentCellHelpers";
@@ -1112,13 +1112,10 @@ export default function Edit({ template, targetMarkers, raids }) {
             <SharedHeader title={template.title} backgroundClass={template.background ?? "bg-vashj-and-kaelthas"} />
             <ToolNav>
                 <div className="flex-initial space-x-4">
-                    <Link
-                        href={route("management.event-templates.index")}
-                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-ground-800 active:border-primary"
-                    >
+                    <ToolNavLink href={route("management.event-templates.index")}>
                         <Icon icon="arrow-left" style="solid" className="mr-1 text-xs" />
                         Back to templates
-                    </Link>
+                    </ToolNavLink>
                 </div>
                 <div className="flex items-center space-x-4">
                     <AutoSaveLabel saving={saving > 0} />

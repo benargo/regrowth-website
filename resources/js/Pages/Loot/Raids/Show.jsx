@@ -1,11 +1,11 @@
 import Master from "@/Layouts/Master";
 import { useState, useRef, useEffect } from "react";
-import { router, Link } from "@inertiajs/react";
+import { router } from "@inertiajs/react";
 import Collapsible from "@/Components/Collapsible";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import PageContainer from "@/Components/PageContainer";
-import ToolNav from "@/Components/ToolNav";
+import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import ItemRow from "@/Components/Loot/ItemRow";
 
 function prepareItems(rawItems) {
@@ -172,13 +172,10 @@ export default function Index({ raid, boss_items, trash_items, priority_weight_t
                 subtitle={raid.data.name}
             />
             <ToolNav>
-                <Link
-                    href={route("loot.index")}
-                    className="hover:border-primary hover:bg-ground-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
-                >
+                <ToolNavLink href={route("loot.index")}>
                     <Icon icon="arrow-left" style="solid" className="mr-2" />
                     <span>Loot bias tool</span>
-                </Link>
+                </ToolNavLink>
             </ToolNav>
             {/* Content */}
             <PageContainer>

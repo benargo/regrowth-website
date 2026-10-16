@@ -12,7 +12,7 @@ import {
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useDroppable } from "@dnd-kit/core";
-import { Link, router, useForm } from "@inertiajs/react";
+import { router, useForm } from "@inertiajs/react";
 import { useSocketId } from "@laravel/echo-react";
 import useItemChannel from "@/Hooks/useItemChannel";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
@@ -22,7 +22,7 @@ import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
 import MarkdownEditor from "@/Components/MarkdownEditor";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
-import ToolNav from "@/Components/ToolNav";
+import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import Master from "@/Layouts/Master";
 import getItemRaid from "@/Helpers/GetItemRaid";
 
@@ -556,13 +556,10 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
             {/* Tool navigation */}
             <ToolNav>
                 <div className="flex-initial space-x-4">
-                    <Link
-                        href={route("loot.items.show", { item: item.data.id, slug: item.data.slug })}
-                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-ground-800 active:border-primary"
-                    >
+                    <ToolNavLink href={route("loot.items.show", { item: item.data.id, slug: item.data.slug })}>
                         <Icon icon="arrow-left" style="solid" className="mr-2" />
                         <span>Finish editing {item.data.name}</span>
-                    </Link>
+                    </ToolNavLink>
                 </div>
                 <div className="flex space-x-4">
                     <AutoSaveLabel processing={saving} />
