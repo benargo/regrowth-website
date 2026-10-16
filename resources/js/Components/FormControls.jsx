@@ -222,10 +222,10 @@ export function CheckboxInput({ name, id = name, checked, onChange, invalid }) {
             name={name}
             checked={checked}
             onChange={onChange}
-            invalid={invalid}
+            aria-invalid={invalid ? true : undefined}
             className={
                 "group border-ink-600 bg-ground-800 data-checked:bg-ink-600 data-focus:outline-ink-400 " +
-                "block size-10.5 rounded border p-2 data-focus:outline-2 data-focus:outline-offset-2 data-invalid:border-red-400"
+                "block size-10.5 rounded border p-2 aria-invalid:border-red-400 data-focus:outline-2 data-focus:outline-offset-2"
             }
         >
             <svg
