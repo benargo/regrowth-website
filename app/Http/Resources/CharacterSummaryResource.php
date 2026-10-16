@@ -6,6 +6,9 @@ use App\Contracts\HasCharacterMedia;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @deprecated Use CharacterResource, loading only the relations the page needs.
+ */
 class CharacterSummaryResource extends JsonResource
 {
     /**

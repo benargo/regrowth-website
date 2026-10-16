@@ -44,7 +44,7 @@ class PlannedAbsenceResource extends JsonResource
             'deleted_at' => $this->deleted_at?->toDateTimeString(),
             'meta' => [
                 'has_started' => $this->start_date->lte(today()),
-                'has_ended' => ($this->end_date ?? $this->start_date)->lt(today()),
+                'has_ended' => $this->end_date?->lt(today()) ?? false,
             ],
         ];
     }

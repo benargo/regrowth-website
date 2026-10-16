@@ -192,12 +192,12 @@ class PlannedAbsenceResourceTest extends TestCase
     }
 
     #[Test]
-    public function meta_has_ended_from_the_start_date_when_open_ended(): void
+    public function meta_never_has_ended_when_open_ended(): void
     {
         $this->mockRequestUser();
         $this->freezeTime();
 
-        $this->assertTrue($this->meta(['start_date' => today()->subDay(), 'end_date' => null])['has_ended']);
+        $this->assertFalse($this->meta(['start_date' => today()->subMonth(), 'end_date' => null])['has_ended']);
         $this->assertFalse($this->meta(['start_date' => today(), 'end_date' => null])['has_ended']);
     }
 

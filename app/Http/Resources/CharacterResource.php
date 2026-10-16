@@ -36,7 +36,7 @@ class CharacterResource extends JsonResource
             'is_loot_councillor' => $this->is_loot_councillor,
             'portrait_url' => $this->whenLoaded('media', fn () => $this->getFirstMediaUrl(HasCharacterMedia::MEDIA_COLLECTION) ?: null),
             'planned_absences' => $this->whenLoaded('plannedAbsences', fn () => PlannedAbsenceResource::collection($this->plannedAbsences)),
-            'playable_class' => $this->whenLoaded('playableClass', fn () => (new PlayableClassResource($this->playableClass))->resolve($request)),
+            'playable_class' => $this->whenLoaded('playableClass', fn () => $this->playableClass?->toResource()->resolve($request)),
             'playable_race' => $this->whenLoaded('playableRace', fn () => (new PlayableRaceResource($this->playableRace))->resolve($request)),
             'gender' => $this->gender,
             'pivot' => $this->whenPivotLoaded('pivot_characters_raid_reports', fn () => [

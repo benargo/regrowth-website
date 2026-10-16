@@ -112,10 +112,21 @@ class CharacterResourceTest extends TestCase
 
         $array = (new CharacterResource($character->load('playableClass')))->toArray(new Request);
 
+        $this->assertIsArray($array['playable_class']);
         $this->assertSame($playableClass->id, $array['playable_class']['id']);
         $this->assertSame('Warrior', $array['playable_class']['name']);
         $this->assertSame('warrior', $array['playable_class']['slug']);
         $this->assertNull($array['playable_class']['icon_url']);
+    }
+
+    #[Test]
+    public function it_returns_null_playable_class_when_loaded_but_unset(): void
+    {
+        $character = Character::factory()->create(['playable_class_id' => null]);
+
+        $array = (new CharacterResource($character->load('playableClass')))->toArray(new Request);
+
+        $this->assertNull($array['playable_class']);
     }
 
     // ==================== playable race relation ====================
