@@ -3,7 +3,7 @@
 namespace Tests\Feature\Actions\Attendance;
 
 use App\Actions\Attendance\CombineLinkedCharacters;
-use App\Data\Attendance\CharacterAttendanceRowData;
+use App\Data\Attendance\CharacterAttendanceData;
 use App\Enums\Presence;
 use App\Models\Character;
 use App\Models\GameVersion;
@@ -127,6 +127,7 @@ class CombineLinkedCharactersTest extends TestCase
         $this->assertCount(1, $rows);
         $this->assertTrue($rows[0]->character->is($main));
         $this->assertTrue($rows[0]->character->relationLoaded('playableClass'));
+        $this->assertTrue($rows[0]->character->relationLoaded('rank'));
         $this->assertSame([Presence::Present, null], $rows[0]->attendance);
         $this->assertSame(1, $rows[0]->totalReports);
         $this->assertTrue($rows[0]->firstAttendance->eq(Carbon::parse('2025-01-08 19:00', 'UTC')));
@@ -181,7 +182,7 @@ class CombineLinkedCharactersTest extends TestCase
     }
 
     /**
-     * @param  array<int, CharacterAttendanceRowData>  $rows
+     * @param  array<int, CharacterAttendanceData>  $rows
      */
     private function combine(array $rows, int $raidCount): Collection
     {
@@ -192,9 +193,9 @@ class CombineLinkedCharactersTest extends TestCase
      * @param  array<int, Presence|null>  $attendance
      * @param  array<int, PlannedAbsence|null>|null  $plannedAbsences
      */
-    private function row(Character $character, array $attendance, ?array $plannedAbsences = null, string $firstAttendance = '2025-01-01 19:00'): CharacterAttendanceRowData
+    private function row(Character $character, array $attendance, ?array $plannedAbsences = null, string $firstAttendance = '2025-01-01 19:00'): CharacterAttendanceData
     {
-        return new CharacterAttendanceRowData(
+        return new CharacterAttendanceData(
             character: $character->fresh(['rank', 'linkedCharacters', 'playableClass.media']),
             firstAttendance: Carbon::parse($firstAttendance, 'UTC'),
             totalReports: 0,

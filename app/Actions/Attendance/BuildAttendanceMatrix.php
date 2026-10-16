@@ -3,7 +3,7 @@
 namespace App\Actions\Attendance;
 
 use App\Data\Attendance\AttendanceMatrixData;
-use App\Data\Attendance\CharacterAttendanceRowData;
+use App\Data\Attendance\CharacterAttendanceData;
 use App\Data\Attendance\PlayerPresenceData;
 use App\Data\Attendance\ReportClusterData;
 use App\Enums\Presence;
@@ -55,31 +55,15 @@ class BuildAttendanceMatrix
             $rows = CombineLinkedCharacters::run($rows, $resolvedRankIds, $clusters->count());
         }
 
-        return new AttendanceMatrixData(columns: $this->columns($clusters), rows: $rows);
-    }
+        $rows->each(fn (CharacterAttendanceData $row): Character => $row->character->unsetRelation('linkedCharacters'));
 
-    /**
-     * @param  Collection<int, ReportClusterData>  $clusters  Oldest first.
-     * @return Collection<int, array{id: string, code: string|null, dayOfWeek: string, date: string, zoneName: string|null}>
-     */
-    private function columns(Collection $clusters): Collection
-    {
-        return $clusters
-            ->map(fn (ReportClusterData $cluster): array => [
-                'id' => $cluster->id(),
-                'code' => $cluster->code(),
-                'dayOfWeek' => $cluster->startTime()->format('D'),
-                'date' => $cluster->startTime()->format('d/m'),
-                'zoneName' => $cluster->zoneName(),
-            ])
-            ->reverse()
-            ->values();
+        return new AttendanceMatrixData(columns: $clusters->reverse()->values(), rows: $rows);
     }
 
     /**
      * @param  Collection<int, ReportClusterData>  $clusters  Oldest first.
      * @param  array<int, int>  $rankIds
-     * @return Collection<int, CharacterAttendanceRowData>
+     * @return Collection<int, CharacterAttendanceData>
      */
     private function rows(Collection $clusters, array $rankIds, bool $includeLinkedCharacters): Collection
     {
@@ -89,7 +73,7 @@ class BuildAttendanceMatrix
 
         /** @var array<int, array{startTime: CarbonInterface, players: Collection<int, PlayerPresenceData>}> $snapshots */
         $snapshots = $clusters
-            ->map(fn (ReportClusterData $cluster): array => ['startTime' => $cluster->startTime(), 'players' => $cluster->players()])
+            ->map(fn (ReportClusterData $cluster): array => ['startTime' => $cluster->startTime, 'players' => $cluster->players])
             ->all();
 
         $firstIndexes = [];
@@ -101,7 +85,7 @@ class BuildAttendanceMatrix
         }
 
         $characters = Character::whereIn('id', array_keys($firstIndexes))
-            ->with(['rank', 'linkedCharacters', 'playableClass.media'])
+            ->with(['linkedCharacters', 'playableClass.media', 'rank'])
             ->get()
             ->when($includeLinkedCharacters, fn (EloquentCollection $characters) => $characters->filter(
                 fn (Character $character): bool => in_array($character->rank_id, $rankIds, true)
@@ -111,13 +95,13 @@ class BuildAttendanceMatrix
         $absencesByCharacterId = PlannedAbsence::whereIn('character_id', $characters->modelKeys())->get()->groupBy('character_id');
 
         return $characters
-            ->map(fn (Character $character): CharacterAttendanceRowData => $this->row(
+            ->map(fn (Character $character): CharacterAttendanceData => $this->row(
                 $character,
                 $snapshots,
                 $firstIndexes[$character->id],
                 $absencesByCharacterId->get($character->id, collect()),
             ))
-            ->sortBy(fn (CharacterAttendanceRowData $row): string => $row->character->name, SORT_STRING)
+            ->sortBy(fn (CharacterAttendanceData $row): string => $row->character->name, SORT_STRING)
             ->values();
     }
 
@@ -125,7 +109,7 @@ class BuildAttendanceMatrix
      * @param  array<int, array{startTime: CarbonInterface, players: Collection<int, PlayerPresenceData>}>  $snapshots  Oldest first.
      * @param  Collection<int, PlannedAbsence>  $absences
      */
-    private function row(Character $character, array $snapshots, int $firstIndex, Collection $absences): CharacterAttendanceRowData
+    private function row(Character $character, array $snapshots, int $firstIndex, Collection $absences): CharacterAttendanceData
     {
         $attendance = [];
         $plannedAbsences = [];
@@ -156,7 +140,7 @@ class BuildAttendanceMatrix
             }
         }
 
-        return new CharacterAttendanceRowData(
+        return new CharacterAttendanceData(
             character: $character,
             firstAttendance: $snapshots[$firstIndex]['startTime'],
             totalReports: $totalReports,

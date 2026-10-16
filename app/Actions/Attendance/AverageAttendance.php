@@ -2,7 +2,7 @@
 
 namespace App\Actions\Attendance;
 
-use App\Data\Attendance\CharacterAttendanceRowData;
+use App\Data\Attendance\CharacterAttendanceData;
 use Illuminate\Support\Collection;
 use Lorisleiva\Actions\Concerns\AsAction;
 
@@ -14,7 +14,7 @@ class AverageAttendance
     use AsAction;
 
     /**
-     * @param  Collection<int, CharacterAttendanceRowData>  $rows
+     * @param  Collection<int, CharacterAttendanceData>  $rows
      * @return float|null The mean to one decimal place, or null when there are no rows.
      */
     public function handle(Collection $rows): ?float

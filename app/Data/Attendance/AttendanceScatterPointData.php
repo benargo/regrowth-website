@@ -31,14 +31,15 @@ final class AttendanceScatterPointData extends Resource
     ) {}
 
     /**
-     * `raidsTotal` counts every raid with a presence, planned absences included.
+     * `raidsTotal` counts every raid with a presence, planned absences included. The
+     * character carries only its playable class.
      */
-    public static function fromRow(CharacterAttendanceRowData $row): self
+    public static function fromRow(CharacterAttendanceData $row): self
     {
         $attendance = collect($row->attendance);
 
         return new self(
-            character: $row->character,
+            character: $row->character->withoutRelations()->setRelation('playableClass', $row->character->playableClass),
             percentage: $row->percentage,
             raidsTotal: $attendance->whereNotNull()->count(),
             raidsAttended: $attendance->filter(fn (?Presence $presence): bool => $presence === Presence::Present)->count(),

@@ -2,7 +2,7 @@
 
 namespace App\Actions\Attendance;
 
-use App\Data\Attendance\CharacterAttendanceRowData;
+use App\Data\Attendance\CharacterAttendanceData;
 use Illuminate\Support\Collection;
 use Lorisleiva\Actions\Concerns\AsAction;
 
@@ -15,13 +15,13 @@ class FindPickingUpCharacters
     use AsAction;
 
     /**
-     * @param  Collection<int, CharacterAttendanceRowData>  $rows
-     * @return Collection<int, CharacterAttendanceRowData>
+     * @param  Collection<int, CharacterAttendanceData>  $rows
+     * @return Collection<int, CharacterAttendanceData>
      */
     public function handle(Collection $rows): Collection
     {
         return $rows
-            ->filter(function (CharacterAttendanceRowData $row): bool {
+            ->filter(function (CharacterAttendanceData $row): bool {
                 $recentRate = $row->recentAttendanceRate();
 
                 return $recentRate !== null && $row->percentage <= 75 && $recentRate - $row->percentage >= 25;

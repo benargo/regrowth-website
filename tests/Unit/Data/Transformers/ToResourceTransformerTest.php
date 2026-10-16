@@ -3,6 +3,7 @@
 namespace Tests\Unit\Data\Transformers;
 
 use App\Data\Transformers\ToResourceTransformer;
+use App\Http\Resources\CharacterSummaryResource;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Mockery;
@@ -50,22 +51,37 @@ class ToResourceTransformerTest extends TestCase
         $this->assertSame(['id' => 42, 'visible' => 'shown'], $transformed);
     }
 
+    #[Test]
+    #[Group('happy-path')]
+    public function it_resolves_the_given_resource_class(): void
+    {
+        $model = $this->mockModelReturningResource(new JsonResource(['id' => 42]), CharacterSummaryResource::class);
+
+        $transformed = $this->transform($model, CharacterSummaryResource::class);
+
+        $this->assertSame(['id' => 42], $transformed);
+    }
+
     // ==================== helpers ====================
 
-    private function mockModelReturningResource(JsonResource $resource): Model
+    /**
+     * @param  class-string<JsonResource>|null  $resourceClass
+     */
+    private function mockModelReturningResource(JsonResource $resource, ?string $resourceClass = null): Model
     {
         $model = Mockery::mock(Model::class);
-        $model->shouldReceive('toResource')->once()->withNoArgs()->andReturn($resource);
+        $model->shouldReceive('toResource')->once()->with($resourceClass)->andReturn($resource);
 
         return $model;
     }
 
     /**
+     * @param  class-string<JsonResource>|null  $resourceClass
      * @return array<string, mixed>
      */
-    private function transform(Model $model): array
+    private function transform(Model $model, ?string $resourceClass = null): array
     {
-        return (new ToResourceTransformer)->transform(
+        return (new ToResourceTransformer($resourceClass))->transform(
             Mockery::mock(DataProperty::class),
             $model,
             Mockery::mock(TransformationContext::class),

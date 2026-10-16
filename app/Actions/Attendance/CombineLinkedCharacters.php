@@ -2,7 +2,7 @@
 
 namespace App\Actions\Attendance;
 
-use App\Data\Attendance\CharacterAttendanceRowData;
+use App\Data\Attendance\CharacterAttendanceData;
 use App\Enums\Presence;
 use App\Models\Character;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -17,19 +17,19 @@ class CombineLinkedCharacters
     use AsAction;
 
     /**
-     * @var array<int, array<int, CharacterAttendanceRowData>> Indexed by main character ID, then by alt character ID.
+     * @var array<int, array<int, CharacterAttendanceData>> Indexed by main character ID, then by alt character ID.
      */
     private array $altRowsByMainId = [];
 
     /**
-     * @param  Collection<int, CharacterAttendanceRowData>  $rows  Characters loaded with `linkedCharacters`.
+     * @param  Collection<int, CharacterAttendanceData>  $rows  Characters loaded with `linkedCharacters`.
      * @param  array<int, int>  $rankIds
-     * @return Collection<int, CharacterAttendanceRowData>
+     * @return Collection<int, CharacterAttendanceData>
      */
     public function handle(Collection $rows, array $rankIds, int $raidCount): Collection
     {
-        $rowsById = $rows->keyBy(fn (CharacterAttendanceRowData $row): int => $row->character->id)
-            ->each(function (CharacterAttendanceRowData $row): void {
+        $rowsById = $rows->keyBy(fn (CharacterAttendanceData $row): int => $row->character->id)
+            ->each(function (CharacterAttendanceData $row): void {
                 $main = $row->character->is_main ? null : $row->character->linkedCharacters->firstWhere('is_main', true);
 
                 if ($main !== null) {
@@ -37,20 +37,20 @@ class CombineLinkedCharacters
                 }
             });
 
-        $mainRows = $rowsById->filter(fn (CharacterAttendanceRowData $row): bool => $row->character->is_main);
+        $mainRows = $rowsById->filter(fn (CharacterAttendanceData $row): bool => $row->character->is_main);
 
         $missingMains = $this->loadMissingMains(array_diff(array_keys($this->altRowsByMainId), $mainRows->keys()->all()));
 
         return $mainRows->values()
-            ->concat($missingMains->map(fn (Character $main): CharacterAttendanceRowData => $this->emptyRow($main, data_get($this->altRowsByMainId, $main->id, []), $raidCount)))
-            ->filter(fn (CharacterAttendanceRowData $row): bool => in_array($row->character->rank_id, $rankIds, true))
-            ->map(fn (CharacterAttendanceRowData $row): CharacterAttendanceRowData => $this->merge($row, data_get($this->altRowsByMainId, $row->character->id, []), $raidCount))
-            ->sortBy(fn (CharacterAttendanceRowData $row): string => $row->character->name, SORT_STRING)
+            ->concat($missingMains->map(fn (Character $main): CharacterAttendanceData => $this->emptyRow($main, data_get($this->altRowsByMainId, $main->id, []), $raidCount)))
+            ->filter(fn (CharacterAttendanceData $row): bool => in_array($row->character->rank_id, $rankIds, true))
+            ->map(fn (CharacterAttendanceData $row): CharacterAttendanceData => $this->merge($row, data_get($this->altRowsByMainId, $row->character->id, []), $raidCount))
+            ->sortBy(fn (CharacterAttendanceData $row): string => $row->character->name, SORT_STRING)
             ->values();
     }
 
     /**
-     * Load the main characters with the given IDs, with their rank, linked characters and class media.
+     * Load the main characters with the given IDs, with their linked characters, class media and rank.
      *
      * @param  array<int, int>  $mainIds
      * @return EloquentCollection<int, Character>
@@ -58,18 +58,18 @@ class CombineLinkedCharacters
     private function loadMissingMains(array $mainIds): EloquentCollection
     {
         return Character::whereIn('id', $mainIds)
-            ->with(['rank', 'linkedCharacters', 'playableClass.media'])
+            ->with(['linkedCharacters', 'playableClass.media', 'rank'])
             ->get();
     }
 
     /**
-     * @param  array<int, CharacterAttendanceRowData>  $altRows
+     * @param  array<int, CharacterAttendanceData>  $altRows
      */
-    private function emptyRow(Character $main, array $altRows, int $raidCount): CharacterAttendanceRowData
+    private function emptyRow(Character $main, array $altRows, int $raidCount): CharacterAttendanceData
     {
-        return new CharacterAttendanceRowData(
+        return new CharacterAttendanceData(
             character: $main,
-            firstAttendance: collect($altRows)->min(fn (CharacterAttendanceRowData $row) => $row->firstAttendance),
+            firstAttendance: collect($altRows)->min(fn (CharacterAttendanceData $row) => $row->firstAttendance),
             totalReports: 0,
             reportsAttended: 0,
             percentage: 0.0,
@@ -79,9 +79,9 @@ class CombineLinkedCharacters
     }
 
     /**
-     * @param  array<int, CharacterAttendanceRowData>  $altRows
+     * @param  array<int, CharacterAttendanceData>  $altRows
      */
-    private function merge(CharacterAttendanceRowData $mainRow, array $altRows, int $raidCount): CharacterAttendanceRowData
+    private function merge(CharacterAttendanceData $mainRow, array $altRows, int $raidCount): CharacterAttendanceData
     {
         $allRows = collect([$mainRow, ...$altRows]);
         $attendance = [];
@@ -91,15 +91,15 @@ class CombineLinkedCharacters
 
         for ($index = 0; $index < $raidCount; $index++) {
             $best = $allRows
-                ->map(fn (CharacterAttendanceRowData $row): ?Presence => $row->attendance[$index] ?? null)
+                ->map(fn (CharacterAttendanceData $row): ?Presence => $row->attendance[$index] ?? null)
                 ->whereNotNull()
                 ->sortByDesc(fn (Presence $presence): int => $presence->priority())
                 ->first();
 
             $attendance[] = $best;
             $attendanceNames[] = $allRows
-                ->filter(fn (CharacterAttendanceRowData $row): bool => ($row->attendance[$index] ?? null)?->isAttended() ?? false)
-                ->map(fn (CharacterAttendanceRowData $row): string => $row->character->name)
+                ->filter(fn (CharacterAttendanceData $row): bool => ($row->attendance[$index] ?? null)?->isAttended() ?? false)
+                ->map(fn (CharacterAttendanceData $row): string => $row->character->name)
                 ->values()
                 ->all();
 
@@ -114,9 +114,9 @@ class CombineLinkedCharacters
             }
         }
 
-        return new CharacterAttendanceRowData(
+        return new CharacterAttendanceData(
             character: $mainRow->character,
-            firstAttendance: $allRows->min(fn (CharacterAttendanceRowData $row) => $row->firstAttendance),
+            firstAttendance: $allRows->min(fn (CharacterAttendanceData $row) => $row->firstAttendance),
             totalReports: $totalReports,
             reportsAttended: $reportsAttended,
             percentage: $totalReports > 0 ? round($reportsAttended / $totalReports * 100, 2) : 0.0,

@@ -3,7 +3,8 @@
 namespace Tests\Unit\Data\Attendance;
 
 use App\Data\Attendance\AttendanceMatrixData;
-use App\Data\Attendance\CharacterAttendanceRowData;
+use App\Data\Attendance\CharacterAttendanceData;
+use App\Data\Attendance\ReportClusterData;
 use App\Models\Character;
 use Carbon\Carbon;
 use PHPUnit\Framework\Attributes\Group;
@@ -17,10 +18,16 @@ class AttendanceMatrixDataTest extends TestCase
     public function it_exposes_its_columns_and_rows(): void
     {
         $columns = collect([
-            ['id' => 'r1', 'code' => 'ABC', 'dayOfWeek' => 'Wed', 'date' => '01/01', 'zoneName' => 'Karazhan'],
+            new ReportClusterData(
+                id: 'r1',
+                code: null,
+                startTime: Carbon::parse('2025-01-01 19:00', 'UTC'),
+                zoneName: null,
+                players: collect(),
+            ),
         ]);
         $rows = collect([
-            new CharacterAttendanceRowData(
+            new CharacterAttendanceData(
                 character: Character::factory()->withoutParents()->make(['id' => 1]),
                 firstAttendance: Carbon::parse('2025-01-01 19:00', 'UTC'),
                 totalReports: 1,

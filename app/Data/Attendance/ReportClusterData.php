@@ -2,12 +2,12 @@
 
 namespace App\Data\Attendance;
 
-use App\Enums\Presence;
-use App\Models\Report;
-use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
-use InvalidArgumentException;
+use Spatie\LaravelData\Attributes\Hidden;
+use Spatie\LaravelData\Attributes\WithTransformer;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Transformers\DateTimeInterfaceTransformer;
 
 /**
  * One raid: a single report, or reports joined by report links.
@@ -15,97 +15,20 @@ use Spatie\LaravelData\Data;
 final class ReportClusterData extends Data
 {
     /**
-     * @param  Collection<int, Report>  $reports  eager-loaded with characters (with pivot.presence) and zone
+     * @param  string  $id  a single report id, or the sorted report ids joined with '+'
+     * @param  string|null  $code  the sorted non-null report codes joined with '+', or null when every report is manual
+     * @param  CarbonInterface  $startTime  the earliest report's start time
+     * @param  string|null  $zoneName  the earliest report's zone name
+     * @param  Collection<int, PlayerPresenceData>  $players  merged presence across the cluster, keyed by character id
      */
     public function __construct(
-        public readonly Collection $reports,
-    ) {
-        if ($this->reports->isEmpty()) {
-            throw new InvalidArgumentException('ReportClusterData requires at least one report.');
-        }
-    }
-
-    /**
-     * A single report id, or the sorted report ids joined with '+' for a merged cluster.
-     */
-    public function id(): string
-    {
-        if ($this->reports->count() === 1) {
-            return $this->reports->first()->id;
-        }
-
-        return $this->reports->pluck('id')->sort()->values()->implode('+');
-    }
-
-    /**
-     * A single code, sorted non-null codes joined with '+', or null when all reports are manual.
-     */
-    public function code(): ?string
-    {
-        $codes = $this->reports->pluck('code')->filter()->sort()->values();
-
-        return $codes->isEmpty() ? null : $codes->implode('+');
-    }
-
-    public function startTime(): Carbon
-    {
-        return $this->reports->sortBy('start_time')->first()->start_time;
-    }
-
-    public function zoneName(): ?string
-    {
-        $zone = $this->reports->sortBy('start_time')->first()->zone;
-
-        return ($zone === null || $zone->id === 0) ? null : $zone->name;
-    }
-
-    public function isMerged(): bool
-    {
-        return $this->reports->count() > 1;
-    }
-
-    /**
-     * Merged per-character presence across the cluster, keyed by character id. The
-     * presence with the highest priority wins; an unknown stored value counts as absent.
-     *
-     * @return Collection<int, PlayerPresenceData>
-     */
-    public function players(): Collection
-    {
-        $merged = [];
-
-        foreach ($this->reports as $report) {
-            foreach ($report->characters as $character) {
-                $presence = Presence::tryFrom((int) $character->pivot->presence) ?? Presence::Absent;
-
-                if (! isset($merged[$character->id]) || $presence->priority() > $merged[$character->id]->presence->priority()) {
-                    $merged[$character->id] = new PlayerPresenceData($character, $presence);
-                }
-            }
-        }
-
-        return collect($merged);
-    }
-
-    /**
-     * @return array{id: string, code: string|null, startTime: string, zoneName: string|null, players: array<int, array<string, mixed>>}
-     */
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->id(),
-            'code' => $this->code(),
-            'startTime' => $this->startTime()->toISOString(),
-            'zoneName' => $this->zoneName(),
-            'players' => $this->players()->values()->map(fn (PlayerPresenceData $player) => $player->toArray())->all(),
-        ];
-    }
-
-    /**
-     * @return array{id: string, code: string|null, startTime: string, zoneName: string|null, players: array<int, array<string, mixed>>}
-     */
-    public function jsonSerialize(): array
-    {
-        return $this->toArray();
-    }
+        public readonly string $id,
+        #[Hidden]
+        public readonly ?string $code,
+        #[WithTransformer(DateTimeInterfaceTransformer::class, format: 'Y-m-d\TH:i:s.u\Z', setTimeZone: 'UTC')]
+        public readonly CarbonInterface $startTime,
+        public readonly ?string $zoneName,
+        #[Hidden]
+        public readonly Collection $players,
+    ) {}
 }

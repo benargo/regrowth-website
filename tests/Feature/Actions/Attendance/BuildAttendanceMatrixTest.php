@@ -6,7 +6,8 @@ use App\Actions\Attendance\BuildAttendanceMatrix;
 use App\Actions\Attendance\ClusterReports;
 use App\Actions\Attendance\LoadAttendanceReports;
 use App\Data\Attendance\AttendanceMatrixData;
-use App\Data\Attendance\CharacterAttendanceRowData;
+use App\Data\Attendance\CharacterAttendanceData;
+use App\Data\Attendance\ReportClusterData;
 use App\Enums\Presence;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
@@ -57,13 +58,13 @@ class BuildAttendanceMatrixTest extends TestCase
         $zone = Zone::factory()->create(['name' => 'Karazhan']);
         $report = $this->makeReport($this->gameVersion, Carbon::parse('2025-01-07 20:00', 'Europe/Paris'), attributes: ['code' => 'ABC', 'zone_id' => $zone->id]);
 
-        $this->assertSame([[
-            'id' => $report->id,
-            'code' => 'ABC',
-            'dayOfWeek' => 'Tue',
-            'date' => '07/01',
-            'zoneName' => 'Karazhan',
-        ]], $this->build()->columns->all());
+        $column = $this->build()->columns->sole();
+
+        $this->assertInstanceOf(ReportClusterData::class, $column);
+        $this->assertSame($report->id, $column->id);
+        $this->assertSame('ABC', $column->code);
+        $this->assertTrue($column->startTime->equalTo(Carbon::parse('2025-01-07 20:00', 'Europe/Paris')));
+        $this->assertSame('Karazhan', $column->zoneName);
     }
 
     #[Test]
@@ -72,7 +73,7 @@ class BuildAttendanceMatrixTest extends TestCase
         $older = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
         $newer = $this->makeReport($this->gameVersion, '2025-01-08 20:00');
 
-        $this->assertSame([$newer->id, $older->id], $this->build()->columns->pluck('id')->all());
+        $this->assertSame([$newer->id, $older->id], $this->build()->columns->map(fn (ReportClusterData $column): string => $column->id)->all());
     }
 
     #[Test]
@@ -99,7 +100,7 @@ class BuildAttendanceMatrixTest extends TestCase
 
         $row = $this->build()->rows->sole();
 
-        $this->assertInstanceOf(CharacterAttendanceRowData::class, $row);
+        $this->assertInstanceOf(CharacterAttendanceData::class, $row);
         $this->assertTrue($row->character->is($character));
         $this->assertSame(1, $row->totalReports);
         $this->assertSame(1, $row->reportsAttended);
@@ -182,13 +183,13 @@ class BuildAttendanceMatrixTest extends TestCase
         $other = $this->makeCharacter($this->gameVersion, $this->rank);
         $first = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
         $second = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
-        $clusterOrder = ClusterReports::run(LoadAttendanceReports::run($this->gameVersion, [$this->rank->id]))->map->id()->all();
+        $clusterOrder = ClusterReports::run(LoadAttendanceReports::run($this->gameVersion, [$this->rank->id]))->map->id->all();
         $laterReport = $clusterOrder[1] === $first->id ? $first : $second;
         $earlierReport = $laterReport->is($first) ? $second : $first;
         $this->attend($earlierReport, $other);
         $this->attend($laterReport, $character);
 
-        $row = $this->build()->rows->first(fn (CharacterAttendanceRowData $row) => $row->character->is($character));
+        $row = $this->build()->rows->first(fn (CharacterAttendanceData $row) => $row->character->is($character));
 
         $this->assertSame([Presence::Present, null], $row->attendance);
         $this->assertSame(1, $row->totalReports);
@@ -216,7 +217,7 @@ class BuildAttendanceMatrixTest extends TestCase
         $this->attend($first, $early);
         $this->attend($second, $late);
 
-        $rows = $this->build()->rows->keyBy(fn (CharacterAttendanceRowData $row) => $row->character->id);
+        $rows = $this->build()->rows->keyBy(fn (CharacterAttendanceData $row) => $row->character->id);
 
         $this->assertTrue($rows[$early->id]->firstAttendance->eq($first->start_time));
         $this->assertTrue($rows[$late->id]->firstAttendance->eq($second->start_time));
@@ -333,15 +334,25 @@ class BuildAttendanceMatrixTest extends TestCase
     }
 
     #[Test]
-    public function it_eager_loads_the_relations_the_payloads_read(): void
+    #[DataProvider('combineLinkedCharactersCases')]
+    public function it_loads_only_the_playable_class_and_rank_on_row_characters(bool $combineLinkedCharacters): void
     {
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $this->makeCharacter($this->gameVersion, $this->rank));
+        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $this->makeCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
 
-        $character = $this->build()->rows->sole()->character;
+        $character = BuildAttendanceMatrix::run($this->gameVersion, combineLinkedCharacters: $combineLinkedCharacters)->rows->sole()->character;
 
-        $this->assertTrue($character->relationLoaded('rank'));
-        $this->assertTrue($character->relationLoaded('linkedCharacters'));
-        $this->assertTrue($character->relationLoaded('playableClass'));
+        $this->assertSame(['playableClass', 'rank'], array_keys($character->getRelations()));
+    }
+
+    /**
+     * @return array<string, array{bool}>
+     */
+    public static function combineLinkedCharactersCases(): array
+    {
+        return [
+            'separate characters' => [false],
+            'combined characters' => [true],
+        ];
     }
 
     // ==================== ranks ====================

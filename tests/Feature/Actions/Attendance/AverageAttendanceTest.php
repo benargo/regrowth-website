@@ -3,7 +3,7 @@
 namespace Tests\Feature\Actions\Attendance;
 
 use App\Actions\Attendance\AverageAttendance;
-use App\Data\Attendance\CharacterAttendanceRowData;
+use App\Data\Attendance\CharacterAttendanceData;
 use App\Models\Character;
 use Carbon\Carbon;
 use PHPUnit\Framework\Attributes\Group;
@@ -30,9 +30,9 @@ class AverageAttendanceTest extends TestCase
     /**
      * @param  array<int, Presence|null>  $attendance
      */
-    private function row(float $percentage, array $attendance = []): CharacterAttendanceRowData
+    private function row(float $percentage, array $attendance = []): CharacterAttendanceData
     {
-        return new CharacterAttendanceRowData(
+        return new CharacterAttendanceData(
             character: Character::factory()->withoutParents()->make(),
             firstAttendance: Carbon::parse('2025-01-01 19:00', 'UTC'),
             totalReports: 0,

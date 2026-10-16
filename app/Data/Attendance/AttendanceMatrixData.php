@@ -11,8 +11,8 @@ use Spatie\LaravelData\Data;
 final class AttendanceMatrixData extends Data
 {
     /**
-     * @param  Collection<int, array{id: string, code: string|null, dayOfWeek: string, date: string, zoneName: string|null}>  $columns  newest raid first
-     * @param  Collection<int, CharacterAttendanceRowData>  $rows  sorted by character name
+     * @param  Collection<int, ReportClusterData>  $columns  newest raid first
+     * @param  Collection<int, CharacterAttendanceData>  $rows  sorted by character name
      */
     public function __construct(
         public readonly Collection $columns,
