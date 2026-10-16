@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Textarea } from "@headlessui/react";
 import { Deferred, useForm } from "@inertiajs/react";
-import { FormRow, SaveButton, controlClassName } from "@/Components/FormControls";
-import InputError from "@/Components/InputError";
+import { FormRow, FieldError, SaveButton, controlClassName } from "@/Components/FormControls";
 import Kbd from "@/Components/Kbd";
 import CopyableCode from "@/Components/CopyableCode";
 import ResponsiveText from "@/Components/ResponsiveText";
 import Steps, { Step } from "@/Components/Steps";
 import ExportSettings from "@/Components/GuildRosterManager/ExportSettings";
+import cn from "@/Helpers/cn";
 
 /**
  * Replicates the look of a GRM button from the in-game interface, so the
@@ -120,10 +120,13 @@ export default function UploadForm({ gameVersion, memberCount, onUploaded }) {
                         onDrop={handleDrop}
                         invalid={!!formErrors.grm_data}
                         data-dragging={isDragging || undefined}
-                        className={`${controlClassName} data-dragging:bg-ground-700 font-mono transition-colors data-dragging:border-blue-500`}
+                        className={cn(
+                            controlClassName,
+                            "data-dragging:bg-ground-700 font-mono transition-colors data-dragging:border-blue-500",
+                        )}
                     />
                 </FormRow>
-                <InputError message={formErrors.game_version} />
+                <FieldError message={formErrors.game_version} />
 
                 <SaveButton
                     processing={processing}

@@ -23,6 +23,7 @@ import { BenchedTable, GroupTable } from "@/Components/Events/GroupTable";
 import MetaCard, { MetaItem } from "@/Components/MetaCard";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
+import { PrimaryButton, SecondaryButton } from "@/Components/FormControls";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import PageContainer from "@/Components/PageContainer";
@@ -644,26 +645,15 @@ function ApplyTemplateModal({ eventId, templates, onClose }) {
                                         ))}
                                     </div>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={() => handleApply(template)}
-                                    disabled={!!applying}
-                                    className="shrink-0 rounded bg-ink-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-ink-500 disabled:opacity-50"
-                                >
+                                <PrimaryButton onClick={() => handleApply(template)} processing={applying === template.id} disabled={!!applying} className="shrink-0">
                                     {applying === template.id ? "Applying…" : "Apply"}
-                                </button>
+                                </PrimaryButton>
                             </div>
                         ))}
                     </div>
                 )}
                 <div className="mt-6 flex justify-end">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="rounded border border-secondary-600 px-4 py-2 text-sm text-secondary-300 transition-colors hover:bg-secondary-600/20"
-                    >
-                        Cancel
-                    </button>
+                    <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
                 </div>
             </div>
         </Modal>

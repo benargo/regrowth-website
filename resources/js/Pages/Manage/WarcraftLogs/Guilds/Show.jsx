@@ -1,13 +1,12 @@
 import { Button } from "@headlessui/react";
 import { router, useForm } from "@inertiajs/react";
 import { Can, usePermission } from "@/Components/Authorizable";
-import Checkbox from "@/Components/Checkbox";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import DetailsForm from "@/Components/Datasets/DetailsForm";
 import { focusRing } from "@/Components/Datasets/RecordCard";
 import EmptyState from "@/Components/EmptyState";
 import Icon from "@/Components/FontAwesome/Icon";
-import { FormRow, FormSection } from "@/Components/FormControls";
+import { Checkbox, FormRow, FormSection } from "@/Components/FormControls";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
 import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
@@ -123,7 +122,6 @@ function GuildTagTable({ guild, hasUpdateTagsPermission }) {
                                 disabled={!hasUpdateTagsPermission}
                                 onChange={() => toggleCountAttendance(guildTag)}
                                 aria-label={`${guildTag.name} counts toward attendance`}
-                                className={`bg-ground-800/50 h-6 w-6 disabled:cursor-not-allowed disabled:opacity-60 ${focusRing}`}
                             />
                         </td>
                     </tr>

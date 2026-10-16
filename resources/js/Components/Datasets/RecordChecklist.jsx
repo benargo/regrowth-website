@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import Checkbox from "@/Components/Checkbox";
+import { Checkbox, FieldError } from "@/Components/FormControls";
 import Pill from "@/Components/Pill";
 
 /**
@@ -137,11 +137,7 @@ export default function RecordChecklist({
                 ))
             )}
 
-            {error && (
-                <p id={errorId} className="text-sm text-red-300">
-                    {error}
-                </p>
-            )}
+            <FieldError id={errorId} message={error} />
         </fieldset>
     );
 }

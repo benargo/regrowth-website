@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { router, usePage } from "@inertiajs/react";
 import { useEcho } from "@laravel/echo-react";
-import { Input } from "@headlessui/react";
 import Icon from "@/Components/FontAwesome/Icon";
-import { controlClassName } from "@/Components/FormControls";
+import { TextInput } from "@/Components/FormControls";
 
 const MEMBER_LIMIT = 5;
 
@@ -125,7 +124,7 @@ export default function UserSearch({ id, value, onSelect, invalid = false }) {
                     style="solid"
                     className="text-secondary-400 pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2"
                 />
-                <Input
+                <TextInput
                     id={id}
                     type="text"
                     value={query}
@@ -135,7 +134,7 @@ export default function UserSearch({ id, value, onSelect, invalid = false }) {
                     spellCheck={false}
                     invalid={invalid}
                     aria-busy={isSearching}
-                    className={`${controlClassName} pr-10 pl-11`}
+                    className="pr-10 pl-11"
                 />
                 {isSearching && (
                     <div

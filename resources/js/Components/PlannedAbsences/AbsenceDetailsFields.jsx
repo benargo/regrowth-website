@@ -1,5 +1,5 @@
-import { Fieldset, Input, Legend } from "@headlessui/react";
-import { FormRow, FormSection, RadioCardGroup, controlClassName } from "@/Components/FormControls";
+import { Fieldset, Legend } from "@headlessui/react";
+import { FieldError, FormRow, FormSection, RadioCardGroup, TextInput } from "@/Components/FormControls";
 import MarkdownEditor from "@/Components/MarkdownEditor";
 import todayDateString from "@/Helpers/todayDateString";
 
@@ -37,7 +37,7 @@ export default function AbsenceDetailsFields({
                 hint={`The first day ${awaySubject} be away.`}
                 error={errors.start_date}
             >
-                <Input
+                <TextInput
                     id="start_date"
                     name="start_date"
                     type="date"
@@ -47,7 +47,7 @@ export default function AbsenceDetailsFields({
                     max="2099-12-31"
                     invalid={Boolean(errors.start_date)}
                     required
-                    className={`${controlClassName} scheme-dark`}
+                    className="scheme-dark"
                 />
             </FormRow>
 
@@ -61,7 +61,7 @@ export default function AbsenceDetailsFields({
                 }
                 error={errors.end_date}
             >
-                <Input
+                <TextInput
                     id="end_date"
                     name="end_date"
                     type="date"
@@ -70,7 +70,7 @@ export default function AbsenceDetailsFields({
                     min={data.start_date || undefined}
                     max="2099-12-31"
                     invalid={Boolean(errors.end_date)}
-                    className={`${controlClassName} scheme-dark`}
+                    className="scheme-dark"
                 />
             </FormRow>
 
@@ -103,7 +103,7 @@ export default function AbsenceDetailsFields({
                     invalid={Boolean(errors.reason)}
                     className="grid scroll-mt-48 grid-cols-1 gap-3 sm:grid-cols-2 lg:scroll-mt-28 lg:grid-cols-3"
                 />
-                {errors.reason && <p className="text-sm text-red-300">{errors.reason}</p>}
+                <FieldError message={errors.reason} />
             </Fieldset>
 
             <FormRow

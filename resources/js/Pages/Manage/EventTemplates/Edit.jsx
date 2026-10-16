@@ -1,4 +1,4 @@
-import PrimaryButton from "@/Components/PrimaryButton";
+import { PrimaryButton } from "@/Components/FormControls";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     DndContext,

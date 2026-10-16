@@ -2,8 +2,7 @@ import { Link, useForm } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import FormContainer from "@/Components/FormContainer";
-import PrimaryButton from "@/Components/PrimaryButton";
-import InputError from "@/Components/InputError";
+import { Checkbox, FieldError, PrimaryButton } from "@/Components/FormControls";
 import Icon from "@/Components/FontAwesome/Icon";
 import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import SpecRow from "@/Components/Characters/SpecRow";
@@ -133,44 +132,31 @@ export default function Edit({ character: { data: character }, specializations: 
                                 </p>
                             )}
 
-                            {specErrors?.length > 0 && (
-                                <InputError message={specErrors[0]} className="mt-2" />
-                            )}
-                            {errors["specializations.specialization_ids"] && (
-                                <InputError message={errors["specializations.specialization_ids"]} className="mt-2" />
-                            )}
-                            {errors["specializations.raid_specialization_id"] && (
-                                <InputError
-                                    message={errors["specializations.raid_specialization_id"]}
-                                    className="mt-2"
-                                />
-                            )}
+                            <FieldError message={specErrors?.[0]} className="mt-2" />
+                            <FieldError message={errors["specializations.specialization_ids"]} className="mt-2" />
+                            <FieldError message={errors["specializations.raid_specialization_id"]} className="mt-2" />
                         </section>
 
                         {/* Loot Council */}
                         <section>
                             <SectionHeading>Loot Council</SectionHeading>
                             <label className="flex cursor-pointer items-center gap-3 rounded border border-ink-600 bg-ground-800/30 px-4 py-3 transition-colors hover:border-ink-500">
-                                <input
-                                    type="checkbox"
+                                <Checkbox
                                     checked={data.is_loot_councillor}
                                     onChange={(e) => setData("is_loot_councillor", e.target.checked)}
-                                    className="h-4 w-4 rounded border-ink-600 bg-ground-900 text-ink-600 focus:ring-ink-500 focus:ring-offset-0"
                                 />
                                 <span className="font-medium text-white">Loot Councillor</span>
                                 <span className="text-sm text-secondary-500">
                                     This character has a vote on loot distribution
                                 </span>
                             </label>
-                            {errors.is_loot_councillor && (
-                                <InputError message={errors.is_loot_councillor} className="mt-2" />
-                            )}
+                            <FieldError message={errors.is_loot_councillor} className="mt-2" />
                         </section>
 
                         {/* Actions */}
                         <div className="flex items-center gap-4 border-t border-ink-600 pt-6">
                             <PrimaryButton type="submit" processing={processing}>
-                                {processing ? "Saving…" : "Save Changes"}
+                                {processing ? "Saving…" : "Save changes"}
                             </PrimaryButton>
                             <Link
                                 href={route("characters.show", {

@@ -2,9 +2,7 @@ import { useForm } from "@inertiajs/react";
 import SharedHeader from "@/Components/SharedHeader";
 import Master from "@/Layouts/Master";
 import FormContainer from "@/Components/FormContainer";
-import FormField from "@/Components/FormField";
-import TextInput from "@/Components/TextInput";
-import PrimaryButton from "@/Components/PrimaryButton";
+import { FormRow, SaveButton, TextInput } from "@/Components/FormControls";
 
 export default function LocalLogin() {
     const { data, setData, post, processing, errors } = useForm({
@@ -21,29 +19,23 @@ export default function LocalLogin() {
             <SharedHeader title="Local Login" subtitle="Development sign-in — local and testing only" />
 
             <FormContainer maxWidth="lg">
-                <p className="mb-6 text-sm text-secondary-400">
+                <p className="text-secondary-400 mb-6 text-sm">
                     Enter the Discord ID of an existing user to sign in as them. This bypasses Discord OAuth and is only
                     available outside production.
                 </p>
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-                    <FormField label="User ID" htmlFor="id" error={errors.id}>
+                    <FormRow label="User ID" error={errors.id}>
                         <TextInput
-                            id="id"
-                            type="text"
                             value={data.id}
                             onChange={(e) => setData("id", e.target.value)}
                             placeholder="e.g. 123456789012345678"
-                            isFocused
-                            className="w-full"
+                            invalid={!!errors.id}
+                            autoFocus
                         />
-                    </FormField>
+                    </FormRow>
 
-                    <div>
-                        <PrimaryButton type="submit" processing={processing}>
-                            {processing ? "Signing in…" : "Sign in"}
-                        </PrimaryButton>
-                    </div>
+                    <SaveButton processing={processing} label="Sign in" processingLabel="Signing in…" />
                 </form>
             </FormContainer>
         </Master>

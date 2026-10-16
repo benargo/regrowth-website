@@ -1,7 +1,6 @@
 import { Link } from "@inertiajs/react";
-import { Button } from "@headlessui/react";
 import Icon from "@/Components/FontAwesome/Icon";
-import { ErrorSummary, RequiredFieldsNote, buttonClassName, linkClassName } from "@/Components/FormControls";
+import { ErrorSummary, PrimaryButton, RequiredFieldsNote, linkClassName } from "@/Components/FormControls";
 import { useErrorSummaryFocus } from "@/Components/FormPage";
 
 const END_BEFORE_START_MESSAGE = "The end date must be on or after the start date.";
@@ -48,10 +47,10 @@ export default function AbsenceForm({ data, setError, errors, processing, onSubm
             {children}
 
             <div className="flex flex-wrap items-center gap-4">
-                <Button type="submit" disabled={processing} className={buttonClassName}>
+                <PrimaryButton type="submit" processing={processing}>
                     <Icon icon="calendar-plus" style="solid" />
                     {processing ? "Saving…" : submitLabel}
-                </Button>
+                </PrimaryButton>
                 <Link href={cancelHref} className={linkClassName}>
                     Cancel
                 </Link>

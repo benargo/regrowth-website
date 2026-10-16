@@ -1,4 +1,5 @@
 import SpecIcon from "@/Components/Characters/SpecIcon";
+import { Checkbox } from "@/Components/FormControls";
 
 export default function SpecRow({ spec, isSelected, isRaidSpec, onToggle, onSetRaid, disabled }) {
     return (
@@ -10,12 +11,7 @@ export default function SpecRow({ spec, isSelected, isRaidSpec, onToggle, onSetR
                         : "border-ink-600 bg-ground-800/30 hover:border-ink-500"
                 }`}
             >
-                <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={onToggle}
-                    className="bg-ground-900 h-4 w-4 rounded border-ink-600 text-ink-600 focus:ring-ink-500 focus:ring-offset-0"
-                />
+                <Checkbox checked={isSelected} onChange={onToggle} />
 
                 <SpecIcon specialization={spec} size={6} />
                 <span className={`flex font-medium ${isSelected ? "text-white" : "text-secondary-400"}`}>{spec.name}</span>

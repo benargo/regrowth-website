@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react";
+import { TextInput } from "@/Components/FormControls";
 
 export default function Autocomplete({
+    id,
     value,
     onChange,
     options,
@@ -114,16 +116,15 @@ export default function Autocomplete({
                 </label>
             )}
 
-            <input
+            <TextInput
                 ref={inputRef}
-                type="text"
+                id={id}
                 value={value}
                 onChange={handleInputChange}
                 onFocus={() => setIsOpen(true)}
                 onKeyDown={handleKeyDown}
                 placeholder={placeholder}
                 required={required}
-                className="w-full rounded border border-ink-600 bg-ground-800 px-4 py-2 text-white placeholder-gray-400 focus:border-ink-500 focus:outline-hidden focus:ring-2 focus:ring-ink-500"
                 autoComplete="off"
             />
 

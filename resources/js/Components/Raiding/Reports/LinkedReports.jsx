@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, router } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
+import { Checkbox, PrimaryButton } from "@/Components/FormControls";
 import Modal from "@/Components/Modal";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import Tooltip from "@/Components/Tooltip";
@@ -152,13 +153,12 @@ function LinkReportsModal({
                                     onClick={() => toggleCluster(cluster)}
                                     className={`flex gap-3 px-6 py-3 transition-colors ${isDisabled ? "cursor-default opacity-60" : "cursor-pointer hover:bg-ground-800/50"}`}
                                 >
-                                    <input
-                                        type="checkbox"
+                                    <Checkbox
                                         checked={isChecked}
                                         disabled={isDisabled}
                                         onChange={() => toggleCluster(cluster)}
                                         onClick={(e) => e.stopPropagation()}
-                                        className="mt-1 h-4 w-4 shrink-0 rounded border-ink-600 bg-ground-800 text-ink-500 accent-ink-500"
+                                        className="mt-1"
                                     />
                                     <div className="min-w-0 flex-1">
                                         {!isSingle && (
@@ -265,17 +265,13 @@ function LinkReportsModal({
                         </>
                     )}
                 </div>
-                <button
-                    onClick={handleSubmit}
-                    disabled={newlySelectedCount === 0 || isSubmitting}
-                    className="rounded bg-ink-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-ink-500 disabled:cursor-not-allowed disabled:opacity-40"
-                >
+                <PrimaryButton onClick={handleSubmit} processing={isSubmitting} disabled={newlySelectedCount === 0}>
                     {isSubmitting
-                        ? "Linking..."
+                        ? "Linking…"
                         : newlySelectedCount === 0
                           ? "Select reports to link"
                           : `Link ${newlySelectedCount} ${newlySelectedCount === 1 ? "report" : "reports"}`}
-                </button>
+                </PrimaryButton>
             </div>
         </Modal>
     );

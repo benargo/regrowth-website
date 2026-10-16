@@ -1,5 +1,4 @@
-import { Input } from "@headlessui/react";
-import { FormRow, SaveButton, controlClassName } from "@/Components/FormControls";
+import { FormRow, SaveButton, TextInput } from "@/Components/FormControls";
 import useNewRecordForm from "@/Hooks/useNewRecordForm";
 
 export default function NewPhaseForm({ url }) {
@@ -19,7 +18,7 @@ export default function NewPhaseForm({ url }) {
                 hint="For example 1 or 2.5."
                 error={error("number")}
             >
-                <Input
+                <TextInput
                     id="new-phase-number"
                     type="number"
                     step="0.1"
@@ -30,7 +29,6 @@ export default function NewPhaseForm({ url }) {
                     value={form.data.number}
                     onChange={(e) => form.setData("number", e.target.value)}
                     invalid={!!error("number")}
-                    className={controlClassName}
                 />
             </FormRow>
             <FormRow
@@ -40,24 +38,22 @@ export default function NewPhaseForm({ url }) {
                 error={error("description")}
                 className="md:col-span-2"
             >
-                <Input
+                <TextInput
                     id="new-phase-description"
                     required
                     autoComplete="off"
                     value={form.data.description}
                     onChange={(e) => form.setData("description", e.target.value)}
                     invalid={!!error("description")}
-                    className={controlClassName}
                 />
             </FormRow>
             <FormRow htmlFor="new-phase-start-date" label="Start date" error={error("start_date")}>
-                <Input
+                <TextInput
                     id="new-phase-start-date"
                     type="date"
                     value={form.data.start_date}
                     onChange={(e) => form.setData("start_date", e.target.value)}
                     invalid={!!error("start_date")}
-                    className={controlClassName}
                 />
             </FormRow>
             <div className="md:col-span-4">

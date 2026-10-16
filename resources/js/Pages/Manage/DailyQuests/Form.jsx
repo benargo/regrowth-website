@@ -4,7 +4,7 @@ import Autocomplete from "@/Components/Autocomplete";
 import { Form } from "@inertiajs/react";
 import { useState } from "react";
 import PageContainer from "@/Components/PageContainer";
-import PrimaryButton from "@/Components/PrimaryButton";
+import { PrimaryButton } from "@/Components/FormControls";
 
 export default function DailyQuestsForm({
     cookingQuests,
@@ -218,7 +218,7 @@ export default function DailyQuestsForm({
                             {/* Submit Button */}
                             <div className="flex justify-end gap-4 pt-4">
                                 <PrimaryButton type="submit" processing={processing}>
-                                    {processing ? "Posting..." : "Post to Discord"}
+                                    {processing ? "Posting…" : "Post to Discord"}
                                 </PrimaryButton>
                             </div>
                         </>

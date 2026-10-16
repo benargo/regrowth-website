@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Icon from "@/Components/FontAwesome/Icon";
 import Modal from "@/Components/Modal";
-import TextInput from "@/Components/TextInput";
+import { PrimaryButton, SecondaryButton, TextInput } from "@/Components/FormControls";
 
 function formatDateValue(value, includeTime) {
     if (!value) return null;
@@ -16,7 +16,7 @@ function formatDateValue(value, includeTime) {
     return value.split("-").reverse().join("/");
 }
 
-export default function DateFilterButton({ label, value, onChange, onClear, min, max, includeTime = false, helpText = "Leave blank to show all available dates." }) {
+export default function DateFilterButton({ id, label, value, onChange, onClear, min, max, includeTime = false, helpText = "Leave blank to show all available dates." }) {
     const [isOpen, setIsOpen] = useState(false);
     const [draft, setDraft] = useState(value);
 
@@ -50,6 +50,7 @@ export default function DateFilterButton({ label, value, onChange, onClear, min,
     return (
         <>
             <button
+                id={id}
                 type="button"
                 onClick={open}
                 className={`flex w-full items-center justify-between rounded border px-4 py-2 text-left text-sm transition-colors hover:bg-ground-700 ${value ? "border-ink-500 bg-ground-800 text-white" : "border-ink-600 bg-ground-800 text-secondary-400"}`}
@@ -75,36 +76,21 @@ export default function DateFilterButton({ label, value, onChange, onClear, min,
                     )}
                     <TextInput
                         type={includeTime ? "datetime-local" : "date"}
+                        aria-label={`${label} date`}
                         value={draft}
                         min={min}
                         max={max ?? defaultMax}
                         onChange={(e) => setDraft(e.target.value)}
-                        className="block w-full bg-ground-800/50 text-white scheme-dark"
+                        className="scheme-dark"
                     />
                     <div className="mt-6 flex justify-between gap-3">
-                        <button
-                            type="button"
-                            onClick={clear}
-                            className="inline-flex items-center gap-2 rounded-md border border-secondary-500 bg-secondary-700 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-secondary-600"
-                        >
+                        <SecondaryButton onClick={clear}>
                             <Icon icon="times" style="solid" />
                             Clear
-                        </button>
+                        </SecondaryButton>
                         <div className="flex gap-3">
-                            <button
-                                type="button"
-                                onClick={close}
-                                className="inline-flex items-center rounded-md border border-secondary-300 bg-secondary-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-ground-700"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="button"
-                                onClick={apply}
-                                className="inline-flex items-center rounded-md border border-transparent bg-ink-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-ink-700"
-                            >
-                                Apply
-                            </button>
+                            <SecondaryButton onClick={close}>Cancel</SecondaryButton>
+                            <PrimaryButton onClick={apply}>Apply</PrimaryButton>
                         </div>
                     </div>
                 </div>

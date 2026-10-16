@@ -3,7 +3,7 @@ import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, us
 import { SortableContext, horizontalListSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import Icon from "@/Components/FontAwesome/Icon";
-import InputError from "@/Components/InputError";
+import { FieldError } from "@/Components/FormControls";
 
 const DEFAULT_ACCEPTS = ["image/jpeg", "image/png", "image/webp"];
 
@@ -199,7 +199,7 @@ export default function ImageManager({
                 </div>
             )}
 
-            <InputError message={error} className="mt-2" />
+            <FieldError message={error} className="mt-2" />
         </div>
     );
 }

@@ -17,6 +17,7 @@ import { useSocketId } from "@laravel/echo-react";
 import useItemChannel from "@/Hooks/useItemChannel";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Icon from "@/Components/FontAwesome/Icon";
+import { PrimaryButton } from "@/Components/FormControls";
 import CommentsSection from "@/Components/Comments/CommentsSection";
 import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
 import MarkdownEditor from "@/Components/MarkdownEditor";
@@ -353,14 +354,10 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
         return (
             <div className="py-8 text-center">
                 <p className="mb-4 text-secondary-400">No biases assigned to this item.</p>
-                <button
-                    type="button"
-                    onClick={() => handleAddNewWeight(0)}
-                    className="inline-flex items-center gap-2 rounded-md bg-ink-600 px-4 py-2 text-white transition-colors hover:bg-ink-700"
-                >
+                <PrimaryButton onClick={() => handleAddNewWeight(0)}>
                     <Icon icon="plus" style="solid" />
                     Add first bias level
-                </button>
+                </PrimaryButton>
                 <PriorityPickerModal
                     isOpen={showPicker}
                     onClose={() => {

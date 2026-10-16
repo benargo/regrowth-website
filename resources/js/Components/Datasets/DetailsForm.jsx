@@ -1,13 +1,12 @@
 import { Link } from "@inertiajs/react";
-import { Button, Input } from "@headlessui/react";
 import {
     CheckboxInput,
     ErrorSummary,
     OptionSelect,
+    PrimaryButton,
     RequiredFieldsNote,
     SlugInput,
-    buttonClassName,
-    controlClassName,
+    TextInput,
     linkClassName,
 } from "@/Components/FormControls";
 import { useErrorSummaryFocus } from "@/Components/FormPage";
@@ -47,13 +46,12 @@ export default function DetailsForm({ form, autosave, onSubmit, submitLabel, pro
     }
 
     const text = (name, props = {}) => (
-        <Input
+        <TextInput
             id={name}
             name={name}
             value={data[name]}
             onChange={(e) => setData(name, e.target.value)}
             invalid={!!errors[name]}
-            className={controlClassName}
             {...props}
         />
     );
@@ -104,9 +102,9 @@ export default function DetailsForm({ form, autosave, onSubmit, submitLabel, pro
 
             {!autosave && (
                 <div className="flex flex-wrap items-center gap-4">
-                    <Button type="submit" disabled={processing} className={buttonClassName}>
+                    <PrimaryButton type="submit" processing={processing}>
                         {processing ? processingLabel : submitLabel}
-                    </Button>
+                    </PrimaryButton>
                     <Link href={cancelHref} className={linkClassName}>
                         Cancel
                     </Link>
