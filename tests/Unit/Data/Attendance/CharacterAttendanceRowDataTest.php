@@ -5,11 +5,8 @@ namespace Tests\Unit\Data\Attendance;
 use App\Data\Attendance\CharacterAttendanceRowData;
 use App\Enums\Presence;
 use App\Models\Character;
-use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
-use App\Models\PlayableClass;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -82,33 +79,15 @@ class CharacterAttendanceRowDataTest extends TestCase
         ];
     }
 
-    // ==================== characterWithPlayableClass ====================
-
-    #[Test]
-    public function character_with_playable_class_keeps_only_that_relation(): void
-    {
-        $playableClass = PlayableClass::factory()->make(['id' => 1]);
-        $character = Character::factory()->withoutParents()->make(['id' => 1])
-            ->setRelation('playableClass', $playableClass)
-            ->setRelation('rank', GuildRank::factory()->make())
-            ->setRelation('linkedCharacters', new EloquentCollection);
-
-        $copy = $this->row([], $character)->characterWithPlayableClass();
-
-        $this->assertSame(['playableClass'], array_keys($copy->getRelations()));
-        $this->assertSame($playableClass, $copy->playableClass);
-        $this->assertTrue($character->relationLoaded('rank'));
-    }
-
     // ==================== helpers ====================
 
     /**
      * @param  array<int, Presence|null>  $attendance
      */
-    private function row(array $attendance, ?Character $character = null): CharacterAttendanceRowData
+    private function row(array $attendance): CharacterAttendanceRowData
     {
         return new CharacterAttendanceRowData(
-            character: $character ?? Character::factory()->withoutParents()->make(['id' => 1]),
+            character: Character::factory()->withoutParents()->make(['id' => 1]),
             firstAttendance: Carbon::parse('2025-01-01 19:00', 'UTC'),
             totalReports: 0,
             reportsAttended: 0,

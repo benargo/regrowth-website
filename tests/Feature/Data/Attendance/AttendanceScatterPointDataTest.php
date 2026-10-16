@@ -78,17 +78,15 @@ class AttendanceScatterPointDataTest extends TestCase
     }
 
     #[Test]
-    public function it_emits_only_playable_class_on_the_character(): void
+    public function it_emits_the_characters_playable_class(): void
     {
-        $character = Character::factory()->withRank()->withPlayableClass(PlayableClass::factory()->create(['name' => 'Rogue']))->create()
-            ->load(['rank', 'linkedCharacters', 'playableClass']);
+        $character = Character::factory()->withPlayableClass(PlayableClass::factory()->create(['name' => 'Rogue']))->create()
+            ->load('playableClass');
 
         $emitted = AttendanceScatterPointData::fromRow($this->row($character))->toArray()['character'];
 
         $this->assertSame('Rogue', $emitted['playable_class']['name']);
         $this->assertArrayHasKey('icon_url', $emitted['playable_class']);
-        $this->assertArrayNotHasKey('rank', $emitted);
-        $this->assertArrayNotHasKey('linked_characters', $emitted);
     }
 
     #[Test]

@@ -43,12 +43,4 @@ final class CharacterAttendanceRowData extends Data
 
         return $recent->filter(fn (Presence $presence): bool => $presence->isAttended())->count() / $recent->count() * 100;
     }
-
-    /**
-     * A copy of the row's character carrying only its `playableClass` relation.
-     */
-    public function characterWithPlayableClass(): Character
-    {
-        return $this->character->withoutRelations()->setRelation('playableClass', $this->character->playableClass);
-    }
 }
