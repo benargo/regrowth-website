@@ -86,4 +86,13 @@ class PlannedAbsence extends Model
     {
         $query->where(fn (Builder $query) => $query->whereNull('end_date')->orWhereDate('end_date', '>=', today()));
     }
+
+    /**
+     * Scope a query to absences starting today or later, ordered by start date.
+     */
+    #[Scope]
+    protected function upcoming(Builder $query): void
+    {
+        $query->where('start_date', '>=', today())->orderBy('start_date');
+    }
 }

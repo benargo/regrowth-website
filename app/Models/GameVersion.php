@@ -141,6 +141,18 @@ class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia
         $query->where('release_date', '<=', $at ?? now());
     }
 
+    /**
+     * Scope to versions with at least one report whose guild tag counts
+     * attendance, newest release first.
+     */
+    #[Scope]
+    protected function withCountedAttendance(Builder $query): void
+    {
+        $query->whereHas('reports.guildTag', fn (Builder $tags) => $tags->countsAttendance())
+            ->orderByDesc('release_date')
+            ->orderBy('id');
+    }
+
     // ============ Media ===========
 
     /**

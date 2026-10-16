@@ -36,11 +36,14 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileUnacceptableForCollection;
+use Tests\Concerns\BuildsAttendanceFixtures;
 use Tests\Support\ModelTestCase;
 
 #[Group('platform')]
 class GameVersionTest extends ModelTestCase
 {
+    use BuildsAttendanceFixtures;
+
     protected function modelClass(): string
     {
         return GameVersion::class;
@@ -448,6 +451,40 @@ class GameVersionTest extends ModelTestCase
         $this->create(['release_date' => now()->subMonth()]);
 
         $this->assertEquals([$older->id], GameVersion::released(now()->subMonths(6))->pluck('id')->all());
+    }
+
+    // ==================== withCountedAttendance scope ====================
+
+    #[Test]
+    public function with_counted_attendance_lists_versions_newest_release_first(): void
+    {
+        $older = $this->makeAttendanceVersion(['release_date' => '2024-01-01']);
+        $newer = $this->makeAttendanceVersion(['release_date' => '2024-06-01']);
+        $this->makeReport($older, '2025-01-01 20:00');
+        $this->makeReport($newer, '2025-01-01 20:00');
+
+        $this->assertSame([$newer->id, $older->id], GameVersion::withCountedAttendance()->get()->modelKeys());
+    }
+
+    #[Test]
+    public function with_counted_attendance_breaks_release_date_ties_by_id(): void
+    {
+        $first = $this->makeAttendanceVersion();
+        $second = $this->makeAttendanceVersion();
+        $this->makeReport($second, '2025-01-01 20:00');
+        $this->makeReport($first, '2025-01-01 20:00');
+
+        $this->assertSame([$first->id, $second->id], GameVersion::withCountedAttendance()->get()->modelKeys());
+    }
+
+    #[Test]
+    public function with_counted_attendance_excludes_versions_without_counted_reports(): void
+    {
+        $uncounted = $this->makeAttendanceVersion();
+        $this->makeReport($uncounted, '2025-01-01 20:00', $this->makeTag($uncounted, countsAttendance: false));
+        $this->makeAttendanceVersion();
+
+        $this->assertFalse(GameVersion::withCountedAttendance()->exists());
     }
 
     // ==================== current rosters ====================
