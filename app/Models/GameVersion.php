@@ -265,6 +265,14 @@ class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia
     }
 
     /**
+     * @return HasMany<Report, $this>
+     */
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class);
+    }
+
+    /**
      * @return HasMany<Item, $this>
      */
     public function items(): HasMany

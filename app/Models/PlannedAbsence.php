@@ -68,22 +68,22 @@ class PlannedAbsence extends Model
     }
 
     /**
-     * Scope a query to absences whose last day (the start date when
-     * open-ended) is before today.
+     * Scope a query to absences whose end date is before today. Open-ended
+     * absences never end.
      */
     #[Scope]
     protected function ended(Builder $query): void
     {
-        $query->whereRaw('COALESCE(end_date, start_date) < ?', [today()]);
+        $query->whereDate('end_date', '<', today());
     }
 
     /**
-     * Scope a query to current and upcoming absences: those whose last day
-     * (the start date when open-ended) is today or later.
+     * Scope a query to current, upcoming and open-ended absences: those
+     * without an end date or whose end date is today or later.
      */
     #[Scope]
     protected function notEnded(Builder $query): void
     {
-        $query->whereRaw('COALESCE(end_date, start_date) >= ?', [today()]);
+        $query->where(fn (Builder $query) => $query->whereNull('end_date')->orWhereDate('end_date', '>=', today()));
     }
 }

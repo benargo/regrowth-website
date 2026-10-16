@@ -15,6 +15,7 @@ use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\Raid;
+use App\Models\Report;
 use App\Models\User;
 use App\Models\WarcraftLogs\Guild;
 use App\Policies\DatasetPolicy;
@@ -288,6 +289,16 @@ class GameVersionTest extends ModelTestCase
 
         $this->assertRelation($gameVersion, 'raids', HasManyThrough::class);
         $this->assertTrue($gameVersion->raids->contains($raid));
+    }
+
+    #[Test]
+    public function it_has_many_reports(): void
+    {
+        $gameVersion = $this->factory()->forGuild()->create(['release_date' => '2024-01-01']);
+        $report = Report::factory()->forGuild($gameVersion->warcraftLogsGuild)->create(['start_time' => '2025-01-01 20:00:00']);
+
+        $this->assertRelation($gameVersion, 'reports', HasMany::class);
+        $this->assertTrue($gameVersion->reports->contains($report));
     }
 
     #[Test]
