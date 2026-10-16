@@ -33,3 +33,6 @@ Use the `now()` and `today()` helpers rather than `Carbon::now()`/`Carbon::today
 Characters and reports only ever match against characters in the same game version; never match a name across the whole `characters` table. A report's version is its stored `game_version_id`, derived from its Warcraft Logs guild and `start_time`. An event's version is its stored `game_version_id`, the single version its raids share. Resolve every external name through `App\Actions\Characters\MatchCharacterName`, one version and one name per call.
 
 Reconciling old rows (pivots, attendance, event links) written under earlier matching rules may reassign or flag them, but must never delete them — this is a red line. A character with a null `game_version_id` is missing its match-up, not wrong: never detach, delete or overwrite its rows on that basis.
+
+## Call Actions with ::run(), not dependency injection
+Never inject Laravel Actions (`AsAction`) through constructor or method DI. For a single call, use `ActionClassName::run(...)`. When the same action runs multiple times in one scope (e.g. a loop or collection pipeline), resolve it once with `$action = ActionClassName::make()` and call `$action->handle(...)` each time. This overrides the general "inject dependencies" rule for Action classes only.
