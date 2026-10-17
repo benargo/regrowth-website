@@ -28,13 +28,13 @@ use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
-abstract class UpdatingMessageFixture extends DiscordMessage implements ShouldUpdateExisting
+class UpdatingMessageFixture extends DiscordMessage implements ShouldUpdateExisting
 {
     use UpdatesExisting;
 
     public function toMessage(): MessagePayloadData
     {
-        return MessagePayloadData::from(['content' => 'Reposted!']);
+        return MessagePayloadData::from(['content' => 'Updated!']);
     }
 
     protected function constrainExisting(Builder $query): Builder
@@ -42,8 +42,6 @@ abstract class UpdatingMessageFixture extends DiscordMessage implements ShouldUp
         return $query;
     }
 }
-
-class EditOnlyMessageFixture extends UpdatingMessageFixture {}
 
 #[Group('discord-integration')]
 class DiscordChannelTest extends TestCase
@@ -241,12 +239,12 @@ class DiscordChannelTest extends TestCase
     #[Test]
     public function it_deletes_the_stale_record_without_reposting_when_the_discord_message_no_longer_exists(): void
     {
-        $stale = $this->storedNotification('454545454545454545', EditOnlyMessageFixture::class);
+        $stale = $this->storedNotification('454545454545454545', UpdatingMessageFixture::class);
 
         $this->fakeDiscord([EditMessageRequest::class => $this->makeDiscordErrorResponse(404, 10008, 'Unknown Message')]);
         $this->fakeCreatedMessage('565656565656565656');
 
-        $this->driver->send($this->notifiable, new EditOnlyMessageFixture);
+        $this->driver->send($this->notifiable, new UpdatingMessageFixture);
 
         $this->assertSoftDeleted('discord_notifications', ['id' => $stale->id]);
         Saloon::assertNotSent(CreateMessageRequest::class);
@@ -407,7 +405,7 @@ class DiscordChannelTest extends TestCase
 
     // ==================== helpers ====================
 
-    private function storedNotification(string $messageId, string $type = EditOnlyMessageFixture::class): DiscordNotification
+    private function storedNotification(string $messageId, string $type = UpdatingMessageFixture::class): DiscordNotification
     {
         return DiscordNotification::factory()->create([
             'type' => $type,
@@ -448,7 +446,7 @@ class DiscordChannelTest extends TestCase
     private function databaseRow(MessagePayloadData $payload): array
     {
         return [
-            'type' => EditOnlyMessageFixture::class,
+            'type' => UpdatingMessageFixture::class,
             'channel_id' => $this->channel->id,
             'payload' => $payload->toArray(),
             'created_by_user_id' => null,

@@ -12,10 +12,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::table('discord_notification_related_models')
-            ->where('model_type', 'App\Models\DailyQuest')
-            ->delete();
-
         DB::table('discord_notifications')
             ->where('type', 'App\Notifications\DailyQuestsMessage')
             ->delete();
