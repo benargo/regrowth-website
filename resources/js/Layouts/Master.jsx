@@ -9,9 +9,46 @@ import ResponsiveNavLink from "@/Components/ResponsiveNavLink";
 import { Can } from "@/Components/Authorizable";
 import WarcraftLogsLogo from "@/Components/WarcraftLogs/Logo";
 import SearchPalette from "@/Components/Search/SearchPalette";
+import cn from "@/Helpers/cn";
 
-export default function Master({ title, children }) {
-    const { auth, flash, discordInviteUrl, theme } = usePage().props;
+const NAV_CLASSES = {
+    classic: {
+        wrapper: "bg-brown-800 bg-parchment",
+        nav: "bg-brown-900/80 border-brown-700/50",
+        iconButton: "hover:bg-brown-700 text-gray-400",
+        searchButton: "hover:bg-brown-700 border-brown-600 bg-brown-800 focus:ring-amber-500 text-gray-400",
+        searchShortcut: "bg-brown-700 text-gray-500",
+        navLink: "",
+        responsiveNavLink: "",
+        dropdownContent: undefined,
+        dropdownLink: "",
+        mobileMenu: "bg-brown-900",
+        mobileLink: "hover:bg-amber-700 text-gray-300",
+        mobileDivider: "border-amber-700",
+        footer: "border-transparent",
+        footerLink: "text-amber-600",
+    },
+    forever: {
+        wrapper: "bg-parchment-forever",
+        nav: "bg-forever-900/80 border-forever-700/50",
+        iconButton: "hover:bg-forever-700 text-verdant-400",
+        searchButton: "hover:bg-forever-700 border-forever-600 bg-forever-800 focus:ring-camel-500 text-verdant-400",
+        searchShortcut: "bg-forever-700 text-verdant-500",
+        navLink: "hover:bg-forever-700/80",
+        responsiveNavLink: "text-verdant-300 hover:bg-camel-700",
+        dropdownContent: "py-1 bg-forever-800",
+        dropdownLink: "bg-forever-800 hover:bg-forever-800 focus:bg-forever-700",
+        mobileMenu: "bg-forever-900",
+        mobileLink: "hover:bg-camel-700 text-verdant-300",
+        mobileDivider: "border-camel-700",
+        footer: "bg-footer-forever border-footer-forever",
+        footerLink: "text-camel-600",
+    },
+};
+
+export default function Master({ title, isHomepage = false, children }) {
+    const { auth, flash, discordInviteUrl } = usePage().props;
+    const classes = isHomepage ? NAV_CLASSES.forever : NAV_CLASSES.classic;
     const user = auth?.user;
     const impersonating = auth?.impersonating;
 
@@ -42,12 +79,20 @@ export default function Master({ title, children }) {
         <>
             <Head title={title} />
 
-            <div className="flex min-h-screen flex-col text-white">
+            <div className={cn("flex min-h-screen flex-col text-white", classes.wrapper)}>
                 <div className="fixed inset-x-0 top-4 z-20 px-4">
-                    <nav className="bg-ground-900/80 border-ground-700/50 grid grid-cols-[auto_1fr_auto] items-center overflow-visible rounded-lg border py-3 pr-3 pl-4 shadow-lg backdrop-blur-xl lg:flex lg:flex-wrap lg:gap-10 lg:px-4">
+                    <nav
+                        className={cn(
+                            "grid grid-cols-[auto_1fr_auto] items-center overflow-visible rounded-lg border py-3 pr-3 pl-4 shadow-lg backdrop-blur-xl lg:flex lg:flex-wrap lg:gap-10 lg:px-4",
+                            classes.nav,
+                        )}
+                    >
                         {/* Mobile menu toggle */}
                         <button
-                            className="hover:bg-ground-700 text-secondary-400 inline-flex items-center justify-center rounded-md p-2 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset lg:hidden"
+                            className={cn(
+                                "inline-flex items-center justify-center rounded-md p-2 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset lg:hidden",
+                                classes.iconButton,
+                            )}
                             type="button"
                             onClick={() => setShowingNavigationDropdown(!showingNavigationDropdown)}
                             aria-controls="mobile-menu"
@@ -76,7 +121,10 @@ export default function Master({ title, children }) {
 
                         {/* Mobile search button */}
                         <button
-                            className="hover:bg-ground-700 text-secondary-400 inline-flex items-center justify-center justify-self-end rounded-md p-2 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset lg:hidden"
+                            className={cn(
+                                "inline-flex items-center justify-center justify-self-end rounded-md p-2 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset lg:hidden",
+                                classes.iconButton,
+                            )}
                             type="button"
                             onClick={() => setSearchOpen(true)}
                             aria-label="Search"
@@ -87,19 +135,24 @@ export default function Master({ title, children }) {
                         {/* Desktop menu */}
                         <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-between">
                             <div className="flex items-center gap-1">
-                                <NavLink href={route("roster.index")}>
+                                <NavLink className={classes.navLink} href={route("roster.index")}>
                                     <Icon icon="users" style="solid" className="mr-2 h-6" />
                                     Roster
                                 </NavLink>
-                                <NavLink href={route("raiding.index")}>
+                                <NavLink className={classes.navLink} href={route("raiding.index")}>
                                     <Icon icon="dragon" style="solid" className="mr-2 h-9" />
                                     Raiding
                                 </NavLink>
-                                <NavLink href={route("loot.index")}>
+                                <NavLink className={classes.navLink} href={route("loot.index")}>
                                     <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
                                     Loot
                                 </NavLink>
-                                <NavLink href={discordInviteUrl} external rel="noopener noreferrer">
+                                <NavLink
+                                    className={classes.navLink}
+                                    href={discordInviteUrl}
+                                    external
+                                    rel="noopener noreferrer"
+                                >
                                     <Icon icon="discord" style="brands" className="mr-2 h-6" />
                                     Discord
                                 </NavLink>
@@ -109,11 +162,14 @@ export default function Master({ title, children }) {
                                 <button
                                     type="button"
                                     onClick={() => setSearchOpen(true)}
-                                    className="hover:bg-ground-700 border-ground-600 bg-ground-800 focus:ring-ink-500 text-secondary-400 flex min-h-6 items-center gap-2 rounded border px-3 py-2 text-sm transition-colors hover:text-white focus:ring-1 focus:outline-hidden"
+                                    className={cn(
+                                        "flex min-h-6 items-center gap-2 rounded border px-3 py-2 text-sm transition-colors hover:text-white focus:ring-1 focus:outline-hidden",
+                                        classes.searchButton,
+                                    )}
                                 >
                                     <Icon icon="search" style="solid" className="h-4 w-4" />
                                     <span>Search</span>
-                                    <span className="bg-ground-700 text-secondary-500 rounded px-1.5 py-0.5 text-xs">
+                                    <span className={cn("rounded px-1.5 py-0.5 text-xs", classes.searchShortcut)}>
                                         ⌘K
                                     </span>
                                 </button>
@@ -138,26 +194,40 @@ export default function Master({ title, children }) {
                                             </button>
                                         </Dropdown.Trigger>
 
-                                        <Dropdown.Content>
-                                            <Dropdown.Link href={route("account.index")}>
+                                        <Dropdown.Content contentClasses={classes.dropdownContent}>
+                                            <Dropdown.Link
+                                                className={classes.dropdownLink}
+                                                href={route("account.index")}
+                                            >
                                                 <Icon icon="user-cog" style="regular" className="mr-2 h-6" />
                                                 Account Settings
                                             </Dropdown.Link>
                                             {impersonating && (
-                                                <Dropdown.Link href={route("auth.return-to-self")}>
+                                                <Dropdown.Link
+                                                    className={classes.dropdownLink}
+                                                    href={route("auth.return-to-self")}
+                                                >
                                                     <Icon icon="undo" style="regular" className="mr-2 h-6" />
                                                     Return to my account
                                                 </Dropdown.Link>
                                             )}
                                             <Can permission="view-officer-dashboard">
-                                                <Dropdown.Link href={route("management.dashboard")}>
+                                                <Dropdown.Link
+                                                    className={classes.dropdownLink}
+                                                    href={route("management.dashboard")}
+                                                >
                                                     <Icon icon="cogs" style="regular" className="mr-2" />
                                                     <div className="flex flex-col items-start gap-1">
                                                         <span>Control Panel</span>
                                                     </div>
                                                 </Dropdown.Link>
                                             </Can>
-                                            <Dropdown.Link href={route("logout")} method="post" as="button">
+                                            <Dropdown.Link
+                                                className={classes.dropdownLink}
+                                                href={route("logout")}
+                                                method="post"
+                                                as="button"
+                                            >
                                                 <Icon icon="sign-out" style="regular" className="mr-2 h-6" />
                                                 Logout
                                             </Dropdown.Link>
@@ -179,19 +249,23 @@ export default function Master({ title, children }) {
 
                 {/* Mobile menu */}
                 <div
-                    className={`bg-ground-900 fixed inset-x-0 top-19 z-20 max-h-[calc(100vh-4.75rem)] overflow-y-auto ${showingNavigationDropdown ? "block" : "hidden"} lg:hidden`}
+                    className={cn(
+                        "fixed inset-x-0 top-19 z-20 max-h-[calc(100vh-4.75rem)] overflow-y-auto lg:hidden",
+                        showingNavigationDropdown ? "block" : "hidden",
+                        classes.mobileMenu,
+                    )}
                     id="mobile-menu"
                 >
                     <div className="space-y-1 px-2 pt-2 pb-3">
-                        <ResponsiveNavLink href={route("roster.index")}>
+                        <ResponsiveNavLink className={classes.responsiveNavLink} href={route("roster.index")}>
                             <Icon icon="users" style="solid" className="mr-2 h-6" />
                             Roster
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink href={route("raiding.index")}>
+                        <ResponsiveNavLink className={classes.responsiveNavLink} href={route("raiding.index")}>
                             <Icon icon="dragon" style="solid" className="mr-2 h-6" />
                             Raiding
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink href={route("loot.index")}>
+                        <ResponsiveNavLink className={classes.responsiveNavLink} href={route("loot.index")}>
                             <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
                             Loot
                         </ResponsiveNavLink>
@@ -201,18 +275,26 @@ export default function Master({ title, children }) {
                                 setShowingNavigationDropdown(false);
                                 setSearchOpen(true);
                             }}
-                            className="hover:bg-ink-700 text-secondary-300 flex w-full flex-row items-center rounded-md px-3 py-2 text-sm font-medium hover:text-white"
+                            className={cn(
+                                "flex w-full flex-row items-center rounded-md px-3 py-2 text-sm font-medium hover:text-white",
+                                classes.mobileLink,
+                            )}
                         >
                             <Icon icon="search" style="solid" className="mr-2 h-6" />
                             Search
                         </button>
-                        <ResponsiveNavLink href={discordInviteUrl} external rel="noopener noreferrer">
+                        <ResponsiveNavLink
+                            className={classes.responsiveNavLink}
+                            href={discordInviteUrl}
+                            external
+                            rel="noopener noreferrer"
+                        >
                             <Icon icon="discord" style="brands" className="mr-2 h-6" />
                             Discord
                         </ResponsiveNavLink>
                     </div>
 
-                    <div className="border-ink-700 border-t pt-4 pb-3">
+                    <div className={cn("border-t pt-4 pb-3", classes.mobileDivider)}>
                         {user ? (
                             <div className="space-y-2 px-2">
                                 <div className="mx-2 flex items-center space-x-3">
@@ -230,7 +312,10 @@ export default function Master({ title, children }) {
                                 </div>
                                 <Link
                                     href={route("account.index")}
-                                    className="hover:bg-ink-700 text-secondary-300 flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:text-white"
+                                    className={cn(
+                                        "flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:text-white",
+                                        classes.mobileLink,
+                                    )}
                                 >
                                     <Icon icon="user-cog" style="regular" className="mr-2" />
                                     Account Settings
@@ -238,7 +323,10 @@ export default function Master({ title, children }) {
                                 {impersonating && (
                                     <Link
                                         href={route("auth.return-to-self")}
-                                        className="hover:bg-ink-700 text-secondary-300 flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:text-white"
+                                        className={cn(
+                                            "flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:text-white",
+                                            classes.mobileLink,
+                                        )}
                                     >
                                         <Icon icon="undo" style="regular" className="mr-2" />
                                         Return to my account
@@ -247,7 +335,10 @@ export default function Master({ title, children }) {
                                 <Can permission="view-officer-dashboard">
                                     <Link
                                         href={route("management.dashboard")}
-                                        className="hover:bg-ink-700 text-secondary-300 flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:text-white"
+                                        className={cn(
+                                            "flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:text-white",
+                                            classes.mobileLink,
+                                        )}
                                     >
                                         <Icon icon="cogs" style="regular" className="mr-2" />
                                         Control Panel
@@ -257,7 +348,10 @@ export default function Master({ title, children }) {
                                     href={route("logout")}
                                     method="post"
                                     as="button"
-                                    className="hover:bg-ink-700 text-secondary-300 flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:text-white"
+                                    className={cn(
+                                        "flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:text-white",
+                                        classes.mobileLink,
+                                    )}
                                 >
                                     <Icon icon="sign-out" style="regular" className="mr-2" />
                                     Logout
@@ -283,7 +377,7 @@ export default function Master({ title, children }) {
 
                 <div className="flex flex-1 flex-col">{children}</div>
 
-                <footer className="bg-footer border-footer border-t-8 py-5" id="footer">
+                <footer className={cn("border-t-8 py-5", classes.footer)} id="footer">
                     <div className="container mx-auto">
                         <div className="my-4 flex flex-col-reverse items-center justify-between md:my-6 md:flex-row">
                             {/* Logos Section */}
@@ -302,18 +396,21 @@ export default function Master({ title, children }) {
                                     className="h-20 w-1/2 flex-1 object-contain md:mr-4 md:w-auto"
                                 />
                                 <span className="sr-only">
-                                    {theme === "forever" ? "World of Warcraft: Forever" : "World of Warcraft: Classic"}
+                                    {isHomepage ? "World of Warcraft: Forever" : "World of Warcraft: Classic"}
                                 </span>
                             </div>
                             {/* Footer Links */}
                             <nav className="flex flex-col items-center justify-start gap-4 md:flex-row md:flex-wrap md:gap-2">
-                                <div className="text-ink-600 flex h-8 flex-row items-center p-1 md:ml-2">
+                                <div className={cn("flex h-8 flex-row items-center p-1 md:ml-2", classes.footerLink)}>
                                     <Icon icon="copyright" style="regular" className="mr-2 h-5 w-5" />
                                     <span className="text-nowrap">{new Date().getFullYear()} Regrowth</span>
                                 </div>
                                 <a
                                     href="https://www.warcraftlogs.com/guilds/774848-regrowth"
-                                    className="text-ink-600 flex h-8 flex-row items-center gap-2 p-1 transition-colors hover:text-white md:ml-2"
+                                    className={cn(
+                                        "flex h-8 flex-row items-center gap-2 p-1 transition-colors hover:text-white md:ml-2",
+                                        classes.footerLink,
+                                    )}
                                     rel="noopener noreferrer"
                                 >
                                     <WarcraftLogsLogo className="h-5 w-5" />
@@ -323,21 +420,30 @@ export default function Master({ title, children }) {
                                     href={discordInviteUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-ink-600 flex h-8 flex-row items-center gap-2 p-1 transition-colors hover:text-white md:ml-2"
+                                    className={cn(
+                                        "flex h-8 flex-row items-center gap-2 p-1 transition-colors hover:text-white md:ml-2",
+                                        classes.footerLink,
+                                    )}
                                 >
                                     <Icon icon="discord" style="brands" className="h-5 w-5" />
                                     <span className="text-nowrap">Discord</span>
                                 </a>
                                 <Link
                                     href={route("privacypolicy")}
-                                    className="text-ink-600 flex h-8 flex-row items-center gap-2 p-1 transition-colors hover:text-white md:ml-2"
+                                    className={cn(
+                                        "flex h-8 flex-row items-center gap-2 p-1 transition-colors hover:text-white md:ml-2",
+                                        classes.footerLink,
+                                    )}
                                 >
                                     <Icon icon="user-secret" style="solid" className="h-5 w-5" />
                                     <span className="text-nowrap">Privacy policy</span>
                                 </Link>
                                 <Link
                                     href={route("battlenet-usage")}
-                                    className="text-ink-600 flex h-8 flex-row items-center gap-2 p-1 transition-colors hover:text-white md:ml-2"
+                                    className={cn(
+                                        "flex h-8 flex-row items-center gap-2 p-1 transition-colors hover:text-white md:ml-2",
+                                        classes.footerLink,
+                                    )}
                                 >
                                     <Icon icon="battle-net" style="brands" className="h-5 w-5" />
                                     <span className="text-nowrap">Battle.net API Usage</span>
@@ -348,7 +454,10 @@ export default function Master({ title, children }) {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     title="Ben Argo"
-                                    className="text-ink-600 mt-0 flex h-8 flex-row items-center gap-2 p-1 transition-colors hover:text-white md:ml-2"
+                                    className={cn(
+                                        "mt-0 flex h-8 flex-row items-center gap-2 p-1 transition-colors hover:text-white md:ml-2",
+                                        classes.footerLink,
+                                    )}
                                 >
                                     <Icon icon="safari" style="brands" className="h-5 w-5" />
                                     <span className="text-nowrap">A Fizzywigs Production</span>
