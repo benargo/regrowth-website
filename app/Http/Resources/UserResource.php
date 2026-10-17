@@ -25,7 +25,7 @@ class UserResource extends JsonResource
             'highest_role' => $this->highestRole()?->name,
             'admin' => $this->is_admin,
             'characters' => $this->whenLoaded('characters', fn () => $this->characters->toResourceCollection()),
-            'events' => $this->whenLoaded('events', fn () => EventResource::collectionForMembers($this->events)),
+            'events' => $this->whenLoaded('events', fn () => $this->events->toResourceCollection(EventResource::class)->scope('members')),
             'planned_absences' => $this->whenLoaded('plannedAbsences'),
             'planned_absences_created' => $this->whenLoaded('plannedAbsencesCreated'),
         ];

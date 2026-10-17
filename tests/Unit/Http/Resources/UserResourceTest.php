@@ -378,16 +378,25 @@ class UserResourceTest extends TestCase
     #[Test]
     public function it_returns_events_in_the_member_shape(): void
     {
-        $this->fakeDiscordChannel();
         $user = User::factory()->withEvents()->create();
 
         $request = new Request;
-        $event = (new UserResource($user->fresh()->load('events')))->resolve($request)['events']->first()->resolve($request);
+        $event = (new UserResource($user->fresh()->load('events')))->resolve($request)['events']->resolve($request)[0];
 
-        $this->assertArrayHasKey('channel', $event);
+        $this->assertArrayHasKey('duration', $event);
         $this->assertArrayNotHasKey('composition', $event);
-        $this->assertArrayNotHasKey('raids', $event);
-        $this->assertArrayNotHasKey('users', $event);
+        $this->assertArrayNotHasKey('channel', $event);
+    }
+
+    #[Test]
+    public function it_returns_an_empty_events_list_when_the_loaded_relation_is_empty(): void
+    {
+        $user = User::factory()->create();
+
+        $request = new Request;
+        $events = (new UserResource($user->fresh()->load('events')))->resolve($request)['events'];
+
+        $this->assertSame([], $events->resolve($request));
     }
 
     // ==================== planned absences ====================

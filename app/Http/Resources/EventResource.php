@@ -2,11 +2,12 @@
 
 namespace App\Http\Resources;
 
-use App\Actions\Discord\FetchChannel;
+use App\Attributes\Http\Resources\ScopeDefinition;
+use App\Contracts\Http\Resources\ScopedResource;
 use App\Enums\SignupStatus;
+use App\Http\Resources\Concerns\HasScopes;
 use App\Models\Boss;
 use App\Models\Character;
-use App\Models\Event;
 use App\Models\EventAssignment;
 use App\Models\Raid;
 use Illuminate\Http\Request;
@@ -14,116 +15,93 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
 
 /**
- * Transform an event into one of three scoped shapes: full (default),
- * members, or visitors.
+ * Transform an event, optionally limited to the `members` or `visitors` scope.
  *
- * Relations each scope expects to be loaded:
- *   - default:      $event->load('raids.bosses.media', 'bosses.media', 'assignments.group', 'characters.rank')
- *                   and optionally 'users'
- *   - forMembers:   nothing
- *   - forVisitors:  $event->load('raids')
- *
- * Each boss under raids.bosses has an is_visible flag, true when the boss is
- * attached to the event through the bosses relation.
+ * Fields whose relation is not loaded are omitted:
+ *   - assignments:  'assignments.group'
+ *   - composition:  'characters.rank' (and 'raids' for the party size)
+ *   - raids:        'raids'; bosses need 'raids.bosses.media', 'bosses.media'
+ *                   and 'assignments.group'
+ *   - users:        'users'
+ *   - channel:      attached with withChannel()
  */
-class EventResource extends JsonResource
+class EventResource extends JsonResource implements ScopedResource
 {
-    protected const SCOPE_FULL = 'full';
-
-    protected const SCOPE_MEMBERS = 'members';
-
-    protected const SCOPE_VISITORS = 'visitors';
-
-    protected string $scope = self::SCOPE_FULL;
+    use HasScopes;
 
     /**
-     * Create a resource with the members shape: id, title, start and end
-     * times, duration, and the Discord channel.
+     * @var array{id: string, name: string, position: int}|null
      */
-    public static function forMembers(mixed $resource): static
-    {
-        return static::withScope($resource, self::SCOPE_MEMBERS);
-    }
+    protected ?array $discordChannel = null;
+
+    protected bool $hasDiscordChannel = false;
 
     /**
-     * Create a resource with the visitors shape: id, title, start and end
-     * times, and raid names.
+     * Attach the event's Discord channel, or null when it has none.
+     *
+     * @param  array{id: string, name: string, position: int}|null  $channel
      */
-    public static function forVisitors(mixed $resource): static
+    public function withChannel(?array $channel): static
     {
-        return static::withScope($resource, self::SCOPE_VISITORS);
-    }
+        $this->discordChannel = $channel;
+        $this->hasDiscordChannel = true;
 
-    /**
-     * @param  iterable<int, Event>  $resources
-     * @return Collection<int, static>
-     */
-    public static function collectionForMembers(iterable $resources): Collection
-    {
-        return collect($resources)->map(fn ($event) => static::forMembers($event));
-    }
-
-    /**
-     * @param  iterable<int, Event>  $resources
-     * @return Collection<int, static>
-     */
-    public static function collectionForVisitors(iterable $resources): Collection
-    {
-        return collect($resources)->map(fn ($event) => static::forVisitors($event));
-    }
-
-    protected static function withScope(mixed $resource, string $scope): static
-    {
-        $instance = new static($resource);
-        $instance->scope = $scope;
-
-        return $instance;
+        return $this;
     }
 
     /**
      * Transform the resource into an array.
      *
-     * @return array<string, mixed>
+     * @return array<array-key, mixed>
      */
     public function toArray(Request $request): array
     {
-        $data = [
+        return $this->scoped([
             'id' => $this->id,
             'title' => $this->title,
             'start_time' => $this->start_time?->toIso8601String(),
             'end_time' => $this->end_time?->toIso8601String(),
-        ];
+            'duration' => $this->start_time && $this->end_time ? $this->duration : null,
+            'color' => $this->color,
+            'background' => $this->background_css_class?->value,
+            'assignments' => $this->whenLoaded('assignments', fn (): array => (new EventAssignmentsCollection(
+                $this->assignments->whereNull('boss_id')->values()
+            ))->resolve($request)),
+            'composition' => $this->whenLoaded('characters', fn (): array => $this->buildComposition($request)),
+            'raids' => $this->whenLoaded('raids', fn (): array => $this->buildRaids($request)),
+            'users' => $this->whenLoaded('users', fn () => $this->users->toResourceCollection()),
+            $this->mergeWhen($this->hasDiscordChannel, fn (): array => ['channel' => $this->discordChannel]),
+        ]);
+    }
 
-        if ($this->scope === self::SCOPE_VISITORS) {
-            $data['raids'] = $this->raids->pluck('name')->values()->all();
+    /**
+     * @return array<string, list<string>>
+     */
+    protected function scopeDefinitions(): array
+    {
+        return ['members' => $this->members(), 'visitors' => $this->visitors()];
+    }
 
-            return $data;
-        }
+    /**
+     * Id, title, start and end times, duration, raids and the Discord channel.
+     *
+     * @return list<string>
+     */
+    #[ScopeDefinition]
+    protected function members(): array
+    {
+        return ['id', 'title', 'start_time', 'end_time', 'duration', 'raids', 'channel'];
+    }
 
-        $data['duration'] = $this->start_time && $this->end_time ? $this->duration : null;
-
-        if ($this->scope === self::SCOPE_FULL) {
-            $allAssignments = $this->assignments;
-            $eventAssignments = $allAssignments->whereNull('boss_id')->values();
-            $bossByIdAssignments = $allAssignments->whereNotNull('boss_id')->groupBy('boss_id');
-
-            $data['color'] = $this->color;
-            $data['background'] = $this->background_css_class?->value;
-            $data['assignments'] = (new EventAssignmentsCollection($eventAssignments))->resolve($request);
-            $data['composition'] = $this->buildComposition($request);
-            $data['raids'] = $this->buildRaids($bossByIdAssignments, $request);
-            $data['users'] = $this->whenLoaded('users', fn () => $this->users->toResourceCollection());
-        }
-
-        try {
-            $data['channel'] = $this->channel_id
-                ? FetchChannel::run($this->channel_id)->only('id', 'name', 'position')->toArray()
-                : null;
-        } catch (\Exception $e) {
-            report($e);
-        }
-
-        return $data;
+    /**
+     * Id, title, start and end times, and raids.
+     *
+     * @return list<string>
+     */
+    #[ScopeDefinition]
+    protected function visitors(): array
+    {
+        return ['id', 'title', 'start_time', 'end_time', 'raids'];
     }
 
     /** @return array{groups: array<int, array<string, mixed>>, bench: array<int, array<string, mixed>>} */
@@ -215,31 +193,41 @@ class EventResource extends JsonResource
     }
 
     /**
-     * @param  Collection<int, Collection<int, EventAssignment>>  $bossByIdAssignments
+     * The event's raids. Each raid's bosses are included when loaded.
+     *
      * @return array<int, array{
      *     id: int,
      *     name: string,
      *     slug: string,
      *     max_players: int,
      *     sort_order: int,
-     *     bosses: array<int, array<string, mixed>>
+     *     bosses?: array<int, array<string, mixed>>
      * }>
      */
-    protected function buildRaids(Collection $bossByIdAssignments, Request $request): array
+    protected function buildRaids(Request $request): array
     {
-        $visibleBossIds = $this->bosses->pluck('id')->flip();
-
         return $this->raids->map(fn (Raid $raid) => [
             'id' => $raid->id,
             'name' => $raid->name,
             'slug' => $raid->slug,
             'max_players' => $raid->max_players,
             'sort_order' => $raid->pivot->sort_order,
-            'bosses' => $raid->bosses
-                ->map(fn (Boss $boss) => $this->buildBoss($boss, $bossByIdAssignments, $visibleBossIds, $request))
-                ->values()
-                ->all(),
+            'bosses' => $this->when($raid->relationLoaded('bosses'), fn (): array => $this->buildBosses($raid, $request)),
         ])->values()->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    protected function buildBosses(Raid $raid, Request $request): array
+    {
+        $visibleBossIds = $this->bosses->pluck('id')->flip();
+        $bossByIdAssignments = $this->assignments->whereNotNull('boss_id')->groupBy('boss_id');
+
+        return $raid->bosses
+            ->map(fn (Boss $boss) => $this->buildBoss($boss, $bossByIdAssignments, $visibleBossIds, $request))
+            ->values()
+            ->all();
     }
 
     /**

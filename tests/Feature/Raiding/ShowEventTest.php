@@ -63,6 +63,22 @@ class ShowEventTest extends TestCase
     }
 
     #[Test]
+    public function it_includes_the_events_discord_channel(): void
+    {
+        $this->fakeDiscordChannel(name: 'raid-chat', position: 3);
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($this->memberRole->id);
+
+        $event = Event::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('event.channel.name', 'raid-chat')
+        );
+    }
+
+    #[Test]
     public function it_returns_a_single_event_prop(): void
     {
         $user = User::factory()->create();

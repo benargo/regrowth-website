@@ -6,6 +6,7 @@ use App\Actions\Datasets\ResolveEditLock;
 use App\Actions\GameVersion\BuildGameVersionRelationships;
 use App\Actions\GameVersion\BuildGameVersionRoutes;
 use App\Actions\GameVersion\UpdateGameVersion;
+use App\Attributes\Http\Controllers\ScopesResourceTo;
 use App\Enums\Faction;
 use App\Enums\GameVersionSetupStep;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
@@ -27,6 +28,7 @@ class GameVersionController extends Controller
     /**
      * Display a listing of game versions.
      */
+    #[ScopesResourceTo(GameVersionResource::class, 'management')]
     #[Authorize('viewAny', GameVersion::class)]
     public function index(BuildGameVersionRoutes $routes): Response
     {
@@ -35,7 +37,7 @@ class GameVersionController extends Controller
             ->orderBy('release_date')
             ->get();
 
-        $gameVersionResources = GameVersionResource::collectionForManagement($gameVersions);
+        $gameVersionResources = GameVersionResource::collection($gameVersions);
         $gameVersionResources->collection->each(
             fn (GameVersionResource $resource): GameVersionResource => $resource->withLinks($routes->links($resource->resource)),
         );
@@ -74,13 +76,15 @@ class GameVersionController extends Controller
     /**
      * Show the form for editing the specified game version and its relationships.
      */
+    #[ScopesResourceTo(GameVersionResource::class, 'management')]
     #[Authorize('update', 'gameVersion')]
     public function edit(Request $request, GameVersion $gameVersion, BuildGameVersionRoutes $routes): Response
     {
         $editLock = ResolveEditLock::run($request, $gameVersion);
+        $gameVersion->loadMissing('warcraftLogsGuild');
 
         return Inertia::render('Manage/GameVersions/Edit', [
-            'gameVersion' => GameVersionResource::forManagement($gameVersion),
+            'gameVersion' => $gameVersion->toResource(),
             'options' => fn (): array => $this->formOptions(),
             'relationships' => fn (): array => BuildGameVersionRelationships::run($gameVersion),
             'steps' => fn (): array => $routes->steps($gameVersion),
@@ -92,6 +96,7 @@ class GameVersionController extends Controller
     /**
      * Show one step of the new game version wizard.
      */
+    #[ScopesResourceTo(GameVersionResource::class, 'management')]
     #[Authorize('update', 'gameVersion')]
     public function setup(
         Request $request,
@@ -100,9 +105,10 @@ class GameVersionController extends Controller
         BuildGameVersionRoutes $routes,
     ): Response {
         $editLock = ResolveEditLock::run($request, $gameVersion);
+        $gameVersion->loadMissing('warcraftLogsGuild');
 
         return Inertia::render('Manage/GameVersions/Setup', [
-            'gameVersion' => GameVersionResource::forManagement($gameVersion),
+            'gameVersion' => $gameVersion->toResource(),
             'step' => $step->toOption(),
             'previousStep' => $step->previous()?->toOption(),
             'nextStep' => $step->next()?->toOption(),
@@ -117,11 +123,14 @@ class GameVersionController extends Controller
     /**
      * Show the final wizard step, a read-only summary of the game version.
      */
+    #[ScopesResourceTo(GameVersionResource::class, 'management')]
     #[Authorize('update', 'gameVersion')]
     public function review(GameVersion $gameVersion, BuildGameVersionRoutes $routes): Response
     {
+        $gameVersion->loadMissing('warcraftLogsGuild');
+
         return Inertia::render('Manage/GameVersions/Review', [
-            'gameVersion' => GameVersionResource::forManagement($gameVersion),
+            'gameVersion' => $gameVersion->toResource(),
             'steps' => $routes->steps($gameVersion),
             'relationships' => BuildGameVersionRelationships::run($gameVersion),
             'routes' => $routes->forReview($gameVersion),
