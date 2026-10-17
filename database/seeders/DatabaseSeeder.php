@@ -30,9 +30,6 @@ class DatabaseSeeder extends Seeder
             PlayableRaceSeeder::class,
             TargetMarkerSeeder::class,
 
-            // Then seed the daily quests data.
-            DailyQuestSeeder::class,
-
             // Then seed the loot bias data.
             PrioritySeeder::class,
             ItemSeeder::class,

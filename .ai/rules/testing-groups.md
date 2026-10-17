@@ -43,7 +43,6 @@ vendor/bin/sail artisan test --testsuite=Feature --group=authorization --compact
 | `raiding`                  | Raids, events, assignments, attendance, phases, templates, planned absences, boss strategies, spells, reports (raid-facing).                                             |
 | `loot`                     | Loot council cache, items, priorities, bias tool.                                                                                                                        |
 | `comments`                 | Anything directly involving the `Comment` model — comment/reaction API, comments index, comment models/resources/policies/form-requests, comment broadcast events.        |
-| `daily-quests`             | Daily quest CRUD, audit, seeders, notifications, stale-message cleanup.                                                                                                  |
 | `blizzard-integration`     | Blizzard Game Data / Render API connectors, requests, responses, data objects, CDN mirror, media/icon endpoints.                                                         |
 | `raidhelper-integration`   | Raid-Helper connector, webhooks, composition/event sync, RH requests.                                                                                                    |
 | `warcraftlogs-integration` | Warcraft Logs connector, requests, DTOs, rate limiting, report links/fetch jobs, report cache.                                                                           |

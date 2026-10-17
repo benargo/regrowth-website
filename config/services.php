@@ -43,13 +43,9 @@ return [
         'server_id' => env('DISCORD_SERVER_ID'),
         'channels' => [
             'announcements' => env('DISCORD_CHANNEL_ANNOUNCEMENTS'),
-            'daily_quests' => env('DISCORD_CHANNEL_DAILY_QUESTS'),
             'lootcouncil' => env('DISCORD_CHANNEL_LOOTCOUNCIL'),
             'officer' => env('DISCORD_CHANNEL_OFFICER'),
             'tbc_chat' => env('DISCORD_CHANNEL_TBC_CHAT'),
-        ],
-        'roles' => [
-            'daily_quest_subscribers' => env('DISCORD_ROLE_DAILY_QUEST_SUBSCRIBERS'),
         ],
     ],
 

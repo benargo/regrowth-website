@@ -8,10 +8,8 @@ use App\Http\Integrations\Discord\Exceptions\MessageNotFoundException;
 use App\Http\Integrations\Discord\Requests\Messages\CreateMessageRequest;
 use App\Http\Integrations\Discord\Requests\Messages\EditMessageRequest;
 use App\Models\DiscordNotification;
-use App\Notifications\Attributes\RepostsIfOriginalDeleted;
 use App\Notifications\Contracts\ShouldUpdateExisting;
 use Illuminate\Support\Facades\DB;
-use ReflectionClass;
 
 /**
  * Laravel notification channel that posts or edits a DiscordMessage in a Discord channel and records it as a DiscordNotification.
@@ -48,7 +46,7 @@ class DiscordChannel
 
     /**
      * Edit an existing Discord message and update its database record. When the Discord message
-     * no longer exists, delete the record and, for #[RepostsIfOriginalDeleted] notifications, post a new message.
+     * no longer exists, delete the record.
      */
     private function updateMessage(Channel $notifiable, DiscordMessage $notification, DiscordNotification $existing): void
     {
@@ -75,10 +73,6 @@ class DiscordChannel
             $existing->withoutEvents(function () use ($existing): void {
                 $existing->delete();
             });
-
-            if ($this->repostsIfOriginalDeleted($notification)) {
-                $this->createMessage($notifiable, $notification);
-            }
         }
     }
 
@@ -100,20 +94,6 @@ class DiscordChannel
         $record = DiscordNotification::create($data);
 
         $this->syncRelatedModels($record, $notification->mapRelatedModels());
-    }
-
-    /**
-     * Determine whether the notification's class, or one of its parents, is marked #[RepostsIfOriginalDeleted].
-     */
-    private function repostsIfOriginalDeleted(DiscordMessage $notification): bool
-    {
-        for ($class = new ReflectionClass($notification); $class !== false; $class = $class->getParentClass()) {
-            if ($class->getAttributes(RepostsIfOriginalDeleted::class) !== []) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**

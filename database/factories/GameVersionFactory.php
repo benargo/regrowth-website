@@ -36,7 +36,7 @@ class GameVersionFactory extends Factory
 
     /**
      * Indicate that this is the Burning Crusade Classic (Anniversary) version
-     * that the item and daily quest seeders resolve by slug.
+     * that the item seeder resolves by slug.
      */
     public function tbc(): static
     {

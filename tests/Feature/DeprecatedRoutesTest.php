@@ -16,6 +16,8 @@ use Tests\Support\DashboardTestCase;
 #[Group('platform')]
 class DeprecatedRoutesTest extends DashboardTestCase
 {
+    // ==================== councillors ====================
+
     #[Test]
     #[Group('deprecated')]
     public function add_councillor_endpoint_is_gone(): void
@@ -39,6 +41,8 @@ class DeprecatedRoutesTest extends DashboardTestCase
 
         $response->assertGone();
     }
+
+    // ==================== grm upload ====================
 
     #[Test]
     #[Group('deprecated')]
@@ -65,6 +69,8 @@ class DeprecatedRoutesTest extends DashboardTestCase
         Queue::assertNothingPushed();
         $this->assertSame([], Storage::disk('local')->allFiles());
     }
+
+    // ==================== guild tags ====================
 
     #[Test]
     #[Group('deprecated')]
@@ -93,6 +99,8 @@ class DeprecatedRoutesTest extends DashboardTestCase
         $response->assertGone();
         $this->assertFalse($guildTag->fresh()->count_attendance);
     }
+
+    // ==================== daily quests ====================
 
     #[Test]
     #[Group('deprecated')]

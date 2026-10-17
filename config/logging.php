@@ -70,13 +70,6 @@ return [
             'replace_placeholders' => true,
         ],
 
-        'daily-quests' => [
-            'driver' => 'single',
-            'path' => storage_path('logs/daily-quests.log'),
-            'level' => 'info',
-            'replace_placeholders' => true,
-        ],
-
         'testing' => [
             'driver' => 'single',
             'path' => storage_path('logs/testing.log'),

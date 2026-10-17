@@ -1,7 +1,6 @@
 <?php
 
 use App\Jobs\BuildAddonExportFile;
-use App\Jobs\DeleteStaleDailyQuestsMessage;
 use App\Jobs\Discord\SyncRoles as SyncDiscordRoles;
 use App\Jobs\Discord\SyncUsers as SyncDiscordUsers;
 use App\Jobs\FetchGuildRosters;
@@ -37,11 +36,6 @@ Schedule::job(new FetchGuildRosters)->everySixHours()->name('fetch-guild-rosters
 Schedule::command('fetch:warcraft-logs --latest')
     ->twiceDailyAt(16, 23, 30)
     ->name('fetch-warcraft-logs-latest');
-
-/**
- * Reset daily quests at 3:00 AM server time.
- */
-Schedule::job(new DeleteStaleDailyQuestsMessage)->dailyAt('03:00')->name('delete-stale-daily-quests-message');
 
 /**
  * Export the Regrowth Addon data daily at 3:15 AM server time.

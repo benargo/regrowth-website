@@ -62,16 +62,4 @@ class DiscordNotification extends Model
             ->where('model_id', (string) $modelId)
         );
     }
-
-    /**
-     * Scope to notifications posted between yesterday's 04:00 reset and 03:59:59 tomorrow.
-     */
-    #[Scope]
-    protected function postedInDailyResetWindow(Builder $query): void
-    {
-        $query->whereBetween('created_at', [
-            today()->subDay()->setTime(4, 0, 0),
-            today()->addDay()->setTime(3, 59, 59),
-        ]);
-    }
 }

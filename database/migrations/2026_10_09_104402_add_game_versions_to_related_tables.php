@@ -39,7 +39,7 @@ return new class extends Migration
      *
      * @var array<int, string>
      */
-    private const INBOUND_ITEM_FK_TABLES = ['pivot_items_priorities', 'pivot_dailyquest_rewards', 'pivot_items_raids'];
+    private const INBOUND_ITEM_FK_TABLES = ['pivot_items_priorities', 'pivot_items_raids'];
 
     public function up(): void
     {
@@ -200,7 +200,6 @@ return new class extends Migration
     {
         $this->repointPivotItemsRaids();
         $this->repointPivotItemsPriorities();
-        $this->repointPivotDailyquestRewards();
     }
 
     private function repointPivotItemsRaids(): void
@@ -274,52 +273,6 @@ return new class extends Migration
             $table->uuid('item_id')->nullable(false)->change();
             $table->unique(['item_id', 'priority_id'], 'pivot_items_priorities_item_id_priority_id_unique');
             $table->foreign('item_id')->references('id')->on('items')->cascadeOnDelete();
-        });
-    }
-
-    private function repointPivotDailyquestRewards(): void
-    {
-        $this->dropItemIdForeignKey('pivot_dailyquest_rewards');
-
-        // Add a temporary index on daily_quest_id so the primary key can be dropped.
-        Schema::table('pivot_dailyquest_rewards', function (Blueprint $table): void {
-            $table->index('daily_quest_id', 'pivot_dailyquest_rewards_daily_quest_id_temp');
-        });
-
-        Schema::table('pivot_dailyquest_rewards', function (Blueprint $table): void {
-            $table->dropPrimary(['daily_quest_id', 'item_id']);
-        });
-
-        Schema::table('pivot_dailyquest_rewards', function (Blueprint $table): void {
-            $table->uuid('item_uuid')->nullable()->after('item_id');
-        });
-
-        DB::table('pivot_dailyquest_rewards')
-            ->join('items', 'pivot_dailyquest_rewards.item_id', '=', 'items.blizzard_id')
-            ->update(['pivot_dailyquest_rewards.item_uuid' => DB::raw('items.id')]);
-
-        $orphans = DB::table('pivot_dailyquest_rewards')->whereNull('item_uuid')->count();
-
-        if ($orphans > 0) {
-            throw new RuntimeException("Cannot repoint pivot_dailyquest_rewards: {$orphans} row(s) reference an item_id with no matching items.blizzard_id.");
-        }
-
-        Schema::table('pivot_dailyquest_rewards', function (Blueprint $table): void {
-            $table->dropColumn('item_id');
-        });
-
-        Schema::table('pivot_dailyquest_rewards', function (Blueprint $table): void {
-            $table->renameColumn('item_uuid', 'item_id');
-        });
-
-        Schema::table('pivot_dailyquest_rewards', function (Blueprint $table): void {
-            $table->uuid('item_id')->nullable(false)->change();
-            $table->primary(['daily_quest_id', 'item_id']);
-            $table->foreign('item_id')->references('id')->on('items')->cascadeOnDelete();
-        });
-
-        Schema::table('pivot_dailyquest_rewards', function (Blueprint $table): void {
-            $table->dropIndex('pivot_dailyquest_rewards_daily_quest_id_temp');
         });
     }
 
