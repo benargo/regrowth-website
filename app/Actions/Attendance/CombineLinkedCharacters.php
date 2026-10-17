@@ -3,7 +3,6 @@
 namespace App\Actions\Attendance;
 
 use App\Data\Attendance\CharacterAttendanceData;
-use App\Enums\Presence;
 use App\Models\Character;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
@@ -72,7 +71,6 @@ class CombineLinkedCharacters
             firstAttendance: collect($altRows)->min(fn (CharacterAttendanceData $row) => $row->firstAttendance),
             totalReports: 0,
             reportsAttended: 0,
-            percentage: 0.0,
             attendance: array_fill(0, $raidCount, null),
             plannedAbsences: array_fill(0, $raidCount, null),
         );
@@ -90,18 +88,27 @@ class CombineLinkedCharacters
         $reportsAttended = 0;
 
         for ($index = 0; $index < $raidCount; $index++) {
-            $best = $allRows
-                ->map(fn (CharacterAttendanceData $row): ?Presence => $row->attendance[$index] ?? null)
-                ->whereNotNull()
-                ->sortByDesc(fn (Presence $presence): int => $presence->priority())
-                ->first();
+            $best = null;
+            $names = [];
+
+            foreach ($allRows as $row) {
+                $presence = $row->attendance[$index] ?? null;
+
+                if ($presence === null) {
+                    continue;
+                }
+
+                if ($best === null || $presence->priority() > $best->priority()) {
+                    $best = $presence;
+                }
+
+                if ($presence->isAttended()) {
+                    $names[] = $row->character->name;
+                }
+            }
 
             $attendance[] = $best;
-            $attendanceNames[] = $allRows
-                ->filter(fn (CharacterAttendanceData $row): bool => ($row->attendance[$index] ?? null)?->isAttended() ?? false)
-                ->map(fn (CharacterAttendanceData $row): string => $row->character->name)
-                ->values()
-                ->all();
+            $attendanceNames[] = $names;
 
             if ($best === null || ($mainRow->plannedAbsences[$index] ?? null) !== null) {
                 continue;
@@ -119,7 +126,6 @@ class CombineLinkedCharacters
             firstAttendance: $allRows->min(fn (CharacterAttendanceData $row) => $row->firstAttendance),
             totalReports: $totalReports,
             reportsAttended: $reportsAttended,
-            percentage: $totalReports > 0 ? round($reportsAttended / $totalReports * 100, 2) : 0.0,
             attendance: $attendance,
             plannedAbsences: $mainRow->plannedAbsences,
             attendanceNames: $attendanceNames,

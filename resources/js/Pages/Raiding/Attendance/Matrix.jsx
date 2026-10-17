@@ -277,11 +277,15 @@ export default function Matrix({ matrix, ranks: { data: ranks }, zones: { data: 
     }, [sinceDate, beforeDate]);
 
     // ── Client-side row filtering ────────────────────────────────────────────
-    const filteredRows = (matrix?.rows ?? [])
-        .filter(
-            (row) => !characterName || normaliseCharacterName(row.character.name).includes(normaliseCharacterName(characterName)),
-        )
-        .filter((row) => selectedClassIds === null || selectedClassIds.includes(row.character.playable_class?.id ?? null));
+    const filteredRows = useMemo(() => {
+        const searchTerm = characterName ? normaliseCharacterName(characterName) : null;
+
+        return (matrix?.rows ?? []).filter(
+            (row) =>
+                (!searchTerm || normaliseCharacterName(row.character.name).includes(searchTerm)) &&
+                (selectedClassIds === null || selectedClassIds.includes(row.character.playable_class?.id ?? null)),
+        );
+    }, [matrix, characterName, selectedClassIds]);
 
     const showSkeleton = !hasEmptyFilter && (isReloading || !matrix);
 

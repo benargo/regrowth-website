@@ -25,6 +25,46 @@ class CharacterAttendanceDataTest extends TestCase
     use BuildsAttendanceFixtures;
     use RefreshDatabase;
 
+    // ==================== characterWithClassOnly ====================
+
+    #[Test]
+    public function character_with_class_only_keeps_only_the_playable_class_relation(): void
+    {
+        $character = Character::factory()
+            ->withPlayableClass(PlayableClass::factory()->create(['name' => 'Druid']))
+            ->create(['rank_id' => GuildRank::factory()->create()->id])
+            ->load(['playableClass', 'rank']);
+
+        $result = $this->row($character)->characterWithClassOnly();
+
+        $this->assertSame(['playableClass'], array_keys($result->getRelations()));
+        $this->assertSame('Druid', $result->playableClass->name);
+        $this->assertSame($character->id, $result->id);
+    }
+
+    #[Test]
+    public function character_with_class_only_does_not_mutate_the_row_character(): void
+    {
+        $character = Character::factory()
+            ->create(['rank_id' => GuildRank::factory()->create()->id])
+            ->load(['playableClass', 'rank']);
+
+        $this->row($character)->characterWithClassOnly();
+
+        $this->assertTrue($character->relationLoaded('rank'));
+    }
+
+    #[Test]
+    public function character_with_class_only_keeps_a_null_playable_class(): void
+    {
+        $character = Character::factory()->create(['playable_class_id' => null])->load('playableClass');
+
+        $result = $this->row($character)->characterWithClassOnly();
+
+        $this->assertTrue($result->relationLoaded('playableClass'));
+        $this->assertNull($result->playableClass);
+    }
+
     // ==================== recentAttendanceRate ====================
 
     /**
@@ -69,7 +109,7 @@ class CharacterAttendanceDataTest extends TestCase
     #[Test]
     public function it_emits_the_percentage_and_presence_cases(): void
     {
-        $array = $this->row(percentage: 75.5, attendance: [Presence::Present, Presence::Benched, null])->toArray();
+        $array = $this->row(reportsAttended: 151, totalReports: 200, attendance: [Presence::Present, Presence::Benched, null])->toArray();
 
         $this->assertSame(75.5, $array['percentage']);
         $this->assertSame([Presence::Present, Presence::Benched, null], $array['attendance']);
@@ -123,7 +163,6 @@ class CharacterAttendanceDataTest extends TestCase
             firstAttendance: Carbon::parse('2025-01-01 19:00', 'UTC'),
             totalReports: 1,
             reportsAttended: 1,
-            percentage: 100.0,
             attendance: [Presence::Present],
             plannedAbsences: [null],
             attendanceNames: [['Thrall', 'Go\'el']],
@@ -161,14 +200,13 @@ class CharacterAttendanceDataTest extends TestCase
      * @param  array<int, Presence|null>  $attendance
      * @param  array<int, PlannedAbsence|null>|null  $plannedAbsences
      */
-    private function row(?Character $character = null, float $percentage = 0.0, array $attendance = [], ?array $plannedAbsences = null): CharacterAttendanceData
+    private function row(?Character $character = null, int $reportsAttended = 0, int $totalReports = 0, array $attendance = [], ?array $plannedAbsences = null): CharacterAttendanceData
     {
         return new CharacterAttendanceData(
             character: $character ?? Character::factory()->create()->load('playableClass'),
             firstAttendance: Carbon::parse('2025-01-01 19:00', 'UTC'),
-            totalReports: 0,
-            reportsAttended: 0,
-            percentage: $percentage,
+            totalReports: $totalReports,
+            reportsAttended: $reportsAttended,
             attendance: $attendance,
             plannedAbsences: $plannedAbsences ?? array_fill(0, count($attendance), null),
         );

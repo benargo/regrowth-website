@@ -39,7 +39,7 @@ final class AttendanceScatterPointData extends Resource
         $attendance = collect($row->attendance);
 
         return new self(
-            character: $row->character->withoutRelations()->setRelation('playableClass', $row->character->playableClass),
+            character: $row->characterWithClassOnly(),
             percentage: $row->percentage,
             raidsTotal: $attendance->whereNotNull()->count(),
             raidsAttended: $attendance->filter(fn (?Presence $presence): bool => $presence === Presence::Present)->count(),

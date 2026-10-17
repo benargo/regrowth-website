@@ -200,7 +200,6 @@ class CombineLinkedCharactersTest extends TestCase
             firstAttendance: Carbon::parse($firstAttendance, 'UTC'),
             totalReports: 0,
             reportsAttended: 0,
-            percentage: 0.0,
             attendance: $attendance,
             plannedAbsences: $plannedAbsences ?? array_fill(0, count($attendance), null),
         );

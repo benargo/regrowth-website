@@ -35,7 +35,7 @@ class AttendanceScatterPointDataTest extends TestCase
     #[Test]
     public function it_emits_the_percentage(): void
     {
-        $this->assertSame(0.8, AttendanceScatterPointData::fromRow($this->row(percentage: 0.8))->toArray()['percentage']);
+        $this->assertSame(0.8, AttendanceScatterPointData::fromRow($this->row(reportsAttended: 1, totalReports: 125))->toArray()['percentage']);
     }
 
     #[Test]
@@ -112,14 +112,13 @@ class AttendanceScatterPointDataTest extends TestCase
      * @param  array<int, Presence|null>  $attendance
      * @param  array<int, PlannedAbsence|null>|null  $plannedAbsences
      */
-    private function row(?Character $character = null, float $percentage = 0.0, array $attendance = [], ?array $plannedAbsences = null): CharacterAttendanceData
+    private function row(?Character $character = null, int $reportsAttended = 0, int $totalReports = 0, array $attendance = [], ?array $plannedAbsences = null): CharacterAttendanceData
     {
         return new CharacterAttendanceData(
             character: $character ?? Character::factory()->create()->load('playableClass'),
             firstAttendance: Carbon::parse('2025-01-01 19:00', 'UTC'),
-            totalReports: 0,
-            reportsAttended: 0,
-            percentage: $percentage,
+            totalReports: $totalReports,
+            reportsAttended: $reportsAttended,
             attendance: $attendance,
             plannedAbsences: $plannedAbsences ?? array_fill(0, count($attendance), null),
         );

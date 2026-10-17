@@ -21,6 +21,7 @@ use App\Http\Resources\PlannedAbsenceResource;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\Phase;
+use Carbon\CarbonInterface;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
@@ -60,10 +61,10 @@ class AttendanceDashboardController extends Controller
         $phases = $this->gameVersion === null ? collect() : ListStartedPhases::run($this->gameVersion);
         $currentPhase = $phases->first();
         $previousPhase = $phases->get(1);
+        [$mainRows, $linkedRows] = $rows->partition(fn (CharacterAttendanceData $row): bool => $row->character->is_main);
 
         return new AttendanceDashboardStatsData(
-            percentageGroups: $rows
-                ->filter(fn (CharacterAttendanceData $row): bool => $row->character->is_main)
+            percentageGroups: $mainRows
                 ->groupBy(fn (CharacterAttendanceData $row): string => match (true) {
                     $row->percentage >= 80 => '>=80',
                     $row->percentage >= 50 => '50-80',
@@ -73,44 +74,26 @@ class AttendanceDashboardController extends Controller
             droppingOff: $this->toCharacterResources(FindDroppingOffCharacters::run($rows)),
             pickingUp: $this->toCharacterResources(FindPickingUpCharacters::run($rows)),
             totalPlayers: $rows->count(),
-            totalMains: $rows->filter(fn (CharacterAttendanceData $row): bool => $row->character->is_main)->count(),
-            totalLinkedCharacters: $rows->reject(fn (CharacterAttendanceData $row): bool => $row->character->is_main)->count(),
-            phaseAttendance: $this->currentPhaseAttendance($currentPhase),
-            previousPhaseAttendance: $this->previousPhaseAttendance($previousPhase, $currentPhase),
+            totalMains: $mainRows->count(),
+            totalLinkedCharacters: $linkedRows->count(),
+            phaseAttendance: $this->phaseAttendance($currentPhase),
+            previousPhaseAttendance: $this->phaseAttendance($previousPhase, before: $currentPhase?->start_date),
             benchedLastWeek: $this->benchedLastWeek(),
             upcomingAbsences: $this->upcomingAbsences(),
         );
     }
 
     /**
-     * Calculate the average attendance for the current phase, or null when no phase is active.
-     *
-     * @return float|null the average attendance percentage, or null when no phase is active
+     * Calculate the average attendance from the given phase's start, optionally until a date, or null when there is no phase.
      */
-    private function currentPhaseAttendance(?Phase $phase): ?float
+    private function phaseAttendance(?Phase $phase, ?CarbonInterface $before = null): ?float
     {
         if ($phase === null) {
             return null;
         }
 
         return AverageAttendance::run(
-            BuildAttendanceMatrix::run($this->gameVersion, since: $phase->start_date->subDay())->rows
-        );
-    }
-
-    /**
-     * Calculate the average attendance for the previous phase, or null when no previous phase exists.
-     *
-     * @return float|null the average attendance percentage, or null when no previous phase exists
-     */
-    private function previousPhaseAttendance(?Phase $phase, ?Phase $currentPhase): ?float
-    {
-        if ($phase === null) {
-            return null;
-        }
-
-        return AverageAttendance::run(
-            BuildAttendanceMatrix::run($this->gameVersion, since: $phase->start_date->subDay(), before: $currentPhase?->start_date)->rows
+            BuildAttendanceMatrix::run($this->gameVersion, since: $phase->start_date->subDay(), before: $before)->rows
         );
     }
 
@@ -151,7 +134,7 @@ class AttendanceDashboardController extends Controller
     private function toCharacterResources(Collection $rows): AnonymousResourceCollection
     {
         return CharacterResource::collection($rows
-            ->map(fn (CharacterAttendanceData $row): Character => $row->character->withoutRelations()->setRelation('playableClass', $row->character->playableClass))
+            ->map(fn (CharacterAttendanceData $row): Character => $row->characterWithClassOnly())
             ->values());
     }
 }

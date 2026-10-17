@@ -32,7 +32,6 @@ class AttendanceMatrixDataTest extends TestCase
                 firstAttendance: Carbon::parse('2025-01-01 19:00', 'UTC'),
                 totalReports: 1,
                 reportsAttended: 0,
-                percentage: 0.0,
                 attendance: [null],
                 plannedAbsences: [null],
             ),
