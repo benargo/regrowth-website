@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Enums\Concerns;
 
+use App\Enums\Concerns\HasSelectOptions;
 use App\Enums\Faction;
-use App\Enums\Theme;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use PHPUnit\Framework\TestCase;
 
@@ -17,7 +17,7 @@ class HasSelectOptionsTest extends TestCase
 
     public function test_it_capitalises_the_value_when_the_enum_has_no_label_method(): void
     {
-        $this->assertContains(['value' => 'classic', 'label' => 'Classic'], Theme::options());
+        $this->assertContains(['value' => 'classic', 'label' => 'Classic'], HasSelectOptionsFixture::options());
     }
 
     public function test_it_uses_the_label_method_when_the_enum_has_one(): void
@@ -27,4 +27,11 @@ class HasSelectOptionsTest extends TestCase
             WarcraftLogsNamespace::options(),
         );
     }
+}
+
+enum HasSelectOptionsFixture: string
+{
+    use HasSelectOptions;
+
+    case CLASSIC = 'classic';
 }

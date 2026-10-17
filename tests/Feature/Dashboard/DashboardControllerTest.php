@@ -65,12 +65,4 @@ class DashboardControllerTest extends DashboardTestCase
                 ->etc()
             );
     }
-
-    #[Test]
-    public function it_renders_with_the_forever_theme(): void
-    {
-        $this->actingAs($this->officer)
-            ->get(route('management.dashboard'))
-            ->assertInertia(fn (Assert $page) => $page->where('theme', 'forever')->etc());
-    }
 }

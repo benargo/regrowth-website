@@ -219,11 +219,22 @@ class HomeControllerTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->where('canViewPlans', true)->etc());
     }
 
+    // ==================== page shell ====================
+
     #[Test]
-    public function it_renders_with_the_forever_theme(): void
+    public function it_paints_the_forever_ground_on_the_body_of_a_full_homepage_load(): void
     {
-        $this->get(route('home'))
-            ->assertInertia(fn (Assert $page) => $page->where('theme', 'forever')->etc());
+        $content = $this->get(route('home'))->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('/<body[^>]*\bbg-parchment-forever\b/', $content);
+    }
+
+    #[Test]
+    public function other_pages_do_not_paint_the_forever_ground_on_the_body(): void
+    {
+        $content = $this->get(route('privacypolicy'))->assertOk()->getContent();
+
+        $this->assertDoesNotMatchRegularExpression('/<body[^>]*\bbg-parchment-forever\b/', $content);
     }
 
     // ==================== officer renders ====================
