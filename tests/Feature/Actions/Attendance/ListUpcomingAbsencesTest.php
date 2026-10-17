@@ -42,13 +42,13 @@ class ListUpcomingAbsencesTest extends TestCase
     }
 
     #[Test]
-    public function it_loads_each_characters_playable_class(): void
+    public function it_loads_each_characters_playable_class_with_its_media(): void
     {
         $gameVersion = GameVersion::factory()->create();
         $character = Character::factory()->forGameVersion($gameVersion)->withPlayableClass()->create();
         PlannedAbsence::factory()->create(['character_id' => $character->id, 'start_date' => today()->addDay()]);
 
-        $this->assertTrue(ListUpcomingAbsences::run($gameVersion)->first()->character->relationLoaded('playableClass'));
+        $this->assertTrue(ListUpcomingAbsences::run($gameVersion)->first()->character->playableClass->relationLoaded('media'));
     }
 
     #[Test]

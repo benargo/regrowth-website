@@ -21,7 +21,7 @@ class LoadAttendanceReports
     /**
      * @param  array<int, int>  $resolvedRankIds  Ranks whose characters are loaded, unless `$withAllCharacters` is true.
      * @param  array<int, int>|null  $zoneIds  Null for every zone; an empty list for none.
-     * @param  array<int, int>|null  $guildTagIds  Null or empty for the tags that count attendance.
+     * @param  array<int, int>|null  $guildTagIds  Null for the tags that count attendance; an empty list for none.
      * @param  CarbonInterface|null  $since  Keeps reports dated after this date.
      * @param  CarbonInterface|null  $before  Keeps reports dated before this date.
      * @return EloquentCollection<int, Report>
@@ -37,7 +37,7 @@ class LoadAttendanceReports
     ): EloquentCollection {
         return $gameVersion->reports()
             ->when(
-                $guildTagIds,
+                $guildTagIds !== null,
                 fn (Builder $query) => $query->whereIn('guild_tag_id', $guildTagIds),
                 fn (Builder $query) => $query->whereHas('guildTag', fn (Builder $tags) => $tags->countsAttendance()),
             )

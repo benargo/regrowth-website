@@ -5,6 +5,7 @@ namespace Tests\Unit\Http\Resources;
 use App\Http\Resources\ReportResource;
 use App\Jobs\BuildAddonExportFile;
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\PlayableClass;
 use App\Models\Report;
@@ -132,6 +133,30 @@ class ReportResourceTest extends TestCase
         $this->assertIsArray($array['guild_tag']);
         $this->assertSame($guildTag->id, $array['guild_tag']['id']);
         $this->assertSame($guildTag->name, $array['guild_tag']['name']);
+    }
+
+    // ==================== game version relation ====================
+
+    #[Test]
+    public function it_omits_game_version_when_not_loaded(): void
+    {
+        $report = Report::factory()->withoutGuildTag()->create();
+
+        $array = (new ReportResource($report))->toArray(new Request);
+
+        $this->assertInstanceOf(MissingValue::class, $array['game_version']);
+    }
+
+    #[Test]
+    public function it_includes_the_game_version_slug_when_loaded(): void
+    {
+        $gameVersion = GameVersion::factory()->forGuild()->create();
+        $report = Report::factory()->forGameVersion($gameVersion)->create();
+        $report->load('gameVersion');
+
+        $array = (new ReportResource($report))->toArray(new Request);
+
+        $this->assertSame($gameVersion->slug, $array['game_version']);
     }
 
     // ==================== characters relation ====================

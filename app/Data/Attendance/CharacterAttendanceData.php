@@ -12,13 +12,13 @@ use App\Models\PlannedAbsence;
 use Carbon\CarbonInterface;
 use Spatie\LaravelData\Attributes\Hidden;
 use Spatie\LaravelData\Attributes\WithTransformer;
+use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Optional;
-use Spatie\LaravelData\Resource;
 
 /**
  * One character's attendance across the matrix's raids.
  */
-final class CharacterAttendanceData extends Resource
+final class CharacterAttendanceData extends Data
 {
     /**
      * The attended share of the reports as a percentage rounded to two decimal

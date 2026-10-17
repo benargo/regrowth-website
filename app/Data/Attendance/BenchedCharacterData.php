@@ -6,12 +6,12 @@ use App\Data\Transformers\ToResourceTransformer;
 use App\Models\Character;
 use App\Models\CharacterReport;
 use Spatie\LaravelData\Attributes\WithTransformer;
-use Spatie\LaravelData\Resource;
+use Spatie\LaravelData\Data;
 
 /**
  * A character benched in a report, labelled with the report's guild tag name.
  */
-final class BenchedCharacterData extends Resource
+final class BenchedCharacterData extends Data
 {
     public function __construct(
         public readonly string $tag,

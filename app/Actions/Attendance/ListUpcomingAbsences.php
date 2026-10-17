@@ -10,7 +10,7 @@ use Lorisleiva\Actions\Concerns\AsAction;
 
 /**
  * Lists the planned absences, starting today or later, of a game version's characters in start order,
- * cached until the end of the day, with each absence's character and playable class loaded.
+ * cached until the end of the day, with each absence's character and playable class (with media) loaded.
  */
 class ListUpcomingAbsences
 {
@@ -29,6 +29,6 @@ class ListUpcomingAbsences
                 ->get()
                 ->map(fn (PlannedAbsence $plannedAbsence): array => $plannedAbsence->getAttributes())
                 ->all(),
-        ))->load('character.playableClass');
+        ))->load('character.playableClass.media');
     }
 }

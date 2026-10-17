@@ -5,13 +5,13 @@ namespace App\Data\Attendance;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Collection;
 use Spatie\LaravelData\Attributes\MapOutputName;
+use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\CamelCaseMapper;
-use Spatie\LaravelData\Resource;
 
 /**
  * The attendance statistics of a game version shown on the attendance dashboard.
  */
-final class AttendanceDashboardStatsData extends Resource
+final class AttendanceDashboardStatsData extends Data
 {
     /**
      * @param  Collection<string, AnonymousResourceCollection>  $percentageGroups  main characters keyed by attendance band: ">=80", "50-80" or "<50"

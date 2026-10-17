@@ -75,12 +75,11 @@ class LoadAttendanceReportsTest extends TestCase
     }
 
     #[Test]
-    public function it_treats_an_empty_guild_tag_list_as_the_counting_tags(): void
+    public function it_loads_no_reports_for_an_empty_guild_tag_list(): void
     {
-        $counted = $this->makeReport($this->gameVersion, '2025-01-01 19:00');
-        $this->makeReport($this->gameVersion, '2025-01-08 19:00', $this->makeTag($this->gameVersion, countsAttendance: false));
+        $this->makeReport($this->gameVersion, '2025-01-01 19:00');
 
-        $this->assertEquals([$counted->id], $this->load(guildTagIds: [])->modelKeys());
+        $this->assertTrue($this->load(guildTagIds: [])->isEmpty());
     }
 
     // ==================== zones and dates ====================

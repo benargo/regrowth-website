@@ -9,13 +9,21 @@ import DateFilterButton from "@/Components/DateFilterButton";
 import normaliseCharacterName from "@/Helpers/NormaliseCharacterName";
 import Tooltip from "@/Components/Tooltip";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
-import { decodeFilter, encodeFilter } from "@/Helpers/EncodeFilter";
+import { decodeFilter, encodeFilter, encodeFilterAgainstDefault } from "@/Helpers/EncodeFilter";
 import RankLabel from "@/Components/GuildRanks/RankLabel";
 import FilterDropdown from "@/Components/FilterDropdown";
 import SearchInput from "@/Components/Search/SearchInput";
 import ToggleFilter from "@/Components/ToggleFilter";
 
 // ─── Matrix components ────────────────────────────────────────────────────────
+
+/**
+ * Formats the calendar date of an ISO timestamp as written, ignoring the viewer's timezone.
+ */
+function formatRaidDate(isoDateTime, options) {
+    const [year, month, day] = isoDateTime.slice(0, 10).split("-").map(Number);
+    return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString("en-GB", { ...options, timeZone: "UTC" });
+}
 
 function MatrixSkeleton() {
     const fakeRows = Array.from({ length: 8 });
@@ -126,13 +134,8 @@ function MatrixTable({ raids, rows }) {
                                 className="px-3 py-3 text-center text-sm font-semibold whitespace-nowrap text-ink-500"
                             >
                                 <Tooltip body={raid.zone_name} position="bottom">
-                                    <p>{new Date(raid.start_time).toLocaleDateString("en-GB", { weekday: "short" })}</p>
-                                    <p>
-                                        {new Date(raid.start_time).toLocaleDateString("en-GB", {
-                                            day: "2-digit",
-                                            month: "2-digit",
-                                        })}
-                                    </p>
+                                    <p>{formatRaidDate(raid.start_time, { weekday: "short" })}</p>
+                                    <p>{formatRaidDate(raid.start_time, { day: "2-digit", month: "2-digit" })}</p>
                                 </Tooltip>
                             </th>
                         ))}
@@ -189,12 +192,8 @@ export default function Matrix({ matrix, ranks: { data: ranks }, zones: { data: 
     const [characterName, setCharacterName] = useState(filters.character?.name ?? "");
     // null = "all selected" (initial state before matrix loads or after explicit reset)
     const [selectedClassIds, setSelectedClassIds] = useState(null);
-    const [selectedRankIds, setSelectedRankIds] = useState(() =>
-        decodeFilter(
-            filters.rank_ids,
-            ranks.filter((r) => r.count_attendance).map((r) => r.id),
-        ),
-    );
+    const defaultRankIds = ranks.filter((r) => r.count_attendance).map((r) => r.id);
+    const [selectedRankIds, setSelectedRankIds] = useState(() => decodeFilter(filters.rank_ids, defaultRankIds));
 
     const availableClasses = useMemo(() => {
         if (!matrix?.rows) return [];
@@ -219,23 +218,22 @@ export default function Matrix({ matrix, ranks: { data: ranks }, zones: { data: 
             zones.map((z) => z.id),
         ),
     );
+    const defaultGuildTagIds = guildTags.filter((g) => g.count_attendance).map((g) => g.id);
     const [selectedGuildTagIds, setSelectedGuildTagIds] = useState(() =>
-        decodeFilter(
-            filters.guild_tag_ids,
-            guildTags.filter((g) => g.count_attendance).map((g) => g.id),
-        ),
+        decodeFilter(filters.guild_tag_ids, defaultGuildTagIds),
     );
     const [sinceDate, setSinceDate] = useState(filters.since_date ?? "");
     const [beforeDate, setBeforeDate] = useState(filters.before_date ?? "");
     const [includeLinkedCharacters, setIncludeLinkedCharacters] = useState(filters.combine_linked_characters);
 
     const [isReloading, setIsReloading] = useState(false);
+    const latestReloadId = useRef(0);
 
     // ── Server-side reload ───────────────────────────────────────────────────
     const buildServerFilters = () => ({
-        rank_ids: encodeFilter(selectedRankIds, ranks),
+        rank_ids: encodeFilterAgainstDefault(selectedRankIds, defaultRankIds),
         zone_ids: encodeFilter(selectedZoneIds, zones),
-        guild_tag_ids: encodeFilter(selectedGuildTagIds, guildTags),
+        guild_tag_ids: encodeFilterAgainstDefault(selectedGuildTagIds, defaultGuildTagIds),
         since_date: sinceDate || undefined,
         before_date: beforeDate || undefined,
         combine_linked_characters: includeLinkedCharacters ? undefined : 0,
@@ -243,18 +241,24 @@ export default function Matrix({ matrix, ranks: { data: ranks }, zones: { data: 
 
     const reloadMatrix = (filterData) => {
         router.cancelAll({ sync: false, prefetch: false });
+        const reloadId = ++latestReloadId.current;
         setIsReloading(true);
         router.reload({
             only: ["matrix"],
             data: filterData,
             preserveState: true,
-            onFinish: () => setIsReloading(false),
+            onFinish: () => {
+                if (reloadId === latestReloadId.current) {
+                    setIsReloading(false);
+                }
+            },
         });
     };
 
     // Trigger reload when dropdown filters change (skip initial mount)
     const isMounted = useRef(false);
-    const hasEmptyFilter = selectedZoneIds.length === 0 || selectedGuildTagIds.length === 0;
+    const hasEmptyFilter =
+        selectedRankIds.length === 0 || selectedZoneIds.length === 0 || selectedGuildTagIds.length === 0;
 
     useEffect(() => {
         if (!isMounted.current) {

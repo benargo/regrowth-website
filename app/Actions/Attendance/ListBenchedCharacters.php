@@ -30,12 +30,14 @@ class ListBenchedCharacters
         return CharacterReport::where('presence', Presence::Benched->value)
             ->whereHas('character')
             ->whereHas('report', fn (Builder $reports) => $reports->whereBelongsTo($gameVersion)->where('start_time', '>=', $since))
-            ->with(['character.playableClass', 'report.guildTag'])
+            ->with(['character.playableClass.media', 'report.guildTag'])
             ->get()
-            ->unique(fn (CharacterReport $benched): string => "{$benched->report->guild_tag_id}:{$benched->character_id}")
             ->map(fn (CharacterReport $benched): BenchedCharacterData => BenchedCharacterData::fromCharacterReport($benched))
-            ->sortBy(fn (BenchedCharacterData $benched): string => $benched->character->name)
             ->groupBy('tag')
+            ->map(fn (Collection $group): Collection => $group
+                ->unique(fn (BenchedCharacterData $benched): int => $benched->character->id)
+                ->sortBy(fn (BenchedCharacterData $benched): string => $benched->character->name)
+                ->values())
             ->sortKeys();
     }
 }

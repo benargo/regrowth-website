@@ -15,6 +15,23 @@ export function encodeFilter(selected, options) {
 }
 
 /**
+ * Encode a filter selection whose default is a subset of its options.
+ *
+ * - Default selected → undefined (omit parameter, backend uses defaults)
+ * - None selected    → 'none'
+ * - Otherwise        → comma-separated string e.g. '1028,1029,1036'
+ *
+ * @param {number[]} selected - Currently selected IDs
+ * @param {number[]} defaultIds - IDs the backend selects when the parameter is omitted
+ * @returns {string|undefined}
+ */
+export function encodeFilterAgainstDefault(selected, defaultIds) {
+    if (selected.length === 0) return "none";
+    if (selected.length === defaultIds.length && defaultIds.every((id) => selected.includes(id))) return undefined;
+    return selected.join(",");
+}
+
+/**
  * Decode a filter value received from the server back into an array of IDs.
  *
  * - null / undefined → defaultIds (use the provided defaults)

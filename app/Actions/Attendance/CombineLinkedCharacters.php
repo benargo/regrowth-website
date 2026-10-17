@@ -16,34 +16,27 @@ class CombineLinkedCharacters
     use AsAction;
 
     /**
-     * @var array<int, array<int, CharacterAttendanceData>> Indexed by main character ID, then by alt character ID.
-     */
-    private array $altRowsByMainId = [];
-
-    /**
      * @param  Collection<int, CharacterAttendanceData>  $rows  Characters loaded with `linkedCharacters`.
      * @param  array<int, int>  $rankIds
      * @return Collection<int, CharacterAttendanceData>
      */
     public function handle(Collection $rows, array $rankIds, int $raidCount): Collection
     {
-        $rowsById = $rows->keyBy(fn (CharacterAttendanceData $row): int => $row->character->id)
-            ->each(function (CharacterAttendanceData $row): void {
-                $main = $row->character->is_main ? null : $row->character->linkedCharacters->firstWhere('is_main', true);
+        $rowsById = $rows->keyBy(fn (CharacterAttendanceData $row): int => $row->character->id);
 
-                if ($main !== null) {
-                    $this->altRowsByMainId[$main->id][] = $row;
-                }
-            });
+        $altRowsByMainId = $rowsById
+            ->reject(fn (CharacterAttendanceData $row): bool => $row->character->is_main)
+            ->groupBy(fn (CharacterAttendanceData $row): ?int => $row->character->linkedCharacters->firstWhere('is_main', true)?->id)
+            ->forget('');
 
         $mainRows = $rowsById->filter(fn (CharacterAttendanceData $row): bool => $row->character->is_main);
 
-        $missingMains = $this->loadMissingMains(array_diff(array_keys($this->altRowsByMainId), $mainRows->keys()->all()));
+        $missingMains = $this->loadMissingMains(array_diff($altRowsByMainId->keys()->all(), $mainRows->keys()->all()));
 
         return $mainRows->values()
-            ->concat($missingMains->map(fn (Character $main): CharacterAttendanceData => $this->emptyRow($main, data_get($this->altRowsByMainId, $main->id, []), $raidCount)))
+            ->concat($missingMains->map(fn (Character $main): CharacterAttendanceData => $this->emptyRow($main, $altRowsByMainId->get($main->id, collect())->all(), $raidCount)))
             ->filter(fn (CharacterAttendanceData $row): bool => in_array($row->character->rank_id, $rankIds, true))
-            ->map(fn (CharacterAttendanceData $row): CharacterAttendanceData => $this->merge($row, data_get($this->altRowsByMainId, $row->character->id, []), $raidCount))
+            ->map(fn (CharacterAttendanceData $row): CharacterAttendanceData => $this->merge($row, $altRowsByMainId->get($row->character->id, collect())->all(), $raidCount))
             ->sortBy(fn (CharacterAttendanceData $row): string => $row->character->name, SORT_STRING)
             ->values();
     }

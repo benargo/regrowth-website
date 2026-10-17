@@ -152,7 +152,7 @@ class AttendanceMatrixControllerTest extends TestCase
                 ->has('matrix.columns', 1)
                 ->where('matrix.columns.0.id', (string) $report->id)
                 ->missing('matrix.columns.0.code')
-                ->where('matrix.columns.0.start_time', $report->start_time->toISOString())
+                ->where('matrix.columns.0.start_time', $report->start_time->setTimezone(config('app.timezone'))->toAtomString())
                 ->has('matrix.columns.0.zone_name')
                 ->has('matrix.rows', 1)
                 ->where('matrix.rows.0.character.name', 'Thrall')
@@ -279,6 +279,41 @@ class AttendanceMatrixControllerTest extends TestCase
             ->where('filters.character.id', $character->id)
             ->where('filters.character.name', 'Thrall')
         );
+    }
+
+    #[Test]
+    public function invoke_character_filter_for_an_alt_returns_its_mains_combined_row(): void
+    {
+        $main = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
+        $alt = $this->makeCharacter($this->gameVersion, null, ['name' => 'Go\'el', 'is_main' => false]);
+        $this->linkCharacters($main, $alt);
+        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $alt);
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.matrix', ['character' => $alt->id]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filters.character', ['id' => $main->id, 'name' => 'Thrall'])
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('matrix.rows', 1)
+                    ->where('matrix.rows.0.character.id', $main->id)));
+    }
+
+    #[Test]
+    public function invoke_character_filter_returns_only_that_characters_row_when_not_combining(): void
+    {
+        $main = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
+        $alt = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Go\'el', 'is_main' => false]);
+        $this->linkCharacters($main, $alt);
+        $report = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
+        $this->attend($report, $main);
+        $this->attend($report, $alt);
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.matrix', ['character' => $main->id, 'combine_linked_characters' => 0]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('matrix.rows', 1)
+                    ->where('matrix.rows.0.character.id', $main->id)));
     }
 
     #[Test]
@@ -959,6 +994,23 @@ class AttendanceMatrixControllerTest extends TestCase
             ->get(route('raiding.attendance.matrix'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', $this->gameVersion->slug));
+    }
+
+    #[Test]
+    public function invoke_filters_to_a_character_of_the_game_version_named_in_the_query(): void
+    {
+        $newer = $this->makeAttendanceVersion(['release_date' => '2024-06-01']);
+        $this->makeReport($newer, '2025-01-01 20:00');
+        $this->makeReport($this->gameVersion, '2025-01-01 20:00');
+        $character = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $newer->slug])
+            ->followingRedirects()
+            ->get(route('raiding.attendance.matrix', ['game_version' => $this->gameVersion->slug, 'character' => $character->id]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('gameVersion.data.slug', $this->gameVersion->slug)
+                ->where('filters.character.id', $character->id));
     }
 
     #[Test]

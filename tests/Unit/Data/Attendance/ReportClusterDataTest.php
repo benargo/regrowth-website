@@ -15,11 +15,11 @@ use Tests\TestCase;
 class ReportClusterDataTest extends TestCase
 {
     #[Test]
-    public function to_array_emits_the_raid_column_shape(): void
+    public function to_array_emits_the_raid_column_shape_in_the_app_timezone(): void
     {
         $this->assertSame([
             'id' => 'r1',
-            'start_time' => '2025-01-01T18:00:00.000000Z',
+            'start_time' => '2025-01-01T19:00:00+01:00',
             'zone_name' => 'Karazhan',
         ], $this->cluster()->toArray());
     }

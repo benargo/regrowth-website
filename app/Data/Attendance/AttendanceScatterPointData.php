@@ -7,13 +7,13 @@ use App\Enums\Presence;
 use App\Models\Character;
 use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Attributes\WithTransformer;
+use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\CamelCaseMapper;
-use Spatie\LaravelData\Resource;
 
 /**
  * One character's point on the attendance scatter chart.
  */
-final class AttendanceScatterPointData extends Resource
+final class AttendanceScatterPointData extends Data
 {
     public function __construct(
         #[WithTransformer(ToResourceTransformer::class)]

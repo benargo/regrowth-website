@@ -4,6 +4,7 @@ namespace Tests\Feature\Http\Requests;
 
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Http\Requests\Raid\AttendanceMatrixRequest;
+use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
@@ -108,11 +109,15 @@ class AttendanceMatrixRequestTest extends TestCase
     }
 
     #[Test]
-    public function an_id_list_with_no_id_in_the_version_falls_back_to_null(): void
+    public function an_id_list_with_no_id_in_the_version_is_an_empty_list(): void
     {
         $foreign = $this->makeRank($this->makeAttendanceVersion());
+        $unused = Zone::factory()->create();
 
-        $this->assertNull($this->request(['rank_ids' => (string) $foreign->id])->rankIds());
+        $request = $this->request(['rank_ids' => (string) $foreign->id, 'zone_ids' => (string) $unused->id]);
+
+        $this->assertSame([], $request->rankIds());
+        $this->assertSame([], $request->zoneIds());
     }
 
     #[Test]
@@ -159,6 +164,30 @@ class AttendanceMatrixRequestTest extends TestCase
         $foreign = $this->makeCharacter($this->makeAttendanceVersion());
 
         $this->assertNull($this->request(['character' => $foreign->id])->character());
+    }
+
+    #[Test]
+    public function character_returns_an_alts_main_when_combining_linked_characters(): void
+    {
+        [$main, $alt] = $this->mainWithAlt();
+
+        $this->assertTrue($this->request(['character' => $alt->id])->character()->is($main));
+    }
+
+    #[Test]
+    public function character_returns_the_alt_itself_when_not_combining_linked_characters(): void
+    {
+        [, $alt] = $this->mainWithAlt();
+
+        $this->assertTrue($this->request(['character' => $alt->id, 'combine_linked_characters' => '0'])->character()->is($alt));
+    }
+
+    #[Test]
+    public function character_returns_an_alt_without_a_main_when_combining_linked_characters(): void
+    {
+        $alt = $this->makeCharacter($this->gameVersion, attributes: ['is_main' => false]);
+
+        $this->assertTrue($this->request(['character' => $alt->id])->character()->is($alt));
     }
 
     #[Test]
@@ -358,6 +387,18 @@ class AttendanceMatrixRequestTest extends TestCase
     /**
      * @param  array<string, mixed>  $input
      */
+    /**
+     * @return array{Character, Character}
+     */
+    private function mainWithAlt(): array
+    {
+        $main = $this->makeCharacter($this->gameVersion, attributes: ['is_main' => true]);
+        $alt = $this->makeCharacter($this->gameVersion, attributes: ['is_main' => false]);
+        $this->linkCharacters($main, $alt);
+
+        return [$main, $alt];
+    }
+
     private function request(array $input = []): AttendanceMatrixRequest
     {
         $request = AttendanceMatrixRequest::create('/raiding/attendance/matrix', 'GET', $input);

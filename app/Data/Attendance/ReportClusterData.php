@@ -5,9 +5,7 @@ namespace App\Data\Attendance;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Spatie\LaravelData\Attributes\Hidden;
-use Spatie\LaravelData\Attributes\WithTransformer;
 use Spatie\LaravelData\Data;
-use Spatie\LaravelData\Transformers\DateTimeInterfaceTransformer;
 
 /**
  * One raid: a single report, or reports joined by report links.
@@ -25,7 +23,6 @@ final class ReportClusterData extends Data
         public readonly string $id,
         #[Hidden]
         public readonly ?string $code,
-        #[WithTransformer(DateTimeInterfaceTransformer::class, format: 'Y-m-d\TH:i:s.u\Z', setTimeZone: 'UTC')]
         public readonly CarbonInterface $startTime,
         public readonly ?string $zoneName,
         #[Hidden]

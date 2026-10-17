@@ -401,6 +401,28 @@ class BuildAttendanceMatrixTest extends TestCase
         $this->assertTrue($matrix->rows->isEmpty());
     }
 
+    #[Test]
+    #[DataProvider('combineLinkedCharactersCases')]
+    public function it_returns_no_rows_for_an_empty_rank_list(bool $combineLinkedCharacters): void
+    {
+        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $this->makeCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
+
+        $matrix = BuildAttendanceMatrix::run($this->gameVersion, rankIds: [], combineLinkedCharacters: $combineLinkedCharacters);
+
+        $this->assertTrue($matrix->rows->isEmpty());
+    }
+
+    #[Test]
+    public function it_returns_no_columns_for_an_empty_guild_tag_list(): void
+    {
+        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $this->makeCharacter($this->gameVersion, $this->rank));
+
+        $matrix = BuildAttendanceMatrix::run($this->gameVersion, guildTagIds: []);
+
+        $this->assertTrue($matrix->columns->isEmpty());
+        $this->assertTrue($matrix->rows->isEmpty());
+    }
+
     // ==================== version scope ====================
 
     #[Test]

@@ -61,6 +61,18 @@ class ListBenchedCharactersTest extends TestCase
     }
 
     #[Test]
+    public function it_lists_a_character_once_across_tags_sharing_a_name(): void
+    {
+        $gameVersion = $this->makeAttendanceVersion();
+        $character = $this->makeCharacter($gameVersion);
+        foreach ([1, 2] as $daysAgo) {
+            $this->attend($this->makeReport($gameVersion, now()->subDays($daysAgo), $this->makeTag($gameVersion, attributes: ['name' => 'Main Raid'])), $character, Presence::Benched);
+        }
+
+        $this->assertTrue(ListBenchedCharacters::run($gameVersion, now()->subDays(7))->get('Main Raid')->sole()->character->is($character));
+    }
+
+    #[Test]
     public function it_groups_untagged_reports_under_untagged(): void
     {
         $gameVersion = $this->makeAttendanceVersion();
@@ -84,12 +96,15 @@ class ListBenchedCharactersTest extends TestCase
     }
 
     #[Test]
-    public function it_includes_each_characters_playable_class(): void
+    public function it_includes_each_characters_playable_class_with_its_media(): void
     {
         $gameVersion = $this->makeAttendanceVersion();
         $character = $this->makeCharacter($gameVersion, attributes: ['playable_class_id' => PlayableClass::factory()->create(['name' => 'Mage'])->id]);
         $this->attend($this->makeReport($gameVersion, now()->subDay(), $this->makeTag($gameVersion, attributes: ['name' => 'Raid'])), $character, Presence::Benched);
 
-        $this->assertSame('Mage', ListBenchedCharacters::run($gameVersion, now()->subDays(7))->get('Raid')->sole()->character->playableClass->name);
+        $playableClass = ListBenchedCharacters::run($gameVersion, now()->subDays(7))->get('Raid')->sole()->character->playableClass;
+
+        $this->assertSame('Mage', $playableClass->name);
+        $this->assertTrue($playableClass->relationLoaded('media'));
     }
 }

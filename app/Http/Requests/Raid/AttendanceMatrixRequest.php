@@ -88,14 +88,20 @@ class AttendanceMatrixRequest extends FormRequest
     }
 
     /**
-     * The requested character, when it belongs to the current version.
+     * The requested character, when it belongs to the current version. When
+     * linked characters are combined, an alt resolves to its main.
      */
     public function character(): ?Character
     {
         return once(function (): ?Character {
             $characterId = $this->validated('character');
+            $character = $characterId === null ? null : $this->gameVersion()?->characters()->find($characterId);
 
-            return $characterId === null ? null : $this->gameVersion()?->characters()->find($characterId);
+            if ($character === null || $character->is_main || ! $this->combineLinkedCharacters()) {
+                return $character;
+            }
+
+            return $character->linkedCharacters()->where('is_main', true)->first() ?? $character;
         });
     }
 
@@ -191,6 +197,6 @@ class AttendanceMatrixRequest extends FormRequest
             return [];
         }
 
-        return $keepExisting(array_map('intval', explode(',', $value))) ?: null;
+        return $keepExisting(array_map('intval', explode(',', $value)));
     }
 }

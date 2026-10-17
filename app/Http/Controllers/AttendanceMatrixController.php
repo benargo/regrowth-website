@@ -93,7 +93,7 @@ class AttendanceMatrixController extends Controller
 
     /**
      * The cached raid columns and character rows of the matrix, narrowed to the
-     * requested character when one is given.
+     * requested character's row when one is given.
      *
      * @return array{columns: array<int, mixed>, rows: array<int, mixed>}
      */

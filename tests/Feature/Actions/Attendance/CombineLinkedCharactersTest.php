@@ -167,6 +167,20 @@ class CombineLinkedCharactersTest extends TestCase
         $this->assertSame(['Amy', 'Zed'], $rows->map(fn ($row) => $row->character->name)->all());
     }
 
+    #[Test]
+    public function it_does_not_carry_alts_into_later_calls_on_the_same_instance(): void
+    {
+        [$main, $alt] = $this->mainWithAlt();
+        $other = $this->makeCharacter($this->gameVersion, $this->rank, ['is_main' => true]);
+        $action = CombineLinkedCharacters::make();
+
+        $action->handle(collect([$this->row($alt, [Presence::Present])]), [$this->rank->id], 1);
+        $rows = $action->handle(collect([$this->row($other, [Presence::Absent])]), [$this->rank->id], 1);
+
+        $this->assertEquals([$other->id], $rows->map(fn ($row) => $row->character->id)->all());
+        $this->assertSame([Presence::Absent], $rows[0]->attendance);
+    }
+
     // ==================== helpers ====================
 
     /**

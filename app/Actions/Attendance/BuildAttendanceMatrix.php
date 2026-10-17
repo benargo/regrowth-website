@@ -23,9 +23,9 @@ class BuildAttendanceMatrix
     use AsAction;
 
     /**
-     * @param  array<int, int>|null  $rankIds  Null or empty for the version's counting ranks.
+     * @param  array<int, int>|null  $rankIds  Null for the version's counting ranks; an empty list for none.
      * @param  array<int, int>|null  $zoneIds  Null for every zone; an empty list for none.
-     * @param  array<int, int>|null  $guildTagIds  Null or empty for the tags that count attendance.
+     * @param  array<int, int>|null  $guildTagIds  Null for the tags that count attendance; an empty list for none.
      */
     public function handle(
         GameVersion $gameVersion,
@@ -36,7 +36,7 @@ class BuildAttendanceMatrix
         ?CarbonInterface $before = null,
         bool $combineLinkedCharacters = false,
     ): AttendanceMatrixData {
-        $resolvedRankIds = $rankIds ?: $gameVersion->guildRanks()->countsAttendance()->pluck('id')->all();
+        $resolvedRankIds = $rankIds ?? $gameVersion->guildRanks()->countsAttendance()->pluck('id')->all();
 
         $clusters = ClusterReports::run(LoadAttendanceReports::run(
             $gameVersion,
