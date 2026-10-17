@@ -15,7 +15,7 @@ Use a single-action \_\_invoke controller for endpoints that perform one action 
 
 ## Prefer Actions over private controller methods for business logic
 
-Extract shared multi-step business logic into a dedicated class in app/Actions (invoked via handle()/execute()/\_\_invoke()) rather than leaving it as private/protected helper methods on the controller. Reach for app/Services only when the logic is genuinely reused across multiple controllers. Organise actions by domains as the `app/Actions` directory will get bloated over time.
+Extract shared multi-step business logic into a dedicated `AsAction` class in app/Actions with a `handle()` method, called via `ActionClassName::run()` (see "Call Actions with ::run(), not dependency injection" in app.md), rather than leaving it as private/protected helper methods on the controller. Reach for app/Services only when the logic is genuinely reused across multiple controllers. Organise actions by domains as the `app/Actions` directory will get bloated over time.
 
 This is a deliberate forward-looking convention: most existing controllers still keep this logic as private helper methods, and app/Actions currently has only one class. New work should default to Actions to grow that pattern over time — do not treat the current codebase majority as the rule here.
 

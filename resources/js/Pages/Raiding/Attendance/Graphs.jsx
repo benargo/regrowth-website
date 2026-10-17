@@ -4,6 +4,7 @@ import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import AttendanceScatterChart from "@/Components/AttendanceScatterChart";
 import PageContainer from "@/Components/PageContainer";
+import GameVersionSelector from "@/Components/GameVersions/GameVersionSelector";
 
 function BoxLabel({ icon, label }) {
     return (
@@ -23,11 +24,18 @@ function ScatterSkeleton() {
     );
 }
 
-export default function Graphs({ scatterPoints }) {
+export default function Graphs({ scatterPoints, gameVersion, gameVersions }) {
     return (
         <Master title="Attendance Graphs">
             <SharedHeader title="Attendance Graphs" backgroundClass="bg-illidan" />
             <PageContainer>
+                {gameVersion && (
+                    <GameVersionSelector
+                        gameVersions={gameVersions.data}
+                        currentGameVersion={gameVersion.data}
+                        href={(version) => route("raiding.attendance.graphs.index", { game_version: version.slug })}
+                    />
+                )}
                 <Deferred data="scatterPoints" fallback={<ScatterSkeleton />}>
                     <div className="rounded border border-ink-600 p-4">
                         <BoxLabel icon="chart-scatter" label="Attendance distribution" />

@@ -4,6 +4,7 @@ import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import Tooltip from "@/Components/Tooltip";
 import PageContainer from "@/Components/PageContainer";
+import GameVersionSelector from "@/Components/GameVersions/GameVersionSelector";
 
 function formatAbsenceDate(isoDate) {
     if (!isoDate) return "";
@@ -83,8 +84,8 @@ function BenchedByTagBox({ icon, label, groups }) {
                         <div key={tag}>
                             <p className="text-xs font-semibold text-ink-300">{tag}</p>
                             <div className="mt-1 flex flex-wrap gap-1">
-                                {players.map((player) => (
-                                    <PlayerChip key={player.name} player={player} />
+                                {players.map((benched) => (
+                                    <PlayerChip key={benched.character.id} player={benched.character} />
                                 ))}
                             </div>
                         </div>
@@ -208,7 +209,7 @@ function StatsHeaderRow({ stats, latestReportDate }) {
             <StatBox
                 icon="calendar"
                 label="Latest report date"
-                value={latestReportDate ?? "No reports yet"}
+                value={latestReportDate ? formatAbsenceDate(latestReportDate) : "No reports yet"}
                 className="col-span-2"
             />
             <StatBox
@@ -287,11 +288,18 @@ function PlayerListRows({ stats }) {
     );
 }
 
-export default function Dashboard({ latestReportDate, stats }) {
+export default function Dashboard({ latestReportDate, stats, gameVersion, gameVersions }) {
     return (
         <Master title="Attendance Dashboard">
             <SharedHeader title="Attendance Dashboard" backgroundClass="bg-illidan" />
             <PageContainer>
+                {gameVersion && (
+                    <GameVersionSelector
+                        gameVersions={gameVersions.data}
+                        currentGameVersion={gameVersion.data}
+                        href={(version) => route("raiding.attendance.dashboard", { game_version: version.slug })}
+                    />
+                )}
                     <Deferred data="stats" fallback={<HeaderRowSkeleton />}>
                         <StatsHeaderRow stats={stats} latestReportDate={latestReportDate} />
                     </Deferred>

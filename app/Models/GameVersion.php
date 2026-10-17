@@ -141,11 +141,22 @@ class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia
         $query->where('release_date', '<=', $at ?? now());
     }
 
+    /**
+     * Scope to versions with at least one report whose guild tag counts
+     * attendance, newest release first.
+     */
+    #[Scope]
+    protected function withCountedAttendance(Builder $query): void
+    {
+        $query->whereHas('reports.guildTag', fn (Builder $tags) => $tags->countsAttendance())
+            ->orderByDesc('release_date')
+            ->orderBy('id');
+    }
+
     // ============ Media ===========
 
     /**
-     * Register the image collections. The icon also takes SVGs, since it is a
-     * single-colour mark that should stay crisp at any size.
+     * Register the image collections; the icon also accepts SVGs.
      */
     public function registerMediaCollections(): void
     {
@@ -195,8 +206,7 @@ class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia
 
     /**
      * Get the versions that own a guild roster. Versions sharing a namespace,
-     * realm and guild with a later release are deprecated and left out. The
-     * dedupe runs in PHP because rosters are matched on slugs.
+     * realm and guild with a later release are deprecated and left out.
      *
      * @return Collection<int, static>
      */
@@ -211,8 +221,7 @@ class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia
 
     /**
      * Get the version whose roster is shown by default: the most recently
-     * released of the current rosters. The newest version always survives the
-     * dedupe, so it is read straight from the query.
+     * released of the current rosters.
      */
     public static function defaultRoster(): ?static
     {
@@ -262,6 +271,14 @@ class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia
     public function raids(): HasManyThrough
     {
         return $this->hasManyThrough(Raid::class, Phase::class);
+    }
+
+    /**
+     * @return HasMany<Report, $this>
+     */
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class);
     }
 
     /**

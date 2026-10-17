@@ -8,6 +8,7 @@ use App\Models\Character;
 use App\Models\PlannedAbsence;
 use App\Models\User;
 use App\Observers\PlannedAbsenceObserver;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -259,23 +260,66 @@ class PlannedAbsenceTest extends ModelTestCase
 
         $ids = PlannedAbsence::ended()->pluck('id');
 
-        $this->assertEqualsCanonicalizing([$endedYesterday->id, $openEndedPast->id], $ids->all());
+        $this->assertSame([$endedYesterday->id], $ids->all());
+        $this->assertNotContains($openEndedPast->id, $ids);
         $this->assertNotContains($endsToday->id, $ids);
         $this->assertNotContains($upcoming->id, $ids);
     }
 
     #[Test]
-    public function not_ended_scope_includes_current_and_upcoming_absences(): void
+    public function not_ended_scope_includes_current_upcoming_and_open_ended_absences(): void
     {
         $endedYesterday = $this->create(['start_date' => today()->subDays(3), 'end_date' => today()->subDay()]);
         $endsToday = $this->create(['start_date' => today()->subDays(3), 'end_date' => today()]);
-        $openEndedToday = $this->create(['start_date' => today(), 'end_date' => null]);
+        $openEndedPast = $this->create(['start_date' => today()->subMonth(), 'end_date' => null]);
         $upcoming = $this->create(['start_date' => today()->addDay(), 'end_date' => today()->addDays(2)]);
 
         $ids = PlannedAbsence::notEnded()->pluck('id');
 
-        $this->assertEqualsCanonicalizing([$endsToday->id, $openEndedToday->id, $upcoming->id], $ids->all());
+        $this->assertEqualsCanonicalizing([$endsToday->id, $openEndedPast->id, $upcoming->id], $ids->all());
         $this->assertNotContains($endedYesterday->id, $ids);
+    }
+
+    #[Test]
+    public function upcoming_scope_includes_absences_starting_today_or_later_in_start_order(): void
+    {
+        $this->freezeTime();
+        $later = $this->create(['start_date' => today()->addDays(5), 'end_date' => today()->addDays(6)]);
+        $today = $this->create(['start_date' => today(), 'end_date' => today()->addDay()]);
+        $this->create(['start_date' => today()->subDay(), 'end_date' => today()->addDay()]);
+
+        $this->assertSame([$today->id, $later->id], PlannedAbsence::upcoming()->pluck('id')->all());
+    }
+
+    // ==================== covers ====================
+
+    #[Test]
+    public function covers_includes_dates_from_start_to_end_inclusive_ignoring_time_of_day(): void
+    {
+        $absence = new PlannedAbsence(['start_date' => '2026-03-15 14:30:00', 'end_date' => '2026-03-20 09:00:00']);
+
+        $this->assertTrue($absence->covers(Carbon::parse('2026-03-15 08:00:00')));
+        $this->assertTrue($absence->covers(Carbon::parse('2026-03-17 12:00:00')));
+        $this->assertTrue($absence->covers(Carbon::parse('2026-03-20 23:59:59')));
+    }
+
+    #[Test]
+    public function covers_excludes_dates_outside_the_range(): void
+    {
+        $absence = new PlannedAbsence(['start_date' => '2026-03-15', 'end_date' => '2026-03-20']);
+
+        $this->assertFalse($absence->covers(Carbon::parse('2026-03-14 23:59:59')));
+        $this->assertFalse($absence->covers(Carbon::parse('2026-03-21 00:00:00')));
+    }
+
+    #[Test]
+    public function covers_includes_every_date_from_the_start_when_open_ended(): void
+    {
+        $absence = new PlannedAbsence(['start_date' => '2026-03-15 14:30:00', 'end_date' => null]);
+
+        $this->assertFalse($absence->covers(Carbon::parse('2026-03-14')));
+        $this->assertTrue($absence->covers(Carbon::parse('2026-03-15 08:00:00')));
+        $this->assertTrue($absence->covers(Carbon::parse('2030-01-01')));
     }
 
     // ==================== observer ====================

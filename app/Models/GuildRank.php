@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Contracts\Models\DatasetModel;
 use App\Policies\DatasetPolicy;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -84,6 +85,15 @@ class GuildRank extends Model implements DatasetModel, Sortable
         return Attribute::make(
             set: fn (string $value) => Str::ucwords(Str::lower($value)),
         );
+    }
+
+    /**
+     * Scope a query to ranks whose characters' attendance is counted.
+     */
+    #[Scope]
+    protected function countsAttendance(Builder $query): void
+    {
+        $query->where('count_attendance', true);
     }
 
     // ============ Relationships ============

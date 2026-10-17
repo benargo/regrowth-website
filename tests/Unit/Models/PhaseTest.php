@@ -253,6 +253,20 @@ class PhaseTest extends ModelTestCase
         $this->assertFalse($phase->hasStarted());
     }
 
+    // ==================== started ====================
+
+    #[Test]
+    public function started_scope_keeps_phases_that_started_by_now(): void
+    {
+        $this->freezeTime();
+        $started = Phase::factory()->create(['start_date' => now()->subDay()]);
+        $startingNow = Phase::factory()->create(['start_date' => now()]);
+        Phase::factory()->upcoming()->create();
+        Phase::factory()->unscheduled()->create();
+
+        $this->assertEqualsCanonicalizing([$started->id, $startingNow->id], Phase::started()->pluck('id')->all());
+    }
+
     // ==================== game version ====================
 
     #[Test]

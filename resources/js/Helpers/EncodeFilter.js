@@ -1,8 +1,8 @@
 /**
  * Encode a filter selection for use as a URL query param.
  *
- * - All selected  → undefined (omit parameter, backend uses defaults)
- * - None selected → undefined (omit parameter; caller must suppress request via hasEmptyFilter guard)
+ * - All selected  → undefined
+ * - None selected → undefined
  * - Subset        → comma-separated string e.g. '1028,1029,1036'
  *
  * @param {number[]} selected - Currently selected IDs
@@ -15,9 +15,26 @@ export function encodeFilter(selected, options) {
 }
 
 /**
+ * Encode a filter selection whose default is a subset of its options.
+ *
+ * - Default selected → undefined
+ * - None selected    → 'none'
+ * - Otherwise        → comma-separated string e.g. '1028,1029,1036'
+ *
+ * @param {number[]} selected - Currently selected IDs
+ * @param {number[]} defaultIds - IDs the backend selects when the parameter is omitted
+ * @returns {string|undefined}
+ */
+export function encodeFilterAgainstDefault(selected, defaultIds) {
+    if (selected.length === 0) return "none";
+    if (selected.length === defaultIds.length && defaultIds.every((id) => selected.includes(id))) return undefined;
+    return selected.join(",");
+}
+
+/**
  * Decode a filter value received from the server back into an array of IDs.
  *
- * - null / undefined → defaultIds (use the provided defaults)
+ * - null / undefined → defaultIds
  * - Array            → as-is
  * - '1028,1029'      → [1028, 1029]
  *

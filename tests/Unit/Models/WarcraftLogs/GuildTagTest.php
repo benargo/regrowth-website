@@ -171,6 +171,17 @@ class GuildTagTest extends ModelTestCase
         $this->assertFalse($guildTag->count_attendance);
     }
 
+    // ==================== countsAttendance ====================
+
+    #[Test]
+    public function counts_attendance_scope_keeps_only_counting_tags(): void
+    {
+        $counting = GuildTag::factory()->countsAttendance()->create();
+        GuildTag::factory()->doesNotCountAttendance()->create();
+
+        $this->assertSame([$counting->id], GuildTag::countsAttendance()->pluck('id')->all());
+    }
+
     // ==================== guild relationship ====================
 
     #[Test]

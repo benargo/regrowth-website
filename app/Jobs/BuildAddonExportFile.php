@@ -2,15 +2,15 @@
 
 namespace App\Jobs;
 
+use App\Actions\Attendance\BuildAttendanceMatrix;
+use App\Data\Attendance\CharacterAttendanceData;
 use App\Enums\LootPriorityType;
-use App\Exceptions\EmptyCollectionException;
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\Item;
 use App\Models\ItemPriority;
 use App\Models\LootPriority;
 use App\Models\Phase;
-use App\Services\Attendance\Calculator;
-use App\Services\Attendance\CharacterAttendanceStatsData;
 use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -34,8 +34,7 @@ class BuildAddonExportFile implements ShouldQueue
     public int $backoff = 60;
 
     /**
-     * Queue a rebuild two minutes from now, so a burst of changes settles
-     * before the export is built.
+     * Queue a rebuild two minutes from now.
      */
     public static function schedule(): void
     {
@@ -67,7 +66,7 @@ class BuildAddonExportFile implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(Calculator $calculator): void
+    public function handle(): void
     {
         $data = [
             'system' => [
@@ -76,7 +75,7 @@ class BuildAddonExportFile implements ShouldQueue
             'phases' => $this->buildPhases(),
             'priorities' => $this->buildPriorities(),
             'items' => $this->buildItems(),
-            'players' => $this->buildPlayerAttendance($calculator),
+            'players' => $this->buildPlayerAttendance(),
             'councillors' => $this->buildCouncillors(),
         ];
 
@@ -133,28 +132,36 @@ class BuildAddonExportFile implements ShouldQueue
     }
 
     /**
-     * Build player attendance statistics.
+     * Build player attendance statistics for the newest game version with counted attendance.
+     *
+     * @return Collection<int, array{id: int, name: string, attendance: array{first_attendance: int, attended: int, total: int, percentage: float}}>
      */
-    protected function buildPlayerAttendance(Calculator $calculator): Collection
+    protected function buildPlayerAttendance(): Collection
     {
-        try {
-            return $calculator->wholeGuild()->map(fn (CharacterAttendanceStatsData $stats) => [
-                'id' => $stats->character->id,
-                'name' => $stats->character->name,
-                'attendance' => [
-                    'first_attendance' => $stats->firstAttendance->unix(),
-                    'attended' => $stats->reportsAttended,
-                    'total' => $stats->totalReports,
-                    'percentage' => $stats->percentage,
-                ],
-            ]);
-        } catch (EmptyCollectionException $e) {
+        $gameVersion = GameVersion::withCountedAttendance()->first();
+
+        if ($gameVersion === null) {
+            return collect();
+        }
+
+        if (! $gameVersion->guildRanks()->countsAttendance()->exists()) {
             Log::warning('BuildAddonExportFile: no counting ranks configured, skipping attendance data.', [
-                'error' => $e->getMessage(),
+                'game_version_id' => $gameVersion->id,
             ]);
 
             return collect();
         }
+
+        return BuildAttendanceMatrix::run($gameVersion)->rows->map(fn (CharacterAttendanceData $row): array => [
+            'id' => $row->character->id,
+            'name' => $row->character->name,
+            'attendance' => [
+                'first_attendance' => $row->firstAttendance->unix(),
+                'attended' => $row->reportsAttended,
+                'total' => $row->totalReports,
+                'percentage' => $row->percentage,
+            ],
+        ]);
     }
 
     /**

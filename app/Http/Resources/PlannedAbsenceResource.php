@@ -2,18 +2,30 @@
 
 namespace App\Http\Resources;
 
+use App\Attributes\Http\Resources\ScopeDefinition;
+use App\Contracts\Http\Resources\ScopedResource;
+use App\Http\Resources\Concerns\HasScopes;
 use App\Models\PlannedAbsence;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
+ * Transform a planned absence, optionally limited to the `attendance` scope.
  * Load `character.media` to include the character's portrait URL.
  *
- * The `meta` block carries has_started / has_ended, so the officer index
- * groups absences by the server's date rather than the browser's.
+ * The `meta` block carries `has_started` and `has_ended`, evaluated against the server's date.
  */
-class PlannedAbsenceResource extends JsonResource
+class PlannedAbsenceResource extends JsonResource implements ScopedResource
 {
+    use HasScopes;
+
+    /**
+     * The resource that this resource collects.
+     *
+     * @var string
+     */
+    public $collects = PlannedAbsence::class;
+
     /**
      * Transform the resource into an array.
      *
@@ -21,7 +33,7 @@ class PlannedAbsenceResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return [
+        return $this->scoped([
             'id' => $this->id,
             'character' => $this->whenLoaded('character', function () use ($request) {
                 return $this->character
@@ -44,9 +56,9 @@ class PlannedAbsenceResource extends JsonResource
             'deleted_at' => $this->deleted_at?->toDateTimeString(),
             'meta' => [
                 'has_started' => $this->start_date->lte(today()),
-                'has_ended' => ($this->end_date ?? $this->start_date)->lt(today()),
+                'has_ended' => $this->end_date?->lt(today()) ?? false,
             ],
-        ];
+        ]);
     }
 
     /**
@@ -66,5 +78,24 @@ class PlannedAbsenceResource extends JsonResource
                 'backdate' => $user?->can('backdate', PlannedAbsence::class) ?? false,
             ],
         ];
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    protected function scopeDefinitions(): array
+    {
+        return ['attendance' => $this->attendance()];
+    }
+
+    /**
+     * Reason and notes.
+     *
+     * @return list<string>
+     */
+    #[ScopeDefinition]
+    protected function attendance(): array
+    {
+        return ['reason', 'notes'];
     }
 }

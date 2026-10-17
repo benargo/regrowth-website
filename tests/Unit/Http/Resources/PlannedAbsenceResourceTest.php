@@ -192,12 +192,12 @@ class PlannedAbsenceResourceTest extends TestCase
     }
 
     #[Test]
-    public function meta_has_ended_from_the_start_date_when_open_ended(): void
+    public function meta_never_has_ended_when_open_ended(): void
     {
         $this->mockRequestUser();
         $this->freezeTime();
 
-        $this->assertTrue($this->meta(['start_date' => today()->subDay(), 'end_date' => null])['has_ended']);
+        $this->assertFalse($this->meta(['start_date' => today()->subMonth(), 'end_date' => null])['has_ended']);
         $this->assertFalse($this->meta(['start_date' => today(), 'end_date' => null])['has_ended']);
     }
 
@@ -340,6 +340,24 @@ class PlannedAbsenceResourceTest extends TestCase
         $this->assertArrayHasKey('slug', $array['character']['playable_class']);
     }
 
+    // ==================== attendance scope ====================
+
+    #[Test]
+    #[Group('resource')]
+    public function attendance_scope_emits_only_the_reason_and_notes(): void
+    {
+        $absence = PlannedAbsence::factory()->create([
+            'reason' => PlannedAbsenceReason::Work,
+            'notes' => 'Late shift.',
+        ]);
+
+        $array = (new PlannedAbsenceResource($absence))->scope('attendance')->resolve(new Request);
+
+        $this->assertSame(['reason', 'notes'], array_keys($array));
+        $this->assertEquals(PlannedAbsenceReasonData::fromReason(PlannedAbsenceReason::Work), $array['reason']);
+        $this->assertSame('Late shift.', $array['notes']);
+    }
+
     // ==================== permissions metadata ====================
 
     #[Test]
@@ -464,7 +482,7 @@ class PlannedAbsenceResourceTest extends TestCase
     }
 
     /**
-     * Helper method to mock the request user for testing authorization logic in the resource.
+     * Mock the request user.
      *
      * @param  bool  $is_admin  Whether the mocked user should have admin privileges.
      */

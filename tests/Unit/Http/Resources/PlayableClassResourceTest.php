@@ -133,4 +133,19 @@ class PlayableClassResourceTest extends TestCase
 
         $this->assertArrayNotHasKey('loot_priorities', $array);
     }
+
+    // ==================== attendance scope ====================
+
+    #[Test]
+    public function the_attendance_scope_emits_only_the_id_name_and_icon_url_even_with_specializations_loaded(): void
+    {
+        $playableClass = PlayableClass::factory()->create();
+        PlayableSpecialization::factory()->count(3)->for($playableClass, 'playableClass')->create();
+
+        $playableClass->load('specializations');
+
+        $array = (new PlayableClassResource($playableClass))->scope('attendance')->resolve(new Request);
+
+        $this->assertSame(['id', 'name', 'icon_url'], array_keys($array));
+    }
 }

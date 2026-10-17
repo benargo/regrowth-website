@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Jobs;
 
+use App\Enums\Presence;
 use App\Jobs\BuildAddonExportFile;
 use App\Models\Character;
 use App\Models\GuildRank;
@@ -9,9 +10,8 @@ use App\Models\Item;
 use App\Models\ItemPriority;
 use App\Models\LootPriority;
 use App\Models\Phase;
+use App\Models\PlannedAbsence;
 use App\Models\Report;
-use App\Models\WarcraftLogs\GuildTag;
-use App\Services\Attendance\Calculator;
 use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,11 +20,13 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Concerns\BuildsAttendanceFixtures;
 use Tests\TestCase;
 
 #[Group('platform')]
 class BuildAddonExportFileTest extends TestCase
 {
+    use BuildsAttendanceFixtures;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -33,9 +35,6 @@ class BuildAddonExportFileTest extends TestCase
 
         Storage::fake('local');
         Storage::fake('public');
-
-        // Calculator::wholeGuild() throws when no counting ranks exist; give every test a baseline rank so the job can run.
-        GuildRank::factory()->create(['count_attendance' => true]);
     }
 
     // ==================== job contract ====================
@@ -66,7 +65,7 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_writes_export_data_to_storage(): void
     {
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         Storage::disk('local')->assertExists('addon/export.json');
     }
@@ -74,7 +73,7 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_writes_valid_json_to_storage(): void
     {
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $content = Storage::disk('local')->get('addon/export.json');
         $this->assertNotNull(json_decode($content, true));
@@ -85,7 +84,7 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_includes_all_sections_in_output(): void
     {
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $this->assertArrayHasKey('system', $data);
@@ -101,7 +100,7 @@ class BuildAddonExportFileTest extends TestCase
     {
         Carbon::setTestNow('2025-06-01 12:00:00');
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $this->assertArrayHasKey('date_generated', $data['system']);
@@ -112,7 +111,7 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_defaults_to_empty_sections_when_no_data_exists(): void
     {
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $this->assertEmpty($data['phases']);
@@ -129,7 +128,7 @@ class BuildAddonExportFileTest extends TestCase
     {
         $phase = Phase::factory()->create(['number' => 2, 'start_date' => Carbon::parse('2025-01-15 20:00:00')]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $phaseData = collect($data['phases'])->firstWhere('id', $phase->id);
@@ -144,7 +143,7 @@ class BuildAddonExportFileTest extends TestCase
     {
         $phase = Phase::factory()->unscheduled()->create();
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $phaseData = collect($data['phases'])->firstWhere('id', $phase->id);
@@ -158,7 +157,7 @@ class BuildAddonExportFileTest extends TestCase
         Phase::factory()->create(['number' => 1]);
         Phase::factory()->create(['number' => 2]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $numbers = collect($data['phases'])->pluck('number')->toArray();
@@ -175,7 +174,7 @@ class BuildAddonExportFileTest extends TestCase
         $item = Item::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priorityWithItems->id]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $ids = collect($data['priorities'])->pluck('id')->toArray();
@@ -193,7 +192,7 @@ class BuildAddonExportFileTest extends TestCase
         $item = Item::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $priorityData = collect($data['priorities'])->firstWhere('id', $priority->id);
@@ -207,7 +206,7 @@ class BuildAddonExportFileTest extends TestCase
         $item = Item::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $priorityData = collect($data['priorities'])->firstWhere('id', $priority->id);
@@ -221,7 +220,7 @@ class BuildAddonExportFileTest extends TestCase
         $item = Item::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $priorityData = collect($data['priorities'])->firstWhere('id', $priority->id);
@@ -238,7 +237,7 @@ class BuildAddonExportFileTest extends TestCase
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $standardPriority->id]);
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $memePriority->id]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $ids = collect($data['priorities'])->pluck('id')->toArray();
@@ -256,7 +255,7 @@ class BuildAddonExportFileTest extends TestCase
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $itemWithPriorities->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $itemIds = collect($data['items'])->pluck('item_id')->toArray();
@@ -275,7 +274,7 @@ class BuildAddonExportFileTest extends TestCase
             'weight' => 75,
         ]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
@@ -292,7 +291,7 @@ class BuildAddonExportFileTest extends TestCase
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $standardPriority->id]);
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $memePriority->id]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
@@ -310,7 +309,7 @@ class BuildAddonExportFileTest extends TestCase
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
@@ -324,7 +323,7 @@ class BuildAddonExportFileTest extends TestCase
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
@@ -338,7 +337,7 @@ class BuildAddonExportFileTest extends TestCase
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
@@ -352,7 +351,7 @@ class BuildAddonExportFileTest extends TestCase
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
@@ -366,7 +365,7 @@ class BuildAddonExportFileTest extends TestCase
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
@@ -380,7 +379,7 @@ class BuildAddonExportFileTest extends TestCase
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
@@ -394,7 +393,7 @@ class BuildAddonExportFileTest extends TestCase
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
@@ -408,7 +407,7 @@ class BuildAddonExportFileTest extends TestCase
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
@@ -422,7 +421,7 @@ class BuildAddonExportFileTest extends TestCase
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
@@ -436,7 +435,7 @@ class BuildAddonExportFileTest extends TestCase
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
@@ -446,52 +445,55 @@ class BuildAddonExportFileTest extends TestCase
     // ==================== attendance data ====================
 
     #[Test]
-    public function it_caches_empty_attendance_when_no_ranks_count_attendance(): void
+    public function it_writes_no_players_when_no_ranks_count_attendance(): void
     {
-        GuildRank::factory()->doesNotCountAttendance()->create();
+        $gameVersion = $this->createAttendanceVersion();
+        $this->createRank($gameVersion, false);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $this->assertEmpty($data['players']);
     }
 
     #[Test]
-    public function it_caches_empty_attendance_when_no_ranks_exist(): void
+    public function it_writes_no_players_when_no_ranks_exist(): void
     {
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $this->assertEmpty($data['players']);
     }
 
     #[Test]
-    public function it_returns_empty_players_and_logs_warning_when_calculator_throws_empty_collection_exception(): void
+    public function it_logs_a_warning_and_writes_no_players_when_the_version_has_no_counting_ranks(): void
     {
-        GuildRank::where('count_attendance', true)->delete();
+        $gameVersion = $this->createAttendanceVersion();
+        $this->createRank($gameVersion, false);
+        $this->createReport($gameVersion, '2025-01-15 20:00:00');
 
         Log::shouldReceive('warning')
             ->once()
             ->withArgs(function ($message, $context) {
-                return $message === 'BuildAddonExportFile: no counting ranks configured, skipping attendance data.'
-                    && isset($context['error']);
+                return $message === 'BuildAddonExportFile: no counting ranks configured, skipping attendance data.';
             });
         Log::shouldReceive('info')->once();
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $this->assertEmpty($data['players']);
     }
 
     #[Test]
-    public function it_caches_empty_attendance_when_no_qualifying_reports_exist(): void
+    public function it_writes_no_players_when_no_qualifying_reports_exist(): void
     {
-        $rank = GuildRank::factory()->create();
-        Character::factory()->create(['rank_id' => $rank->id]);
-        GuildTag::factory()->doesNotCountAttendance()->create();
+        $gameVersion = $this->createAttendanceVersion();
+        $rank = $this->createRank($gameVersion);
+        $this->createCharacter($gameVersion, $rank);
+        $this->createReport($gameVersion, '2025-01-15 20:00:00', $this->createTag($gameVersion, false));
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $this->assertEmpty($data['players']);
@@ -500,13 +502,12 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_builds_attendance_from_database_pivot(): void
     {
-        $rank = GuildRank::factory()->create();
-        $character = Character::factory()->create(['name' => 'TestPlayer', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->create();
-        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:00:00')]);
-        $report->characters()->attach($character->id, ['presence' => 1]);
+        $gameVersion = $this->createAttendanceVersion();
+        $character = $this->createCharacter($gameVersion, $this->createRank($gameVersion), ['name' => 'TestPlayer']);
+        $report = $this->createReport($gameVersion, Carbon::parse('2025-01-15 20:00:00'));
+        $this->attend($report, $character);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $this->assertCount(1, $data['players']);
@@ -518,17 +519,21 @@ class BuildAddonExportFileTest extends TestCase
     }
 
     #[Test]
-    public function it_counts_reports_without_a_game_version_in_attendance(): void
+    public function it_leaves_reports_without_a_game_version_out_of_attendance(): void
     {
-        $rank = GuildRank::factory()->create();
-        $character = Character::factory()->create(['name' => 'TestPlayer', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->create();
-        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::now()->subDays(1)]);
-        $report->characters()->attach($character->id, ['presence' => 1]);
+        $gameVersion = $this->createAttendanceVersion();
+        $character = $this->createCharacter($gameVersion, $this->createRank($gameVersion), ['name' => 'TestPlayer']);
+        $counted = $this->createReport($gameVersion, Carbon::parse('2025-01-15 20:00:00'));
+        $this->attend($counted, $character);
 
-        $this->assertNull($report->game_version_id);
+        $unversioned = Report::factory()
+            ->withGuildTag($this->createTag($gameVersion))
+            ->create(['start_time' => Carbon::parse('2025-01-22 20:00:00')]);
+        $this->attend($unversioned, $character);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        $this->assertNull($unversioned->game_version_id);
+
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $playerData = collect($data['players'])->firstWhere('name', 'TestPlayer');
@@ -539,13 +544,11 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_maps_character_id_from_model(): void
     {
-        $rank = GuildRank::factory()->create();
-        $character = Character::factory()->create(['name' => 'TestPlayer', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->create();
-        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::now()->subDays(1)]);
-        $report->characters()->attach($character->id, ['presence' => 1]);
+        $gameVersion = $this->createAttendanceVersion();
+        $character = $this->createCharacter($gameVersion, $this->createRank($gameVersion), ['name' => 'TestPlayer']);
+        $this->attend($this->createReport($gameVersion, Carbon::parse('2025-01-15 20:00:00')), $character);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $playerData = collect($data['players'])->firstWhere('name', 'TestPlayer');
@@ -555,13 +558,12 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_includes_first_attendance_date_as_unix_timestamp(): void
     {
-        $rank = GuildRank::factory()->create();
-        $character = Character::factory()->create(['name' => 'TestPlayer', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->create();
-        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:00:00')]);
-        $report->characters()->attach($character->id, ['presence' => 1]);
+        $gameVersion = $this->createAttendanceVersion();
+        $character = $this->createCharacter($gameVersion, $this->createRank($gameVersion), ['name' => 'TestPlayer']);
+        $report = $this->createReport($gameVersion, Carbon::parse('2025-01-15 20:00:00'));
+        $this->attend($report, $character);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $playerData = collect($data['players'])->firstWhere('name', 'TestPlayer');
@@ -572,16 +574,14 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_excludes_characters_from_non_counting_ranks(): void
     {
-        $countingRank = GuildRank::factory()->create();
-        $nonCountingRank = GuildRank::factory()->doesNotCountAttendance()->create();
-        $countingChar = Character::factory()->create(['name' => 'CountingPlayer', 'rank_id' => $countingRank->id]);
-        $nonCountingChar = Character::factory()->create(['name' => 'NonCountingPlayer', 'rank_id' => $nonCountingRank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->create();
-        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::now()->subDays(1)]);
-        $report->characters()->attach($countingChar->id, ['presence' => 1]);
-        $report->characters()->attach($nonCountingChar->id, ['presence' => 1]);
+        $gameVersion = $this->createAttendanceVersion();
+        $countingChar = $this->createCharacter($gameVersion, $this->createRank($gameVersion), ['name' => 'CountingPlayer']);
+        $nonCountingChar = $this->createCharacter($gameVersion, $this->createRank($gameVersion, false), ['name' => 'NonCountingPlayer']);
+        $report = $this->createReport($gameVersion, Carbon::parse('2025-01-15 20:00:00'));
+        $this->attend($report, $countingChar);
+        $this->attend($report, $nonCountingChar);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $names = collect($data['players'])->pluck('name')->toArray();
@@ -592,20 +592,55 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_excludes_reports_from_non_counting_guild_tags(): void
     {
-        $rank = GuildRank::factory()->create();
-        $character = Character::factory()->create(['name' => 'TestPlayer', 'rank_id' => $rank->id]);
-        $countingTag = GuildTag::factory()->countsAttendance()->create();
-        $nonCountingTag = GuildTag::factory()->doesNotCountAttendance()->create();
-        $countingReport = Report::factory()->withGuildTag($countingTag)->create(['start_time' => Carbon::parse('2025-01-15 20:00:00')]);
-        $nonCountingReport = Report::factory()->withGuildTag($nonCountingTag)->create(['start_time' => Carbon::parse('2025-01-22 20:00:00')]);
-        $countingReport->characters()->attach($character->id, ['presence' => 1]);
-        $nonCountingReport->characters()->attach($character->id, ['presence' => 1]);
+        $gameVersion = $this->createAttendanceVersion();
+        $character = $this->createCharacter($gameVersion, $this->createRank($gameVersion), ['name' => 'TestPlayer']);
+        $countingReport = $this->createReport($gameVersion, Carbon::parse('2025-01-15 20:00:00'));
+        $nonCountingReport = $this->createReport($gameVersion, Carbon::parse('2025-01-22 20:00:00'), $this->createTag($gameVersion, false));
+        $this->attend($countingReport, $character);
+        $this->attend($nonCountingReport, $character);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $playerData = collect($data['players'])->firstWhere('name', 'TestPlayer');
         $this->assertEquals(1, $playerData['attendance']['total']);
+    }
+
+    #[Test]
+    public function it_writes_todays_player_fields_for_a_known_fixture(): void
+    {
+        $gameVersion = $this->createAttendanceVersion();
+        $rank = $this->createRank($gameVersion);
+        $thrall = $this->createCharacter($gameVersion, $rank, ['name' => 'Thrall']);
+        $jaina = $this->createCharacter($gameVersion, $rank, ['name' => 'Jaina']);
+        $first = $this->createReport($gameVersion, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $second = $this->createReport($gameVersion, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
+        $third = $this->createReport($gameVersion, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
+        $this->attend($first, $thrall);
+        $this->attend($second, $thrall, Presence::Benched);
+        $this->attend($third, $thrall, Presence::Absent);
+        $this->attend($second, $jaina);
+        PlannedAbsence::factory()->create(['character_id' => $jaina->id, 'start_date' => '2025-01-15', 'end_date' => '2025-01-15']);
+
+        app(BuildAddonExportFile::class)->handle();
+
+        $players = collect(json_decode(Storage::disk('local')->get('addon/export.json'), true)['players'])->keyBy('name');
+        $this->assertSame(['first_attendance' => $first->start_time->unix(), 'attended' => 2, 'total' => 3, 'percentage' => 66.67], $players['Thrall']['attendance']);
+        $this->assertSame(['first_attendance' => $second->start_time->unix(), 'attended' => 1, 'total' => 1, 'percentage' => 100], $players['Jaina']['attendance']);
+        $this->assertSame(['Jaina', 'Thrall'], $players->keys()->all());
+    }
+
+    #[Test]
+    public function it_reads_players_from_the_newest_attendance_version(): void
+    {
+        $older = $this->createAttendanceVersion(['release_date' => '2024-01-01']);
+        $newer = $this->createAttendanceVersion(['release_date' => '2024-06-01']);
+        $this->attend($this->createReport($older, '2025-01-01 20:00'), $this->createCharacter($older, $this->createRank($older), ['name' => 'Old']));
+        $this->attend($this->createReport($newer, '2025-01-01 20:00'), $this->createCharacter($newer, $this->createRank($newer), ['name' => 'New']));
+
+        app(BuildAddonExportFile::class)->handle();
+
+        $this->assertSame(['New'], collect(json_decode(Storage::disk('local')->get('addon/export.json'), true)['players'])->pluck('name')->all());
     }
 
     // ==================== councillor data ====================
@@ -613,7 +648,7 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_caches_empty_collection_when_no_councillors_exist(): void
     {
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $this->assertEmpty($data['councillors']);
@@ -626,7 +661,7 @@ class BuildAddonExportFileTest extends TestCase
         Character::factory()->lootCouncillor()->create(['name' => 'Councillor1', 'rank_id' => $rank->id]);
         Character::factory()->lootCouncillor()->create(['name' => 'Councillor2', 'rank_id' => $rank->id]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $this->assertCount(2, $data['councillors']);
@@ -638,7 +673,7 @@ class BuildAddonExportFileTest extends TestCase
         $rank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Officer']);
         $character = Character::factory()->lootCouncillor()->create(['name' => 'TestCouncillor', 'rank_id' => $rank->id]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $councillor = collect($data['councillors'])->firstWhere('id', $character->id);
@@ -652,7 +687,7 @@ class BuildAddonExportFileTest extends TestCase
     {
         Character::factory()->lootCouncillor()->create(['name' => 'UnrankedCouncillor', 'rank_id' => null]);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $councillor = collect($data['councillors'])->firstWhere('name', 'UnrankedCouncillor');
@@ -666,7 +701,7 @@ class BuildAddonExportFileTest extends TestCase
         Character::factory()->lootCouncillor()->create(['name' => 'Alice']);
         Character::factory()->lootCouncillor()->create(['name' => 'Milo']);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $names = collect($data['councillors'])->pluck('name')->toArray();
@@ -679,7 +714,7 @@ class BuildAddonExportFileTest extends TestCase
         Character::factory()->lootCouncillor()->create(['name' => 'IsCouncillor']);
         Character::factory()->create(['name' => 'NotCouncillor']);
 
-        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+        app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $names = collect($data['councillors'])->pluck('name')->toArray();

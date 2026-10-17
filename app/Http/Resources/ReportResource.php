@@ -25,6 +25,7 @@ class ReportResource extends JsonResource
                 'id' => $this->zone->id,
                 'name' => $this->zone->name,
             ],
+            'game_version' => $this->whenLoaded('gameVersion', fn () => $this->gameVersion->slug),
             'guild_tag' => $this->whenLoaded('guildTag', fn () => [
                 'id' => $this->guildTag->id,
                 'name' => $this->guildTag->name,

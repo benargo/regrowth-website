@@ -15,6 +15,7 @@ use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\Raid;
+use App\Models\Report;
 use App\Models\User;
 use App\Models\WarcraftLogs\Guild;
 use App\Policies\DatasetPolicy;
@@ -35,11 +36,14 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileUnacceptableForCollection;
+use Tests\Concerns\BuildsAttendanceFixtures;
 use Tests\Support\ModelTestCase;
 
 #[Group('platform')]
 class GameVersionTest extends ModelTestCase
 {
+    use BuildsAttendanceFixtures;
+
     protected function modelClass(): string
     {
         return GameVersion::class;
@@ -291,6 +295,16 @@ class GameVersionTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_has_many_reports(): void
+    {
+        $gameVersion = $this->factory()->forGuild()->create(['release_date' => '2024-01-01']);
+        $report = Report::factory()->forGuild($gameVersion->warcraftLogsGuild)->create(['start_time' => '2025-01-01 20:00:00']);
+
+        $this->assertRelation($gameVersion, 'reports', HasMany::class);
+        $this->assertTrue($gameVersion->reports->contains($report));
+    }
+
+    #[Test]
     public function it_belongs_to_many_playable_races(): void
     {
         $gameVersion = $this->create();
@@ -437,6 +451,40 @@ class GameVersionTest extends ModelTestCase
         $this->create(['release_date' => now()->subMonth()]);
 
         $this->assertEquals([$older->id], GameVersion::released(now()->subMonths(6))->pluck('id')->all());
+    }
+
+    // ==================== withCountedAttendance scope ====================
+
+    #[Test]
+    public function with_counted_attendance_lists_versions_newest_release_first(): void
+    {
+        $older = $this->createAttendanceVersion(['release_date' => '2024-01-01']);
+        $newer = $this->createAttendanceVersion(['release_date' => '2024-06-01']);
+        $this->createReport($older, '2025-01-01 20:00');
+        $this->createReport($newer, '2025-01-01 20:00');
+
+        $this->assertSame([$newer->id, $older->id], GameVersion::withCountedAttendance()->get()->modelKeys());
+    }
+
+    #[Test]
+    public function with_counted_attendance_breaks_release_date_ties_by_id(): void
+    {
+        $first = $this->createAttendanceVersion();
+        $second = $this->createAttendanceVersion();
+        $this->createReport($second, '2025-01-01 20:00');
+        $this->createReport($first, '2025-01-01 20:00');
+
+        $this->assertSame([$first->id, $second->id], GameVersion::withCountedAttendance()->get()->modelKeys());
+    }
+
+    #[Test]
+    public function with_counted_attendance_excludes_versions_without_counted_reports(): void
+    {
+        $uncounted = $this->createAttendanceVersion();
+        $this->createReport($uncounted, '2025-01-01 20:00', $this->createTag($uncounted, countsAttendance: false));
+        $this->createAttendanceVersion();
+
+        $this->assertFalse(GameVersion::withCountedAttendance()->exists());
     }
 
     // ==================== current rosters ====================

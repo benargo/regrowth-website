@@ -7,8 +7,10 @@ use App\Observers\WarcraftLogs\GuildTagObserver;
 use App\Policies\WarcraftLogsGuildPolicy;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -42,6 +44,15 @@ class GuildTag extends Model
             'count_attendance' => 'boolean',
             'warcraft_logs_guild_id' => 'integer',
         ];
+    }
+
+    /**
+     * Scope a query to tags whose reports count towards attendance.
+     */
+    #[Scope]
+    protected function countsAttendance(Builder $query): void
+    {
+        $query->where('count_attendance', true);
     }
 
     /**

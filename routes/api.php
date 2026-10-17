@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Api\AttendanceNamesController;
 use App\Http\Controllers\Api\BlizzardMediaController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\CommentReactionController;
@@ -14,9 +13,6 @@ use App\Http\Controllers\Api\RaidHelper\UpdateCompositionController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\SpellController;
 use Illuminate\Support\Facades\Route;
-
-Route::get('/attendance/names', AttendanceNamesController::class)
-    ->name('api.attendance.names');
 
 Route::get('/blizzard/media', BlizzardMediaController::class)->name('api.blizzard.media');
 
@@ -33,8 +29,7 @@ Route::prefix('/raidhelper')->group(function () {
 
 Route::middleware(['auth:sanctum'])->prefix('/comments')->group(function () {
     // Reactions are declared first and both keys are numerically constrained, so
-    // the literal `reactions` segment can never bind as a {comment}. The
-    // constraint makes the separation structural rather than order-dependent.
+    // the literal `reactions` segment never binds as a {comment}.
     Route::post('/reactions', [CommentReactionController::class, 'store'])
         ->name('api.comments.reactions.store');
     Route::delete('/reactions/{reaction}', [CommentReactionController::class, 'destroy'])

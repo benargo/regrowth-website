@@ -173,6 +173,15 @@ class GuildRankTest extends ModelTestCase
         $this->assertFalse($guildRank->count_attendance);
     }
 
+    #[Test]
+    public function counts_attendance_scope_keeps_only_counting_ranks(): void
+    {
+        $counting = GuildRank::factory()->create(['count_attendance' => true]);
+        GuildRank::factory()->doesNotCountAttendance()->create();
+
+        $this->assertSame([$counting->id], GuildRank::countsAttendance()->pluck('id')->all());
+    }
+
     // ==================== name constraints ====================
 
     #[Test]

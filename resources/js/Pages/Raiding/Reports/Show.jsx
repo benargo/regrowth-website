@@ -30,7 +30,7 @@ function ViewOnWarcraftLogsLink({ code, children }) {
     );
 }
 
-function CharactersTable({ characters }) {
+function CharactersTable({ characters, gameVersion }) {
     if (!characters || characters.length === 0) {
         return <EmptyState icon="users" message="No characters recorded for this report." />;
     }
@@ -75,7 +75,10 @@ function CharactersTable({ characters }) {
                             <Can permission="view-attendance">
                                 <td className="px-4 py-3">
                                     <Link
-                                        href={route("raiding.attendance.matrix", { character: character.id })}
+                                        href={route("raiding.attendance.matrix", {
+                                            character: character.id,
+                                            game_version: gameVersion,
+                                        })}
                                         className="text-sm text-ink-400 hover:text-ink-300 hover:underline"
                                     >
                                         View attendance
@@ -145,7 +148,7 @@ export default function Show({ report, nearbyReports, impactedReports }) {
                     )}
                 </h2>
                 <div className="rounded border border-ink-600/30">
-                    <CharactersTable characters={presentCharacters} />
+                    <CharactersTable characters={presentCharacters} gameVersion={data.game_version} />
                 </div>
 
                 {/* Loot councillors */}

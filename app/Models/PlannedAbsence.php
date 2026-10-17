@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Data\PlannedAbsenceReasonData;
 use App\Observers\PlannedAbsenceObserver;
+use Carbon\CarbonInterface;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -68,22 +69,48 @@ class PlannedAbsence extends Model
     }
 
     /**
-     * Scope a query to absences whose last day (the start date when
-     * open-ended) is before today.
+     * Determine whether the absence includes the given date.
+     */
+    public function covers(CarbonInterface $date): bool
+    {
+        $day = $date->toImmutable()->startOfDay();
+
+        if ($this->end_date === null) {
+            return $day->gte($this->start_date->toImmutable()->startOfDay());
+        }
+
+        return $day->betweenIncluded(
+            $this->start_date->toImmutable()->startOfDay(),
+            $this->end_date->toImmutable()->startOfDay(),
+        );
+    }
+
+    /**
+     * Scope a query to absences whose end date is before today. Open-ended
+     * absences never end.
      */
     #[Scope]
     protected function ended(Builder $query): void
     {
-        $query->whereRaw('COALESCE(end_date, start_date) < ?', [today()]);
+        $query->whereDate('end_date', '<', today());
     }
 
     /**
-     * Scope a query to current and upcoming absences: those whose last day
-     * (the start date when open-ended) is today or later.
+     * Scope a query to current, upcoming and open-ended absences: those
+     * without an end date or whose end date is today or later.
      */
     #[Scope]
     protected function notEnded(Builder $query): void
     {
-        $query->whereRaw('COALESCE(end_date, start_date) >= ?', [today()]);
+        $query->where(fn (Builder $query) => $query->whereNull('end_date')->orWhereDate('end_date', '>=', today()));
+    }
+
+    /**
+     * Scope a query to absences starting today or later, ordered by start date.
+     */
+    #[Scope]
+    protected function upcoming(Builder $query): void
+    {
+        $query->where('start_date', '>=', today())->orderBy('start_date');
     }
 }

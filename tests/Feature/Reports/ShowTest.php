@@ -4,6 +4,7 @@ namespace Tests\Feature\Reports;
 
 use App\Jobs\BuildAddonExportFile;
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\PlayableClass;
 use App\Models\Report;
 use App\Models\User;
@@ -66,6 +67,19 @@ class ShowTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/Reports/Show')
+        );
+    }
+
+    #[Test]
+    public function show_includes_the_reports_game_version_slug(): void
+    {
+        $gameVersion = GameVersion::factory()->forGuild()->create();
+        $report = Report::factory()->forGameVersion($gameVersion)->create();
+
+        $response = $this->actingAs(User::factory()->create())->get(route('raiding.reports.show', $report));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('report.data.game_version', $gameVersion->slug)
         );
     }
 
