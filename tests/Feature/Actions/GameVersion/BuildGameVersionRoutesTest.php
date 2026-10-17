@@ -170,6 +170,15 @@ class BuildGameVersionRoutesTest extends TestCase
         ], $routes);
     }
 
+    #[Test]
+    public function it_leads_a_stored_game_version_to_the_first_setup_step(): void
+    {
+        $this->assertSame(
+            'http://localhost/manage/game-versions/7/setup/theme',
+            BuildGameVersionRoutes::make()->afterStore($this->gameVersion()),
+        );
+    }
+
     // ==================== helpers ====================
 
     /**

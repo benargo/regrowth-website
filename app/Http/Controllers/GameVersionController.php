@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Datasets\DeleteDatasetRecord;
 use App\Actions\Datasets\ResolveEditLock;
 use App\Actions\GameVersion\BuildGameVersionRelationships;
 use App\Actions\GameVersion\BuildGameVersionRoutes;
@@ -65,11 +66,11 @@ class GameVersionController extends Controller
      * Store a newly created game version and continue to the setup wizard.
      */
     #[Authorize('create', GameVersion::class)]
-    public function store(StoreGameVersionRequest $request): RedirectResponse
+    public function store(StoreGameVersionRequest $request, BuildGameVersionRoutes $routes): RedirectResponse
     {
         $gameVersion = GameVersion::create($request->validated());
 
-        return Redirect::route('management.game-versions.setup', [$gameVersion, GameVersionSetupStep::first()])
+        return Redirect::to($routes->afterStore($gameVersion))
             ->with('success', "Added {$gameVersion->title}.");
     }
 
@@ -159,20 +160,7 @@ class GameVersionController extends Controller
     #[Authorize('delete', 'gameVersion')]
     public function destroy(Request $request, GameVersion $gameVersion): RedirectResponse
     {
-        if ($gameVersion->isLockedForEditingBy($request->user())) {
-            return Redirect::back()
-                ->with('error', "Someone is editing {$gameVersion->title}, so it can't be deleted right now.");
-        }
-
-        if ($gameVersion->isInUse()) {
-            return Redirect::back()
-                ->with('error', "{$gameVersion->title} is still linked to other records and cannot be deleted.");
-        }
-
-        $gameVersion->delete();
-
-        return Redirect::route('management.game-versions.index')
-            ->with('success', "Deleted {$gameVersion->title}.");
+        return DeleteDatasetRecord::run($request, $gameVersion, $gameVersion->title, 'management.game-versions.index');
     }
 
     /**

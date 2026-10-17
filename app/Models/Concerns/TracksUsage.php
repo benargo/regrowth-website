@@ -2,12 +2,15 @@
 
 namespace App\Models\Concerns;
 
+use App\Contracts\Models\HasUsage;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Tells whether other records still reference a model, which guards deletes.
  * The host lists the relationships whose existing rows mark it as in use.
+ *
+ * @phpstan-require-implements HasUsage
  */
 trait TracksUsage
 {
