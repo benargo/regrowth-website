@@ -112,7 +112,7 @@ export default function ManagePhases({ phases, current_phase }) {
                                 <p className="flex justify-center md:justify-start">
                                     <button
                                         onClick={() => openEditModal(phase)}
-                                        className="mt-2 flex items-center gap-4 rounded border border-ink-600 px-2 py-3 transition-colors hover:bg-ink-600/20"
+                                        className="mt-2 flex items-center gap-4 rounded border border-amber-600 px-2 py-3 transition-colors hover:bg-amber-600/20"
                                     >
                                         <div className="mx-1 text-center">
                                             <Icon icon="edit" style="regular" className="h-4 w-4" />

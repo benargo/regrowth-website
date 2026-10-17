@@ -10,7 +10,7 @@ import Icon from "@/Components/FontAwesome/Icon";
 
 function SaveIndicator({ saving, saved }) {
     const visible = saving || saved;
-    const color = saving ? "text-ink-400" : "text-green-400";
+    const color = saving ? "text-amber-400" : "text-green-400";
     return (
         <span
             className={`flex items-center gap-1.5 text-sm font-medium transition-opacity duration-200 ${color} ${visible ? "opacity-100" : "pointer-events-none opacity-0"}`}

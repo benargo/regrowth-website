@@ -27,19 +27,19 @@ function GuildDetails({ guild }) {
             </h2>
             <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
-                    <dt className="text-secondary-300 text-sm">Warcraft Logs guild ID</dt>
+                    <dt className="text-gray-300 text-sm">Warcraft Logs guild ID</dt>
                     <dd className="text-white">{guild.id}</dd>
                 </div>
                 <div>
-                    <dt className="text-secondary-300 text-sm">Warcraft Logs site</dt>
+                    <dt className="text-gray-300 text-sm">Warcraft Logs site</dt>
                     <dd className="text-white">{guild.namespace.label}</dd>
                 </div>
                 <div>
-                    <dt className="text-secondary-300 text-sm">Game versions</dt>
+                    <dt className="text-gray-300 text-sm">Game versions</dt>
                     <dd className="text-white">{gameVersionTitles || "None yet"}</dd>
                 </div>
                 <div>
-                    <dt className="text-secondary-300 text-sm">Reports</dt>
+                    <dt className="text-gray-300 text-sm">Reports</dt>
                     <dd className="text-white">{guild.reports_count}</dd>
                 </div>
             </dl>
@@ -103,7 +103,7 @@ function GuildTagTable({ guild, hasUpdateTagsPermission }) {
         <table className="w-full text-left">
             <caption className="sr-only">Warcraft Logs tags of guild {guild.id}</caption>
             <thead>
-                <tr className="border-ink-600/40 text-secondary-300 border-b text-sm">
+                <tr className="border-amber-600/40 text-gray-300 border-b text-sm">
                     <th scope="col" className="py-2 pr-4 font-normal">
                         Tag
                     </th>
@@ -114,7 +114,7 @@ function GuildTagTable({ guild, hasUpdateTagsPermission }) {
             </thead>
             <tbody>
                 {guild.guild_tags.map((guildTag) => (
-                    <tr key={guildTag.id} className="border-ink-600/20 border-b last:border-b-0">
+                    <tr key={guildTag.id} className="border-amber-600/20 border-b last:border-b-0">
                         <td className="py-3 pr-4 text-white">{guildTag.name}</td>
                         <td className="py-3">
                             <Checkbox
@@ -135,11 +135,11 @@ function DeleteGuild({ guild }) {
     const deletion = useRecordDeletion();
 
     return (
-        <section aria-labelledby="delete-guild-heading" className="border-ink-600/40 flex flex-col gap-3 border-t pt-6">
+        <section aria-labelledby="delete-guild-heading" className="border-amber-600/40 flex flex-col gap-3 border-t pt-6">
             <h2 id="delete-guild-heading" className="font-serif text-xl text-white">
                 Delete this guild
             </h2>
-            <p className="text-secondary-300 text-sm">
+            <p className="text-gray-300 text-sm">
                 Deleting the guild deletes its tags and detaches its game versions and reports. Nothing else is deleted,
                 and recorded attendance is kept.
             </p>
@@ -206,7 +206,7 @@ export default function Show({ guild: { data: guild }, namespaces }) {
                         <h2 id="guild-tags-heading" className="font-serif text-xl text-white">
                             Tags
                         </h2>
-                        <p className="text-secondary-300 text-sm">
+                        <p className="text-gray-300 text-sm">
                             Tags come from Warcraft Logs and can't be added or renamed here. Reports with a tag that
                             counts toward attendance are included in the attendance stats.
                         </p>

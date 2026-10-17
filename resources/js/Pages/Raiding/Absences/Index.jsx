@@ -13,7 +13,7 @@ import ToggleFilter from "@/Components/ToggleFilter";
 import { Table, TableHead, TableBody, TableHeader } from "@/Components/Table";
 import { linkButtonClassName } from "@/Components/FormControls";
 
-const SECTION_HEADING = "text-ink-300 font-semibold";
+const SECTION_HEADING = "text-amber-300 font-semibold";
 const NO_PERMISSIONS = { update: false, delete: false, restore: false };
 
 /**
@@ -30,7 +30,7 @@ function PlannedAbsencesSkeleton() {
     return (
         <div className="animate-pulse space-y-3">
             {[...Array(4)].map((_, i) => (
-                <div key={i} className="bg-ground-800/50 h-12 rounded" />
+                <div key={i} className="bg-brown-800/50 h-12 rounded" />
             ))}
         </div>
     );
@@ -173,7 +173,7 @@ export default function Index() {
                             {sections.upcoming.length > 0 ? (
                                 <AbsenceTable absences={sections.upcoming} permissions={permissions} />
                             ) : (
-                                <p className="text-secondary-500 mt-3 text-sm">No one has an absence booked.</p>
+                                <p className="text-gray-500 mt-3 text-sm">No one has an absence booked.</p>
                             )}
                         </section>
 

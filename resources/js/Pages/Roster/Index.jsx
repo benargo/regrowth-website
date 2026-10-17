@@ -24,33 +24,33 @@ function CharacterRowCells({ character, spec }) {
                 className={`border-b-line table-cell border-b px-4 align-middle py-3${character.is_known ? " border-l-2 border-l-line/60" : ""}`}
             >
                 <span
-                    className={`inline-flex items-center gap-2 font-medium ${character.is_known ? "text-white" : "text-secondary-400"}`}
+                    className={`inline-flex items-center gap-2 font-medium ${character.is_known ? "text-white" : "text-gray-400"}`}
                 >
                     {character.name}
                     {character.is_main && (
-                        <Pill bgColor="bg-ink-700" textColor="text-heading">
+                        <Pill bgColor="bg-amber-700" textColor="text-amber-500">
                             Main
                         </Pill>
                     )}
                 </span>
             </div>
-            <div role="cell" className="border-b-line table-cell border-b px-4 py-3 align-middle text-secondary-300">
+            <div role="cell" className="border-b-line table-cell border-b px-4 py-3 align-middle text-gray-300">
                 {character.level}
             </div>
-            <div role="cell" className="border-b-line table-cell border-b px-4 py-3 align-middle text-secondary-300">
+            <div role="cell" className="border-b-line table-cell border-b px-4 py-3 align-middle text-gray-300">
                 {character.playable_race?.name ?? "—"}
             </div>
             <div role="cell" className="border-b-line table-cell border-b px-4 py-3 align-middle">
                 <div className="flex flex-row items-center gap-2">
                     <SpecIcon specialization={spec} playableClass={character.playable_class} />
-                    <span className="text-secondary-300">
+                    <span className="text-gray-300">
                         {character.playable_class
                             ? `${spec?.name ? `${spec.name} ` : ""}${character.playable_class.name}`
                             : "—"}
                     </span>
                 </div>
             </div>
-            <div role="cell" className="border-b-line table-cell border-b px-4 py-3 align-middle text-secondary-300">
+            <div role="cell" className="border-b-line table-cell border-b px-4 py-3 align-middle text-gray-300">
                 {character.rank ?? "—"}
             </div>
         </>
@@ -65,7 +65,7 @@ function CharacterRow({ character }) {
             <Link
                 role="row"
                 href={route("characters.show", { character: character.id, slug: character.slug })}
-                className="border-b-line/50 hover:bg-ground-800/50 table-row border-b transition-colors"
+                className="border-b-line/50 hover:bg-brown-800/50 table-row border-b transition-colors"
             >
                 <CharacterRowCells character={character} spec={spec} />
             </Link>
@@ -73,7 +73,7 @@ function CharacterRow({ character }) {
     }
 
     return (
-        <div role="row" className="border-ink-600/50 table-row border-b">
+        <div role="row" className="border-amber-600/50 table-row border-b">
             <CharacterRowCells character={character} spec={spec} />
         </div>
     );
@@ -87,7 +87,7 @@ function CharacterCard({ character }) {
                 <SpecIcon specialization={spec} playableClass={character.playable_class} size={10} />
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1.5">
-                        <h3 className={`font-bold ${character.is_known ? "text-white" : "text-secondary-400"}`}>
+                        <h3 className={`font-bold ${character.is_known ? "text-white" : "text-gray-400"}`}>
                             {character.name}
                         </h3>
                         {character.is_main && (
@@ -96,7 +96,7 @@ function CharacterCard({ character }) {
                             </Pill>
                         )}
                     </div>
-                    <p className="text-sm text-secondary-400">
+                    <p className="text-sm text-gray-400">
                         Level {character.level} {character.playable_race?.name}{" "}
                         {character.playable_class
                             ? `${spec?.name ? `${spec.name} ` : ""}${character.playable_class.name}`
@@ -105,7 +105,7 @@ function CharacterCard({ character }) {
                 </div>
             </div>
             <div className="flex items-center text-sm">
-                <span className="text-ink-500">{character.rank ?? "—"}</span>
+                <span className="text-amber-500">{character.rank ?? "—"}</span>
             </div>
         </>
     );
@@ -117,37 +117,37 @@ function CharacterCard({ character }) {
                     character: character.id,
                     slug: character.slug,
                 })}
-                className="border-ink-600 bg-ground-800/50 block rounded-lg border-y border-r border-l-2 border-ink-600/60 p-4 transition-colors hover:border-ink-600/40"
+                className="border-amber-600 bg-brown-800/50 block rounded-lg border-y border-r border-l-2 border-amber-600/60 p-4 transition-colors hover:border-amber-600/40"
             >
                 {cardContent}
             </Link>
         );
     }
 
-    return <div className="border-ink-600 bg-ground-800/50 block rounded-lg border p-4">{cardContent}</div>;
+    return <div className="border-amber-600 bg-brown-800/50 block rounded-lg border p-4">{cardContent}</div>;
 }
 
 function IndexSkeleton() {
     return (
         <div className="animate-pulse">
             <div className="mb-8 space-y-6">
-                <div className="bg-ground-800 h-10 rounded"></div>
+                <div className="bg-brown-800 h-10 rounded"></div>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                     {[...Array(4)].map((_, i) => (
-                        <div key={i} className="bg-ground-800 h-10 rounded"></div>
+                        <div key={i} className="bg-brown-800 h-10 rounded"></div>
                     ))}
                 </div>
-                <div className="bg-ground-800 h-5 w-48 rounded"></div>
+                <div className="bg-brown-800 h-5 w-48 rounded"></div>
             </div>
             <div className="hidden md:block">
-                <div className="bg-ground-800/50 mb-2 h-12 rounded"></div>
+                <div className="bg-brown-800/50 mb-2 h-12 rounded"></div>
                 {[...Array(10)].map((_, i) => (
-                    <div key={i} className="bg-ground-800/30 mb-1 h-14 rounded"></div>
+                    <div key={i} className="bg-brown-800/30 mb-1 h-14 rounded"></div>
                 ))}
             </div>
             <div className="space-y-4 md:hidden">
                 {[...Array(6)].map((_, i) => (
-                    <div key={i} className="bg-ground-800/50 h-24 rounded-lg"></div>
+                    <div key={i} className="bg-brown-800/50 h-24 rounded-lg"></div>
                 ))}
             </div>
         </div>
@@ -338,7 +338,7 @@ function RosterContent({ gameVersion, gameVersions, characters, classes, ranks, 
                                 />
                             </div>
                         </div>
-                        <p className="mb-4 text-sm text-secondary-200">
+                        <p className="mb-4 text-sm text-gray-200">
                             Showing {filteredAndSorted.length} of {characters.length} characters
                         </p>
 

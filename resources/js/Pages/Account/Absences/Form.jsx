@@ -23,7 +23,7 @@ const TICKET_URL = "https://discord.com/channels/829020506907869214/101133171437
 function ConnectBattleNet({ message }) {
     return (
         <div className="flex flex-col items-start gap-3">
-            <p className="text-secondary-300 text-sm">{message}</p>
+            <p className="text-gray-300 text-sm">{message}</p>
             <BattleNetLoginButton>Connect Battle.net</BattleNetLoginButton>
         </div>
     );
@@ -32,7 +32,7 @@ function ConnectBattleNet({ message }) {
 function CharacterPickerSkeleton() {
     return (
         <div className="animate-pulse" aria-hidden="true">
-            <div className="border-ink-600 bg-ground-800 h-10.5 rounded border" />
+            <div className="border-amber-600 bg-brown-800 h-10.5 rounded border" />
         </div>
     );
 }
@@ -63,7 +63,7 @@ function AccountCharacterPicker({ gameVersion, value, onChange, invalid }) {
             ) : (
                 <div className="flex flex-col gap-2">
                     {accountCharacters?.mains_only === false && (
-                        <p className="text-secondary-300 text-sm">
+                        <p className="text-gray-300 text-sm">
                             None of your characters is marked as a main on the roster yet. Pick the one you raid on.
                         </p>
                     )}
@@ -128,7 +128,7 @@ function AccountAbsenceForm({ gameVersion, plannedAbsence, action, canBackdate, 
                                 <ClassPill playableClass={character.playable_class} />
                             </>
                         ) : (
-                            <span className="text-secondary-300">Unknown character</span>
+                            <span className="text-gray-300">Unknown character</span>
                         )}
                     </div>
                 ) : (

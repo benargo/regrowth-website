@@ -13,7 +13,7 @@ const STATUS_DETAIL = {
     outdated: { tone: "text-yellow-400", text: "That's over a week ago, so upload a fresh export." },
     stale: { tone: "text-red-400", text: "The guild's member count has changed since, so upload a fresh export." },
     unknown: {
-        tone: "text-secondary-300",
+        tone: "text-gray-300",
         text: "Blizzard didn't return the guild's member count, so it couldn't be checked.",
     },
 };
@@ -26,7 +26,7 @@ function UploadStatusSummary({ gameVersion, status, lastUploadTimestamp }) {
     const detail = STATUS_DETAIL[status];
 
     return (
-        <div className="text-md text-secondary-400 mb-6 flex items-baseline gap-2">
+        <div className="text-md text-gray-400 mb-6 flex items-baseline gap-2">
             <UploadStatusDot status={status} />
             <span>
                 {lastUploadTimestamp
@@ -66,7 +66,7 @@ export default function Create({
             </ToolNav>
             <PageContainer>
                 {gameVersion === null ? (
-                    <p className="text-secondary-400 text-lg">
+                    <p className="text-gray-400 text-lg">
                         No game version has a guild roster yet. Set one up before uploading GRM data.
                     </p>
                 ) : (
@@ -78,7 +78,7 @@ export default function Create({
                         />
 
                         <h2 className="mb-2 text-xl font-bold">
-                            Upload GRM data for <span className="text-heading">{gameVersion.title}</span>
+                            Upload GRM data for <span className="text-amber-500">{gameVersion.title}</span>
                         </h2>
                         <UploadStatusSummary
                             gameVersion={gameVersion}

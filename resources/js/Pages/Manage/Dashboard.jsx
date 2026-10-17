@@ -4,8 +4,8 @@ import Icon from "@/Components/FontAwesome/Icon";
 import Collapsible from "@/Components/Collapsible";
 import { Can } from "@/Components/Authorizable";
 import SharedHeader from "@/Components/SharedHeader";
-import Section from "@/Themes/Forever/Section";
-import DisplayHeading from "@/Themes/Forever/DisplayHeading";
+import Band from "@/Components/Band/Band";
+import BandHeading from "@/Components/Band/BandHeading";
 
 /**
  * A linked dashboard tile. `external` renders a plain anchor for pages
@@ -17,7 +17,7 @@ function DashboardCard({ href, icon, external = false, children }) {
     return (
         <LinkComponent
             href={href}
-            className="border-ink-600 hover:bg-ink-600/20 focus-visible:outline-ink-300 flex items-center gap-4 rounded border px-2 py-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="border-amber-600 hover:bg-amber-600/20 focus-visible:outline-amber-300 flex items-center gap-4 rounded border px-2 py-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
         >
             <div className="mx-2 text-center">
                 <Icon icon={icon} style="light" className="text-3xl" />
@@ -36,12 +36,12 @@ export default function Dashboard({ discordRoles }) {
             <SharedHeader title="Officers’ Dashboard" backgroundClass="bg-officer-meeting" />
 
             {/* Raiding */}
-            <Section tone="mid" edge="bottom" edgeTone="deep">
+            <Band tone="light">
                 <div className="container mx-auto px-4">
-                    <DisplayHeading level={2} eyebrow="Raiding" className="mb-4">
+                    <BandHeading level={2} eyebrow="Raiding" className="mb-4">
                         Teams &amp; Attendance
-                    </DisplayHeading>
-                    <p className="text-ink-400 mb-4">
+                    </BandHeading>
+                    <p className="text-amber-400 mb-4">
                         Manage raid team compositions, planned absences, and attendance tracking.
                     </p>
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -75,15 +75,15 @@ export default function Dashboard({ discordRoles }) {
                         </Can>
                     </div>
                 </div>
-            </Section>
+            </Band>
 
             {/* Loot Council */}
-            <Section tone="deep" edge="bottom" edgeTone="mid">
+            <Band tone="shaded" edge="both">
                 <div className="container mx-auto px-4">
-                    <DisplayHeading level={2} eyebrow="Loot Council" className="mb-4">
+                    <BandHeading level={2} eyebrow="Loot Council" className="mb-4">
                         Distribution &amp; Addons
-                    </DisplayHeading>
-                    <p className="text-ink-400 mb-4">Manage loot distribution priorities and addon settings.</p>
+                    </BandHeading>
+                    <p className="text-amber-400 mb-4">Manage loot distribution priorities and addon settings.</p>
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                         <DashboardCard href={route("management.addon.export")} icon="file-export">
                             <h3 className="text-md">Export addon data</h3>
@@ -95,15 +95,15 @@ export default function Dashboard({ discordRoles }) {
                         </DashboardCard>
                     </div>
                 </div>
-            </Section>
+            </Band>
 
             {/* Datasets */}
-            <Section tone="mid" edge="bottom" edgeTone="deep">
+            <Band tone="light">
                 <div className="container mx-auto px-4">
-                    <DisplayHeading level={2} eyebrow="Datasets" className="mb-4">
+                    <BandHeading level={2} eyebrow="Datasets" className="mb-4">
                         Game &amp; Guild Data
-                    </DisplayHeading>
-                    <p className="text-ink-400 mb-4">Manage core datasets that power the site&rsquo;s features.</p>
+                    </BandHeading>
+                    <p className="text-amber-400 mb-4">Manage core datasets that power the site&rsquo;s features.</p>
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                         <Can permission="edit-datasets">
                             <DashboardCard href={route("management.game-versions.index")} icon="gamepad">
@@ -142,20 +142,20 @@ export default function Dashboard({ discordRoles }) {
                         </Can>
                     </div>
                 </div>
-            </Section>
+            </Band>
 
             {/* Site Management */}
-            <Section tone="deep">
+            <Band tone="shaded" edge="top">
                 <div className="container mx-auto px-4">
-                    <DisplayHeading level={2} eyebrow="Site Management" className="mb-4">
+                    <BandHeading level={2} eyebrow="Site Management" className="mb-4">
                         Settings &amp; Testing
-                    </DisplayHeading>
-                    <p className="text-ink-400 mb-4">Manage site-wide settings and test the site as other roles.</p>
+                    </BandHeading>
+                    <p className="text-amber-400 mb-4">Manage site-wide settings and test the site as other roles.</p>
 
                     <div className="flex flex-col gap-4">
                         {/* Site options */}
                         <Collapsible title="Site options" style="gray">
-                            <p className="text-md text-secondary-400 mb-4">
+                            <p className="text-md text-gray-400 mb-4">
                                 Configure site-wide options and permissions.
                             </p>
                             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -174,7 +174,7 @@ export default function Dashboard({ discordRoles }) {
 
                         {/* Testing */}
                         <Collapsible title="Testing" style="gray">
-                            <p className="text-md text-secondary-400 mb-4">
+                            <p className="text-md text-gray-400 mb-4">
                                 View the site as different user roles for testing purposes. Use the user menu to switch
                                 back to your own account.
                             </p>
@@ -201,7 +201,7 @@ export default function Dashboard({ discordRoles }) {
                         </Collapsible>
                     </div>
                 </div>
-            </Section>
+            </Band>
         </Master>
     );
 }

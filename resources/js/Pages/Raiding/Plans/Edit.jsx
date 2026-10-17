@@ -65,11 +65,11 @@ function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) 
             ref={setNodeRef}
             style={style}
             data-assignment-key={assignment._key}
-            className="group border-ink-600/50 relative border-b last:border-0"
+            className="group border-amber-600/50 relative border-b last:border-0"
         >
             {/* Drag handle */}
             <td
-                className="text-ink-400 hover:text-ink-400 w-6 cursor-grab px-1 py-2 text-center active:cursor-grabbing"
+                className="text-amber-400 hover:text-amber-400 w-6 cursor-grab px-1 py-2 text-center active:cursor-grabbing"
                 {...attributes}
                 {...listeners}
             >
@@ -130,12 +130,12 @@ function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) 
 
 function AddAssignmentRow({ onAdd }) {
     return (
-        <tr className="border-ink-600/50 border-t border-dashed">
+        <tr className="border-amber-600/50 border-t border-dashed">
             <td colSpan={4}>
                 <button
                     type="button"
                     onClick={onAdd}
-                    className="text-ink-500 hover:bg-ground-700/30 hover:text-ink-300 flex w-full items-center justify-center gap-2 py-2 text-xs transition-colors"
+                    className="text-amber-500 hover:bg-brown-700/30 hover:text-amber-300 flex w-full items-center justify-center gap-2 py-2 text-xs transition-colors"
                 >
                     <Icon icon="plus" style="solid" className="text-[10px]" />
                     Add assignment
@@ -149,8 +149,8 @@ function InsertionIndicatorRow() {
     return (
         <tr>
             <td colSpan={4} className="p-0">
-                <div className="mx-1 flex h-8 items-center rounded border-2 border-dashed border-ink-500 bg-ink-600/20">
-                    <span className="ml-3 text-[10px] font-medium text-ink-400">Drop here</span>
+                <div className="mx-1 flex h-8 items-center rounded border-2 border-dashed border-amber-500 bg-amber-600/20">
+                    <span className="ml-3 text-[10px] font-medium text-amber-400">Drop here</span>
                 </div>
             </td>
         </tr>
@@ -166,7 +166,7 @@ function EmptyGroupDroppable({ containerId }) {
             <td colSpan={4}>
                 <div
                     className={`flex items-center justify-center rounded py-4 text-xs transition-colors ${
-                        isOver ? "bg-ink-600/20 text-ink-400" : "text-ink-500"
+                        isOver ? "bg-amber-600/20 text-amber-400" : "text-amber-500"
                     }`}
                 >
                     Drop here
@@ -204,12 +204,12 @@ function AssignmentGroupEditor({
         <div
             ref={setContainerRef}
             className={`overflow-visible rounded-lg border transition-colors ${
-                isTargetContainer || isOverContainer ? "border-ink-500 bg-ink-600/10" : "border-ink-600"
+                isTargetContainer || isOverContainer ? "border-amber-500 bg-amber-600/10" : "border-amber-600"
             }`}
         >
             {groupName && (
-                <div className="border-ink-600 bg-ground-800/60 border-b px-3 py-2">
-                    <h3 className="text-sm font-semibold text-ink-400">{groupName}</h3>
+                <div className="border-amber-600 bg-brown-800/60 border-b px-3 py-2">
+                    <h3 className="text-sm font-semibold text-amber-400">{groupName}</h3>
                 </div>
             )}
 
@@ -303,7 +303,7 @@ function SortableGroupCard({
                 <div className="mb-1 flex items-center gap-1">
                     <button
                         type="button"
-                        className="text-ink-500 hover:text-ink-400 cursor-grab touch-none active:cursor-grabbing"
+                        className="text-amber-500 hover:text-amber-400 cursor-grab touch-none active:cursor-grabbing"
                         {...attributes}
                         {...listeners}
                     >
@@ -321,7 +321,7 @@ function SortableGroupCard({
                                 if (e.key === "Enter") commitRename();
                                 if (e.key === "Escape") setEditingName(false);
                             }}
-                            className="bg-ground-800 flex-1 rounded border border-ink-500 px-2 py-0.5 text-sm text-ink-400 focus:outline-hidden"
+                            className="bg-brown-800 flex-1 rounded border border-amber-500 px-2 py-0.5 text-sm text-amber-400 focus:outline-hidden"
                         />
                     ) : (
                         <button
@@ -330,9 +330,9 @@ function SortableGroupCard({
                                 setNameInput(groupName ?? "");
                                 setEditingName(true);
                             }}
-                            className="flex-1 truncate text-left text-sm font-semibold text-ink-400 hover:text-ink-300"
+                            className="flex-1 truncate text-left text-sm font-semibold text-amber-400 hover:text-amber-300"
                         >
-                            {groupName ?? <span className="text-ink-500 italic">Unnamed group</span>}
+                            {groupName ?? <span className="text-amber-500 italic">Unnamed group</span>}
                         </button>
                     )}
 
@@ -378,8 +378,8 @@ function DroppableAddGroupButton({ droppableId, onClick, compact = false }) {
                     compact ? "py-2" : "py-6"
                 } ${
                     isOver
-                        ? "border-ink-500/70 bg-ink-600/15 text-ink-400"
-                        : "border-ink-600/50 text-ink-500 hover:border-ink-600/40 hover:bg-ink-600/5 hover:text-ink-500"
+                        ? "border-amber-500/70 bg-amber-600/15 text-amber-400"
+                        : "border-amber-600/50 text-amber-500 hover:border-amber-600/40 hover:bg-amber-600/5 hover:text-amber-500"
                 }`}
             >
                 <Icon icon="plus" style="solid" className="text-[10px]" />
@@ -556,7 +556,7 @@ function BossStrategySection({ boss, raid, commonContainerProps, groupsByBossId,
         >
             <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
                 <div className="flex flex-col gap-3">
-                    <h3 className="text-sm font-semibold tracking-wider text-ink-500/80 uppercase">Assignments</h3>
+                    <h3 className="text-sm font-semibold tracking-wider text-amber-500/80 uppercase">Assignments</h3>
                     <GroupContainer
                         bossId={boss.id}
                         groups={groupsByBossId[boss.id] ?? []}
@@ -567,20 +567,20 @@ function BossStrategySection({ boss, raid, commonContainerProps, groupsByBossId,
 
                 {bossImages.length > 0 || bossNotes ? (
                     <div className="col-span-2 flex flex-col gap-4">
-                        <h3 className="text-sm font-semibold tracking-wider text-ink-500/80 uppercase">Strategy</h3>
+                        <h3 className="text-sm font-semibold tracking-wider text-amber-500/80 uppercase">Strategy</h3>
                         {bossImages.map((url, i) => (
                             <img
                                 key={i}
                                 src={url}
                                 alt={`${boss.name} strategy ${i + 1}`}
-                                className="rounded-lg border border-ink-600/30"
+                                className="rounded-lg border border-amber-600/30"
                             />
                         ))}
                         {bossNotes && <FormattedMarkdown>{bossNotes}</FormattedMarkdown>}
                     </div>
                 ) : (
                     <div className="col-span-2 flex items-center justify-center py-8">
-                        <p className="text-ink-500 text-center text-sm">
+                        <p className="text-amber-500 text-center text-sm">
                             No strategy notes or images for this boss yet.
                         </p>
                     </div>
@@ -615,11 +615,11 @@ function ApplyTemplateModal({ eventId, templates, onClose }) {
             <div className="p-6 text-white">
                 <h2 className="mb-4 text-lg font-semibold">Apply a template</h2>
                 {templates.length === 0 ? (
-                    <p className="text-sm text-secondary-400">
+                    <p className="text-sm text-gray-400">
                         No templates match the raids in this event. Create a template from the{" "}
                         <a
                             href={route("management.event-templates.index")}
-                            className="text-ink-400 underline hover:text-ink-300"
+                            className="text-amber-400 underline hover:text-amber-300"
                         >
                             Event Templates
                         </a>{" "}
@@ -630,7 +630,7 @@ function ApplyTemplateModal({ eventId, templates, onClose }) {
                         {templates.map((template) => (
                             <div
                                 key={template.id}
-                                className="border-ink-600 flex items-center justify-between gap-4 rounded border px-4 py-3"
+                                className="border-amber-600 flex items-center justify-between gap-4 rounded border px-4 py-3"
                             >
                                 <div className="flex flex-col gap-1">
                                     <span className="font-semibold">{template.title}</span>
@@ -638,7 +638,7 @@ function ApplyTemplateModal({ eventId, templates, onClose }) {
                                         {template.raids.map((r) => (
                                             <span
                                                 key={r.id}
-                                                className="rounded bg-ink-600/20 px-2 py-0.5 text-xs text-ink-400"
+                                                className="rounded bg-amber-600/20 px-2 py-0.5 text-xs text-amber-400"
                                             >
                                                 {r.name}
                                             </span>
@@ -1378,12 +1378,12 @@ export default function Edit({ event, targetMarkers, templates }) {
                     )}
                     <div className="grow" />
                     {templates === undefined ? (
-                        <div className="h-7 w-32 animate-pulse rounded border border-ink-600/20 bg-ink-600/10" />
+                        <div className="h-7 w-32 animate-pulse rounded border border-amber-600/20 bg-amber-600/10" />
                     ) : (
                         <button
                             type="button"
                             onClick={() => setShowApplyTemplate(true)}
-                            className="flex items-center gap-1 rounded border border-ink-600/60 px-3 py-1 text-sm text-ink-400 transition-colors hover:bg-ink-600/20"
+                            className="flex items-center gap-1 rounded border border-amber-600/60 px-3 py-1 text-sm text-amber-400 transition-colors hover:bg-amber-600/20"
                         >
                             <Icon icon="copy" style="light" />
                             Apply template
@@ -1393,7 +1393,7 @@ export default function Edit({ event, targetMarkers, templates }) {
                         type="button"
                         onClick={handlePublish}
                         disabled={publishing}
-                        className="flex items-center gap-1 rounded border border-ink-600/60 px-3 py-1 text-sm text-ink-400 transition-colors hover:bg-ink-600/20 disabled:opacity-50"
+                        className="flex items-center gap-1 rounded border border-amber-600/60 px-3 py-1 text-sm text-amber-400 transition-colors hover:bg-amber-600/20 disabled:opacity-50"
                     >
                         <Icon icon="bullhorn" style="light" />
                         {publishing ? "Publishing…" : "Publish"}
@@ -1409,7 +1409,7 @@ export default function Edit({ event, targetMarkers, templates }) {
                         {compBench.length > 0 && <BenchedTable characters={compBench} />}
                     </div>
                 ) : (
-                    <p className="flex-1 text-center text-sm text-secondary-400">
+                    <p className="flex-1 text-center text-sm text-gray-400">
                         Groups for this raid have not been posted yet.
                     </p>
                 )}
@@ -1435,7 +1435,7 @@ export default function Edit({ event, targetMarkers, templates }) {
                 >
                     {/* General Assignments */}
                     <section className="mb-8">
-                        <h2 className="mb-3 text-base font-semibold tracking-wider text-ink-500/80 uppercase">
+                        <h2 className="mb-3 text-base font-semibold tracking-wider text-amber-500/80 uppercase">
                             General Assignments
                         </h2>
                         <GroupContainer
@@ -1453,7 +1453,7 @@ export default function Edit({ event, targetMarkers, templates }) {
                             {event.raids.map((raid) => (
                                 <div key={raid.slug}>
                                     {event.raids.length > 1 && (
-                                        <h2 className="mb-3 text-base font-semibold tracking-wider text-ink-500/80 uppercase">
+                                        <h2 className="mb-3 text-base font-semibold tracking-wider text-amber-500/80 uppercase">
                                             {raid.name}
                                         </h2>
                                     )}
@@ -1480,20 +1480,20 @@ export default function Edit({ event, targetMarkers, templates }) {
 
                     <DragOverlay>
                         {activeAssignment ? (
-                            <table className="bg-ground-800 w-full table-fixed rounded border border-ink-500/50 opacity-90 shadow-xl">
+                            <table className="bg-brown-800 w-full table-fixed rounded border border-amber-500/50 opacity-90 shadow-xl">
                                 <tbody>
-                                    <tr className="border-ink-600/50 border-b">
-                                        <td className="text-ink-400 w-6 px-1 py-2">
+                                    <tr className="border-amber-600/50 border-b">
+                                        <td className="text-amber-400 w-6 px-1 py-2">
                                             <Icon icon="grip-vertical" style="solid" className="text-xs" />
                                         </td>
-                                        <td className="border-ink-600/50 text-heading w-1/2 border-r px-3 py-2.5 text-sm">
+                                        <td className="border-amber-600/50 text-amber-500 w-1/2 border-r px-3 py-2.5 text-sm">
                                             {labelFromSide(activeAssignment._leftSide).label || (
-                                                <span className="text-ink-500 italic">empty</span>
+                                                <span className="text-amber-500 italic">empty</span>
                                             )}
                                         </td>
-                                        <td className="text-heading w-1/2 px-3 py-2.5 text-sm">
+                                        <td className="text-amber-500 w-1/2 px-3 py-2.5 text-sm">
                                             {labelFromSide(activeAssignment._rightSide).label || (
-                                                <span className="text-ink-500 italic">empty</span>
+                                                <span className="text-amber-500 italic">empty</span>
                                             )}
                                         </td>
                                         <td className="w-10" />

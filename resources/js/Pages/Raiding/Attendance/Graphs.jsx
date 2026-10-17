@@ -8,8 +8,8 @@ import GameVersionSelector from "@/Components/GameVersions/GameVersionSelector";
 
 function BoxLabel({ icon, label }) {
     return (
-        <p className="flex items-center gap-2 text-sm text-secondary-400">
-            {icon && <Icon icon={icon} style="light" className="text-ink-400" />}
+        <p className="flex items-center gap-2 text-sm text-gray-400">
+            {icon && <Icon icon={icon} style="light" className="text-amber-400" />}
             <span>{label}</span>
         </p>
     );
@@ -17,9 +17,9 @@ function BoxLabel({ icon, label }) {
 
 function ScatterSkeleton() {
     return (
-        <div className="animate-pulse rounded border border-ink-600/30 p-4">
-            <div className="mb-3 h-3 w-1/3 rounded bg-secondary-700" />
-            <div className="h-72 w-full rounded bg-secondary-700/50" />
+        <div className="animate-pulse rounded border border-amber-600/30 p-4">
+            <div className="mb-3 h-3 w-1/3 rounded bg-gray-700" />
+            <div className="h-72 w-full rounded bg-gray-700/50" />
         </div>
     );
 }
@@ -37,7 +37,7 @@ export default function Graphs({ scatterPoints, gameVersion, gameVersions }) {
                     />
                 )}
                 <Deferred data="scatterPoints" fallback={<ScatterSkeleton />}>
-                    <div className="rounded border border-ink-600 p-4">
+                    <div className="rounded border border-amber-600 p-4">
                         <BoxLabel icon="chart-scatter" label="Attendance distribution" />
                         <AttendanceScatterChart points={scatterPoints} />
                     </div>

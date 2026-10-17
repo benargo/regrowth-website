@@ -9,9 +9,9 @@ import SpecRow from "@/Components/Characters/SpecRow";
 
 function SectionHeading({ children }) {
     return (
-        <h2 className="mb-4 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.15em] text-ink-500/70">
+        <h2 className="mb-4 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.15em] text-amber-500/70">
             <span>{children}</span>
-            <span className="h-px flex-1 bg-ink-600/20" />
+            <span className="h-px flex-1 bg-amber-600/20" />
         </h2>
     );
 }
@@ -89,12 +89,12 @@ export default function Edit({ character: { data: character }, specializations: 
                             <img
                                 src={character.playable_class.icon_url}
                                 alt={character.playable_class.name}
-                                className="h-12 w-12 rounded-lg border border-ink-600/30 shadow-lg shadow-black/40"
+                                className="h-12 w-12 rounded-lg border border-amber-600/30 shadow-lg shadow-black/40"
                             />
                         )}
                         <div>
                             <h2 className="text-xl font-bold text-white">{character.name}</h2>
-                            <p className="text-sm text-secondary-400">
+                            <p className="text-sm text-gray-400">
                                 {character.playable_class?.name ?? "Unknown class"}
                                 {character.rank?.name ? ` · ${character.rank.name}` : ""}
                             </p>
@@ -105,9 +105,9 @@ export default function Edit({ character: { data: character }, specializations: 
                         {/* Specializations */}
                         <section>
                             <SectionHeading>Specializations</SectionHeading>
-                            <p className="mb-4 text-sm text-secondary-400">
+                            <p className="mb-4 text-sm text-gray-400">
                                 Select which specs this character plays. Mark one as the{" "}
-                                <span className="inline-flex items-center gap-1 text-ink-500">
+                                <span className="inline-flex items-center gap-1 text-amber-500">
                                     raid spec
                                 </span>
                                 .
@@ -127,7 +127,7 @@ export default function Edit({ character: { data: character }, specializations: 
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-sm text-secondary-500">
+                                <p className="text-sm text-gray-500">
                                     No specializations available for this class.
                                 </p>
                             )}
@@ -140,13 +140,13 @@ export default function Edit({ character: { data: character }, specializations: 
                         {/* Loot Council */}
                         <section>
                             <SectionHeading>Loot Council</SectionHeading>
-                            <label className="flex cursor-pointer items-center gap-3 rounded border border-ink-600 bg-ground-800/30 px-4 py-3 transition-colors hover:border-ink-500">
+                            <label className="flex cursor-pointer items-center gap-3 rounded border border-amber-600 bg-brown-800/30 px-4 py-3 transition-colors hover:border-amber-500">
                                 <Checkbox
                                     checked={data.is_loot_councillor}
                                     onChange={(e) => setData("is_loot_councillor", e.target.checked)}
                                 />
                                 <span className="font-medium text-white">Loot Councillor</span>
-                                <span className="text-sm text-secondary-500">
+                                <span className="text-sm text-gray-500">
                                     This character has a vote on loot distribution
                                 </span>
                             </label>
@@ -154,7 +154,7 @@ export default function Edit({ character: { data: character }, specializations: 
                         </section>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-4 border-t border-ink-600 pt-6">
+                        <div className="flex items-center gap-4 border-t border-amber-600 pt-6">
                             <PrimaryButton type="submit" processing={processing}>
                                 {processing ? "Saving…" : "Save changes"}
                             </PrimaryButton>
@@ -163,7 +163,7 @@ export default function Edit({ character: { data: character }, specializations: 
                                     character: character.id,
                                     slug: character.slug,
                                 })}
-                                className="text-sm text-secondary-400 transition-colors hover:text-white"
+                                className="text-sm text-gray-400 transition-colors hover:text-white"
                             >
                                 Cancel
                             </Link>

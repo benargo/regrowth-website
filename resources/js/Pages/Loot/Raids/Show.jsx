@@ -30,7 +30,7 @@ function prepareItems(rawItems) {
 
 function BossItems({ prepared, weightThreshold }) {
     if (!prepared) {
-        return <p className="text-secondary-500 italic">No items configured for this boss.</p>;
+        return <p className="text-gray-500 italic">No items configured for this boss.</p>;
     }
 
     const { groups, ungroupedItems } = prepared;
@@ -50,7 +50,7 @@ function BossItems({ prepared, weightThreshold }) {
         <div className="space-y-4">
             {groupNames.map((groupName) => (
                 <div key={groupName} className="mb-8 space-y-2">
-                    <h4 className="text-sm font-semibold text-ink-500">{groupName}</h4>
+                    <h4 className="text-sm font-semibold text-amber-500">{groupName}</h4>
                     {groups[groupName].map((item) => (
                         <ItemRow key={item.id} item={item} weightThreshold={weightThreshold} />
                     ))}
@@ -190,7 +190,7 @@ export default function Index({ raid, boss_items, trash_items, priority_weight_t
                             style="amber"
                             headerRight={
                                 boss.comments_count > 0 && (
-                                    <span className="inline-flex items-center gap-1 rounded bg-ink-600/20 px-2 py-1 text-xs font-semibold text-ink-600">
+                                    <span className="inline-flex items-center gap-1 rounded bg-amber-600/20 px-2 py-1 text-xs font-semibold text-amber-600">
                                         <Icon icon="comments" style="solid" className="h-4 w-4" />
                                         {boss.comments_count}
                                     </span>
@@ -214,7 +214,7 @@ export default function Index({ raid, boss_items, trash_items, priority_weight_t
                             style="amber"
                             headerRight={
                                 raid.data.trash_comments_count > 0 && (
-                                    <span className="inline-flex items-center gap-1 rounded bg-ink-600/20 px-2 py-1 text-xs font-semibold text-ink-600">
+                                    <span className="inline-flex items-center gap-1 rounded bg-amber-600/20 px-2 py-1 text-xs font-semibold text-amber-600">
                                         <Icon icon="comments" style="solid" className="h-4 w-4" />
                                         {raid.data.trash_comments_count}
                                     </span>

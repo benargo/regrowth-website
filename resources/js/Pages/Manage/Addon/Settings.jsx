@@ -100,15 +100,15 @@ export default function AddonSettings({ councillors: councillorsProp, tags: tags
                 </div>
 
                 <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <div className="mb-4 rounded-lg border border-ink-600 p-4">
+                    <div className="mb-4 rounded-lg border border-amber-600 p-4">
                         <h2 className="mb-2 flex flex-row items-center">
                             <Icon icon="user-friends" style="solid" className="mr-2 h-6 w-6" />
                             <span className="text-2xl font-semibold">Loot council members</span>
                         </h2>
-                        <p className="text-mb mb-1 text-secondary-200">
+                        <p className="text-mb mb-1 text-gray-200">
                             Configure which guild members are part of the loot council.
                         </p>
-                        <p className="mb-1 text-sm text-secondary-400">
+                        <p className="mb-1 text-sm text-gray-400">
                             {councillorCounts.total} total ({councillorCounts.mains} mains, {councillorCounts.alts}{" "}
                             alts)
                         </p>
@@ -116,15 +116,15 @@ export default function AddonSettings({ councillors: councillorsProp, tags: tags
                             <div className="mt-4">
                                 {councillors.map((councillor) => (
                                     <div key={councillor.id} className="mb-2 flex flex-row items-center gap-4">
-                                        <div className="border-ink-600 bg-ground-800/30 flex h-12 flex-1 items-center gap-3 rounded-md border p-2">
+                                        <div className="border-amber-600 bg-brown-800/30 flex h-12 flex-1 items-center gap-3 rounded-md border p-2">
                                             {councillor.portrait_url ? (
                                                 <img
                                                     src={councillor.portrait_url}
                                                     alt={councillor.name}
-                                                    className="h-8 w-8 rounded border border-ink-600/30"
+                                                    className="h-8 w-8 rounded border border-amber-600/30"
                                                 />
                                             ) : (
-                                                <div className="h-8 w-8 rounded border border-ink-600/30 bg-secondary-700" />
+                                                <div className="h-8 w-8 rounded border border-amber-600/30 bg-gray-700" />
                                             )}
                                             <span>{councillor.name}</span>
                                         </div>
@@ -142,7 +142,7 @@ export default function AddonSettings({ councillors: councillorsProp, tags: tags
                                 ))}
                             </div>
                         ) : (
-                            <p className="border-ink-600 my-2 rounded-md border p-2 text-sm text-secondary-400">
+                            <p className="border-amber-600 my-2 rounded-md border p-2 text-sm text-gray-400">
                                 No loot councillors configured.
                             </p>
                         )}
@@ -158,7 +158,7 @@ export default function AddonSettings({ councillors: councillorsProp, tags: tags
                             />
                         </div>
                     </div>
-                    <div className="mb-4 rounded-lg border border-ink-600 p-4">
+                    <div className="mb-4 rounded-lg border border-amber-600 p-4">
                         <h2 className="mb-2 flex flex-row items-center">
                             <Icon icon="analytics" style="solid" className="mr-2 h-6 w-6" />
                             <span className="text-2xl font-semibold">Ranks to track attendance</span>
@@ -177,16 +177,16 @@ export default function AddonSettings({ councillors: councillorsProp, tags: tags
                             .
                         </p>
                     </div>
-                    <div className="mb-4 rounded-lg border border-ink-600 p-4">
+                    <div className="mb-4 rounded-lg border border-amber-600 p-4">
                         <h2 className="mb-2 flex flex-row items-center">
                             <img src="/images/logo_warcraftlogs.webp" alt="Warcraft Logs" className="mr-2 h-6 w-6" />
                             <span className="text-2xl font-semibold">Warcraft Logs tags</span>
                         </h2>
-                        <p className="text-mb mb-1 text-secondary-200">
+                        <p className="text-mb mb-1 text-gray-200">
                             Select which Warcraft Logs tags should be used for attendance calculations.
                         </p>
                         {tags.length > 0 ? (
-                            <div className="border-ink-600 mt-4 rounded-md border">
+                            <div className="border-amber-600 mt-4 rounded-md border">
                                 {tags.map((tag) => {
                                     const hasGuild = tag.guild_id !== null;
 
@@ -195,7 +195,7 @@ export default function AddonSettings({ councillors: councillorsProp, tags: tags
                                             key={tag.id}
                                             className="border-b-line flex flex-row items-center border-b first:rounded-t-md last:rounded-b-md"
                                         >
-                                            <div className="border-ink-600 bg-ground-800/50 mr-2 flex h-12 w-12 items-center justify-center border p-2">
+                                            <div className="border-amber-600 bg-brown-800/50 mr-2 flex h-12 w-12 items-center justify-center border p-2">
                                                 <Checkbox
                                                     checked={tag.count_attendance}
                                                     disabled={!canUpdateTags || !hasGuild}
@@ -216,7 +216,7 @@ export default function AddonSettings({ councillors: councillorsProp, tags: tags
                                 })}
                             </div>
                         ) : (
-                            <p className="mt-2 text-sm text-secondary-400">No tags available.</p>
+                            <p className="mt-2 text-sm text-gray-400">No tags available.</p>
                         )}
                     </div>
                 </div>
