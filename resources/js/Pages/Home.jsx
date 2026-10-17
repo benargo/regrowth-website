@@ -15,7 +15,7 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
             <div className="text-base">
                 <div className="flex flex-col lg:h-screen">
                     <section className="bg-masthead-forever relative lg:flex-1">
-                        <div className="bg-masthead-forever hidden h-[60vh] overflow-hidden md:block md:h-[800px] lg:h-full" />
+                        <div className="hidden h-[60vh] overflow-hidden md:block md:h-[800px] lg:h-full" />
 
                         <div className="relative flex flex-col items-center justify-center py-20 md:absolute md:inset-0 md:py-0">
                             <div className="my-10 flex flex-row items-center">

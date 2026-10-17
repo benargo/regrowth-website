@@ -26,7 +26,7 @@ export default function Modal({ children, show = false, maxWidth = "2xl", closea
             <div className="fixed inset-0 z-10 flex items-center overflow-y-auto px-4 py-6 sm:px-0">
                 <DialogPanel
                     transition
-                    className={`bg-brown-800 border-primary bg-parchment w-full transform overflow-hidden rounded-lg border shadow-xl transition duration-300 ease-out data-closed:translate-y-4 data-closed:opacity-0 sm:mx-auto sm:data-closed:translate-y-0 sm:data-closed:scale-95 ${maxWidthClass}`}
+                    className={`border-primary bg-parchment w-full transform overflow-hidden rounded-lg border shadow-xl transition duration-300 ease-out data-closed:translate-y-4 data-closed:opacity-0 sm:mx-auto sm:data-closed:translate-y-0 sm:data-closed:scale-95 ${maxWidthClass}`}
                 >
                     {children}
                 </DialogPanel>

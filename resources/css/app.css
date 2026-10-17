@@ -212,12 +212,9 @@
         font-family: var(--font-serif);
     }
 
-    /* Page background: the Classic brown texture over brown-800 */
+    /* Page background colour beneath the layout's textured wrapper */
     body {
         background-color: var(--color-brown-800);
-        background-image: url("../images/classic/bg_brown_texture.jpg");
-        background-position: center -200px;
-        background-repeat: repeat;
     }
 }
 
@@ -355,9 +352,10 @@ svg.recharts-surface {
     background-size: cover;
 }
 
-/* Classic brown texture surface, used by the search palette and modals */
+/* Classic brown texture over brown-800, used by the layout, search palette and modals */
 
 .bg-parchment {
+    background-color: var(--color-brown-800);
     background-image: url("../images/classic/bg_brown_texture.jpg");
     background-position: center -200px;
     background-repeat: repeat;
@@ -409,8 +407,4 @@ svg.recharts-surface {
     .bg-footer-forever {
         background-image: url("../images/forever/bg_footer_lg.webp");
     }
-}
-
-.border-footer-forever {
-    border-color: var(--color-camel-600);
 }

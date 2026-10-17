@@ -1,3 +1,5 @@
+import { WAVE_PATH } from "@/Components/Band/WavyEdge";
+
 const TONE_FILL = {
     deep: "var(--color-forever-900)",
     mid: "var(--color-forever-800)",
@@ -23,10 +25,7 @@ export default function RaggedEdge({ position = "bottom", tone = "deep", classNa
                 preserveAspectRatio="none"
                 xmlns="http://www.w3.org/2000/svg"
             >
-                <path
-                    fill={TONE_FILL[tone] ?? TONE_FILL.deep}
-                    d="M0 40h1440V18c-38 6-72-4-110-7-44-4-83 9-127 8-52-1-97-14-149-12-45 2-85 15-130 14-51-1-95-16-146-14-43 2-80 14-123 15-49 1-92-12-141-10-38 2-71 12-109 13-72 2-134-12-205-9-38 2-72 9-110 12z"
-                />
+                <path fill={TONE_FILL[tone] ?? TONE_FILL.deep} d={WAVE_PATH} />
             </svg>
         </div>
     );

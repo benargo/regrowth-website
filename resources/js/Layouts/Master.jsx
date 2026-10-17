@@ -12,17 +12,17 @@ import WarcraftLogsLogo from "@/Components/WarcraftLogs/Logo";
 import SearchPalette from "@/Components/Search/SearchPalette";
 import cn from "@/Helpers/cn";
 
+const MOBILE_LINK = "flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:text-white";
+
+const FOOTER_LINK = "flex h-8 flex-row items-center gap-2 p-1 transition-colors md:ml-2";
+
 const NAV_CLASSES = {
     classic: {
-        wrapper: "bg-brown-800 bg-parchment",
+        wrapper: "bg-parchment",
         nav: "bg-brown-900/80 border-brown-700/50",
         iconButton: "hover:bg-brown-700 text-gray-400",
         searchButton: "hover:bg-brown-700 border-brown-600 bg-brown-800 focus:ring-amber-500 text-gray-300",
         searchShortcut: "bg-brown-900 text-gray-400",
-        navLink: "",
-        responsiveNavLink: "",
-        dropdownContent: undefined,
-        dropdownLink: "",
         mobileMenu: "bg-brown-900",
         mobileLink: "hover:bg-amber-700 text-gray-300",
         mobileDivider: "border-amber-700",
@@ -39,11 +39,11 @@ const NAV_CLASSES = {
         navLink: "hover:bg-forever-700/80 focus-visible:outline-camel-400",
         responsiveNavLink: "text-verdant-300 hover:bg-camel-800 focus-visible:outline-camel-400",
         dropdownContent: "py-1 bg-forever-800",
-        dropdownLink: "bg-forever-800 hover:bg-forever-800 data-focus:bg-forever-700",
+        dropdownLink: "bg-forever-800 data-focus:bg-forever-700",
         mobileMenu: "bg-forever-900",
         mobileLink: "hover:bg-camel-800 text-verdant-300",
         mobileDivider: "border-camel-700",
-        footer: "bg-footer-forever border-footer-forever",
+        footer: "bg-footer-forever border-camel-600",
         footerText: "text-camel-400",
         footerLink: "text-camel-400 hover:text-camel-200",
     },
@@ -52,6 +52,8 @@ const NAV_CLASSES = {
 export default function Master({ title, isHomepage = false, children }) {
     const { auth, flash, discordInviteUrl } = usePage().props;
     const classes = isHomepage ? NAV_CLASSES.forever : NAV_CLASSES.classic;
+    const mobileLinkClass = cn(MOBILE_LINK, classes.mobileLink);
+    const footerLinkClass = cn(FOOTER_LINK, classes.footerLink);
     const user = auth?.user;
     const impersonating = auth?.impersonating;
 
@@ -321,49 +323,23 @@ export default function Master({ title, isHomepage = false, children }) {
                                         )}
                                     </div>
                                 </div>
-                                <Link
-                                    href={route("account.index")}
-                                    className={cn(
-                                        "flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:text-white",
-                                        classes.mobileLink,
-                                    )}
-                                >
+                                <Link href={route("account.index")} className={mobileLinkClass}>
                                     <Icon icon="user-cog" style="regular" className="mr-2" />
                                     Account Settings
                                 </Link>
                                 {impersonating && (
-                                    <Link
-                                        href={route("auth.return-to-self")}
-                                        className={cn(
-                                            "flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:text-white",
-                                            classes.mobileLink,
-                                        )}
-                                    >
+                                    <Link href={route("auth.return-to-self")} className={mobileLinkClass}>
                                         <Icon icon="undo" style="regular" className="mr-2" />
                                         Return to my account
                                     </Link>
                                 )}
                                 <Can permission="view-officer-dashboard">
-                                    <Link
-                                        href={route("management.dashboard")}
-                                        className={cn(
-                                            "flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:text-white",
-                                            classes.mobileLink,
-                                        )}
-                                    >
+                                    <Link href={route("management.dashboard")} className={mobileLinkClass}>
                                         <Icon icon="cogs" style="regular" className="mr-2" />
                                         Control Panel
                                     </Link>
                                 </Can>
-                                <Link
-                                    href={route("logout")}
-                                    method="post"
-                                    as="button"
-                                    className={cn(
-                                        "flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:text-white",
-                                        classes.mobileLink,
-                                    )}
-                                >
+                                <Link href={route("logout")} method="post" as="button" className={mobileLinkClass}>
                                     <Icon icon="sign-out" style="regular" className="mr-2" />
                                     Logout
                                 </Link>
@@ -420,10 +396,7 @@ export default function Master({ title, isHomepage = false, children }) {
                                 </div>
                                 <a
                                     href="https://www.warcraftlogs.com/guilds/774848-regrowth"
-                                    className={cn(
-                                        "flex h-8 flex-row items-center gap-2 p-1 transition-colors md:ml-2",
-                                        classes.footerLink,
-                                    )}
+                                    className={footerLinkClass}
                                     rel="noopener noreferrer"
                                 >
                                     <WarcraftLogsLogo className="h-5 w-5" />
@@ -433,31 +406,16 @@ export default function Master({ title, isHomepage = false, children }) {
                                     href={discordInviteUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={cn(
-                                        "flex h-8 flex-row items-center gap-2 p-1 transition-colors md:ml-2",
-                                        classes.footerLink,
-                                    )}
+                                    className={footerLinkClass}
                                 >
                                     <Icon icon="discord" style="brands" className="h-5 w-5" />
                                     <span className="text-nowrap">Discord</span>
                                 </a>
-                                <Link
-                                    href={route("privacypolicy")}
-                                    className={cn(
-                                        "flex h-8 flex-row items-center gap-2 p-1 transition-colors md:ml-2",
-                                        classes.footerLink,
-                                    )}
-                                >
+                                <Link href={route("privacypolicy")} className={footerLinkClass}>
                                     <Icon icon="user-secret" style="solid" className="h-5 w-5" />
                                     <span className="text-nowrap">Privacy policy</span>
                                 </Link>
-                                <Link
-                                    href={route("battlenet-usage")}
-                                    className={cn(
-                                        "flex h-8 flex-row items-center gap-2 p-1 transition-colors md:ml-2",
-                                        classes.footerLink,
-                                    )}
-                                >
+                                <Link href={route("battlenet-usage")} className={footerLinkClass}>
                                     <Icon icon="battle-net" style="brands" className="h-5 w-5" />
                                     <span className="text-nowrap">Battle.net API Usage</span>
                                 </Link>
@@ -467,10 +425,7 @@ export default function Master({ title, isHomepage = false, children }) {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     title="Ben Argo"
-                                    className={cn(
-                                        "mt-0 flex h-8 flex-row items-center gap-2 p-1 transition-colors md:ml-2",
-                                        classes.footerLink,
-                                    )}
+                                    className={cn("mt-0", footerLinkClass)}
                                 >
                                     <Icon icon="safari" style="brands" className="h-5 w-5" />
                                     <span className="text-nowrap">A Fizzywigs Production</span>

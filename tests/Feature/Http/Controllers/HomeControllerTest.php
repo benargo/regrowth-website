@@ -241,7 +241,7 @@ class HomeControllerTest extends TestCase
     {
         $content = $this->get(route('home'))->assertOk()->getContent();
 
-        $this->assertMatchesRegularExpression('/<body[^>]*\bbg-parchment-forever\b/', $content);
+        $this->assertMatchesRegularExpression('/<body[^>]*\bbg-forever-800\b/', $content);
     }
 
     #[Test]
@@ -249,7 +249,7 @@ class HomeControllerTest extends TestCase
     {
         $content = $this->get(route('privacypolicy'))->assertOk()->getContent();
 
-        $this->assertDoesNotMatchRegularExpression('/<body[^>]*\bbg-parchment-forever\b/', $content);
+        $this->assertDoesNotMatchRegularExpression('/<body[^>]*\bbg-forever-800\b/', $content);
     }
 
     // ==================== officer renders ====================

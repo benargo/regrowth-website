@@ -26,7 +26,7 @@
 
         <link rel="icon" type="image/webp" href="{{ asset('images/guild_emblem.webp') }}" />
     </head>
-    <body @class(['font-sans antialiased overflow-x-clip', 'bg-parchment-forever' => ($page['component'] ?? null) === 'Home'])>
+    <body @class(['font-sans antialiased overflow-x-clip', 'bg-forever-800' => ($page['component'] ?? null) === 'Home'])>
         @inertia
 
         <!-- Wowhead Tooltips -->

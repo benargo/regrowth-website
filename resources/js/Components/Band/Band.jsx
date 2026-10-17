@@ -1,20 +1,6 @@
 import cn from "@/Helpers/cn";
+import getSectionPadding from "@/Helpers/getSectionPadding";
 import WavyEdge from "./WavyEdge";
-
-const SECTION_PADDING = {
-    top: {
-        false: "pt-16",
-        true: "pt-22 md:pt-28",
-    },
-    bottom: {
-        false: "pb-16",
-        true: "pb-22 md:pb-28",
-    },
-};
-
-function getSectionPadding({ showTop, showBottom }) {
-    return `${SECTION_PADDING.top[showTop]} ${SECTION_PADDING.bottom[showBottom]}`;
-}
 
 /**
  * A full-width Classic band with a centred container. A `light` band has no

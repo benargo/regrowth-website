@@ -128,7 +128,7 @@ export default function SearchPalette({ open, onClose }) {
             <div className="fixed inset-0 z-10 flex items-start justify-center overflow-y-auto px-4 pt-[10vh] pb-6">
                 <DialogPanel
                     transition
-                    className="border-primary bg-brown-800 bg-parchment w-full max-w-2xl transform overflow-hidden rounded-lg border shadow-xl transition duration-300 ease-out data-closed:translate-y-4 data-closed:scale-95 data-closed:opacity-0"
+                    className="border-primary bg-parchment w-full max-w-2xl transform overflow-hidden rounded-lg border shadow-xl transition duration-300 ease-out data-closed:translate-y-4 data-closed:scale-95 data-closed:opacity-0"
                 >
                     <div className="flex items-center gap-2 border-b border-amber-600/50 px-4 py-3">
                         <Icon icon="search" style="solid" className="h-4 w-4 flex-none text-gray-400" />

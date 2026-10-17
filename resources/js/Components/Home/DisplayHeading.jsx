@@ -1,25 +1,9 @@
-const SIZES = {
-    1: "text-5xl md:text-7xl",
-    2: "text-4xl md:text-5xl",
-    3: "text-2xl md:text-3xl",
-};
+import BandHeading from "@/Components/Band/BandHeading";
 
 /**
- * Parchment display heading in the Forever style: serif, weight 400, warm
- * camel gradient text, with an optional uppercase eyebrow above it.
+ * Parchment display heading in the Forever style: a `BandHeading` in the
+ * camel palette.
  */
-export default function DisplayHeading({ level = 2, eyebrow, className = "", children, ...props }) {
-    const Tag = `h${level}`;
-
-    return (
-        <div className={className}>
-            {eyebrow && <p className="text-camel-300 mb-2 text-sm font-medium tracking-[0.2em] uppercase">{eyebrow}</p>}
-            <Tag
-                className={`from-camel-100 to-camel-300 bg-linear-to-b bg-clip-text pb-1 font-serif text-transparent text-shadow-sm ${SIZES[level] ?? SIZES[2]}`}
-                {...props}
-            >
-                {children}
-            </Tag>
-        </div>
-    );
+export default function DisplayHeading(props) {
+    return <BandHeading palette="camel" {...props} />;
 }

@@ -1,3 +1,4 @@
+import getSectionPadding from "@/Helpers/getSectionPadding";
 import RaggedEdge from "./RaggedEdge";
 
 const TONE_BG = {
@@ -5,21 +6,6 @@ const TONE_BG = {
     mid: "bg-forever-800",
     parchment: "bg-mountains",
 };
-
-const SECTION_PADDING = {
-    top: {
-        false: "pt-16",
-        true: "pt-22 md:pt-28",
-    },
-    bottom: {
-        false: "pb-16",
-        true: "pb-22 md:pb-28",
-    },
-};
-
-function getSectionPadding({ showTop, showBottom }) {
-    return `${SECTION_PADDING.top[showTop]} ${SECTION_PADDING.bottom[showBottom]}`;
-}
 
 /**
  * A full-width homepage band. Bands alternate tone down the page and are
