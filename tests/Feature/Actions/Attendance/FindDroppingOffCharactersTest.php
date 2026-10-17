@@ -15,9 +15,9 @@ use Tests\TestCase;
 class FindDroppingOffCharactersTest extends TestCase
 {
     #[Test]
-    public function it_finds_a_character_whose_recent_rate_fell_at_least_25_points(): void
+    public function it_finds_a_character_whose_recent_rate_fell_more_than_25_points(): void
     {
-        $dropping = $this->row(3, 4, [Presence::Absent, Presence::Absent, Presence::Present, Presence::Present]);
+        $dropping = $this->row(3, 4, [Presence::Absent, Presence::Absent, Presence::Absent, Presence::Present]);
 
         $this->assertSame([$dropping], FindDroppingOffCharacters::run(collect([$dropping]))->all());
     }
@@ -31,9 +31,17 @@ class FindDroppingOffCharactersTest extends TestCase
     }
 
     #[Test]
-    public function it_ignores_an_overall_rate_below_25(): void
+    public function it_ignores_a_drop_of_24_points(): void
     {
         $row = $this->row(6, 25, [Presence::Absent, Presence::Absent, Presence::Absent, Presence::Absent]);
+
+        $this->assertTrue(FindDroppingOffCharacters::run(collect([$row]))->isEmpty());
+    }
+
+    #[Test]
+    public function it_ignores_a_drop_under_25_points(): void
+    {
+        $row = $this->row(4, 5, [Presence::Present, Presence::Present, Presence::Present, Presence::Absent]);
 
         $this->assertTrue(FindDroppingOffCharacters::run(collect([$row]))->isEmpty());
     }

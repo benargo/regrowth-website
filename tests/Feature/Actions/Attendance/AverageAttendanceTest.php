@@ -27,18 +27,15 @@ class AverageAttendanceTest extends TestCase
 
     // ==================== helpers ====================
 
-    /**
-     * @param  array<int, Presence|null>  $attendance
-     */
-    private function row(int $reportsAttended, int $totalReports, array $attendance = []): CharacterAttendanceData
+    private function row(int $reportsAttended, int $totalReports): CharacterAttendanceData
     {
         return new CharacterAttendanceData(
             character: Character::factory()->withoutParents()->make(),
             firstAttendance: Carbon::parse('2025-01-01 19:00', 'UTC'),
             totalReports: $totalReports,
             reportsAttended: $reportsAttended,
-            attendance: $attendance,
-            plannedAbsences: array_fill(0, count($attendance), null),
+            attendance: [],
+            plannedAbsences: [],
         );
     }
 }

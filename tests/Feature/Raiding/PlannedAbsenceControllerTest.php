@@ -289,6 +289,23 @@ class PlannedAbsenceControllerTest extends TestCase
     }
 
     #[Test]
+    public function index_lists_an_open_ended_absence_that_started_a_month_ago_as_current(): void
+    {
+        $this->freezeTime();
+        $openEnded = PlannedAbsence::factory()->withCharacter()->create(['start_date' => today()->subMonth(), 'end_date' => null]);
+
+        $this->actingAs(User::factory()->member()->create())
+            ->get(route('raiding.absences.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('planned_absences.data', 1)
+                    ->where('planned_absences.data.0.id', $openEnded->id)
+                    ->has('past_planned_absences', 0)
+                )
+            );
+    }
+
+    #[Test]
     public function index_includes_deleted_past_absences(): void
     {
         $this->pastAbsence()->delete();

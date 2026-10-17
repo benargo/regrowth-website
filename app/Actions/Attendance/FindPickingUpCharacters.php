@@ -8,7 +8,7 @@ use Lorisleiva\Actions\Concerns\AsAction;
 
 /**
  * Finds characters whose attendance over their newest four raids is at
- * least 25 points above their overall attendance, among those at 75% or less.
+ * least 25 points above their overall attendance.
  */
 class FindPickingUpCharacters
 {
@@ -24,7 +24,7 @@ class FindPickingUpCharacters
             ->filter(function (CharacterAttendanceData $row): bool {
                 $recentRate = $row->recentAttendanceRate();
 
-                return $recentRate !== null && $row->percentage <= 75 && $recentRate - $row->percentage >= 25;
+                return $recentRate !== null && $recentRate - $row->percentage >= 25;
             })
             ->values();
     }

@@ -67,7 +67,7 @@ class ClusterReports
             id: $reports->pluck('id')->sort()->implode('+'),
             code: $codes->isEmpty() ? null : $codes->implode('+'),
             startTime: $earliest->start_time,
-            zoneName: ($earliest->zone === null || $earliest->zone->id === 0) ? null : $earliest->zone->name,
+            zoneName: $earliest->zone?->id === 0 ? null : $earliest->zone?->name,
             players: $this->players($reports),
         );
     }

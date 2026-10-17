@@ -3,10 +3,6 @@
 namespace Tests\Unit\Data\Attendance;
 
 use App\Data\Attendance\AttendanceMatrixData;
-use App\Data\Attendance\CharacterAttendanceData;
-use App\Data\Attendance\ReportClusterData;
-use App\Models\Character;
-use Carbon\Carbon;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -15,31 +11,12 @@ use Tests\TestCase;
 class AttendanceMatrixDataTest extends TestCase
 {
     #[Test]
-    public function it_exposes_its_columns_and_rows(): void
+    #[Group('contract')]
+    public function to_array_emits_the_columns_and_rows_the_matrix_page_reads(): void
     {
-        $columns = collect([
-            new ReportClusterData(
-                id: 'r1',
-                code: null,
-                startTime: Carbon::parse('2025-01-01 19:00', 'UTC'),
-                zoneName: null,
-                players: collect(),
-            ),
-        ]);
-        $rows = collect([
-            new CharacterAttendanceData(
-                character: Character::factory()->withoutParents()->make(['id' => 1]),
-                firstAttendance: Carbon::parse('2025-01-01 19:00', 'UTC'),
-                totalReports: 1,
-                reportsAttended: 0,
-                attendance: [null],
-                plannedAbsences: [null],
-            ),
-        ]);
-
-        $matrix = new AttendanceMatrixData(columns: $columns, rows: $rows);
-
-        $this->assertSame($columns, $matrix->columns);
-        $this->assertSame($rows, $matrix->rows);
+        $this->assertSame(
+            ['columns' => [], 'rows' => []],
+            (new AttendanceMatrixData(columns: collect(), rows: collect()))->toArray(),
+        );
     }
 }

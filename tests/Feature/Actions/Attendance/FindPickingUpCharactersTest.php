@@ -23,7 +23,7 @@ class FindPickingUpCharactersTest extends TestCase
     }
 
     #[Test]
-    public function it_ignores_an_overall_rate_above_75(): void
+    public function it_ignores_a_rise_of_24_points(): void
     {
         $row = $this->row(19, 25, [Presence::Present, Presence::Present, Presence::Present, Presence::Present]);
 
