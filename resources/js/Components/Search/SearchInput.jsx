@@ -15,8 +15,10 @@ export default function SearchInput({ value, onChange, placeholder = "Search by 
             />
             {value && (
                 <button
+                    type="button"
                     onClick={() => onChange("")}
-                    className="absolute top-1/2 right-3 -translate-y-1/2 text-secondary-500 hover:text-white"
+                    aria-label="Clear search"
+                    className="absolute top-1/2 right-3 -translate-y-1/2 rounded text-secondary-500 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-400"
                 >
                     <Icon icon="times" style="solid" />
                 </button>

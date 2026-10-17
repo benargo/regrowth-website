@@ -190,6 +190,13 @@ function MatrixTable({ raids, rows }) {
 export default function Matrix({ matrix, ranks: { data: ranks }, zones: { data: zones }, guildTags: { data: guildTags }, filters, earliestDate, gameVersion, gameVersions }) {
     // ── Client-side filter state (no server reload) ──────────────────────────
     const [characterName, setCharacterName] = useState(filters.character?.name ?? "");
+    const [characterId, setCharacterId] = useState(filters.character?.id ?? null);
+
+    // Updates the name search and drops the server-side character filter.
+    const handleCharacterNameChange = (name) => {
+        setCharacterName(name);
+        setCharacterId(null);
+    };
     // null = "all selected" (initial state before matrix loads or after explicit reset)
     const [selectedClassIds, setSelectedClassIds] = useState(null);
     const defaultRankIds = ranks.filter((r) => r.count_attendance).map((r) => r.id);
@@ -237,6 +244,7 @@ export default function Matrix({ matrix, ranks: { data: ranks }, zones: { data: 
         since_date: sinceDate || undefined,
         before_date: beforeDate || undefined,
         combine_linked_characters: includeLinkedCharacters ? undefined : 0,
+        character: characterId ?? undefined,
     });
 
     const reloadMatrix = (filterData) => {
@@ -267,7 +275,7 @@ export default function Matrix({ matrix, ranks: { data: ranks }, zones: { data: 
         }
         if (hasEmptyFilter) return;
         reloadMatrix(buildServerFilters());
-    }, [selectedZoneIds, selectedGuildTagIds, includeLinkedCharacters, selectedRankIds]);
+    }, [selectedZoneIds, selectedGuildTagIds, includeLinkedCharacters, selectedRankIds, characterId]);
 
     // Trigger reload when date filters change (skip initial mount)
     const datesInitialized = useRef(false);
@@ -308,7 +316,7 @@ export default function Matrix({ matrix, ranks: { data: ranks }, zones: { data: 
                 <div className="mb-6 space-y-3">
                     {/* Row 1: Client-side filters */}
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                        <SearchInput value={characterName} onChange={setCharacterName} placeholder="Search by name…" />
+                        <SearchInput value={characterName} onChange={handleCharacterNameChange} placeholder="Search by name…" />
                         <FilterDropdown
                             label={{ singular: "Rank", plural: "Ranks" }}
                             options={ranks}
