@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Actions\Attendance\BuildAttendanceMatrix;
 use App\Data\Attendance\AttendanceMatrixData;
-use App\Data\Attendance\CharacterAttendanceData;
 use App\Http\Middleware\RemembersCurrentGameVersion;
 use App\Http\Requests\Raid\AttendanceMatrixRequest;
 use App\Http\Resources\GameVersionResource;
@@ -92,8 +91,7 @@ class AttendanceMatrixController extends Controller
     }
 
     /**
-     * The cached raid columns and character rows of the matrix, narrowed to the
-     * requested character's row when one is given.
+     * The cached raid columns and character rows of the matrix.
      *
      * @return array{columns: array<int, mixed>, rows: array<int, mixed>}
      */
@@ -106,19 +104,7 @@ class AttendanceMatrixController extends Controller
         return Cache::tags(['attendance'])->remember(
             $request->cacheKey('attendance:matrix:'),
             now()->addHours(24),
-            function () use ($request, $gameVersion): array {
-                $matrix = $this->buildMatrix($request, $gameVersion);
-                $character = $request->character();
-
-                if ($character === null) {
-                    return $matrix->toArray();
-                }
-
-                return (new AttendanceMatrixData(
-                    columns: $matrix->columns,
-                    rows: $matrix->rows->filter(fn (CharacterAttendanceData $row): bool => $row->character->is($character))->values(),
-                ))->toArray();
-            },
+            fn (): array => $this->buildMatrix($request, $gameVersion)->toArray(),
         );
     }
 
@@ -135,6 +121,7 @@ class AttendanceMatrixController extends Controller
             since: $request->sinceDate(),
             before: $request->beforeDate(),
             combineLinkedCharacters: $request->combineLinkedCharacters(),
+            character: $request->character(),
         );
     }
 }

@@ -26,6 +26,7 @@ class BuildAttendanceMatrix
      * @param  array<int, int>|null  $rankIds  Null for the version's counting ranks; an empty list for none.
      * @param  array<int, int>|null  $zoneIds  Null for every zone; an empty list for none.
      * @param  array<int, int>|null  $guildTagIds  Null for the tags that count attendance; an empty list for none.
+     * @param  Character|null  $character  Narrows the rows to this character's row; when combining linked characters, an alt narrows them to its main's row.
      */
     public function handle(
         GameVersion $gameVersion,
@@ -35,6 +36,7 @@ class BuildAttendanceMatrix
         ?CarbonInterface $since = null,
         ?CarbonInterface $before = null,
         bool $combineLinkedCharacters = false,
+        ?Character $character = null,
     ): AttendanceMatrixData {
         $resolvedRankIds = $rankIds ?? $gameVersion->guildRanks()->countsAttendance()->pluck('id')->all();
 
@@ -54,9 +56,31 @@ class BuildAttendanceMatrix
             $rows = CombineLinkedCharacters::run($rows, $resolvedRankIds, $clusters->count());
         }
 
-        $rows->each(fn (CharacterAttendanceData $row): Character => $row->character->unsetRelation('pivot'));
+        if ($character !== null) {
+            $rows = $this->rowsOf($rows, $character, $combineLinkedCharacters);
+        }
+
+        $rows->pluck('character')->each->unsetRelation('pivot');
 
         return new AttendanceMatrixData(columns: $clusters->reverse()->values(), rows: $rows);
+    }
+
+    /**
+     * The row of the given character or, when combining linked characters, the row
+     * of the main that an alt is linked to.
+     *
+     * @param  Collection<int, CharacterAttendanceData>  $rows  Characters loaded with `linkedCharacters`.
+     * @return Collection<int, CharacterAttendanceData>
+     */
+    private function rowsOf(Collection $rows, Character $character, bool $combineLinkedCharacters): Collection
+    {
+        $isFoldedAlt = $combineLinkedCharacters && ! $character->is_main;
+
+        return $rows
+            ->filter(fn (CharacterAttendanceData $row): bool => $isFoldedAlt
+                ? $row->character->linkedCharacters->contains($character)
+                : $row->character->is($character))
+            ->values();
     }
 
     /**

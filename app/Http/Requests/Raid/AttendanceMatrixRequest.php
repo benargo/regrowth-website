@@ -25,10 +25,11 @@ class AttendanceMatrixRequest extends FormRequest
      */
     public function rules(): array
     {
-        $dateRules = ['nullable', 'date', 'before_or_equal:'.today()->toDateString()];
+        $today = today()->toDateString();
+        $dateRules = ['nullable', 'date', "before_or_equal:{$today}"];
 
         if ($this->earliestDate() !== null) {
-            $dateRules[] = 'after_or_equal:'.$this->earliestDate();
+            $dateRules[] = "after_or_equal:{$this->earliestDate()}";
         }
 
         return [
@@ -88,20 +89,14 @@ class AttendanceMatrixRequest extends FormRequest
     }
 
     /**
-     * The requested character, when it belongs to the current version. When
-     * linked characters are combined, an alt resolves to its main.
+     * The requested character, when it belongs to the current version.
      */
     public function character(): ?Character
     {
         return once(function (): ?Character {
             $characterId = $this->validated('character');
-            $character = $characterId === null ? null : $this->gameVersion()?->characters()->find($characterId);
 
-            if ($character === null || $character->is_main || ! $this->combineLinkedCharacters()) {
-                return $character;
-            }
-
-            return $character->linkedCharacters()->where('is_main', true)->first() ?? $character;
+            return $characterId === null ? null : $this->gameVersion()?->characters()->find($characterId);
         });
     }
 
@@ -130,7 +125,7 @@ class AttendanceMatrixRequest extends FormRequest
      */
     public function combineLinkedCharacters(): bool
     {
-        return $this->has('combine_linked_characters') ? $this->boolean('combine_linked_characters') : true;
+        return $this->boolean('combine_linked_characters', true);
     }
 
     /**
@@ -138,7 +133,7 @@ class AttendanceMatrixRequest extends FormRequest
      */
     public function cacheKey(string $prefix): string
     {
-        return $prefix.$this->gameVersion()?->id.':'.hash('crc32', json_encode([
+        $filtersHash = hash('crc32', json_encode([
             'character_id' => $this->character()?->id,
             'rank_ids' => $this->rankIds(),
             'zone_ids' => $this->zoneIds(),
@@ -147,6 +142,8 @@ class AttendanceMatrixRequest extends FormRequest
             'before_date' => $this->beforeDate()?->toDateString(),
             'combine_linked_characters' => $this->combineLinkedCharacters(),
         ]));
+
+        return "{$prefix}{$this->gameVersion()?->id}:{$filtersHash}";
     }
 
     /**
@@ -157,7 +154,7 @@ class AttendanceMatrixRequest extends FormRequest
     public function filters(): array
     {
         return [
-            'character' => $this->character()?->only(['id', 'name']),
+            'character' => $this->displayedCharacter()?->only(['id', 'name']),
             'rank_ids' => $this->rankIds(),
             'zone_ids' => $this->zoneIds(),
             'guild_tag_ids' => $this->guildTagIds(),
@@ -179,6 +176,21 @@ class AttendanceMatrixRequest extends FormRequest
                 ? null
                 : FindReportDateRange::run($gameVersion)->earliest?->subDay()->toDateString();
         });
+    }
+
+    /**
+     * The character whose row the matrix shows: the requested character or, when
+     * linked characters are combined, an alt's main.
+     */
+    private function displayedCharacter(): ?Character
+    {
+        $character = $this->character();
+
+        if ($character === null || $character->is_main || ! $this->combineLinkedCharacters()) {
+            return $character;
+        }
+
+        return $character->linkedCharacters()->where('is_main', true)->first() ?? $character;
     }
 
     /**
