@@ -34,9 +34,9 @@ export default function AutoSaveLabel({
 
     if (processing) {
         return (
-            <div className="text-amber-400 inline-flex items-center gap-2 text-sm">
+            <div className="inline-flex items-center gap-2 text-sm text-amber-400">
                 <Icon icon="spinner" style="solid" className="fa-spin" />
-                <p>Saving...</p>
+                <p>Saving…</p>
             </div>
         );
     }
@@ -64,9 +64,9 @@ export default function AutoSaveLabel({
 
 export function AutoSaving() {
     return (
-        <div className="text-amber-400 inline-flex items-center gap-2 text-sm">
+        <div className="inline-flex items-center gap-2 text-sm text-amber-400">
             <Icon icon="spinner" style="solid" className="fa-spin" />
-            <p>Saving...</p>
+            <p>Saving…</p>
         </div>
     );
 }

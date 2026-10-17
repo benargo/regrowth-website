@@ -88,7 +88,7 @@ export default function UpcomingEvents({ events, canViewPlans = false }) {
                             {canViewPlans ? (
                                 <Link
                                     href={route("raiding.plans.show", event.id)}
-                                    className="hover:bg-forever-700/60 flex flex-wrap items-baseline gap-x-4 gap-y-1 px-2 py-4 transition-colors"
+                                    className="hover:bg-forever-700/60 focus-visible:outline-camel-400 flex flex-wrap items-baseline gap-x-4 gap-y-1 px-2 py-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
                                 >
                                     <EventRow event={event} />
                                 </Link>

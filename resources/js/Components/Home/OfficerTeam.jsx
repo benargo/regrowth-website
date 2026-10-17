@@ -58,10 +58,10 @@ function OfficerProfile({
                 {showRender ? (
                     <img
                         src={render.url}
-                        alt={`${officer.name}, guild officer`}
+                        alt=""
                         loading="lazy"
                         onError={() => setFailed(true)}
-                        className="absolute left-1/2 w-auto max-w-none -translate-x-1/2 object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.55)] transition-transform duration-300 group-hover:-translate-y-1"
+                        className="absolute left-1/2 w-auto max-w-none -translate-x-1/2 object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.55)] transition-transform duration-300 group-hover:-translate-y-1 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
                         style={{ height: `${imageHeight}px`, bottom: `${-bottomOffset}px` }}
                     />
                 ) : (
@@ -70,7 +70,7 @@ function OfficerProfile({
                         viewBox="0 0 100 140"
                         preserveAspectRatio="xMidYMax meet"
                         fill="currentColor"
-                        className={`text-forever-600 absolute bottom-0 left-1/2 h-full w-auto max-w-none -translate-x-1/2 drop-shadow-[0_8px_20px_rgba(0,0,0,0.55)] transition-transform duration-300 group-hover:-translate-y-1 ${isLoading ? "animate-pulse" : ""}`}
+                        className={`text-forever-600 absolute bottom-0 left-1/2 h-full w-auto max-w-none -translate-x-1/2 drop-shadow-[0_8px_20px_rgba(0,0,0,0.55)] transition-transform duration-300 group-hover:-translate-y-1 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0 ${isLoading ? "animate-pulse motion-reduce:animate-none" : ""}`}
                     >
                         <circle cx="50" cy="42" r="24" />
                         <path d="M50 74c-22 0-38 15-42 38-1 6 3 10 9 10h66c6 0 10-4 9-10-4-23-20-38-42-38z" />
@@ -171,11 +171,20 @@ export default function OfficerTeam({ officers = [], renders }) {
             </div>
 
             <div className="lg:hidden">
-                <div className="overflow-hidden" ref={emblaRef}>
+                <div
+                    className="overflow-hidden"
+                    ref={emblaRef}
+                    role="region"
+                    aria-roledescription="carousel"
+                    aria-label="Officers"
+                >
                     <div className="flex">
-                        {officers.map((officer) => (
+                        {officers.map((officer, index) => (
                             <div
                                 key={officer.name}
+                                role="group"
+                                aria-roledescription="slide"
+                                aria-label={`${index + 1} of ${officers.length}`}
                                 className="flex min-w-0 flex-[0_0_100%] items-end justify-center px-4 sm:flex-[0_0_85%]"
                             >
                                 <OfficerProfile
@@ -193,19 +202,25 @@ export default function OfficerTeam({ officers = [], renders }) {
                     <div className="mt-8 flex items-center justify-center gap-6">
                         <CarouselArrowButton direction="prev" onClick={scrollPrev} label="Previous officer" />
 
-                        <div className="flex items-center gap-2" role="tablist" aria-label="Officers">
+                        <div className="flex items-center gap-1" role="group" aria-label="Choose officer">
                             {officers.map((officer, index) => (
                                 <button
                                     key={officer.name}
                                     type="button"
-                                    role="tab"
-                                    aria-selected={index === selectedIndex}
-                                    aria-label={`Show ${officer.name}`}
+                                    aria-label={`${officer.name}, ${index + 1} of ${officers.length}`}
+                                    aria-current={index === selectedIndex ? "true" : undefined}
                                     onClick={() => scrollTo(index)}
-                                    className={`h-2.5 w-2.5 rounded-full transition-colors ${
-                                        index === selectedIndex ? "bg-camel-100" : "bg-camel-400 hover:bg-camel-300"
-                                    }`}
-                                />
+                                    className="group/dot focus-visible:outline-camel-400 flex size-6 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
+                                >
+                                    <span
+                                        aria-hidden="true"
+                                        className={`size-2.5 rounded-full transition-colors ${
+                                            index === selectedIndex
+                                                ? "bg-camel-100"
+                                                : "bg-camel-400 group-hover/dot:bg-camel-300"
+                                        }`}
+                                    />
+                                </button>
                             ))}
                         </div>
 
@@ -228,7 +243,7 @@ function CarouselArrowButton({ direction, onClick, label }) {
             type="button"
             onClick={onClick}
             aria-label={label}
-            className="text-camel-400 hover:text-camel-200 focus-visible:outline-camel-500 rounded-full p-1 transition-colors focus-visible:outline focus-visible:outline-2"
+            className="text-camel-400 hover:text-camel-200 focus-visible:outline-camel-400 rounded-full p-1.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
         >
             <svg
                 aria-hidden="true"

@@ -6,6 +6,7 @@ import CommentForm from "@/Components/Comments/CommentForm";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import Icon from "@/Components/FontAwesome/Icon";
+import IconButton from "@/Components/IconButton";
 import Pill from "@/Components/Pill";
 import Tooltip from "@/Components/Tooltip";
 
@@ -75,7 +76,9 @@ export default function CommentItem({
 
     if (comment.is_deleted) {
         return (
-            <div className={`border-amber-600 bg-brown-800/50 rounded-lg border border-dashed ${isReply ? "p-3" : "p-4"}`}>
+            <div
+                className={`bg-brown-800/50 rounded-lg border border-dashed border-amber-600 ${isReply ? "p-3" : "p-4"}`}
+            >
                 <div className="flex items-center gap-3">
                     <img
                         src={comment.user.avatar}
@@ -92,7 +95,7 @@ export default function CommentItem({
 
     return (
         <>
-            <div className={`border-amber-600 bg-brown-800 rounded-lg border ${isReply ? "p-3" : "p-4"}`}>
+            <div className={`bg-brown-800 rounded-lg border border-amber-600 ${isReply ? "p-3" : "p-4"}`}>
                 {/* Header with user info and timestamp */}
                 <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -136,7 +139,7 @@ export default function CommentItem({
 
                 {/* Actions */}
                 {!isEditing && (
-                    <div className="border-amber-600 mt-3 flex flex-col justify-start gap-4 border-t pt-3 text-sm md:flex-row">
+                    <div className="mt-3 flex flex-col justify-start gap-4 border-t border-amber-600 pt-3 text-sm md:flex-row">
                         {!readOnly && onReply && comment.permissions.reply && canReplyToComments && (
                             <button
                                 type="button"
@@ -198,29 +201,35 @@ export default function CommentItem({
                                                   : "You may not react to this comment."
                                         }
                                     >
-                                        <button className="cursor-not-allowed text-gray-400" disabled>
-                                            <Icon icon="thumbs-up" style="regular" />
-                                        </button>
+                                        <IconButton
+                                            icon="thumbs-up"
+                                            iconStyle="regular"
+                                            label="You can't react to this comment"
+                                            className="cursor-not-allowed text-gray-400"
+                                            aria-disabled="true"
+                                            onClick={(event) => event.preventDefault()}
+                                        />
                                     </Tooltip>
                                 )}
                                 {!readOnly && comment.permissions.react && userHasReacted() && (
                                     <Tooltip body="Click to remove your reaction.">
-                                        <button
+                                        <IconButton
+                                            icon="thumbs-up"
+                                            label="Remove your like"
                                             className="text-amber-400 transition-colors hover:text-amber-300"
                                             onClick={handleReactionToggle}
-                                        >
-                                            <Icon icon="thumbs-up" style="solid" />
-                                        </button>
+                                        />
                                     </Tooltip>
                                 )}
                                 {!readOnly && comment.permissions.react && !userHasReacted() && (
                                     <Tooltip body="Click to like this comment.">
-                                        <button
+                                        <IconButton
+                                            icon="thumbs-up"
+                                            iconStyle="regular"
+                                            label="Like comment"
                                             className="text-white-400 transition-colors hover:text-gray-300"
                                             onClick={handleReactionToggle}
-                                        >
-                                            <Icon icon="thumbs-up" style="regular" />
-                                        </button>
+                                        />
                                     </Tooltip>
                                 )}
                                 {comment.reactions.length > 0 && (
@@ -237,7 +246,7 @@ export default function CommentItem({
                                                 <img
                                                     src={reaction.user?.avatar}
                                                     alt={reaction.user?.display_name}
-                                                    className="border-amber-600 h-6 w-6 rounded-full border-2"
+                                                    className="h-6 w-6 rounded-full border-2 border-amber-600"
                                                 />
                                             </Tooltip>
                                         ))}

@@ -35,6 +35,21 @@ class HomeControllerTest extends TestCase
     }
 
     #[Test]
+    public function the_homepage_declares_a_dark_color_scheme_and_forever_theme_color(): void
+    {
+        $this->get(route('home'))
+            ->assertSee('<meta name="theme-color" content="#003c4e">', false)
+            ->assertSee('style="color-scheme: dark"', false);
+    }
+
+    #[Test]
+    public function other_pages_use_the_classic_theme_color(): void
+    {
+        $this->get(route('privacypolicy'))
+            ->assertSee('<meta name="theme-color" content="#4a3d32">', false);
+    }
+
+    #[Test]
     public function it_passes_the_launch_date_and_invite_url(): void
     {
         config(['guild.discord_invite_url' => 'https://discord.gg/example-invite']);

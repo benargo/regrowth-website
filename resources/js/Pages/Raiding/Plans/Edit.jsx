@@ -41,7 +41,7 @@ function parseAddNewGroupId(id) {
 
 // ─── Sortable assignment row ──────────────────────────────────────────────────
 
-function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) {
+function AssignmentRowEditor({ assignment, position, targetMarkers, onUpdate, onRemove }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: assignment._key,
         data: { type: "assignment", boss_id: assignment.boss_id, group_id: assignment.group_id },
@@ -65,11 +65,12 @@ function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) 
             ref={setNodeRef}
             style={style}
             data-assignment-key={assignment._key}
-            className="group border-amber-600/50 relative border-b last:border-0"
+            className="group relative border-b border-amber-600/50 last:border-0"
         >
             {/* Drag handle */}
             <td
-                className="text-amber-400 hover:text-amber-400 w-6 cursor-grab px-1 py-2 text-center active:cursor-grabbing"
+                className="w-6 cursor-grab px-1 py-2 text-center text-amber-400 hover:text-amber-400 active:cursor-grabbing"
+                aria-label={`Reorder assignment ${position}`}
                 {...attributes}
                 {...listeners}
             >
@@ -77,6 +78,7 @@ function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) 
             </td>
 
             <AssignmentCellEditor
+                label={`Assignment ${position}, left`}
                 initialLabel={leftLabel.label}
                 initialIconUrl={leftLabel.iconUrl}
                 initialSlug={leftLabel.slug}
@@ -94,6 +96,7 @@ function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) 
                 }
             />
             <AssignmentCellEditor
+                label={`Assignment ${position}, right`}
                 initialLabel={rightLabel.label}
                 initialIconUrl={rightLabel.iconUrl}
                 initialSlug={rightLabel.slug}
@@ -116,6 +119,7 @@ function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) 
                     <button
                         type="button"
                         onClick={() => onRemove(assignment._key)}
+                        aria-label={`Remove assignment ${position}`}
                         className="flex h-5 w-5 items-center justify-center rounded-full bg-red-700/80 text-xs text-white transition-colors hover:bg-red-600"
                     >
                         <Icon icon="times" style="solid" className="text-[9px]" />
@@ -130,12 +134,12 @@ function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) 
 
 function AddAssignmentRow({ onAdd }) {
     return (
-        <tr className="border-amber-600/50 border-t border-dashed">
+        <tr className="border-t border-dashed border-amber-600/50">
             <td colSpan={4}>
                 <button
                     type="button"
                     onClick={onAdd}
-                    className="text-amber-500 hover:bg-brown-700/30 hover:text-amber-300 flex w-full items-center justify-center gap-2 py-2 text-xs transition-colors"
+                    className="hover:bg-brown-700/30 flex w-full items-center justify-center gap-2 py-2 text-xs text-amber-500 transition-colors hover:text-amber-300"
                 >
                     <Icon icon="plus" style="solid" className="text-[10px]" />
                     Add assignment
@@ -208,7 +212,7 @@ function AssignmentGroupEditor({
             }`}
         >
             {groupName && (
-                <div className="border-amber-600 bg-brown-800/60 border-b px-3 py-2">
+                <div className="bg-brown-800/60 border-b border-amber-600 px-3 py-2">
                     <h3 className="text-sm font-semibold text-amber-400">{groupName}</h3>
                 </div>
             )}
@@ -225,7 +229,7 @@ function AssignmentGroupEditor({
                         {sortedAssignments.length === 0 ? (
                             <EmptyGroupDroppable containerId={containerId} />
                         ) : (
-                            sortedAssignments.flatMap((assignment) => {
+                            sortedAssignments.flatMap((assignment, index) => {
                                 const isCrossContainer = isTargetContainer && dragOverInfo?.overKey !== null;
                                 const isOverThis = isCrossContainer && dragOverInfo.overKey === assignment._key;
                                 const rows = [];
@@ -236,6 +240,7 @@ function AssignmentGroupEditor({
                                     <AssignmentRowEditor
                                         key={assignment._key}
                                         assignment={assignment}
+                                        position={index + 1}
                                         targetMarkers={targetMarkers}
                                         onUpdate={onUpdate}
                                         onRemove={onRemove}
@@ -303,7 +308,8 @@ function SortableGroupCard({
                 <div className="mb-1 flex items-center gap-1">
                     <button
                         type="button"
-                        className="text-amber-500 hover:text-amber-400 cursor-grab touch-none active:cursor-grabbing"
+                        className="cursor-grab touch-none text-amber-500 hover:text-amber-400 active:cursor-grabbing"
+                        aria-label={`Reorder ${groupName ?? "unnamed group"}`}
                         {...attributes}
                         {...listeners}
                     >
@@ -314,6 +320,7 @@ function SortableGroupCard({
                         <input
                             ref={nameRef}
                             type="text"
+                            aria-label="Group name"
                             value={nameInput}
                             onChange={(e) => setNameInput(e.target.value)}
                             onBlur={commitRename}
@@ -339,6 +346,7 @@ function SortableGroupCard({
                     <button
                         type="button"
                         onClick={() => onRemoveGroup(groupKey)}
+                        aria-label="Remove group"
                         className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-700/60 text-[9px] text-white hover:bg-red-600"
                     >
                         <Icon icon="times" style="solid" />
@@ -580,7 +588,7 @@ function BossStrategySection({ boss, raid, commonContainerProps, groupsByBossId,
                     </div>
                 ) : (
                     <div className="col-span-2 flex items-center justify-center py-8">
-                        <p className="text-amber-500 text-center text-sm">
+                        <p className="text-center text-sm text-amber-500">
                             No strategy notes or images for this boss yet.
                         </p>
                     </div>
@@ -630,7 +638,7 @@ function ApplyTemplateModal({ eventId, templates, onClose }) {
                         {templates.map((template) => (
                             <div
                                 key={template.id}
-                                className="border-amber-600 flex items-center justify-between gap-4 rounded border px-4 py-3"
+                                className="flex items-center justify-between gap-4 rounded border border-amber-600 px-4 py-3"
                             >
                                 <div className="flex flex-col gap-1">
                                     <span className="font-semibold">{template.title}</span>
@@ -645,7 +653,12 @@ function ApplyTemplateModal({ eventId, templates, onClose }) {
                                         ))}
                                     </div>
                                 </div>
-                                <PrimaryButton onClick={() => handleApply(template)} processing={applying === template.id} disabled={!!applying} className="shrink-0">
+                                <PrimaryButton
+                                    onClick={() => handleApply(template)}
+                                    processing={applying === template.id}
+                                    disabled={!!applying}
+                                    className="shrink-0"
+                                >
                                     {applying === template.id ? "Applying…" : "Apply"}
                                 </PrimaryButton>
                             </div>
@@ -1482,16 +1495,16 @@ export default function Edit({ event, targetMarkers, templates }) {
                         {activeAssignment ? (
                             <table className="bg-brown-800 w-full table-fixed rounded border border-amber-500/50 opacity-90 shadow-xl">
                                 <tbody>
-                                    <tr className="border-amber-600/50 border-b">
-                                        <td className="text-amber-400 w-6 px-1 py-2">
+                                    <tr className="border-b border-amber-600/50">
+                                        <td className="w-6 px-1 py-2 text-amber-400">
                                             <Icon icon="grip-vertical" style="solid" className="text-xs" />
                                         </td>
-                                        <td className="border-amber-600/50 text-amber-500 w-1/2 border-r px-3 py-2.5 text-sm">
+                                        <td className="w-1/2 border-r border-amber-600/50 px-3 py-2.5 text-sm text-amber-500">
                                             {labelFromSide(activeAssignment._leftSide).label || (
                                                 <span className="text-amber-500 italic">empty</span>
                                             )}
                                         </td>
-                                        <td className="text-amber-500 w-1/2 px-3 py-2.5 text-sm">
+                                        <td className="w-1/2 px-3 py-2.5 text-sm text-amber-500">
                                             {labelFromSide(activeAssignment._rightSide).label || (
                                                 <span className="text-amber-500 italic">empty</span>
                                             )}

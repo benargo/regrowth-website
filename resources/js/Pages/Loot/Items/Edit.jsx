@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { DialogTitle } from "@headlessui/react";
 import {
     DndContext,
     DragOverlay,
@@ -17,10 +18,12 @@ import { useSocketId } from "@laravel/echo-react";
 import useItemChannel from "@/Hooks/useItemChannel";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Icon from "@/Components/FontAwesome/Icon";
+import IconButton from "@/Components/IconButton";
 import { PrimaryButton } from "@/Components/FormControls";
 import CommentsSection from "@/Components/Comments/CommentsSection";
 import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
 import MarkdownEditor from "@/Components/MarkdownEditor";
+import Modal from "@/Components/Modal";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
 import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
@@ -43,7 +46,7 @@ function DraggablePriorityItem({ priority, onRemove }) {
         <div
             ref={setNodeRef}
             style={style}
-            className="min-w-50 relative flex cursor-grab items-center justify-center gap-2 rounded-md border border-primary bg-brown-800 p-6"
+            className="border-primary bg-brown-800 relative flex min-w-50 cursor-grab items-center justify-center gap-2 rounded-md border p-6"
             {...attributes}
             {...listeners}
         >
@@ -55,7 +58,7 @@ function DraggablePriorityItem({ priority, onRemove }) {
                     e.stopPropagation();
                     onRemove(priority.id);
                 }}
-                className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs text-white transition-colors hover:bg-red-700"
+                className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs text-white transition-colors hover:bg-red-700"
             >
                 <Icon icon="times" style="solid" />
             </button>
@@ -67,7 +70,7 @@ function PriorityOverlay({ priority }) {
     if (!priority) return null;
 
     return (
-        <div className="flex w-60 cursor-grabbing items-center justify-center gap-2 rounded-md border border-primary bg-brown-800 p-6 shadow-lg">
+        <div className="border-primary bg-brown-800 flex w-60 cursor-grabbing items-center justify-center gap-2 rounded-md border p-6 shadow-lg">
             {priority.media && <img src={priority.media} alt="" className="h-6 w-6 rounded-xs" />}
             <span>{priority.title}</span>
         </div>
@@ -126,7 +129,7 @@ function InsertWeightZone({ afterWeight, onDrop, onAddClick }) {
                     type="button"
                     onClick={() => onAddClick(afterWeight)}
                     className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
-                        isOver ? "bg-amber-500 text-brown-900" : "bg-amber-600 text-white hover:bg-amber-700"
+                        isOver ? "text-brown-900 bg-amber-500" : "bg-amber-600 text-white hover:bg-amber-700"
                     }`}
                 >
                     <Icon icon="plus" style="solid" />
@@ -149,14 +152,15 @@ function AddNewWeightRow({ weight, onAddClick }) {
                 isOver ? "border-amber-500 bg-amber-600/20" : "border-amber-600/30"
             }`}
         >
-            <button
-                type="button"
+            <IconButton
+                icon="plus"
+                label="Add new bias level"
                 onClick={() => onAddClick(weight)}
                 className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-600 text-white transition-colors hover:bg-amber-700"
-            >
-                <Icon icon="plus" style="solid" />
-            </button>
-            <span className="ml-4 text-gray-400">Add new bias level</span>
+            />
+            <span className="ml-4 text-gray-400" aria-hidden="true">
+                Add new bias level
+            </span>
         </div>
     );
 }
@@ -173,30 +177,30 @@ function PriorityPickerModal({ isOpen, onClose, priorities, onSelect }) {
         }, {});
     }, [priorities]);
 
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-            <div
-                className="max-h-[80vh] max-w-6xl overflow-y-auto rounded-lg border border-primary bg-brown-900 p-6"
-                onClick={(e) => e.stopPropagation()}
-            >
+        <Modal show={isOpen} onClose={onClose} maxWidth="6xl">
+            <div className="max-h-[80vh] overflow-y-auto p-6">
                 <div className="mb-4 flex items-center justify-between">
-                    <h3 className="text-xl font-bold">Select an option</h3>
-                    <button type="button" onClick={onClose} className="text-gray-400 hover:text-white">
-                        <Icon icon="times" style="solid" />
-                    </button>
+                    <DialogTitle as="h3" className="text-xl font-bold">
+                        Select an option
+                    </DialogTitle>
+                    <IconButton
+                        icon="times"
+                        label="Close dialog"
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-white"
+                    />
                 </div>
                 {Object.entries(groupedPriorities).map(([type, typePriorities]) => (
                     <div key={type} className="mb-4">
-                        <h4 className="mb-2 text-sm font-semibold uppercase text-amber-500">{type}</h4>
+                        <h4 className="mb-2 text-sm font-semibold text-amber-500 uppercase">{type}</h4>
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                             {typePriorities.map((priority) => (
                                 <button
                                     key={priority.id}
                                     type="button"
                                     onClick={() => onSelect(priority.id)}
-                                    className="flex items-center gap-2 rounded-md border border-primary/50 bg-brown-800 p-3 text-left transition-colors hover:bg-brown-700"
+                                    className="border-primary/50 bg-brown-800 hover:bg-brown-700 flex items-center gap-2 rounded-md border p-3 text-left transition-colors"
                                 >
                                     {priority.media && (
                                         <img src={priority.media} alt="" className="h-5 w-5 rounded-xs" />
@@ -211,7 +215,7 @@ function PriorityPickerModal({ isOpen, onClose, priorities, onSelect }) {
                     <p className="py-4 text-center text-gray-400">All options have been assigned to this item.</p>
                 )}
             </div>
-        </div>
+        </Modal>
     );
 }
 
@@ -433,7 +437,11 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
     const [notesError, setNotesError] = useState(null);
     const [saving, setSaving] = useState(false);
 
-    const { data: notesData, setData: setNotesData, reset: resetNotes } = useForm({
+    const {
+        data: notesData,
+        setData: setNotesData,
+        reset: resetNotes,
+    } = useForm({
         notes: item.data.notes || "",
     });
 
@@ -549,7 +557,11 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
 
     return (
         <Master title={`Editing ${item.data.name}`}>
-            <SharedHeader backgroundClass={raid?.background ?? "bg-vashj-and-kaelthas"} title="Edit Loot Biases" subtitle={raid?.name} />
+            <SharedHeader
+                backgroundClass={raid?.background ?? "bg-vashj-and-kaelthas"}
+                title="Edit Loot Biases"
+                subtitle={raid?.name}
+            />
             {/* Tool navigation */}
             <ToolNav>
                 <div className="flex-initial space-x-4">
@@ -567,7 +579,7 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
                 <ItemDetailsCard item={item.data} />
 
                 {/* Editable Priorities */}
-                <h2 className="mb-2 mt-8 text-xl font-bold">Loot Biases</h2>
+                <h2 className="mt-8 mb-2 text-xl font-bold">Loot Biases</h2>
                 <p className="mb-4 text-gray-400">
                     Drag biases between rows to change their weight. Use the + buttons to add new biases.
                 </p>
@@ -604,7 +616,7 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
                             <button
                                 type="button"
                                 onClick={() => resetNotes("notes")}
-                                className="hover:bg-brown-700 focus:bg-brown-700 focus:ring-amber-500 active:bg-brown-800 inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:outline-hidden"
+                                className="hover:bg-brown-700 focus:bg-brown-700 active:bg-brown-800 inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:outline-hidden"
                             >
                                 <Icon icon="trash" style="solid" className="mr-1" /> Reset notes
                             </button>

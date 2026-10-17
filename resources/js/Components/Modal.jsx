@@ -1,12 +1,6 @@
-import { Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react';
+import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
 
-export default function Modal({
-    children,
-    show = false,
-    maxWidth = '2xl',
-    closeable = true,
-    onClose = () => {},
-}) {
+export default function Modal({ children, show = false, maxWidth = "2xl", closeable = true, onClose = () => {} }) {
     const close = () => {
         if (closeable) {
             onClose();
@@ -14,19 +8,16 @@ export default function Modal({
     };
 
     const maxWidthClass = {
-        sm: 'sm:max-w-sm',
-        md: 'sm:max-w-md',
-        lg: 'sm:max-w-lg',
-        xl: 'sm:max-w-xl',
-        '2xl': 'sm:max-w-2xl',
+        sm: "sm:max-w-sm",
+        md: "sm:max-w-md",
+        lg: "sm:max-w-lg",
+        xl: "sm:max-w-xl",
+        "2xl": "sm:max-w-2xl",
+        "6xl": "sm:max-w-6xl",
     }[maxWidth];
 
     return (
-        <Dialog
-            open={show}
-            onClose={close}
-            className="relative z-50"
-        >
+        <Dialog open={show} onClose={close} className="relative z-50">
             <DialogBackdrop
                 transition
                 className="fixed inset-0 bg-gray-500/75 transition duration-300 ease-out data-closed:opacity-0"
@@ -35,7 +26,7 @@ export default function Modal({
             <div className="fixed inset-0 z-10 flex items-center overflow-y-auto px-4 py-6 sm:px-0">
                 <DialogPanel
                     transition
-                    className={`bg-brown-800 w-full transform overflow-hidden rounded-lg border border-primary bg-parchment shadow-xl transition duration-300 ease-out data-closed:translate-y-4 data-closed:opacity-0 sm:mx-auto sm:data-closed:translate-y-0 sm:data-closed:scale-95 ${maxWidthClass}`}
+                    className={`bg-brown-800 border-primary bg-parchment w-full transform overflow-hidden rounded-lg border shadow-xl transition duration-300 ease-out data-closed:translate-y-4 data-closed:opacity-0 sm:mx-auto sm:data-closed:translate-y-0 sm:data-closed:scale-95 ${maxWidthClass}`}
                 >
                     {children}
                 </DialogPanel>

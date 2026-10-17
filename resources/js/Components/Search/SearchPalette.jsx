@@ -138,7 +138,8 @@ export default function SearchPalette({ open, onClose }) {
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder="Search..."
+                            aria-label="Search"
+                            placeholder="Search…"
                             role="combobox"
                             aria-expanded={results.length > 0}
                             aria-controls="search-palette-listbox"

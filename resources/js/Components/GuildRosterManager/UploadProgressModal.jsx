@@ -16,7 +16,7 @@ function TallyStat({ label, value, colorClass }) {
     return (
         <div className="bg-brown-800 flex flex-col items-center rounded px-2 py-1.5">
             <span className={`text-lg font-bold ${colorClass}`}>{animated}</span>
-            <span className="text-gray-300 text-center text-xs">{label}</span>
+            <span className="text-center text-xs text-gray-300">{label}</span>
         </div>
     );
 }
@@ -186,13 +186,13 @@ const UploadProgressModal = forwardRef(function UploadProgressModal(_props, ref)
                 </div>
 
                 <div className="mb-4">
-                    <div className="text-gray-400 mb-1 flex justify-between text-sm">
+                    <div className="mb-1 flex justify-between text-sm text-gray-400">
                         <span>{total ? `${processedSoFar} of ${total} characters` : "Preparing..."}</span>
                         <span>{animatedPercent}%</span>
                     </div>
                     <div className="bg-brown-700 h-3 w-full overflow-hidden rounded-full">
                         <div
-                            className={`h-3 rounded-full transition-all duration-500 ${barColor}`}
+                            className={`h-3 rounded-full transition-[width] duration-500 ${barColor}`}
                             style={{ width: `${animatedPercent}%` }}
                         />
                     </div>
@@ -200,7 +200,7 @@ const UploadProgressModal = forwardRef(function UploadProgressModal(_props, ref)
 
                 {(isQueued || isProcessing) && (
                     <div className="space-y-3">
-                        <div className="text-gray-300 flex items-center gap-2 text-sm">
+                        <div className="flex items-center gap-2 text-sm text-gray-300">
                             <svg
                                 className="h-4 w-4 shrink-0 animate-spin text-blue-400"
                                 fill="none"
@@ -245,7 +245,7 @@ const UploadProgressModal = forwardRef(function UploadProgressModal(_props, ref)
                 )}
 
                 {isRetrying && (
-                    <div className="border-amber-700 bg-amber-600/40 text-amber-400 rounded border p-3 text-sm">
+                    <div className="rounded border border-amber-700 bg-amber-600/40 p-3 text-sm text-amber-400">
                         <div className="flex items-center gap-2 font-semibold">
                             <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path
@@ -298,7 +298,7 @@ const UploadProgressModal = forwardRef(function UploadProgressModal(_props, ref)
                                 tallies.skippedCount > 0 ||
                                 tallies.warningCount > 0 ||
                                 tallies.errorCount > 0) && (
-                                <ul className="text-gray-300 space-y-1 pl-1 text-sm">
+                                <ul className="space-y-1 pl-1 text-sm text-gray-300">
                                     {tallies.processedCount > 0 && (
                                         <li>
                                             <span className="font-semibold text-green-400">

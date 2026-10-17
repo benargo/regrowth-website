@@ -1,39 +1,28 @@
-import { Transition } from "@headlessui/react";
+import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { Link } from "@inertiajs/react";
-import { createContext, useContext, useState } from "react";
+import { Fragment } from "react";
 import cn from "@/Helpers/cn";
 
-const DropDownContext = createContext();
-
+/**
+ * Menu with keyboard navigation, outside-click and Escape dismissal, built on
+ * Headless UI's `Menu`.
+ */
 const Dropdown = ({ children }) => {
-    const [open, setOpen] = useState(false);
-
-    const toggleOpen = () => {
-        setOpen((previousState) => !previousState);
-    };
-
     return (
-        <DropDownContext.Provider value={{ open, setOpen, toggleOpen }}>
-            <div className="relative">{children}</div>
-        </DropDownContext.Provider>
+        <Menu as="div" className="relative">
+            {children}
+        </Menu>
     );
 };
 
+/**
+ * The menu button; `children` must be a single element.
+ */
 const Trigger = ({ children }) => {
-    const { open, setOpen, toggleOpen } = useContext(DropDownContext);
-
-    return (
-        <>
-            <div onClick={toggleOpen}>{children}</div>
-
-            {open && <div className="fixed inset-0 z-40" onClick={() => setOpen(false)}></div>}
-        </>
-    );
+    return <MenuButton as={Fragment}>{children}</MenuButton>;
 };
 
 const Content = ({ align = "right", width = "48", contentClasses = "py-1 bg-brown-800", children }) => {
-    const { open, setOpen } = useContext(DropDownContext);
-
     let alignmentClasses = "origin-top";
 
     if (align === "left") {
@@ -49,38 +38,36 @@ const Content = ({ align = "right", width = "48", contentClasses = "py-1 bg-brow
     }
 
     return (
-        <>
-            <Transition
-                show={open}
-                enter="transition ease-out duration-200"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="transition ease-in duration-75"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
-            >
-                <div
-                    className={`absolute z-50 mt-2 rounded-md shadow-lg ${alignmentClasses} ${widthClasses}`}
-                    onClick={() => setOpen(false)}
-                >
-                    <div className={cn("ring-opacity-5 rounded-md ring-1 ring-black", contentClasses)}>{children}</div>
-                </div>
-            </Transition>
-        </>
+        <MenuItems
+            transition
+            className={cn(
+                "absolute z-50 mt-2 rounded-md shadow-lg focus:outline-hidden",
+                "transition ease-out data-closed:scale-95 data-closed:opacity-0 data-enter:duration-200 data-leave:duration-75 data-leave:ease-in",
+                alignmentClasses,
+                widthClasses,
+            )}
+        >
+            <div className={cn("ring-opacity-5 rounded-md ring-1 ring-black", contentClasses)}>{children}</div>
+        </MenuItems>
     );
 };
 
+/**
+ * A menu item rendered as an Inertia `Link`; closes the menu when activated.
+ */
 const DropdownLink = ({ className = "", children, ...props }) => {
     return (
-        <Link
-            {...props}
-            className={cn(
-                "bg-brown-800 hover:bg-brown-800 focus:bg-brown-700 block flex w-full flex-row items-center rounded-md px-4 py-2 text-start text-sm leading-5 text-white transition duration-150 ease-in-out focus:outline-hidden",
-                className,
-            )}
-        >
-            {children}
-        </Link>
+        <MenuItem>
+            <Link
+                {...props}
+                className={cn(
+                    "bg-brown-800 hover:bg-brown-800 data-focus:bg-brown-700 block flex w-full flex-row items-center rounded-md px-4 py-2 text-start text-sm leading-5 text-white transition duration-150 ease-in-out focus:outline-hidden",
+                    className,
+                )}
+            >
+                {children}
+            </Link>
+        </MenuItem>
     );
 };
 

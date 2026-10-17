@@ -35,7 +35,7 @@ function parseAddNewGroupId(id) {
 
 // ─── Sortable assignment row ──────────────────────────────────────────────────
 
-function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) {
+function AssignmentRowEditor({ assignment, position, targetMarkers, onUpdate, onRemove }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: assignment._key,
         data: { type: "assignment", boss_id: assignment.boss_id, group_id: assignment.group_id },
@@ -63,12 +63,14 @@ function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) 
         >
             <td
                 className="w-6 cursor-grab px-1 py-2 text-center text-amber-400 hover:text-amber-400 active:cursor-grabbing"
+                aria-label={`Reorder assignment ${position}`}
                 {...attributes}
                 {...listeners}
             >
                 <Icon icon="grip-vertical" style="solid" className="text-xs" />
             </td>
             <AssignmentCellEditor
+                label={`Assignment ${position}, left`}
                 initialLabel={leftLabel.label}
                 initialIconUrl={leftLabel.iconUrl}
                 initialSlug={leftLabel.slug}
@@ -86,6 +88,7 @@ function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) 
                 }
             />
             <AssignmentCellEditor
+                label={`Assignment ${position}, right`}
                 initialLabel={rightLabel.label}
                 initialIconUrl={rightLabel.iconUrl}
                 initialSlug={rightLabel.slug}
@@ -107,6 +110,7 @@ function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) 
                     <button
                         type="button"
                         onClick={() => onRemove(assignment._key)}
+                        aria-label={`Remove assignment ${position}`}
                         className="flex h-5 w-5 items-center justify-center rounded-full bg-red-700/80 text-xs text-white transition-colors hover:bg-red-600"
                     >
                         <Icon icon="times" style="solid" className="text-[9px]" />
@@ -126,7 +130,7 @@ function AddAssignmentRow({ onAdd }) {
                 <button
                     type="button"
                     onClick={onAdd}
-                    className="flex w-full items-center justify-center gap-2 py-2 text-xs text-amber-500 transition-colors hover:bg-brown-700/30 hover:text-amber-300"
+                    className="hover:bg-brown-700/30 flex w-full items-center justify-center gap-2 py-2 text-xs text-amber-500 transition-colors hover:text-amber-300"
                 >
                     <Icon icon="plus" style="solid" className="text-[10px]" />
                     Add assignment
@@ -199,7 +203,7 @@ function AssignmentGroupEditor({
             }`}
         >
             {groupName && (
-                <div className="border-b border-amber-600 bg-brown-800/60 px-3 py-2">
+                <div className="bg-brown-800/60 border-b border-amber-600 px-3 py-2">
                     <h3 className="text-sm font-semibold text-amber-400">{groupName}</h3>
                 </div>
             )}
@@ -215,7 +219,7 @@ function AssignmentGroupEditor({
                         {sortedAssignments.length === 0 ? (
                             <EmptyGroupDroppable containerId={containerId} />
                         ) : (
-                            sortedAssignments.flatMap((assignment) => {
+                            sortedAssignments.flatMap((assignment, index) => {
                                 const isCrossContainer = isTargetContainer && dragOverInfo?.overKey !== null;
                                 const isOverThis = isCrossContainer && dragOverInfo.overKey === assignment._key;
                                 const rows = [];
@@ -226,6 +230,7 @@ function AssignmentGroupEditor({
                                     <AssignmentRowEditor
                                         key={assignment._key}
                                         assignment={assignment}
+                                        position={index + 1}
                                         targetMarkers={targetMarkers}
                                         onUpdate={onUpdate}
                                         onRemove={onRemove}
@@ -293,6 +298,7 @@ function SortableGroupCard({
                     <button
                         type="button"
                         className="cursor-grab touch-none text-amber-500 hover:text-amber-400 active:cursor-grabbing"
+                        aria-label={`Reorder ${groupName ?? "unnamed group"}`}
                         {...attributes}
                         {...listeners}
                     >
@@ -303,6 +309,7 @@ function SortableGroupCard({
                         <input
                             ref={nameRef}
                             type="text"
+                            aria-label="Group name"
                             value={nameInput}
                             onChange={(e) => setNameInput(e.target.value)}
                             onBlur={commitRename}
@@ -310,7 +317,7 @@ function SortableGroupCard({
                                 if (e.key === "Enter") commitRename();
                                 if (e.key === "Escape") setEditingName(false);
                             }}
-                            className="flex-1 rounded border border-amber-500 bg-brown-800 px-2 py-0.5 text-sm text-amber-400 focus:outline-hidden"
+                            className="bg-brown-800 flex-1 rounded border border-amber-500 px-2 py-0.5 text-sm text-amber-400 focus:outline-hidden"
                         />
                     ) : (
                         <button
@@ -321,13 +328,14 @@ function SortableGroupCard({
                             }}
                             className="flex-1 truncate text-left text-sm font-semibold text-amber-400 hover:text-amber-300"
                         >
-                            {groupName ?? <span className="italic text-amber-500">Unnamed group</span>}
+                            {groupName ?? <span className="text-amber-500 italic">Unnamed group</span>}
                         </button>
                     )}
 
                     <button
                         type="button"
                         onClick={() => onRemoveGroup(groupKey)}
+                        aria-label="Remove group"
                         className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-700/60 text-[9px] text-white hover:bg-red-600"
                     >
                         <Icon icon="times" style="solid" />
@@ -1132,6 +1140,7 @@ export default function Edit({ template, targetMarkers, raids }) {
                                     Template name
                                 </label>
                                 <input
+                                    id="template-title"
                                     type="text"
                                     value={data.title}
                                     onChange={(e) => setData("title", e.target.value)}
@@ -1187,7 +1196,7 @@ export default function Edit({ template, targetMarkers, raids }) {
                 >
                     {/* General Assignments */}
                     <section className="mb-8">
-                        <h2 className="mb-3 text-base font-semibold uppercase tracking-wider text-amber-500/80">
+                        <h2 className="mb-3 text-base font-semibold tracking-wider text-amber-500/80 uppercase">
                             General Assignments
                         </h2>
                         <GroupContainer
@@ -1205,7 +1214,7 @@ export default function Edit({ template, targetMarkers, raids }) {
                             {template.raids.map((raid) => (
                                 <div key={raid.slug}>
                                     {template.raids.length > 1 && (
-                                        <h2 className="mb-3 text-base font-semibold uppercase tracking-wider text-amber-500/80">
+                                        <h2 className="mb-3 text-base font-semibold tracking-wider text-amber-500/80 uppercase">
                                             {raid.name}
                                         </h2>
                                     )}
@@ -1228,7 +1237,7 @@ export default function Edit({ template, targetMarkers, raids }) {
 
                     <DragOverlay>
                         {activeAssignment ? (
-                            <table className="w-full table-fixed rounded border border-amber-500/50 bg-brown-800 opacity-90 shadow-xl">
+                            <table className="bg-brown-800 w-full table-fixed rounded border border-amber-500/50 opacity-90 shadow-xl">
                                 <tbody>
                                     <tr className="border-b border-amber-600/50">
                                         <td className="w-6 px-1 py-2 text-amber-400">
@@ -1236,12 +1245,12 @@ export default function Edit({ template, targetMarkers, raids }) {
                                         </td>
                                         <td className="w-1/2 border-r border-amber-600/50 px-3 py-2.5 text-sm text-amber-500">
                                             {labelFromSide(activeAssignment._leftSide).label || (
-                                                <span className="italic text-amber-500">empty</span>
+                                                <span className="text-amber-500 italic">empty</span>
                                             )}
                                         </td>
                                         <td className="w-1/2 px-3 py-2.5 text-sm text-amber-500">
                                             {labelFromSide(activeAssignment._rightSide).label || (
-                                                <span className="italic text-amber-500">empty</span>
+                                                <span className="text-amber-500 italic">empty</span>
                                             )}
                                         </td>
                                         <td className="w-10" />

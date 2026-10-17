@@ -1,7 +1,7 @@
 import Icon from "@/Components/FontAwesome/Icon";
 import { TextInput } from "@/Components/FormControls";
 
-export default function SearchInput({ value, onChange, placeholder = "Search by name...", dusk, inputRef }) {
+export default function SearchInput({ value, onChange, placeholder = "Search by name…", dusk, inputRef }) {
     return (
         <div className="relative">
             <Icon icon="search" style="solid" className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />

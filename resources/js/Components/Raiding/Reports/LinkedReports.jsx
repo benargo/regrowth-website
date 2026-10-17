@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
+import { DialogTitle } from "@headlessui/react";
 import { Link, router } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
+import IconButton from "@/Components/IconButton";
 import { Checkbox, PrimaryButton } from "@/Components/FormControls";
 import Modal from "@/Components/Modal";
 import ConfirmationModal from "@/Components/ConfirmationModal";
@@ -114,10 +116,15 @@ function LinkReportsModal({
     return (
         <Modal show={isOpen} maxWidth="xl" onClose={onClose}>
             <div className="flex items-center justify-between border-b border-amber-600/30 px-6 py-4">
-                <h2 className="text-lg font-semibold text-white">Link Reports</h2>
-                <button onClick={onClose} className="text-gray-400 transition-colors hover:text-white">
-                    <Icon icon="times" style="solid" />
-                </button>
+                <DialogTitle as="h2" className="text-lg font-semibold text-white">
+                    Link Reports
+                </DialogTitle>
+                <IconButton
+                    icon="times"
+                    label="Close dialog"
+                    onClick={onClose}
+                    className="text-gray-400 transition-colors hover:text-white"
+                />
             </div>
 
             <div className="max-h-[60vh] overflow-y-auto">
@@ -125,10 +132,10 @@ function LinkReportsModal({
                     <ul className="divide-y divide-amber-600">
                         {skeletonRows.map((_, i) => (
                             <li key={i} className="flex animate-pulse items-center gap-3 px-6 py-3">
-                                <div className="h-4 w-4 rounded bg-brown-700" />
+                                <div className="bg-brown-700 h-4 w-4 rounded" />
                                 <div className="flex-1 space-y-1.5">
-                                    <div className="h-3.5 w-48 rounded bg-brown-700" />
-                                    <div className="h-3 w-32 rounded bg-brown-700" />
+                                    <div className="bg-brown-700 h-3.5 w-48 rounded" />
+                                    <div className="bg-brown-700 h-3 w-32 rounded" />
                                 </div>
                             </li>
                         ))}
@@ -151,7 +158,7 @@ function LinkReportsModal({
                                 <li
                                     key={cluster.id}
                                     onClick={() => toggleCluster(cluster)}
-                                    className={`flex gap-3 px-6 py-3 transition-colors ${isDisabled ? "cursor-default opacity-60" : "cursor-pointer hover:bg-brown-800/50"}`}
+                                    className={`flex gap-3 px-6 py-3 transition-colors ${isDisabled ? "cursor-default opacity-60" : "hover:bg-brown-800/50 cursor-pointer"}`}
                                 >
                                     <Checkbox
                                         checked={isChecked}
@@ -247,6 +254,7 @@ function LinkReportsModal({
                         <>
                             <button
                                 onClick={() => handlePageChange(meta.current_page - 1)}
+                                aria-label="Previous page"
                                 disabled={meta.current_page <= 1 || isLoading}
                                 className="rounded border border-amber-600/30 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-amber-600/10 disabled:cursor-not-allowed disabled:opacity-40"
                             >
@@ -257,6 +265,7 @@ function LinkReportsModal({
                             </span>
                             <button
                                 onClick={() => handlePageChange(meta.current_page + 1)}
+                                aria-label="Next page"
                                 disabled={meta.current_page >= meta.last_page || isLoading}
                                 className="rounded border border-amber-600/30 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-amber-600/10 disabled:cursor-not-allowed disabled:opacity-40"
                             >
@@ -290,7 +299,7 @@ function DeleteLinkModal({ isOpen, onClose, currentReport, impactedReports, onCo
             initialLoadDone.current = true;
             setIsLoading(true);
             router.reload({
-                only: ['impactedReports'],
+                only: ["impactedReports"],
                 preserveState: true,
                 onFinish: () => setIsLoading(false),
             });
@@ -312,22 +321,21 @@ function DeleteLinkModal({ isOpen, onClose, currentReport, impactedReports, onCo
             onConfirm={onConfirm}
             title="Remove Links"
             confirmLabel="Confirm"
-            processingLabel="Removing..."
+            processingLabel="Removing…"
             processing={isDeleting || isLoading}
             variant="delete"
         >
             <p className="mb-4">
-                This will remove{' '}
-                <span className="font-medium text-white">{currentReport.title}</span>{' '}
-                from all manually linked reports. The following links will be severed:
+                This will remove <span className="font-medium text-white">{currentReport.title}</span> from all manually
+                linked reports. The following links will be severed:
             </p>
             {isLoading ? (
                 <ul className="divide-y divide-amber-600 rounded border border-amber-600/30">
                     {skeletonRows.map((_, i) => (
                         <li key={i} className="flex animate-pulse items-center gap-3 px-4 py-3">
                             <div className="flex-1 space-y-1.5">
-                                <div className="h-3.5 w-48 rounded bg-brown-700" />
-                                <div className="h-3 w-32 rounded bg-brown-700" />
+                                <div className="bg-brown-700 h-3.5 w-48 rounded" />
+                                <div className="bg-brown-700 h-3 w-32 rounded" />
                             </div>
                         </li>
                     ))}
@@ -471,26 +479,25 @@ export default function LinkedReports({ currentReport, nearbyReports, impactedRe
                                 </div>
                                 <div className="ml-2">
                                     {isCreateMode ? (
-                                        <button
-                                            type="button"
+                                        <IconButton
+                                            icon="unlink"
+                                            label="Remove link"
                                             onClick={() => handleCreateModeRemove(linked)}
-                                            className="rounded p-1.5 text-gray-400 transition-colors hover:bg-red-700/20 hover:text-red-400"
-                                        >
-                                            <Icon icon="unlink" style="solid" className="text-xs" />
-                                        </button>
+                                            className="rounded p-1.5 text-xs text-gray-400 transition-colors hover:bg-red-700/20 hover:text-red-400"
+                                        />
                                     ) : (
                                         <Can permission="manage-reports">
                                             <Tooltip
                                                 body={isManualLink ? "Remove link" : "Auto-linked – cannot be removed"}
                                                 position="left"
                                             >
-                                                <button
+                                                <IconButton
+                                                    icon="unlink"
+                                                    label="Remove link"
                                                     onClick={() => isManualLink && handleShowModeDelete()}
-                                                    disabled={!isManualLink}
-                                                    className="rounded px-3 py-1.5 text-gray-400 transition-colors hover:bg-red-700/20 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
-                                                >
-                                                    <Icon icon="unlink" style="solid" className="text-xs" />
-                                                </button>
+                                                    aria-disabled={isManualLink ? undefined : "true"}
+                                                    className="rounded px-3 py-1.5 text-xs text-gray-400 transition-colors hover:bg-red-700/20 hover:text-red-400 aria-disabled:cursor-not-allowed aria-disabled:opacity-40"
+                                                />
                                             </Tooltip>
                                         </Can>
                                     )}

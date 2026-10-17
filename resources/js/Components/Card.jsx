@@ -20,8 +20,8 @@ export default function Card({
         return (
             <Element
                 {...(href ? { href } : { type: "button", onClick })}
-                className={`group block w-full overflow-hidden rounded-lg border text-left shadow-lg transition-all duration-300 hover:scale-[1.03] ${
-                    selected ? "border-amber-500 ring-amber-500 ring-2" : "border-amber-600/30"
+                className={`group block w-full overflow-hidden rounded-lg border text-left shadow-lg transition-[border-color,box-shadow,scale] duration-300 hover:scale-[1.03] ${
+                    selected ? "border-amber-500 ring-2 ring-amber-500" : "border-amber-600/30"
                 } ${className}`}
                 style={borderColor ? { "--raid-color": borderColor } : undefined}
                 onMouseEnter={(e) => borderColor && (e.currentTarget.style.borderColor = borderColor)}
@@ -31,7 +31,7 @@ export default function Card({
                     <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-transparent" />
                     <div className="absolute right-0 bottom-0 left-0 p-4">
                         {eyebrow && (
-                            <p className="text-amber-400 mb-1 text-xs font-semibold tracking-widest uppercase">
+                            <p className="mb-1 text-xs font-semibold tracking-widest text-amber-400 uppercase">
                                 {eyebrow}
                             </p>
                         )}
@@ -43,9 +43,9 @@ export default function Card({
     }
 
     return (
-        <div className={`border-amber-600 rounded border ${className}`}>
+        <div className={`rounded border border-amber-600 ${className}`}>
             {(title || headerRight) && (
-                <div className="border-amber-600/40 flex items-center justify-between border-b px-4 py-3">
+                <div className="flex items-center justify-between border-b border-amber-600/40 px-4 py-3">
                     {title && <h3 className="font-semibold text-white">{title}</h3>}
                     {headerRight && <div>{headerRight}</div>}
                 </div>

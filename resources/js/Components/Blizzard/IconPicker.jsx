@@ -95,14 +95,15 @@ export default function IconPicker({ onSelect, maxSelections = 1 }) {
                     <Icon
                         icon="search"
                         style="solid"
-                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-amber-500"
+                        className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-xs text-amber-500"
                     />
                     <input
                         type="text"
                         value={query}
                         onChange={handleQueryChange}
+                        aria-label="Search icons"
                         placeholder="Search icons…"
-                        className="w-full rounded border border-amber-500 bg-brown-800 py-2 pl-8 pr-3 text-sm text-white placeholder-amber-500 focus:border-amber-500 focus:outline-hidden"
+                        className="bg-brown-800 w-full rounded border border-amber-500 py-2 pr-3 pl-8 text-sm text-white placeholder-amber-500 focus:border-amber-500 focus:outline-hidden"
                         autoFocus
                     />
                 </div>
@@ -123,9 +124,9 @@ export default function IconPicker({ onSelect, maxSelections = 1 }) {
                                     type="button"
                                     onClick={() => toggleIcon(icon)}
                                     disabled={isDisabled}
-                                    className={`relative inline-flex items-center rounded p-0.5 transition-all ${
+                                    className={`relative inline-flex items-center rounded p-0.5 transition-colors ${
                                         isSelected
-                                            ? "ring-2 ring-green-500 ring-offset-1 ring-offset-surface-raised"
+                                            ? "ring-offset-surface-raised ring-2 ring-green-500 ring-offset-1"
                                             : isDisabled
                                               ? "cursor-not-allowed opacity-40"
                                               : "hover:bg-brown-700"
@@ -137,7 +138,7 @@ export default function IconPicker({ onSelect, maxSelections = 1 }) {
                                         <img src={icon.url} alt={icon.name} className="h-8 w-8 rounded-xs" />
                                     </Tooltip>
                                     {isSelected && (
-                                        <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-green-500 shadow">
+                                        <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-green-500 shadow">
                                             <Icon icon="check" style="solid" className="text-[7px] text-white" />
                                         </span>
                                     )}

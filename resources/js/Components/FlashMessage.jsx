@@ -54,7 +54,7 @@ export default function FlashMessage({ type = "error", message, onDismiss }) {
     return (
         <div
             role={type === "error" ? "alert" : "status"}
-            className={`fixed left-1/2 top-16 z-50 mx-auto w-full max-w-lg -translate-x-1/2 px-4 transition-all duration-300 ease-in-out ${isLeaving ? "-translate-y-2 opacity-0" : "translate-y-0 opacity-100"} `}
+            className={`fixed top-16 left-1/2 z-50 mx-auto w-full max-w-lg -translate-x-1/2 px-4 transition-[opacity,translate] duration-300 ease-in-out ${isLeaving ? "-translate-y-2 opacity-0" : "translate-y-0 opacity-100"} `}
         >
             <div
                 className={` ${style.bg} ${style.border} flex items-start gap-3 rounded-lg border px-4 py-3 shadow-lg backdrop-blur-sm`}

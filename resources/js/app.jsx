@@ -1,25 +1,29 @@
-import '../css/app.css';
-import './bootstrap';
+import "../css/app.css";
+import "./bootstrap";
 
-import { createInertiaApp } from '@inertiajs/react';
-import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
-import { createRoot } from 'react-dom/client';
+import { createInertiaApp, router } from "@inertiajs/react";
+import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
+import { createRoot } from "react-dom/client";
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || "Laravel";
+
+const THEME_COLORS = { forever: "#003c4e", classic: "#4a3d32" };
+
+router.on("navigate", (event) => {
+    document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute("content", event.detail.page.component === "Home" ? THEME_COLORS.forever : THEME_COLORS.classic);
+});
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
-    resolve: (name) =>
-        resolvePageComponent(
-            `./Pages/${name}.jsx`,
-            import.meta.glob('./Pages/**/*.jsx'),
-        ),
+    resolve: (name) => resolvePageComponent(`./Pages/${name}.jsx`, import.meta.glob("./Pages/**/*.jsx")),
     setup({ el, App, props }) {
         const root = createRoot(el);
 
         root.render(<App {...props} />);
     },
     progress: {
-        color: '#f8b700',
+        color: "#f8b700",
     },
 });

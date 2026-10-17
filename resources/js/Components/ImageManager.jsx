@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useId, useState, useRef } from "react";
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, horizontalListSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -34,7 +34,7 @@ function SortableImage({ url, onDelete, disabled, sortable }) {
             {...attributes}
             {...listeners}
         >
-            <img src={url} alt="" className="border-amber-600 h-32 w-32 rounded border object-cover" />
+            <img src={url} alt="" className="h-32 w-32 rounded border border-amber-600 object-cover" />
             <button
                 type="button"
                 disabled={disabled}
@@ -77,6 +77,7 @@ export default function ImageManager({
     const remaining = max === null ? Infinity : max - images.length;
     const multiple = max !== 1;
     const fileInputRef = useRef(null);
+    const hintId = useId();
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -132,7 +133,7 @@ export default function ImageManager({
         <div>
             {images.length > 0 && (
                 <div className="mb-6">
-                    <p className="text-gray-400 mb-3 text-sm">
+                    <p className="mb-3 text-sm text-gray-400">
                         {multiple ? <>Drag to reorder &#124; hover to delete</> : "Hover to delete"}
                     </p>
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -168,7 +169,7 @@ export default function ImageManager({
                 >
                     {saving ? (
                         <>
-                            <Icon icon="spinner" style="solid" className="fa-spin text-amber-400 text-2xl" />
+                            <Icon icon="spinner" style="solid" className="fa-spin text-2xl text-amber-400" />
                             <span className="text-sm">Uploading…</span>
                         </>
                     ) : isDraggingFile ? (
@@ -181,9 +182,19 @@ export default function ImageManager({
                             <Icon icon="cloud-upload" style="solid" className="text-2xl" />
                             <span className="text-sm">
                                 Drag &amp; drop {multiple ? "images" : "an image"} here, or{" "}
-                                <span className="text-amber-400 underline">browse</span>
+                                <button
+                                    type="button"
+                                    aria-describedby={hintId}
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        fileInputRef.current?.click();
+                                    }}
+                                    className="rounded-sm text-amber-400 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+                                >
+                                    browse
+                                </button>
                             </span>
-                            <span className="text-gray-400 text-xs">
+                            <span id={hintId} className="text-xs text-gray-400">
                                 {describeTypes(accepts)} · max 2 MB{multiple ? " each" : ""}
                             </span>
                         </>
@@ -194,6 +205,7 @@ export default function ImageManager({
                         multiple={multiple}
                         accept={accepts.join(",")}
                         onChange={handleFileInputChange}
+                        aria-label={multiple ? "Upload images" : "Upload image"}
                         className="hidden"
                     />
                 </div>

@@ -4,6 +4,7 @@ import Dropdown from "@/Components/Dropdown";
 import FlashMessage from "@/Components/FlashMessage";
 import Icon from "@/Components/FontAwesome/Icon";
 import NavLink from "@/Components/NavLink";
+import Kbd from "@/Components/Kbd";
 import Pill from "@/Components/Pill";
 import ResponsiveNavLink from "@/Components/ResponsiveNavLink";
 import { Can } from "@/Components/Authorizable";
@@ -35,10 +36,10 @@ const NAV_CLASSES = {
         iconButton: "hover:bg-forever-700 text-verdant-400",
         searchButton: "hover:bg-forever-700 border-forever-600 bg-forever-800 focus:ring-camel-500 text-verdant-300",
         searchShortcut: "bg-forever-900 text-verdant-300",
-        navLink: "hover:bg-forever-700/80",
-        responsiveNavLink: "text-verdant-300 hover:bg-camel-800",
+        navLink: "hover:bg-forever-700/80 focus-visible:outline-camel-400",
+        responsiveNavLink: "text-verdant-300 hover:bg-camel-800 focus-visible:outline-camel-400",
         dropdownContent: "py-1 bg-forever-800",
-        dropdownLink: "bg-forever-800 hover:bg-forever-800 focus:bg-forever-700",
+        dropdownLink: "bg-forever-800 hover:bg-forever-800 data-focus:bg-forever-700",
         mobileMenu: "bg-forever-900",
         mobileLink: "hover:bg-camel-800 text-verdant-300",
         mobileDivider: "border-camel-700",
@@ -58,6 +59,7 @@ export default function Master({ title, isHomepage = false, children }) {
     const [flashError, setFlashError] = useState(flash?.error);
     const [flashSuccess, setFlashSuccess] = useState(flash?.success);
     const [searchOpen, setSearchOpen] = useState(false);
+    const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 
     // Update flash messages when props change
     useEffect(() => {
@@ -82,8 +84,15 @@ export default function Master({ title, isHomepage = false, children }) {
             <Head title={title} />
 
             <div className={cn("flex min-h-screen flex-col text-white", classes.wrapper)}>
+                <a
+                    href="#main-content"
+                    className="bg-brown-900 fixed top-2 left-2 z-50 -translate-y-[200%] rounded px-4 py-2 focus-visible:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+                >
+                    Skip to main content
+                </a>
                 <div className="fixed inset-x-0 top-4 z-20 px-4">
                     <nav
+                        aria-label="Main"
                         className={cn(
                             "grid grid-cols-[auto_1fr_auto] items-center overflow-visible rounded-lg border py-3 pr-3 pl-4 shadow-lg backdrop-blur-xl lg:flex lg:flex-wrap lg:gap-10 lg:px-4",
                             classes.nav,
@@ -92,7 +101,7 @@ export default function Master({ title, isHomepage = false, children }) {
                         {/* Mobile menu toggle */}
                         <button
                             className={cn(
-                                "inline-flex items-center justify-center rounded-md p-2 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset lg:hidden",
+                                "inline-flex items-center justify-center rounded-md p-2 hover:text-white focus:outline-hidden focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-inset lg:hidden",
                                 classes.iconButton,
                             )}
                             type="button"
@@ -124,7 +133,7 @@ export default function Master({ title, isHomepage = false, children }) {
                         {/* Mobile search button */}
                         <button
                             className={cn(
-                                "inline-flex items-center justify-center justify-self-end rounded-md p-2 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset lg:hidden",
+                                "inline-flex items-center justify-center justify-self-end rounded-md p-2 hover:text-white focus:outline-hidden focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-inset lg:hidden",
                                 classes.iconButton,
                             )}
                             type="button"
@@ -164,26 +173,26 @@ export default function Master({ title, isHomepage = false, children }) {
                                 <button
                                     type="button"
                                     onClick={() => setSearchOpen(true)}
+                                    aria-keyshortcuts="Meta+K Control+K"
                                     className={cn(
-                                        "flex min-h-6 items-center gap-2 rounded border px-3 py-2 text-sm transition-colors hover:text-white focus:ring-1 focus:outline-hidden",
+                                        "flex min-h-6 items-center gap-2 rounded border px-3 py-2 text-sm transition-colors hover:text-white focus:outline-hidden focus-visible:ring-1",
                                         classes.searchButton,
                                     )}
                                 >
                                     <Icon icon="search" style="solid" className="h-4 w-4" />
                                     <span>Search</span>
-                                    <span className={cn("rounded px-1.5 py-0.5 text-xs", classes.searchShortcut)}>
-                                        ⌘K
+                                    <span
+                                        aria-hidden="true"
+                                        className={cn("rounded px-1.5 py-0.5 text-xs", classes.searchShortcut)}
+                                    >
+                                        <Kbd>{isMac ? "⌘K" : "Ctrl K"}</Kbd>
                                     </span>
                                 </button>
                                 {user ? (
                                     <Dropdown>
                                         <Dropdown.Trigger>
-                                            <button className="flex items-center space-x-2 text-sm font-medium text-white transition-colors hover:text-white">
-                                                <img
-                                                    src={user.avatar}
-                                                    alt={user.display_name}
-                                                    className="h-8 w-8 rounded-full"
-                                                />
+                                            <button className="flex items-center space-x-2 rounded-md text-sm font-medium text-white transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">
+                                                <img src={user.avatar} alt="" className="h-8 w-8 rounded-full" />
                                                 <span>{user.display_name}</span>
                                                 {user.highest_role && (
                                                     <Pill
@@ -300,7 +309,7 @@ export default function Master({ title, isHomepage = false, children }) {
                         {user ? (
                             <div className="space-y-2 px-2">
                                 <div className="mx-2 flex items-center space-x-3">
-                                    <img src={user.avatar} alt={user.display_name} className="h-10 w-10 rounded-full" />
+                                    <img src={user.avatar} alt="" className="h-10 w-10 rounded-full" />
                                     <div>
                                         <div className="text-base font-medium text-white">{user.display_name}</div>
                                         {user.highest_role && (
@@ -377,7 +386,9 @@ export default function Master({ title, isHomepage = false, children }) {
                 <FlashMessage type="error" message={flashError} onDismiss={() => setFlashError(null)} />
                 <FlashMessage type="success" message={flashSuccess} onDismiss={() => setFlashSuccess(null)} />
 
-                <div className="flex flex-1 flex-col">{children}</div>
+                <main id="main-content" tabIndex={-1} className="flex flex-1 flex-col focus:outline-none">
+                    {children}
+                </main>
 
                 <footer className={cn("border-t-8 py-5", classes.footer)} id="footer">
                     <div className="container mx-auto">
@@ -387,7 +398,7 @@ export default function Master({ title, isHomepage = false, children }) {
                                 <Link href="/" title="Regrowth" className="flex flex-1 items-center md:flex-none">
                                     <img
                                         src="/images/guild_emblem.webp"
-                                        alt="Guild Emblem"
+                                        alt=""
                                         className="h-20 w-1/2 object-contain md:w-auto"
                                     />
                                     <span className="sr-only">Regrowth</span>
@@ -397,12 +408,12 @@ export default function Master({ title, isHomepage = false, children }) {
                                     alt="World of Warcraft: Forever logo"
                                     className="h-20 w-1/2 flex-1 object-contain md:mr-4 md:w-auto"
                                 />
-                                <span className="sr-only">
-                                    {isHomepage ? "World of Warcraft: Forever" : "World of Warcraft: Classic"}
-                                </span>
                             </div>
                             {/* Footer Links */}
-                            <nav className="flex flex-col items-center justify-start gap-4 md:flex-row md:flex-wrap md:gap-2">
+                            <nav
+                                aria-label="Footer"
+                                className="flex flex-col items-center justify-start gap-4 md:flex-row md:flex-wrap md:gap-2"
+                            >
                                 <div className={cn("flex h-8 flex-row items-center p-1 md:ml-2", classes.footerText)}>
                                     <Icon icon="copyright" style="regular" className="mr-2 h-5 w-5" />
                                     <span className="text-nowrap">{new Date().getFullYear()} Regrowth</span>

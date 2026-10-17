@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { cloneElement, Fragment, isValidElement, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 const GAP = 8;
@@ -51,7 +51,7 @@ function computePosition(triggerRect, tooltipRect, position) {
 }
 
 /**
- * Hover tooltip rendered into a portal, positioned relative to its trigger
+ * Hover and focus tooltip rendered into a portal, positioned relative to its trigger
  * and clamped to stay within the viewport.
  *
  * Positioning happens in two passes:
@@ -68,17 +68,40 @@ function computePosition(triggerRect, tooltipRect, position) {
  * (viewport-relative, not document-relative), so `coords` don't need
  * adjusting for page scroll.
  *
+ * The tooltip shows on hover and on focus within the trigger, and hides on
+ * mouse leave, blur and Escape. It renders with `role="tooltip"` and is only
+ * mounted while visible, when the trigger's `aria-describedby` points at it.
+ * When `children` is a single non-Fragment element it receives
+ * `aria-describedby`; otherwise the wrapper does.
+ *
  * `as` sets the trigger wrapper's element; pass "span" when the tooltip sits
  * inside inline content such as a paragraph.
  */
-export default function Tooltip({ children, body, position = "top", className = "", as: Element = "div", ...props }) {
+export default function Tooltip({
+    children,
+    body,
+    position = "top",
+    className = "",
+    as: Element = "div",
+    onMouseEnter,
+    onMouseLeave,
+    onFocus,
+    onBlur,
+    ...props
+}) {
     const triggerRef = useRef(null);
     const tooltipRef = useRef(null);
+    const tooltipId = useId();
     const [isVisible, setIsVisible] = useState(false);
     const [coords, setCoords] = useState(null);
 
     useLayoutEffect(() => {
-        if (!isVisible || !triggerRef.current || !tooltipRef.current) {
+        if (!isVisible) {
+            setCoords(null);
+            return;
+        }
+
+        if (!triggerRef.current || !tooltipRef.current) {
             return;
         }
 
@@ -88,26 +111,70 @@ export default function Tooltip({ children, body, position = "top", className = 
         setCoords(computePosition(triggerRect, tooltipRect, position));
     }, [isVisible, position]);
 
+    useEffect(() => {
+        if (!isVisible) {
+            return;
+        }
+
+        const handleKeyDown = (event) => {
+            if (event.key === "Escape") {
+                setIsVisible(false);
+            }
+        };
+
+        document.addEventListener("keydown", handleKeyDown);
+
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [isVisible]);
+
+    const describedBy = isVisible ? tooltipId : undefined;
+    const isSingleElement = isValidElement(children) && children.type !== Fragment;
+    const trigger = isSingleElement
+        ? cloneElement(children, {
+              "aria-describedby":
+                  [children.props["aria-describedby"], describedBy].filter(Boolean).join(" ") || undefined,
+          })
+        : children;
+
     return (
         <Element
             ref={triggerRef}
             className={`relative inline-block ${className}`}
-            onMouseEnter={() => setIsVisible(true)}
-            onMouseLeave={() => setIsVisible(false)}
+            aria-describedby={isSingleElement ? undefined : describedBy}
+            onMouseEnter={(event) => {
+                setIsVisible(true);
+                onMouseEnter?.(event);
+            }}
+            onMouseLeave={(event) => {
+                setIsVisible(false);
+                onMouseLeave?.(event);
+            }}
+            onFocus={(event) => {
+                setIsVisible(true);
+                onFocus?.(event);
+            }}
+            onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget)) {
+                    setIsVisible(false);
+                }
+                onBlur?.(event);
+            }}
             {...props}
         >
-            {children}
+            {trigger}
             {isVisible &&
                 createPortal(
                     <div
                         ref={tooltipRef}
+                        id={tooltipId}
+                        role="tooltip"
                         style={{
                             position: "fixed",
                             top: coords?.top ?? -9999,
                             left: coords?.left ?? -9999,
                             visibility: coords ? "visible" : "hidden",
                         }}
-                        className={`bg-gray-900 pointer-events-none z-30 max-w-xs rounded px-2 py-1 text-xs text-white ${body ? "" : "w-max"}`}
+                        className={`pointer-events-none z-30 max-w-xs rounded bg-gray-900 px-2 py-1 text-xs text-white ${body ? "" : "w-max"}`}
                     >
                         {body}
                         <div className={`absolute border-4 border-transparent ${ARROW_CLASSES[position]}`}></div>

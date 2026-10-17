@@ -78,7 +78,7 @@ export default function LaunchCountdown({ targetIso }) {
                 </div>
 
                 {remaining !== null && (
-                    <div className="flex items-start gap-2 md:gap-4" role="timer" aria-live="off">
+                    <div className="flex items-start gap-2 md:gap-4" role="timer" aria-live="off" aria-hidden="true">
                         {UNITS.map((unit, index) => (
                             <div key={unit.key} className="flex items-start gap-2 md:gap-4">
                                 <div className="flex min-w-[3.5rem] flex-col items-center md:min-w-[4.5rem]">

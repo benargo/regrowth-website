@@ -75,7 +75,7 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
                         href={discordInviteUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="border-discord/30 text-camel-200 focus:ring-forever-500/60 bg-discord hover:bg-discord/80 inline-flex items-center gap-3 rounded border px-8 py-4 text-lg shadow-lg transition-colors focus:ring-2 focus:outline-hidden"
+                        className="border-discord/30 text-camel-200 bg-discord hover:bg-discord/80 focus-visible:outline-camel-400 inline-flex items-center gap-3 rounded border px-8 py-4 text-lg shadow-lg transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
                     >
                         <Icon icon="discord" style="brands" className="h-6 w-6 text-white" />
                         Join our Discord
