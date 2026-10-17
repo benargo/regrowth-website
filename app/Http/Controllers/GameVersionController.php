@@ -160,7 +160,14 @@ class GameVersionController extends Controller
     #[Authorize('delete', 'gameVersion')]
     public function destroy(Request $request, GameVersion $gameVersion): RedirectResponse
     {
-        return DeleteDatasetRecord::run($request, $gameVersion, $gameVersion->title, 'management.game-versions.index');
+        $refusal = DeleteDatasetRecord::run($request->user(), $gameVersion, $gameVersion->title);
+
+        if ($refusal !== null) {
+            return Redirect::back()->with('error', $refusal);
+        }
+
+        return Redirect::route('management.game-versions.index')
+            ->with('success', "Deleted {$gameVersion->title}.");
     }
 
     /**

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import RecordCard, { usageSummary } from "@/Components/Datasets/RecordCard";
 import PhaseStartDate from "@/Components/Phases/PhaseStartDate";
 
@@ -7,15 +6,19 @@ const USAGE_LABELS = [
     ["reports_count", "report", "reports"],
 ];
 
+/** A random offset, drawn once per page load, that shuffles the banner picks. */
+const BANNER_SEED = Math.floor(Math.random() * 1000);
+
 /**
- * One raid to paint the card's banner: picked at random from the phase's raids
- * with artwork, or from all of them when none has artwork. Null without raids.
+ * One raid to paint the phase's banner: picked from its raids with artwork, or
+ * from all of them when none has artwork, the same raid for a phase on every
+ * render until the page reloads. Null without raids.
  */
-function pickBannerRaid(raids) {
+function pickBannerRaid(phaseId, raids) {
     const withArtwork = raids.filter((raid) => raid.background);
     const pool = withArtwork.length > 0 ? withArtwork : raids;
 
-    return pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null;
+    return pool.length > 0 ? pool[(phaseId + BANNER_SEED) % pool.length] : null;
 }
 
 /**
@@ -23,7 +26,7 @@ function pickBannerRaid(raids) {
  */
 export default function PhaseCard({ phase, dragHandle = null, onDelete }) {
     const raids = Object.values(phase.raids ?? {});
-    const [bannerRaid] = useState(() => pickBannerRaid(raids));
+    const bannerRaid = pickBannerRaid(phase.id, raids);
 
     return (
         <RecordCard

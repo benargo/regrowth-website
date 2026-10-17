@@ -128,6 +128,13 @@ class PhaseController extends Controller
     #[Authorize('delete', 'phase')]
     public function destroy(Request $request, Phase $phase): RedirectResponse
     {
-        return DeleteDatasetRecord::run($request, $phase, $phase->name, 'management.phases.index');
+        $refusal = DeleteDatasetRecord::run($request->user(), $phase, $phase->name);
+
+        if ($refusal !== null) {
+            return Redirect::back()->with('error', $refusal);
+        }
+
+        return Redirect::route('management.phases.index')
+            ->with('success', "Deleted {$phase->name}.");
     }
 }

@@ -7,7 +7,6 @@ use App\Models\GameVersion;
 use App\Models\Phase;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -19,14 +18,13 @@ class DeleteDatasetRecordTest extends TestCase
 
     #[Group('happy-path')]
     #[Test]
-    public function it_deletes_an_unused_record_and_redirects_to_the_index(): void
+    public function it_deletes_an_unused_record(): void
     {
         $gameVersion = GameVersion::factory()->create();
 
-        $response = DeleteDatasetRecord::run($this->requestBy(User::factory()->officer()->create()), $gameVersion, 'Era', 'management.game-versions.index');
+        $refusal = DeleteDatasetRecord::run(User::factory()->officer()->create(), $gameVersion, 'Era');
 
-        $this->assertSame(route('management.game-versions.index'), $response->getTargetUrl());
-        $this->assertSame('Deleted Era.', session('success'));
+        $this->assertNull($refusal);
         $this->assertModelMissing($gameVersion);
     }
 
@@ -36,9 +34,9 @@ class DeleteDatasetRecordTest extends TestCase
         $gameVersion = GameVersion::factory()->create();
         $gameVersion->acquireEditLock(User::factory()->officer()->create());
 
-        DeleteDatasetRecord::run($this->requestBy(User::factory()->officer()->create()), $gameVersion, 'Era', 'management.game-versions.index');
+        $refusal = DeleteDatasetRecord::run(User::factory()->officer()->create(), $gameVersion, 'Era');
 
-        $this->assertSame("Someone is editing Era, so it can't be deleted right now.", session('error'));
+        $this->assertSame("Someone is editing Era, so it can't be deleted right now.", $refusal);
         $this->assertModelExists($gameVersion);
     }
 
@@ -48,19 +46,9 @@ class DeleteDatasetRecordTest extends TestCase
         $gameVersion = GameVersion::factory()->create();
         Phase::factory()->for($gameVersion)->create();
 
-        DeleteDatasetRecord::run($this->requestBy(User::factory()->officer()->create()), $gameVersion, 'Era', 'management.game-versions.index');
+        $refusal = DeleteDatasetRecord::run(User::factory()->officer()->create(), $gameVersion, 'Era');
 
-        $this->assertSame('Era is still linked to other records and cannot be deleted.', session('error'));
+        $this->assertSame('Era is still linked to other records and cannot be deleted.', $refusal);
         $this->assertModelExists($gameVersion);
-    }
-
-    // ==================== helpers ====================
-
-    private function requestBy(User $user): Request
-    {
-        $request = Request::create('/manage/game-versions', 'DELETE');
-        $request->setUserResolver(fn (): User => $user);
-
-        return $request;
     }
 }
