@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="{{ $page['props']['theme'] ?? \App\Enums\Theme::default()->value }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -25,7 +25,7 @@
 
         <link rel="icon" type="image/webp" rel="noopener" target="_blank" href="{{ asset('images/guild_emblem.webp') }}" />
     </head>
-    <body class="font-sans antialiased overflow-x-clip">
+    <body @class(['font-sans antialiased overflow-x-clip', 'bg-parchment-forever' => ($page['component'] ?? null) === 'Home'])>
         @inertia
 
         <!-- Wowhead Tooltips -->

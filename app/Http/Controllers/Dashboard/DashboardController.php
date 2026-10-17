@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\Dashboard;
 
-use App\Attributes\UsesTheme;
-use App\Enums\Theme;
 use App\Http\Controllers\Controller;
 use App\Models\DiscordRole;
 use Illuminate\Http\Request;
@@ -12,7 +10,6 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 #[Authorize('view-officer-dashboard')]
-#[UsesTheme(Theme::FOREVER)]
 class DashboardController extends Controller
 {
     /**

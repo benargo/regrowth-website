@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\Account;
 
-use App\Attributes\UsesTheme;
-use App\Enums\Theme;
 use App\Http\Controllers\Controller;
 use App\Models\PlannedAbsence;
 use App\Models\User;
@@ -11,7 +9,6 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-#[UsesTheme(Theme::FOREVER)]
 class AccountController extends Controller
 {
     /**
