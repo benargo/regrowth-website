@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useId } from "react";
 import Icon from "@/Components/FontAwesome/Icon";
 import Tooltip from "@/Components/Tooltip";
 
@@ -18,7 +18,7 @@ const STYLES = {
 export function RotatingChevron({ expanded = false, style = "solid" }) {
     return (
         <span
-            className={`flex items-center justify-items-center transition-transform duration-300 ${expanded ? "-rotate-180" : ""}`}
+            className={`flex items-center justify-items-center transition-transform duration-300 motion-reduce:transition-none ${expanded ? "-rotate-180" : ""}`}
         >
             <Icon icon="chevron-down" style={style} />
         </span>
@@ -37,9 +37,9 @@ export function RotatingChevron({ expanded = false, style = "solid" }) {
  */
 export function DisabledCollapsible({ title, headerRight, tooltip }) {
     const collapsible = (
-        <div className="rounded-md border border-secondary-700 opacity-60">
-            <div className="flex w-full cursor-not-allowed items-center gap-3 px-4 py-3 text-left text-secondary-500">
-                <span className="flex items-center justify-items-center text-secondary-600">
+        <div className="border-secondary-700 rounded-md border opacity-60">
+            <div className="text-secondary-500 flex w-full cursor-not-allowed items-center gap-3 px-4 py-3 text-left">
+                <span className="text-secondary-600 flex items-center justify-items-center">
                     <Icon icon="chevron-down" style="solid" />
                 </span>
                 <h3 className="text-lg font-semibold">{title}</h3>
@@ -72,6 +72,7 @@ export default function Collapsible({
     style = "amber",
 }) {
     const styles = STYLES[style] ?? STYLES.amber;
+    const panelId = useId();
 
     const [expanded, setExpanded] = useState(() => {
         if (sessionKey) {
@@ -118,7 +119,7 @@ export default function Collapsible({
         return (
             <div className="animate-pulse space-y-2">
                 {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-12 rounded bg-secondary-600/20" />
+                    <div key={i} className="bg-secondary-600/20 h-12 rounded" />
                 ))}
             </div>
         );
@@ -126,16 +127,21 @@ export default function Collapsible({
 
     return (
         <div className={`rounded-md border ${styles.border}`}>
-            <button
-                onClick={handleToggle}
-                className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors ${styles.header}`}
-            >
-                <RotatingChevron expanded={expanded} />
-                <h3 className="text-lg font-semibold">{title}</h3>
-                {headerRight && <span className="ml-auto">{headerRight}</span>}
-            </button>
+            <h3 className="text-lg font-semibold">
+                <button
+                    type="button"
+                    onClick={handleToggle}
+                    aria-expanded={expanded}
+                    aria-controls={panelId}
+                    className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors ${styles.header}`}
+                >
+                    <RotatingChevron expanded={expanded} />
+                    <span>{title}</span>
+                    {headerRight && <span className="ml-auto text-base font-normal">{headerRight}</span>}
+                </button>
+            </h3>
             {expanded && (
-                <div className={`border-t px-4 py-3 ${styles.body}`}>
+                <div id={panelId} className={`border-t px-4 py-3 ${styles.body}`}>
                     {loading ? loadingSkeleton : children || loadingSkeleton}
                 </div>
             )}
