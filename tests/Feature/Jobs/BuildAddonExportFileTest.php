@@ -151,17 +151,16 @@ class BuildAddonExportFileTest extends TestCase
     }
 
     #[Test]
-    public function it_orders_phases_by_number(): void
+    public function it_lists_phases_in_release_order(): void
     {
-        Phase::factory()->create(['number' => 3]);
-        Phase::factory()->create(['number' => 1]);
-        Phase::factory()->create(['number' => 2]);
+        Phase::factory()->unscheduled()->create(['number' => 4]);
+        Phase::factory()->create(['number' => 1, 'start_date' => '2026-05-15 00:00:00']);
+        Phase::factory()->create(['number' => 3, 'start_date' => '2026-01-01 00:00:00']);
 
         app(BuildAddonExportFile::class)->handle();
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
-        $numbers = collect($data['phases'])->pluck('number')->toArray();
-        $this->assertEquals([1, 2, 3], $numbers);
+        $this->assertEquals([3, 1, 4], collect($data['phases'])->pluck('number')->toArray());
     }
 
     // ==================== priority data ====================

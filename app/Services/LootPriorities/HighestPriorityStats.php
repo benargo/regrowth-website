@@ -24,7 +24,7 @@ class HighestPriorityStats
                 ->join('loot_priorities as lp', 'lp.id', '=', 'pip.priority_id')
                 ->where('lp.type', '!=', LootPriorityType::MEME->value)
                 ->whereColumn('raids.phase_id', 'phases.id'))
-            ->orderBy('number')
+            ->inReleaseOrder()
             ->get();
     }
 
