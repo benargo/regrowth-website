@@ -113,6 +113,14 @@ export default function Dashboard({ discordRoles }) {
                                 </p>
                             </DashboardCard>
                         </Can>
+                        <Can permission="edit-datasets">
+                            <DashboardCard href={route("management.phases.index")} icon="hourglass-start">
+                                <h3 className="text-md">Manage phases</h3>
+                                <p className="mb-1 text-sm">
+                                    Set the content phases of each game version, their start dates and order.
+                                </p>
+                            </DashboardCard>
+                        </Can>
                         <Can permission="view-warcraft-logs-guilds">
                             <DashboardCard href={route("management.warcraftlogs.guilds.index")} icon="flag">
                                 <h3 className="text-md">Manage Warcraft Logs guilds</h3>
@@ -122,12 +130,6 @@ export default function Dashboard({ discordRoles }) {
                                 </p>
                             </DashboardCard>
                         </Can>
-                        <DashboardCard href={route("management.phases.view")} icon="hourglass-start">
-                            <h3 className="text-md">Manage TBC phases</h3>
-                            <p className="mb-1 text-sm">
-                                Set the start dates of phases of The Burning Crusade content.
-                            </p>
-                        </DashboardCard>
                         <DashboardCard href={route("management.grm.create")} icon="file-upload">
                             <h3 className="text-md">Upload GRM data</h3>
                             <p className="mb-1 text-sm">Upload data from GRM to link mains and alts together.</p>

@@ -23,6 +23,9 @@ Route::post('/manage/grm-upload', fn () => abort(410));
 // Guild tags no longer belong to phases. Their reports derive a phase from their guild and start time.
 Route::put('/manage/phases/{phase}/guild-tags', fn () => abort(410));
 
+// Old phase start date form, now part of the phase Edit page (PATCH /manage/phases/{phase}).
+Route::put('/manage/phases/{phase}', fn () => abort(410));
+
 // Old guild tag attendance toggle, now scoped to its guild under /manage/warcraftlogs/guilds.
 Route::patch('/datasets/guild-tags/{guildTag}/count-attendance', fn () => abort(410));
 

@@ -122,6 +122,45 @@ class PhaseObserverTest extends TestCase
         Bus::assertDispatched(BuildAddonExportFile::class, fn (BuildAddonExportFile $job) => $job->delay !== null);
     }
 
+    // ==================== sort order ====================
+
+    #[Test]
+    public function clearing_a_start_date_moves_the_phase_to_the_end_of_its_unscheduled_list(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $first = Phase::factory()->forGameVersion($gameVersion)->unscheduled()->create();
+        $second = Phase::factory()->forGameVersion($gameVersion)->unscheduled()->create();
+        $dated = Phase::factory()->forGameVersion($gameVersion)->create(['start_date' => '2026-01-01 00:00:00']);
+
+        $dated->update(['start_date' => null]);
+
+        $this->assertSame([$first->id, $second->id, $dated->id], Phase::inReleaseOrder()->pluck('id')->all());
+    }
+
+    #[Test]
+    public function moving_an_unscheduled_phase_to_another_game_version_puts_it_last_there(): void
+    {
+        $newVersion = GameVersion::factory()->create();
+        $alreadyThere = Phase::factory()->forGameVersion($newVersion)->unscheduled()->create();
+        $moving = Phase::factory()->forGameVersion(GameVersion::factory()->create())->unscheduled()->create();
+
+        $moving->update(['game_version_id' => $newVersion->id]);
+
+        $this->assertSame($alreadyThere->sort_order + 1, $moving->fresh()->sort_order);
+    }
+
+    #[Test]
+    public function editing_an_unscheduled_phases_description_keeps_its_place(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $first = Phase::factory()->forGameVersion($gameVersion)->unscheduled()->create();
+        Phase::factory()->forGameVersion($gameVersion)->unscheduled()->create();
+
+        $first->update(['description' => 'Renamed']);
+
+        $this->assertSame(1, $first->fresh()->sort_order);
+    }
+
     // ==================== helpers ====================
 
     /**

@@ -8,10 +8,16 @@ use Illuminate\Database\Seeder;
 class PhaseSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Seed the Burning Crusade phases into an empty phases table.
      */
     public function run(): void
     {
+        if (Phase::exists()) {
+            $this->command?->info('Phases already exist — skipping.');
+
+            return;
+        }
+
         $phases = [
             [
                 'id' => 1,
@@ -46,10 +52,7 @@ class PhaseSeeder extends Seeder
         ];
 
         foreach ($phases as $phase) {
-            Phase::query()->updateOrCreate(
-                ['id' => $phase['id']],
-                $phase
-            );
+            Phase::forceCreate($phase);
         }
     }
 }

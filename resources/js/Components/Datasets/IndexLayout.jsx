@@ -10,8 +10,19 @@ import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
  * officers' dashboard, the intro beside an Add button (left out when there's
  * no `addHref`, e.g. for a user who can't create), then the record cards
  * (`children`) in a grid, or an empty state when there are none.
+ * `layout="stack"` stacks the children (e.g. grouped sections) instead of
+ * the card grid.
  */
-export default function IndexLayout({ intro, addHref = null, addLabel, isEmpty, emptyIcon, emptyMessage, children }) {
+export default function IndexLayout({
+    intro,
+    addHref = null,
+    addLabel,
+    isEmpty,
+    emptyIcon,
+    emptyMessage,
+    layout = "grid",
+    children,
+}) {
     return (
         <>
             <ToolNav>
@@ -29,7 +40,7 @@ export default function IndexLayout({ intro, addHref = null, addLabel, isEmpty, 
                     {addHref && (
                         <Link
                             href={addHref}
-                            className={`bg-amber-800 hover:bg-amber-900 inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-sm font-semibold text-white ${focusRing}`}
+                            className={`inline-flex shrink-0 items-center justify-center gap-2 rounded whitespace-nowrap bg-amber-800 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-900 ${focusRing}`}
                         >
                             <Icon icon="plus" style="light" />
                             {addLabel}
@@ -40,7 +51,13 @@ export default function IndexLayout({ intro, addHref = null, addLabel, isEmpty, 
                 {isEmpty ? (
                     <EmptyState icon={emptyIcon} message={emptyMessage} />
                 ) : (
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">{children}</div>
+                    <div
+                        className={
+                            layout === "stack" ? "flex flex-col gap-12" : "grid grid-cols-1 gap-6 lg:grid-cols-2"
+                        }
+                    >
+                        {children}
+                    </div>
                 )}
             </PageContainer>
         </>

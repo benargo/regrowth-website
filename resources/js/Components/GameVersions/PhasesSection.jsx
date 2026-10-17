@@ -1,7 +1,8 @@
+import { Link } from "@inertiajs/react";
 import RecordChecklist from "@/Components/Datasets/RecordChecklist";
 import Relationships from "@/Components/Datasets/Relationships";
-import { SaveButton, firstError } from "@/Components/FormControls";
-import NewPhaseForm from "@/Components/GameVersions/NewPhaseForm";
+import { SaveButton, firstError, linkClassName } from "@/Components/FormControls";
+import UnscheduledPhaseOrder from "@/Components/Phases/UnscheduledPhaseOrder";
 import Pill from "@/Components/Pill";
 import useRelationshipForm from "@/Hooks/useRelationshipForm";
 
@@ -18,7 +19,7 @@ function RaidPill({ raid }) {
         <span className="inline-flex items-center gap-1.5">
             <span
                 aria-hidden="true"
-                className="border-amber-600 h-2.5 w-2.5 shrink-0 rounded-full border"
+                className="h-2.5 w-2.5 shrink-0 rounded-full border border-amber-600"
                 style={{ backgroundColor: raid.color ? `#${raid.color}` : "transparent" }}
             />
             <Pill bgColor="bg-brown-800" textColor="text-gray-200" borderColor="border-amber-600">
@@ -68,7 +69,7 @@ export default function PhasesSection({
         <Relationships
             id="phases"
             title="Phases and raids"
-            description="Tick the content phases that belong to this version. Ticking a phase from another version moves it here, along with its raids and bosses. Each phase's raids are listed under it; add a new raid to a linked phase below."
+            description="Tick the content phases that belong to this version. Ticking a phase from another version moves it here, along with its raids and bosses."
         >
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6" {...containerProps}>
                 <RecordChecklist
@@ -80,14 +81,46 @@ export default function PhasesSection({
                     onChange={(ids) => setIds("phase_ids", ids)}
                     ownerOf={(phase) => otherOwner(phase, gameVersion)}
                     renderLabel={(phase) => <PhaseLabel phase={phase} />}
-                    emptyMessage="No phases exist yet. Add the first one below."
+                    emptyMessage="No phases exist yet. Add the first one from the phases page."
                     error={firstError(form.errors, "phase_ids")}
                 />
                 {!autosave && <SaveButton processing={form.processing} label={submitLabel} />}
             </form>
-            <Relationships.AddRecord label="Add a new phase">
-                <NewPhaseForm url={routes.update} />
-            </Relationships.AddRecord>
+
+            {relationships.unscheduled_phases.data.length > 1 && (
+                <div className="flex flex-col gap-3">
+                    <h3 className="font-serif text-xl text-white">Order of unscheduled phases</h3>
+                    <p className="max-w-prose text-sm text-gray-300">
+                        Drag this version's phases without a start date into the order you expect them to arrive.
+                    </p>
+                    <UnscheduledPhaseOrder
+                        phases={relationships.unscheduled_phases.data}
+                        url={routes.update}
+                        field="unscheduled_phase_ids"
+                        label={`Unscheduled ${gameVersion.title} phases`}
+                        className="divide-y divide-amber-600/40 rounded border border-amber-600/40"
+                        renderPhase={(phase, dragHandle) => (
+                            <div className="bg-brown-900 flex items-center gap-3 px-3 py-2">
+                                {dragHandle}
+                                <span className="text-white">{phase.name}</span>
+                                <span className="truncate text-sm text-gray-300">{phase.description}</span>
+                            </div>
+                        )}
+                    />
+                </div>
+            )}
+
+            <p className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                <Link
+                    href={route("management.phases.create", { game_version: gameVersion.id })}
+                    className={linkClassName}
+                >
+                    Add a phase to {gameVersion.title}
+                </Link>
+                <Link href={route("management.phases.index")} className={linkClassName}>
+                    Manage all phases
+                </Link>
+            </p>
         </Relationships>
     );
 }

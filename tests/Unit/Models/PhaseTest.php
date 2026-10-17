@@ -48,6 +48,7 @@ class PhaseTest extends ModelTestCase
             'number',
             'description',
             'start_date',
+            'sort_order',
             'game_version_id',
         ]);
     }
@@ -265,6 +266,78 @@ class PhaseTest extends ModelTestCase
         Phase::factory()->unscheduled()->create();
 
         $this->assertEqualsCanonicalizing([$started->id, $startingNow->id], Phase::started()->pluck('id')->all());
+    }
+
+    // ==================== order ====================
+
+    #[Test]
+    public function in_release_order_lists_dated_phases_by_start_date_then_undated_by_sort_order(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $laterUndated = Phase::factory()->for($gameVersion)->unscheduled()->create(['number' => 4]);
+        $earlierUndated = Phase::factory()->for($gameVersion)->unscheduled()->create(['number' => 5]);
+        $laterUndated->update(['sort_order' => 2]);
+        $earlierUndated->update(['sort_order' => 1]);
+        $later = Phase::factory()->for($gameVersion)->create(['number' => 1, 'start_date' => '2026-05-15 00:00:00']);
+        $earlier = Phase::factory()->for($gameVersion)->create(['number' => 3, 'start_date' => '2026-01-01 00:00:00']);
+
+        $this->assertSame(
+            [$earlier->id, $later->id, $earlierUndated->id, $laterUndated->id],
+            Phase::inReleaseOrder()->pluck('id')->all(),
+        );
+    }
+
+    #[Test]
+    public function a_new_unscheduled_phase_goes_to_the_end_of_its_game_versions_list(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        Phase::factory()->for($gameVersion)->unscheduled()->create(['number' => 4]);
+        Phase::factory()->for(GameVersion::factory())->unscheduled()->create(['number' => 4]);
+
+        $phase = Phase::factory()->for($gameVersion)->unscheduled()->create(['number' => 5]);
+
+        $this->assertSame(2, $phase->sort_order);
+    }
+
+    #[Test]
+    public function name_reads_phase_and_its_number(): void
+    {
+        $this->assertSame('Phase 3.5', Phase::factory()->make(['number' => '3.5'])->name);
+        $this->assertSame('Phase 2', Phase::factory()->make(['number' => '2.0'])->name);
+    }
+
+    // ==================== usage ====================
+
+    #[Test]
+    public function it_is_in_use_while_it_has_raids(): void
+    {
+        $phase = Phase::factory()->create();
+        $this->assertFalse($phase->isInUse());
+
+        Raid::factory()->for($phase)->create();
+
+        $this->assertTrue($phase->isInUse());
+    }
+
+    #[Test]
+    public function it_is_in_use_while_reports_fall_in_it(): void
+    {
+        $phase = Phase::factory()->create();
+        Report::withoutEvents(fn () => Report::factory()->create(['phase_id' => $phase->id]));
+
+        $this->assertTrue($phase->isInUse());
+    }
+
+    #[Test]
+    public function with_usage_counts_counts_raids_and_reports(): void
+    {
+        $phase = Phase::factory()->create();
+        Raid::factory()->for($phase)->count(2)->create();
+
+        $counted = Phase::withUsageCounts()->find($phase->id);
+
+        $this->assertSame(2, $counted->raids_count);
+        $this->assertSame(0, $counted->reports_count);
     }
 
     // ==================== game version ====================

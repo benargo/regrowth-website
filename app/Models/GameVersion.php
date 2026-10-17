@@ -6,6 +6,7 @@ use App\Casts\AsBinaryColor;
 use App\Casts\AsSlug;
 use App\Contracts\Models\DatasetModel;
 use App\Contracts\Models\EditLockable;
+use App\Contracts\Models\HasUsage;
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Support\NameSlug;
@@ -47,7 +48,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
     'warcraft_logs_guild_id',
 ])]
 #[UsePolicy(DatasetPolicy::class)]
-class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia
+class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia, HasUsage
 {
     use HasEditLock;
 

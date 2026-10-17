@@ -21,6 +21,20 @@ class PhaseObserver
     }
 
     /**
+     * Handle the Phase "updating" event: a phase that becomes unscheduled, or
+     * moves to another game version while unscheduled, goes to the end of its
+     * game version's unscheduled phases.
+     */
+    public function updating(Phase $phase): void
+    {
+        $isUnscheduled = $phase->start_date === null;
+
+        if ($isUnscheduled && $phase->isDirty(['start_date', 'game_version_id'])) {
+            $phase->setHighestOrderNumber();
+        }
+    }
+
+    /**
      * Handle the Phase "updated" event.
      */
     public function updated(Phase $phase): void

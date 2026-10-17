@@ -72,15 +72,31 @@ abstract class BuildDatasetRoutes
     }
 
     /**
-     * @return array{index: string, update: string, review: string}
+     * The Edit page's URLs. The review URL is included only for a dataset
+     * with a setup wizard.
+     *
+     * @return array{index: string, update: string, review?: string}
      */
     public function forEdit(Model $record): array
     {
         return [
             'index' => $this->route('index'),
             'update' => $this->route('update', $record),
-            'review' => $this->route('review', $record),
+            ...($this->setupSteps() === null ? [] : ['review' => $this->route('review', $record)]),
         ];
+    }
+
+    /**
+     * Where a newly stored record leads: its first setup step, or its Edit
+     * page for a dataset without a wizard.
+     */
+    public function afterStore(Model $record): string
+    {
+        $steps = $this->setupSteps();
+
+        return $steps === null
+            ? $this->route('edit', $record)
+            : $this->setupUrl($record, $steps::first());
     }
 
     /**

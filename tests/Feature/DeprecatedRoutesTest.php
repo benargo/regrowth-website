@@ -148,4 +148,19 @@ class DeprecatedRoutesTest extends DashboardTestCase
     {
         $this->get('/manage/daily-quests/audit')->assertGone();
     }
+
+    // ==================== phases ====================
+
+    #[Test]
+    #[Group('deprecated')]
+    public function old_phase_start_date_endpoint_is_gone(): void
+    {
+        $phase = Phase::factory()->create();
+
+        $response = $this->actingAs($this->officer)->put("/manage/phases/{$phase->id}", [
+            'start_date' => '2026-06-01T19:00',
+        ]);
+
+        $response->assertGone();
+    }
 }

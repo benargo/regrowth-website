@@ -70,6 +70,20 @@ class BossStrategyControllerTest extends DashboardTestCase
     }
 
     #[Test]
+    public function index_lists_phases_in_release_order(): void
+    {
+        $unscheduled = Phase::factory()->unscheduled()->create(['number' => 1]);
+        $earlier = Phase::factory()->create(['number' => 3, 'start_date' => '2026-01-01 00:00:00']);
+
+        $response = $this->actingAs($this->officer)->get(route('management.boss-strategies.index'));
+
+        $response->assertInertia(fn ($page) => $page
+            ->where('phases.0.id', $earlier->id)
+            ->where('phases.1.id', $unscheduled->id)
+        );
+    }
+
+    #[Test]
     public function index_requires_authentication(): void
     {
         $response = $this->get(route('management.boss-strategies.index'));
