@@ -2,44 +2,26 @@
 
 namespace App\Http\Resources;
 
+use App\Attributes\Http\Resources\ScopeDefinition;
+use App\Contracts\Http\Resources\ScopedResource;
+use App\Http\Resources\Concerns\HasScopes;
 use App\Models\GameVersion;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Spatie\MediaLibrary\MediaCollections\MediaCollection;
 
-class GameVersionResource extends JsonResource
+/**
+ * Transform a game version, optionally limited to the `management` scope.
+ * warcraftlogs and the usage counts are omitted unless loaded.
+ */
+class GameVersionResource extends JsonResource implements ScopedResource
 {
-    protected const SCOPE_DEFAULT = 'default';
-
-    protected const SCOPE_MANAGEMENT = 'management';
-
-    protected string $scope = self::SCOPE_DEFAULT;
+    use HasScopes;
 
     /**
      * @var array<string, mixed>|null
      */
     protected ?array $links = null;
-
-    /**
-     * The full shape for the Officers' game version management pages.
-     */
-    public static function forManagement(mixed $resource): static
-    {
-        if ($resource instanceof GameVersion) {
-            $resource->loadMissing('warcraftLogsGuild');
-        }
-
-        return static::withScope($resource, self::SCOPE_MANAGEMENT);
-    }
-
-    /**
-     * @param  iterable<int, GameVersion>  $resources
-     */
-    public static function collectionForManagement(iterable $resources): AnonymousResourceCollection
-    {
-        return static::collection(collect($resources)->map(fn (GameVersion $gameVersion) => static::forManagement($gameVersion)));
-    }
 
     /**
      * Attach the management action links for this game version.
@@ -53,14 +35,6 @@ class GameVersionResource extends JsonResource
         return $this;
     }
 
-    protected static function withScope(mixed $resource, string $scope): static
-    {
-        $instance = new static($resource);
-        $instance->scope = $scope;
-
-        return $instance;
-    }
-
     /**
      * Transform the resource into an array.
      *
@@ -68,7 +42,7 @@ class GameVersionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $data = [
+        return $this->scoped([
             'id' => $this->id,
             'title' => $this->title,
             'slug' => $this->slug,
@@ -76,32 +50,47 @@ class GameVersionResource extends JsonResource
             'banner_url' => $this->getFirstMediaUrl(GameVersion::MEDIA_BANNER) ?: null,
             'icon_url' => $this->getFirstMediaUrl(GameVersion::MEDIA_ICON) ?: null,
             'logo_url' => $this->getFirstMediaUrl(GameVersion::MEDIA_LOGO) ?: null,
-        ];
-
-        if ($this->scope !== self::SCOPE_MANAGEMENT) {
-            return $data;
-        }
-
-        return [
-            ...$data,
             'realm' => $this->realm,
             'guild_name' => $this->guild_name,
             'uses_surnames' => $this->uses_surnames,
             'faction' => $this->faction,
             'release_date' => $this->release_date?->toDateString(),
             'blizzard' => ['namespace' => $this->blizzard_namespace],
-            'warcraftlogs' => [
+            'warcraftlogs' => $this->when($this->relationLoaded('warcraftLogsGuild'), fn (): array => [
                 'guild' => $this->warcraft_logs_guild_id,
                 'namespace' => [
                     'value' => $this->warcraftLogsGuild?->namespace,
                     'label' => $this->warcraftLogsGuild?->namespace->label(),
                 ],
-            ],
+            ]),
             'phases_count' => $this->whenCounted('phases'),
             'items_count' => $this->whenCounted('items'),
             'characters_count' => $this->whenCounted('characters'),
             'guild_ranks_count' => $this->whenCounted('guildRanks'),
             'links' => $this->when($this->links !== null, fn (): ?array => $this->links),
+        ]);
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    protected function scopeDefinitions(): array
+    {
+        return ['management' => $this->management()];
+    }
+
+    /**
+     * Every field, for the Officers' game version management pages.
+     *
+     * @return list<string>
+     */
+    #[ScopeDefinition]
+    protected function management(): array
+    {
+        return [
+            'id', 'title', 'slug', 'color', 'banner_url', 'icon_url', 'logo_url',
+            'realm', 'guild_name', 'uses_surnames', 'faction', 'release_date', 'blizzard', 'warcraftlogs',
+            'phases_count', 'items_count', 'characters_count', 'guild_ranks_count', 'links',
         ];
     }
 

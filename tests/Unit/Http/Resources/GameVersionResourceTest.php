@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -96,7 +97,10 @@ class GameVersionResourceTest extends TestCase
 
         $array = (new GameVersionResource($gameVersion))->resolve(new Request);
 
-        $this->assertSame(['id', 'title', 'slug', 'color', 'banner_url', 'icon_url', 'logo_url'], array_keys($array));
+        $this->assertSame(
+            ['id', 'title', 'slug', 'color', 'banner_url', 'icon_url', 'logo_url', 'realm', 'guild_name', 'uses_surnames', 'faction', 'release_date', 'blizzard'],
+            array_keys($array),
+        );
     }
 
     // ==================== images ====================
@@ -132,16 +136,6 @@ class GameVersionResourceTest extends TestCase
     // ==================== management scope ====================
 
     #[Test]
-    public function the_default_shape_leaves_out_whether_characters_have_surnames(): void
-    {
-        $array = (new GameVersionResource(GameVersion::factory()->withSurnames()->make()))->resolve(new Request);
-
-        $this->assertArrayNotHasKey('uses_surnames', $array);
-    }
-
-    // ==================== forManagement ====================
-
-    #[Test]
     public function the_management_scope_exposes_every_editable_field(): void
     {
         $gameVersion = GameVersion::factory()->make([
@@ -161,7 +155,7 @@ class GameVersionResourceTest extends TestCase
             'namespace' => WarcraftLogsNamespace::Anniversary,
         ]));
 
-        $array = GameVersionResource::forManagement($gameVersion)->resolve(new Request);
+        $array = $gameVersion->loadMissing('warcraftLogsGuild')->toResource()->scope('management')->resolve(new Request);
 
         $this->assertSame([
             'id' => 7,
@@ -197,7 +191,7 @@ class GameVersionResourceTest extends TestCase
             'warcraft_logs_guild_id' => null,
         ]);
 
-        $array = GameVersionResource::forManagement($gameVersion)->resolve(new Request);
+        $array = $gameVersion->loadMissing('warcraftLogsGuild')->toResource()->scope('management')->resolve(new Request);
 
         $this->assertNull($array['realm']);
         $this->assertNull($array['faction']);
@@ -213,7 +207,7 @@ class GameVersionResourceTest extends TestCase
         $gameVersion->setAttribute('phases_count', 2);
         $gameVersion->setAttribute('guild_tags_count', 3);
 
-        $array = GameVersionResource::forManagement($gameVersion)->resolve(new Request);
+        $array = $gameVersion->loadMissing('warcraftLogsGuild')->toResource()->scope('management')->resolve(new Request);
 
         $this->assertSame(2, $array['phases_count']);
         $this->assertArrayNotHasKey('guild_tags_count', $array);
@@ -226,11 +220,44 @@ class GameVersionResourceTest extends TestCase
         $gameVersion = GameVersion::factory()->make();
         $links = ['edit' => 'https://example.test/edit'];
 
-        $withoutLinks = GameVersionResource::forManagement($gameVersion)->resolve(new Request);
-        $withLinks = GameVersionResource::forManagement($gameVersion)->withLinks($links)->resolve(new Request);
+        $withoutLinks = $gameVersion->loadMissing('warcraftLogsGuild')->toResource()->scope('management')->resolve(new Request);
+        $withLinks = $gameVersion->loadMissing('warcraftLogsGuild')->toResource()->scope('management')->withLinks($links)->resolve(new Request);
 
         $this->assertArrayNotHasKey('links', $withoutLinks);
         $this->assertSame($links, $withLinks['links']);
+    }
+
+    #[Test]
+    public function the_management_scope_omits_warcraftlogs_when_the_guild_is_not_loaded(): void
+    {
+        $array = GameVersion::factory()->create()->fresh()->toResource()->scope('management')->resolve(new Request);
+
+        $this->assertArrayNotHasKey('warcraftlogs', $array);
+    }
+
+    #[Test]
+    public function the_unscoped_resource_does_not_query_the_warcraft_logs_guild(): void
+    {
+        GameVersion::factory()->count(2)->create(['warcraft_logs_guild_id' => Guild::factory()->create()->id]);
+        $gameVersions = GameVersion::all();
+
+        DB::enableQueryLog();
+        GameVersionResource::collection($gameVersions)->resolve(new Request);
+
+        $this->assertEmpty(array_filter(
+            DB::getQueryLog(),
+            fn (array $query): bool => str_contains($query['query'], 'warcraft_logs_guilds'),
+        ));
+    }
+
+    #[Test]
+    public function the_management_scope_keeps_per_item_links_in_a_collection(): void
+    {
+        $links = ['edit' => 'https://example.test/edit'];
+        $collection = GameVersionResource::collection([GameVersion::factory()->make()])->scope('management');
+        $collection->collection->first()->withLinks($links);
+
+        $this->assertSame($links, $collection->resolve(new Request)[0]['links']);
     }
 
     // ==================== metadata ====================
