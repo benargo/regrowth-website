@@ -47,7 +47,7 @@ function EventRow({ event }) {
             </span>
             <span className="text-ink-200 font-serif text-lg">{event.title}</span>
             {event.raids.length > 0 && (
-                <span className="text-ink-500 hidden text-sm md:inline">{event.raids.join(", ")}</span>
+                <span className="text-ink-500 hidden text-sm md:inline">{event.raids.map((raid) => raid.name).join(", ")}</span>
             )}
         </>
     );

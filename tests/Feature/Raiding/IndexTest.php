@@ -86,6 +86,24 @@ class IndexTest extends TestCase
     }
 
     #[Test]
+    public function guests_never_receive_the_members_shape_cached_for_signed_in_users(): void
+    {
+        $this->fakeDiscordChannel(name: 'raid-events', position: 1);
+        Event::factory()->create(['end_time' => now()->addDays(3)]);
+
+        $this->actingAs(User::factory()->create())->get(route('raiding.index'))
+            ->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload->has('upcomingEvents.0.channel')->etc()));
+
+        auth()->logout();
+
+        $this->get(route('raiding.index'))
+            ->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('upcomingEvents.0', fn (Assert $event) => $event->missing('channel')->missing('duration')->etc())
+                ->etc()
+            ));
+    }
+
+    #[Test]
     public function template_events_are_excluded_from_upcoming_events(): void
     {
         $this->fakeDiscordChannel(name: 'raid-events', position: 1);

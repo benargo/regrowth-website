@@ -9,16 +9,19 @@ use App\Models\Event;
 use App\Models\PlayableRace;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
 #[Group('home')]
 class HomeControllerTest extends TestCase
 {
+    use MocksDiscordService;
     use RefreshDatabase;
 
     // ==================== index ====================
@@ -140,6 +143,63 @@ class HomeControllerTest extends TestCase
                     ->hasAll(['id', 'title', 'start_time', 'end_time', 'raids'])
                     ->missing('channel')
                     ->missing('channel_id')
+                )->etc())
+            );
+    }
+
+    #[Test]
+    public function guests_see_upcoming_events_in_the_visitors_shape(): void
+    {
+        Event::factory()->live()->create([
+            'start_time' => now()->addDay(),
+            'end_time' => now()->addDay()->addHours(3),
+        ]);
+
+        $this->get(route('home'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload->has('upcomingEvents.0', fn (Assert $event) => $event
+                    ->has('raids')
+                    ->missing('duration')
+                    ->etc()
+                )->etc())
+            );
+    }
+
+    #[Test]
+    public function guests_never_receive_upcoming_events_cached_in_the_previous_raid_names_shape(): void
+    {
+        $event = Event::factory()->live()->create([
+            'start_time' => now()->addDay(),
+            'end_time' => now()->addDay()->addHours(3),
+        ]);
+        Cache::tags('raiding', 'events')->put('events:upcoming:public', [['id' => $event->id, 'raids' => ['Black Temple']]], now()->addMinutes(10));
+
+        $this->get(route('home'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload->has('upcomingEvents.0', fn (Assert $upcoming) => $upcoming
+                    ->has('title')
+                    ->etc()
+                )->etc())
+            );
+    }
+
+    #[Test]
+    public function signed_in_users_see_upcoming_events_in_the_members_shape(): void
+    {
+        $this->fakeDiscordChannel(name: 'raid-chat', position: 3);
+        Event::factory()->live()->create([
+            'start_time' => now()->addDay(),
+            'end_time' => now()->addDay()->addHours(3),
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('home'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload->has('upcomingEvents.0', fn (Assert $event) => $event
+                    ->has('duration')
+                    ->has('raids')
+                    ->where('channel.name', 'raid-chat')
+                    ->etc()
                 )->etc())
             );
     }

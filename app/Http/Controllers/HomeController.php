@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Events\BuildEventsForViewer;
 use App\Attributes\UsesTheme;
 use App\Contracts\HasCharacterMedia;
 use App\Enums\Theme;
-use App\Http\Resources\EventResource;
 use App\Jobs\AttachRenderToCharacter;
 use App\Models\Character;
 use App\Models\Event;
@@ -33,16 +33,15 @@ class HomeController extends Controller
             'officerRenders' => Inertia::defer(fn () => $this->resolveOfficerRenders()),
             'upcomingEvents' => Inertia::defer(function () use ($request) {
                 return Cache::tags('raiding', 'events')->remember(
-                    'events:upcoming:public',
+                    $request->user() ? 'events:upcoming:home:members' : 'events:upcoming:home:visitors',
                     now()->addMinutes(10),
-                    fn () => EventResource::collectionForVisitors(
+                    fn () => BuildEventsForViewer::run(
                         Event::live()
-                            ->with('raids')
                             ->where('end_time', '>=', now())
                             ->orderBy('start_time')
-                            ->take(self::UPCOMING_EVENT_LIMIT)
-                            ->get()
-                    )->map->resolve($request)->all()
+                            ->take(self::UPCOMING_EVENT_LIMIT),
+                        $request,
+                    )->resolve($request)
                 );
             }),
         ]);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Events\AttachEventChannel;
 use App\Contracts\HasBlizzardIcons;
 use App\Http\Resources\CharacterSummaryResource;
 use App\Http\Resources\EventResource;
@@ -49,7 +50,7 @@ class EventController extends Controller implements HasBlizzardIcons
         $event->load('raids.bosses.media', 'bosses.media', 'assignments.group', 'characters.rank');
 
         return Inertia::render('Raiding/Plans/Show', [
-            'event' => (new EventResource($event))->resolve($request),
+            'event' => AttachEventChannel::run(new EventResource($event))->resolve($request),
             'questionMarkIconUrl' => URL::signedRoute('icons.show', [
                 'size' => self::DEFAULT_MEDIA_SIZE,
                 'name' => self::BLIZZARD_UNKNOWN_ICON.'.jpg',
@@ -67,7 +68,7 @@ class EventController extends Controller implements HasBlizzardIcons
         $event->load('raids.bosses.media', 'bosses.media', 'assignments.group', 'characters.rank');
 
         return Inertia::render('Raiding/Plans/Edit', [
-            'event' => (new EventResource($event))->resolve($request),
+            'event' => AttachEventChannel::run(new EventResource($event))->resolve($request),
             'targetMarkers' => TargetMarker::all()->map(fn (TargetMarker $m) => ['slug' => $m->slug, 'name' => $m->name])->values(),
             'characters' => Inertia::optional(function () use ($request) {
                 return Character::with('rank', 'playableClass')

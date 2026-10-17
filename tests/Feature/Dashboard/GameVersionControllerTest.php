@@ -8,6 +8,8 @@ use App\Enums\Faction;
 use App\Enums\GameVersionSetupStep;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
+use App\Http\Middleware\SetResourceScope;
+use App\Http\Resources\GameVersionResource;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\Phase;
@@ -20,6 +22,7 @@ use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
@@ -470,6 +473,35 @@ class GameVersionControllerTest extends DashboardTestCase
                 'update' => route('management.game-versions.update', $gameVersion),
                 'review' => route('management.game-versions.review', $gameVersion),
             ])
+        );
+    }
+
+    #[Test]
+    #[Group('contract')]
+    #[TestWith(['management.game-versions.index'])]
+    #[TestWith(['management.game-versions.edit'])]
+    #[TestWith(['management.game-versions.setup'])]
+    #[TestWith(['management.game-versions.review'])]
+    public function the_management_pages_scope_the_game_version_resource_for_the_request(string $routeName): void
+    {
+        $this->assertContains(
+            SetResourceScope::class.':'.GameVersionResource::class.',management',
+            Route::getRoutes()->getByName($routeName)->gatherMiddleware(),
+        );
+    }
+
+    #[Test]
+    public function the_edit_page_receives_the_management_shape(): void
+    {
+        $guild = Guild::factory()->create(['namespace' => WarcraftLogsNamespace::Anniversary]);
+        $gameVersion = GameVersion::factory()->create(['realm' => 'Thunderstrike', 'warcraft_logs_guild_id' => $guild->id]);
+        $this->fakeRelationships($gameVersion);
+
+        $response = $this->actingAs($this->officer)->get(route('management.game-versions.edit', $gameVersion));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('gameVersion.data.realm', 'Thunderstrike')
+            ->where('gameVersion.data.warcraftlogs.namespace.value', WarcraftLogsNamespace::Anniversary->value)
         );
     }
 
