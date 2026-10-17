@@ -187,12 +187,17 @@ return new class extends Migration
     }
 
     /**
-     * Drop the item_id foreign key from each table that references items.
+     * Drop the item_id foreign key from each table that references items,
+     * including the legacy pivot_dailyquest_rewards table when it exists.
      */
     private function dropInboundItemForeignKeys(): void
     {
         foreach (self::INBOUND_ITEM_FK_TABLES as $table) {
             $this->dropItemIdForeignKey($table);
+        }
+
+        if (Schema::hasTable('pivot_dailyquest_rewards')) {
+            $this->dropItemIdForeignKey('pivot_dailyquest_rewards');
         }
     }
 
