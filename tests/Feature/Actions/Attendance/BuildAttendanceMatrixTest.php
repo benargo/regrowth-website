@@ -335,13 +335,13 @@ class BuildAttendanceMatrixTest extends TestCase
 
     #[Test]
     #[DataProvider('combineLinkedCharactersCases')]
-    public function it_loads_only_the_playable_class_and_rank_on_row_characters(bool $combineLinkedCharacters): void
+    public function it_drops_the_pivot_from_row_characters(bool $combineLinkedCharacters): void
     {
         $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $this->makeCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
 
         $character = BuildAttendanceMatrix::run($this->gameVersion, combineLinkedCharacters: $combineLinkedCharacters)->rows->sole()->character;
 
-        $this->assertSame(['playableClass', 'rank'], array_keys($character->getRelations()));
+        $this->assertArrayNotHasKey('pivot', $character->getRelations());
     }
 
     /**

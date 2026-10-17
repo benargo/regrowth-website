@@ -3,6 +3,7 @@
 namespace Tests\Unit\Http\Resources\Concerns;
 
 use App\Attributes\Http\Resources\ResourceScope;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Attributes\Group;
@@ -112,6 +113,30 @@ class HasScopeMappingsTest extends TestCase
         $this->assertSame(['id' => 2, 'name' => 'Jaina'], $array['child']);
     }
 
+    #[Test]
+    public function it_scopes_a_nested_resource_resolved_inside_to_array(): void
+    {
+        $array = $this->parentResolvingItsChild()->scope('listing')->resolve(new Request);
+
+        $this->assertSame(['id' => 2, 'name' => 'Jaina'], $array['child']);
+    }
+
+    #[Test]
+    public function it_leaves_a_nested_resource_resolved_inside_to_array_unscoped_without_a_mapping(): void
+    {
+        $array = $this->parentResolvingItsChild()->scope('full')->resolve(new Request);
+
+        $this->assertArrayHasKey('secret', $array['child']);
+    }
+
+    #[Test]
+    public function it_leaves_a_nested_resource_resolved_inside_to_array_unscoped_without_a_scope(): void
+    {
+        $array = $this->parentResolvingItsChild()->resolve(new Request);
+
+        $this->assertArrayHasKey('secret', $array['child']);
+    }
+
     /**
      * @return array{id: int, child: array<string, mixed>, children: list<array<string, mixed>>}
      */
@@ -133,5 +158,25 @@ class HasScopeMappingsTest extends TestCase
     private function resolveDeep(JsonResource $resource): array
     {
         return json_decode(json_encode($resource->resolve()), true);
+    }
+
+    /**
+     * A parent resource that resolves its child to an array inside `toArray()`.
+     */
+    private function parentResolvingItsChild(): ParentScopedTestResource
+    {
+        return new class($this->row()) extends ParentScopedTestResource
+        {
+            /**
+             * @return array<string, mixed>
+             */
+            public function toArray(Request $request): array
+            {
+                return $this->scoped([
+                    'id' => $this->resource['id'],
+                    'child' => $this->scopeNested(new ScopedTestResource($this->resource['child']))->resolve($request),
+                ]);
+            }
+        };
     }
 }

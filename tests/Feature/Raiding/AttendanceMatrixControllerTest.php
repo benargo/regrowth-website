@@ -156,7 +156,9 @@ class AttendanceMatrixControllerTest extends TestCase
                 ->has('matrix.columns.0.zone_name')
                 ->has('matrix.rows', 1)
                 ->where('matrix.rows.0.character.name', 'Thrall')
-                ->where('matrix.rows.0.character.rank.id', $rank->id)
+                ->where('matrix.rows.0.character.rank.name', $rank->name)
+                ->missing('matrix.rows.0.character.rank.id')
+                ->missing('matrix.rows.0.character.rank.sort_order')
                 ->where('matrix.rows.0.attendance.0', 1)
             )
         );
@@ -187,6 +189,7 @@ class AttendanceMatrixControllerTest extends TestCase
                 ->has('matrix.rows.0.character.playable_class')
                 ->where('matrix.rows.0.character.playable_class.name', 'Warrior')
                 ->has('matrix.rows.0.character.playable_class.icon_url')
+                ->missing('matrix.rows.0.character.playable_class.slug')
             )
         );
     }
@@ -1012,6 +1015,25 @@ class AttendanceMatrixControllerTest extends TestCase
                     ->has('matrix.rows', 1)
                     ->where('matrix.rows.0.character.name', 'Thrall')
                     ->where('matrix.rows.0.attendance.0', 1)));
+    }
+
+    #[Test]
+    public function invoke_deferred_prop_rows_omit_linked_characters_when_combining(): void
+    {
+        $main = $this->makeCharacter($this->gameVersion, $this->rank, ['is_main' => true]);
+        $alt = $this->makeCharacter($this->gameVersion, $this->rank, ['is_main' => false]);
+        $this->linkCharacters($main, $alt);
+        $report = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
+        $this->attend($report, $main);
+        $this->attend($report, $alt);
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.matrix'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('matrix.rows', 1)
+                    ->where('matrix.rows.0.character.id', $main->id)
+                    ->missing('matrix.rows.0.character.linked_characters')));
     }
 
     #[Test]

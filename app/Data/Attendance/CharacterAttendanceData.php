@@ -5,7 +5,7 @@ namespace App\Data\Attendance;
 use App\Data\Transformers\ToResourceListTransformer;
 use App\Data\Transformers\ToResourceTransformer;
 use App\Enums\Presence;
-use App\Http\Resources\CharacterSummaryResource;
+use App\Http\Resources\CharacterResource;
 use App\Http\Resources\PlannedAbsenceSummaryResource;
 use App\Models\Character;
 use App\Models\PlannedAbsence;
@@ -32,7 +32,7 @@ final class CharacterAttendanceData extends Resource
      * @param  array<int, array<int, string>>|Optional  $attendanceNames  one per raid column; omitted when optional
      */
     public function __construct(
-        #[WithTransformer(ToResourceTransformer::class, resource: CharacterSummaryResource::class)]
+        #[WithTransformer(ToResourceTransformer::class, resource: CharacterResource::class, scope: 'attendance')]
         public readonly Character $character,
         #[Hidden]
         public readonly CarbonInterface $firstAttendance,

@@ -159,21 +159,29 @@ trait HasScopes
         }
 
         $scopedData = array_intersect_key($expanded, array_flip(static::definedScopes()[$scope]));
-        $mappings = static::definedScopeMappings()[$scope] ?? [];
 
         foreach ($scopedData as $value) {
-            if (! $value instanceof ScopedResource) {
-                continue;
-            }
-
-            $nestedClass = $value instanceof ScopedResourceCollection ? $value->collects : $value::class;
-
-            if (array_key_exists($nestedClass, $mappings)) {
-                $value->scope($mappings[$nestedClass]);
+            if ($value instanceof ScopedResource) {
+                $this->applyScopeMapping($value, $scope);
             }
         }
 
         return $scopedData;
+    }
+
+    /**
+     * Apply the active scope's mapping for the given nested resource's class,
+     * for a nested resource that is resolved inside `toArray()`.
+     */
+    protected function scopeNested(ScopedResource $resource): ScopedResource
+    {
+        $scope = $this->activeScope();
+
+        if ($scope !== null) {
+            $this->applyScopeMapping($resource, $scope);
+        }
+
+        return $resource;
     }
 
     /**
@@ -198,6 +206,22 @@ trait HasScopes
         Log::error("Scope [{$key}] is not defined on [".static::class.'].');
 
         return false;
+    }
+
+    /**
+     * Apply the given scope's mapping for the nested resource's class, matching a
+     * `ScopedResourceCollection` by the class it collects.
+     */
+    private function applyScopeMapping(ScopedResource $resource, string $scope): void
+    {
+        $nestedClass = $resource instanceof ScopedResourceCollection ? $resource->collects : $resource::class;
+        $mappings = static::definedScopeMappings()[$scope] ?? [];
+
+        if (! array_key_exists($nestedClass, $mappings)) {
+            return;
+        }
+
+        $resource->scope($mappings[$nestedClass]);
     }
 
     /**

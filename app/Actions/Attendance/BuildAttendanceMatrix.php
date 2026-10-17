@@ -54,7 +54,7 @@ class BuildAttendanceMatrix
             $rows = CombineLinkedCharacters::run($rows, $resolvedRankIds, $clusters->count());
         }
 
-        $rows->each(fn (CharacterAttendanceData $row): Character => $row->character->unsetRelation('linkedCharacters')->unsetRelation('pivot'));
+        $rows->each(fn (CharacterAttendanceData $row): Character => $row->character->unsetRelation('pivot'));
 
         return new AttendanceMatrixData(columns: $clusters->reverse()->values(), rows: $rows);
     }

@@ -116,7 +116,7 @@ class CharacterAttendanceDataTest extends TestCase
     }
 
     #[Test]
-    public function it_emits_the_character_in_its_summary_shape_with_rank_and_playable_class(): void
+    public function it_emits_the_character_in_its_attendance_shape_with_rank_and_playable_class(): void
     {
         $rank = GuildRank::factory()->create(['name' => 'Raider']);
         $character = Character::factory()
@@ -126,13 +126,12 @@ class CharacterAttendanceDataTest extends TestCase
 
         $array = $this->row($character)->toArray()['character'];
 
+        $this->assertSame(['id', 'name', 'playable_class', 'rank'], array_keys($array));
         $this->assertSame($character->id, $array['id']);
         $this->assertSame('Thrall', $array['name']);
-        $this->assertSame($rank->id, $array['rank']['id']);
-        $this->assertSame('Raider', $array['rank']['name']);
+        $this->assertSame(['name' => 'Raider', 'slug' => 'raider'], $array['rank']);
+        $this->assertSame(['id', 'name', 'icon_url'], array_keys($array['playable_class']));
         $this->assertSame('Druid', $array['playable_class']['name']);
-        $this->assertArrayHasKey('icon_url', $array['playable_class']);
-        $this->assertArrayNotHasKey('slug', $array);
     }
 
     #[Test]

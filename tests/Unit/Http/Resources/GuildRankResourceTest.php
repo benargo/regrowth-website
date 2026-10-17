@@ -78,4 +78,19 @@ class GuildRankResourceTest extends TestCase
 
         $this->assertSame(2, $array['characters_count']);
     }
+
+    // ==================== attendance scope ====================
+
+    #[Test]
+    public function the_attendance_scope_emits_only_the_name_and_slug_even_with_characters_counted(): void
+    {
+        $rank = GuildRank::factory()->create(['name' => 'Raider']);
+        Character::factory()->create(['rank_id' => $rank->id]);
+
+        $rank = GuildRank::withCount('characters')->findOrFail($rank->id);
+
+        $array = (new GuildRankResource($rank))->scope('attendance')->resolve(new Request);
+
+        $this->assertSame(['name' => 'Raider', 'slug' => 'raider'], $array);
+    }
 }

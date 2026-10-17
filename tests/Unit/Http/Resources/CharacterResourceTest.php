@@ -227,6 +227,16 @@ class CharacterResourceTest extends TestCase
         $this->assertSame($rank->id, $array['rank']['id']);
     }
 
+    #[Test]
+    public function it_returns_null_rank_when_loaded_but_unset(): void
+    {
+        $character = Character::factory()->create(['rank_id' => null]);
+
+        $array = (new CharacterResource($character->load('rank')))->toArray(new Request);
+
+        $this->assertNull($array['rank']);
+    }
+
     // ==================== specializations relation ====================
 
     #[Test]
@@ -354,5 +364,55 @@ class CharacterResourceTest extends TestCase
         $array = (new CharacterResource($character->load('user')))->toArray(new Request);
 
         $this->assertNull($array['user']);
+    }
+
+    // ==================== attendance scope ====================
+
+    #[Test]
+    public function the_attendance_scope_emits_only_the_keys_the_matrix_reads_even_with_linked_characters_loaded(): void
+    {
+        $character = $this->loadedCharacter();
+        $character->setRelation('linkedCharacters', Character::factory()->count(1)->create());
+
+        $array = (new CharacterResource($character))->scope('attendance')->resolve(new Request);
+
+        $this->assertSame(['id', 'name', 'playable_class', 'rank'], array_keys($array));
+    }
+
+    #[Test]
+    public function the_attendance_scope_emits_only_the_rank_and_class_fields_the_matrix_reads(): void
+    {
+        $character = $this->loadedCharacter(rankName: 'Raider', className: 'Druid');
+
+        $array = (new CharacterResource($character))->scope('attendance')->resolve(new Request);
+
+        $this->assertSame(['name' => 'Raider', 'slug' => 'raider'], $array['rank']);
+        $this->assertSame(['id', 'name', 'icon_url'], array_keys($array['playable_class']));
+        $this->assertSame('Druid', $array['playable_class']['name']);
+    }
+
+    #[Test]
+    public function the_attendance_scope_omits_rank_and_playable_class_when_not_loaded(): void
+    {
+        $character = Character::factory()->create();
+
+        $array = (new CharacterResource($character))->scope('attendance')->resolve(new Request);
+
+        $this->assertSame(['id', 'name'], array_keys($array));
+    }
+
+    /**
+     * A character with its rank, playable class and media loaded.
+     */
+    private function loadedCharacter(string $rankName = 'Raider', string $className = 'Warrior'): Character
+    {
+        $rank = GuildRank::factory()->create(['name' => $rankName]);
+        $playableClass = PlayableClass::factory()->create(['name' => $className]);
+
+        return Character::factory()
+            ->for($rank, 'rank')
+            ->withPlayableClass($playableClass)
+            ->create()
+            ->load(['rank', 'playableClass', 'media']);
     }
 }

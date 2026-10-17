@@ -2,17 +2,23 @@
 
 namespace App\Http\Resources;
 
+use App\Attributes\Http\Resources\ScopeDefinition;
 use App\Contracts\HasCharacterMedia;
+use App\Contracts\Http\Resources\ScopedResource;
+use App\Http\Resources\Concerns\HasScopes;
 use App\Models\Character;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
+ * Transform a character, optionally limited to the `attendance` scope.
  * `portrait_url` is only included when `media` is loaded.
  * `user` is only included when `user` is loaded; load `user.discordRoles` with it.
  */
-class CharacterResource extends JsonResource
+class CharacterResource extends JsonResource implements ScopedResource
 {
+    use HasScopes;
+
     /**
      * The resource that this resource collects.
      *
@@ -27,7 +33,7 @@ class CharacterResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return [
+        return $this->scoped([
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
@@ -36,19 +42,46 @@ class CharacterResource extends JsonResource
             'is_loot_councillor' => $this->is_loot_councillor,
             'portrait_url' => $this->whenLoaded('media', fn () => $this->getFirstMediaUrl(HasCharacterMedia::MEDIA_COLLECTION) ?: null),
             'planned_absences' => $this->whenLoaded('plannedAbsences', fn () => PlannedAbsenceResource::collection($this->plannedAbsences)),
-            'playable_class' => $this->whenLoaded('playableClass', fn () => $this->playableClass?->toResource()->resolve($request)),
+            'playable_class' => $this->whenLoaded('playableClass', fn (): array => $this->scopeNested($this->playableClass->toResource())->resolve($request)),
             'playable_race' => $this->whenLoaded('playableRace', fn () => (new PlayableRaceResource($this->playableRace))->resolve($request)),
             'gender' => $this->gender,
             'pivot' => $this->whenPivotLoaded('pivot_characters_raid_reports', fn () => [
                 'presence' => $this->pivot->presence,
                 'is_loot_councillor' => $this->pivot->is_loot_councillor,
             ]),
-            'rank' => $this->whenLoaded('rank', fn () => (new GuildRankResource($this->rank))->resolve($request)),
+            'rank' => $this->whenLoaded('rank', fn (): array => $this->scopeNested($this->rank->toResource())->resolve($request)),
             'specializations' => $this->whenLoaded('specializations', fn () => PlayableSpecializationResource::collection($this->specializations)->resolve($request)),
             // Recursive self-reference: never eager-load linkedCharacters.linkedCharacters
             // or this will infinite-loop. Use a separate summary resource for nested cases.
             'linked_characters' => $this->whenLoaded('linkedCharacters', fn () => CharacterResource::collection($this->linkedCharacters)->resolve($request)),
             'user' => $this->whenLoaded('user', fn () => $this->user?->toResource()),
-        ];
+        ]);
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    protected function scopeDefinitions(): array
+    {
+        return ['attendance' => $this->attendance()];
+    }
+
+    /**
+     * @return array<string, array<class-string, string>>
+     */
+    protected function scopeMappings(): array
+    {
+        return ['attendance' => [GuildRankResource::class => 'attendance', PlayableClassResource::class => 'attendance']];
+    }
+
+    /**
+     * Id, name, playable class and rank, for the attendance matrix.
+     *
+     * @return list<string>
+     */
+    #[ScopeDefinition]
+    protected function attendance(): array
+    {
+        return ['id', 'name', 'playable_class', 'rank'];
     }
 }
