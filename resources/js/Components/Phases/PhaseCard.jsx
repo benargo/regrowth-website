@@ -34,6 +34,7 @@ export default function PhaseCard({ phase, dragHandle = null, onDelete, headingL
             badge={phase.is_current ? "Current phase" : null}
             handle={dragHandle}
             headingLevel={headingLevel}
+            hasBanner
             details={[
                 ["Starts", <PhaseStartDate startDate={phase.start_date} />],
                 ["Raids", raids.length > 0 ? raids.map((raid) => raid.name).join(", ") : "None yet"],

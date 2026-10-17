@@ -1,11 +1,12 @@
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import IndexLayout from "@/Components/Datasets/IndexLayout";
+import GameVersionSelector from "@/Components/GameVersions/GameVersionSelector";
 import GameVersionPhases from "@/Components/Phases/GameVersionPhases";
 import SharedHeader from "@/Components/SharedHeader";
 import useRecordDeletion from "@/Hooks/useRecordDeletion";
 import Master from "@/Layouts/Master";
 
-export default function Index({ groups, routes }) {
+export default function Index({ gameVersion, gameVersions, groups, routes }) {
     const deletion = useRecordDeletion();
 
     return (
@@ -13,7 +14,7 @@ export default function Index({ groups, routes }) {
             <SharedHeader backgroundClass="bg-officer-meeting" title="Phases" />
 
             <IndexLayout
-                intro="Each game version's content phases. Phases with a start date follow it; put the rest in the order you expect them to arrive."
+                intro="A game version's content phases. Phases with a start date follow it; put the rest in the order you expect them to arrive."
                 addHref={routes.create}
                 addLabel="Add phase"
                 layout="stack"
@@ -21,14 +22,19 @@ export default function Index({ groups, routes }) {
                 emptyIcon="hourglass-start"
                 emptyMessage="No game versions or phases yet. Add a phase to get started."
             >
-                {groups.map((group) => (
-                    <GameVersionPhases
-                        key={group.game_version?.data.id ?? "none"}
-                        group={group}
-                        reorderUrl={routes.reorder}
-                        onDelete={deletion.request}
-                    />
-                ))}
+                <div>
+                    <GameVersionSelector gameVersions={gameVersions.data} currentGameVersion={gameVersion?.data} />
+                    <div className="flex flex-col gap-12">
+                        {groups.map((group) => (
+                            <GameVersionPhases
+                                key={group.game_version?.data.id ?? "none"}
+                                group={group}
+                                reorderUrl={routes.reorder}
+                                onDelete={deletion.request}
+                            />
+                        ))}
+                    </div>
+                </div>
             </IndexLayout>
 
             <ConfirmationModal

@@ -34,26 +34,25 @@ class BuildPhaseIndexGroupsTest extends TestCase
     }
 
     #[Test]
-    public function it_groups_phases_under_each_game_version_newest_release_first(): void
+    public function it_groups_the_given_game_versions_phases(): void
     {
-        $older = GameVersion::factory()->create(['title' => 'Era', 'release_date' => '2019-08-27']);
-        $newer = GameVersion::factory()->create(['title' => 'Anniversary', 'release_date' => '2026-02-06']);
-        $olderPhase = Phase::factory()->for($older)->create();
-        $newerPhase = Phase::factory()->for($newer)->create();
+        $gameVersion = GameVersion::factory()->create(['title' => 'Anniversary']);
+        $phase = Phase::factory()->for($gameVersion)->create();
+        Phase::factory()->for(GameVersion::factory())->create();
 
-        $groups = $this->build();
+        $groups = $this->build($gameVersion);
 
-        $this->assertSame(['Anniversary', 'Era'], array_map(fn (array $group): string => $group['game_version']['title'], $groups));
-        $this->assertSame([$newerPhase->id], array_column($groups[0]['phases'], 'id'));
-        $this->assertSame([$olderPhase->id], array_column($groups[1]['phases'], 'id'));
+        $this->assertCount(1, $groups);
+        $this->assertSame('Anniversary', $groups[0]['game_version']['title']);
+        $this->assertSame([$phase->id], array_column($groups[0]['phases'], 'id'));
     }
 
     #[Test]
     public function it_includes_a_game_version_with_no_phases(): void
     {
-        GameVersion::factory()->create();
+        $gameVersion = GameVersion::factory()->create();
 
-        $groups = $this->build();
+        $groups = $this->build($gameVersion);
 
         $this->assertCount(1, $groups);
         $this->assertSame([], $groups[0]['phases']);
@@ -62,10 +61,10 @@ class BuildPhaseIndexGroupsTest extends TestCase
     #[Test]
     public function it_lists_phases_without_a_game_version_in_a_last_group(): void
     {
-        GameVersion::factory()->create();
+        $gameVersion = GameVersion::factory()->create();
         $unowned = Phase::factory()->create(['game_version_id' => null]);
 
-        $groups = $this->build();
+        $groups = $this->build($gameVersion);
 
         $this->assertCount(2, $groups);
         $this->assertNull($groups[1]['game_version']);
@@ -75,9 +74,22 @@ class BuildPhaseIndexGroupsTest extends TestCase
     #[Test]
     public function it_leaves_out_the_unowned_group_when_every_phase_has_a_game_version(): void
     {
-        Phase::factory()->for(GameVersion::factory())->create();
+        $gameVersion = GameVersion::factory()->create();
+        Phase::factory()->for($gameVersion)->create();
 
-        $this->assertCount(1, $this->build());
+        $this->assertCount(1, $this->build($gameVersion));
+    }
+
+    #[Test]
+    public function it_lists_only_unowned_phases_without_a_game_version(): void
+    {
+        $unowned = Phase::factory()->create(['game_version_id' => null]);
+
+        $groups = $this->build(null);
+
+        $this->assertCount(1, $groups);
+        $this->assertNull($groups[0]['game_version']);
+        $this->assertSame([$unowned->id], array_column($groups[0]['phases'], 'id'));
     }
 
     #[Test]
@@ -90,7 +102,7 @@ class BuildPhaseIndexGroupsTest extends TestCase
 
         $this->assertSame(
             [$earlier->id, $later->id, $unscheduled->id],
-            array_column($this->build()[0]['phases'], 'id'),
+            array_column($this->build($gameVersion)[0]['phases'], 'id'),
         );
     }
 
@@ -103,7 +115,7 @@ class BuildPhaseIndexGroupsTest extends TestCase
         $current = Phase::factory()->for($gameVersion)->create(['start_date' => now()->subMonth()]);
         Phase::factory()->for($gameVersion)->upcoming()->create();
 
-        $phases = $this->build()[0]['phases'];
+        $phases = $this->build($gameVersion)[0]['phases'];
 
         $this->assertSame([false, true, false], array_column($phases, 'is_current'));
         $this->assertSame($current->id, $phases[1]['id']);
@@ -112,11 +124,12 @@ class BuildPhaseIndexGroupsTest extends TestCase
     #[Test]
     public function it_attaches_links_usage_counts_and_raids_by_name(): void
     {
-        $phase = Phase::factory()->for(GameVersion::factory())->create();
+        $gameVersion = GameVersion::factory()->create();
+        $phase = Phase::factory()->for($gameVersion)->create();
         Raid::factory()->for($phase)->create(['name' => 'Karazhan']);
         Raid::factory()->for($phase)->create(['name' => "Gruul's Lair"]);
 
-        $resolved = $this->build()[0]['phases'][0];
+        $resolved = $this->build($gameVersion)[0]['phases'][0];
 
         $this->assertSame([
             'edit' => route('management.phases.edit', $phase),
@@ -130,15 +143,15 @@ class BuildPhaseIndexGroupsTest extends TestCase
     // ==================== helpers ====================
 
     /**
-     * Run the action and resolve each group's resources.
+     * Run the action for the game version and resolve each group's resources.
      *
      * @return list<array{game_version: array<string, mixed>|null, phases: list<array<string, mixed>>}>
      */
-    private function build(): array
+    private function build(?GameVersion $gameVersion): array
     {
         return array_map(fn (array $group): array => [
             'game_version' => $group['game_version']?->resolve(new Request),
             'phases' => array_values($group['phases']->resolve(new Request)),
-        ], BuildPhaseIndexGroups::run(new BuildPhaseRoutes));
+        ], BuildPhaseIndexGroups::run($gameVersion, new BuildPhaseRoutes));
     }
 }
