@@ -5,6 +5,7 @@ import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
 import GameVersionSelector from "@/Components/GameVersions/GameVersionSelector";
 import Icon from "@/Components/FontAwesome/Icon";
+import { TableHeader } from "@/Components/Table";
 import DateFilterButton from "@/Components/DateFilterButton";
 import normaliseCharacterName from "@/Helpers/NormaliseCharacterName";
 import Tooltip from "@/Components/Tooltip";
@@ -32,33 +33,33 @@ function MatrixSkeleton() {
     return (
         <div className="animate-pulse overflow-x-auto">
             <table className="w-full min-w-max border-collapse">
-                <thead className="border-b border-ink-600/30">
+                <thead className="border-b border-amber-600/30">
                     <tr>
                         <th className="px-4 py-3">
-                            <div className="bg-ground-700 h-4 w-32 rounded" />
+                            <div className="bg-brown-700 h-4 w-32 rounded" />
                         </th>
                         <th className="px-4 py-3">
-                            <div className="bg-ground-700 h-4 w-12 rounded" />
+                            <div className="bg-brown-700 h-4 w-12 rounded" />
                         </th>
                         {fakeCols.map((_, i) => (
                             <th key={i} className="px-3 py-3">
-                                <div className="bg-ground-700 mx-auto h-4 w-10 rounded" />
+                                <div className="bg-brown-700 mx-auto h-4 w-10 rounded" />
                             </th>
                         ))}
                     </tr>
                 </thead>
-                <tbody className="divide-ink-600 divide-y">
+                <tbody className="divide-amber-600 divide-y">
                     {fakeRows.map((_, i) => (
                         <tr key={i}>
                             <td className="px-4 py-2">
-                                <div className="bg-ground-700 h-4 w-28 rounded" />
+                                <div className="bg-brown-700 h-4 w-28 rounded" />
                             </td>
                             <td className="px-4 py-2">
-                                <div className="bg-ground-700 mx-auto h-4 w-12 rounded" />
+                                <div className="bg-brown-700 mx-auto h-4 w-12 rounded" />
                             </td>
                             {fakeCols.map((_, j) => (
                                 <td key={j} className="px-3 py-2">
-                                    <div className="bg-ground-700 mx-auto h-4 w-4 rounded" />
+                                    <div className="bg-brown-700 mx-auto h-4 w-4 rounded" />
                                 </td>
                             ))}
                         </tr>
@@ -96,7 +97,7 @@ function AttendanceCell({ value, names, plannedAbsence }) {
             </Tooltip>
         );
     } else if (value === 2) {
-        icon = <Icon icon="couch" style="regular" className="text-ink-500" />;
+        icon = <Icon icon="couch" style="regular" className="text-amber-500" />;
     } else if (value === 0) {
         icon = <Icon icon="circle" style="regular" className="text-red-500" />;
     }
@@ -107,7 +108,7 @@ function AttendanceCell({ value, names, plannedAbsence }) {
 function MatrixTable({ raids, rows }) {
     if (rows.length === 0) {
         return (
-            <div className="py-16 text-center text-secondary-400">
+            <div className="py-16 text-center text-gray-400">
                 <Icon icon="table" style="solid" className="mb-4 text-4xl" />
                 <p>No attendance data available.</p>
             </div>
@@ -117,36 +118,29 @@ function MatrixTable({ raids, rows }) {
     return (
         <div className="overflow-x-auto overflow-y-hidden">
             <table className="min-w-max table-auto border-collapse">
-                <thead className="border-b border-ink-600">
+                <thead className="border-b border-amber-600">
                     <tr>
-                        <th className="bg-ground-900 px-4 py-3 text-left text-sm font-semibold text-ink-500 md:sticky md:left-0 md:z-20">
-                            Name
-                        </th>
-                        <th className="bg-ground-900 hidden px-4 py-3 text-left text-sm font-semibold text-ink-500 md:sticky md:left-[max-content] md:z-20 md:table-cell">
+                        <TableHeader className="bg-brown-900 text-left md:sticky md:left-0 md:z-20">Name</TableHeader>
+                        <TableHeader className="bg-brown-900 hidden text-left md:sticky md:left-[max-content] md:z-20 md:table-cell">
                             Rank
-                        </th>
-                        <th className="bg-ground-900 px-4 py-3 text-right text-sm font-semibold text-ink-500 lg:sticky lg:z-20">
-                            %
-                        </th>
+                        </TableHeader>
+                        <TableHeader className="bg-brown-900 text-right lg:sticky lg:z-20">%</TableHeader>
                         {raids.map((raid) => (
-                            <th
-                                key={raid.id}
-                                className="px-3 py-3 text-center text-sm font-semibold whitespace-nowrap text-ink-500"
-                            >
+                            <TableHeader key={raid.id} className="px-3 text-center whitespace-nowrap">
                                 <Tooltip body={raid.zone_name} position="bottom">
                                     <p>{formatRaidDate(raid.start_time, { weekday: "short" })}</p>
                                     <p>{formatRaidDate(raid.start_time, { day: "2-digit", month: "2-digit" })}</p>
                                 </Tooltip>
-                            </th>
+                            </TableHeader>
                         ))}
                     </tr>
                 </thead>
-                <tbody className="divide-ink-600 divide-y">
+                <tbody className="divide-amber-600 divide-y">
                     {rows.map((row) => {
                         const { character } = row;
                         return (
-                            <tr key={character.id} className="hover:bg-ground-800/50 transition-colors">
-                                <td className="bg-ground-900 px-4 py-2 text-sm font-medium text-white md:sticky md:z-10">
+                            <tr key={character.id} className="hover:bg-brown-800/50 transition-colors">
+                                <td className="bg-brown-900 px-4 py-2 text-sm font-medium text-white md:sticky md:z-10">
                                     <div className="flex flex-col gap-1 lg:flex-row lg:gap-2">
                                         <p className="flex grow-0 flex-row items-center font-semibold">
                                             {character.playable_class && (
@@ -160,10 +154,10 @@ function MatrixTable({ raids, rows }) {
                                         </p>
                                     </div>
                                 </td>
-                                <td className="bg-ground-900 hidden px-4 py-2 text-right text-sm whitespace-nowrap text-secondary-300 md:table-cell lg:sticky lg:z-10">
+                                <td className="bg-brown-900 hidden px-4 py-2 text-right text-sm whitespace-nowrap text-gray-300 md:table-cell lg:sticky lg:z-10">
                                     {character.rank && <RankLabel rank={character.rank} />}
                                 </td>
-                                <td className="bg-ground-900 px-4 py-2 text-right text-sm whitespace-nowrap text-secondary-300 lg:sticky lg:z-10">
+                                <td className="bg-brown-900 px-4 py-2 text-right text-sm whitespace-nowrap text-gray-300 lg:sticky lg:z-10">
                                     <span className="hidden md:inline">{row.percentage.toFixed(2)}%</span>
                                     <span className="inline md:hidden">{row.percentage.toFixed(0)}%</span>
                                 </td>

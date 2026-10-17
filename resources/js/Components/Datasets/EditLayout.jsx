@@ -52,7 +52,7 @@ export default function EditLayout({ steps, routes, children }) {
                 {reviewHref && (
                     <Link
                         href={reviewHref}
-                        className="text-secondary-300 focus-visible:outline-ink-400 flex items-center gap-2 self-start rounded text-sm underline hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+                        className="text-gray-300 focus-visible:outline-amber-400 flex items-center gap-2 self-start rounded text-sm underline hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2"
                     >
                         <Icon icon="arrow-left" style="solid" className="text-xs" />
                         Back to review

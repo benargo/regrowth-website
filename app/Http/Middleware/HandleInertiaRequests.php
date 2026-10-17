@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Attributes\UsesTheme;
 use App\Http\Resources\UserPermissionResource;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
@@ -46,7 +45,6 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success'),
             ],
             'discordInviteUrl' => config('guild.discord_invite_url'),
-            'theme' => UsesTheme::forRoute($request->route())->value,
         ];
     }
 }

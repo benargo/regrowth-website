@@ -18,7 +18,7 @@ export default function ExportSettings() {
     return (
         <SettingsPanel>
             <SettingRow label="Delimiter">
-                <code className="border-ink-600 min-w-10 rounded-xs border bg-black/40 px-3 py-0.5 text-center font-mono font-bold text-white">
+                <code className="border-amber-600 min-w-10 rounded-xs border bg-black/40 px-3 py-0.5 text-center font-mono font-bold text-white">
                     ,
                 </code>
             </SettingRow>
@@ -33,7 +33,7 @@ export default function ExportSettings() {
                         </div>
                     ))}
                 </div>
-                <p className="text-secondary-400 font-sans text-sm">
+                <p className="text-gray-400 font-sans text-sm">
                     GRM ticks most columns by default. Untick every other column.
                 </p>
             </SettingsGroup>

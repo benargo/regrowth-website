@@ -140,23 +140,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Theme
-    |--------------------------------------------------------------------------
-    |
-    | The site-wide default visual theme, used for any route that does not
-    | declare its own via #[UsesTheme]. Must match a case of App\Enums\Theme
-    | and a [data-theme] block in resources/css/app.css. Swapping this flips
-    | every undecorated page, so the whole site can move to Forever at launch
-    | with an env change and a config:clear.
-    |
-    | Supported: "classic", "forever"
-    |
-    */
-
-    'theme' => env('APP_THEME', 'classic'),
-
-    /*
-    |--------------------------------------------------------------------------
     | Seed From APIs
     |--------------------------------------------------------------------------
     |

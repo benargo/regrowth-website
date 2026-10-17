@@ -15,7 +15,7 @@ import cn from "@/Helpers/cn";
  */
 function InGameButton({ children }) {
     return (
-        <span className="font-friz-quadrata border-secondary-600 mx-1 inline-block rounded-md border bg-red-600 px-6 py-2 font-bold text-[#ffff00] shadow-md">
+        <span className="font-friz-quadrata border-gray-600 mx-1 inline-block rounded-md border bg-red-600 px-6 py-2 font-bold text-[#ffff00] shadow-md">
             {children}
         </span>
     );
@@ -122,7 +122,7 @@ export default function UploadForm({ gameVersion, memberCount, onUploaded }) {
                         data-dragging={isDragging || undefined}
                         className={cn(
                             controlClassName,
-                            "data-dragging:bg-ground-700 font-mono transition-colors data-dragging:border-blue-500",
+                            "data-dragging:bg-brown-700 font-mono transition-colors data-dragging:border-blue-500",
                         )}
                     />
                 </FormRow>

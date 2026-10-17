@@ -4,7 +4,7 @@
  */
 export default function SettingsPanel({ children, className = "" }) {
     return (
-        <div className={`border-ink-700 bg-ground-900 space-y-4 rounded-md border p-4 font-serif ${className}`}>
+        <div className={`border-amber-700 bg-brown-900 space-y-4 rounded-md border p-4 font-serif ${className}`}>
             {children}
         </div>
     );
@@ -18,9 +18,9 @@ export function SettingsGroup({ label, children }) {
     return (
         <div className="space-y-3">
             {label && (
-                <div className="text-secondary-400 flex items-center gap-3 text-sm">
+                <div className="text-gray-400 flex items-center gap-3 text-sm">
                     <span className="shrink-0">{label}</span>
-                    <span aria-hidden="true" className="bg-ink-700 h-px grow" />
+                    <span aria-hidden="true" className="bg-amber-700 h-px grow" />
                 </div>
             )}
             {children}

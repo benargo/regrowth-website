@@ -3,9 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Events\BuildEventsForViewer;
-use App\Attributes\UsesTheme;
 use App\Contracts\HasCharacterMedia;
-use App\Enums\Theme;
 use App\Jobs\AttachRenderToCharacter;
 use App\Models\Character;
 use App\Models\Event;
@@ -15,7 +13,6 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
-#[UsesTheme(Theme::FOREVER)]
 class HomeController extends Controller
 {
     private const UPCOMING_EVENT_LIMIT = 5;

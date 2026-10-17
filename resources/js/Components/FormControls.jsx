@@ -18,32 +18,32 @@ import cn from "@/Helpers/cn";
 import slugify from "@/Helpers/Slugify";
 
 export const controlClassName =
-    "block w-full rounded border border-ink-600 bg-ground-800 px-4 py-2 text-white placeholder-secondary-400 " +
-    "data-focus:border-ink-400 data-focus:outline-2 data-focus:outline-offset-2 data-focus:outline-ink-400 " +
+    "block w-full rounded border border-amber-600 bg-brown-800 px-4 py-2 text-white placeholder-gray-300 " +
+    "data-focus:border-amber-400 data-focus:outline-2 data-focus:outline-offset-2 data-focus:outline-amber-400 " +
     "data-invalid:border-red-400";
 
 const buttonLayoutClassName = "inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold";
 
 const buttonBaseClassName = `${buttonLayoutClassName} data-disabled:opacity-50 data-focus:outline-2 data-focus:outline-offset-2`;
 
-const buttonClassName = `bg-ink-800 data-hover:bg-ink-900 data-focus:outline-ink-400 text-white ${buttonBaseClassName}`;
+const buttonClassName = `bg-amber-800 data-hover:bg-amber-900 data-focus:outline-amber-400 text-white ${buttonBaseClassName}`;
 
 /** A quieter button beside a primary one, such as Cancel or Clear. */
 const secondaryButtonClassName =
-    `bg-ground-800 text-secondary-200 inset-ring inset-ring-ink-600 data-hover:bg-ground-700 data-hover:text-white ` +
-    `data-focus:outline-ink-400 ${buttonBaseClassName}`;
+    `bg-brown-800 text-gray-200 inset-ring inset-ring-amber-600 data-hover:bg-brown-700 data-hover:text-white ` +
+    `data-focus:outline-amber-400 ${buttonBaseClassName}`;
 
 /** A button for a destructive action, such as confirming a delete. */
 const dangerButtonClassName = `bg-red-700 data-hover:bg-red-800 data-focus:outline-red-400 text-white ${buttonBaseClassName}`;
 
 /** A Link styled like PrimaryButton, such as Edit or Finish. */
 export const linkButtonClassName =
-    `bg-ink-800 hover:bg-ink-900 focus-visible:outline-ink-400 text-white focus-visible:outline-2 ` +
+    `bg-amber-800 hover:bg-amber-900 focus-visible:outline-amber-400 text-white focus-visible:outline-2 ` +
     `focus-visible:outline-offset-2 ${buttonLayoutClassName}`;
 
 /** A quiet text link beside a form's buttons, such as Cancel, Back or Skip. */
 export const linkClassName =
-    "text-secondary-300 focus-visible:outline-ink-400 rounded px-2 py-2 text-sm underline hover:text-white " +
+    "text-gray-300 focus-visible:outline-amber-400 rounded px-2 py-2 text-sm underline hover:text-white " +
     "focus-visible:outline-2 focus-visible:outline-offset-2";
 
 /**
@@ -72,7 +72,7 @@ export function FormRow({ htmlFor, label, required = false, hint, hintAsTooltip 
 
     return (
         <Field className={cn("flex flex-col gap-1.5", className)}>
-            <Label htmlFor={htmlFor} className="text-secondary-300 text-sm font-medium">
+            <Label htmlFor={htmlFor} className="text-gray-300 text-sm font-medium">
                 {hint && hintAsTooltip ? (
                     <Tooltip as="span" body={hint}>
                         {labelContent}
@@ -84,7 +84,7 @@ export function FormRow({ htmlFor, label, required = false, hint, hintAsTooltip 
             </Label>
             {children}
             {hint && (
-                <Description className={hintAsTooltip ? "sr-only" : "text-secondary-300 text-sm"}>{hint}</Description>
+                <Description className={hintAsTooltip ? "sr-only" : "text-gray-300 text-sm"}>{hint}</Description>
             )}
             {error && <Description className="text-sm text-red-300">{error}</Description>}
         </Field>
@@ -94,7 +94,7 @@ export function FormRow({ htmlFor, label, required = false, hint, hintAsTooltip 
 /** Explains the asterisk FormRow puts on required fields. */
 export function RequiredFieldsNote() {
     return (
-        <p className="text-secondary-300 text-sm">
+        <p className="text-gray-300 text-sm">
             Fields marked with{" "}
             <span aria-hidden="true" className="text-red-300">
                 *
@@ -127,8 +127,8 @@ export function TextInput({ className, ...props }) {
 }
 
 const checkboxClassName =
-    "size-4 shrink-0 cursor-pointer rounded border-ink-600 bg-ground-800 checked:bg-ink-600 indeterminate:bg-ink-600 " +
-    "focus:ring-0 focus:ring-offset-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-400 " +
+    "size-4 shrink-0 cursor-pointer rounded border-amber-600 bg-brown-800 checked:bg-amber-600 indeterminate:bg-amber-600 " +
+    "focus:ring-0 focus:ring-offset-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 " +
     "aria-invalid:border-red-400 disabled:cursor-not-allowed disabled:opacity-50";
 
 /**
@@ -224,7 +224,7 @@ export function CheckboxInput({ name, id = name, checked, onChange, invalid }) {
             onChange={onChange}
             aria-invalid={invalid ? true : undefined}
             className={
-                "group border-ink-600 bg-ground-800 data-checked:bg-ink-600 data-focus:outline-ink-400 " +
+                "group border-amber-600 bg-brown-800 data-checked:bg-amber-600 data-focus:outline-amber-400 " +
                 "block size-10.5 rounded border p-2 aria-invalid:border-red-400 data-focus:outline-2 data-focus:outline-offset-2"
             }
         >
@@ -259,15 +259,15 @@ export function RadioCardGroup({ id, name, value, onChange, options, invalid, cl
                 <Field
                     key={option.value}
                     className={
-                        "border-ink-600 bg-ground-800 has-data-checked:border-ink-300 has-data-checked:bg-ink-600/30 " +
-                        "has-data-focus:outline-ink-400 has-data-hover:border-ink-400 grid grid-cols-[1.125rem_1fr] " +
+                        "border-amber-600 bg-brown-800 has-data-checked:border-amber-300 has-data-checked:bg-amber-600/30 " +
+                        "has-data-focus:outline-amber-400 has-data-hover:border-amber-400 grid grid-cols-[1.125rem_1fr] " +
                         "content-start items-center gap-x-3 gap-y-1 rounded border p-3 has-data-focus:outline-2 has-data-focus:outline-offset-2"
                     }
                 >
                     <Radio
                         value={option.value}
                         className={
-                            "group border-ink-500 bg-ground-900 flex size-4.5 cursor-pointer data-checked:border-sky-400 " +
+                            "group border-amber-500 bg-brown-900 flex size-4.5 cursor-pointer data-checked:border-sky-400 " +
                             "items-center justify-center rounded-full border focus:outline-none"
                         }
                     >
@@ -285,7 +285,7 @@ export function RadioCardGroup({ id, name, value, onChange, options, invalid, cl
                         {option.label}
                     </Label>
                     {option.description && (
-                        <Description className="text-secondary-300 col-start-2 text-sm">
+                        <Description className="text-gray-300 col-start-2 text-sm">
                             {option.description}
                         </Description>
                     )}
@@ -363,7 +363,7 @@ export function FormSection({ id, legend, children }) {
     return (
         <Fieldset
             id={id}
-            className="border-ink-600/40 flex scroll-mt-48 flex-col gap-6 border-t pt-6 first:border-t-0 first:pt-0 lg:scroll-mt-28"
+            className="border-amber-600/40 flex scroll-mt-48 flex-col gap-6 border-t pt-6 first:border-t-0 first:pt-0 lg:scroll-mt-28"
         >
             <Legend className="font-serif text-xl text-white">{legend}</Legend>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">{children}</div>

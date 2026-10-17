@@ -25,7 +25,7 @@ export default function SetupNavigation({ backHref, backLabel, children }) {
     return (
         <nav
             aria-label="Setup navigation"
-            className="border-ink-600/40 flex flex-wrap items-center justify-between gap-4 border-t pt-6"
+            className="border-amber-600/40 flex flex-wrap items-center justify-between gap-4 border-t pt-6"
         >
             <Link href={backHref} className={linkClassName}>
                 {backLabel}

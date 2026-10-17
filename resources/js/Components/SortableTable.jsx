@@ -13,12 +13,16 @@ function SortableHeader({ column, label, sortColumn, sortDirection, onSort }) {
     return (
         <div
             role="columnheader"
-            className="table-cell cursor-pointer select-none px-4 py-3 text-left text-sm font-semibold text-ink-500 transition-colors hover:text-ink-400"
-            onClick={() => onSort(column)}
+            aria-sort={isActive ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+            className="table-cell px-4 py-3 text-left text-sm font-semibold"
         >
-            <span className="inline-flex items-center gap-2">
+            <button
+                type="button"
+                className="inline-flex w-full cursor-pointer items-center gap-2 rounded-sm text-left text-amber-500 transition-colors select-none hover:text-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+                onClick={() => onSort(column)}
+            >
                 {label}
-                <span className="text-xs">
+                <span className="text-xs" aria-hidden="true">
                     {isActive ? (
                         sortDirection === "asc" ? (
                             <Icon icon="sort-up" style="solid" />
@@ -26,36 +30,28 @@ function SortableHeader({ column, label, sortColumn, sortDirection, onSort }) {
                             <Icon icon="sort-down" style="solid" />
                         )
                     ) : (
-                        <Icon icon="sort" style="solid" className="text-secondary-600" />
+                        <Icon icon="sort" style="solid" className="text-gray-500" />
                     )}
                 </span>
-            </span>
+            </button>
         </div>
     );
 }
 
-export default function SortableTable({
-    columns,
-    sortColumn,
-    sortDirection,
-    onSort,
-    className,
-    children,
-}) {
+export default function SortableTable({ columns, sortColumn, sortDirection, onSort, className, children }) {
     if (process.env.NODE_ENV !== "production" && !columns) {
         throw new Error("SortableTable: a 'columns' prop is required.");
     }
 
     const handleSort = (column) => {
-        const newDirection =
-            sortColumn === column ? (sortDirection === "asc" ? "desc" : "asc") : "asc";
+        const newDirection = sortColumn === column ? (sortDirection === "asc" ? "desc" : "asc") : "asc";
         onSort(column, newDirection);
     };
 
     return (
         <div role="table" className={`table w-full text-left${className ? ` ${className}` : ""}`}>
             <div role="rowgroup" className="table-header-group">
-                <div role="row" className="table-row border-b border-ink-600">
+                <div role="row" className="table-row border-b border-amber-600">
                     {columns.map((col) => (
                         <SortableHeader
                             key={col}

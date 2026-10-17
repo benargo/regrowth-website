@@ -14,13 +14,13 @@ export default function FormPageLayout({ sections, sidebar = null, note = null, 
                 {(sidebar || note) && (
                     <div className="flex flex-col gap-1 lg:pl-4">
                         {sidebar}
-                        {note && <p className="text-secondary-300 hidden text-sm lg:block">{note}</p>}
+                        {note && <p className="text-gray-300 hidden text-sm lg:block">{note}</p>}
                     </div>
                 )}
             </OnThisPage>
 
             <div className="flex min-w-0 flex-1 flex-col gap-10">
-                {note && <p className="text-secondary-300 -mt-6 text-sm lg:hidden">{note}</p>}
+                {note && <p className="text-gray-300 -mt-6 text-sm lg:hidden">{note}</p>}
 
                 {children}
             </div>

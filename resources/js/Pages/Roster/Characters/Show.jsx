@@ -24,7 +24,7 @@ const RANK_COLORS = {
     "veteran":      { bg: "bg-green-900/40", text: "text-green-300", border: "border-green-700/50" },
     "member":       { bg: "bg-green-900/40", text: "text-green-300", border: "border-green-700/50" },
     "initiate":     { bg: "bg-green-900/30", text: "text-green-400", border: "border-green-700/40" },
-    "inactive":     { bg: "bg-secondary-800/50", text: "text-secondary-400", border: "border-secondary-600/40" },
+    "inactive":     { bg: "bg-gray-800/50", text: "text-gray-400", border: "border-gray-600/40" },
 };
 
 function RankPill({ rank }) {
@@ -45,7 +45,7 @@ function ReportsSkeleton() {
     return (
         <div className="animate-pulse space-y-2">
             {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-12 rounded bg-ground-800/50" />
+                <div key={i} className="h-12 rounded bg-brown-800/50" />
             ))}
         </div>
     );
@@ -64,19 +64,19 @@ function ReportRow({ report }) {
     return (
         <Link
             href={route("raiding.reports.show", report.id)}
-            className="flex items-center justify-between rounded border border-ink-600 bg-ground-800/40 px-4 py-3 transition-colors hover:border-ink-600/40 hover:bg-ground-800"
+            className="flex items-center justify-between rounded border border-amber-600 bg-brown-800/40 px-4 py-3 transition-colors hover:border-amber-600/40 hover:bg-brown-800"
         >
             <span className="font-medium text-white">{report.title}</span>
-            <span className="text-sm text-secondary-400">{date}</span>
+            <span className="text-sm text-gray-400">{date}</span>
         </Link>
     );
 }
 
 function SectionHeading({ children }) {
     return (
-        <h2 className="mb-4 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.15em] text-ink-500/70">
+        <h2 className="mb-4 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.15em] text-amber-500/70">
             <span>{children}</span>
-            <span className="h-px flex-1 bg-ink-600/20" />
+            <span className="h-px flex-1 bg-amber-600/20" />
         </h2>
     );
 }
@@ -112,7 +112,7 @@ export default function Show({ character: { data: character }, roster_url, recen
                         <h2 className="text-2xl font-bold text-white">{character.name}</h2>
                         <div className="mt-1 flex flex-wrap items-center gap-2">
                             {character.is_main && (
-                                <Pill bgColor="bg-ink-700" textColor="text-heading">Main</Pill>
+                                <Pill bgColor="bg-amber-700" textColor="text-amber-100">Main</Pill>
                             )}
                             {character.is_loot_councillor && (
                                 <Pill bgColor="bg-purple-800" textColor="text-purple-200">Loot Council</Pill>
@@ -126,7 +126,7 @@ export default function Show({ character: { data: character }, roster_url, recen
                                 character: character.id,
                                 slug: character.slug,
                             })}
-                            className="ml-auto flex items-center gap-2 rounded border border-ink-600/60 px-4 py-2 text-sm font-medium text-ink-400 transition-colors hover:bg-ink-600/20"
+                            className="ml-auto flex items-center gap-2 rounded border border-amber-600/60 px-4 py-2 text-sm font-medium text-amber-400 transition-colors hover:bg-amber-600/20"
                         >
                             <Icon icon="edit" style="light" />
                             Edit Character
@@ -192,7 +192,7 @@ export default function Show({ character: { data: character }, roster_url, recen
                                                 character: alt.id,
                                                 slug: alt.slug,
                                             })}
-                                            className="flex items-center gap-3 rounded border border-ink-600 bg-ground-800/40 px-3 py-2.5 transition-colors hover:border-ink-600/40 hover:bg-ground-800"
+                                            className="flex items-center gap-3 rounded border border-amber-600 bg-brown-800/40 px-3 py-2.5 transition-colors hover:border-amber-600/40 hover:bg-brown-800"
                                         >
                                             {alt.playable_class?.icon_url && (
                                                 <img
@@ -202,7 +202,7 @@ export default function Show({ character: { data: character }, roster_url, recen
                                                 />
                                             )}
                                             <span className="flex-1 font-medium text-white">{alt.name}</span>
-                                            <span className="text-xs text-secondary-500">{alt.rank?.name ?? "—"}</span>
+                                            <span className="text-xs text-gray-400">{alt.rank?.name ?? "—"}</span>
                                         </Link>
                                     ))}
                                 </div>
@@ -213,7 +213,7 @@ export default function Show({ character: { data: character }, roster_url, recen
                                     size="text-2xl"
                                     message="No linked characters found."
                                 >
-                                    <p className="text-xs text-secondary-600">If this is an error, please alert an Officer.</p>
+                                    <p className="text-xs text-gray-400">If this is an error, please alert an Officer.</p>
                                 </EmptyState>
                             )}
                         </section>
@@ -231,7 +231,7 @@ export default function Show({ character: { data: character }, roster_url, recen
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-sm text-secondary-500">No reports found for this character.</p>
+                            <p className="text-sm text-gray-400">No reports found for this character.</p>
                         )}
                     </div>
                 </div>

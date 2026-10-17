@@ -17,6 +17,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import Icon from "@/Components/FontAwesome/Icon";
+import IconButton from "@/Components/IconButton";
 import { Checkbox, PrimaryButton, TextInput } from "@/Components/FormControls";
 
 /**
@@ -39,7 +40,7 @@ function RankRowContent({ row, index, dragHandle, children }) {
     return (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 sm:flex-nowrap">
             {dragHandle}
-            <span aria-hidden="true" className="text-secondary-400 w-7 text-right font-serif text-2xl tabular-nums">
+            <span aria-hidden="true" className="text-gray-400 w-7 text-right font-serif text-2xl tabular-nums">
                 {index}
             </span>
             <span
@@ -83,7 +84,7 @@ function SortableRankRow({ row, index, error, onRename, onCommitName, onToggleAt
         <li
             ref={setNodeRef}
             style={{ transform: CSS.Transform.toString(transform), transition }}
-            className={`bg-ground-900 ${isDragging ? "opacity-40" : ""}`}
+            className={`bg-brown-900 ${isDragging ? "opacity-40" : ""}`}
         >
             <RankRowContent
                 row={row}
@@ -95,7 +96,7 @@ function SortableRankRow({ row, index, error, onRename, onCommitName, onToggleAt
                         {...attributes}
                         {...listeners}
                         aria-label={`Move ${row.name}`}
-                        className="text-secondary-400 focus-visible:outline-ink-400 flex h-8 w-6 cursor-grab items-center justify-center rounded hover:text-white focus-visible:outline-2 active:cursor-grabbing"
+                        className="text-gray-400 focus-visible:outline-amber-400 flex h-8 w-6 cursor-grab items-center justify-center rounded hover:text-white focus-visible:outline-2 active:cursor-grabbing"
                     >
                         <Icon icon="grip-vertical" style="regular" />
                     </button>
@@ -114,27 +115,25 @@ function SortableRankRow({ row, index, error, onRename, onCommitName, onToggleAt
                     onChange={(event) => onRename(row.key, event.target.value)}
                     onBlur={handleBlur}
                     onKeyDown={handleKeyDown}
-                    className="focus-visible:outline-ink-400 hover:border-ink-600 min-w-0 flex-1 basis-40 rounded border-b border-transparent bg-transparent px-1 py-1 text-base text-white focus-visible:outline-2"
+                    className="focus-visible:outline-amber-400 hover:border-amber-600 min-w-0 flex-1 basis-40 rounded border-b border-transparent bg-transparent px-1 py-1 text-base text-white focus-visible:outline-2"
                 />
-                <span className="text-secondary-400 w-28 text-sm">{charactersLabel(row.characters_count)}</span>
+                <span className="text-gray-400 w-28 text-sm">{charactersLabel(row.characters_count)}</span>
                 <span className="flex items-center gap-2">
                     <Checkbox
                         id={attendanceId}
                         checked={row.count_attendance}
                         onChange={() => onToggleAttendance(row.key)}
                     />
-                    <label htmlFor={attendanceId} className="text-secondary-300 text-sm whitespace-nowrap">
+                    <label htmlFor={attendanceId} className="text-gray-300 text-sm whitespace-nowrap">
                         Attendance tracked
                     </label>
                 </span>
-                <button
-                    type="button"
+                <IconButton
+                    icon="trash-alt"
+                    label={`Delete ${row.name}`}
                     onClick={() => onDelete(row.key)}
-                    aria-label={`Delete ${row.name}`}
-                    className="text-secondary-400 focus-visible:outline-ink-400 ml-auto flex h-8 w-8 items-center justify-center rounded hover:text-red-400 focus-visible:text-red-400 focus-visible:outline-2"
-                >
-                    <Icon icon="trash-alt" style="solid" />
-                </button>
+                    className="ml-auto flex h-8 w-8 items-center justify-center rounded text-gray-400 hover:text-red-400 focus-visible:text-red-400"
+                />
             </RankRowContent>
             {error && (
                 <p className="px-3 pb-2 pl-24 text-sm text-red-400" role="alert">
@@ -160,7 +159,7 @@ function AddRankRow({ onAdd }) {
     }
 
     return (
-        <div className="bg-ground-800/50 flex flex-wrap items-center gap-3 px-3 py-3">
+        <div className="bg-brown-800/50 flex flex-wrap items-center gap-3 px-3 py-3">
             <label htmlFor="guild-rank-new-name" className="sr-only">
                 New rank name
             </label>
@@ -234,9 +233,9 @@ export default function RankLadder({ rows, onChange, onCommit, errors = {}, maxR
     }
 
     return (
-        <div className="border-ink-600/40 overflow-hidden rounded border">
+        <div className="border-amber-600/40 overflow-hidden rounded border">
             {rows.length === 0 ? (
-                <p className="text-secondary-300 px-4 py-3 text-sm">No ranks yet. Add the guild master first.</p>
+                <p className="text-gray-300 px-4 py-3 text-sm">No ranks yet. Add the guild master first.</p>
             ) : (
                 <DndContext
                     sensors={sensors}
@@ -246,7 +245,7 @@ export default function RankLadder({ rows, onChange, onCommit, errors = {}, maxR
                     onDragEnd={handleDragEnd}
                 >
                     <SortableContext items={rows.map((row) => row.key)} strategy={verticalListSortingStrategy}>
-                        <ol aria-label="Guild ranks" className="divide-ink-600/40 divide-y">
+                        <ol aria-label="Guild ranks" className="divide-amber-600/40 divide-y">
                             {rows.map((row, index) => (
                                 <SortableRankRow
                                     key={row.key}
@@ -263,12 +262,12 @@ export default function RankLadder({ rows, onChange, onCommit, errors = {}, maxR
                     </SortableContext>
                     <DragOverlay>
                         {activeIndex >= 0 && (
-                            <div className="bg-ground-900 ring-ink-400 rounded shadow-lg ring-1">
+                            <div className="bg-brown-900 ring-amber-400 rounded shadow-lg ring-1">
                                 <RankRowContent
                                     row={rows[activeIndex]}
                                     index={activeIndex}
                                     dragHandle={
-                                        <span className="text-secondary-400 flex h-8 w-6 items-center justify-center">
+                                        <span className="text-gray-400 flex h-8 w-6 items-center justify-center">
                                             <Icon icon="grip-vertical" style="regular" />
                                         </span>
                                     }
@@ -280,11 +279,11 @@ export default function RankLadder({ rows, onChange, onCommit, errors = {}, maxR
                     </DragOverlay>
                 </DndContext>
             )}
-            <div className="border-ink-600/40 border-t">
+            <div className="border-amber-600/40 border-t">
                 {rows.length < maxRanks ? (
                     <AddRankRow onAdd={(name) => onCommit((current) => [...current, newRow(name)])} />
                 ) : (
-                    <p className="text-secondary-300 px-4 py-3 text-sm">Guilds can have up to {maxRanks} ranks.</p>
+                    <p className="text-gray-300 px-4 py-3 text-sm">Guilds can have up to {maxRanks} ranks.</p>
                 )}
             </div>
         </div>

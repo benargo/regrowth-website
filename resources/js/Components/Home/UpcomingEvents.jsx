@@ -1,6 +1,6 @@
 import { Link } from "@inertiajs/react";
-import Section from "@/Themes/Forever/Section";
-import DisplayHeading from "@/Themes/Forever/DisplayHeading";
+import Section from "@/Components/Home/Section";
+import DisplayHeading from "@/Components/Home/DisplayHeading";
 
 /**
  * Format an ISO timestamp in the viewer's own timezone. The server sends
@@ -26,9 +26,9 @@ function formatTime(iso) {
  */
 function SkeletonRow() {
     return (
-        <li className="border-ground-600/60 flex animate-pulse items-center gap-4 border-b py-4">
-            <div className="bg-ground-600/60 h-4 w-28 rounded" />
-            <div className="bg-ground-600/40 h-4 w-44 rounded" />
+        <li className="border-forever-600/60 flex animate-pulse items-center gap-4 border-b py-4">
+            <div className="bg-forever-600/60 h-4 w-28 rounded" />
+            <div className="bg-forever-600/40 h-4 w-44 rounded" />
         </li>
     );
 }
@@ -40,14 +40,16 @@ function SkeletonRow() {
 function EventRow({ event }) {
     return (
         <>
-            <span className="text-ink-400 w-full shrink-0 text-sm tabular-nums sm:w-44">
+            <span className="text-camel-400 w-full shrink-0 text-sm tabular-nums sm:w-44">
                 <time dateTime={event.start_time}>
                     {formatDate(event.start_time)} · {formatTime(event.start_time)}
                 </time>
             </span>
-            <span className="text-ink-200 font-serif text-lg">{event.title}</span>
+            <span className="text-camel-200 font-serif text-lg">{event.title}</span>
             {event.raids.length > 0 && (
-                <span className="text-ink-500 hidden text-sm md:inline">{event.raids.map((raid) => raid.name).join(", ")}</span>
+                <span className="text-camel-500 hidden text-sm md:inline">
+                    {event.raids.map((raid) => raid.name).join(", ")}
+                </span>
             )}
         </>
     );
@@ -70,23 +72,23 @@ export default function UpcomingEvents({ events, canViewPlans = false }) {
             </DisplayHeading>
 
             {isLoading ? (
-                <ul className="border-ground-600/60 border-t">
+                <ul className="border-forever-600/60 border-t">
                     <SkeletonRow />
                     <SkeletonRow />
                     <SkeletonRow />
                 </ul>
             ) : events.length === 0 ? (
-                <p className="text-ink-400 text-center">
+                <p className="text-camel-400 text-center">
                     No raids are scheduled right now. Check back soon, or ask in Discord.
                 </p>
             ) : (
-                <ul className="border-ground-600/60 border-t">
+                <ul className="border-forever-600/60 border-t">
                     {events.map((event) => (
-                        <li key={event.id} className="border-ground-600/60 border-b">
+                        <li key={event.id} className="border-forever-600/60 border-b">
                             {canViewPlans ? (
                                 <Link
                                     href={route("raiding.plans.show", event.id)}
-                                    className="hover:bg-ground-700/60 flex flex-wrap items-baseline gap-x-4 gap-y-1 px-2 py-4 transition-colors"
+                                    className="hover:bg-forever-700/60 focus-visible:outline-camel-400 flex flex-wrap items-baseline gap-x-4 gap-y-1 px-2 py-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
                                 >
                                     <EventRow event={event} />
                                 </Link>

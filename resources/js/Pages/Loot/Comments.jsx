@@ -108,10 +108,10 @@ export default function Comments({ comments, replies }) {
                                                 item: group.item.id,
                                                 slug: group.item.slug,
                                             })}
-                                            className="flex items-center gap-3 transition-colors hover:text-ink-300"
+                                            className="flex items-center gap-3 transition-colors hover:text-amber-300"
                                         >
                                             {group.item?.icon && <div className="h-8 w-8 flex-none" />}
-                                            <h3 className="text-lg font-semibold text-ink-400 hover:text-ink-300">
+                                            <h3 className="text-lg font-semibold text-amber-400 hover:text-amber-300">
                                                 {group.item?.name ?? `Item #${itemId}`}
                                             </h3>
                                         </Link>
@@ -155,7 +155,7 @@ export default function Comments({ comments, replies }) {
                         <Pagination links={comments.meta.links} meta={comments.meta} itemName="comments" />
                     </>
                 ) : (
-                    <p className="py-8 text-center text-secondary-400">No comments yet.</p>
+                    <p className="py-8 text-center text-gray-400">No comments yet.</p>
                 )}
             </PageContainer>
         </Master>

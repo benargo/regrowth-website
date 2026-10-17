@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Icon from "./FontAwesome/Icon";
+import IconButton from "@/Components/IconButton";
 
 export default function FlashMessage({ type = "error", message, onDismiss }) {
     const [isVisible, setIsVisible] = useState(true);
@@ -54,20 +55,20 @@ export default function FlashMessage({ type = "error", message, onDismiss }) {
     return (
         <div
             role={type === "error" ? "alert" : "status"}
-            className={`fixed left-1/2 top-16 z-50 mx-auto w-full max-w-lg -translate-x-1/2 px-4 transition-all duration-300 ease-in-out ${isLeaving ? "-translate-y-2 opacity-0" : "translate-y-0 opacity-100"} `}
+            className={`fixed top-16 left-1/2 z-50 mx-auto w-full max-w-lg -translate-x-1/2 px-4 transition-[opacity,translate] duration-300 ease-in-out ${isLeaving ? "-translate-y-2 opacity-0" : "translate-y-0 opacity-100"} `}
         >
             <div
                 className={` ${style.bg} ${style.border} flex items-start gap-3 rounded-lg border px-4 py-3 shadow-lg backdrop-blur-sm`}
             >
                 {style.icon}
                 <p className="flex-1 text-sm text-white">{message}</p>
-                <button
+                <IconButton
+                    icon="times"
+                    iconStyle="regular"
+                    label="Dismiss"
                     onClick={handleDismiss}
-                    className="text-secondary-400 transition-colors hover:text-white"
-                    aria-label="Dismiss"
-                >
-                    <Icon icon="times" style="regular" />
-                </button>
+                    className="text-gray-400 transition-colors hover:text-white"
+                />
             </div>
         </div>
     );

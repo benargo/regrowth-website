@@ -20,25 +20,25 @@ export default function PlannedAbsenceRow({ absence, showCreatedBy = false, canE
 
     return (
         <>
-            <div className="border-ink-800/50 bg-ground-800/50 flex flex-col gap-2 rounded border px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
-                <div className="text-ink-300/70 shrink-0 text-sm">
+            <div className="border-amber-800/50 bg-brown-800/50 flex flex-col gap-2 rounded border px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
+                <div className="text-amber-300/70 shrink-0 text-sm">
                     <Icon icon="calendar" style="regular" className="mr-1.5 h-4" />
                     {formatDate(absence.start_date).medium}
                     {absence.end_date && (
                         <>
-                            <span className="text-secondary-500 mx-1">—</span>
+                            <span className="text-gray-400 mx-1">—</span>
                             {formatDate(absence.end_date).medium}
                         </>
                     )}
                 </div>
 
-                <div className="text-secondary-300 flex flex-1 flex-col gap-1 text-sm">
-                    <ReasonLabel reason={absence.reason} className="text-ink-300 font-medium" />
+                <div className="text-gray-300 flex flex-1 flex-col gap-1 text-sm">
+                    <ReasonLabel reason={absence.reason} className="text-amber-300 font-medium" />
                     {absence.notes && <FormattedMarkdown>{absence.notes}</FormattedMarkdown>}
                 </div>
 
                 {showCreatedBy && absence.created_by && absence.created_at && (
-                    <div className="text-secondary-500 shrink-0 text-xs">
+                    <div className="text-gray-400 shrink-0 text-xs">
                         Added by {absence.created_by.display_name} on {formatDate(absence.created_at).medium}
                     </div>
                 )}
@@ -47,7 +47,7 @@ export default function PlannedAbsenceRow({ absence, showCreatedBy = false, canE
                     {(canEditAny || canEdit) && (
                         <Link
                             href={route(canEditAny ? "raiding.absences.edit" : "account.absences.edit", absence.id)}
-                            className="text-ink-400 hover:text-ink-300 flex items-center text-sm"
+                            className="text-amber-400 hover:text-amber-300 flex items-center text-sm"
                         >
                             <Icon icon="pen" style="regular" className="mr-1.5 h-4" />
                             Edit

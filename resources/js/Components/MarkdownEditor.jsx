@@ -410,12 +410,12 @@ export default function MarkdownEditor({
 
     return (
         <div className={className}>
-            <div className="overflow-hidden rounded-md border border-ink-500 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary hover:border-ink-600">
+            <div className="overflow-hidden rounded-md border border-amber-500 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary hover:border-amber-600">
                 {formatButtons.length > 0 && (
-                    <div className="flex items-center gap-0.5 border-b border-ink-500 bg-ground-700 px-2 py-1.5">
+                    <div className="flex items-center gap-0.5 border-b border-amber-500 bg-brown-700 px-2 py-1.5">
                         {groupedButtons.map((group, groupIndex) => (
                             <div key={groupIndex} className="flex items-center gap-0.5">
-                                {groupIndex > 0 && <span className="mx-1.5 h-4 w-px bg-ink-500" />}
+                                {groupIndex > 0 && <span className="mx-1.5 h-4 w-px bg-amber-500" />}
                                 {group.map((format) => (
                                     <FormatButton
                                         key={format.key}
@@ -428,7 +428,7 @@ export default function MarkdownEditor({
                         ))}
                         {ungroupedButtons.length > 0 && (
                             <div className="flex items-center gap-0.5">
-                                {groupedButtons.length > 0 && <span className="mx-1.5 h-4 w-px bg-ink-500" />}
+                                {groupedButtons.length > 0 && <span className="mx-1.5 h-4 w-px bg-amber-500" />}
                                 {ungroupedButtons.map((format) => (
                                     <FormatButton
                                         key={format.key}
@@ -450,7 +450,7 @@ export default function MarkdownEditor({
                     placeholder={computedPlaceholder}
                     rows={rows}
                     autoFocus={autoFocus}
-                    className="block w-full resize-none border-none bg-ground-800 p-2 text-white placeholder-gray-500 focus:outline-hidden focus:ring-0"
+                    className="block w-full resize-none border-none bg-brown-800 p-2 text-white placeholder-gray-300 focus:outline-hidden focus:ring-0"
                 />
             </div>
             <div>
@@ -460,7 +460,7 @@ export default function MarkdownEditor({
             <Modal show={showWowheadModal} onClose={handleWowheadCancel} maxWidth="md">
                 <div className="p-6">
                     <h2 className="text-lg font-medium text-white">Insert Wowhead Link</h2>
-                    <p className="mt-1 text-sm text-secondary-400">Paste a Wowhead URL for an item or spell.</p>
+                    <p className="mt-1 text-sm text-gray-400">Paste a Wowhead URL for an item or spell.</p>
 
                     <div className="mt-4">
                         <FormRow label="Wowhead URL" error={wowheadError}>
@@ -493,7 +493,7 @@ export default function MarkdownEditor({
             <Modal show={showLinkModal} onClose={handleLinkCancel} maxWidth="md">
                 <div className="p-6">
                     <h2 className="text-lg font-medium text-white">Insert Link</h2>
-                    <p className="mt-1 text-sm text-secondary-400">Enter a URL and optional display text.</p>
+                    <p className="mt-1 text-sm text-gray-400">Enter a URL and optional display text.</p>
 
                     <div className="mt-4 space-y-4">
                         <FormRow label="URL" error={linkError}>
@@ -511,7 +511,7 @@ export default function MarkdownEditor({
                         <FormRow
                             label={
                                 <>
-                                    Display text <span className="text-secondary-500">(optional)</span>
+                                    Display text <span className="text-gray-400">(optional)</span>
                                 </>
                             }
                         >

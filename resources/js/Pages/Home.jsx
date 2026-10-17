@@ -1,21 +1,21 @@
 import { Deferred, usePage } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
-import RaggedEdge from "@/Themes/Forever/RaggedEdge";
+import RaggedEdge from "@/Components/Home/RaggedEdge";
 import LaunchCountdown from "@/Components/Home/LaunchCountdown";
 import OfficerTeam from "@/Components/Home/OfficerTeam";
 import UpcomingEvents from "@/Components/Home/UpcomingEvents";
-import Section from "@/Themes/Forever/Section";
-import DisplayHeading from "@/Themes/Forever/DisplayHeading";
+import Section from "@/Components/Home/Section";
+import DisplayHeading from "@/Components/Home/DisplayHeading";
 import Icon from "@/Components/FontAwesome/Icon";
 
 export default function Home({ foreverLaunchAt, officers, canViewPlans, discordInviteUrl }) {
     const { officerRenders, upcomingEvents } = usePage().props;
     return (
-        <Master title="Home">
+        <Master title="Home" isHomepage>
             <div className="text-base">
                 <div className="flex flex-col lg:h-screen">
-                    <section className="bg-masthead relative lg:flex-1">
-                        <div className="bg-masthead hidden h-[60vh] overflow-hidden md:block md:h-[800px] lg:h-full" />
+                    <section className="bg-masthead-forever relative lg:flex-1">
+                        <div className="hidden h-[60vh] overflow-hidden md:block md:h-[800px] lg:h-full" />
 
                         <div className="relative flex flex-col items-center justify-center py-20 md:absolute md:inset-0 md:py-0">
                             <div className="my-10 flex flex-row items-center">
@@ -27,10 +27,10 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
                                     />
                                 </div>
                                 <div className="text-center md:text-left">
-                                    <h1 className="from-ink-100 to-ink-300 mb-3 bg-linear-to-b bg-clip-text pb-1 font-serif text-6xl font-normal text-transparent drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)] text-shadow-sm md:text-8xl">
+                                    <h1 className="from-camel-100 to-camel-300 mb-3 bg-linear-to-b bg-clip-text pb-1 font-serif text-6xl font-normal text-transparent drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)] text-shadow-sm md:text-8xl">
                                         Regrowth
                                     </h1>
-                                    <p className="from-ink-300 to-ink-500 text-ink-400 bg-linear-to-b bg-clip-text text-2xl tracking-[0.2em] uppercase md:text-3xl">
+                                    <p className="from-camel-300 to-camel-500 text-camel-400 bg-linear-to-b bg-clip-text text-2xl tracking-[0.2em] uppercase md:text-3xl">
                                         Thunderstrike
                                     </p>
                                 </div>
@@ -65,7 +65,7 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
                         Your Journey Starts Here
                     </DisplayHeading>
 
-                    <p className="text-ink-400 mx-auto mb-8 max-w-xl">
+                    <p className="text-camel-400 mx-auto mb-8 max-w-xl">
                         Whether you're a seasoned raider or stepping into Azeroth for the first time, there's a place
                         for you in Regrowth. Come and say hello — recruitment, raid chatter and everything else happens
                         on our Discord.
@@ -75,7 +75,7 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
                         href={discordInviteUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="border-discord/30 text-heading focus:ring-primary/60 bg-discord hover:bg-discord/80 inline-flex items-center gap-3 rounded border px-8 py-4 text-lg shadow-lg transition-colors focus:ring-2 focus:outline-hidden"
+                        className="border-discord/30 text-camel-200 bg-discord hover:bg-discord/80 focus-visible:outline-camel-400 inline-flex items-center gap-3 rounded border px-8 py-4 text-lg shadow-lg transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
                     >
                         <Icon icon="discord" style="brands" className="h-6 w-6 text-white" />
                         Join our Discord

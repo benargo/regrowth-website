@@ -75,13 +75,13 @@ export default function AbsenceDetailsFields({
             </FormRow>
 
             <Fieldset className="flex flex-col gap-1.5 md:col-span-2">
-                <Legend className="text-secondary-300 text-sm font-medium">
+                <Legend className="text-gray-300 text-sm font-medium">
                     Reason
                     <span aria-hidden="true" className="ml-1 text-red-300">
                         *
                     </span>
                 </Legend>
-                <p className="text-secondary-300 text-sm">
+                <p className="text-gray-300 text-sm">
                     {isOfficer
                         ? "Pick the closest match."
                         : "Pick the closest match. You can add more detail in the notes."}

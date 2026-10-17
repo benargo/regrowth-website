@@ -20,6 +20,7 @@ import AssignmentCellEditor, { resetAssignmentOptionsFetched } from "@/Component
 import MetaCard, { MetaItem } from "@/Components/MetaCard";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
+import IconButton from "@/Components/IconButton";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import Tooltip from "@/Components/Tooltip";
 import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
@@ -35,7 +36,7 @@ function parseAddNewGroupId(id) {
 
 // ─── Sortable assignment row ──────────────────────────────────────────────────
 
-function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) {
+function AssignmentRowEditor({ assignment, position, targetMarkers, onUpdate, onRemove }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: assignment._key,
         data: { type: "assignment", boss_id: assignment.boss_id, group_id: assignment.group_id },
@@ -59,16 +60,18 @@ function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) 
             ref={setNodeRef}
             style={style}
             data-assignment-key={assignment._key}
-            className="group relative border-b border-ink-600/50 last:border-0"
+            className="group relative border-b border-amber-600/50 last:border-0"
         >
             <td
-                className="w-6 cursor-grab px-1 py-2 text-center text-ink-400 hover:text-ink-400 active:cursor-grabbing"
+                className="w-6 cursor-grab px-1 py-2 text-center text-amber-400 hover:text-amber-400 active:cursor-grabbing"
+                aria-label={`Reorder assignment ${position}`}
                 {...attributes}
                 {...listeners}
             >
                 <Icon icon="grip-vertical" style="solid" className="text-xs" />
             </td>
             <AssignmentCellEditor
+                label={`Assignment ${position}, left`}
                 initialLabel={leftLabel.label}
                 initialIconUrl={leftLabel.iconUrl}
                 initialSlug={leftLabel.slug}
@@ -86,6 +89,7 @@ function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) 
                 }
             />
             <AssignmentCellEditor
+                label={`Assignment ${position}, right`}
                 initialLabel={rightLabel.label}
                 initialIconUrl={rightLabel.iconUrl}
                 initialSlug={rightLabel.slug}
@@ -104,13 +108,13 @@ function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) 
             />
             <td className="w-10 px-1 py-2">
                 <div className="relative flex h-full items-center justify-center">
-                    <button
-                        type="button"
+                    <IconButton
+                        icon="times"
+                        iconClassName="text-[9px]"
+                        label={`Remove assignment ${position}`}
                         onClick={() => onRemove(assignment._key)}
                         className="flex h-5 w-5 items-center justify-center rounded-full bg-red-700/80 text-xs text-white transition-colors hover:bg-red-600"
-                    >
-                        <Icon icon="times" style="solid" className="text-[9px]" />
-                    </button>
+                    />
                 </div>
             </td>
         </tr>
@@ -121,12 +125,12 @@ function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) 
 
 function AddAssignmentRow({ onAdd }) {
     return (
-        <tr className="border-t border-dashed border-ink-600/50">
+        <tr className="border-t border-dashed border-amber-600/50">
             <td colSpan={4}>
                 <button
                     type="button"
                     onClick={onAdd}
-                    className="flex w-full items-center justify-center gap-2 py-2 text-xs text-ink-500 transition-colors hover:bg-ground-700/30 hover:text-ink-300"
+                    className="hover:bg-brown-700/30 flex w-full items-center justify-center gap-2 py-2 text-xs text-amber-500 transition-colors hover:text-amber-300"
                 >
                     <Icon icon="plus" style="solid" className="text-[10px]" />
                     Add assignment
@@ -140,8 +144,8 @@ function InsertionIndicatorRow() {
     return (
         <tr>
             <td colSpan={4} className="p-0">
-                <div className="mx-1 flex h-8 items-center rounded border-2 border-dashed border-ink-500 bg-ink-600/20">
-                    <span className="ml-3 text-[10px] font-medium text-ink-400">Drop here</span>
+                <div className="mx-1 flex h-8 items-center rounded border-2 border-dashed border-amber-500 bg-amber-600/20">
+                    <span className="ml-3 text-[10px] font-medium text-amber-400">Drop here</span>
                 </div>
             </td>
         </tr>
@@ -157,7 +161,7 @@ function EmptyGroupDroppable({ containerId }) {
             <td colSpan={4}>
                 <div
                     className={`flex items-center justify-center rounded py-4 text-xs transition-colors ${
-                        isOver ? "bg-ink-600/20 text-ink-400" : "text-ink-500"
+                        isOver ? "bg-amber-600/20 text-amber-400" : "text-amber-500"
                     }`}
                 >
                     Drop here
@@ -195,12 +199,12 @@ function AssignmentGroupEditor({
         <div
             ref={setContainerRef}
             className={`overflow-visible rounded-lg border transition-colors ${
-                isTargetContainer || isOverContainer ? "border-ink-500 bg-ink-600/10" : "border-ink-600"
+                isTargetContainer || isOverContainer ? "border-amber-500 bg-amber-600/10" : "border-amber-600"
             }`}
         >
             {groupName && (
-                <div className="border-b border-ink-600 bg-ground-800/60 px-3 py-2">
-                    <h3 className="text-sm font-semibold text-ink-400">{groupName}</h3>
+                <div className="bg-brown-800/60 border-b border-amber-600 px-3 py-2">
+                    <h3 className="text-sm font-semibold text-amber-400">{groupName}</h3>
                 </div>
             )}
             <SortableContext items={sortedAssignments.map((a) => a._key)} strategy={verticalListSortingStrategy}>
@@ -215,7 +219,7 @@ function AssignmentGroupEditor({
                         {sortedAssignments.length === 0 ? (
                             <EmptyGroupDroppable containerId={containerId} />
                         ) : (
-                            sortedAssignments.flatMap((assignment) => {
+                            sortedAssignments.flatMap((assignment, index) => {
                                 const isCrossContainer = isTargetContainer && dragOverInfo?.overKey !== null;
                                 const isOverThis = isCrossContainer && dragOverInfo.overKey === assignment._key;
                                 const rows = [];
@@ -226,6 +230,7 @@ function AssignmentGroupEditor({
                                     <AssignmentRowEditor
                                         key={assignment._key}
                                         assignment={assignment}
+                                        position={index + 1}
                                         targetMarkers={targetMarkers}
                                         onUpdate={onUpdate}
                                         onRemove={onRemove}
@@ -290,19 +295,20 @@ function SortableGroupCard({
         <div ref={setNodeRef} style={style} className="relative">
             {groupId !== null && (
                 <div className="mb-1 flex items-center gap-1">
-                    <button
-                        type="button"
-                        className="cursor-grab touch-none text-ink-500 hover:text-ink-400 active:cursor-grabbing"
+                    <IconButton
+                        icon="grip-vertical"
+                        iconClassName="text-xs"
+                        label={`Reorder ${groupName ?? "unnamed group"}`}
+                        className="cursor-grab touch-none text-amber-500 hover:text-amber-400 active:cursor-grabbing"
                         {...attributes}
                         {...listeners}
-                    >
-                        <Icon icon="grip-vertical" style="solid" className="text-xs" />
-                    </button>
+                    />
 
                     {editingName ? (
                         <input
                             ref={nameRef}
                             type="text"
+                            aria-label="Group name"
                             value={nameInput}
                             onChange={(e) => setNameInput(e.target.value)}
                             onBlur={commitRename}
@@ -310,7 +316,7 @@ function SortableGroupCard({
                                 if (e.key === "Enter") commitRename();
                                 if (e.key === "Escape") setEditingName(false);
                             }}
-                            className="flex-1 rounded border border-ink-500 bg-ground-800 px-2 py-0.5 text-sm text-ink-400 focus:outline-hidden"
+                            className="bg-brown-800 flex-1 rounded border border-amber-500 px-2 py-0.5 text-sm text-amber-400 focus:outline-hidden"
                         />
                     ) : (
                         <button
@@ -319,19 +325,18 @@ function SortableGroupCard({
                                 setNameInput(groupName ?? "");
                                 setEditingName(true);
                             }}
-                            className="flex-1 truncate text-left text-sm font-semibold text-ink-400 hover:text-ink-300"
+                            className="flex-1 truncate text-left text-sm font-semibold text-amber-400 hover:text-amber-300"
                         >
-                            {groupName ?? <span className="italic text-ink-500">Unnamed group</span>}
+                            {groupName ?? <span className="text-amber-500 italic">Unnamed group</span>}
                         </button>
                     )}
 
-                    <button
-                        type="button"
+                    <IconButton
+                        icon="times"
+                        label="Remove group"
                         onClick={() => onRemoveGroup(groupKey)}
                         className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-700/60 text-[9px] text-white hover:bg-red-600"
-                    >
-                        <Icon icon="times" style="solid" />
-                    </button>
+                    />
                 </div>
             )}
 
@@ -367,8 +372,8 @@ function DroppableAddGroupButton({ droppableId, onClick, compact = false }) {
                     compact ? "py-2" : "py-6"
                 } ${
                     isOver
-                        ? "border-ink-500/70 bg-ink-600/15 text-ink-400"
-                        : "border-ink-600/50 text-ink-500 hover:border-ink-600/40 hover:bg-ink-600/5 hover:text-ink-500"
+                        ? "border-amber-500/70 bg-amber-600/15 text-amber-400"
+                        : "border-amber-600/50 text-amber-500 hover:border-amber-600/40 hover:bg-amber-600/5 hover:text-amber-500"
                 }`}
             >
                 <Icon icon="plus" style="solid" className="text-[10px]" />
@@ -1132,10 +1137,11 @@ export default function Edit({ template, targetMarkers, raids }) {
                                     Template name
                                 </label>
                                 <input
+                                    id="template-title"
                                     type="text"
                                     value={data.title}
                                     onChange={(e) => setData("title", e.target.value)}
-                                    className="rounded border border-transparent bg-transparent px-1 text-white focus:border-ink-500 focus:outline-hidden"
+                                    className="rounded border border-transparent bg-transparent px-1 text-white focus:border-amber-500 focus:outline-hidden"
                                     placeholder="Template name"
                                 />
                             </Tooltip>
@@ -1187,7 +1193,7 @@ export default function Edit({ template, targetMarkers, raids }) {
                 >
                     {/* General Assignments */}
                     <section className="mb-8">
-                        <h2 className="mb-3 text-base font-semibold uppercase tracking-wider text-ink-500/80">
+                        <h2 className="mb-3 text-base font-semibold tracking-wider text-amber-500/80 uppercase">
                             General Assignments
                         </h2>
                         <GroupContainer
@@ -1205,7 +1211,7 @@ export default function Edit({ template, targetMarkers, raids }) {
                             {template.raids.map((raid) => (
                                 <div key={raid.slug}>
                                     {template.raids.length > 1 && (
-                                        <h2 className="mb-3 text-base font-semibold uppercase tracking-wider text-ink-500/80">
+                                        <h2 className="mb-3 text-base font-semibold tracking-wider text-amber-500/80 uppercase">
                                             {raid.name}
                                         </h2>
                                     )}
@@ -1228,20 +1234,20 @@ export default function Edit({ template, targetMarkers, raids }) {
 
                     <DragOverlay>
                         {activeAssignment ? (
-                            <table className="w-full table-fixed rounded border border-ink-500/50 bg-ground-800 opacity-90 shadow-xl">
+                            <table className="bg-brown-800 w-full table-fixed rounded border border-amber-500/50 opacity-90 shadow-xl">
                                 <tbody>
-                                    <tr className="border-b border-ink-600/50">
-                                        <td className="w-6 px-1 py-2 text-ink-400">
+                                    <tr className="border-b border-amber-600/50">
+                                        <td className="w-6 px-1 py-2 text-amber-400">
                                             <Icon icon="grip-vertical" style="solid" className="text-xs" />
                                         </td>
-                                        <td className="w-1/2 border-r border-ink-600/50 px-3 py-2.5 text-sm text-heading">
+                                        <td className="w-1/2 border-r border-amber-600/50 px-3 py-2.5 text-sm text-amber-500">
                                             {labelFromSide(activeAssignment._leftSide).label || (
-                                                <span className="italic text-ink-500">empty</span>
+                                                <span className="text-amber-500 italic">empty</span>
                                             )}
                                         </td>
-                                        <td className="w-1/2 px-3 py-2.5 text-sm text-heading">
+                                        <td className="w-1/2 px-3 py-2.5 text-sm text-amber-500">
                                             {labelFromSide(activeAssignment._rightSide).label || (
-                                                <span className="italic text-ink-500">empty</span>
+                                                <span className="text-amber-500 italic">empty</span>
                                             )}
                                         </td>
                                         <td className="w-10" />

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useId } from "react";
 import { TextInput } from "@/Components/FormControls";
 
 export default function Autocomplete({
@@ -19,8 +19,12 @@ export default function Autocomplete({
     const [isOpen, setIsOpen] = useState(false);
     const [filteredOptions, setFilteredOptions] = useState(options);
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
-    const containerRef = useRef(null);
     const inputRef = useRef(null);
+    const generatedId = useId();
+    const inputId = id ?? generatedId;
+    const listboxId = `${inputId}-listbox`;
+    const isListboxOpen = isOpen && filteredOptions.length > 0;
+    const optionId = (option) => `${listboxId}-${option.id}`;
 
     // Normalize string for comparison
     const normalizeString = (str) => {
@@ -49,18 +53,6 @@ export default function Autocomplete({
         setHighlightedIndex(-1);
     }, [value, options]);
 
-    // Close dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (containerRef.current && !containerRef.current.contains(event.target)) {
-                setIsOpen(false);
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
     const handleInputChange = (e) => {
         onChange(e.target.value);
         setIsOpen(true);
@@ -69,7 +61,6 @@ export default function Autocomplete({
     const handleOptionClick = (option) => {
         onChange(getOptionValue(option));
         setIsOpen(false);
-        inputRef.current?.blur();
     };
 
     const handleKeyDown = (e) => {
@@ -84,9 +75,7 @@ export default function Autocomplete({
         switch (e.key) {
             case "ArrowDown":
                 e.preventDefault();
-                setHighlightedIndex((prev) =>
-                    prev < filteredOptions.length - 1 ? prev + 1 : prev
-                );
+                setHighlightedIndex((prev) => (prev < filteredOptions.length - 1 ? prev + 1 : prev));
                 break;
             case "ArrowUp":
                 e.preventDefault();
@@ -100,45 +89,61 @@ export default function Autocomplete({
                 break;
             case "Escape":
                 setIsOpen(false);
-                inputRef.current?.blur();
                 break;
         }
     };
 
     return (
-        <div ref={containerRef} className="relative">
+        <div className="relative">
             {(icon || labelText) && (
-                <label className="mb-2 flex flex-row items-center">
-                    {icon && (
-                        <img src={icon} alt={iconAlt} className="mr-2 h-6 w-6 rounded-xs" />
-                    )}
+                <label htmlFor={inputId} className="mb-2 flex flex-row items-center">
+                    {icon && <img src={icon} alt={iconAlt} className="mr-2 h-6 w-6 rounded-xs" />}
                     {labelText && <span className="text-lg font-semibold">{labelText}</span>}
                 </label>
             )}
 
             <TextInput
                 ref={inputRef}
-                id={id}
+                id={inputId}
                 value={value}
+                role="combobox"
+                aria-expanded={isListboxOpen}
+                aria-controls={isListboxOpen ? listboxId : undefined}
+                aria-autocomplete="list"
+                aria-activedescendant={
+                    isListboxOpen && filteredOptions[highlightedIndex]
+                        ? optionId(filteredOptions[highlightedIndex])
+                        : undefined
+                }
                 onChange={handleInputChange}
                 onFocus={() => setIsOpen(true)}
+                onClick={() => setIsOpen(true)}
+                onBlur={() => setIsOpen(false)}
                 onKeyDown={handleKeyDown}
                 placeholder={placeholder}
                 required={required}
                 autoComplete="off"
             />
 
-            {isOpen && filteredOptions.length > 0 && (
-                <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded border border-ink-600 bg-ground-800 shadow-xl">
+            {isListboxOpen && (
+                <div
+                    id={listboxId}
+                    role="listbox"
+                    onMouseDown={(event) => event.preventDefault()}
+                    className="bg-brown-800 absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded border border-amber-600 shadow-xl"
+                >
                     {filteredOptions.map((option, index) => (
                         <div
                             key={option.id}
+                            id={optionId(option)}
+                            role="option"
+                            aria-selected={index === highlightedIndex}
                             onClick={() => handleOptionClick(option)}
                             onMouseEnter={() => setHighlightedIndex(index)}
                             className={`cursor-pointer px-4 py-2 transition-colors ${
                                 index === highlightedIndex
-                                    ? "bg-ink-600 text-white"
-                                    : "text-secondary-300 hover:bg-ink-600/20"
+                                    ? "bg-amber-700 text-white"
+                                    : "text-gray-300 hover:bg-amber-600/20"
                             }`}
                         >
                             {renderOption(option)}
@@ -148,7 +153,7 @@ export default function Autocomplete({
             )}
 
             {isOpen && filteredOptions.length === 0 && value && (
-                <div className="absolute z-10 mt-1 w-full rounded border border-ink-600 bg-ground-800 px-4 py-2 text-secondary-400 shadow-xl">
+                <div className="bg-brown-800 absolute z-10 mt-1 w-full rounded border border-amber-600 px-4 py-2 text-gray-300 shadow-xl">
                     No matches found
                 </div>
             )}
