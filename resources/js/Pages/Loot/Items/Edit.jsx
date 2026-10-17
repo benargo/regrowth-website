@@ -24,6 +24,7 @@ import CommentsSection from "@/Components/Comments/CommentsSection";
 import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
 import MarkdownEditor from "@/Components/MarkdownEditor";
 import Modal from "@/Components/Modal";
+import RemoveButton from "@/Components/RemoveButton";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
 import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
@@ -52,16 +53,13 @@ function DraggablePriorityItem({ priority, onRemove }) {
         >
             {priority.media && <img src={priority.media} alt="" className="h-6 w-6 rounded-xs" />}
             <span>{priority.title}</span>
-            <button
-                type="button"
+            <RemoveButton
+                label={`Remove ${priority.title}`}
                 onClick={(e) => {
                     e.stopPropagation();
                     onRemove(priority.id);
                 }}
-                className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs text-white transition-colors hover:bg-red-700"
-            >
-                <Icon icon="times" style="solid" />
-            </button>
+            />
         </div>
     );
 }
@@ -91,13 +89,12 @@ function DroppableWeightRow({ weight, children, onAddClick }) {
             <div className="w-12 flex-none text-4xl">{weight + 1}</div>
             <div className="ml-4 flex w-full flex-wrap items-center justify-center gap-4 py-4">
                 {children}
-                <button
-                    type="button"
+                <IconButton
+                    icon="plus"
+                    label={`Add bias to level ${weight + 1}`}
                     onClick={() => onAddClick(weight)}
                     className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-600 text-white transition-colors hover:bg-amber-700"
-                >
-                    <Icon icon="plus" style="solid" />
-                </button>
+                />
             </div>
         </div>
     );
@@ -121,19 +118,18 @@ function InsertWeightZone({ afterWeight, onDrop, onAddClick }) {
                 <Icon icon="chevron-down" style="solid" />
             </div>
             <div
-                className={`absolute inset-x-0 top-1/2 flex -translate-y-1/2 items-center justify-center transition-opacity ${
+                className={`absolute inset-x-0 top-1/2 flex -translate-y-1/2 items-center justify-center transition-opacity focus-within:opacity-100 ${
                     isHovered || isOver ? "opacity-100" : "opacity-0"
                 }`}
             >
-                <button
-                    type="button"
+                <IconButton
+                    icon="plus"
+                    label={`Insert new bias level after level ${afterWeight + 1}`}
                     onClick={() => onAddClick(afterWeight)}
                     className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
                         isOver ? "text-brown-900 bg-amber-500" : "bg-amber-600 text-white hover:bg-amber-700"
                     }`}
-                >
-                    <Icon icon="plus" style="solid" />
-                </button>
+                />
             </div>
         </div>
     );

@@ -20,6 +20,7 @@ import AssignmentCellEditor, { resetAssignmentOptionsFetched } from "@/Component
 import MetaCard, { MetaItem } from "@/Components/MetaCard";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
+import IconButton from "@/Components/IconButton";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import Tooltip from "@/Components/Tooltip";
 import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
@@ -107,14 +108,13 @@ function AssignmentRowEditor({ assignment, position, targetMarkers, onUpdate, on
             />
             <td className="w-10 px-1 py-2">
                 <div className="relative flex h-full items-center justify-center">
-                    <button
-                        type="button"
+                    <IconButton
+                        icon="times"
+                        iconClassName="text-[9px]"
+                        label={`Remove assignment ${position}`}
                         onClick={() => onRemove(assignment._key)}
-                        aria-label={`Remove assignment ${position}`}
                         className="flex h-5 w-5 items-center justify-center rounded-full bg-red-700/80 text-xs text-white transition-colors hover:bg-red-600"
-                    >
-                        <Icon icon="times" style="solid" className="text-[9px]" />
-                    </button>
+                    />
                 </div>
             </td>
         </tr>
@@ -295,15 +295,14 @@ function SortableGroupCard({
         <div ref={setNodeRef} style={style} className="relative">
             {groupId !== null && (
                 <div className="mb-1 flex items-center gap-1">
-                    <button
-                        type="button"
+                    <IconButton
+                        icon="grip-vertical"
+                        iconClassName="text-xs"
+                        label={`Reorder ${groupName ?? "unnamed group"}`}
                         className="cursor-grab touch-none text-amber-500 hover:text-amber-400 active:cursor-grabbing"
-                        aria-label={`Reorder ${groupName ?? "unnamed group"}`}
                         {...attributes}
                         {...listeners}
-                    >
-                        <Icon icon="grip-vertical" style="solid" className="text-xs" />
-                    </button>
+                    />
 
                     {editingName ? (
                         <input
@@ -332,14 +331,12 @@ function SortableGroupCard({
                         </button>
                     )}
 
-                    <button
-                        type="button"
+                    <IconButton
+                        icon="times"
+                        label="Remove group"
                         onClick={() => onRemoveGroup(groupKey)}
-                        aria-label="Remove group"
                         className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-700/60 text-[9px] text-white hover:bg-red-600"
-                    >
-                        <Icon icon="times" style="solid" />
-                    </button>
+                    />
                 </div>
             )}
 

@@ -3,8 +3,9 @@ import cn from "@/Helpers/cn";
 
 /**
  * An icon-only button whose accessible name comes from the required `label`.
+ * `iconClassName` is applied to the icon itself.
  */
-export default function IconButton({ icon, label, iconStyle = "solid", className = "", ...props }) {
+export default function IconButton({ icon, label, iconStyle = "solid", iconClassName, className = "", ...props }) {
     if (process.env.NODE_ENV !== "production" && !label) {
         throw new Error("IconButton: a 'label' prop is required.");
     }
@@ -19,7 +20,7 @@ export default function IconButton({ icon, label, iconStyle = "solid", className
             )}
             {...props}
         >
-            <Icon icon={icon} style={iconStyle} aria-hidden="true" />
+            <Icon icon={icon} style={iconStyle} className={iconClassName} aria-hidden="true" />
         </button>
     );
 }

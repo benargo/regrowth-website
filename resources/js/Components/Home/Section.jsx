@@ -23,15 +23,15 @@ export default function Section({
     children,
     ...props
 }) {
-    const showTop = edge === "top" || edge === "both";
-    const showBottom = edge === "bottom" || edge === "both";
-    const padding = getSectionPadding({ showTop, showBottom });
+    const hasTopEdge = edge === "top" || edge === "both";
+    const hasBottomEdge = edge === "bottom" || edge === "both";
+    const padding = getSectionPadding({ hasTopEdge, hasBottomEdge });
 
     return (
         <section className={`relative ${TONE_BG[tone] ?? TONE_BG.mid} ${className}`} {...props}>
-            {showTop && <RaggedEdge position="top" tone={edgeTone} />}
+            {hasTopEdge && <RaggedEdge position="top" tone={edgeTone} />}
             <div className={`relative z-10 container mx-auto px-4 ${padding} ${maxWidth}`}>{children}</div>
-            {showBottom && <RaggedEdge position="bottom" tone={edgeTone} />}
+            {hasBottomEdge && <RaggedEdge position="bottom" tone={edgeTone} />}
         </section>
     );
 }

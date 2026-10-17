@@ -1,11 +1,9 @@
-import Icon from "@/Components/FontAwesome/Icon";
-
 export default function FormatButton({ title, onClick, label = null }) {
     return (
         <div key={title} className="group relative">
             <button
                 type="button"
-                aria-label={label?.type === Icon ? title : undefined}
+                aria-label={label ? title : undefined}
                 onClick={onClick}
                 className={`bg-brown-700 hover:bg-brown-700 focus:ring-primary flex h-8 w-8 items-center justify-center rounded border border-amber-500 px-2 py-1 text-sm text-white focus:ring-1 focus:outline-hidden`}
             >

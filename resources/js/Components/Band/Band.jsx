@@ -9,9 +9,9 @@ import WavyEdge from "./WavyEdge";
  */
 export default function Band({ tone = "light", edge = "none", className = "", maxWidth = "", children, ...props }) {
     const isShaded = tone === "shaded";
-    const showTop = isShaded && (edge === "top" || edge === "both");
-    const showBottom = isShaded && (edge === "bottom" || edge === "both");
-    const padding = getSectionPadding({ showTop, showBottom });
+    const hasTopEdge = isShaded && (edge === "top" || edge === "both");
+    const hasBottomEdge = isShaded && (edge === "bottom" || edge === "both");
+    const padding = getSectionPadding({ hasTopEdge, hasBottomEdge });
 
     return (
         <section className={cn("relative", className)} {...props}>

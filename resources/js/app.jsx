@@ -10,9 +10,12 @@ const appName = import.meta.env.VITE_APP_NAME || "Laravel";
 const THEME_COLORS = { forever: "#003c4e", classic: "#4a3d32" };
 
 router.on("navigate", (event) => {
+    const isHomepage = event.detail.page.component === "Home";
+
     document
         .querySelector('meta[name="theme-color"]')
-        ?.setAttribute("content", event.detail.page.component === "Home" ? THEME_COLORS.forever : THEME_COLORS.classic);
+        ?.setAttribute("content", isHomepage ? THEME_COLORS.forever : THEME_COLORS.classic);
+    document.body.classList.toggle("bg-forever-800", isHomepage);
 });
 
 createInertiaApp({

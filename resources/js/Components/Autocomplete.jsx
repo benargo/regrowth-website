@@ -19,7 +19,6 @@ export default function Autocomplete({
     const [isOpen, setIsOpen] = useState(false);
     const [filteredOptions, setFilteredOptions] = useState(options);
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
-    const containerRef = useRef(null);
     const inputRef = useRef(null);
     const generatedId = useId();
     const inputId = id ?? generatedId;
@@ -53,18 +52,6 @@ export default function Autocomplete({
         setFilteredOptions(filtered);
         setHighlightedIndex(-1);
     }, [value, options]);
-
-    // Close dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (containerRef.current && !containerRef.current.contains(event.target)) {
-                setIsOpen(false);
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
 
     const handleInputChange = (e) => {
         onChange(e.target.value);
@@ -107,7 +94,7 @@ export default function Autocomplete({
     };
 
     return (
-        <div ref={containerRef} className="relative">
+        <div className="relative">
             {(icon || labelText) && (
                 <label htmlFor={inputId} className="mb-2 flex flex-row items-center">
                     {icon && <img src={icon} alt={iconAlt} className="mr-2 h-6 w-6 rounded-xs" />}
@@ -130,6 +117,7 @@ export default function Autocomplete({
                 }
                 onChange={handleInputChange}
                 onFocus={() => setIsOpen(true)}
+                onClick={() => setIsOpen(true)}
                 onBlur={() => setIsOpen(false)}
                 onKeyDown={handleKeyDown}
                 placeholder={placeholder}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import Modal from "@/Components/Modal";
+import IconButton from "@/Components/IconButton";
 import useGrmUploadChannel from "@/Hooks/useGrmUploadChannel";
 import useCountUp from "@/Hooks/useCountUp";
 
@@ -169,20 +170,13 @@ const UploadProgressModal = forwardRef(function UploadProgressModal(_props, ref)
             <div className="p-6 text-white">
                 <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-lg font-bold">GRM Upload Progress</h2>
-                    <button
+                    <IconButton
+                        icon="times"
+                        iconClassName="h-5 w-5"
+                        label="Dismiss"
                         onClick={dismiss}
                         className="text-gray-400 transition-colors hover:text-white"
-                        aria-label="Dismiss"
-                    >
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M6 18L18 6M6 6l12 12"
-                            />
-                        </svg>
-                    </button>
+                    />
                 </div>
 
                 <div className="mb-4">

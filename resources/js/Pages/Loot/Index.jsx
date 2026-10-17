@@ -2,7 +2,7 @@ import { Link } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
-import Card from "@/Components/Card";
+import ImageCard from "@/Components/ImageCard";
 import Icon from "@/Components/FontAwesome/Icon";
 import { Can } from "@/Components/Authorizable";
 
@@ -91,7 +91,7 @@ export default function Index({ raids, stats }) {
                 <StatsRow stats={stats} />
                 <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {raids.data.map((raid) => (
-                        <Card
+                        <ImageCard
                             key={raid.id}
                             href={route("loot.raids.show", { raid: raid.id, name: raid.slug })}
                             backgroundClass={raid.background ?? "bg-brown-900"}

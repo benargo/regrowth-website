@@ -17,6 +17,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import Icon from "@/Components/FontAwesome/Icon";
+import IconButton from "@/Components/IconButton";
 import { Checkbox, PrimaryButton, TextInput } from "@/Components/FormControls";
 
 /**
@@ -127,14 +128,12 @@ function SortableRankRow({ row, index, error, onRename, onCommitName, onToggleAt
                         Attendance tracked
                     </label>
                 </span>
-                <button
-                    type="button"
+                <IconButton
+                    icon="trash-alt"
+                    label={`Delete ${row.name}`}
                     onClick={() => onDelete(row.key)}
-                    aria-label={`Delete ${row.name}`}
-                    className="text-gray-400 focus-visible:outline-amber-400 ml-auto flex h-8 w-8 items-center justify-center rounded hover:text-red-400 focus-visible:text-red-400 focus-visible:outline-2"
-                >
-                    <Icon icon="trash-alt" style="solid" />
-                </button>
+                    className="ml-auto flex h-8 w-8 items-center justify-center rounded text-gray-400 hover:text-red-400 focus-visible:text-red-400"
+                />
             </RankRowContent>
             {error && (
                 <p className="px-3 pb-2 pl-24 text-sm text-red-400" role="alert">

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { router, usePage } from "@inertiajs/react";
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from "@headlessui/react";
 import Icon from "@/Components/FontAwesome/Icon";
+import IconButton from "@/Components/IconButton";
 import Pill from "@/Components/Pill";
 import CharacterPortrait from "@/Components/Characters/CharacterPortrait";
 import ClassPill from "@/Components/Characters/ClassPill";
@@ -140,14 +141,12 @@ export default function CharacterSearch({
                 )}
 
                 {!disabled && (query || selectedCharacter) ? (
-                    <button
-                        type="button"
+                    <IconButton
+                        icon="times"
+                        label="Clear character"
                         onClick={handleClear}
-                        aria-label="Clear character"
-                        className="text-gray-400 focus-visible:outline-amber-400 absolute inset-y-0 right-1 my-auto flex size-8 items-center justify-center rounded hover:text-white focus-visible:outline-2"
-                    >
-                        <Icon icon="times" style="solid" />
-                    </button>
+                        className="absolute inset-y-0 right-1 my-auto flex size-8 items-center justify-center rounded text-gray-400 hover:text-white"
+                    />
                 ) : (
                     <ComboboxButton
                         aria-label="Show characters"

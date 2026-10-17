@@ -252,25 +252,23 @@ function LinkReportsModal({
                 <div className="flex items-center gap-3">
                     {meta && meta.last_page > 1 && (
                         <>
-                            <button
+                            <IconButton
+                                icon="chevron-left"
+                                label="Previous page"
                                 onClick={() => handlePageChange(meta.current_page - 1)}
-                                aria-label="Previous page"
                                 disabled={meta.current_page <= 1 || isLoading}
                                 className="rounded border border-amber-600/30 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-amber-600/10 disabled:cursor-not-allowed disabled:opacity-40"
-                            >
-                                <Icon icon="chevron-left" style="solid" />
-                            </button>
+                            />
                             <span className="text-sm text-gray-400">
                                 Page {meta.current_page} of {meta.last_page}
                             </span>
-                            <button
+                            <IconButton
+                                icon="chevron-right"
+                                label="Next page"
                                 onClick={() => handlePageChange(meta.current_page + 1)}
-                                aria-label="Next page"
                                 disabled={meta.current_page >= meta.last_page || isLoading}
                                 className="rounded border border-amber-600/30 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-amber-600/10 disabled:cursor-not-allowed disabled:opacity-40"
-                            >
-                                <Icon icon="chevron-right" style="solid" />
-                            </button>
+                            />
                         </>
                     )}
                 </div>

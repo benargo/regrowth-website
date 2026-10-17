@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { router, usePage } from "@inertiajs/react";
 import { useEcho } from "@laravel/echo-react";
 import Icon from "@/Components/FontAwesome/Icon";
+import IconButton from "@/Components/IconButton";
 import { TextInput } from "@/Components/FormControls";
 
 const MEMBER_LIMIT = 5;
@@ -144,14 +145,12 @@ export default function UserSearch({ id, value, onSelect, invalid = false }) {
                     />
                 )}
                 {!isSearching && (query || value) && (
-                    <button
-                        type="button"
+                    <IconButton
+                        icon="times"
+                        label="Clear Discord user"
                         onClick={handleClear}
-                        aria-label="Clear Discord user"
-                        className="text-gray-400 focus-visible:outline-amber-400 absolute inset-y-0 right-1 my-auto flex size-8 items-center justify-center rounded hover:text-white focus-visible:outline-2"
-                    >
-                        <Icon icon="times" style="solid" />
-                    </button>
+                        className="absolute inset-y-0 right-1 my-auto flex size-8 items-center justify-center rounded text-gray-400 hover:text-white"
+                    />
                 )}
             </div>
 

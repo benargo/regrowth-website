@@ -5,6 +5,7 @@ import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
 import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import Icon from "@/Components/FontAwesome/Icon";
+import { TableHeader } from "@/Components/Table";
 import useLocalStorage from "@/Hooks/useLocalStorage";
 import useLootPrioritiesChannel from "@/Hooks/useLootPrioritiesChannel";
 
@@ -52,11 +53,11 @@ function DesktopTable({ phases, rows, columnMax, phaseTotals }) {
             <table className="w-full min-w-max border-collapse">
                 <thead className="bg-brown-900 sticky top-0 border-b border-amber-600/30">
                     <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Priority</th>
+                        <TableHeader className="text-left">Priority</TableHeader>
                         {phases.map((phase) => (
-                            <th key={phase.id} className="px-3 py-3 text-center text-sm font-semibold text-amber-500">
+                            <TableHeader key={phase.id} className="px-3 text-center">
                                 {phase.name}
-                            </th>
+                            </TableHeader>
                         ))}
                     </tr>
                 </thead>

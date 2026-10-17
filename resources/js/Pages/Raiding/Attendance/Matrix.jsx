@@ -5,6 +5,7 @@ import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
 import GameVersionSelector from "@/Components/GameVersions/GameVersionSelector";
 import Icon from "@/Components/FontAwesome/Icon";
+import { TableHeader } from "@/Components/Table";
 import DateFilterButton from "@/Components/DateFilterButton";
 import normaliseCharacterName from "@/Helpers/NormaliseCharacterName";
 import Tooltip from "@/Components/Tooltip";
@@ -119,25 +120,18 @@ function MatrixTable({ raids, rows }) {
             <table className="min-w-max table-auto border-collapse">
                 <thead className="border-b border-amber-600">
                     <tr>
-                        <th className="bg-brown-900 px-4 py-3 text-left text-sm font-semibold text-amber-500 md:sticky md:left-0 md:z-20">
-                            Name
-                        </th>
-                        <th className="bg-brown-900 hidden px-4 py-3 text-left text-sm font-semibold text-amber-500 md:sticky md:left-[max-content] md:z-20 md:table-cell">
+                        <TableHeader className="bg-brown-900 text-left md:sticky md:left-0 md:z-20">Name</TableHeader>
+                        <TableHeader className="bg-brown-900 hidden text-left md:sticky md:left-[max-content] md:z-20 md:table-cell">
                             Rank
-                        </th>
-                        <th className="bg-brown-900 px-4 py-3 text-right text-sm font-semibold text-amber-500 lg:sticky lg:z-20">
-                            %
-                        </th>
+                        </TableHeader>
+                        <TableHeader className="bg-brown-900 text-right lg:sticky lg:z-20">%</TableHeader>
                         {raids.map((raid) => (
-                            <th
-                                key={raid.id}
-                                className="px-3 py-3 text-center text-sm font-semibold whitespace-nowrap text-amber-500"
-                            >
+                            <TableHeader key={raid.id} className="px-3 text-center whitespace-nowrap">
                                 <Tooltip body={raid.zone_name} position="bottom">
                                     <p>{formatRaidDate(raid.start_time, { weekday: "short" })}</p>
                                     <p>{formatRaidDate(raid.start_time, { day: "2-digit", month: "2-digit" })}</p>
                                 </Tooltip>
-                            </th>
+                            </TableHeader>
                         ))}
                     </tr>
                 </thead>

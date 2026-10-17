@@ -54,6 +54,9 @@ export default function Master({ title, isHomepage = false, children }) {
     const classes = isHomepage ? NAV_CLASSES.forever : NAV_CLASSES.classic;
     const mobileLinkClass = cn(MOBILE_LINK, classes.mobileLink);
     const footerLinkClass = cn(FOOTER_LINK, classes.footerLink);
+    const isRosterActive = route().current("roster.*") || route().current("characters.show");
+    const isRaidingActive = route().current("raiding.*");
+    const isLootActive = route().current("loot.*");
     const user = auth?.user;
     const impersonating = auth?.impersonating;
 
@@ -148,15 +151,23 @@ export default function Master({ title, isHomepage = false, children }) {
                         {/* Desktop menu */}
                         <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-between">
                             <div className="flex items-center gap-1">
-                                <NavLink className={classes.navLink} href={route("roster.index")}>
+                                <NavLink
+                                    className={classes.navLink}
+                                    href={route("roster.index")}
+                                    active={isRosterActive}
+                                >
                                     <Icon icon="users" style="solid" className="mr-2 h-6" />
                                     Roster
                                 </NavLink>
-                                <NavLink className={classes.navLink} href={route("raiding.index")}>
+                                <NavLink
+                                    className={classes.navLink}
+                                    href={route("raiding.index")}
+                                    active={isRaidingActive}
+                                >
                                     <Icon icon="dragon" style="solid" className="mr-2 h-9" />
                                     Raiding
                                 </NavLink>
-                                <NavLink className={classes.navLink} href={route("loot.index")}>
+                                <NavLink className={classes.navLink} href={route("loot.index")} active={isLootActive}>
                                     <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
                                     Loot
                                 </NavLink>
@@ -270,15 +281,27 @@ export default function Master({ title, isHomepage = false, children }) {
                     id="mobile-menu"
                 >
                     <div className="space-y-1 px-2 pt-2 pb-3">
-                        <ResponsiveNavLink className={classes.responsiveNavLink} href={route("roster.index")}>
+                        <ResponsiveNavLink
+                            className={classes.responsiveNavLink}
+                            href={route("roster.index")}
+                            active={isRosterActive}
+                        >
                             <Icon icon="users" style="solid" className="mr-2 h-6" />
                             Roster
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink className={classes.responsiveNavLink} href={route("raiding.index")}>
+                        <ResponsiveNavLink
+                            className={classes.responsiveNavLink}
+                            href={route("raiding.index")}
+                            active={isRaidingActive}
+                        >
                             <Icon icon="dragon" style="solid" className="mr-2 h-6" />
                             Raiding
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink className={classes.responsiveNavLink} href={route("loot.index")}>
+                        <ResponsiveNavLink
+                            className={classes.responsiveNavLink}
+                            href={route("loot.index")}
+                            active={isLootActive}
+                        >
                             <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
                             Loot
                         </ResponsiveNavLink>

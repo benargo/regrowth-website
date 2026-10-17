@@ -1,4 +1,5 @@
 import Icon from "@/Components/FontAwesome/Icon";
+import IconButton from "@/Components/IconButton";
 import { TextInput } from "@/Components/FormControls";
 
 export default function SearchInput({ value, onChange, placeholder = "Search by name…", dusk, inputRef }) {
@@ -14,14 +15,12 @@ export default function SearchInput({ value, onChange, placeholder = "Search by 
                 className="pr-10 pl-10"
             />
             {value && (
-                <button
-                    type="button"
+                <IconButton
+                    icon="times"
+                    label="Clear search"
                     onClick={() => onChange("")}
-                    aria-label="Clear search"
-                    className="absolute top-1/2 right-3 -translate-y-1/2 rounded text-gray-400 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
-                >
-                    <Icon icon="times" style="solid" />
-                </button>
+                    className="absolute top-1/2 right-3 -translate-y-1/2 rounded text-gray-400 hover:text-white"
+                />
             )}
         </div>
     );

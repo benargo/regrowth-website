@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Icon from "./FontAwesome/Icon";
+import IconButton from "@/Components/IconButton";
 
 export default function FlashMessage({ type = "error", message, onDismiss }) {
     const [isVisible, setIsVisible] = useState(true);
@@ -61,13 +62,13 @@ export default function FlashMessage({ type = "error", message, onDismiss }) {
             >
                 {style.icon}
                 <p className="flex-1 text-sm text-white">{message}</p>
-                <button
+                <IconButton
+                    icon="times"
+                    iconStyle="regular"
+                    label="Dismiss"
                     onClick={handleDismiss}
                     className="text-gray-400 transition-colors hover:text-white"
-                    aria-label="Dismiss"
-                >
-                    <Icon icon="times" style="regular" />
-                </button>
+                />
             </div>
         </div>
     );
