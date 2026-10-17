@@ -2,6 +2,7 @@
 
 namespace App\Actions\GameVersion;
 
+use App\Actions\Phase\ReorderPhases;
 use App\Models\GameVersion;
 use App\Models\Raid;
 use Illuminate\Http\UploadedFile;
@@ -18,8 +19,8 @@ use Lorisleiva\Actions\Concerns\AsAction;
  * phase, so linking a phase is all it takes to bring them along.
  *
  * Phases are saved one model at a time rather than with a bulk query update
- * so Phase still dispatches AddonSettingsProcessed. There are only tens of
- * phases, so the per-row cost doesn't matter.
+ * so Phase still dispatches AddonSettingsProcessed; the unscheduled phases'
+ * order goes through ReorderPhases.
  *
  * Guild ranks are replaced as a whole ordered list; see SyncGuildRanks.
  *
@@ -40,7 +41,7 @@ class UpdateGameVersion
         'playable_race_ids',
         'playable_class_ids',
         'phase_ids',
-        'new_phase',
+        'unscheduled_phase_ids',
         'new_raid',
         'guild_ranks',
     ];
@@ -65,8 +66,8 @@ class UpdateGameVersion
                 $this->assign($gameVersion, 'phases', $data['phase_ids']);
             }
 
-            if (Arr::exists($data, 'new_phase')) {
-                $gameVersion->phases()->create($data['new_phase']);
+            if (Arr::exists($data, 'unscheduled_phase_ids')) {
+                ReorderPhases::run($data['unscheduled_phase_ids']);
             }
 
             if (Arr::exists($data, 'new_raid')) {
