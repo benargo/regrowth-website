@@ -235,28 +235,28 @@ function PlayerListRows({ stats }) {
                 <PlayerListBox
                     icon="star"
                     label="Players above 80% attendance"
-                    players={stats.percentageGroups[">=80"]?.data ?? []}
+                    players={stats.percentageGroups[">=80"] ?? []}
                 />
                 <PlayerListBox
                     icon="user-check"
                     label="Players between 50–80% attendance"
-                    players={stats.percentageGroups["50-80"]?.data ?? []}
+                    players={stats.percentageGroups["50-80"] ?? []}
                 />
                 <PlayerListBox
                     icon="user-check"
                     label="Players below 50% attendance"
-                    players={stats.percentageGroups["<50"]?.data ?? []}
+                    players={stats.percentageGroups["<50"] ?? []}
                 />
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <BenchedByTagBox icon="couch" label="Players benched last week" groups={stats.benchedLastWeek} />
-                <PlayerListBox icon="chart-line-down" label="Players dropping off" players={stats.droppingOff.data} />
-                <PlayerListBox icon="chart-line" label="Players picking up" players={stats.pickingUp.data} />
+                <PlayerListBox icon="chart-line-down" label="Players dropping off" players={stats.droppingOff} />
+                <PlayerListBox icon="chart-line" label="Players picking up" players={stats.pickingUp} />
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-                <UpcomingAbsencesBox icon="umbrella-beach" absences={stats.upcomingAbsences.data} />
+                <UpcomingAbsencesBox icon="umbrella-beach" absences={stats.upcomingAbsences} />
                 <Link
                     href={route("raiding.attendance.graphs.index")}
                     className="flex items-center gap-4 rounded border border-ink-600 p-4 transition-colors hover:bg-ink-600/20"
