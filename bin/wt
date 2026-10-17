@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+#
+# Run a command in the main checkout's Sail app container against the current
+# git worktree, using a testing database dedicated to that worktree.
+#
+#   bin/wt php artisan test --compact --display-phpunit-notices
+#   bin/wt composer install
+#   bin/wt prune
+#
+# From the main checkout the command runs against /var/www/html and the
+# `testing` database. From a worktree under the main checkout it runs against
+# /var/www/html/<worktree path> and the `testing_<slug>` database, where
+# <slug> is the worktree's directory name. On first use in a worktree it
+# clones vendor/ and node_modules/ from the main checkout (copy-on-write) and
+# writes public/hot so @vite renders without a compiled manifest.
+#
+# `prune` drops every testing_* database (including --parallel copies) whose
+# worktree no longer exists.
+
+set -euo pipefail
+
+main=$(cd "$(git rev-parse --path-format=absolute --git-common-dir)/.." && pwd -P)
+top=$(cd "$(git rev-parse --show-toplevel)" && pwd -P)
+
+export WWWUSER=${WWWUSER:-$(id -u)}
+export WWWGROUP=${WWWGROUP:-$(id -g)}
+
+for compose_file in "$main"/compose.yaml "$main"/compose.yml "$main"/docker-compose.yml "$main"/docker-compose.yaml; do
+    [[ -f $compose_file ]] && break
+done
+
+dc() {
+    docker compose --project-directory "$main" -f "$compose_file" "$@"
+}
+
+mariadb_root() {
+    dc exec -T mariadb sh -c 'mariadb -uroot -p"$MYSQL_ROOT_PASSWORD" -N -B "$@"' mariadb "$@"
+}
+
+slug_for() {
+    basename "$1" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9\n' '_'
+}
+
+prune() {
+    local keep=() path line
+    while IFS= read -r line; do
+        path=${line#worktree }
+        [[ $path == "$main" ]] && continue
+        keep+=("testing_$(slug_for "$path")")
+    done < <(git worktree list --porcelain | grep '^worktree ')
+
+    local database base dropped=0
+    for database in $(mariadb_root -e "SHOW DATABASES LIKE 'testing\\_%'"); do
+        base=$(sed -E 's/_test_[0-9]+$//' <<<"$database")
+        [[ $base == testing ]] && continue
+        if [[ " ${keep[*]-} " == *" $base "* ]]; then
+            continue
+        fi
+        echo "Dropping $database" >&2
+        mariadb_root -e "DROP DATABASE \`$database\`"
+        dropped=$((dropped + 1))
+    done
+    echo "Dropped $dropped database(s)." >&2
+}
+
+provision() {
+    local directory
+    for directory in vendor node_modules; do
+        if [[ ! -e $top/$directory && -d $main/$directory ]]; then
+            echo "Cloning $directory/ from the main checkout" >&2
+            cp -Rc "$main/$directory" "$top/$directory"
+        fi
+    done
+
+    if [[ ! -e $top/public/hot && ! -e $top/public/build/manifest.json ]]; then
+        echo "http://localhost:5173" >"$top/public/hot"
+    fi
+}
+
+if [[ ${1-} == prune ]]; then
+    prune
+    exit 0
+fi
+
+if [[ $# -eq 0 ]]; then
+    sed -n '3,18p' "$0" | sed 's/^# \{0,1\}//'
+    exit 1
+fi
+
+if [[ $top == "$main" ]]; then
+    relative=""
+    database=testing
+elif [[ $top == "$main"/* ]]; then
+    relative=${top#"$main"/}
+    database="testing_$(slug_for "$top")"
+    provision
+else
+    echo "bin/wt: $top is outside $main, so the Sail container cannot see it." >&2
+    echo "Create worktrees under $main/.claude/worktrees/ instead." >&2
+    exit 1
+fi
+
+mariadb_root -e "CREATE DATABASE IF NOT EXISTS \`$database\`"
+
+tty_flag=()
+if [[ ! -t 0 || ! -t 1 ]]; then
+    tty_flag=(-T)
+fi
+
+exec docker compose --project-directory "$main" -f "$compose_file" exec ${tty_flag[@]+"${tty_flag[@]}"} \
+    -u sail \
+    -w "/var/www/html${relative:+/$relative}" \
+    -e DB_DATABASE="$database" \
+    laravel.test "$@"

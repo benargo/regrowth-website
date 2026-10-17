@@ -11,6 +11,16 @@ Always use `vendor/bin/sail test` (which wraps `php artisan test`). Never invoke
 - Standard run: `vendor/bin/sail test --display-phpunit-notices`
 - Filtered run: `vendor/bin/sail test --compact --display-phpunit-notices --filter=...`
 
+## Run tests from a git worktree via `bin/wt`
+
+Inside a git worktree, run tests with `bin/wt php artisan test` instead of `vendor/bin/sail test`. `bin/wt` executes the command in the main checkout's Sail container, in the worktree's directory, against a dedicated `testing_<worktree-name>` database, so concurrent runs in different worktrees don't overwrite each other.
+
+- Worktrees must live under the main checkout (Claude Code's default `.claude/worktrees/<name>`); the container cannot see worktrees elsewhere.
+- Never run `vendor/bin/sail up` from a worktree — it starts a second stack that collides with the main one's ports.
+- Worktree run: `bin/wt php artisan test --compact --display-phpunit-notices --filter=...`
+- Other commands work the same way: `bin/wt composer install`, `bin/wt npm run build`.
+- `bin/wt prune` drops testing databases whose worktree has been removed.
+
 ## `make:test` naming
 
 Pass only the path relative to the test type's base directory — Artisan prepends `tests/Unit/` for `--unit` and `tests/Feature/` otherwise.
