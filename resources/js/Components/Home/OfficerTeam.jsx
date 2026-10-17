@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
-import Section from "@/Themes/Forever/Section";
-import DisplayHeading from "@/Themes/Forever/DisplayHeading";
+import Section from "@/Components/Home/Section";
+import DisplayHeading from "@/Components/Home/DisplayHeading";
 import CountryFlag from "@/Components/CountryFlag";
 
 /** Layering per position so nearer (taller-index) officers read on top. */
@@ -70,7 +70,7 @@ function OfficerProfile({
                         viewBox="0 0 100 140"
                         preserveAspectRatio="xMidYMax meet"
                         fill="currentColor"
-                        className={`text-ground-600 absolute bottom-0 left-1/2 h-full w-auto max-w-none -translate-x-1/2 drop-shadow-[0_8px_20px_rgba(0,0,0,0.55)] transition-transform duration-300 group-hover:-translate-y-1 ${isLoading ? "animate-pulse" : ""}`}
+                        className={`text-forever-600 absolute bottom-0 left-1/2 h-full w-auto max-w-none -translate-x-1/2 drop-shadow-[0_8px_20px_rgba(0,0,0,0.55)] transition-transform duration-300 group-hover:-translate-y-1 ${isLoading ? "animate-pulse" : ""}`}
                     >
                         <circle cx="50" cy="42" r="24" />
                         <path d="M50 74c-22 0-38 15-42 38-1 6 3 10 9 10h66c6 0 10-4 9-10-4-23-20-38-42-38z" />
@@ -79,11 +79,11 @@ function OfficerProfile({
             </div>
 
             {/* Baseline every officer stands on. */}
-            <div className="via-primary/50 relative z-10 h-px w-full bg-linear-to-r from-transparent to-transparent" />
+            <div className="via-forever-500/50 relative z-10 h-px w-full bg-linear-to-r from-transparent to-transparent" />
 
-            <h3 className="text-ink-200 mt-4 font-serif text-xl font-normal">{officer.name}</h3>
+            <h3 className="text-camel-200 mt-4 font-serif text-xl font-normal">{officer.name}</h3>
 
-            <p className="text-ink-400 mt-1 flex items-center justify-center gap-1.5 text-sm">
+            <p className="text-camel-400 mt-1 flex items-center justify-center gap-1.5 text-sm">
                 <CountryFlag countryCode={officer.country_code} />
                 <span className="sr-only">{officer.demonym}</span>
             </p>
@@ -151,7 +151,7 @@ export default function OfficerTeam({ officers = [], renders }) {
                 Meet the Officers
             </DisplayHeading>
 
-            <p className="text-ink-200 mx-auto mb-12 max-w-2xl text-center md:mb-16">
+            <p className="text-camel-200 mx-auto mb-12 max-w-2xl text-center md:mb-16">
                 Regrowth is steered by a team of officers who organise the raids, settle the loot and keep the guild
                 running. Here they all are.
             </p>
@@ -203,7 +203,7 @@ export default function OfficerTeam({ officers = [], renders }) {
                                     aria-label={`Show ${officer.name}`}
                                     onClick={() => scrollTo(index)}
                                     className={`h-2.5 w-2.5 rounded-full transition-colors ${
-                                        index === selectedIndex ? "bg-ink-300" : "bg-ink-600/50 hover:bg-ink-500"
+                                        index === selectedIndex ? "bg-camel-300" : "bg-camel-600/50 hover:bg-camel-500"
                                     }`}
                                 />
                             ))}
@@ -228,7 +228,7 @@ function CarouselArrowButton({ direction, onClick, label }) {
             type="button"
             onClick={onClick}
             aria-label={label}
-            className="text-ink-400 hover:text-ink-200 focus-visible:outline-ink-500 rounded-full p-1 transition-colors focus-visible:outline focus-visible:outline-2"
+            className="text-camel-400 hover:text-camel-200 focus-visible:outline-camel-500 rounded-full p-1 transition-colors focus-visible:outline focus-visible:outline-2"
         >
             <svg
                 aria-hidden="true"

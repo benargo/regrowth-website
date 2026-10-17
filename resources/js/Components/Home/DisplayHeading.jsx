@@ -6,17 +6,16 @@ const SIZES = {
 
 /**
  * Parchment display heading in the Forever style: serif, weight 400, warm
- * camel. Deliberately not bold — light weight is the strongest signal of
- * the World of Warcraft look.
+ * camel gradient text, with an optional uppercase eyebrow above it.
  */
 export default function DisplayHeading({ level = 2, eyebrow, className = "", children, ...props }) {
     const Tag = `h${level}`;
 
     return (
         <div className={className}>
-            {eyebrow && <p className="text-ink-300 mb-2 text-sm font-medium tracking-[0.2em] uppercase">{eyebrow}</p>}
+            {eyebrow && <p className="text-camel-300 mb-2 text-sm font-medium tracking-[0.2em] uppercase">{eyebrow}</p>}
             <Tag
-                className={`from-ink-100 to-ink-300 bg-linear-to-b bg-clip-text pb-1 font-serif text-transparent text-shadow-sm ${SIZES[level] ?? SIZES[2]}`}
+                className={`from-camel-100 to-camel-300 bg-linear-to-b bg-clip-text pb-1 font-serif text-transparent text-shadow-sm ${SIZES[level] ?? SIZES[2]}`}
                 {...props}
             >
                 {children}

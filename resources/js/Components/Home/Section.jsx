@@ -1,18 +1,11 @@
 import RaggedEdge from "./RaggedEdge";
 
 const TONE_BG = {
-    deep: "bg-ground-900",
-    mid: "bg-ground-800",
+    deep: "bg-forever-900",
+    mid: "bg-forever-800",
     parchment: "bg-mountains",
 };
 
-/**
- * A full-width themed band. Bands alternate tone down the page and are
- * separated by torn edges rather than straight rules.
- *
- * `edge` names which sides get a torn divider, and `edgeTone` is the tone
- * of the *adjacent* band the tear reveals.
- */
 const SECTION_PADDING = {
     top: {
         false: "pt-16",
@@ -28,6 +21,13 @@ function getSectionPadding({ showTop, showBottom }) {
     return `${SECTION_PADDING.top[showTop]} ${SECTION_PADDING.bottom[showBottom]}`;
 }
 
+/**
+ * A full-width homepage band. Bands alternate tone down the page and are
+ * separated by torn edges rather than straight rules.
+ *
+ * `edge` names which sides get a torn divider, and `edgeTone` is the tone
+ * of the *adjacent* band the tear reveals.
+ */
 export default function Section({
     tone = "mid",
     edge = "none",
