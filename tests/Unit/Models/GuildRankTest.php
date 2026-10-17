@@ -179,7 +179,7 @@ class GuildRankTest extends ModelTestCase
         $counting = GuildRank::factory()->create(['count_attendance' => true]);
         GuildRank::factory()->doesNotCountAttendance()->create();
 
-        $this->assertEquals([$counting->id], GuildRank::countsAttendance()->pluck('id')->all());
+        $this->assertSame([$counting->id], GuildRank::countsAttendance()->pluck('id')->all());
     }
 
     // ==================== name constraints ====================

@@ -21,7 +21,7 @@ trait BuildsAttendanceFixtures
     /**
      * @param  array<string, mixed>  $attributes
      */
-    protected function makeAttendanceVersion(array $attributes = []): GameVersion
+    protected function createAttendanceVersion(array $attributes = []): GameVersion
     {
         return GameVersion::factory()->forGuild()->create([
             'release_date' => '2024-01-01 00:00:00',
@@ -32,14 +32,14 @@ trait BuildsAttendanceFixtures
     /**
      * @param  array<string, mixed>  $attributes
      */
-    protected function makeTag(GameVersion $gameVersion, bool $countsAttendance = true, array $attributes = []): GuildTag
+    protected function createTag(GameVersion $gameVersion, bool $countsAttendance = true, array $attributes = []): GuildTag
     {
         return GuildTag::factory()
             ->forGuild($gameVersion->warcraftLogsGuild)
             ->create(['count_attendance' => $countsAttendance, ...$attributes]);
     }
 
-    protected function makeRank(GameVersion $gameVersion, bool $countsAttendance = true): GuildRank
+    protected function createRank(GameVersion $gameVersion, bool $countsAttendance = true): GuildRank
     {
         return GuildRank::factory()->for($gameVersion)->create(['count_attendance' => $countsAttendance]);
     }
@@ -47,7 +47,7 @@ trait BuildsAttendanceFixtures
     /**
      * @param  array<string, mixed>  $attributes
      */
-    protected function makeCharacter(GameVersion $gameVersion, ?GuildRank $rank = null, array $attributes = []): Character
+    protected function createCharacter(GameVersion $gameVersion, ?GuildRank $rank = null, array $attributes = []): Character
     {
         return Character::factory()
             ->forGameVersion($gameVersion)
@@ -58,11 +58,11 @@ trait BuildsAttendanceFixtures
     /**
      * @param  array<string, mixed>  $attributes
      */
-    protected function makeReport(GameVersion $gameVersion, CarbonInterface|string $startTime, ?GuildTag $tag = null, array $attributes = []): Report
+    protected function createReport(GameVersion $gameVersion, CarbonInterface|string $startTime, ?GuildTag $tag = null, array $attributes = []): Report
     {
         return Report::factory()
             ->forGuild($gameVersion->warcraftLogsGuild)
-            ->withGuildTag($tag ?? $this->makeTag($gameVersion))
+            ->withGuildTag($tag ?? $this->createTag($gameVersion))
             ->create(['start_time' => $startTime, ...$attributes]);
     }
 

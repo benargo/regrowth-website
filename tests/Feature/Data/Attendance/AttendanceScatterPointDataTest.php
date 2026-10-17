@@ -92,11 +92,11 @@ class AttendanceScatterPointDataTest extends TestCase
     #[Test]
     public function it_runs_no_query_to_build_the_payload(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $rank = $this->makeRank($gameVersion);
-        $report = $this->makeReport($gameVersion, '2025-01-01 20:00');
+        $gameVersion = $this->createAttendanceVersion();
+        $rank = $this->createRank($gameVersion);
+        $report = $this->createReport($gameVersion, '2025-01-01 20:00');
         foreach (range(1, 3) as $ignored) {
-            $this->attend($report, $this->makeCharacter($gameVersion, $rank, ['playable_class_id' => PlayableClass::factory()->create()->id]));
+            $this->attend($report, $this->createCharacter($gameVersion, $rank, ['playable_class_id' => PlayableClass::factory()->create()->id]));
         }
         $rows = BuildAttendanceMatrix::run($gameVersion)->rows;
 

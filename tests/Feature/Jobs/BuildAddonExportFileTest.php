@@ -447,8 +447,8 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_writes_no_players_when_no_ranks_count_attendance(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $this->makeRank($gameVersion, false);
+        $gameVersion = $this->createAttendanceVersion();
+        $this->createRank($gameVersion, false);
 
         app(BuildAddonExportFile::class)->handle();
 
@@ -468,9 +468,9 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_logs_a_warning_and_writes_no_players_when_the_version_has_no_counting_ranks(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $this->makeRank($gameVersion, false);
-        $this->makeReport($gameVersion, '2025-01-15 20:00:00');
+        $gameVersion = $this->createAttendanceVersion();
+        $this->createRank($gameVersion, false);
+        $this->createReport($gameVersion, '2025-01-15 20:00:00');
 
         Log::shouldReceive('warning')
             ->once()
@@ -488,10 +488,10 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_writes_no_players_when_no_qualifying_reports_exist(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $rank = $this->makeRank($gameVersion);
-        $this->makeCharacter($gameVersion, $rank);
-        $this->makeReport($gameVersion, '2025-01-15 20:00:00', $this->makeTag($gameVersion, false));
+        $gameVersion = $this->createAttendanceVersion();
+        $rank = $this->createRank($gameVersion);
+        $this->createCharacter($gameVersion, $rank);
+        $this->createReport($gameVersion, '2025-01-15 20:00:00', $this->createTag($gameVersion, false));
 
         app(BuildAddonExportFile::class)->handle();
 
@@ -502,9 +502,9 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_builds_attendance_from_database_pivot(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $character = $this->makeCharacter($gameVersion, $this->makeRank($gameVersion), ['name' => 'TestPlayer']);
-        $report = $this->makeReport($gameVersion, Carbon::parse('2025-01-15 20:00:00'));
+        $gameVersion = $this->createAttendanceVersion();
+        $character = $this->createCharacter($gameVersion, $this->createRank($gameVersion), ['name' => 'TestPlayer']);
+        $report = $this->createReport($gameVersion, Carbon::parse('2025-01-15 20:00:00'));
         $this->attend($report, $character);
 
         app(BuildAddonExportFile::class)->handle();
@@ -521,13 +521,13 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_leaves_reports_without_a_game_version_out_of_attendance(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $character = $this->makeCharacter($gameVersion, $this->makeRank($gameVersion), ['name' => 'TestPlayer']);
-        $counted = $this->makeReport($gameVersion, Carbon::parse('2025-01-15 20:00:00'));
+        $gameVersion = $this->createAttendanceVersion();
+        $character = $this->createCharacter($gameVersion, $this->createRank($gameVersion), ['name' => 'TestPlayer']);
+        $counted = $this->createReport($gameVersion, Carbon::parse('2025-01-15 20:00:00'));
         $this->attend($counted, $character);
 
         $unversioned = Report::factory()
-            ->withGuildTag($this->makeTag($gameVersion))
+            ->withGuildTag($this->createTag($gameVersion))
             ->create(['start_time' => Carbon::parse('2025-01-22 20:00:00')]);
         $this->attend($unversioned, $character);
 
@@ -544,9 +544,9 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_maps_character_id_from_model(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $character = $this->makeCharacter($gameVersion, $this->makeRank($gameVersion), ['name' => 'TestPlayer']);
-        $this->attend($this->makeReport($gameVersion, Carbon::parse('2025-01-15 20:00:00')), $character);
+        $gameVersion = $this->createAttendanceVersion();
+        $character = $this->createCharacter($gameVersion, $this->createRank($gameVersion), ['name' => 'TestPlayer']);
+        $this->attend($this->createReport($gameVersion, Carbon::parse('2025-01-15 20:00:00')), $character);
 
         app(BuildAddonExportFile::class)->handle();
 
@@ -558,9 +558,9 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_includes_first_attendance_date_as_unix_timestamp(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $character = $this->makeCharacter($gameVersion, $this->makeRank($gameVersion), ['name' => 'TestPlayer']);
-        $report = $this->makeReport($gameVersion, Carbon::parse('2025-01-15 20:00:00'));
+        $gameVersion = $this->createAttendanceVersion();
+        $character = $this->createCharacter($gameVersion, $this->createRank($gameVersion), ['name' => 'TestPlayer']);
+        $report = $this->createReport($gameVersion, Carbon::parse('2025-01-15 20:00:00'));
         $this->attend($report, $character);
 
         app(BuildAddonExportFile::class)->handle();
@@ -574,10 +574,10 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_excludes_characters_from_non_counting_ranks(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $countingChar = $this->makeCharacter($gameVersion, $this->makeRank($gameVersion), ['name' => 'CountingPlayer']);
-        $nonCountingChar = $this->makeCharacter($gameVersion, $this->makeRank($gameVersion, false), ['name' => 'NonCountingPlayer']);
-        $report = $this->makeReport($gameVersion, Carbon::parse('2025-01-15 20:00:00'));
+        $gameVersion = $this->createAttendanceVersion();
+        $countingChar = $this->createCharacter($gameVersion, $this->createRank($gameVersion), ['name' => 'CountingPlayer']);
+        $nonCountingChar = $this->createCharacter($gameVersion, $this->createRank($gameVersion, false), ['name' => 'NonCountingPlayer']);
+        $report = $this->createReport($gameVersion, Carbon::parse('2025-01-15 20:00:00'));
         $this->attend($report, $countingChar);
         $this->attend($report, $nonCountingChar);
 
@@ -592,10 +592,10 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_excludes_reports_from_non_counting_guild_tags(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $character = $this->makeCharacter($gameVersion, $this->makeRank($gameVersion), ['name' => 'TestPlayer']);
-        $countingReport = $this->makeReport($gameVersion, Carbon::parse('2025-01-15 20:00:00'));
-        $nonCountingReport = $this->makeReport($gameVersion, Carbon::parse('2025-01-22 20:00:00'), $this->makeTag($gameVersion, false));
+        $gameVersion = $this->createAttendanceVersion();
+        $character = $this->createCharacter($gameVersion, $this->createRank($gameVersion), ['name' => 'TestPlayer']);
+        $countingReport = $this->createReport($gameVersion, Carbon::parse('2025-01-15 20:00:00'));
+        $nonCountingReport = $this->createReport($gameVersion, Carbon::parse('2025-01-22 20:00:00'), $this->createTag($gameVersion, false));
         $this->attend($countingReport, $character);
         $this->attend($nonCountingReport, $character);
 
@@ -609,13 +609,13 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_writes_todays_player_fields_for_a_known_fixture(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $rank = $this->makeRank($gameVersion);
-        $thrall = $this->makeCharacter($gameVersion, $rank, ['name' => 'Thrall']);
-        $jaina = $this->makeCharacter($gameVersion, $rank, ['name' => 'Jaina']);
-        $first = $this->makeReport($gameVersion, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
-        $second = $this->makeReport($gameVersion, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
-        $third = $this->makeReport($gameVersion, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
+        $gameVersion = $this->createAttendanceVersion();
+        $rank = $this->createRank($gameVersion);
+        $thrall = $this->createCharacter($gameVersion, $rank, ['name' => 'Thrall']);
+        $jaina = $this->createCharacter($gameVersion, $rank, ['name' => 'Jaina']);
+        $first = $this->createReport($gameVersion, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $second = $this->createReport($gameVersion, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
+        $third = $this->createReport($gameVersion, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
         $this->attend($first, $thrall);
         $this->attend($second, $thrall, Presence::Benched);
         $this->attend($third, $thrall, Presence::Absent);
@@ -633,10 +633,10 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_reads_players_from_the_newest_attendance_version(): void
     {
-        $older = $this->makeAttendanceVersion(['release_date' => '2024-01-01']);
-        $newer = $this->makeAttendanceVersion(['release_date' => '2024-06-01']);
-        $this->attend($this->makeReport($older, '2025-01-01 20:00'), $this->makeCharacter($older, $this->makeRank($older), ['name' => 'Old']));
-        $this->attend($this->makeReport($newer, '2025-01-01 20:00'), $this->makeCharacter($newer, $this->makeRank($newer), ['name' => 'New']));
+        $older = $this->createAttendanceVersion(['release_date' => '2024-01-01']);
+        $newer = $this->createAttendanceVersion(['release_date' => '2024-06-01']);
+        $this->attend($this->createReport($older, '2025-01-01 20:00'), $this->createCharacter($older, $this->createRank($older), ['name' => 'Old']));
+        $this->attend($this->createReport($newer, '2025-01-01 20:00'), $this->createCharacter($newer, $this->createRank($newer), ['name' => 'New']));
 
         app(BuildAddonExportFile::class)->handle();
 

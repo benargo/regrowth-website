@@ -31,8 +31,8 @@ class CombineLinkedCharactersTest extends TestCase
     {
         parent::setUp();
 
-        $this->gameVersion = $this->makeAttendanceVersion();
-        $this->rank = $this->makeRank($this->gameVersion);
+        $this->gameVersion = $this->createAttendanceVersion();
+        $this->rank = $this->createRank($this->gameVersion);
     }
 
     // ==================== folding ====================
@@ -136,22 +136,22 @@ class CombineLinkedCharactersTest extends TestCase
     #[Test]
     public function it_outputs_only_mains_in_the_given_ranks(): void
     {
-        $otherRank = $this->makeRank($this->gameVersion);
-        $ranked = $this->makeCharacter($this->gameVersion, $this->rank, ['is_main' => true]);
-        $unranked = $this->makeCharacter($this->gameVersion, $otherRank, ['is_main' => true]);
+        $otherRank = $this->createRank($this->gameVersion);
+        $ranked = $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]);
+        $unranked = $this->createCharacter($this->gameVersion, $otherRank, ['is_main' => true]);
 
         $rows = $this->combine([
             $this->row($ranked, [Presence::Present]),
             $this->row($unranked, [Presence::Present]),
         ], raidCount: 1);
 
-        $this->assertEquals([$ranked->id], $rows->map(fn ($row) => $row->character->id)->all());
+        $this->assertSame([$ranked->id], $rows->map(fn ($row) => $row->character->id)->all());
     }
 
     #[Test]
     public function it_drops_non_main_rows_without_a_main(): void
     {
-        $loner = $this->makeCharacter($this->gameVersion, $this->rank, ['is_main' => false]);
+        $loner = $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => false]);
 
         $this->assertTrue($this->combine([$this->row($loner, [Presence::Present])], raidCount: 1)->isEmpty());
     }
@@ -159,8 +159,8 @@ class CombineLinkedCharactersTest extends TestCase
     #[Test]
     public function it_sorts_the_combined_rows_by_name(): void
     {
-        $zed = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Zed', 'is_main' => true]);
-        $amy = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Amy', 'is_main' => true]);
+        $zed = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Zed', 'is_main' => true]);
+        $amy = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Amy', 'is_main' => true]);
 
         $rows = $this->combine([$this->row($zed, [Presence::Present]), $this->row($amy, [Presence::Present])], raidCount: 1);
 
@@ -171,13 +171,13 @@ class CombineLinkedCharactersTest extends TestCase
     public function it_does_not_carry_alts_into_later_calls_on_the_same_instance(): void
     {
         [$main, $alt] = $this->mainWithAlt();
-        $other = $this->makeCharacter($this->gameVersion, $this->rank, ['is_main' => true]);
+        $other = $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]);
         $action = CombineLinkedCharacters::make();
 
         $action->handle(collect([$this->row($alt, [Presence::Present])]), [$this->rank->id], 1);
         $rows = $action->handle(collect([$this->row($other, [Presence::Absent])]), [$this->rank->id], 1);
 
-        $this->assertEquals([$other->id], $rows->map(fn ($row) => $row->character->id)->all());
+        $this->assertSame([$other->id], $rows->map(fn ($row) => $row->character->id)->all());
         $this->assertSame([Presence::Absent], $rows[0]->attendance);
     }
 
@@ -188,8 +188,8 @@ class CombineLinkedCharactersTest extends TestCase
      */
     private function mainWithAlt(): array
     {
-        $main = $this->makeCharacter($this->gameVersion, $this->rank, ['is_main' => true]);
-        $alt = $this->makeCharacter($this->gameVersion, null, ['is_main' => false]);
+        $main = $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]);
+        $alt = $this->createCharacter($this->gameVersion, null, ['is_main' => false]);
         $this->linkCharacters($main, $alt);
 
         return [$main, $alt];

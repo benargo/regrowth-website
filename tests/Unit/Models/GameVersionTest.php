@@ -458,10 +458,10 @@ class GameVersionTest extends ModelTestCase
     #[Test]
     public function with_counted_attendance_lists_versions_newest_release_first(): void
     {
-        $older = $this->makeAttendanceVersion(['release_date' => '2024-01-01']);
-        $newer = $this->makeAttendanceVersion(['release_date' => '2024-06-01']);
-        $this->makeReport($older, '2025-01-01 20:00');
-        $this->makeReport($newer, '2025-01-01 20:00');
+        $older = $this->createAttendanceVersion(['release_date' => '2024-01-01']);
+        $newer = $this->createAttendanceVersion(['release_date' => '2024-06-01']);
+        $this->createReport($older, '2025-01-01 20:00');
+        $this->createReport($newer, '2025-01-01 20:00');
 
         $this->assertSame([$newer->id, $older->id], GameVersion::withCountedAttendance()->get()->modelKeys());
     }
@@ -469,10 +469,10 @@ class GameVersionTest extends ModelTestCase
     #[Test]
     public function with_counted_attendance_breaks_release_date_ties_by_id(): void
     {
-        $first = $this->makeAttendanceVersion();
-        $second = $this->makeAttendanceVersion();
-        $this->makeReport($second, '2025-01-01 20:00');
-        $this->makeReport($first, '2025-01-01 20:00');
+        $first = $this->createAttendanceVersion();
+        $second = $this->createAttendanceVersion();
+        $this->createReport($second, '2025-01-01 20:00');
+        $this->createReport($first, '2025-01-01 20:00');
 
         $this->assertSame([$first->id, $second->id], GameVersion::withCountedAttendance()->get()->modelKeys());
     }
@@ -480,9 +480,9 @@ class GameVersionTest extends ModelTestCase
     #[Test]
     public function with_counted_attendance_excludes_versions_without_counted_reports(): void
     {
-        $uncounted = $this->makeAttendanceVersion();
-        $this->makeReport($uncounted, '2025-01-01 20:00', $this->makeTag($uncounted, countsAttendance: false));
-        $this->makeAttendanceVersion();
+        $uncounted = $this->createAttendanceVersion();
+        $this->createReport($uncounted, '2025-01-01 20:00', $this->createTag($uncounted, countsAttendance: false));
+        $this->createAttendanceVersion();
 
         $this->assertFalse(GameVersion::withCountedAttendance()->exists());
     }

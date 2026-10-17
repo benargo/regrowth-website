@@ -3,8 +3,6 @@
 namespace Tests\Feature\Actions\Attendance;
 
 use App\Actions\Attendance\BuildAttendanceMatrix;
-use App\Actions\Attendance\ClusterReports;
-use App\Actions\Attendance\LoadAttendanceReports;
 use App\Data\Attendance\AttendanceMatrixData;
 use App\Data\Attendance\CharacterAttendanceData;
 use App\Data\Attendance\ReportClusterData;
@@ -36,8 +34,8 @@ class BuildAttendanceMatrixTest extends TestCase
     {
         parent::setUp();
 
-        $this->gameVersion = $this->makeAttendanceVersion();
-        $this->rank = $this->makeRank($this->gameVersion);
+        $this->gameVersion = $this->createAttendanceVersion();
+        $this->rank = $this->createRank($this->gameVersion);
     }
 
     #[Test]
@@ -56,7 +54,7 @@ class BuildAttendanceMatrixTest extends TestCase
     public function it_describes_each_column(): void
     {
         $zone = Zone::factory()->create(['name' => 'Karazhan']);
-        $report = $this->makeReport($this->gameVersion, Carbon::parse('2025-01-07 20:00', 'Europe/Paris'), attributes: ['code' => 'ABC', 'zone_id' => $zone->id]);
+        $report = $this->createReport($this->gameVersion, Carbon::parse('2025-01-07 20:00', 'Europe/Paris'), attributes: ['code' => 'ABC', 'zone_id' => $zone->id]);
 
         $column = $this->build()->columns->sole();
 
@@ -70,8 +68,8 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_orders_columns_newest_first(): void
     {
-        $older = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
-        $newer = $this->makeReport($this->gameVersion, '2025-01-08 20:00');
+        $older = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $newer = $this->createReport($this->gameVersion, '2025-01-08 20:00');
 
         $this->assertSame([$newer->id, $older->id], $this->build()->columns->map(fn (ReportClusterData $column): string => $column->id)->all());
     }
@@ -79,10 +77,10 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_merges_linked_reports_into_one_column(): void
     {
-        $first = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
-        $second = $this->makeReport($this->gameVersion, '2025-01-01 21:00');
+        $first = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $second = $this->createReport($this->gameVersion, '2025-01-01 21:00');
         $this->linkReports($first, $second);
-        $this->attend($first, $this->makeCharacter($this->gameVersion, $this->rank));
+        $this->attend($first, $this->createCharacter($this->gameVersion, $this->rank));
 
         $matrix = $this->build();
 
@@ -95,8 +93,8 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_counts_a_single_attended_raid_as_full_attendance(): void
     {
-        $character = $this->makeCharacter($this->gameVersion, $this->rank);
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $character);
+        $character = $this->createCharacter($this->gameVersion, $this->rank);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $character);
 
         $row = $this->build()->rows->sole();
 
@@ -111,10 +109,10 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_counts_present_and_benched_as_attended(): void
     {
-        $character = $this->makeCharacter($this->gameVersion, $this->rank);
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $character, Presence::Present);
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-08 20:00'), $character, Presence::Benched);
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-15 20:00'), $character, Presence::Absent);
+        $character = $this->createCharacter($this->gameVersion, $this->rank);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $character, Presence::Present);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-08 20:00'), $character, Presence::Benched);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-15 20:00'), $character, Presence::Absent);
 
         $row = $this->build()->rows->sole();
 
@@ -127,8 +125,8 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_counts_an_absent_presence_as_not_attended(): void
     {
-        $character = $this->makeCharacter($this->gameVersion, $this->rank);
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $character, Presence::Absent);
+        $character = $this->createCharacter($this->gameVersion, $this->rank);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $character, Presence::Absent);
 
         $row = $this->build()->rows->sole();
 
@@ -139,9 +137,9 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_counts_an_unknown_presence_value_as_not_attended(): void
     {
-        $character = $this->makeCharacter($this->gameVersion, $this->rank);
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $character);
-        $this->makeReport($this->gameVersion, '2025-01-08 20:00')->characters()->attach($character->id, ['presence' => 3]);
+        $character = $this->createCharacter($this->gameVersion, $this->rank);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $character);
+        $this->createReport($this->gameVersion, '2025-01-08 20:00')->characters()->attach($character->id, ['presence' => 3]);
 
         $row = $this->build()->rows->sole();
 
@@ -153,9 +151,9 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_counts_a_later_raid_without_the_character_as_absent(): void
     {
-        $character = $this->makeCharacter($this->gameVersion, $this->rank);
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $character);
-        $this->makeReport($this->gameVersion, '2025-01-08 20:00');
+        $character = $this->createCharacter($this->gameVersion, $this->rank);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $character);
+        $this->createReport($this->gameVersion, '2025-01-08 20:00');
 
         $row = $this->build()->rows->sole();
 
@@ -166,9 +164,9 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_leaves_raids_before_a_characters_first_cluster_null(): void
     {
-        $character = $this->makeCharacter($this->gameVersion, $this->rank);
-        $this->makeReport($this->gameVersion, '2025-01-01 20:00');
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-08 20:00'), $character);
+        $character = $this->createCharacter($this->gameVersion, $this->rank);
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $this->attend($this->createReport($this->gameVersion, '2025-01-08 20:00'), $character);
 
         $row = $this->build()->rows->sole();
 
@@ -177,32 +175,37 @@ class BuildAttendanceMatrixTest extends TestCase
     }
 
     #[Test]
-    public function it_decides_the_first_cluster_by_index_when_start_times_tie(): void
+    public function it_starts_a_characters_row_at_its_own_column_when_start_times_tie(): void
     {
-        $character = $this->makeCharacter($this->gameVersion, $this->rank);
-        $other = $this->makeCharacter($this->gameVersion, $this->rank);
-        $first = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
-        $second = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
-        $clusterOrder = ClusterReports::run(LoadAttendanceReports::run($this->gameVersion, [$this->rank->id]))->map->id->all();
-        $laterReport = $clusterOrder[1] === $first->id ? $first : $second;
-        $earlierReport = $laterReport->is($first) ? $second : $first;
-        $this->attend($earlierReport, $other);
-        $this->attend($laterReport, $character);
+        $character = $this->createCharacter($this->gameVersion, $this->rank);
+        $other = $this->createCharacter($this->gameVersion, $this->rank);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $other);
+        $characterReport = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $this->attend($characterReport, $character);
 
-        $row = $this->build()->rows->first(fn (CharacterAttendanceData $row) => $row->character->is($character));
+        $matrix = $this->build();
+        $row = $matrix->rows->first(fn (CharacterAttendanceData $row) => $row->character->is($character));
+        $characterColumn = $matrix->columns->search(fn (ReportClusterData $column): bool => $column->id === $characterReport->id);
 
-        $this->assertSame([Presence::Present, null], $row->attendance);
-        $this->assertSame(1, $row->totalReports);
+        $this->assertSame(
+            $matrix->columns->keys()->map(fn (int $index): ?Presence => match (true) {
+                $index < $characterColumn => Presence::Absent,
+                $index === $characterColumn => Presence::Present,
+                default => null,
+            })->all(),
+            $row->attendance,
+        );
+        $this->assertSame($characterColumn + 1, $row->totalReports);
     }
 
     #[Test]
     public function it_sets_first_attendance_to_the_first_attended_cluster_start(): void
     {
-        $character = $this->makeCharacter($this->gameVersion, $this->rank);
-        $this->makeReport($this->gameVersion, '2025-01-01 20:00');
-        $first = $this->makeReport($this->gameVersion, '2025-01-08 20:00');
+        $character = $this->createCharacter($this->gameVersion, $this->rank);
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $first = $this->createReport($this->gameVersion, '2025-01-08 20:00');
         $this->attend($first, $character);
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-15 20:00'), $character);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-15 20:00'), $character);
 
         $this->assertTrue($this->build()->rows->sole()->firstAttendance->eq($first->start_time));
     }
@@ -210,10 +213,10 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_tracks_first_attendance_per_character(): void
     {
-        $early = $this->makeCharacter($this->gameVersion, $this->rank);
-        $late = $this->makeCharacter($this->gameVersion, $this->rank);
-        $first = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
-        $second = $this->makeReport($this->gameVersion, '2025-01-08 20:00');
+        $early = $this->createCharacter($this->gameVersion, $this->rank);
+        $late = $this->createCharacter($this->gameVersion, $this->rank);
+        $first = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $second = $this->createReport($this->gameVersion, '2025-01-08 20:00');
         $this->attend($first, $early);
         $this->attend($second, $late);
 
@@ -228,9 +231,9 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_leaves_planned_absence_raids_out_of_the_totals(): void
     {
-        $character = $this->makeCharacter($this->gameVersion, $this->rank);
-        $this->attend($this->makeReport($this->gameVersion, Carbon::parse('2025-01-01 20:00', 'Europe/Paris')), $character);
-        $this->attend($this->makeReport($this->gameVersion, Carbon::parse('2025-01-08 20:00', 'Europe/Paris')), $character, Presence::Absent);
+        $character = $this->createCharacter($this->gameVersion, $this->rank);
+        $this->attend($this->createReport($this->gameVersion, Carbon::parse('2025-01-01 20:00', 'Europe/Paris')), $character);
+        $this->attend($this->createReport($this->gameVersion, Carbon::parse('2025-01-08 20:00', 'Europe/Paris')), $character, Presence::Absent);
         PlannedAbsence::factory()->create(['character_id' => $character->id, 'start_date' => '2025-01-08', 'end_date' => '2025-01-08']);
 
         $row = $this->build()->rows->sole();
@@ -242,8 +245,8 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_reports_zero_percent_when_every_raid_is_covered_by_an_absence(): void
     {
-        $character = $this->makeCharacter($this->gameVersion, $this->rank);
-        $this->attend($this->makeReport($this->gameVersion, Carbon::parse('2025-01-01 20:00', 'Europe/Paris')), $character, Presence::Absent);
+        $character = $this->createCharacter($this->gameVersion, $this->rank);
+        $this->attend($this->createReport($this->gameVersion, Carbon::parse('2025-01-01 20:00', 'Europe/Paris')), $character, Presence::Absent);
         PlannedAbsence::factory()->create(['character_id' => $character->id, 'start_date' => '2025-01-01', 'end_date' => '2025-01-01']);
 
         $this->assertSame(0.0, $this->build()->rows->sole()->percentage);
@@ -252,8 +255,8 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_records_the_covering_planned_absence_per_raid(): void
     {
-        $character = $this->makeCharacter($this->gameVersion, $this->rank);
-        $this->attend($this->makeReport($this->gameVersion, Carbon::parse('2025-01-01 20:00', 'Europe/Paris')), $character, Presence::Absent);
+        $character = $this->createCharacter($this->gameVersion, $this->rank);
+        $this->attend($this->createReport($this->gameVersion, Carbon::parse('2025-01-01 20:00', 'Europe/Paris')), $character, Presence::Absent);
         $absence = PlannedAbsence::factory()->create(['character_id' => $character->id, 'start_date' => '2025-01-01', 'end_date' => '2025-01-01']);
 
         $this->assertTrue($this->build()->rows->sole()->plannedAbsences[0]->is($absence));
@@ -262,8 +265,8 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_records_null_for_raids_without_a_planned_absence(): void
     {
-        $character = $this->makeCharacter($this->gameVersion, $this->rank);
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $character);
+        $character = $this->createCharacter($this->gameVersion, $this->rank);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $character);
 
         $this->assertSame([null], $this->build()->rows->sole()->plannedAbsences);
     }
@@ -272,8 +275,8 @@ class BuildAttendanceMatrixTest extends TestCase
     #[DataProvider('plannedAbsenceDateCases')]
     public function it_matches_planned_absences_to_raids_by_date(string $raidStart, string $start, ?string $end, bool $isCovered): void
     {
-        $character = $this->makeCharacter($this->gameVersion, $this->rank);
-        $this->attend($this->makeReport($this->gameVersion, $raidStart), $character, Presence::Absent);
+        $character = $this->createCharacter($this->gameVersion, $this->rank);
+        $this->attend($this->createReport($this->gameVersion, $raidStart), $character, Presence::Absent);
         PlannedAbsence::factory()->create(['character_id' => $character->id, 'start_date' => $start, 'end_date' => $end]);
 
         $this->assertSame($isCovered, $this->build()->rows->sole()->plannedAbsences[0] !== null);
@@ -298,9 +301,9 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_builds_one_row_per_character(): void
     {
-        $report = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00');
         foreach (range(1, 3) as $ignored) {
-            $this->attend($report, $this->makeCharacter($this->gameVersion, $this->rank));
+            $this->attend($report, $this->createCharacter($this->gameVersion, $this->rank));
         }
 
         $this->assertCount(3, $this->build()->rows);
@@ -309,9 +312,9 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_sorts_rows_by_character_name(): void
     {
-        $report = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
-        $this->attend($report, $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Zebra']));
-        $this->attend($report, $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Alpha']));
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $this->attend($report, $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Zebra']));
+        $this->attend($report, $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Alpha']));
 
         $this->assertSame(['Alpha', 'Zebra'], $this->build()->rows->map(fn ($row) => $row->character->name)->all());
     }
@@ -319,11 +322,11 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_keeps_same_named_characters_apart(): void
     {
-        $report = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
-        $thrall = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall']);
-        $otherVersion = $this->makeAttendanceVersion();
-        $otherRank = $this->makeRank($otherVersion);
-        $otherThrall = $this->makeCharacter($otherVersion, $otherRank, ['name' => 'Thrall']);
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $thrall = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall']);
+        $otherVersion = $this->createAttendanceVersion();
+        $otherRank = $this->createRank($otherVersion);
+        $otherThrall = $this->createCharacter($otherVersion, $otherRank, ['name' => 'Thrall']);
         $this->attend($report, $thrall);
         $this->attend($report, $otherThrall, Presence::Absent);
 
@@ -337,7 +340,7 @@ class BuildAttendanceMatrixTest extends TestCase
     #[DataProvider('combineLinkedCharactersCases')]
     public function it_drops_the_pivot_from_row_characters(bool $combineLinkedCharacters): void
     {
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $this->makeCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
 
         $character = BuildAttendanceMatrix::run($this->gameVersion, combineLinkedCharacters: $combineLinkedCharacters)->rows->sole()->character;
 
@@ -360,18 +363,18 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_defaults_to_the_versions_counting_ranks(): void
     {
-        $report = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
-        $this->attend($report, $counted = $this->makeCharacter($this->gameVersion, $this->rank));
-        $this->attend($report, $this->makeCharacter($this->gameVersion, $this->makeRank($this->gameVersion, countsAttendance: false)));
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $this->attend($report, $counted = $this->createCharacter($this->gameVersion, $this->rank));
+        $this->attend($report, $this->createCharacter($this->gameVersion, $this->createRank($this->gameVersion, countsAttendance: false)));
 
-        $this->assertEquals([$counted->id], $this->build()->rows->map(fn ($row) => $row->character->id)->all());
+        $this->assertSame([$counted->id], $this->build()->rows->map(fn ($row) => $row->character->id)->all());
     }
 
     #[Test]
     public function it_ignores_another_versions_counting_ranks(): void
     {
-        $otherRank = $this->makeRank($this->makeAttendanceVersion());
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $this->makeCharacter($this->gameVersion, $otherRank));
+        $otherRank = $this->createRank($this->createAttendanceVersion());
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $this->createCharacter($this->gameVersion, $otherRank));
 
         $this->assertTrue($this->build()->rows->isEmpty());
     }
@@ -379,21 +382,21 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_limits_rows_to_the_given_ranks(): void
     {
-        $other = $this->makeRank($this->gameVersion);
-        $report = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
-        $this->attend($report, $kept = $this->makeCharacter($this->gameVersion, $this->rank));
-        $this->attend($report, $this->makeCharacter($this->gameVersion, $other));
+        $other = $this->createRank($this->gameVersion);
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $this->attend($report, $kept = $this->createCharacter($this->gameVersion, $this->rank));
+        $this->attend($report, $this->createCharacter($this->gameVersion, $other));
 
         $rows = BuildAttendanceMatrix::run($this->gameVersion, rankIds: [$this->rank->id])->rows;
 
-        $this->assertEquals([$kept->id], $rows->map(fn ($row) => $row->character->id)->all());
+        $this->assertSame([$kept->id], $rows->map(fn ($row) => $row->character->id)->all());
     }
 
     #[Test]
     public function it_returns_no_rows_when_the_version_has_no_counting_ranks(): void
     {
         $this->rank->update(['count_attendance' => false]);
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $this->makeCharacter($this->gameVersion, $this->rank));
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $this->createCharacter($this->gameVersion, $this->rank));
 
         $matrix = $this->build();
 
@@ -405,7 +408,7 @@ class BuildAttendanceMatrixTest extends TestCase
     #[DataProvider('combineLinkedCharactersCases')]
     public function it_returns_no_rows_for_an_empty_rank_list(bool $combineLinkedCharacters): void
     {
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $this->makeCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
 
         $matrix = BuildAttendanceMatrix::run($this->gameVersion, rankIds: [], combineLinkedCharacters: $combineLinkedCharacters);
 
@@ -415,7 +418,7 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_returns_no_columns_for_an_empty_guild_tag_list(): void
     {
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $this->makeCharacter($this->gameVersion, $this->rank));
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $this->createCharacter($this->gameVersion, $this->rank));
 
         $matrix = BuildAttendanceMatrix::run($this->gameVersion, guildTagIds: []);
 
@@ -428,9 +431,9 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_excludes_another_versions_reports(): void
     {
-        $character = $this->makeCharacter($this->gameVersion, $this->rank);
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $character);
-        $this->makeReport($this->makeAttendanceVersion(), '2025-01-08 20:00');
+        $character = $this->createCharacter($this->gameVersion, $this->rank);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $character);
+        $this->createReport($this->createAttendanceVersion(), '2025-01-08 20:00');
 
         $matrix = $this->build();
 
@@ -443,10 +446,10 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_folds_an_unranked_alt_into_its_ranked_main_when_combining(): void
     {
-        $main = $this->makeCharacter($this->gameVersion, $this->rank, ['is_main' => true]);
-        $alt = $this->makeCharacter($this->gameVersion, null, ['is_main' => false]);
+        $main = $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]);
+        $alt = $this->createCharacter($this->gameVersion, null, ['is_main' => false]);
         $this->linkCharacters($main, $alt);
-        $report = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00');
         $this->attend($report, $main, Presence::Absent);
         $this->attend($report, $alt);
 
@@ -460,15 +463,72 @@ class BuildAttendanceMatrixTest extends TestCase
     #[Test]
     public function it_runs_a_query_count_that_does_not_grow_with_rows(): void
     {
-        $report = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
-        $this->attend($report, $this->makeCharacter($this->gameVersion, $this->rank));
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $this->attend($report, $this->createCharacter($this->gameVersion, $this->rank));
         $oneRow = $this->countQueries(fn () => $this->build());
 
         foreach (range(1, 3) as $ignored) {
-            $this->attend($report, $this->makeCharacter($this->gameVersion, $this->rank));
+            $this->attend($report, $this->createCharacter($this->gameVersion, $this->rank));
         }
 
         $this->assertSame($oneRow, $this->countQueries(fn () => $this->build()));
+    }
+
+    // ==================== character ====================
+
+    #[Test]
+    #[DataProvider('combineLinkedCharactersCases')]
+    public function it_narrows_the_rows_to_the_given_character(bool $combineLinkedCharacters): void
+    {
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $this->attend($report, $kept = $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
+        $this->attend($report, $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
+
+        $matrix = BuildAttendanceMatrix::run($this->gameVersion, combineLinkedCharacters: $combineLinkedCharacters, character: $kept);
+
+        $this->assertTrue($matrix->rows->sole()->character->is($kept));
+        $this->assertCount(1, $matrix->columns);
+    }
+
+    #[Test]
+    public function it_narrows_the_rows_to_an_alts_main_when_combining(): void
+    {
+        $main = $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]);
+        $alt = $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => false]);
+        $this->linkCharacters($main, $alt);
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $this->attend($report, $alt);
+        $this->attend($report, $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
+
+        $row = BuildAttendanceMatrix::run($this->gameVersion, combineLinkedCharacters: true, character: $alt)->rows->sole();
+
+        $this->assertTrue($row->character->is($main));
+    }
+
+    #[Test]
+    public function it_narrows_the_rows_to_the_alt_itself_when_not_combining(): void
+    {
+        $main = $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]);
+        $alt = $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => false]);
+        $this->linkCharacters($main, $alt);
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $this->attend($report, $main);
+        $this->attend($report, $alt);
+
+        $row = BuildAttendanceMatrix::run($this->gameVersion, character: $alt)->rows->sole();
+
+        $this->assertTrue($row->character->is($alt));
+    }
+
+    #[Test]
+    public function it_returns_no_rows_for_an_alt_without_a_main_when_combining(): void
+    {
+        $alt = $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => false]);
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $this->attend($report, $alt);
+        $this->attend($report, $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
+
+        $this->assertTrue(BuildAttendanceMatrix::run($this->gameVersion, combineLinkedCharacters: true, character: $alt)->rows->isEmpty());
     }
 
     // ==================== helpers ====================

@@ -45,8 +45,8 @@ class AttendanceGraphsControllerTest extends TestCase
         );
         $officerRole->givePermissionTo($permission);
 
-        $this->gameVersion = $this->makeAttendanceVersion();
-        $this->rank = $this->makeRank($this->gameVersion);
+        $this->gameVersion = $this->createAttendanceVersion();
+        $this->rank = $this->createRank($this->gameVersion);
     }
 
     // ==================== invoke: Access Control ====================
@@ -130,8 +130,8 @@ class AttendanceGraphsControllerTest extends TestCase
     #[Test]
     public function invoke_scatter_points_returns_one_entry_per_player_with_expected_keys(): void
     {
-        $character = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Illidan', 'is_main' => true]);
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $character);
+        $character = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Illidan', 'is_main' => true]);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $character);
 
         $user = User::factory()->officer()->create();
 
@@ -155,12 +155,12 @@ class AttendanceGraphsControllerTest extends TestCase
     #[Test]
     public function invoke_scatter_points_counts_benched_and_other_absences(): void
     {
-        $character = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Maiev', 'is_main' => true]);
-        $tag = $this->makeTag($this->gameVersion);
+        $character = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Maiev', 'is_main' => true]);
+        $tag = $this->createTag($this->gameVersion);
 
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00', $tag), $character);
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-02 20:00', $tag), $character, Presence::Benched);
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-03 20:00', $tag), $character, Presence::Absent);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00', $tag), $character);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-02 20:00', $tag), $character, Presence::Benched);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-03 20:00', $tag), $character, Presence::Absent);
 
         $user = User::factory()->officer()->create();
 
@@ -179,11 +179,11 @@ class AttendanceGraphsControllerTest extends TestCase
     #[Test]
     public function invoke_scatter_points_counts_planned_absences_covering_raids(): void
     {
-        $character = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Tyrande', 'is_main' => true]);
-        $tag = $this->makeTag($this->gameVersion);
+        $character = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Tyrande', 'is_main' => true]);
+        $tag = $this->createTag($this->gameVersion);
 
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00', $tag), $character);
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-08 20:00', $tag), $character, Presence::Absent);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00', $tag), $character);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-08 20:00', $tag), $character, Presence::Absent);
 
         PlannedAbsence::factory()->create([
             'character_id' => $character->id,
@@ -207,8 +207,8 @@ class AttendanceGraphsControllerTest extends TestCase
     public function invoke_scatter_points_include_playable_class(): void
     {
         $playableClass = PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
-        $character = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true, 'playable_class_id' => $playableClass->id]);
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $character);
+        $character = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true, 'playable_class_id' => $playableClass->id]);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $character);
         $user = User::factory()->officer()->create();
 
         $this->actingAs($user)
@@ -239,8 +239,8 @@ class AttendanceGraphsControllerTest extends TestCase
     #[Test]
     public function invoke_scatter_character_carries_an_unwrapped_playable_class(): void
     {
-        $character = $this->makeCharacter($this->gameVersion, $this->rank, ['playable_class_id' => PlayableClass::factory()->create(['name' => 'Hunter'])->id]);
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $character);
+        $character = $this->createCharacter($this->gameVersion, $this->rank, ['playable_class_id' => PlayableClass::factory()->create(['name' => 'Hunter'])->id]);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $character);
 
         $this->actingAs(User::factory()->officer()->create())
             ->get(route('raiding.attendance.graphs.index'))
@@ -265,9 +265,9 @@ class AttendanceGraphsControllerTest extends TestCase
     #[Test]
     public function invoke_uses_the_session_game_version(): void
     {
-        $newer = $this->makeAttendanceVersion(['release_date' => '2024-06-01']);
-        $this->makeReport($newer, '2025-01-01 20:00');
-        $this->makeReport($this->gameVersion, '2025-01-01 20:00');
+        $newer = $this->createAttendanceVersion(['release_date' => '2024-06-01']);
+        $this->createReport($newer, '2025-01-01 20:00');
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
 
         $this->actingAs(User::factory()->officer()->create())
             ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $this->gameVersion->slug])
@@ -278,15 +278,15 @@ class AttendanceGraphsControllerTest extends TestCase
     #[Test]
     public function invoke_payload_query_count_does_not_grow_with_rows(): void
     {
-        $report = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
-        $this->attend($report, $this->makeCharacter($this->gameVersion, $this->rank));
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $this->attend($report, $this->createCharacter($this->gameVersion, $this->rank));
         $user = User::factory()->officer()->create();
         $this->countDeferredQueries($user, 'raiding.attendance.graphs.index', 'scatterPoints');
         Cache::tags(['attendance'])->flush();
         $oneRow = $this->countDeferredQueries($user, 'raiding.attendance.graphs.index', 'scatterPoints');
 
         foreach (range(1, 3) as $ignored) {
-            $this->attend($report, $this->makeCharacter($this->gameVersion, $this->rank));
+            $this->attend($report, $this->createCharacter($this->gameVersion, $this->rank));
         }
         Cache::tags(['attendance'])->flush();
 

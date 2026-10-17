@@ -260,7 +260,7 @@ class PlannedAbsenceTest extends ModelTestCase
 
         $ids = PlannedAbsence::ended()->pluck('id');
 
-        $this->assertEquals([$endedYesterday->id], $ids->all());
+        $this->assertSame([$endedYesterday->id], $ids->all());
         $this->assertNotContains($openEndedPast->id, $ids);
         $this->assertNotContains($endsToday->id, $ids);
         $this->assertNotContains($upcoming->id, $ids);
@@ -283,6 +283,7 @@ class PlannedAbsenceTest extends ModelTestCase
     #[Test]
     public function upcoming_scope_includes_absences_starting_today_or_later_in_start_order(): void
     {
+        $this->freezeTime();
         $later = $this->create(['start_date' => today()->addDays(5), 'end_date' => today()->addDays(6)]);
         $today = $this->create(['start_date' => today(), 'end_date' => today()->addDay()]);
         $this->create(['start_date' => today()->subDay(), 'end_date' => today()->addDay()]);

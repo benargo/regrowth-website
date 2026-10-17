@@ -28,11 +28,11 @@ class ListBenchedCharactersTest extends TestCase
     #[Test]
     public function it_groups_benched_characters_by_tag_name(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $kael = $this->makeCharacter($gameVersion, attributes: ['name' => 'Kael']);
-        $illidan = $this->makeCharacter($gameVersion, attributes: ['name' => 'Illidan']);
-        $this->attend($this->makeReport($gameVersion, now()->subDays(2), $this->makeTag($gameVersion, attributes: ['name' => 'Tuesday'])), $illidan, Presence::Benched);
-        $this->attend($this->makeReport($gameVersion, now()->subDays(1), $this->makeTag($gameVersion, attributes: ['name' => 'Monday'])), $kael, Presence::Benched);
+        $gameVersion = $this->createAttendanceVersion();
+        $kael = $this->createCharacter($gameVersion, attributes: ['name' => 'Kael']);
+        $illidan = $this->createCharacter($gameVersion, attributes: ['name' => 'Illidan']);
+        $this->attend($this->createReport($gameVersion, now()->subDays(2), $this->createTag($gameVersion, attributes: ['name' => 'Tuesday'])), $illidan, Presence::Benched);
+        $this->attend($this->createReport($gameVersion, now()->subDays(1), $this->createTag($gameVersion, attributes: ['name' => 'Monday'])), $kael, Presence::Benched);
 
         $benched = ListBenchedCharacters::run($gameVersion, now()->subDays(7));
 
@@ -44,12 +44,12 @@ class ListBenchedCharactersTest extends TestCase
     #[Test]
     public function it_lists_each_character_once_sorted_by_name(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $tag = $this->makeTag($gameVersion, attributes: ['name' => 'Raid']);
-        $zed = $this->makeCharacter($gameVersion, attributes: ['name' => 'Zed']);
-        $amy = $this->makeCharacter($gameVersion, attributes: ['name' => 'Amy']);
+        $gameVersion = $this->createAttendanceVersion();
+        $tag = $this->createTag($gameVersion, attributes: ['name' => 'Raid']);
+        $zed = $this->createCharacter($gameVersion, attributes: ['name' => 'Zed']);
+        $amy = $this->createCharacter($gameVersion, attributes: ['name' => 'Amy']);
         foreach ([1, 2] as $daysAgo) {
-            $report = $this->makeReport($gameVersion, now()->subDays($daysAgo), $tag);
+            $report = $this->createReport($gameVersion, now()->subDays($daysAgo), $tag);
             $this->attend($report, $zed, Presence::Benched);
             $this->attend($report, $amy, Presence::Benched);
         }
@@ -63,10 +63,10 @@ class ListBenchedCharactersTest extends TestCase
     #[Test]
     public function it_lists_a_character_once_across_tags_sharing_a_name(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $character = $this->makeCharacter($gameVersion);
+        $gameVersion = $this->createAttendanceVersion();
+        $character = $this->createCharacter($gameVersion);
         foreach ([1, 2] as $daysAgo) {
-            $this->attend($this->makeReport($gameVersion, now()->subDays($daysAgo), $this->makeTag($gameVersion, attributes: ['name' => 'Main Raid'])), $character, Presence::Benched);
+            $this->attend($this->createReport($gameVersion, now()->subDays($daysAgo), $this->createTag($gameVersion, attributes: ['name' => 'Main Raid'])), $character, Presence::Benched);
         }
 
         $this->assertTrue(ListBenchedCharacters::run($gameVersion, now()->subDays(7))->get('Main Raid')->sole()->character->is($character));
@@ -75,10 +75,10 @@ class ListBenchedCharactersTest extends TestCase
     #[Test]
     public function it_groups_untagged_reports_under_untagged(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $report = $this->makeReport($gameVersion, now()->subDay());
+        $gameVersion = $this->createAttendanceVersion();
+        $report = $this->createReport($gameVersion, now()->subDay());
         $report->update(['guild_tag_id' => null]);
-        $this->attend($report, $this->makeCharacter($gameVersion), Presence::Benched);
+        $this->attend($report, $this->createCharacter($gameVersion), Presence::Benched);
 
         $this->assertTrue(ListBenchedCharacters::run($gameVersion, now()->subDays(7))->has('Untagged'));
     }
@@ -86,11 +86,11 @@ class ListBenchedCharactersTest extends TestCase
     #[Test]
     public function it_ignores_reports_before_since_other_presences_and_other_versions(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $otherVersion = $this->makeAttendanceVersion();
-        $this->attend($this->makeReport($gameVersion, now()->subDays(8)), $this->makeCharacter($gameVersion), Presence::Benched);
-        $this->attend($this->makeReport($gameVersion, now()->subDay()), $this->makeCharacter($gameVersion), Presence::Present);
-        $this->attend($this->makeReport($otherVersion, now()->subDay()), $this->makeCharacter($otherVersion), Presence::Benched);
+        $gameVersion = $this->createAttendanceVersion();
+        $otherVersion = $this->createAttendanceVersion();
+        $this->attend($this->createReport($gameVersion, now()->subDays(8)), $this->createCharacter($gameVersion), Presence::Benched);
+        $this->attend($this->createReport($gameVersion, now()->subDay()), $this->createCharacter($gameVersion), Presence::Present);
+        $this->attend($this->createReport($otherVersion, now()->subDay()), $this->createCharacter($otherVersion), Presence::Benched);
 
         $this->assertTrue(ListBenchedCharacters::run($gameVersion, now()->subDays(7))->isEmpty());
     }
@@ -98,9 +98,9 @@ class ListBenchedCharactersTest extends TestCase
     #[Test]
     public function it_includes_each_characters_playable_class_with_its_media(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $character = $this->makeCharacter($gameVersion, attributes: ['playable_class_id' => PlayableClass::factory()->create(['name' => 'Mage'])->id]);
-        $this->attend($this->makeReport($gameVersion, now()->subDay(), $this->makeTag($gameVersion, attributes: ['name' => 'Raid'])), $character, Presence::Benched);
+        $gameVersion = $this->createAttendanceVersion();
+        $character = $this->createCharacter($gameVersion, attributes: ['playable_class_id' => PlayableClass::factory()->create(['name' => 'Mage'])->id]);
+        $this->attend($this->createReport($gameVersion, now()->subDay(), $this->createTag($gameVersion, attributes: ['name' => 'Raid'])), $character, Presence::Benched);
 
         $playableClass = ListBenchedCharacters::run($gameVersion, now()->subDays(7))->get('Raid')->sole()->character->playableClass;
 

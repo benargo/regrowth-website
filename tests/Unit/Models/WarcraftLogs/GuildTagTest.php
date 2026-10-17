@@ -179,7 +179,7 @@ class GuildTagTest extends ModelTestCase
         $counting = GuildTag::factory()->countsAttendance()->create();
         GuildTag::factory()->doesNotCountAttendance()->create();
 
-        $this->assertEquals([$counting->id], GuildTag::countsAttendance()->pluck('id')->all());
+        $this->assertSame([$counting->id], GuildTag::countsAttendance()->pluck('id')->all());
     }
 
     // ==================== guild relationship ====================

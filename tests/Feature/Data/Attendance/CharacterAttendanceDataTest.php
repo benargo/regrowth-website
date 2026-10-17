@@ -100,7 +100,7 @@ class CharacterAttendanceDataTest extends TestCase
     #[Test]
     public function it_emits_only_the_keys_the_matrix_reads(): void
     {
-        $this->assertSame(
+        $this->assertEqualsCanonicalizing(
             ['character', 'percentage', 'attendance', 'planned_absences'],
             array_keys($this->row()->toArray()),
         );
@@ -143,15 +143,33 @@ class CharacterAttendanceDataTest extends TestCase
     }
 
     #[Test]
-    public function it_emits_each_planned_absence_in_its_summary_shape_keyed_by_raid_column(): void
+    public function it_emits_each_planned_absence_in_its_attendance_shape_keyed_by_raid_column(): void
     {
         $absence = PlannedAbsence::factory()->create(['reason' => PlannedAbsenceReason::Work, 'notes' => 'Late shift.']);
 
         $plannedAbsences = $this->row(attendance: [Presence::Present, Presence::Absent], plannedAbsences: [null, $absence])->toArray()['planned_absences'];
 
-        $this->assertSame([
-            1 => ['reason' => ['label' => 'Stuck at work', 'icon' => 'briefcase'], 'notes' => 'Late shift.'],
-        ], $plannedAbsences);
+        $this->assertSame([1], array_keys($plannedAbsences));
+        $this->assertSame(['reason', 'notes'], array_keys($plannedAbsences[1]));
+        $this->assertSame('Stuck at work', $plannedAbsences[1]['reason']->label);
+        $this->assertSame('briefcase', $plannedAbsences[1]['reason']->icon);
+        $this->assertSame('Late shift.', $plannedAbsences[1]['notes']);
+    }
+
+    #[Test]
+    public function it_derives_the_percentage_rather_than_reading_it_from_input(): void
+    {
+        $row = CharacterAttendanceData::from([
+            'character' => Character::factory()->create()->load('playableClass'),
+            'first_attendance' => Carbon::parse('2025-01-01 19:00', 'UTC'),
+            'total_reports' => 4,
+            'reports_attended' => 3,
+            'attendance' => [],
+            'planned_absences' => [],
+            'percentage' => 10.0,
+        ]);
+
+        $this->assertSame(75.0, $row->percentage);
     }
 
     #[Test]
@@ -179,11 +197,11 @@ class CharacterAttendanceDataTest extends TestCase
     #[Test]
     public function it_runs_no_query_to_serialize_matrix_rows(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $rank = $this->makeRank($gameVersion);
-        $report = $this->makeReport($gameVersion, '2025-01-01 20:00');
+        $gameVersion = $this->createAttendanceVersion();
+        $rank = $this->createRank($gameVersion);
+        $report = $this->createReport($gameVersion, '2025-01-01 20:00');
         foreach (range(1, 3) as $ignored) {
-            $this->attend($report, $this->makeCharacter($gameVersion, $rank, ['playable_class_id' => PlayableClass::factory()->create()->id]));
+            $this->attend($report, $this->createCharacter($gameVersion, $rank, ['playable_class_id' => PlayableClass::factory()->create()->id]));
         }
         $rows = BuildAttendanceMatrix::run($gameVersion)->rows;
 

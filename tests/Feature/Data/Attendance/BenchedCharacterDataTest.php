@@ -20,9 +20,9 @@ class BenchedCharacterDataTest extends TestCase
     #[Test]
     public function it_takes_the_tag_name_and_character_from_the_character_report(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $character = $this->makeCharacter($gameVersion);
-        $this->attend($this->makeReport($gameVersion, now(), $this->makeTag($gameVersion, attributes: ['name' => 'Raid'])), $character, Presence::Benched);
+        $gameVersion = $this->createAttendanceVersion();
+        $character = $this->createCharacter($gameVersion);
+        $this->attend($this->createReport($gameVersion, now(), $this->createTag($gameVersion, attributes: ['name' => 'Raid'])), $character, Presence::Benched);
 
         $benched = BenchedCharacterData::fromCharacterReport(CharacterReport::sole());
 
@@ -33,10 +33,10 @@ class BenchedCharacterDataTest extends TestCase
     #[Test]
     public function it_names_an_untagged_reports_tag_untagged(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $report = $this->makeReport($gameVersion, now());
+        $gameVersion = $this->createAttendanceVersion();
+        $report = $this->createReport($gameVersion, now());
         $report->update(['guild_tag_id' => null]);
-        $this->attend($report, $this->makeCharacter($gameVersion), Presence::Benched);
+        $this->attend($report, $this->createCharacter($gameVersion), Presence::Benched);
 
         $this->assertSame('Untagged', BenchedCharacterData::fromCharacterReport(CharacterReport::sole())->tag);
     }
@@ -44,9 +44,9 @@ class BenchedCharacterDataTest extends TestCase
     #[Test]
     public function it_emits_the_character_as_its_resource(): void
     {
-        $gameVersion = $this->makeAttendanceVersion();
-        $character = $this->makeCharacter($gameVersion, attributes: ['name' => 'Kael']);
-        $this->attend($this->makeReport($gameVersion, now()), $character, Presence::Benched);
+        $gameVersion = $this->createAttendanceVersion();
+        $character = $this->createCharacter($gameVersion, attributes: ['name' => 'Kael']);
+        $this->attend($this->createReport($gameVersion, now()), $character, Presence::Benched);
 
         $array = BenchedCharacterData::fromCharacterReport(CharacterReport::sole())->toArray();
 
