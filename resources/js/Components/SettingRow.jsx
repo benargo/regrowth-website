@@ -21,7 +21,7 @@ export function SettingToggle({ label, enabled }) {
         <div className="flex items-start gap-2">
             <span
                 aria-hidden="true"
-                className="border-ink-600 bg-ground-800 mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-xs border"
+                className="border-amber-600 bg-brown-800 mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-xs border"
             >
                 {enabled && <Icon icon="check" style="solid" className="text-sm text-yellow-400" />}
             </span>

@@ -1,6 +1,7 @@
 import { Transition } from "@headlessui/react";
 import { Link } from "@inertiajs/react";
 import { createContext, useContext, useState } from "react";
+import cn from "@/Helpers/cn";
 
 const DropDownContext = createContext();
 
@@ -30,7 +31,7 @@ const Trigger = ({ children }) => {
     );
 };
 
-const Content = ({ align = "right", width = "48", contentClasses = "py-1 bg-ground-800", children }) => {
+const Content = ({ align = "right", width = "48", contentClasses = "py-1 bg-brown-800", children }) => {
     const { open, setOpen } = useContext(DropDownContext);
 
     let alignmentClasses = "origin-top";
@@ -62,7 +63,7 @@ const Content = ({ align = "right", width = "48", contentClasses = "py-1 bg-grou
                     className={`absolute z-50 mt-2 rounded-md shadow-lg ${alignmentClasses} ${widthClasses}`}
                     onClick={() => setOpen(false)}
                 >
-                    <div className={`rounded-md ring-1 ring-black ring-opacity-5 ` + contentClasses}>{children}</div>
+                    <div className={cn("ring-opacity-5 rounded-md ring-1 ring-black", contentClasses)}>{children}</div>
                 </div>
             </Transition>
         </>
@@ -73,10 +74,10 @@ const DropdownLink = ({ className = "", children, ...props }) => {
     return (
         <Link
             {...props}
-            className={
-                "block flex w-full flex-row items-center rounded-md bg-ground-800 px-4 py-2 text-start text-sm leading-5 text-white transition duration-150 ease-in-out hover:bg-ground-800 focus:bg-ground-700 focus:outline-hidden " +
-                className
-            }
+            className={cn(
+                "bg-brown-800 hover:bg-brown-800 focus:bg-brown-700 block flex w-full flex-row items-center rounded-md px-4 py-2 text-start text-sm leading-5 text-white transition duration-150 ease-in-out focus:outline-hidden",
+                className,
+            )}
         >
             {children}
         </Link>

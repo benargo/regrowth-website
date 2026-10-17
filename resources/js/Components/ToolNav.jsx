@@ -37,13 +37,13 @@ export function ToolNavSteps({ label = "Progress", steps, currentKey }) {
                             {...linkProps}
                             aria-current={isCurrent ? "step" : undefined}
                             className={
-                                "group focus-visible:outline-ink-400 relative flex h-9 items-center gap-2 pr-6 text-sm whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 " +
+                                "group focus-visible:outline-amber-400 relative flex h-9 items-center gap-2 pr-6 text-sm whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 " +
                                 (index === 0 ? "pl-4 " : "pl-6 ") +
                                 (isCurrent
                                     ? "font-semibold text-white"
                                     : isPast
-                                      ? "text-ink-200 font-medium"
-                                      : "text-secondary-400 font-medium")
+                                      ? "text-amber-200 font-medium"
+                                      : "text-gray-400 font-medium")
                             }
                         >
                             <span
@@ -53,9 +53,9 @@ export function ToolNavSteps({ label = "Progress", steps, currentKey }) {
                                     (index === 0 ? firstSegmentShape : segmentShape) +
                                     " " +
                                     (isCurrent
-                                        ? "bg-ground-600"
-                                        : (isPast ? "bg-ground-800" : "bg-ground-800/50") +
-                                          (step.href ? " group-hover:bg-ground-700" : ""))
+                                        ? "bg-brown-600"
+                                        : (isPast ? "bg-brown-800" : "bg-brown-800/50") +
+                                          (step.href ? " group-hover:bg-brown-700" : ""))
                                 }
                             />
                             {isPast && <Icon icon="check" className="relative" />}
@@ -72,7 +72,7 @@ export function ToolNavLink({ as: Component = Link, className, children, ...prop
     return (
         <Component
             className={cn(
-                "hover:border-primary hover:bg-ground-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white",
+                "hover:border-primary hover:bg-brown-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white",
                 className,
             )}
             {...props}
@@ -84,7 +84,7 @@ export function ToolNavLink({ as: Component = Link, className, children, ...prop
 
 export default function ToolNav({ children }) {
     return (
-        <nav className="bg-ground-900 shadow">
+        <nav className="bg-brown-900 shadow">
             <div className="container mx-auto px-4">
                 <div className="flex min-h-12 flex-row flex-wrap items-center justify-between gap-x-2">{children}</div>
             </div>

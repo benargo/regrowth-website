@@ -14,20 +14,20 @@ export function Table({ className = "", children, ...props }) {
     );
 }
 
-export function TableHead({ className = "border-ink-600", ...props }) {
+export function TableHead({ className = "border-amber-600", ...props }) {
     return <thead {...props} className={`border-b ${className}`} />;
 }
 
 export function TableBody({ className = "", ...props }) {
-    return <tbody {...props} className={`divide-ink-600 divide-y ${className}`} />;
+    return <tbody {...props} className={`divide-amber-600 divide-y ${className}`} />;
 }
 
 export function TableRow({ className = "", ...props }) {
-    return <tr {...props} className={`hover:bg-ground-800/50 transition-colors ${className}`} />;
+    return <tr {...props} className={`hover:bg-brown-800/50 transition-colors ${className}`} />;
 }
 
 export function TableHeader({ className = "", ...props }) {
-    return <th {...props} className={`text-ink-500 px-4 py-3 text-sm font-semibold ${className}`} />;
+    return <th {...props} className={`text-amber-500 px-4 py-3 text-sm font-semibold ${className}`} />;
 }
 
 export function TableCell({ className = "", ...props }) {

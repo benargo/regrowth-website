@@ -4,14 +4,14 @@ import Tooltip from "@/Components/Tooltip";
 
 const STYLES = {
     amber: {
-        border: "border-ink-600",
-        header: "hover:bg-ink-600/10",
-        body: "border-ink-600",
+        border: "border-amber-600",
+        header: "hover:bg-amber-600/10",
+        body: "border-amber-600",
     },
     gray: {
-        border: "border-secondary-400",
-        header: "hover:bg-secondary-400/10",
-        body: "border-secondary-400",
+        border: "border-gray-400",
+        header: "hover:bg-gray-400/10",
+        body: "border-gray-400",
     },
 };
 
@@ -37,9 +37,9 @@ export function RotatingChevron({ expanded = false, style = "solid" }) {
  */
 export function DisabledCollapsible({ title, headerRight, tooltip }) {
     const collapsible = (
-        <div className="border-secondary-700 rounded-md border opacity-60">
-            <div className="text-secondary-500 flex w-full cursor-not-allowed items-center gap-3 px-4 py-3 text-left">
-                <span className="text-secondary-600 flex items-center justify-items-center">
+        <div className="border-gray-700 rounded-md border opacity-60">
+            <div className="text-gray-500 flex w-full cursor-not-allowed items-center gap-3 px-4 py-3 text-left">
+                <span className="text-gray-600 flex items-center justify-items-center">
                     <Icon icon="chevron-down" style="solid" />
                 </span>
                 <h3 className="text-lg font-semibold">{title}</h3>
@@ -119,7 +119,7 @@ export default function Collapsible({
         return (
             <div className="animate-pulse space-y-2">
                 {[1, 2, 3].map((i) => (
-                    <div key={i} className="bg-secondary-600/20 h-12 rounded" />
+                    <div key={i} className="bg-gray-600/20 h-12 rounded" />
                 ))}
             </div>
         );

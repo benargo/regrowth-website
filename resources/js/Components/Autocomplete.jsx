@@ -129,7 +129,7 @@ export default function Autocomplete({
             />
 
             {isOpen && filteredOptions.length > 0 && (
-                <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded border border-ink-600 bg-ground-800 shadow-xl">
+                <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded border border-amber-600 bg-brown-800 shadow-xl">
                     {filteredOptions.map((option, index) => (
                         <div
                             key={option.id}
@@ -137,8 +137,8 @@ export default function Autocomplete({
                             onMouseEnter={() => setHighlightedIndex(index)}
                             className={`cursor-pointer px-4 py-2 transition-colors ${
                                 index === highlightedIndex
-                                    ? "bg-ink-600 text-white"
-                                    : "text-secondary-300 hover:bg-ink-600/20"
+                                    ? "bg-amber-600 text-white"
+                                    : "text-gray-300 hover:bg-amber-600/20"
                             }`}
                         >
                             {renderOption(option)}
@@ -148,7 +148,7 @@ export default function Autocomplete({
             )}
 
             {isOpen && filteredOptions.length === 0 && value && (
-                <div className="absolute z-10 mt-1 w-full rounded border border-ink-600 bg-ground-800 px-4 py-2 text-secondary-400 shadow-xl">
+                <div className="absolute z-10 mt-1 w-full rounded border border-amber-600 bg-brown-800 px-4 py-2 text-gray-400 shadow-xl">
                     No matches found
                 </div>
             )}

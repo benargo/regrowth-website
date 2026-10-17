@@ -34,7 +34,7 @@ function SortableImage({ url, onDelete, disabled, sortable }) {
             {...attributes}
             {...listeners}
         >
-            <img src={url} alt="" className="border-ink-600 h-32 w-32 rounded border object-cover" />
+            <img src={url} alt="" className="border-amber-600 h-32 w-32 rounded border object-cover" />
             <button
                 type="button"
                 disabled={disabled}
@@ -132,7 +132,7 @@ export default function ImageManager({
         <div>
             {images.length > 0 && (
                 <div className="mb-6">
-                    <p className="text-secondary-400 mb-3 text-sm">
+                    <p className="text-gray-400 mb-3 text-sm">
                         {multiple ? <>Drag to reorder &#124; hover to delete</> : "Hover to delete"}
                     </p>
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -162,13 +162,13 @@ export default function ImageManager({
                     onClick={() => fileInputRef.current?.click()}
                     className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-colors ${
                         isDraggingFile
-                            ? "border-ink-400 bg-ink-600/10 text-ink-300"
-                            : "border-secondary-600 text-secondary-400 hover:border-ink-600 hover:text-secondary-300"
+                            ? "border-amber-400 bg-amber-600/10 text-amber-300"
+                            : "border-gray-600 text-gray-400 hover:border-amber-600 hover:text-gray-300"
                     }`}
                 >
                     {saving ? (
                         <>
-                            <Icon icon="spinner" style="solid" className="fa-spin text-ink-400 text-2xl" />
+                            <Icon icon="spinner" style="solid" className="fa-spin text-amber-400 text-2xl" />
                             <span className="text-sm">Uploading…</span>
                         </>
                     ) : isDraggingFile ? (
@@ -181,9 +181,9 @@ export default function ImageManager({
                             <Icon icon="cloud-upload" style="solid" className="text-2xl" />
                             <span className="text-sm">
                                 Drag &amp; drop {multiple ? "images" : "an image"} here, or{" "}
-                                <span className="text-ink-400 underline">browse</span>
+                                <span className="text-amber-400 underline">browse</span>
                             </span>
-                            <span className="text-secondary-500 text-xs">
+                            <span className="text-gray-500 text-xs">
                                 {describeTypes(accepts)} · max 2 MB{multiple ? " each" : ""}
                             </span>
                         </>
