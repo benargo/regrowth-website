@@ -25,11 +25,11 @@ export default function IndexLayout({ intro, addHref = null, addLabel, isEmpty, 
 
             <PageContainer>
                 <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-secondary-300">{intro}</p>
+                    <p className="text-gray-300">{intro}</p>
                     {addHref && (
                         <Link
                             href={addHref}
-                            className={`bg-ink-800 hover:bg-ink-900 inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-sm font-semibold text-white ${focusRing}`}
+                            className={`bg-amber-800 hover:bg-amber-900 inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-sm font-semibold text-white ${focusRing}`}
                         >
                             <Icon icon="plus" style="light" />
                             {addLabel}

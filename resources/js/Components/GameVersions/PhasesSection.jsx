@@ -18,10 +18,10 @@ function RaidPill({ raid }) {
         <span className="inline-flex items-center gap-1.5">
             <span
                 aria-hidden="true"
-                className="border-ink-600 h-2.5 w-2.5 shrink-0 rounded-full border"
+                className="border-amber-600 h-2.5 w-2.5 shrink-0 rounded-full border"
                 style={{ backgroundColor: raid.color ? `#${raid.color}` : "transparent" }}
             />
-            <Pill bgColor="bg-ground-800" textColor="text-secondary-200" borderColor="border-ink-600">
+            <Pill bgColor="bg-brown-800" textColor="text-gray-200" borderColor="border-amber-600">
                 {raid.name} ({raid.difficulty})
             </Pill>
         </span>

@@ -57,43 +57,43 @@ export default function PlannedAbsenceTableRow({
     return (
         <TableRow className={isDeleted ? "opacity-60" : ""}>
             <TableCell
-                className={`relative ${isCurrent ? "before:bg-ink-500 before:absolute before:inset-y-0 before:left-0 before:w-0.5" : ""}`}
+                className={`relative ${isCurrent ? "before:bg-amber-500 before:absolute before:inset-y-0 before:left-0 before:w-0.5" : ""}`}
             >
                 <div className="flex items-center gap-3">
                     {character && <CharacterPortrait character={character} className="size-9" />}
                     <div className="flex min-w-0 flex-col gap-0.5">
                         <span className="flex items-center gap-2">
-                            <span className="text-ink-400 font-medium">{characterName}</span>
+                            <span className="text-amber-400 font-medium">{characterName}</span>
                             {isDeleted && (
                                 <Pill bgColor="bg-red-900/60" textColor="text-red-300">
                                     Deleted
                                 </Pill>
                             )}
                         </span>
-                        <span className="text-ink-300/70 text-xs sm:hidden">
+                        <span className="text-amber-300/70 text-xs sm:hidden">
                             <span className={dateClassName}>
                                 {startLabel} – {endLabel}
                             </span>
                             {returnLabel && <> · {returnLabel}</>}
                         </span>
-                        <ReasonLabel reason={absence.reason} className="text-ink-300/70 text-xs md:hidden" />
+                        <ReasonLabel reason={absence.reason} className="text-amber-300/70 text-xs md:hidden" />
                     </div>
                 </div>
             </TableCell>
-            <TableCell className="text-ink-300 hidden whitespace-nowrap sm:table-cell">
+            <TableCell className="text-amber-300 hidden whitespace-nowrap sm:table-cell">
                 <span className={dateClassName}>{startLabel}</span>
             </TableCell>
-            <TableCell className="text-ink-300 hidden whitespace-nowrap sm:table-cell">
+            <TableCell className="text-amber-300 hidden whitespace-nowrap sm:table-cell">
                 <span className={dateClassName}>{endLabel}</span>
-                {returnLabel && <span className="text-ink-400 block text-xs">{returnLabel}</span>}
+                {returnLabel && <span className="text-amber-400 block text-xs">{returnLabel}</span>}
             </TableCell>
-            <TableCell className="text-ink-300 hidden md:table-cell">
+            <TableCell className="text-amber-300 hidden md:table-cell">
                 <ReasonLabel reason={absence.reason} />
             </TableCell>
-            <TableCell className="text-secondary-300 max-w-md text-sm">
+            <TableCell className="text-gray-300 max-w-md text-sm">
                 {absence.notes ? <FormattedMarkdown>{absence.notes}</FormattedMarkdown> : <span>—</span>}
                 {absence.created_by && (
-                    <p className="text-secondary-500 mt-1 text-xs">
+                    <p className="text-gray-500 mt-1 text-xs">
                         Added by {absence.created_by.display_name} on {formatDate(absence.created_at).medium}
                     </p>
                 )}

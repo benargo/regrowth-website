@@ -17,7 +17,7 @@ export default function ReviewSummary({ routes, steps, details, summaries, relat
 
     return (
         <div className="mx-auto flex max-w-5xl flex-col gap-8">
-            <p className="text-secondary-300 max-w-prose">
+            <p className="text-gray-300 max-w-prose">
                 Check the details and linked records below. Use Edit to go back to a step; saving it brings you back
                 here.
             </p>

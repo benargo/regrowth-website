@@ -113,7 +113,7 @@ export default function CharacterSearch({
                     ) : (
                         // Font Awesome swaps the <i> for an <svg>, so React must unmount a wrapper it owns instead.
                         <span>
-                            <Icon icon="search" style="solid" className="text-secondary-400 ml-1.5" />
+                            <Icon icon="search" style="solid" className="text-gray-400 ml-1.5" />
                         </span>
                     )}
                 </span>
@@ -144,14 +144,14 @@ export default function CharacterSearch({
                         type="button"
                         onClick={handleClear}
                         aria-label="Clear character"
-                        className="text-secondary-400 focus-visible:outline-ink-400 absolute inset-y-0 right-1 my-auto flex size-8 items-center justify-center rounded hover:text-white focus-visible:outline-2"
+                        className="text-gray-400 focus-visible:outline-amber-400 absolute inset-y-0 right-1 my-auto flex size-8 items-center justify-center rounded hover:text-white focus-visible:outline-2"
                     >
                         <Icon icon="times" style="solid" />
                     </button>
                 ) : (
                     <ComboboxButton
                         aria-label="Show characters"
-                        className="text-secondary-400 absolute inset-y-0 right-1 my-auto flex size-8 items-center justify-center rounded data-hover:text-white"
+                        className="text-gray-400 absolute inset-y-0 right-1 my-auto flex size-8 items-center justify-center rounded data-hover:text-white"
                     >
                         <Icon icon="chevron-down" style="solid" className="text-xs" />
                     </ComboboxButton>
@@ -160,10 +160,10 @@ export default function CharacterSearch({
 
             <ComboboxOptions
                 anchor="bottom start"
-                className="border-ink-600 bg-ground-800 z-50 max-h-64 w-(--input-width) overflow-y-auto rounded border py-1 shadow-lg shadow-black/40 [--anchor-gap:4px]"
+                className="border-amber-600 bg-brown-800 z-50 max-h-64 w-(--input-width) overflow-y-auto rounded border py-1 shadow-lg shadow-black/40 [--anchor-gap:4px]"
             >
                 {filtered.length === 0 ? (
-                    <div className="text-secondary-300 px-4 py-2 text-sm">{emptyMessage}</div>
+                    <div className="text-gray-300 px-4 py-2 text-sm">{emptyMessage}</div>
                 ) : (
                     filtered.map((character) => {
                         const mainName = character.is_main ? null : character.linked_characters?.[0]?.name;
@@ -172,13 +172,13 @@ export default function CharacterSearch({
                             <ComboboxOption
                                 key={character.id}
                                 value={character}
-                                className="data-focus:bg-ground-700 flex cursor-pointer items-center gap-3 px-3 py-1.5 text-sm text-white"
+                                className="data-focus:bg-brown-700 flex cursor-pointer items-center gap-3 px-3 py-1.5 text-sm text-white"
                             >
                                 <CharacterPortrait character={character} />
                                 <span className="truncate">{character.name}</span>
                                 <ClassPill playableClass={character.playable_class} />
                                 {mainName && (
-                                    <Pill bgColor="bg-ground-700" textColor="text-secondary-300">
+                                    <Pill bgColor="bg-brown-700" textColor="text-gray-300">
                                         alt of {mainName}
                                     </Pill>
                                 )}

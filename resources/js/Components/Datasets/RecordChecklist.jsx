@@ -74,7 +74,7 @@ export default function RecordChecklist({
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                     <label
                         htmlFor={selectAllId}
-                        className="text-secondary-100 flex min-h-8 cursor-pointer items-center gap-3 border border-transparent px-3 hover:text-white"
+                        className="text-gray-100 flex min-h-8 cursor-pointer items-center gap-3 border border-transparent px-3 hover:text-white"
                     >
                         <Checkbox
                             ref={selectAllRef}
@@ -85,18 +85,18 @@ export default function RecordChecklist({
                         />
                         Select all
                     </label>
-                    <span id={`${selectAllId}-count`} className="text-secondary-300 text-sm">
+                    <span id={`${selectAllId}-count`} className="text-gray-300 text-sm">
                         {selectedCount} of {optionIds.length} selected
                     </span>
                 </div>
             )}
 
             {options.length === 0 ? (
-                <p className="text-secondary-300 text-sm">{emptyMessage}</p>
+                <p className="text-gray-300 text-sm">{emptyMessage}</p>
             ) : (
                 groupOptions(options, groupBy).map(([group, members]) => (
                     <div key={group ?? "all"} className="flex flex-col gap-2">
-                        {group && <h3 className="text-secondary-200 text-sm font-semibold">{group}</h3>}
+                        {group && <h3 className="text-gray-200 text-sm font-semibold">{group}</h3>}
                         <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                             {members.map((option) => {
                                 const inputId = `${name}-${option.id}`;
@@ -106,7 +106,7 @@ export default function RecordChecklist({
                                     <li key={option.id}>
                                         <label
                                             htmlFor={inputId}
-                                            className="border-ink-600/40 has-checked:border-ink-400 has-checked:bg-ink-800/40 hover:bg-ink-600/10 flex h-full cursor-pointer items-start gap-3 rounded border px-3 py-2"
+                                            className="border-amber-600/40 has-checked:border-amber-400 has-checked:bg-amber-800/40 hover:bg-amber-600/10 flex h-full cursor-pointer items-start gap-3 rounded border px-3 py-2"
                                         >
                                             <Checkbox
                                                 id={inputId}
@@ -119,9 +119,9 @@ export default function RecordChecklist({
                                                 {owner && (
                                                     <span>
                                                         <Pill
-                                                            bgColor="bg-ground-800"
-                                                            textColor="text-secondary-200"
-                                                            borderColor="border-ink-600"
+                                                            bgColor="bg-brown-800"
+                                                            textColor="text-gray-200"
+                                                            borderColor="border-amber-600"
                                                         >
                                                             In {owner}
                                                         </Pill>

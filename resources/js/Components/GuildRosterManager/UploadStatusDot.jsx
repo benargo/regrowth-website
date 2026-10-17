@@ -12,8 +12,8 @@ const DOT_CLASSES = {
     current: "bg-green-500",
     outdated: "bg-yellow-500",
     stale: "bg-red-500",
-    missing: "border-2 border-secondary-400",
-    unknown: "bg-secondary-500",
+    missing: "border-2 border-gray-400",
+    unknown: "bg-gray-500",
 };
 
 /**
@@ -22,7 +22,7 @@ const DOT_CLASSES = {
  */
 export default function UploadStatusDot({ status }) {
     if (status === undefined) {
-        return <span aria-hidden="true" className="bg-ground-700 inline-block size-2.5 animate-pulse rounded-full" />;
+        return <span aria-hidden="true" className="bg-brown-700 inline-block size-2.5 animate-pulse rounded-full" />;
     }
 
     return (

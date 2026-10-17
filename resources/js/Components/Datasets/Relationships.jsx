@@ -10,13 +10,13 @@ export default function Relationships({ id, title, description, children }) {
         <section
             id={id}
             aria-labelledby={`${id}-heading`}
-            className="border-ink-600/40 flex scroll-mt-48 flex-col gap-6 border-t pt-8 lg:scroll-mt-28"
+            className="border-amber-600/40 flex scroll-mt-48 flex-col gap-6 border-t pt-8 lg:scroll-mt-28"
         >
             <header className="flex flex-col gap-1">
                 <h2 id={`${id}-heading`} className="font-serif text-2xl text-white">
                     {title}
                 </h2>
-                {description && <p className="text-secondary-300 max-w-prose text-sm">{description}</p>}
+                {description && <p className="text-gray-300 max-w-prose text-sm">{description}</p>}
             </header>
             {children}
         </section>
@@ -28,8 +28,8 @@ export default function Relationships({ id, title, description, children }) {
  */
 function AddRecord({ label, children }) {
     return (
-        <Disclosure as="div" className="border-ink-600/40 rounded border">
-            <DisclosureButton className="group data-focus:outline-ink-400 flex w-full items-center justify-between gap-4 px-4 py-3 text-left text-sm font-semibold text-white data-focus:outline-2 data-focus:outline-offset-2">
+        <Disclosure as="div" className="border-amber-600/40 rounded border">
+            <DisclosureButton className="group data-focus:outline-amber-400 flex w-full items-center justify-between gap-4 px-4 py-3 text-left text-sm font-semibold text-white data-focus:outline-2 data-focus:outline-offset-2">
                 <span className="flex items-center gap-2">
                     <Icon icon="plus" />
                     {label}
@@ -39,7 +39,7 @@ function AddRecord({ label, children }) {
                     className="transition-transform group-data-open:rotate-180 motion-reduce:transition-none"
                 />
             </DisclosureButton>
-            <DisclosurePanel className="border-ink-600/40 border-t p-4">{children}</DisclosurePanel>
+            <DisclosurePanel className="border-amber-600/40 border-t p-4">{children}</DisclosurePanel>
         </Disclosure>
     );
 }

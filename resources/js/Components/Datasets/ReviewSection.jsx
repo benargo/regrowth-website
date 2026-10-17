@@ -16,7 +16,7 @@ export function selectedOptions(group) {
  */
 export default function ReviewSection({ id, title, editHref, editLabel, children }) {
     return (
-        <section aria-labelledby={`${id}-heading`} className="border-ink-600/40 flex flex-col gap-4 border-t pt-6">
+        <section aria-labelledby={`${id}-heading`} className="border-amber-600/40 flex flex-col gap-4 border-t pt-6">
             <header className="flex flex-wrap items-center justify-between gap-4">
                 <h2 id={`${id}-heading`} className="font-serif text-2xl text-white">
                     {title}
@@ -39,8 +39,8 @@ function Details({ details }) {
         <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-[max-content_1fr]">
             {details.map(([label, value]) => (
                 <div key={label} className="contents">
-                    <dt className="text-secondary-300">{label}</dt>
-                    <dd className={value ? "text-white" : "text-secondary-400 italic"}>{value || "Not set"}</dd>
+                    <dt className="text-gray-300">{label}</dt>
+                    <dd className={value ? "text-white" : "text-gray-400 italic"}>{value || "Not set"}</dd>
                 </div>
             ))}
         </dl>
@@ -54,9 +54,9 @@ function Details({ details }) {
 function Records({ heading, items }) {
     return (
         <div className="flex flex-col gap-2">
-            {heading && <h3 className="text-secondary-300 text-sm font-semibold">{heading}</h3>}
+            {heading && <h3 className="text-gray-300 text-sm font-semibold">{heading}</h3>}
             {items.length === 0 ? (
-                <p className="text-secondary-400 text-sm italic">None linked.</p>
+                <p className="text-gray-400 text-sm italic">None linked.</p>
             ) : (
                 <ul className="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
                     {items.map((item) => (
@@ -64,7 +64,7 @@ function Records({ heading, items }) {
                             {item.icon && <img src={item.icon} alt="" className="h-4 w-4 rounded-xs" />}
                             <div className="flex flex-col">
                                 <span className="text-white">{item.primary}</span>
-                                {item.secondary && <span className="text-secondary-400">{item.secondary}</span>}
+                                {item.secondary && <span className="text-gray-400">{item.secondary}</span>}
                             </div>
                         </li>
                     ))}
