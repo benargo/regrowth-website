@@ -22,6 +22,7 @@ class BuildGameVersionRelationships
      *     playable_races: ResourceCollection,
      *     playable_classes: ResourceCollection,
      *     phases: ResourceCollection,
+     *     unscheduled_phases: ResourceCollection,
      *     guild_ranks: ResourceCollection,
      * }
      */
@@ -39,12 +40,17 @@ class BuildGameVersionRelationships
                     'selected_ids' => $gameVersion->playableClasses()->pluck('playable_classes.id')->all(),
                 ]),
             'phases' => Phase::with(['gameVersion', 'raids' => fn ($query) => $query->orderBy('name')])
-                ->orderBy('number')
+                ->inReleaseOrder()
                 ->get()
                 ->toResourceCollection()
                 ->additional([
                     'selected_ids' => $gameVersion->phases()->pluck('id')->all(),
                 ]),
+            'unscheduled_phases' => $gameVersion->phases()
+                ->whereNull('start_date')
+                ->orderBy('sort_order')
+                ->get()
+                ->toResourceCollection(),
             'guild_ranks' => $gameVersion->guildRanks()
                 ->withCount('characters')
                 ->ordered()

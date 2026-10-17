@@ -32,6 +32,28 @@ class BuildDatasetRoutesTest extends TestCase
         ], $routes->links(GameVersion::factory()->make(['id' => 7])));
     }
 
+    #[Test]
+    public function it_leads_a_stored_record_to_its_edit_page_without_a_setup_wizard(): void
+    {
+        $routes = $this->routesWithoutWizard();
+
+        $this->assertSame(
+            'http://localhost/manage/game-versions/7/edit',
+            $routes->afterStore(GameVersion::factory()->make(['id' => 7])),
+        );
+    }
+
+    #[Test]
+    public function it_leaves_the_review_url_out_of_the_edit_urls_without_a_setup_wizard(): void
+    {
+        $routes = $this->routesWithoutWizard();
+
+        $this->assertSame([
+            'index' => 'http://localhost/manage/game-versions',
+            'update' => 'http://localhost/manage/game-versions/7',
+        ], $routes->forEdit(GameVersion::factory()->make(['id' => 7])));
+    }
+
     // ==================== helpers ====================
 
     /**

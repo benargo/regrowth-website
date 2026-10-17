@@ -45,9 +45,9 @@ class BuildGameVersionRelationshipsTest extends TestCase
     {
         $gameVersion = GameVersion::factory()->create();
         $otherGameVersion = GameVersion::factory()->create(['title' => 'Era']);
-        $linked = Phase::factory()->for($gameVersion)->create(['number' => '1.0']);
-        Phase::factory()->for($otherGameVersion)->create(['number' => '2.0']);
-        Phase::factory()->create(['number' => '3.0']);
+        $linked = Phase::factory()->for($gameVersion)->create(['number' => '1.0', 'start_date' => '2026-01-01 00:00:00']);
+        Phase::factory()->for($otherGameVersion)->create(['number' => '2.0', 'start_date' => '2026-02-01 00:00:00']);
+        Phase::factory()->create(['number' => '3.0', 'start_date' => '2026-03-01 00:00:00']);
 
         $relationships = $this->build($gameVersion);
 
@@ -56,7 +56,22 @@ class BuildGameVersionRelationshipsTest extends TestCase
         $this->assertSame($otherGameVersion->id, $relationships['phases']['data'][1]['game_version']['id']);
         $this->assertSame('Era', $relationships['phases']['data'][1]['game_version']['title']);
         $this->assertNull($relationships['phases']['data'][2]['game_version']);
-        $this->assertSame(['playable_races', 'playable_classes', 'phases', 'guild_ranks'], array_keys($relationships));
+        $this->assertSame(['playable_races', 'playable_classes', 'phases', 'unscheduled_phases', 'guild_ranks'], array_keys($relationships));
+    }
+
+    #[Test]
+    public function it_lists_the_phases_in_release_order(): void
+    {
+        $unscheduled = Phase::factory()->unscheduled()->create(['number' => '4.0']);
+        $later = Phase::factory()->create(['number' => '1.0', 'start_date' => '2026-05-15 00:00:00']);
+        $earlier = Phase::factory()->create(['number' => '3.0', 'start_date' => '2026-01-01 00:00:00']);
+
+        $relationships = $this->build(GameVersion::factory()->create());
+
+        $this->assertSame(
+            [$earlier->id, $later->id, $unscheduled->id],
+            array_column($relationships['phases']['data'], 'id'),
+        );
     }
 
     #[Test]
@@ -108,6 +123,21 @@ class BuildGameVersionRelationshipsTest extends TestCase
         $this->assertSame([false, true], array_column($ranks, 'count_attendance'));
         $this->assertSame([0, 2], array_column($ranks, 'characters_count'));
         $this->assertSame($raider->id, $ranks[1]['id']);
+    }
+
+    #[Test]
+    public function it_lists_the_game_versions_unscheduled_phases_in_sort_order(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        [$first, $second] = Phase::factory()->for($gameVersion)->unscheduled()->count(2)->create();
+        $first->update(['sort_order' => 2]);
+        $second->update(['sort_order' => 1]);
+        Phase::factory()->for($gameVersion)->started()->create();
+        Phase::factory()->for(GameVersion::factory())->unscheduled()->create();
+
+        $relationships = $this->build($gameVersion);
+
+        $this->assertSame([$second->id, $first->id], array_column($relationships['unscheduled_phases']['data'], 'id'));
     }
 
     /**

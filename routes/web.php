@@ -13,7 +13,6 @@ use App\Http\Controllers\Dashboard\AddonSchemaController;
 use App\Http\Controllers\Dashboard\AddonSettingsController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\PermissionController;
-use App\Http\Controllers\Dashboard\PhaseController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTemplateController;
 use App\Http\Controllers\GameVersionController;
@@ -21,6 +20,7 @@ use App\Http\Controllers\GuildRosterManager\ImportController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LootBiasToolController;
+use App\Http\Controllers\PhaseController;
 use App\Http\Controllers\PlannedAbsenceController;
 use App\Http\Controllers\RaidingController;
 use App\Http\Controllers\ReportController;
@@ -168,8 +168,13 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     /**
      * Phases management
      */
-    Route::get('/phases', [PhaseController::class, 'index'])->name('phases.view');
-    Route::put('/phases/{phase}', [PhaseController::class, 'update'])->name('phases.update');
+    Route::get('/phases', [PhaseController::class, 'index'])->name('phases.index');
+    Route::get('/phases/create', [PhaseController::class, 'create'])->name('phases.create');
+    Route::post('/phases', [PhaseController::class, 'store'])->name('phases.store');
+    Route::patch('/phases/order', [PhaseController::class, 'reorder'])->name('phases.reorder');
+    Route::get('/phases/{phase}/edit', [PhaseController::class, 'edit'])->name('phases.edit');
+    Route::patch('/phases/{phase}', [PhaseController::class, 'update'])->name('phases.update');
+    Route::delete('/phases/{phase}', [PhaseController::class, 'destroy'])->name('phases.destroy');
 
     /**
      * Permissions management

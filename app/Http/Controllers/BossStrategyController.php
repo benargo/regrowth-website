@@ -21,7 +21,7 @@ class BossStrategyController extends Controller
      */
     public function index(Request $request)
     {
-        $phases = Phase::with(['raids'])->orderBy('number')->get();
+        $phases = Phase::with(['raids'])->inReleaseOrder()->get();
 
         $route = Route::currentRouteName();
 

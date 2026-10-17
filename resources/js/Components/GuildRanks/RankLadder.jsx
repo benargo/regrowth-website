@@ -1,21 +1,5 @@
 import { useRef, useState } from "react";
-import {
-    DndContext,
-    DragOverlay,
-    KeyboardSensor,
-    PointerSensor,
-    closestCenter,
-    useSensor,
-    useSensors,
-} from "@dnd-kit/core";
-import {
-    SortableContext,
-    arrayMove,
-    sortableKeyboardCoordinates,
-    useSortable,
-    verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import SortableList, { moveByKey } from "@/Components/Datasets/SortableList";
 import Icon from "@/Components/FontAwesome/Icon";
 import IconButton from "@/Components/IconButton";
 import { Checkbox, PrimaryButton, TextInput } from "@/Components/FormControls";
@@ -40,7 +24,7 @@ function RankRowContent({ row, index, dragHandle, children }) {
     return (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 sm:flex-nowrap">
             {dragHandle}
-            <span aria-hidden="true" className="text-gray-400 w-7 text-right font-serif text-2xl tabular-nums">
+            <span aria-hidden="true" className="w-7 text-right font-serif text-2xl text-gray-400 tabular-nums">
                 {index}
             </span>
             <span
@@ -53,11 +37,8 @@ function RankRowContent({ row, index, dragHandle, children }) {
     );
 }
 
-function SortableRankRow({ row, index, error, onRename, onCommitName, onToggleAttendance, onDelete }) {
+function RankRow({ row, index, dragHandle, error, onRename, onCommitName, onToggleAttendance, onDelete }) {
     const nameBeforeEdit = useRef(row.name);
-    const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
-        id: row.key,
-    });
     const nameId = `guild-rank-${row.key}-name`;
     const attendanceId = `guild-rank-${row.key}-attendance`;
 
@@ -81,27 +62,8 @@ function SortableRankRow({ row, index, error, onRename, onCommitName, onToggleAt
     }
 
     return (
-        <li
-            ref={setNodeRef}
-            style={{ transform: CSS.Transform.toString(transform), transition }}
-            className={`bg-brown-900 ${isDragging ? "opacity-40" : ""}`}
-        >
-            <RankRowContent
-                row={row}
-                index={index}
-                dragHandle={
-                    <button
-                        type="button"
-                        ref={setActivatorNodeRef}
-                        {...attributes}
-                        {...listeners}
-                        aria-label={`Move ${row.name}`}
-                        className="text-gray-400 focus-visible:outline-amber-400 flex h-8 w-6 cursor-grab items-center justify-center rounded hover:text-white focus-visible:outline-2 active:cursor-grabbing"
-                    >
-                        <Icon icon="grip-vertical" style="regular" />
-                    </button>
-                }
-            >
+        <>
+            <RankRowContent row={row} index={index} dragHandle={dragHandle}>
                 <input
                     id={nameId}
                     type="text"
@@ -115,16 +77,16 @@ function SortableRankRow({ row, index, error, onRename, onCommitName, onToggleAt
                     onChange={(event) => onRename(row.key, event.target.value)}
                     onBlur={handleBlur}
                     onKeyDown={handleKeyDown}
-                    className="focus-visible:outline-amber-400 hover:border-amber-600 min-w-0 flex-1 basis-40 rounded border-b border-transparent bg-transparent px-1 py-1 text-base text-white focus-visible:outline-2"
+                    className="min-w-0 flex-1 basis-40 rounded border-b border-transparent bg-transparent px-1 py-1 text-base text-white hover:border-amber-600 focus-visible:outline-2 focus-visible:outline-amber-400"
                 />
-                <span className="text-gray-400 w-28 text-sm">{charactersLabel(row.characters_count)}</span>
+                <span className="w-28 text-sm text-gray-400">{charactersLabel(row.characters_count)}</span>
                 <span className="flex items-center gap-2">
                     <Checkbox
                         id={attendanceId}
                         checked={row.count_attendance}
                         onChange={() => onToggleAttendance(row.key)}
                     />
-                    <label htmlFor={attendanceId} className="text-gray-300 text-sm whitespace-nowrap">
+                    <label htmlFor={attendanceId} className="text-sm whitespace-nowrap text-gray-300">
                         Attendance tracked
                     </label>
                 </span>
@@ -140,7 +102,7 @@ function SortableRankRow({ row, index, error, onRename, onCommitName, onToggleAt
                     {error}
                 </p>
             )}
-        </li>
+        </>
     );
 }
 
@@ -195,13 +157,6 @@ function AddRankRow({ onAdd }) {
  * a save lands between renders. `errors` maps a row's key to its message.
  */
 export default function RankLadder({ rows, onChange, onCommit, errors = {}, maxRanks, newRow }) {
-    const [activeKey, setActiveKey] = useState(null);
-    const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-    );
-    const activeIndex = rows.findIndex((row) => row.key === activeKey);
-
     function rename(key, name) {
         onChange((current) => current.map((row) => (row.key === key ? { ...row, name } : row)));
     }
@@ -216,74 +171,55 @@ export default function RankLadder({ rows, onChange, onCommit, errors = {}, maxR
         onCommit((current) => current.filter((row) => row.key !== key));
     }
 
-    function handleDragEnd({ active, over }) {
-        setActiveKey(null);
-
-        if (!over || active.id === over.id) {
-            return;
-        }
-
-        onCommit((current) =>
-            arrayMove(
-                current,
-                current.findIndex((row) => row.key === active.id),
-                current.findIndex((row) => row.key === over.id),
-            ),
-        );
-    }
-
     return (
-        <div className="border-amber-600/40 overflow-hidden rounded border">
+        <div className="overflow-hidden rounded border border-amber-600/40">
             {rows.length === 0 ? (
-                <p className="text-gray-300 px-4 py-3 text-sm">No ranks yet. Add the guild master first.</p>
+                <p className="px-4 py-3 text-sm text-gray-300">No ranks yet. Add the guild master first.</p>
             ) : (
-                <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragStart={({ active }) => setActiveKey(active.id)}
-                    onDragCancel={() => setActiveKey(null)}
-                    onDragEnd={handleDragEnd}
-                >
-                    <SortableContext items={rows.map((row) => row.key)} strategy={verticalListSortingStrategy}>
-                        <ol aria-label="Guild ranks" className="divide-amber-600/40 divide-y">
-                            {rows.map((row, index) => (
-                                <SortableRankRow
-                                    key={row.key}
-                                    row={row}
-                                    index={index}
-                                    error={errors[row.key]}
-                                    onRename={rename}
-                                    onCommitName={() => onCommit((current) => current)}
-                                    onToggleAttendance={toggleAttendance}
-                                    onDelete={remove}
-                                />
-                            ))}
-                        </ol>
-                    </SortableContext>
-                    <DragOverlay>
-                        {activeIndex >= 0 && (
-                            <div className="bg-brown-900 ring-amber-400 rounded shadow-lg ring-1">
-                                <RankRowContent
-                                    row={rows[activeIndex]}
-                                    index={activeIndex}
-                                    dragHandle={
-                                        <span className="text-gray-400 flex h-8 w-6 items-center justify-center">
-                                            <Icon icon="grip-vertical" style="regular" />
-                                        </span>
-                                    }
-                                >
-                                    <span className="flex-1 px-1 text-white">{rows[activeIndex].name}</span>
-                                </RankRowContent>
-                            </div>
-                        )}
-                    </DragOverlay>
-                </DndContext>
+                <SortableList
+                    items={rows}
+                    getKey={(row) => row.key}
+                    getLabel={(row) => row.name}
+                    label="Guild ranks"
+                    className="divide-y divide-amber-600/40"
+                    itemClassName="bg-brown-900"
+                    onMove={(activeKey, overKey) =>
+                        onCommit((current) => moveByKey(current, (row) => row.key, activeKey, overKey))
+                    }
+                    renderItem={(row, { index, dragHandle }) => (
+                        <RankRow
+                            row={row}
+                            index={index}
+                            dragHandle={dragHandle}
+                            error={errors[row.key]}
+                            onRename={rename}
+                            onCommitName={() => onCommit((current) => current)}
+                            onToggleAttendance={toggleAttendance}
+                            onDelete={remove}
+                        />
+                    )}
+                    renderOverlay={(row, index) => (
+                        <div className="bg-brown-900">
+                            <RankRowContent
+                                row={row}
+                                index={index}
+                                dragHandle={
+                                    <span className="flex h-8 w-6 items-center justify-center text-gray-400">
+                                        <Icon icon="grip-vertical" style="regular" />
+                                    </span>
+                                }
+                            >
+                                <span className="flex-1 px-1 text-white">{row.name}</span>
+                            </RankRowContent>
+                        </div>
+                    )}
+                />
             )}
-            <div className="border-amber-600/40 border-t">
+            <div className="border-t border-amber-600/40">
                 {rows.length < maxRanks ? (
                     <AddRankRow onAdd={(name) => onCommit((current) => [...current, newRow(name)])} />
                 ) : (
-                    <p className="text-gray-300 px-4 py-3 text-sm">Guilds can have up to {maxRanks} ranks.</p>
+                    <p className="px-4 py-3 text-sm text-gray-300">Guilds can have up to {maxRanks} ranks.</p>
                 )}
             </div>
         </div>

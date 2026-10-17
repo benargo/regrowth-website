@@ -89,7 +89,7 @@ class BuildAddonExportFile implements ShouldQueue
      */
     protected function buildPhases(): Collection
     {
-        return Phase::orderBy('number')->get()->map(function (Phase $phase) {
+        return Phase::inReleaseOrder()->get()->map(function (Phase $phase) {
             return [
                 'id' => $phase->id,
                 'number' => $phase->number,

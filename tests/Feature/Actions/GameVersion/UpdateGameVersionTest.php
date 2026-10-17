@@ -195,40 +195,18 @@ class UpdateGameVersionTest extends TestCase
         $this->assertNull($phase->fresh()->game_version_id);
     }
 
-    // ==================== new phase ====================
-
-    #[Group('happy-path')]
-    #[Test]
-    public function it_creates_a_phase_owned_by_the_game_version(): void
-    {
-        $gameVersion = GameVersion::factory()->create();
-
-        $this->updateGameVersion($gameVersion, [
-            'new_phase' => [
-                'number' => '2.5',
-                'description' => "Zul'Aman",
-                'start_date' => '2026-05-12',
-            ],
-        ]);
-
-        $phase = Phase::sole();
-        $this->assertSame($gameVersion->id, $phase->game_version_id);
-        $this->assertSame('2.5', $phase->number);
-        $this->assertSame("Zul'Aman", $phase->description);
-        $this->assertSame('2026-05-12', $phase->start_date->toDateString());
-    }
+    // ==================== unscheduled phase order ====================
 
     #[Test]
-    public function it_keeps_a_new_phase_when_the_same_update_unlinks_every_phase(): void
+    public function it_reorders_the_unscheduled_phases(): void
     {
         $gameVersion = GameVersion::factory()->create();
+        [$first, $second] = Phase::factory()->for($gameVersion)->unscheduled()->count(2)->create();
 
-        $this->updateGameVersion($gameVersion, [
-            'phase_ids' => [],
-            'new_phase' => ['number' => '1.0', 'description' => 'Launch'],
-        ]);
+        $this->updateGameVersion($gameVersion, ['unscheduled_phase_ids' => [$second->id, $first->id]]);
 
-        $this->assertSame($gameVersion->id, Phase::sole()->game_version_id);
+        $this->assertSame(1, $second->fresh()->sort_order);
+        $this->assertSame(2, $first->fresh()->sort_order);
     }
 
     // ==================== raids and bosses follow their phase ====================

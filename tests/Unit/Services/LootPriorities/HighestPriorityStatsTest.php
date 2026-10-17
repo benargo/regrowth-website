@@ -76,13 +76,13 @@ class HighestPriorityStatsTest extends TestCase
     }
 
     #[Test]
-    public function phases_are_ordered_by_number_ascending(): void
+    public function phases_are_listed_in_release_order(): void
     {
-        $phaseThree = Phase::factory()->create(['number' => 3]);
-        $phaseOne = Phase::factory()->create(['number' => 1]);
-        $phaseThreeFive = Phase::factory()->create(['number' => 3.5]);
+        $unscheduled = Phase::factory()->unscheduled()->create(['number' => 4]);
+        $later = Phase::factory()->create(['number' => 1, 'start_date' => '2026-05-15 00:00:00']);
+        $earlier = Phase::factory()->create(['number' => 3, 'start_date' => '2026-01-01 00:00:00']);
 
-        foreach ([$phaseThree, $phaseOne, $phaseThreeFive] as $phase) {
+        foreach ([$unscheduled, $later, $earlier] as $phase) {
             $item = $this->itemInPhase($phase);
             $priority = LootPriority::factory()->role()->create();
             $item->priorities()->attach($priority->id, ['weight' => 0]);
@@ -90,10 +90,7 @@ class HighestPriorityStatsTest extends TestCase
 
         $phases = $this->service()->phases();
 
-        $this->assertSame(
-            [$phaseOne->id, $phaseThree->id, $phaseThreeFive->id],
-            $phases->pluck('id')->all()
-        );
+        $this->assertSame([$earlier->id, $later->id, $unscheduled->id], $phases->pluck('id')->all());
     }
 
     // ==================== table(): aggregation ====================

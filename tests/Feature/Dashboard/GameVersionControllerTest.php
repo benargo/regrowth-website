@@ -1320,99 +1320,109 @@ class GameVersionControllerTest extends DashboardTestCase
         ]);
     }
 
-    // ==================== update: new phase ====================
-
-    #[Group('happy-path')]
+    #[Group('validation')]
     #[Test]
-    public function it_adds_a_new_phase(): void
+    public function it_rejects_ticking_two_phases_with_the_same_number(): void
     {
         $gameVersion = GameVersion::factory()->create();
-        $payload = [
-            'new_phase' => [
-                'number' => '2.5',
-                'description' => "Zul'Aman",
-                'start_date' => '2026-05-12',
-            ],
-        ];
-        $this->expectUpdate($gameVersion, $payload);
+        $owned = Phase::factory()->for($gameVersion)->create(['number' => '1.0']);
+        $incoming = Phase::factory()->for(GameVersion::factory())->create(['number' => '1.0']);
+        UpdateGameVersion::shouldNotRun();
 
         $response = $this->actingAs($this->officer)
             ->from($this->editUrl($gameVersion))
-            ->patch(route('management.game-versions.update', $gameVersion), $payload);
+            ->patch(route('management.game-versions.update', $gameVersion), ['phase_ids' => [$owned->id, $incoming->id]]);
 
-        $response->assertRedirect($this->editUrl($gameVersion));
-        $response->assertSessionHas('success', "Saved changes to {$gameVersion->title}.");
+        $response->assertInvalid(['phase_ids' => 'Two of the ticked phases have the same number. Untick one, or change its number first.']);
+    }
+
+    #[Test]
+    public function it_allows_swapping_a_phase_for_another_with_the_same_number(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        Phase::factory()->for($gameVersion)->create(['number' => '1.0']);
+        $incoming = Phase::factory()->for(GameVersion::factory())->create(['number' => '1.0']);
+        $this->expectUpdate($gameVersion, ['phase_ids' => [$incoming->id]]);
+
+        $response = $this->actingAs($this->officer)
+            ->from($this->editUrl($gameVersion))
+            ->patch(route('management.game-versions.update', $gameVersion), ['phase_ids' => [$incoming->id]]);
+
+        $response->assertValid();
     }
 
     #[Group('validation')]
     #[Test]
-    public function it_requires_a_new_phase_number_and_description(): void
+    public function it_rejects_unticking_a_phase_whose_number_a_phase_without_a_game_version_uses(): void
     {
         $gameVersion = GameVersion::factory()->create();
+        Phase::factory()->for($gameVersion)->create(['number' => '1.0']);
+        Phase::factory()->create(['number' => '1.0', 'game_version_id' => null]);
+        UpdateGameVersion::shouldNotRun();
+
+        $response = $this->actingAs($this->officer)
+            ->from($this->editUrl($gameVersion))
+            ->patchJson(route('management.game-versions.update', $gameVersion), ['phase_ids' => []]);
+
+        $response->assertInvalid(['phase_ids' => 'Unticking Phase 1 would leave two phases without a game version numbered 1. Change its number first.']);
+    }
+
+    // ==================== update: unscheduled phase order ====================
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_saves_the_order_of_the_unscheduled_phases(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        [$first, $second] = Phase::factory()->for($gameVersion)->unscheduled()->count(2)->create();
+        $this->expectUpdate($gameVersion, ['unscheduled_phase_ids' => [$second->id, $first->id]]);
+
+        $response = $this->actingAs($this->officer)
+            ->from($this->editUrl($gameVersion))
+            ->patch(route('management.game-versions.update', $gameVersion), [
+                'unscheduled_phase_ids' => [$second->id, $first->id],
+            ]);
+
+        $response->assertRedirect($this->editUrl($gameVersion));
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_rejects_an_unscheduled_phase_order_that_leaves_one_out(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        [$first] = Phase::factory()->for($gameVersion)->unscheduled()->count(2)->create();
         UpdateGameVersion::shouldNotRun();
 
         $response = $this->actingAs($this->officer)
             ->from($this->editUrl($gameVersion))
             ->patch(route('management.game-versions.update', $gameVersion), [
-                'new_phase' => ['number' => '', 'description' => '', 'start_date' => ''],
+                'unscheduled_phase_ids' => [$first->id],
             ]);
 
         $response->assertInvalid([
-            'new_phase.number' => 'Enter the phase number.',
-            'new_phase.description' => 'Enter a description for the phase.',
+            'unscheduled_phase_ids' => 'The unscheduled phases have changed since this page loaded. Reload the page and try again.',
         ]);
     }
 
     #[Group('validation')]
-    #[TestWith(['10', 'The phase number field must be between 0 and 9.9.'])]
-    #[TestWith(['-1', 'The phase number field must be between 0 and 9.9.'])]
-    #[TestWith(['1.25', 'The phase number field must have 0-1 decimal places.'])]
     #[Test]
-    public function it_rejects_a_phase_number_the_column_cannot_hold(string $number, string $message): void
+    public function it_rejects_an_unscheduled_phase_order_with_another_game_versions_phase(): void
     {
         $gameVersion = GameVersion::factory()->create();
+        $own = Phase::factory()->for($gameVersion)->unscheduled()->create();
+        $other = Phase::factory()->for(GameVersion::factory())->unscheduled()->create();
         UpdateGameVersion::shouldNotRun();
 
         $response = $this->actingAs($this->officer)
             ->from($this->editUrl($gameVersion))
             ->patch(route('management.game-versions.update', $gameVersion), [
-                'new_phase' => ['number' => $number, 'description' => 'Too far'],
+                'unscheduled_phase_ids' => [$own->id, $other->id],
             ]);
 
-        $response->assertInvalid(['new_phase.number' => $message]);
-    }
-
-    #[Group('validation')]
-    #[Test]
-    public function it_rejects_a_phase_number_the_game_version_already_uses(): void
-    {
-        $gameVersion = GameVersion::factory()->create();
-        Phase::factory()->for($gameVersion)->create(['number' => '2.0']);
-        UpdateGameVersion::shouldNotRun();
-
-        $response = $this->actingAs($this->officer)
-            ->from($this->editUrl($gameVersion))
-            ->patch(route('management.game-versions.update', $gameVersion), [
-                'new_phase' => ['number' => '2', 'description' => 'Second'],
-            ]);
-
-        $response->assertInvalid(['new_phase.number' => 'This game version already has a phase with that number.']);
-    }
-
-    #[Test]
-    public function it_allows_a_phase_number_another_game_version_uses(): void
-    {
-        $gameVersion = GameVersion::factory()->create();
-        Phase::factory()->for(GameVersion::factory())->create(['number' => '2.0']);
-        $this->expectUpdate($gameVersion, ['new_phase' => ['number' => '2.0', 'description' => 'Second']]);
-
-        $response = $this->actingAs($this->officer)
-            ->from($this->editUrl($gameVersion))
-            ->patch(route('management.game-versions.update', $gameVersion), [
-                'new_phase' => ['number' => '2.0', 'description' => 'Second'],
-            ]);
-
-        $response->assertValid();
+        $response->assertInvalid([
+            'unscheduled_phase_ids' => 'The unscheduled phases have changed since this page loaded. Reload the page and try again.',
+        ]);
     }
 
     // ==================== update: raids are read-only ====================
@@ -1528,6 +1538,23 @@ class GameVersionControllerTest extends DashboardTestCase
             ->patch(route('management.game-versions.update', $gameVersion), [
                 'realm' => 'Firemaw',
                 'guild_tag_ids' => [999999],
+            ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect($this->editUrl($gameVersion));
+    }
+
+    #[Test]
+    public function it_ignores_a_new_phase_sent_by_a_stale_page(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $this->expectUpdate($gameVersion, ['realm' => 'Firemaw']);
+
+        $response = $this->actingAs($this->officer)
+            ->from($this->editUrl($gameVersion))
+            ->patch(route('management.game-versions.update', $gameVersion), [
+                'realm' => 'Firemaw',
+                'new_phase' => ['number' => '2', 'description' => 'Second'],
             ]);
 
         $response->assertSessionHasNoErrors();
