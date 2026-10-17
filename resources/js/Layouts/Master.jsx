@@ -26,7 +26,8 @@ const NAV_CLASSES = {
         mobileLink: "hover:bg-amber-700 text-gray-300",
         mobileDivider: "border-amber-700",
         footer: "border-transparent",
-        footerLink: "text-amber-600",
+        footerText: "text-amber-400",
+        footerLink: "text-amber-400 hover:text-amber-300",
     },
     forever: {
         wrapper: "bg-parchment-forever",
@@ -42,7 +43,8 @@ const NAV_CLASSES = {
         mobileLink: "hover:bg-camel-700 text-verdant-300",
         mobileDivider: "border-camel-700",
         footer: "bg-footer-forever border-footer-forever",
-        footerLink: "text-camel-600",
+        footerText: "text-camel-400",
+        footerLink: "text-camel-400 hover:text-camel-200",
     },
 };
 
@@ -401,14 +403,14 @@ export default function Master({ title, isHomepage = false, children }) {
                             </div>
                             {/* Footer Links */}
                             <nav className="flex flex-col items-center justify-start gap-4 md:flex-row md:flex-wrap md:gap-2">
-                                <div className={cn("flex h-8 flex-row items-center p-1 md:ml-2", classes.footerLink)}>
+                                <div className={cn("flex h-8 flex-row items-center p-1 md:ml-2", classes.footerText)}>
                                     <Icon icon="copyright" style="regular" className="mr-2 h-5 w-5" />
                                     <span className="text-nowrap">{new Date().getFullYear()} Regrowth</span>
                                 </div>
                                 <a
                                     href="https://www.warcraftlogs.com/guilds/774848-regrowth"
                                     className={cn(
-                                        "flex h-8 flex-row items-center gap-2 p-1 transition-colors hover:text-white md:ml-2",
+                                        "flex h-8 flex-row items-center gap-2 p-1 transition-colors md:ml-2",
                                         classes.footerLink,
                                     )}
                                     rel="noopener noreferrer"
@@ -421,7 +423,7 @@ export default function Master({ title, isHomepage = false, children }) {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className={cn(
-                                        "flex h-8 flex-row items-center gap-2 p-1 transition-colors hover:text-white md:ml-2",
+                                        "flex h-8 flex-row items-center gap-2 p-1 transition-colors md:ml-2",
                                         classes.footerLink,
                                     )}
                                 >
@@ -431,7 +433,7 @@ export default function Master({ title, isHomepage = false, children }) {
                                 <Link
                                     href={route("privacypolicy")}
                                     className={cn(
-                                        "flex h-8 flex-row items-center gap-2 p-1 transition-colors hover:text-white md:ml-2",
+                                        "flex h-8 flex-row items-center gap-2 p-1 transition-colors md:ml-2",
                                         classes.footerLink,
                                     )}
                                 >
@@ -441,7 +443,7 @@ export default function Master({ title, isHomepage = false, children }) {
                                 <Link
                                     href={route("battlenet-usage")}
                                     className={cn(
-                                        "flex h-8 flex-row items-center gap-2 p-1 transition-colors hover:text-white md:ml-2",
+                                        "flex h-8 flex-row items-center gap-2 p-1 transition-colors md:ml-2",
                                         classes.footerLink,
                                     )}
                                 >
@@ -455,7 +457,7 @@ export default function Master({ title, isHomepage = false, children }) {
                                     rel="noopener noreferrer"
                                     title="Ben Argo"
                                     className={cn(
-                                        "mt-0 flex h-8 flex-row items-center gap-2 p-1 transition-colors hover:text-white md:ml-2",
+                                        "mt-0 flex h-8 flex-row items-center gap-2 p-1 transition-colors md:ml-2",
                                         classes.footerLink,
                                     )}
                                 >
