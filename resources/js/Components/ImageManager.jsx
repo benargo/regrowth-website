@@ -183,7 +183,7 @@ export default function ImageManager({
                                 Drag &amp; drop {multiple ? "images" : "an image"} here, or{" "}
                                 <span className="text-amber-400 underline">browse</span>
                             </span>
-                            <span className="text-gray-500 text-xs">
+                            <span className="text-gray-400 text-xs">
                                 {describeTypes(accepts)} · max 2 MB{multiple ? " each" : ""}
                             </span>
                         </>

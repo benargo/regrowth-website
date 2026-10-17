@@ -105,7 +105,7 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
                 <nav className="mb-6">
                     <Dropdown>
                         <Dropdown.Trigger>
-                            <button className="flex items-center justify-between rounded border border-amber-600 px-4 py-2 text-amber-600 transition-colors hover:bg-amber-600/20">
+                            <button className="flex items-center justify-between rounded border border-amber-600 px-4 py-2 text-amber-500 transition-colors hover:bg-amber-600/20">
                                 {groups.find((g) => g.active)?.name ?? "Select Group"}
                                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path

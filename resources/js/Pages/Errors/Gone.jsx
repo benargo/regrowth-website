@@ -37,7 +37,7 @@ export default function Gone() {
 
                     <Link
                         href={route("raiding.index")}
-                        className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold px-6 py-3 rounded transition-colors"
+                        className="inline-flex items-center gap-2 bg-amber-700 hover:bg-amber-800 text-white font-semibold px-6 py-3 rounded transition-colors"
                     >
                         <Icon icon="dragon" style="solid" />
                         Back to Raiding

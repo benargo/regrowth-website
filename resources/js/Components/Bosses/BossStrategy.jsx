@@ -7,7 +7,7 @@ export default function BossStrategy({ boss }) {
     if (!(boss.images?.length > 0 || boss.notes)) {
         return (
             <div className="col-span-2 flex items-center justify-center gap-4 text-center">
-                <p className="text-center text-sm text-gray-500">
+                <p className="text-center text-sm text-gray-400">
                     No strategy notes or images for this boss yet.
                 </p>
             </div>

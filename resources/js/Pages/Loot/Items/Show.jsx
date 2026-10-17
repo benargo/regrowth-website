@@ -22,7 +22,7 @@ function PriorityItem({ priority }) {
 
 function PriorityDisplay({ priorities }) {
     if (!priorities || priorities.length === 0) {
-        return <p className="text-gray-500 italic">This item has no biases.</p>;
+        return <p className="text-gray-400 italic">This item has no biases.</p>;
     }
 
     const sorted = [...priorities].sort((a, b) => a.weight - b.weight);
@@ -49,7 +49,7 @@ function PriorityDisplay({ priorities }) {
                     <div
                         className={`flex items-center gap-3 px-3 py-4 ${rowBgs[Math.min(weightIndex, rowBgs.length - 1)]}`}
                     >
-                        <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full border border-amber-600 text-lg font-bold text-amber-600">
+                        <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full border border-amber-600 text-lg font-bold text-amber-400">
                             {weightIndex + 1}
                         </div>
                         <div className="flex flex-1 flex-wrap items-center justify-center gap-2">
@@ -60,7 +60,7 @@ function PriorityDisplay({ priorities }) {
                                             key={`separator-${index}`}
                                             icon="equals"
                                             style="solid"
-                                            className="flex-none text-2xl font-bold text-amber-600"
+                                            className="flex-none text-2xl font-bold text-amber-500"
                                         />
                                     )}
                                     <PriorityItem priority={priority} />

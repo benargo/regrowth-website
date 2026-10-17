@@ -49,13 +49,13 @@ export default function FilterDropdown({ label, options, selected, onChange, sho
                     <div className="flex border-b border-amber-600">
                         <button
                             onClick={selectAll}
-                            className="flex-1 px-3 py-2 text-sm text-amber-500 transition-colors hover:bg-brown-700"
+                            className="flex-1 px-3 py-2 text-sm text-amber-500 transition-colors hover:bg-brown-700 hover:text-amber-400"
                         >
                             All
                         </button>
                         <button
                             onClick={selectNone}
-                            className="flex-1 border-l border-amber-600 px-3 py-2 text-sm text-amber-500 transition-colors hover:bg-brown-700"
+                            className="flex-1 border-l border-amber-600 px-3 py-2 text-sm text-amber-500 transition-colors hover:bg-brown-700 hover:text-amber-400"
                         >
                             None
                         </button>

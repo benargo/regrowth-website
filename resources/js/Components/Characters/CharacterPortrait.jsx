@@ -26,7 +26,7 @@ export default function CharacterPortrait({ character, className = "size-8", alt
             {character.playable_class?.icon_url ? (
                 <img src={character.playable_class.icon_url} alt="" className="size-1/2 rounded opacity-40" />
             ) : (
-                <Icon icon="user" style="light" className="text-gray-500" />
+                <Icon icon="user" style="light" className="text-gray-400" />
             )}
         </span>
     );

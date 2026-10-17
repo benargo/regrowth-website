@@ -22,7 +22,7 @@ function TemplateCard({ template, onDeleteClick }) {
         <div className="flex flex-col gap-3 rounded border border-amber-600/40 bg-brown-800/40 p-4">
             <div className="flex items-start justify-between gap-2">
                 <h3 className="font-semibold text-white">{template.title}</h3>
-                <span className="shrink-0 text-xs text-gray-500">Updated {updatedAt}</span>
+                <span className="shrink-0 text-xs text-gray-400">Updated {updatedAt}</span>
             </div>
             <div className="flex flex-wrap gap-1">
                 {template.raids.map((raid) => (
@@ -82,7 +82,7 @@ export default function Index({ templates, raidGroups }) {
                     <p className="text-gray-400">Create and manage reusable raid event templates.</p>
                     <Link
                         href={route("management.event-templates.create")}
-                        className="flex items-center gap-2 rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500"
+                        className="flex items-center gap-2 rounded bg-amber-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-800"
                     >
                         <Icon icon="plus" style="light" />
                         Create Template
@@ -90,14 +90,14 @@ export default function Index({ templates, raidGroups }) {
                 </div>
 
                 {raidGroups.length === 0 ? (
-                    <p className="text-center text-gray-500">No templates yet. Create one to get started.</p>
+                    <p className="text-center text-gray-400">No templates yet. Create one to get started.</p>
                 ) : (
                     <div className="flex flex-col gap-12">
                         {raidGroups.map(({ raid, templates: raidTemplates }) => (
                             <section key={raid.id}>
                                 <h2 className="mb-4 text-xl font-semibold text-amber-400">{raid.name}</h2>
                                 {raidTemplates.length === 0 ? (
-                                    <p className="text-sm text-gray-500">No templates for this raid yet.</p>
+                                    <p className="text-sm text-gray-400">No templates for this raid yet.</p>
                                 ) : (
                                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                                         {raidTemplates.map((template) => (

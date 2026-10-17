@@ -26,7 +26,7 @@ export default function PlannedAbsenceRow({ absence, showCreatedBy = false, canE
                     {formatDate(absence.start_date).medium}
                     {absence.end_date && (
                         <>
-                            <span className="text-gray-500 mx-1">—</span>
+                            <span className="text-gray-400 mx-1">—</span>
                             {formatDate(absence.end_date).medium}
                         </>
                     )}
@@ -38,7 +38,7 @@ export default function PlannedAbsenceRow({ absence, showCreatedBy = false, canE
                 </div>
 
                 {showCreatedBy && absence.created_by && absence.created_at && (
-                    <div className="text-gray-500 shrink-0 text-xs">
+                    <div className="text-gray-400 shrink-0 text-xs">
                         Added by {absence.created_by.display_name} on {formatDate(absence.created_at).medium}
                     </div>
                 )}

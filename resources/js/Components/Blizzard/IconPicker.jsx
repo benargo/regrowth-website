@@ -181,7 +181,7 @@ export default function IconPicker({ onSelect, maxSelections = 1 }) {
                     type="button"
                     disabled={selectionCount === 0}
                     onClick={handleConfirm}
-                    className="rounded bg-amber-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-amber-700 disabled:opacity-40"
+                    className="rounded bg-amber-700 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-amber-800 disabled:opacity-40"
                 >
                     {maxSelections === 1
                         ? "Select"

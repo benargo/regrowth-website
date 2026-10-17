@@ -32,7 +32,7 @@ function StatBox({ icon, label, value, subLabel, subText, className }) {
             <BoxLabel icon={icon} label={label} />
             <p className="mt-1 grow align-top text-3xl font-bold text-amber-400">{value ?? "–"}</p>
             {subText && <p className="mt-1 grow text-xs text-gray-400">{subText}</p>}
-            {subLabel && <p className="mt-2 grow text-xs text-gray-500">{subLabel}</p>}
+            {subLabel && <p className="mt-2 grow text-xs text-gray-400">{subLabel}</p>}
         </div>
     );
 }
@@ -77,7 +77,7 @@ function BenchedByTagBox({ icon, label, groups }) {
             <BoxLabel icon={icon} label={label} />
             <p className="mt-1 text-3xl font-bold text-amber-400">{total}</p>
             {entries.length === 0 ? (
-                <p className="mt-3 text-sm text-gray-500">No benched players this week.</p>
+                <p className="mt-3 text-sm text-gray-400">No benched players this week.</p>
             ) : (
                 <div className="mt-3 flex flex-col gap-2">
                     {entries.map(([tag, players]) => (
@@ -124,7 +124,7 @@ function UpcomingAbsencesBox({ icon, absences }) {
         <div className="flex flex-col rounded border border-amber-600 p-4">
             <BoxLabel icon={icon} label="Upcoming planned absences" />
             {absences.length === 0 ? (
-                <p className="mt-3 text-sm text-gray-500">No upcoming absences.</p>
+                <p className="mt-3 text-sm text-gray-400">No upcoming absences.</p>
             ) : (
                 <ul className="mt-3 flex flex-col gap-2">
                     {absences.map((absence) => (

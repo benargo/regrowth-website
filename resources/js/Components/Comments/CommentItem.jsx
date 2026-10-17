@@ -83,9 +83,9 @@ export default function CommentItem({
                         className={`rounded-full opacity-50 grayscale ${isReply ? "h-6 w-6" : "h-8 w-8"}`}
                     />
                     <span className="text-sm font-medium text-gray-400">{comment.user.display_name}</span>
-                    <span className="ml-auto text-sm text-gray-500">{formatDate(comment.created_at)}</span>
+                    <span className="ml-auto text-sm text-gray-400">{formatDate(comment.created_at)}</span>
                 </div>
-                <p className="mt-2 text-sm text-gray-500 italic">[deleted]</p>
+                <p className="mt-2 text-sm text-gray-400 italic">[deleted]</p>
             </div>
         );
     }
@@ -117,7 +117,7 @@ export default function CommentItem({
                             )}
                         </div>
                     </div>
-                    <span className="text-sm text-gray-400">{formatDate(comment.created_at)}</span>
+                    <span className="text-sm text-gray-300">{formatDate(comment.created_at)}</span>
                 </div>
 
                 {/* Comment body or edit form */}
@@ -157,7 +157,7 @@ export default function CommentItem({
                         {!readOnly && comment.permissions.delete && (
                             <button
                                 onClick={() => setConfirmingDelete(true)}
-                                className="text-red-400 transition-colors hover:text-red-300"
+                                className="text-red-300 transition-colors hover:text-red-200"
                             >
                                 <Icon icon="trash" style="solid" className="mr-1" /> Delete
                             </button>

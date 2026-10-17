@@ -53,14 +53,14 @@ export default function DateFilterButton({ id, label, value, onChange, onClear, 
                 id={id}
                 type="button"
                 onClick={open}
-                className={`flex w-full items-center justify-between rounded border px-4 py-2 text-left text-sm transition-colors hover:bg-brown-700 ${value ? "border-amber-500 bg-brown-800 text-white" : "border-amber-600 bg-brown-800 text-gray-400"}`}
+                className={`flex w-full items-center justify-between rounded border px-4 py-2 text-left text-sm transition-colors hover:bg-brown-700 ${value ? "border-amber-500 bg-brown-800 text-white" : "border-amber-600 bg-brown-800 text-gray-300"}`}
             >
                 <span className="flex items-center gap-2 truncate">
                     <Icon icon="calendar" style="regular" className="shrink-0 text-amber-500" />
                     {formattedValue ? `${label}: ${formattedValue}` : label}
                 </span>
                 {value && (
-                    <span className="ml-2 shrink-0 rounded-full bg-amber-600 px-1.5 py-0.5 text-xs text-white">
+                    <span className="ml-2 shrink-0 rounded-full bg-amber-700 px-1.5 py-0.5 text-xs text-white">
                         set
                     </span>
                 )}

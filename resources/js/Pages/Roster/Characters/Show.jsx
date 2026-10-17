@@ -112,7 +112,7 @@ export default function Show({ character: { data: character }, roster_url, recen
                         <h2 className="text-2xl font-bold text-white">{character.name}</h2>
                         <div className="mt-1 flex flex-wrap items-center gap-2">
                             {character.is_main && (
-                                <Pill bgColor="bg-amber-700" textColor="text-amber-500">Main</Pill>
+                                <Pill bgColor="bg-amber-700" textColor="text-amber-100">Main</Pill>
                             )}
                             {character.is_loot_councillor && (
                                 <Pill bgColor="bg-purple-800" textColor="text-purple-200">Loot Council</Pill>
@@ -202,7 +202,7 @@ export default function Show({ character: { data: character }, roster_url, recen
                                                 />
                                             )}
                                             <span className="flex-1 font-medium text-white">{alt.name}</span>
-                                            <span className="text-xs text-gray-500">{alt.rank?.name ?? "—"}</span>
+                                            <span className="text-xs text-gray-400">{alt.rank?.name ?? "—"}</span>
                                         </Link>
                                     ))}
                                 </div>
@@ -213,7 +213,7 @@ export default function Show({ character: { data: character }, roster_url, recen
                                     size="text-2xl"
                                     message="No linked characters found."
                                 >
-                                    <p className="text-xs text-gray-600">If this is an error, please alert an Officer.</p>
+                                    <p className="text-xs text-gray-400">If this is an error, please alert an Officer.</p>
                                 </EmptyState>
                             )}
                         </section>
@@ -231,7 +231,7 @@ export default function Show({ character: { data: character }, roster_url, recen
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-sm text-gray-500">No reports found for this character.</p>
+                            <p className="text-sm text-gray-400">No reports found for this character.</p>
                         )}
                     </div>
                 </div>

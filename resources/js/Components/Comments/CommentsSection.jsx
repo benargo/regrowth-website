@@ -542,7 +542,7 @@ export default function CommentsSection({ comments, replies, itemId, registerBro
                 >
                     <Icon icon="arrow-up" style="solid" />
                     {newCommentCount === 1 ? "1 new comment" : `${newCommentCount} new comments`}
-                    <span className="text-gray-400">— jump to the latest</span>
+                    <span className="text-gray-300">— jump to the latest</span>
                 </button>
             )}
 

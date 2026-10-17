@@ -146,7 +146,7 @@ export default function SearchPalette({ open, onClose }) {
                             aria-activedescendant={
                                 highlightedIndex >= 0 ? `search-palette-option-${highlightedIndex}` : undefined
                             }
-                            className="w-full border-none bg-transparent text-white placeholder-gray-500 focus:border-none focus:ring-0 focus:outline-hidden"
+                            className="w-full border-none bg-transparent text-white placeholder-gray-400 focus:border-none focus:ring-0 focus:outline-hidden"
                         />
                         {raidScope && !scopeDismissed && (
                             <button

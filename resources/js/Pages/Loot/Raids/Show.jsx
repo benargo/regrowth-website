@@ -30,7 +30,7 @@ function prepareItems(rawItems) {
 
 function BossItems({ prepared, weightThreshold }) {
     if (!prepared) {
-        return <p className="text-gray-500 italic">No items configured for this boss.</p>;
+        return <p className="text-gray-400 italic">No items configured for this boss.</p>;
     }
 
     const { groups, ungroupedItems } = prepared;
@@ -190,7 +190,7 @@ export default function Index({ raid, boss_items, trash_items, priority_weight_t
                             style="amber"
                             headerRight={
                                 boss.comments_count > 0 && (
-                                    <span className="inline-flex items-center gap-1 rounded bg-amber-600/20 px-2 py-1 text-xs font-semibold text-amber-600">
+                                    <span className="inline-flex items-center gap-1 rounded bg-amber-600/20 px-2 py-1 text-xs font-semibold text-amber-500">
                                         <Icon icon="comments" style="solid" className="h-4 w-4" />
                                         {boss.comments_count}
                                     </span>
@@ -214,7 +214,7 @@ export default function Index({ raid, boss_items, trash_items, priority_weight_t
                             style="amber"
                             headerRight={
                                 raid.data.trash_comments_count > 0 && (
-                                    <span className="inline-flex items-center gap-1 rounded bg-amber-600/20 px-2 py-1 text-xs font-semibold text-amber-600">
+                                    <span className="inline-flex items-center gap-1 rounded bg-amber-600/20 px-2 py-1 text-xs font-semibold text-amber-500">
                                         <Icon icon="comments" style="solid" className="h-4 w-4" />
                                         {raid.data.trash_comments_count}
                                     </span>

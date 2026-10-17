@@ -173,7 +173,7 @@ export default function Index() {
                             {sections.upcoming.length > 0 ? (
                                 <AbsenceTable absences={sections.upcoming} permissions={permissions} />
                             ) : (
-                                <p className="text-gray-500 mt-3 text-sm">No one has an absence booked.</p>
+                                <p className="text-gray-400 mt-3 text-sm">No one has an absence booked.</p>
                             )}
                         </section>
 

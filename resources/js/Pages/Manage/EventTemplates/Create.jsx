@@ -42,7 +42,7 @@ export default function Create({ raids }) {
                     <div className="flex flex-col gap-2">
                         <p className="text-sm font-semibold text-gray-300">Raids</p>
                         {raids.length === 0 ? (
-                            <p className="text-sm text-gray-500">No raids available.</p>
+                            <p className="text-sm text-gray-400">No raids available.</p>
                         ) : (
                             <div className="flex flex-col gap-2">
                                 {raids.map((raid) => (

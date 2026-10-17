@@ -18,7 +18,7 @@ import cn from "@/Helpers/cn";
 import slugify from "@/Helpers/Slugify";
 
 export const controlClassName =
-    "block w-full rounded border border-amber-600 bg-brown-800 px-4 py-2 text-white placeholder-gray-400 " +
+    "block w-full rounded border border-amber-600 bg-brown-800 px-4 py-2 text-white placeholder-gray-300 " +
     "data-focus:border-amber-400 data-focus:outline-2 data-focus:outline-offset-2 data-focus:outline-amber-400 " +
     "data-invalid:border-red-400";
 

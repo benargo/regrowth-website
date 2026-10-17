@@ -76,7 +76,7 @@ export default function EventsTable({ events }) {
                                 href={route("raiding.plans.show", event.id)}
                             >
                                 <div className="w-40 shrink-0 whitespace-nowrap px-4 py-3">
-                                    <p className="text-xs text-gray-500">{dayOfWeek}</p>
+                                    <p className="text-xs text-gray-400">{dayOfWeek}</p>
                                     <p className="text-sm text-gray-300">
                                         <span className="md:hidden">{formattedDate.short}</span>
                                         <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>

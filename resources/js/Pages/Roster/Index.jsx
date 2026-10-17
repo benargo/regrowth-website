@@ -28,7 +28,7 @@ function CharacterRowCells({ character, spec }) {
                 >
                     {character.name}
                     {character.is_main && (
-                        <Pill bgColor="bg-amber-700" textColor="text-amber-500">
+                        <Pill bgColor="bg-amber-700" textColor="text-amber-100">
                             Main
                         </Pill>
                     )}

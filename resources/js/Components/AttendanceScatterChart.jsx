@@ -92,7 +92,7 @@ function ChartTooltip({ active, payload }) {
 
 export default function AttendanceScatterChart({ points }) {
     if (!points || points.length === 0) {
-        return <p className="mt-3 text-sm text-gray-500">No attendance data yet.</p>;
+        return <p className="mt-3 text-sm text-gray-400">No attendance data yet.</p>;
     }
 
     // Each point occupies ~10 percentage-point width; find lowest row with no horizontal collision

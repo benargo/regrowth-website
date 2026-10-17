@@ -203,7 +203,7 @@ export default function OfficerTeam({ officers = [], renders }) {
                                     aria-label={`Show ${officer.name}`}
                                     onClick={() => scrollTo(index)}
                                     className={`h-2.5 w-2.5 rounded-full transition-colors ${
-                                        index === selectedIndex ? "bg-camel-300" : "bg-camel-600/50 hover:bg-camel-500"
+                                        index === selectedIndex ? "bg-camel-100" : "bg-camel-400 hover:bg-camel-300"
                                     }`}
                                 />
                             ))}

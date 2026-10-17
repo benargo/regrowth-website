@@ -81,7 +81,7 @@ export default function Table({ reports }) {
                     return (
                         <TableRow key={report.id}>
                             <TableCell className="whitespace-nowrap">
-                                <p className="text-gray-500 text-xs">{dayOfWeek}</p>
+                                <p className="text-gray-400 text-xs">{dayOfWeek}</p>
                                 <p className="text-gray-300 text-sm">
                                     <span className="md:hidden">{formattedDate.short}</span>
                                     <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
@@ -110,7 +110,7 @@ export default function Table({ reports }) {
                                         <Icon icon="link" style="solid" className="text-amber-500" />
                                     </Tooltip>
                                 ) : (
-                                    <Icon icon="link" style="solid" className="text-gray-600" />
+                                    <Icon icon="link" style="solid" className="text-gray-400" />
                                 )}
                             </TableCell>
                         </TableRow>

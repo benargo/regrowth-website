@@ -450,7 +450,7 @@ export default function MarkdownEditor({
                     placeholder={computedPlaceholder}
                     rows={rows}
                     autoFocus={autoFocus}
-                    className="block w-full resize-none border-none bg-brown-800 p-2 text-white placeholder-gray-500 focus:outline-hidden focus:ring-0"
+                    className="block w-full resize-none border-none bg-brown-800 p-2 text-white placeholder-gray-300 focus:outline-hidden focus:ring-0"
                 />
             </div>
             <div>
@@ -511,7 +511,7 @@ export default function MarkdownEditor({
                         <FormRow
                             label={
                                 <>
-                                    Display text <span className="text-gray-500">(optional)</span>
+                                    Display text <span className="text-gray-400">(optional)</span>
                                 </>
                             }
                         >

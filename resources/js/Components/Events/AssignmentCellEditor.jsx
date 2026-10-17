@@ -197,7 +197,7 @@ function DefineSpellModal({ initialName = "", onClose, onCreated }) {
                         <button
                             type="submit"
                             disabled={submitting || !formData.name.trim()}
-                            className="rounded bg-amber-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-700 disabled:opacity-40"
+                            className="rounded bg-amber-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-800 disabled:opacity-40"
                         >
                             {submitting ? "Creating…" : "Create Spell"}
                         </button>
@@ -471,11 +471,11 @@ export default function AssignmentCellEditor({
                                                     handleSelect(opt);
                                                 }}
                                                 onMouseEnter={() => setHighlightedIndex(myIdx)}
-                                                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-amber-500 ${myIdx === highlightedIndex ? "bg-brown-700" : "hover:bg-brown-700"}`}
+                                                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-amber-400 ${myIdx === highlightedIndex ? "bg-brown-700" : "hover:bg-brown-700"}`}
                                             >
                                                 {renderOptionIcon(opt)}
                                                 <span className="flex-1 truncate">{opt.label}</span>
-                                                {opt.sublabel && <span className="text-xs text-amber-500">{opt.sublabel}</span>}
+                                                {opt.sublabel && <span className="text-xs text-amber-400">{opt.sublabel}</span>}
                                             </button>
                                         );
                                     })}

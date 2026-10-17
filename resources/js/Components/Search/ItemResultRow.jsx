@@ -23,7 +23,7 @@ export default function ItemResultRow({ item, index, isHighlighted, onMouseEnter
             >
                 {item.icon && <div className="h-8 w-8 flex-none" />}
                 <div className="flex min-w-0 flex-col text-left">
-                    {breadcrumb && <p className="truncate text-xs text-gray-400">{breadcrumb}</p>}
+                    {breadcrumb && <p className="truncate text-xs text-gray-300">{breadcrumb}</p>}
                     <h4 className="text-md truncate font-bold text-white">{item.name}</h4>
                     <div className="flex items-center gap-2">
                         {item.comments_count > 0 && (

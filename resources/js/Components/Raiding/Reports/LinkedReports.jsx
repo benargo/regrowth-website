@@ -15,8 +15,8 @@ function ClusterReportRow({ report, dayDiff }) {
         <div>
             <p className="truncate text-sm font-medium text-white">{report.title}</p>
             <div className="flex flex-col gap-2 md:flex-row">
-                <p className="mt-0.5 text-xs text-gray-500">{report.zone?.name}</p>
-                <p className="mt-0.5 text-xs text-gray-500 md:border-l md:border-gray-700 md:pl-2">
+                <p className="mt-0.5 text-xs text-gray-400">{report.zone?.name}</p>
+                <p className="mt-0.5 text-xs text-gray-400 md:border-l md:border-gray-700 md:pl-2">
                     <span className="md:hidden">{formattedDate.short}</span>
                     <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
                     <span className="hidden lg:inline">{formattedDate.long}</span>
@@ -163,7 +163,7 @@ function LinkReportsModal({
                                     <div className="min-w-0 flex-1">
                                         {!isSingle && (
                                             <div className="mb-2 flex items-center gap-2">
-                                                <span className="text-xs text-gray-500">
+                                                <span className="text-xs text-gray-400">
                                                     {cluster.reports.length} reports
                                                 </span>
                                                 {current && (
@@ -196,15 +196,15 @@ function LinkReportsModal({
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <div className="mt-0.5 text-xs text-gray-500">
+                                                    <div className="mt-0.5 text-xs text-gray-400">
                                                         {(() => {
                                                             const d = formatDate(cluster.reports[0].start_time);
                                                             return (
                                                                 <div className="flex flex-col gap-2 md:flex-row">
-                                                                    <p className="mt-0.5 text-xs text-gray-500">
+                                                                    <p className="mt-0.5 text-xs text-gray-400">
                                                                         {cluster.reports[0].zone.name}
                                                                     </p>
-                                                                    <p className="mt-0.5 text-xs text-gray-500 md:border-l md:border-gray-700 md:pl-2">
+                                                                    <p className="mt-0.5 text-xs text-gray-400 md:border-l md:border-gray-700 md:pl-2">
                                                                         <span className="md:hidden">{d.short}</span>
                                                                         <span className="hidden md:inline lg:hidden">
                                                                             {d.medium}
@@ -333,7 +333,7 @@ function DeleteLinkModal({ isOpen, onClose, currentReport, impactedReports, onCo
                     ))}
                 </ul>
             ) : !impactedReports?.data || impactedReports.data.length === 0 ? (
-                <p className="text-sm text-gray-500">No manually linked reports found.</p>
+                <p className="text-sm text-gray-400">No manually linked reports found.</p>
             ) : (
                 <ul className="divide-y divide-amber-600 rounded border border-amber-600/30">
                     {impactedReports.data.map((report) => {
@@ -341,7 +341,7 @@ function DeleteLinkModal({ isOpen, onClose, currentReport, impactedReports, onCo
                         return (
                             <li key={report.id} className="px-4 py-3">
                                 <span className="text-sm font-medium text-white">{report.title}</span>
-                                <p className="mt-0.5 text-xs text-gray-500">
+                                <p className="mt-0.5 text-xs text-gray-400">
                                     <span className="md:hidden">{formattedDate.short}</span>
                                     <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
                                     <span className="hidden lg:inline">{formattedDate.long}</span>
@@ -447,16 +447,16 @@ export default function LinkedReports({ currentReport, nearbyReports, impactedRe
                                             {linked.title}
                                         </Link>
                                     )}
-                                    <p className="mt-0.5 flex items-center gap-2 text-xs text-gray-500">
+                                    <p className="mt-0.5 flex items-center gap-2 text-xs text-gray-400">
                                         <span className="md:hidden">{formattedDate.short}</span>
                                         <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
                                         <span className="hidden lg:inline">{formattedDate.long}</span>
                                         {linked.zone?.name && (
-                                            <span className="ml-2 text-gray-500">{linked.zone.name}</span>
+                                            <span className="ml-2 text-gray-400">{linked.zone.name}</span>
                                         )}
-                                        {dayDiff && <span className="ml-2 text-gray-500">{dayDiff}</span>}
+                                        {dayDiff && <span className="ml-2 text-gray-400">{dayDiff}</span>}
                                         {!isCreateMode && isManualLink && (
-                                            <span className="ml-2 text-gray-500">
+                                            <span className="ml-2 text-gray-400">
                                                 Linked by {linked.pivot.created_by.display_name} on{" "}
                                                 {new Date(linked.pivot.created_at).toLocaleString("en-GB", {
                                                     day: "numeric",
@@ -474,7 +474,7 @@ export default function LinkedReports({ currentReport, nearbyReports, impactedRe
                                         <button
                                             type="button"
                                             onClick={() => handleCreateModeRemove(linked)}
-                                            className="rounded p-1.5 text-gray-500 transition-colors hover:bg-red-700/20 hover:text-red-400"
+                                            className="rounded p-1.5 text-gray-400 transition-colors hover:bg-red-700/20 hover:text-red-400"
                                         >
                                             <Icon icon="unlink" style="solid" className="text-xs" />
                                         </button>
@@ -487,7 +487,7 @@ export default function LinkedReports({ currentReport, nearbyReports, impactedRe
                                                 <button
                                                     onClick={() => isManualLink && handleShowModeDelete()}
                                                     disabled={!isManualLink}
-                                                    className="rounded px-3 py-1.5 text-gray-500 transition-colors hover:bg-red-700/20 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
+                                                    className="rounded px-3 py-1.5 text-gray-400 transition-colors hover:bg-red-700/20 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
                                                 >
                                                     <Icon icon="unlink" style="solid" className="text-xs" />
                                                 </button>

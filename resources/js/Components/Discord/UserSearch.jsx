@@ -166,7 +166,7 @@ export default function UserSearch({ id, value, onSelect, invalid = false }) {
                             >
                                 {member.nickname ?? member.username}
                                 {member.nickname && (
-                                    <span className="text-gray-400 ml-2 text-xs">@{member.username}</span>
+                                    <span className="text-gray-300 ml-2 text-xs">@{member.username}</span>
                                 )}
                             </button>
                         </li>
@@ -177,14 +177,14 @@ export default function UserSearch({ id, value, onSelect, invalid = false }) {
             {isOpen && hasSearchFailed && (
                 <div
                     role="alert"
-                    className="border-amber-600 bg-brown-800 text-gray-400 absolute z-50 mt-1 w-full rounded border px-4 py-2 text-sm shadow-lg"
+                    className="border-amber-600 bg-brown-800 text-gray-300 absolute z-50 mt-1 w-full rounded border px-4 py-2 text-sm shadow-lg"
                 >
                     Couldn't search Discord. Try again.
                 </div>
             )}
 
             {isOpen && !isSearching && !hasSearchFailed && results.length === 0 && query.trim() && (
-                <div className="border-amber-600 bg-brown-800 text-gray-400 absolute z-50 mt-1 w-full rounded border px-4 py-2 text-sm shadow-lg">
+                <div className="border-amber-600 bg-brown-800 text-gray-300 absolute z-50 mt-1 w-full rounded border px-4 py-2 text-sm shadow-lg">
                     No members found
                 </div>
             )}

@@ -126,7 +126,7 @@ function InsertWeightZone({ afterWeight, onDrop, onAddClick }) {
                     type="button"
                     onClick={() => onAddClick(afterWeight)}
                     className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
-                        isOver ? "bg-amber-500 text-white" : "bg-amber-600 text-white hover:bg-amber-700"
+                        isOver ? "bg-amber-500 text-brown-900" : "bg-amber-600 text-white hover:bg-amber-700"
                     }`}
                 >
                     <Icon icon="plus" style="solid" />

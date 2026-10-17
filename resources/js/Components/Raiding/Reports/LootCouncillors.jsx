@@ -163,7 +163,7 @@ export default function LootCouncillors({ reportId, characters, onChange }) {
                                         type="button"
                                         disabled={processingIds.has(character.id)}
                                         onClick={() => handleRemove(character.id)}
-                                        className="rounded px-3 py-1.5 text-gray-500 transition-colors hover:bg-red-700/20 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="rounded px-3 py-1.5 text-gray-400 transition-colors hover:bg-red-700/20 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
                                     >
                                         <Icon icon="times" style="solid" className="text-xs" />
                                     </button>

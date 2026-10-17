@@ -32,7 +32,7 @@ function BossSection({ boss, onStrategyChanged }) {
                             )}
                         </div>
                     ) : (
-                        <p className="text-center text-sm text-gray-500">No assignments for this boss yet.</p>
+                        <p className="text-center text-sm text-gray-400">No assignments for this boss yet.</p>
                     )}
                 </div>
                 <BossStrategy boss={boss} />

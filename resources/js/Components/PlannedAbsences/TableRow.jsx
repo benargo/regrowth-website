@@ -93,7 +93,7 @@ export default function PlannedAbsenceTableRow({
             <TableCell className="text-gray-300 max-w-md text-sm">
                 {absence.notes ? <FormattedMarkdown>{absence.notes}</FormattedMarkdown> : <span>—</span>}
                 {absence.created_by && (
-                    <p className="text-gray-500 mt-1 text-xs">
+                    <p className="text-gray-400 mt-1 text-xs">
                         Added by {absence.created_by.display_name} on {formatDate(absence.created_at).medium}
                     </p>
                 )}

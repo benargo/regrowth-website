@@ -16,7 +16,7 @@ function TallyStat({ label, value, colorClass }) {
     return (
         <div className="bg-brown-800 flex flex-col items-center rounded px-2 py-1.5">
             <span className={`text-lg font-bold ${colorClass}`}>{animated}</span>
-            <span className="text-gray-400 text-center text-xs">{label}</span>
+            <span className="text-gray-300 text-center text-xs">{label}</span>
         </div>
     );
 }
@@ -245,7 +245,7 @@ const UploadProgressModal = forwardRef(function UploadProgressModal(_props, ref)
                 )}
 
                 {isRetrying && (
-                    <div className="border-amber-700 bg-amber-600/40 text-amber-500 rounded border p-3 text-sm">
+                    <div className="border-amber-700 bg-amber-600/40 text-amber-400 rounded border p-3 text-sm">
                         <div className="flex items-center gap-2 font-semibold">
                             <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path

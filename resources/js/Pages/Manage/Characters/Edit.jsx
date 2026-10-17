@@ -127,7 +127,7 @@ export default function Edit({ character: { data: character }, specializations: 
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-gray-400">
                                     No specializations available for this class.
                                 </p>
                             )}
@@ -146,7 +146,7 @@ export default function Edit({ character: { data: character }, specializations: 
                                     onChange={(e) => setData("is_loot_councillor", e.target.checked)}
                                 />
                                 <span className="font-medium text-white">Loot Councillor</span>
-                                <span className="text-sm text-gray-500">
+                                <span className="text-sm text-gray-400">
                                     This character has a vote on loot distribution
                                 </span>
                             </label>

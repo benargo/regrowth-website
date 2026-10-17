@@ -137,7 +137,7 @@ export default function Autocomplete({
                             onMouseEnter={() => setHighlightedIndex(index)}
                             className={`cursor-pointer px-4 py-2 transition-colors ${
                                 index === highlightedIndex
-                                    ? "bg-amber-600 text-white"
+                                    ? "bg-amber-700 text-white"
                                     : "text-gray-300 hover:bg-amber-600/20"
                             }`}
                         >
@@ -148,7 +148,7 @@ export default function Autocomplete({
             )}
 
             {isOpen && filteredOptions.length === 0 && value && (
-                <div className="absolute z-10 mt-1 w-full rounded border border-amber-600 bg-brown-800 px-4 py-2 text-gray-400 shadow-xl">
+                <div className="absolute z-10 mt-1 w-full rounded border border-amber-600 bg-brown-800 px-4 py-2 text-gray-300 shadow-xl">
                     No matches found
                 </div>
             )}
