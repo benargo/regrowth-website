@@ -8,6 +8,7 @@ use App\Models\Character;
 use App\Models\PlannedAbsence;
 use App\Models\User;
 use App\Observers\PlannedAbsenceObserver;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -287,6 +288,37 @@ class PlannedAbsenceTest extends ModelTestCase
         $this->create(['start_date' => today()->subDay(), 'end_date' => today()->addDay()]);
 
         $this->assertSame([$today->id, $later->id], PlannedAbsence::upcoming()->pluck('id')->all());
+    }
+
+    // ==================== covers ====================
+
+    #[Test]
+    public function covers_includes_dates_from_start_to_end_inclusive_ignoring_time_of_day(): void
+    {
+        $absence = new PlannedAbsence(['start_date' => '2026-03-15 14:30:00', 'end_date' => '2026-03-20 09:00:00']);
+
+        $this->assertTrue($absence->covers(Carbon::parse('2026-03-15 08:00:00')));
+        $this->assertTrue($absence->covers(Carbon::parse('2026-03-17 12:00:00')));
+        $this->assertTrue($absence->covers(Carbon::parse('2026-03-20 23:59:59')));
+    }
+
+    #[Test]
+    public function covers_excludes_dates_outside_the_range(): void
+    {
+        $absence = new PlannedAbsence(['start_date' => '2026-03-15', 'end_date' => '2026-03-20']);
+
+        $this->assertFalse($absence->covers(Carbon::parse('2026-03-14 23:59:59')));
+        $this->assertFalse($absence->covers(Carbon::parse('2026-03-21 00:00:00')));
+    }
+
+    #[Test]
+    public function covers_includes_every_date_from_the_start_when_open_ended(): void
+    {
+        $absence = new PlannedAbsence(['start_date' => '2026-03-15 14:30:00', 'end_date' => null]);
+
+        $this->assertFalse($absence->covers(Carbon::parse('2026-03-14')));
+        $this->assertTrue($absence->covers(Carbon::parse('2026-03-15 08:00:00')));
+        $this->assertTrue($absence->covers(Carbon::parse('2030-01-01')));
     }
 
     // ==================== observer ====================

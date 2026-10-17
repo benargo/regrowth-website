@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Data\PlannedAbsenceReasonData;
 use App\Observers\PlannedAbsenceObserver;
+use Carbon\CarbonInterface;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -65,6 +66,23 @@ class PlannedAbsence extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Helper method to determine if the absence includes a given date.
+     */
+    public function covers(CarbonInterface $date): bool
+    {
+        $day = $date->toImmutable()->startOfDay();
+
+        if ($this->end_date === null) {
+            return $day->gte($this->start_date->toImmutable()->startOfDay());
+        }
+
+        return $day->betweenIncluded(
+            $this->start_date->toImmutable()->startOfDay(),
+            $this->end_date->toImmutable()->startOfDay(),
+        );
     }
 
     /**
