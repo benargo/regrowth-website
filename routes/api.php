@@ -29,8 +29,7 @@ Route::prefix('/raidhelper')->group(function () {
 
 Route::middleware(['auth:sanctum'])->prefix('/comments')->group(function () {
     // Reactions are declared first and both keys are numerically constrained, so
-    // the literal `reactions` segment can never bind as a {comment}. The
-    // constraint makes the separation structural rather than order-dependent.
+    // the literal `reactions` segment never binds as a {comment}.
     Route::post('/reactions', [CommentReactionController::class, 'store'])
         ->name('api.comments.reactions.store');
     Route::delete('/reactions/{reaction}', [CommentReactionController::class, 'destroy'])

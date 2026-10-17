@@ -4,9 +4,7 @@ import modelColor from "@/Helpers/ModelColor";
 
 /**
  * Tabs for switching between game versions. A switch revisits the current page
- * with `?game_version=`, which the server remembers as the user's current
- * version before redirecting back to the clean URL. Page state is preserved,
- * so per-version components key themselves on the slug.
+ * with `?game_version=`, preserving page state.
  *
  * The selected tab is drawn in its version's colour.
  *
@@ -36,8 +34,6 @@ export default function GameVersionSelector({ gameVersions, currentGameVersion, 
                     ...(href
                         ? { href: href(gameVersion) }
                         : {
-                            // A synchronous visit, unlike router.reload(), cancels an earlier switch still in
-                            // flight, so rapid clicks can't land out of order.
                             onClick: () =>
                                 router.get(
                                     window.location.href,

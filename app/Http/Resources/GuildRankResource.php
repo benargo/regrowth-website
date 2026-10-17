@@ -50,7 +50,7 @@ class GuildRankResource extends JsonResource implements ScopedResource
     }
 
     /**
-     * Name and slug, for the attendance matrix.
+     * Name and slug.
      *
      * @return list<string>
      */

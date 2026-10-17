@@ -75,7 +75,7 @@ class CharacterResource extends JsonResource implements ScopedResource
     }
 
     /**
-     * Id, name, playable class and rank, for the attendance matrix.
+     * Id, name, playable class and rank.
      *
      * @return list<string>
      */

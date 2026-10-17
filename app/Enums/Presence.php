@@ -13,7 +13,7 @@ enum Presence: int
     case Benched = 2;
 
     /**
-     * Rank used to pick one presence across linked reports: Present 2, Benched 1, Absent 0.
+     * The presence's priority: Present 2, Benched 1, Absent 0.
      */
     public function priority(): int
     {

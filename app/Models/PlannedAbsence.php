@@ -69,7 +69,7 @@ class PlannedAbsence extends Model
     }
 
     /**
-     * Helper method to determine if the absence includes a given date.
+     * Determine whether the absence includes the given date.
      */
     public function covers(CarbonInterface $date): bool
     {

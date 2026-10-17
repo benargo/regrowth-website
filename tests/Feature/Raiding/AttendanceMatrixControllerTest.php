@@ -48,8 +48,8 @@ class AttendanceMatrixControllerTest extends TestCase
         );
         $officerRole->givePermissionTo($permission);
 
-        $this->gameVersion = $this->makeAttendanceVersion();
-        $this->rank = $this->makeRank($this->gameVersion);
+        $this->gameVersion = $this->createAttendanceVersion();
+        $this->rank = $this->createRank($this->gameVersion);
     }
 
     // ==================== matrix: Access Control ====================
@@ -134,10 +134,10 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_deferred_prop_returns_columns_and_rows(): void
     {
-        $rank = $this->makeRank($this->gameVersion);
-        $character = $this->makeCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
-        $tag = $this->makeTag($this->gameVersion);
-        $report = $this->makeReport($this->gameVersion, '2025-01-01 20:00', $tag);
+        $rank = $this->createRank($this->gameVersion);
+        $character = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
+        $tag = $this->createTag($this->gameVersion);
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00', $tag);
         $this->attend($report, $character);
 
         $user = User::factory()->officer()->create();
@@ -167,15 +167,15 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_deferred_prop_rows_include_playable_class_with_icon_url(): void
     {
-        $rank = $this->makeRank($this->gameVersion);
+        $rank = $this->createRank($this->gameVersion);
         $playableClass = PlayableClass::factory()->create(['name' => 'Warrior']);
-        $character = $this->makeCharacter($this->gameVersion, $rank, [
+        $character = $this->createCharacter($this->gameVersion, $rank, [
             'name' => 'Thrall',
             'playable_class_id' => $playableClass->id,
             'is_main' => true,
         ]);
-        $tag = $this->makeTag($this->gameVersion);
-        $report = $this->makeReport($this->gameVersion, '2025-01-01 20:00', $tag);
+        $tag = $this->createTag($this->gameVersion);
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00', $tag);
         $this->attend($report, $character);
 
         $user = User::factory()->officer()->create();
@@ -214,7 +214,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_includes_filter_option_props(): void
     {
-        $this->makeReport($this->gameVersion, '2025-01-01 20:00');
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
 
         $user = User::factory()->officer()->create();
 
@@ -240,9 +240,9 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_ranks_includes_all_ranks_regardless_of_count_attendance(): void
     {
-        $this->makeReport($this->gameVersion, '2025-01-01 20:00');
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
         $counting = $this->rank;
-        $nonCounting = $this->makeRank($this->gameVersion, false);
+        $nonCounting = $this->createRank($this->gameVersion, false);
 
         $user = User::factory()->officer()->create();
 
@@ -269,8 +269,8 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_character_filter_returns_character_name(): void
     {
-        $this->makeReport($this->gameVersion, '2025-01-01 20:00');
-        $character = $this->makeCharacter($this->gameVersion, null, ['name' => 'Thrall', 'is_main' => true]);
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $character = $this->createCharacter($this->gameVersion, null, ['name' => 'Thrall', 'is_main' => true]);
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['character' => $character->id]));
@@ -284,10 +284,10 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_character_filter_for_an_alt_returns_its_mains_combined_row(): void
     {
-        $main = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
-        $alt = $this->makeCharacter($this->gameVersion, null, ['name' => 'Go\'el', 'is_main' => false]);
+        $main = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
+        $alt = $this->createCharacter($this->gameVersion, null, ['name' => 'Go\'el', 'is_main' => false]);
         $this->linkCharacters($main, $alt);
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $alt);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $alt);
 
         $this->actingAs(User::factory()->officer()->create())
             ->get(route('raiding.attendance.matrix', ['character' => $alt->id]))
@@ -301,10 +301,10 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_character_filter_returns_only_that_characters_row_when_not_combining(): void
     {
-        $main = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
-        $alt = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Go\'el', 'is_main' => false]);
+        $main = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
+        $alt = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Go\'el', 'is_main' => false]);
         $this->linkCharacters($main, $alt);
-        $report = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00');
         $this->attend($report, $main);
         $this->attend($report, $alt);
 
@@ -319,7 +319,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_filter_id_lists_are_null_by_default(): void
     {
-        $this->makeReport($this->gameVersion, '2025-01-01 20:00');
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
 
         $this->actingAs(User::factory()->officer()->create())
             ->get(route('raiding.attendance.matrix'))
@@ -344,8 +344,8 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_accepts_valid_character_id(): void
     {
-        $this->makeReport($this->gameVersion, '2025-01-01 20:00');
-        $character = $this->makeCharacter($this->gameVersion, null, ['is_main' => true]);
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $character = $this->createCharacter($this->gameVersion, null, ['is_main' => true]);
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['character' => $character->id]));
@@ -508,8 +508,8 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_accepts_since_date_equal_to_minimum(): void
     {
-        $tag = $this->makeTag($this->gameVersion);
-        $this->makeReport($this->gameVersion, '2025-01-05 20:00', $tag);
+        $tag = $this->createTag($this->gameVersion);
+        $this->createReport($this->gameVersion, '2025-01-05 20:00', $tag);
 
         $user = User::factory()->officer()->create();
 
@@ -523,8 +523,8 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_rejects_since_date_before_minimum(): void
     {
-        $tag = $this->makeTag($this->gameVersion);
-        $this->makeReport($this->gameVersion, '2025-01-05 20:00', $tag);
+        $tag = $this->createTag($this->gameVersion);
+        $this->createReport($this->gameVersion, '2025-01-05 20:00', $tag);
 
         $user = User::factory()->officer()->create();
 
@@ -537,8 +537,8 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_accepts_before_date_equal_to_minimum(): void
     {
-        $tag = $this->makeTag($this->gameVersion);
-        $this->makeReport($this->gameVersion, '2025-01-05 20:00', $tag);
+        $tag = $this->createTag($this->gameVersion);
+        $this->createReport($this->gameVersion, '2025-01-05 20:00', $tag);
 
         $user = User::factory()->officer()->create();
 
@@ -551,8 +551,8 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_rejects_before_date_before_minimum(): void
     {
-        $tag = $this->makeTag($this->gameVersion);
-        $this->makeReport($this->gameVersion, '2025-01-05 20:00', $tag);
+        $tag = $this->createTag($this->gameVersion);
+        $this->createReport($this->gameVersion, '2025-01-05 20:00', $tag);
 
         $user = User::factory()->officer()->create();
 
@@ -588,9 +588,9 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_earliest_date_is_day_before_earliest_report(): void
     {
-        $tag = $this->makeTag($this->gameVersion);
-        $this->makeReport($this->gameVersion, '2025-03-10 20:00', $tag);
-        $this->makeReport($this->gameVersion, '2025-01-05 20:00', $tag);
+        $tag = $this->createTag($this->gameVersion);
+        $this->createReport($this->gameVersion, '2025-03-10 20:00', $tag);
+        $this->createReport($this->gameVersion, '2025-01-05 20:00', $tag);
 
         $user = User::factory()->officer()->create();
 
@@ -606,13 +606,13 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_character_filter_limits_data_to_that_character(): void
     {
-        $rank = $this->makeRank($this->gameVersion);
-        $thrall = $this->makeCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
-        $jaina = $this->makeCharacter($this->gameVersion, $rank, ['name' => 'Jaina', 'is_main' => true]);
+        $rank = $this->createRank($this->gameVersion);
+        $thrall = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
+        $jaina = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Jaina', 'is_main' => true]);
 
-        $tag = $this->makeTag($this->gameVersion);
+        $tag = $this->createTag($this->gameVersion);
 
-        $report = $this->makeReport($this->gameVersion, '2025-01-01 20:00', $tag);
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00', $tag);
         $this->attend($report, $thrall);
         $this->attend($report, $jaina);
 
@@ -631,15 +631,15 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_guild_tag_filter_limits_data_to_selected_tag(): void
     {
-        $rank = $this->makeRank($this->gameVersion);
-        $thrall = $this->makeCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
-        $jaina = $this->makeCharacter($this->gameVersion, $rank, ['name' => 'Jaina', 'is_main' => true]);
+        $rank = $this->createRank($this->gameVersion);
+        $thrall = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
+        $jaina = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Jaina', 'is_main' => true]);
 
-        $tag1 = $this->makeTag($this->gameVersion);
-        $tag2 = $this->makeTag($this->gameVersion);
+        $tag1 = $this->createTag($this->gameVersion);
+        $tag2 = $this->createTag($this->gameVersion);
 
-        $report1 = $this->makeReport($this->gameVersion, '2025-01-01 20:00', $tag1);
-        $report2 = $this->makeReport($this->gameVersion, '2025-01-08 20:00', $tag2);
+        $report1 = $this->createReport($this->gameVersion, '2025-01-01 20:00', $tag1);
+        $report2 = $this->createReport($this->gameVersion, '2025-01-08 20:00', $tag2);
         $this->attend($report1, $thrall);
         $this->attend($report2, $jaina);
 
@@ -658,14 +658,14 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_since_date_filter_excludes_older_reports(): void
     {
-        $rank = $this->makeRank($this->gameVersion);
-        $thrall = $this->makeCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
-        $jaina = $this->makeCharacter($this->gameVersion, $rank, ['name' => 'Jaina', 'is_main' => true]);
+        $rank = $this->createRank($this->gameVersion);
+        $thrall = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
+        $jaina = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Jaina', 'is_main' => true]);
 
-        $tag = $this->makeTag($this->gameVersion);
+        $tag = $this->createTag($this->gameVersion);
 
-        $oldReport = $this->makeReport($this->gameVersion, '2025-01-01 20:00', $tag);
-        $newReport = $this->makeReport($this->gameVersion, '2025-02-01 20:00', $tag);
+        $oldReport = $this->createReport($this->gameVersion, '2025-01-01 20:00', $tag);
+        $newReport = $this->createReport($this->gameVersion, '2025-02-01 20:00', $tag);
         $this->attend($oldReport, $thrall);
         $this->attend($newReport, $jaina);
 
@@ -685,14 +685,14 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_before_date_filter_excludes_newer_reports(): void
     {
-        $rank = $this->makeRank($this->gameVersion);
-        $thrall = $this->makeCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
-        $jaina = $this->makeCharacter($this->gameVersion, $rank, ['name' => 'Jaina', 'is_main' => true]);
+        $rank = $this->createRank($this->gameVersion);
+        $thrall = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
+        $jaina = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Jaina', 'is_main' => true]);
 
-        $tag = $this->makeTag($this->gameVersion);
+        $tag = $this->createTag($this->gameVersion);
 
-        $oldReport = $this->makeReport($this->gameVersion, '2025-01-01 20:00', $tag);
-        $newReport = $this->makeReport($this->gameVersion, '2025-02-01 20:00', $tag);
+        $oldReport = $this->createReport($this->gameVersion, '2025-01-01 20:00', $tag);
+        $newReport = $this->createReport($this->gameVersion, '2025-02-01 20:00', $tag);
         $this->attend($oldReport, $thrall);
         $this->attend($newReport, $jaina);
 
@@ -763,10 +763,10 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_result_is_served_from_cache_on_second_request(): void
     {
-        $rank = $this->makeRank($this->gameVersion);
-        $thrall = $this->makeCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
-        $tag = $this->makeTag($this->gameVersion);
-        $report = $this->makeReport($this->gameVersion, '2025-01-01 20:00', $tag);
+        $rank = $this->createRank($this->gameVersion);
+        $thrall = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
+        $tag = $this->createTag($this->gameVersion);
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00', $tag);
         $this->attend($report, $thrall);
 
         $user = User::factory()->officer()->create();
@@ -782,8 +782,7 @@ class AttendanceMatrixControllerTest extends TestCase
             );
 
         // Add a new character to the DB — if caching is working this should not appear.
-        // Attaching to the existing report avoids the Report observer flushing the attendance cache.
-        $jaina = $this->makeCharacter($this->gameVersion, $rank, ['name' => 'Jaina', 'is_main' => true]);
+        $jaina = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Jaina', 'is_main' => true]);
         $this->attend($report, $jaina);
 
         // Second request with identical filters should return the cached result.
@@ -803,7 +802,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        // Non-null zone_ids exercises the sort($zoneIds) branch in matrixCacheKey()
+        // Non-null zone_ids exercises the zone_ids entry in AttendanceMatrixRequest::cacheKey()
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['zone_ids' => '3,1,2']));
 
         $response->assertOk();
@@ -815,12 +814,12 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_rows_carry_their_planned_absences(): void
     {
-        $rank = $this->makeRank($this->gameVersion);
-        $character = $this->makeCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
-        $tag = $this->makeTag($this->gameVersion);
+        $rank = $this->createRank($this->gameVersion);
+        $character = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
+        $tag = $this->createTag($this->gameVersion);
 
         $raidDate = '2025-01-15 20:00';
-        $report = $this->makeReport($this->gameVersion, $raidDate, $tag);
+        $report = $this->createReport($this->gameVersion, $raidDate, $tag);
         $this->attend($report, $character);
 
         PlannedAbsence::factory()->create([
@@ -839,10 +838,10 @@ class AttendanceMatrixControllerTest extends TestCase
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->missing('matrix.planned_absences')
                 ->has('matrix.rows.0.planned_absences', 1)
-                ->where('matrix.rows.0.planned_absences.0', [
-                    'reason' => ['label' => 'Stuck at work', 'icon' => 'briefcase'],
-                    'notes' => 'Late shift.',
-                ])
+                ->has('matrix.rows.0.planned_absences.0', 2)
+                ->where('matrix.rows.0.planned_absences.0.reason.label', 'Stuck at work')
+                ->where('matrix.rows.0.planned_absences.0.reason.icon', 'briefcase')
+                ->where('matrix.rows.0.planned_absences.0.notes', 'Late shift.')
             )
         );
     }
@@ -852,13 +851,13 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_excludes_mains_whose_rank_is_not_in_the_rank_filter(): void
     {
-        $rank1 = $this->makeRank($this->gameVersion);
-        $rank2 = $this->makeRank($this->gameVersion);
-        $main1 = $this->makeCharacter($this->gameVersion, $rank1, ['name' => 'Thrall', 'is_main' => true]);
-        $main2 = $this->makeCharacter($this->gameVersion, $rank2, ['name' => 'Jaina', 'is_main' => true]);
+        $rank1 = $this->createRank($this->gameVersion);
+        $rank2 = $this->createRank($this->gameVersion);
+        $main1 = $this->createCharacter($this->gameVersion, $rank1, ['name' => 'Thrall', 'is_main' => true]);
+        $main2 = $this->createCharacter($this->gameVersion, $rank2, ['name' => 'Jaina', 'is_main' => true]);
 
-        $tag = $this->makeTag($this->gameVersion);
-        $report = $this->makeReport($this->gameVersion, '2025-01-15 20:00', $tag);
+        $tag = $this->createTag($this->gameVersion);
+        $report = $this->createReport($this->gameVersion, '2025-01-15 20:00', $tag);
         $this->attend($report, $main1);
         $this->attend($report, $main2);
 
@@ -881,13 +880,13 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_records_zero_attendance_when_all_merged_characters_were_absent(): void
     {
-        $rank = $this->makeRank($this->gameVersion);
-        $main = $this->makeCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
-        $alt = $this->makeCharacter($this->gameVersion, $rank, ['name' => 'ThrallAlt', 'is_main' => false]);
+        $rank = $this->createRank($this->gameVersion);
+        $main = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
+        $alt = $this->createCharacter($this->gameVersion, $rank, ['name' => 'ThrallAlt', 'is_main' => false]);
         $this->linkCharacters($main, $alt);
 
-        $tag = $this->makeTag($this->gameVersion);
-        $report = $this->makeReport($this->gameVersion, '2025-01-15 20:00', $tag);
+        $tag = $this->createTag($this->gameVersion);
+        $report = $this->createReport($this->gameVersion, '2025-01-15 20:00', $tag);
         $this->attend($report, $main, Presence::Absent);
         $this->attend($report, $alt, Presence::Absent);
 
@@ -906,15 +905,15 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_cache_is_distinct_per_filter_combination(): void
     {
-        $rank = $this->makeRank($this->gameVersion);
-        $thrall = $this->makeCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
-        $jaina = $this->makeCharacter($this->gameVersion, $rank, ['name' => 'Jaina', 'is_main' => true]);
+        $rank = $this->createRank($this->gameVersion);
+        $thrall = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
+        $jaina = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Jaina', 'is_main' => true]);
 
-        $tag1 = $this->makeTag($this->gameVersion);
-        $tag2 = $this->makeTag($this->gameVersion);
+        $tag1 = $this->createTag($this->gameVersion);
+        $tag2 = $this->createTag($this->gameVersion);
 
-        $report1 = $this->makeReport($this->gameVersion, '2025-01-01 20:00', $tag1);
-        $report2 = $this->makeReport($this->gameVersion, '2025-01-08 20:00', $tag2);
+        $report1 = $this->createReport($this->gameVersion, '2025-01-01 20:00', $tag1);
+        $report2 = $this->createReport($this->gameVersion, '2025-01-08 20:00', $tag2);
         $this->attend($report1, $thrall);
         $this->attend($report2, $jaina);
 
@@ -943,8 +942,8 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_ranks_include_only_the_selected_versions_ranks(): void
     {
-        $this->makeReport($this->gameVersion, '2025-01-01 20:00');
-        $this->makeRank($this->makeAttendanceVersion());
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $this->createRank($this->createAttendanceVersion());
 
         $this->actingAs(User::factory()->officer()->create())
             ->get(route('raiding.attendance.matrix'))
@@ -957,10 +956,10 @@ class AttendanceMatrixControllerTest extends TestCase
     public function invoke_zones_and_guild_tags_list_only_those_used_by_the_versions_reports(): void
     {
         $zone = Zone::factory()->create();
-        $tag = $this->makeTag($this->gameVersion);
-        $this->makeReport($this->gameVersion, '2025-01-01 20:00', $tag, ['zone_id' => $zone->id]);
+        $tag = $this->createTag($this->gameVersion);
+        $this->createReport($this->gameVersion, '2025-01-01 20:00', $tag, ['zone_id' => $zone->id]);
         Zone::factory()->create();
-        $this->makeTag($this->gameVersion);
+        $this->createTag($this->gameVersion);
 
         $this->actingAs(User::factory()->officer()->create())
             ->get(route('raiding.attendance.matrix'))
@@ -974,9 +973,9 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_uses_the_session_game_version(): void
     {
-        $newer = $this->makeAttendanceVersion(['release_date' => '2024-06-01']);
-        $this->makeReport($newer, '2025-01-01 20:00');
-        $this->makeReport($this->gameVersion, '2025-01-01 20:00');
+        $newer = $this->createAttendanceVersion(['release_date' => '2024-06-01']);
+        $this->createReport($newer, '2025-01-01 20:00');
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
 
         $this->actingAs(User::factory()->officer()->create())
             ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $this->gameVersion->slug])
@@ -987,7 +986,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_falls_back_to_the_newest_version_for_a_stale_session_slug(): void
     {
-        $this->makeReport($this->gameVersion, '2025-01-01 20:00');
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
 
         $this->actingAs(User::factory()->officer()->create())
             ->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'retired-version'])
@@ -999,10 +998,10 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_filters_to_a_character_of_the_game_version_named_in_the_query(): void
     {
-        $newer = $this->makeAttendanceVersion(['release_date' => '2024-06-01']);
-        $this->makeReport($newer, '2025-01-01 20:00');
-        $this->makeReport($this->gameVersion, '2025-01-01 20:00');
-        $character = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
+        $newer = $this->createAttendanceVersion(['release_date' => '2024-06-01']);
+        $this->createReport($newer, '2025-01-01 20:00');
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $character = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
 
         $this->actingAs(User::factory()->officer()->create())
             ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $newer->slug])
@@ -1016,7 +1015,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_remembers_a_game_version_query_and_redirects_without_it(): void
     {
-        $this->makeReport($this->gameVersion, '2025-01-01 20:00');
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
 
         $this->actingAs(User::factory()->officer()->create())
             ->get(route('raiding.attendance.matrix', ['game_version' => $this->gameVersion->slug, 'rank_ids' => '1']))
@@ -1044,7 +1043,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_rows_carry_a_null_playable_class_for_a_character_without_one(): void
     {
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $this->makeCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
 
         $this->actingAs(User::factory()->officer()->create())
             ->get(route('raiding.attendance.matrix'))
@@ -1055,10 +1054,10 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_combining_folds_an_alt_into_its_main(): void
     {
-        $main = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
-        $alt = $this->makeCharacter($this->gameVersion, null, ['is_main' => false]);
+        $main = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
+        $alt = $this->createCharacter($this->gameVersion, null, ['is_main' => false]);
         $this->linkCharacters($main, $alt);
-        $this->attend($this->makeReport($this->gameVersion, '2025-01-01 20:00'), $alt);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $alt);
 
         $this->actingAs(User::factory()->officer()->create())
             ->get(route('raiding.attendance.matrix'))
@@ -1072,10 +1071,10 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_deferred_prop_rows_omit_linked_characters_when_combining(): void
     {
-        $main = $this->makeCharacter($this->gameVersion, $this->rank, ['is_main' => true]);
-        $alt = $this->makeCharacter($this->gameVersion, $this->rank, ['is_main' => false]);
+        $main = $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]);
+        $alt = $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => false]);
         $this->linkCharacters($main, $alt);
-        $report = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00');
         $this->attend($report, $main);
         $this->attend($report, $alt);
 
@@ -1091,15 +1090,15 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_payload_query_count_does_not_grow_with_rows(): void
     {
-        $report = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
-        $this->attend($report, $this->makeCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $this->attend($report, $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
         $user = User::factory()->officer()->create();
         $this->actingAs($user)->get(route('raiding.attendance.matrix'));
         Cache::tags(['attendance'])->flush();
         $oneRow = $this->countMatrixQueries($user);
 
         foreach (range(1, 3) as $ignored) {
-            $this->attend($report, $this->makeCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
+            $this->attend($report, $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
         }
         Cache::tags(['attendance'])->flush();
 
@@ -1121,10 +1120,10 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_rows_carry_each_raids_attendance_names(): void
     {
-        $thrall = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
-        $jaina = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Jaina', 'is_main' => true]);
-        $earlier = $this->makeReport($this->gameVersion, '2025-01-01 20:00');
-        $later = $this->makeReport($this->gameVersion, '2025-01-08 20:00');
+        $thrall = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
+        $jaina = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Jaina', 'is_main' => true]);
+        $earlier = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $later = $this->createReport($this->gameVersion, '2025-01-08 20:00');
         $this->attend($earlier, $thrall);
         $this->attend($later, $thrall, Presence::Absent);
         $this->attend($later, $jaina);
@@ -1142,10 +1141,10 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_attendance_names_merge_an_alt_into_its_main(): void
     {
-        $main = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
-        $alt = $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'ThrallAlt', 'is_main' => false]);
+        $main = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
+        $alt = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'ThrallAlt', 'is_main' => false]);
         $this->linkCharacters($main, $alt);
-        $report = $this->makeReport($this->gameVersion, '2025-01-15 20:00');
+        $report = $this->createReport($this->gameVersion, '2025-01-15 20:00');
         $this->attend($report, $main);
         $this->attend($report, $alt);
 
@@ -1161,8 +1160,8 @@ class AttendanceMatrixControllerTest extends TestCase
     public function invoke_attendance_names_are_omitted_without_combining_linked_characters(): void
     {
         $this->attend(
-            $this->makeReport($this->gameVersion, '2025-01-15 20:00'),
-            $this->makeCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]),
+            $this->createReport($this->gameVersion, '2025-01-15 20:00'),
+            $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]),
         );
 
         $this->actingAs(User::factory()->officer()->create())

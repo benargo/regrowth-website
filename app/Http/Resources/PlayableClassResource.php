@@ -40,7 +40,7 @@ class PlayableClassResource extends JsonResource implements ScopedResource
     }
 
     /**
-     * Id, name and icon URL, for the attendance matrix.
+     * Id, name and icon URL.
      *
      * @return list<string>
      */

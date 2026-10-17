@@ -34,8 +34,7 @@ class BuildAddonExportFile implements ShouldQueue
     public int $backoff = 60;
 
     /**
-     * Queue a rebuild two minutes from now, so a burst of changes settles
-     * before the export is built.
+     * Queue a rebuild two minutes from now.
      */
     public static function schedule(): void
     {
@@ -134,6 +133,8 @@ class BuildAddonExportFile implements ShouldQueue
 
     /**
      * Build player attendance statistics for the newest game version with counted attendance.
+     *
+     * @return Collection<int, array{id: int, name: string, attendance: array{first_attendance: int, attended: int, total: int, percentage: float}}>
      */
     protected function buildPlayerAttendance(): Collection
     {

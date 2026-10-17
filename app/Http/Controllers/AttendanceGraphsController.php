@@ -37,7 +37,6 @@ class AttendanceGraphsController extends Controller
     /**
      * Get the scatter points for the attendance graph of the given game version.
      *
-     * @param  GameVersion|null  $gameVersion  The game version to get the scatter points for.
      * @return Collection<int, AttendanceScatterPointData>
      */
     private function getScatterPoints(?GameVersion $gameVersion): Collection
