@@ -17,6 +17,8 @@ class PhaseObserver
      */
     public function created(Phase $phase): void
     {
+        BuildAddonExportFile::schedule();
+
         $this->refreshReportsOfGameVersions([$phase->game_version_id]);
     }
 
@@ -66,6 +68,8 @@ class PhaseObserver
      */
     public function deleted(Phase $phase): void
     {
+        BuildAddonExportFile::schedule();
+
         $this->refreshReportsOfGameVersions([$phase->game_version_id]);
     }
 

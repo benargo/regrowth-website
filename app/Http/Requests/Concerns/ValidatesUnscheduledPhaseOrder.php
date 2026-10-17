@@ -8,8 +8,7 @@ use Illuminate\Validation\Validator;
 
 /**
  * For form requests that reorder a game version's unscheduled phases:
- * rejects a list that isn't exactly that version's unscheduled phases, such
- * as one sent by a page loaded before a phase was added, dated or moved.
+ * rejects a list that isn't exactly that version's unscheduled phases.
  */
 trait ValidatesUnscheduledPhaseOrder
 {

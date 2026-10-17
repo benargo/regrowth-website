@@ -2,7 +2,7 @@ import Relationships from "@/Components/Datasets/Relationships";
 import modelColor from "@/Helpers/ModelColor";
 
 /**
- * The raids in a phase, read-only. Raids are linked to phases from the raid side.
+ * The raids in a phase, read-only.
  */
 export default function PhaseRaids({ raids }) {
     const list = Object.values(raids ?? {});

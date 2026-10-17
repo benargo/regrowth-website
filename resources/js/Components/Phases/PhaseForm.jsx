@@ -79,8 +79,8 @@ export default function PhaseForm({ form, options, ...detailsFormProps }) {
                                 <button
                                     type="button"
                                     onClick={() => {
-                                        clear("start_date");
                                         document.getElementById("start_date")?.focus();
+                                        clear("start_date");
                                     }}
                                     className={linkClassName}
                                 >

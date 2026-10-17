@@ -10,7 +10,7 @@ export default function PhaseStartDate({ startDate }) {
     }
 
     const serverTime = formatDateTime(startDate);
-    const localTime = formatDateTime(startDate, undefined);
+    const localTime = formatDateTime(startDate, null);
 
     return (
         <span className="flex flex-col">

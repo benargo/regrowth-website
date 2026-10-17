@@ -57,7 +57,7 @@ class StorePhaseRequest extends FormRequest
     }
 
     /**
-     * The format a phase number must take to fit its decimal(2,1) column.
+     * The format rules for a phase number: up to 9.9, with at most one decimal place.
      *
      * @return list<string>
      */

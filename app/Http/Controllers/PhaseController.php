@@ -85,10 +85,11 @@ class PhaseController extends Controller
     public function edit(Request $request, Phase $phase, BuildPhaseRoutes $routes): Response
     {
         $editLock = ResolveEditLock::run($request, $phase);
-        $phase->loadMissing(['gameVersion', 'raids' => fn (HasMany $query) => $query->orderBy('name')]);
 
         return Inertia::render('Manage/Phases/Edit', [
-            'phase' => $phase->toResource(),
+            'phase' => fn (): PhaseResource => $phase
+                ->loadMissing(['gameVersion', 'raids' => fn (HasMany $query) => $query->orderBy('name')])
+                ->toResource(),
             'options' => fn (): array => BuildPhaseFormOptions::run(),
             'routes' => fn (): array => $routes->forEdit($phase),
             ...$editLock,

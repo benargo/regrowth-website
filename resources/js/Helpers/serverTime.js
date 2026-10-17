@@ -27,8 +27,8 @@ export function toServerDateTimeLocal(isoString) {
 
 /**
  * The ISO timestamp for reading, such as "23 Oct 2026, 19:00 CEST", in server
- * time, or in the viewer's own time zone when `timeZone` is undefined. Each
- * time zone's formatter is built once.
+ * time, or in the viewer's own time zone when `timeZone` is null. Each time
+ * zone's formatter is built once.
  */
 export function formatDateTime(isoString, timeZone = SERVER_TIME_ZONE) {
     if (!READABLE_FORMATS.has(timeZone)) {
@@ -40,7 +40,7 @@ export function formatDateTime(isoString, timeZone = SERVER_TIME_ZONE) {
                 year: "numeric",
                 hour: "2-digit",
                 minute: "2-digit",
-                timeZone,
+                timeZone: timeZone ?? undefined,
                 timeZoneName: "short",
             }),
         );

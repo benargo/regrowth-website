@@ -122,6 +122,27 @@ class PhaseObserverTest extends TestCase
         Bus::assertDispatched(BuildAddonExportFile::class, fn (BuildAddonExportFile $job) => $job->delay !== null);
     }
 
+    #[Test]
+    public function creating_a_phase_schedules_addon_export_build(): void
+    {
+        Bus::fake([BuildAddonExportFile::class]);
+
+        Phase::factory()->create();
+
+        Bus::assertDispatched(BuildAddonExportFile::class, fn (BuildAddonExportFile $job) => $job->delay !== null);
+    }
+
+    #[Test]
+    public function deleting_a_phase_schedules_addon_export_build(): void
+    {
+        $phase = Phase::factory()->create();
+        Bus::fake([BuildAddonExportFile::class]);
+
+        $phase->delete();
+
+        Bus::assertDispatched(BuildAddonExportFile::class, fn (BuildAddonExportFile $job) => $job->delay !== null);
+    }
+
     // ==================== sort order ====================
 
     #[Test]

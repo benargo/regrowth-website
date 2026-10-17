@@ -18,9 +18,8 @@ use Lorisleiva\Actions\Concerns\AsAction;
  * Raids and bosses have no game version of their own: they follow their
  * phase, so linking a phase is all it takes to bring them along.
  *
- * Phases are saved one model at a time rather than with a bulk query update
- * so Phase still dispatches AddonSettingsProcessed; the unscheduled phases'
- * order goes through ReorderPhases.
+ * Phases are saved one model at a time, so each fires its model events; the
+ * unscheduled phases' order goes through ReorderPhases.
  *
  * Guild ranks are replaced as a whole ordered list; see SyncGuildRanks.
  *
