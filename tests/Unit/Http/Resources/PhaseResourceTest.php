@@ -196,4 +196,39 @@ class PhaseResourceTest extends TestCase
         $this->assertArrayHasKey('start_date', $array);
         $this->assertArrayHasKey('has_started', $array);
     }
+
+    // ==================== management ====================
+
+    #[Test]
+    public function the_default_shape_is_unchanged(): void
+    {
+        $phase = Phase::factory()->create();
+
+        $this->assertSame(
+            ['id', 'number', 'name', 'description', 'start_date', 'has_started'],
+            array_keys((new PhaseResource($phase))->resolve(new Request)),
+        );
+    }
+
+    #[Test]
+    public function the_management_scope_adds_links_the_current_flag_and_usage_counts(): void
+    {
+        $phase = Phase::factory()->create();
+        Raid::factory()->for($phase)->create();
+        $counted = Phase::withUsageCounts()->with('gameVersion')->find($phase->id);
+
+        $array = (new PhaseResource($counted))
+            ->withLinks(['edit' => '/edit', 'destroy' => '/destroy'])
+            ->markCurrent(true)
+            ->scope('management')
+            ->resolve(new Request);
+
+        $this->assertSame(
+            ['id', 'number', 'name', 'description', 'start_date', 'has_started', 'is_current', 'game_version', 'raids_count', 'reports_count', 'links'],
+            array_keys($array),
+        );
+        $this->assertTrue($array['is_current']);
+        $this->assertSame(1, $array['raids_count']);
+        $this->assertSame(['edit' => '/edit', 'destroy' => '/destroy'], $array['links']);
+    }
 }

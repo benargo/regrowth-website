@@ -144,7 +144,7 @@ class DashboardPagesTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('management.phases.view'));
+        $response = $this->actingAs($user)->get(route('management.phases.index'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');

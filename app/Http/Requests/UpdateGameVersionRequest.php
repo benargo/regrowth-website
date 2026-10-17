@@ -5,12 +5,14 @@ namespace App\Http\Requests;
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Requests\Concerns\ChecksEditLock;
+use App\Http\Requests\Concerns\ValidatesUnscheduledPhaseOrder;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\WarcraftLogs\Guild;
+use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -20,6 +22,7 @@ use Illuminate\Validation\Validator;
 class UpdateGameVersionRequest extends StoreGameVersionRequest
 {
     use ChecksEditLock;
+    use ValidatesUnscheduledPhaseOrder;
 
     /**
      * Get the validation rules that apply to the request.
@@ -45,16 +48,8 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             'playable_class_ids.*' => ['integer', 'distinct', Rule::exists(PlayableClass::class, 'id')],
             'phase_ids' => ['sometimes', 'array'],
             'phase_ids.*' => ['integer', 'distinct', Rule::exists(Phase::class, 'id')],
-            'new_phase' => ['sometimes', 'required', 'array:number,description,start_date'],
-            'new_phase.number' => [
-                'required_with:new_phase',
-                'numeric',
-                'decimal:0,1',
-                'between:0,9.9',
-                Rule::unique(Phase::class, 'number')->where('game_version_id', $this->route('gameVersion')->getKey()),
-            ],
-            'new_phase.description' => ['required_with:new_phase', 'string', 'max:255'],
-            'new_phase.start_date' => ['nullable', 'date'],
+            'unscheduled_phase_ids' => ['sometimes', 'array'],
+            'unscheduled_phase_ids.*' => ['integer', 'distinct'],
             'new_raid' => ['sometimes', 'required', 'array:name,difficulty,phase_id,max_players'],
             'new_raid.name' => ['required_with:new_raid', 'string', 'max:255'],
             'new_raid.difficulty' => ['required_with:new_raid', 'string', 'max:50'],
@@ -93,9 +88,6 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             'playable_race_ids.*.exists' => 'One of the selected races no longer exists. Reload the page and try again.',
             'playable_class_ids.*.exists' => 'One of the selected classes no longer exists. Reload the page and try again.',
             'phase_ids.*.exists' => 'One of the selected phases no longer exists. Reload the page and try again.',
-            'new_phase.number.required_with' => 'Enter the phase number.',
-            'new_phase.number.unique' => 'This game version already has a phase with that number.',
-            'new_phase.description.required_with' => 'Enter a description for the phase.',
             'new_raid.name.required_with' => 'Enter the raid name.',
             'new_raid.difficulty.required_with' => 'Enter the raid difficulty, for example Normal.',
             'new_raid.phase_id.required_with' => 'Choose which phase the raid belongs to.',
@@ -116,8 +108,6 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
     {
         return [
             ...parent::attributes(),
-            'new_phase.number' => 'phase number',
-            'new_phase.start_date' => 'start date',
             'new_raid.max_players' => 'maximum players',
             'guild_ranks.*.name' => 'rank name',
         ];
@@ -132,7 +122,44 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
     {
         return [
             $this->editLockCheck('gameVersion', 'game version'),
+            $this->unscheduledPhaseOrderCheck('unscheduled_phase_ids', $this->route('gameVersion')->getKey()),
+            $this->phaseNumbersStayUniqueCheck(),
         ];
+    }
+
+    /**
+     * An after() hook that rejects a phase list that would give two phases in
+     * the game version the same number, or that unticks a phase whose number
+     * a phase without a game version already has.
+     *
+     * @return Closure(Validator): void
+     */
+    private function phaseNumbersStayUniqueCheck(): Closure
+    {
+        return function (Validator $validator): void {
+            if (! $this->has('phase_ids') || $validator->errors()->hasAny(['phase_ids', 'phase_ids.*'])) {
+                return;
+            }
+
+            $phaseIds = $this->input('phase_ids', []);
+            $tickedNumbers = Phase::whereKey($phaseIds)->toBase()->pluck('number');
+
+            if ($tickedNumbers->duplicates()->isNotEmpty()) {
+                $validator->errors()->add('phase_ids', 'Two of the ticked phases have the same number. Untick one, or change its number first.');
+
+                return;
+            }
+
+            $unownedNumbers = Phase::whereNull('game_version_id')->whereKeyNot($phaseIds)->toBase()->pluck('number');
+            $clash = $this->route('gameVersion')->phases()
+                ->whereKeyNot($phaseIds)
+                ->get()
+                ->first(fn (Phase $phase): bool => $unownedNumbers->contains($phase->getRawOriginal('number')));
+
+            if ($clash !== null) {
+                $validator->errors()->add('phase_ids', "Unticking {$clash->name} would leave two phases without a game version numbered {$clash->number}. Change its number first.");
+            }
+        };
     }
 
     /**
