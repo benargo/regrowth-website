@@ -28,6 +28,11 @@ class BuildGameVersionRelationships
      */
     public function handle(GameVersion $gameVersion): array
     {
+        $phases = Phase::with(['gameVersion', 'raids' => fn ($query) => $query->orderBy('name')])
+            ->inReleaseOrder()
+            ->get();
+        $ownPhases = $phases->where('game_version_id', $gameVersion->id);
+
         return [
             'playable_races' => PlayableRace::orderBy('name')->get()
                 ->toResourceCollection()
@@ -39,17 +44,12 @@ class BuildGameVersionRelationships
                 ->additional([
                     'selected_ids' => $gameVersion->playableClasses()->pluck('playable_classes.id')->all(),
                 ]),
-            'phases' => Phase::with(['gameVersion', 'raids' => fn ($query) => $query->orderBy('name')])
-                ->inReleaseOrder()
-                ->get()
-                ->toResourceCollection()
+            'phases' => $phases->toResourceCollection()
                 ->additional([
-                    'selected_ids' => $gameVersion->phases()->pluck('id')->all(),
+                    'selected_ids' => $ownPhases->pluck('id')->values()->all(),
                 ]),
-            'unscheduled_phases' => $gameVersion->phases()
-                ->whereNull('start_date')
-                ->orderBy('sort_order')
-                ->get()
+            'unscheduled_phases' => $ownPhases->whereNull('start_date')
+                ->values()
                 ->toResourceCollection(),
             'guild_ranks' => $gameVersion->guildRanks()
                 ->withCount('characters')

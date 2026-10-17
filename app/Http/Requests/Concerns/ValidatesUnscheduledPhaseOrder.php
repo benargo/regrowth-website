@@ -27,8 +27,7 @@ trait ValidatesUnscheduledPhaseOrder
                 return;
             }
 
-            $expected = Phase::where('game_version_id', $gameVersionId)
-                ->whereNull('start_date')
+            $expected = Phase::unscheduledIn($gameVersionId)
                 ->pluck('id')
                 ->sort()
                 ->values()

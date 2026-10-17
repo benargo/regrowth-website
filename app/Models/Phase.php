@@ -76,9 +76,17 @@ class Phase extends Model implements DatasetModel, EditLockable, HasUsage, Sorta
      */
     public function buildSortQuery(): Builder
     {
-        return static::query()
-            ->where('game_version_id', $this->game_version_id)
-            ->whereNull('start_date');
+        return static::query()->unscheduledIn($this->game_version_id);
+    }
+
+    /**
+     * Scope a query to the phases of the given game version (or of no game
+     * version, when null) that have no start date.
+     */
+    #[Scope]
+    protected function unscheduledIn(Builder $query, ?int $gameVersionId): void
+    {
+        $query->where('game_version_id', $gameVersionId)->whereNull('start_date');
     }
 
     /**

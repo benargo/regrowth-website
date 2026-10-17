@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useForm } from "@inertiajs/react";
 import EditLayout from "@/Components/Datasets/EditLayout";
 import EditLockGuard from "@/Components/Datasets/EditLockGuard";
@@ -10,7 +11,8 @@ import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import Master from "@/Layouts/Master";
 
 export default function Edit({ phase: { data: phase }, options, routes, canEdit, editor }) {
-    const form = useForm(phaseFormData(phase));
+    const saved = useMemo(() => phaseFormData(phase), [phase]);
+    const form = useForm(saved);
 
     return (
         <Master title={`Edit ${phase.name}`}>
@@ -29,11 +31,7 @@ export default function Edit({ phase: { data: phase }, options, routes, canEdit,
                 <EditLayout steps={[]} routes={routes}>
                     <EditLockGuard canEdit={canEdit} editor={editor} recordName="phase">
                         <EditLayout.Details>
-                            <PhaseForm
-                                form={form}
-                                options={options}
-                                autosave={{ url: routes.update, saved: phaseFormData(phase) }}
-                            />
+                            <PhaseForm form={form} options={options} autosave={{ url: routes.update, saved }} />
                         </EditLayout.Details>
                         <PhaseRaids raids={phase.raids} />
                     </EditLockGuard>

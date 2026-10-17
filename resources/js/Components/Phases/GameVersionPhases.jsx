@@ -14,8 +14,9 @@ import modelColor from "@/Helpers/ModelColor";
 export default function GameVersionPhases({ group, reorderUrl, onDelete }) {
     const gameVersion = group.game_version?.data ?? null;
     const phases = group.phases.data;
-    const scheduled = useMemo(() => phases.filter((phase) => phase.start_date), [phases]);
+    const scheduled = phases.filter((phase) => phase.start_date);
     const unscheduled = useMemo(() => phases.filter((phase) => !phase.start_date), [phases]);
+    const title = gameVersion?.title ?? "No game version";
     const headingId = `phases-${gameVersion?.id ?? "none"}`;
     const rule = modelColor(gameVersion?.color, ["bg"]);
     const createHref = route("management.phases.create", gameVersion ? { game_version: gameVersion.id } : {});
@@ -25,7 +26,7 @@ export default function GameVersionPhases({ group, reorderUrl, onDelete }) {
             <header className="flex flex-col gap-2">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
                     <h2 id={headingId} className="font-serif text-3xl text-white">
-                        {gameVersion?.title ?? "No game version"}
+                        {title}
                     </h2>
                     <Link href={createHref} className={`text-sm text-gray-300 underline hover:text-white ${focusRing}`}>
                         Add a phase<span className="sr-only"> to {gameVersion?.title ?? "no game version"}</span>
@@ -54,7 +55,7 @@ export default function GameVersionPhases({ group, reorderUrl, onDelete }) {
 
             {scheduled.length > 0 && (
                 <ol
-                    aria-label={`${gameVersion?.title ?? "Unlinked"} phases by start date`}
+                    aria-label={`${title} phases by start date`}
                     className="flex flex-col gap-6 border-l-2 border-amber-600/60 pl-6"
                 >
                     {scheduled.map((phase) => (

@@ -4,6 +4,13 @@ import { moveByKey } from "@/Components/Datasets/SortableList";
 import useAutosave, { autosaveVisit } from "@/Hooks/useAutosave";
 
 /**
+ * Whether two key lists hold the same keys in the same order.
+ */
+function isSameOrder(keys, otherKeys) {
+    return keys.length === otherKeys.length && keys.every((itemKey, index) => itemKey === otherKeys[index]);
+}
+
+/**
  * A list's order that changes as soon as an item is dropped and saves straight
  * away: `field` holds the item keys in their new order, sent with `data` to
  * `url` as an autosave PATCH. New props become the saved order; the shown
@@ -25,7 +32,7 @@ export default function useOrderAutosave({ items, getKey, url, field, data = {},
     useEffect(() => {
         const serverKeys = items.map(getKey);
         const localKeys = latest.current.map(getKey);
-        const isSameSet = JSON.stringify([...serverKeys].sort()) === JSON.stringify([...localKeys].sort());
+        const isSameSet = isSameOrder([...serverKeys].sort(), [...localKeys].sort());
         saved.current = serverKeys;
 
         if (hasUnsentMove.current && isSameSet) {
@@ -56,7 +63,7 @@ export default function useOrderAutosave({ items, getKey, url, field, data = {},
 
         if (result.ok) {
             saved.current = sent;
-            hasUnsentMove.current = JSON.stringify(latest.current.map(getKey)) !== JSON.stringify(sent);
+            hasUnsentMove.current = !isSameOrder(latest.current.map(getKey), sent);
         }
 
         return result;
@@ -65,7 +72,7 @@ export default function useOrderAutosave({ items, getKey, url, field, data = {},
     const { schedule } = useAutosave({
         key,
         delay: 0,
-        isDirty: () => JSON.stringify(latest.current.map(getKey)) !== JSON.stringify(saved.current),
+        isDirty: () => !isSameOrder(latest.current.map(getKey), saved.current),
         save,
     });
 

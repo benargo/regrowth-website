@@ -21,7 +21,7 @@ function pickBannerRaid(raids) {
 /**
  * A phase's card on the Index page, under a banner of one of its raids.
  */
-export default function PhaseCard({ phase, dragHandle = null, onDelete, headingLevel = 3 }) {
+export default function PhaseCard({ phase, dragHandle = null, onDelete }) {
     const raids = Object.values(phase.raids ?? {});
     const [bannerRaid] = useState(() => pickBannerRaid(raids));
 
@@ -33,7 +33,7 @@ export default function PhaseCard({ phase, dragHandle = null, onDelete, headingL
             headerClassName={bannerRaid ? (bannerRaid.background ?? "") : "bg-officer-meeting"}
             badge={phase.is_current ? "Current phase" : null}
             handle={dragHandle}
-            headingLevel={headingLevel}
+            headingLevel={3}
             hasBanner
             details={[
                 ["Starts", <PhaseStartDate startDate={phase.start_date} />],
