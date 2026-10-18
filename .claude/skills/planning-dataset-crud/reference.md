@@ -66,3 +66,11 @@ When a plan extracts one of these, the same task updates this file.
 - Bespoke endpoints and deferred props with side effects (external API calls, upserts, broadcasts), which can't simply become an autosaved field.
 - Code that matches records by id or name (external syncs, e.g. Raid-Helper's `SyncEvent`), which constrains renames and id changes.
 - Parent and child datasets, and whether they are managed already.
+
+## Raid: follow-ups already decided
+
+`Raid` has a single-file `banner` media collection (webp `header` conversion), read through `banner_url` and `banner_position` on `RaidResource` and `EventResource`. The Raid CRUD adds:
+
+- A banner upload/remove field that mirrors `UpdateGameVersion`'s media handling and `ThemeSection.jsx`.
+- `Raid::acceptedMimeTypes()` (copy `GameVersion`'s), with the `media.accepts` map exposed on `RaidResource::with()` as `GameVersionResource` does.
+- A banner **position** control that writes the `position` custom property on the banner media (`center`, `center bottom`, `center top`). The read path (`bannerPosition` → `banner_position` → `modelBackground`) already exists. Set Serpentshrine Cavern and Tempest Keep to `center bottom` there if their banners aren't re-cropped.

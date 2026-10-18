@@ -14,6 +14,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Listeners/** | .ai/rules/listeners.md |
 | database/migrations/** | .ai/rules/migrations.md |
 | app/Models/GuildRank.php, app/Models/*.php | .ai/rules/models.md |
+| docs/superpowers/plans/** | .ai/rules/plans.md |
 | app/Http/Resources/** | .ai/rules/resources.md |
 | app/Services/**/*Data.php, app/Services/** | .ai/rules/services.md |
 | tests/** | .ai/rules/testing-groups.md |
