@@ -39,6 +39,11 @@ trait HasScopes
     private static array $definedScopeMappings = [];
 
     /**
+     * @var array<class-string, array<string, array<string, true|array<string, mixed>>>>
+     */
+    private static array $fieldTrees = [];
+
+    /**
      * @var array<class-string, string>
      */
     private static array $requestScopes = [];
@@ -161,7 +166,7 @@ trait HasScopes
             $expanded[$key] = $value;
         }
 
-        $fieldTree = static::fieldTree(static::definedScopes()[$scope]);
+        $fieldTree = self::$fieldTrees[static::class][$scope] ??= static::fieldTree(static::definedScopes()[$scope]);
         $scopedData = array_intersect_key($expanded, $fieldTree);
 
         foreach ($scopedData as $key => $value) {

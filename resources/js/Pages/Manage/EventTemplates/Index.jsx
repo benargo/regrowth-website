@@ -50,7 +50,7 @@ function TemplateCard({ template, onDeleteClick }) {
     );
 }
 
-export default function Index({ templates, raidGroups }) {
+export default function Index({ raidGroups }) {
     const [templateToDelete, setTemplateToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
 

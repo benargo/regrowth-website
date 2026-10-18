@@ -12,15 +12,16 @@ use Lorisleiva\Actions\Concerns\AsAction;
 
 /**
  * Builds one group per raid in the given templates, in the order each raid
- * first appears, holding every template that raid belongs to scoped to
- * `template`. A multi-raid template appears under each of its raids.
+ * first appears, holding the raid scoped to `summary` and every template that
+ * raid belongs to scoped to `template`. A multi-raid template appears under
+ * each of its raids.
  */
 class BuildTemplateGroups
 {
     use AsAction;
 
     /**
-     * @param  Collection<int, Event>  $templates  Templates with `raids.media` loaded.
+     * @param  Collection<int, Event>  $templates  Templates with `raids` loaded.
      * @return list<array{raid: RaidResource, templates: ScopedResourceCollection}>
      */
     public function handle(Collection $templates): array
@@ -29,8 +30,8 @@ class BuildTemplateGroups
             ->flatMap(fn (Event $template) => $template->raids->map(fn (Raid $raid): array => ['raid' => $raid, 'template' => $template]))
             ->groupBy(fn (array $pair): int => $pair['raid']->id)
             ->map(fn ($pairs): array => [
-                'raid' => $pairs->first()['raid']->toResource(),
-                'templates' => EventResource::collection($pairs->pluck('template')->values())->scope('template'),
+                'raid' => $pairs->first()['raid']->toResource()->scope('summary'),
+                'templates' => EventResource::collection($pairs->pluck('template'))->scope('template'),
             ])
             ->values()
             ->all();

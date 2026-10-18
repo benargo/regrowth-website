@@ -64,8 +64,7 @@ class EventResource extends JsonResource implements ScopedResource
             'duration' => $this->start_time && $this->end_time ? $this->duration : null,
             'updated_at' => $this->updated_at?->toIso8601String(),
             'color' => $this->color,
-            'banner_url' => $this->whenLoaded('raids', fn (): ?string => $this->bannerRaid()?->banner_url),
-            'banner_position' => $this->whenLoaded('raids', fn (): ?string => $this->bannerRaid()?->banner_position),
+            $this->mergeWhen($this->hasRaidMediaLoaded(), fn (): array => $this->banner()),
             'assignments' => $this->whenLoaded('assignments', fn (): array => (new EventAssignmentsCollection(
                 $this->assignments->whereNull('boss_id')->values()
             ))->resolve($request)),
@@ -177,11 +176,25 @@ class EventResource extends JsonResource implements ScopedResource
     }
 
     /**
-     * The first of the event's raids, in pivot order, that has a banner.
+     * Whether the event's raids and each raid's media are loaded.
      */
-    private function bannerRaid(): ?Raid
+    private function hasRaidMediaLoaded(): bool
     {
-        return $this->raids->first(fn (Raid $raid): bool => $raid->banner_url !== null);
+        return $this->relationLoaded('raids')
+            && $this->raids->every(fn (Raid $raid): bool => $raid->relationLoaded('media'));
+    }
+
+    /**
+     * The banner URL and position of the first of the event's raids, in pivot
+     * order, that has a banner.
+     *
+     * @return array{banner_url: ?string, banner_position: ?string}
+     */
+    private function banner(): array
+    {
+        $raid = $this->raids->first(fn (Raid $raid): bool => $raid->banner_url !== null);
+
+        return ['banner_url' => $raid?->banner_url, 'banner_position' => $raid?->banner_position];
     }
 
     /**

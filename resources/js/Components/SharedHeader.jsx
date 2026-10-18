@@ -14,12 +14,11 @@ export default function SharedHeader({
     image,
     imagePosition,
 }) {
-    const { className, style } = modelBackground(color, image, imagePosition);
-    const background = image || color ? className : backgroundClass;
+    const { className, style } = modelBackground(color, image, imagePosition, backgroundClass);
 
     return (
         <header
-            className={`${background} h-64 bg-cover bg-center text-white [mask-image:linear-gradient(to_bottom,#000_90%,transparent)] md:h-128`}
+            className={`${className} h-64 bg-cover bg-center text-white [mask-image:linear-gradient(to_bottom,#000_90%,transparent)] md:h-128`}
             style={style}
         >
             <div className="flex h-full w-full items-center bg-black/50 px-4 pt-20.5 pb-8 lg:pt-21.5">

@@ -22,8 +22,7 @@ export default function ImageCard({
     className = "",
 }) {
     const Element = href ? Link : "button";
-    const background = modelBackground(color, image, imagePosition);
-    const backgroundClassName = image || color ? background.className : backgroundClass;
+    const background = modelBackground(color, image, imagePosition, backgroundClass);
 
     return (
         <Element
@@ -37,7 +36,7 @@ export default function ImageCard({
             style={color ? { "--card-color": `#${color}` } : undefined}
         >
             <div
-                className={`${backgroundClassName} relative aspect-video w-full bg-cover bg-center`}
+                className={`${background.className} relative aspect-video w-full bg-cover bg-center`}
                 style={background.style}
             >
                 <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-transparent" />

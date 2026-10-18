@@ -37,7 +37,7 @@ class SearchController extends Controller
 
                 $items = (clone $matches)
                     ->orderBy('name')
-                    ->with(['raids.media', 'boss', 'media'])
+                    ->with(['raids', 'boss', 'media'])
                     ->withCount('comments')
                     ->take(self::LIMIT)
                     ->get();

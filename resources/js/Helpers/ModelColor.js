@@ -46,22 +46,17 @@ export default function modelColor(color, utilities = ["bg"]) {
  * its colour, so the colour fills in while the image loads or when there is
  * none. Spread both onto the element alongside `bg-cover bg-center`. A CSS
  * `position`, such as "center bottom", overrides `bg-center` for the image.
+ * The className is `fallbackClass` when there is neither image nor colour.
  *
- *     const { className, style } = modelBackground(raid.color, raid.banner_url, raid.banner_position);
+ *     const { className, style } = modelBackground(raid.color, raid.banner_url, raid.banner_position, "bg-masthead");
  */
-export function modelBackground(color, image, position = null) {
+export function modelBackground(color, image, position = null, fallbackClass = "") {
     const tint = modelColor(color);
 
-    if (!image) {
-        return { className: tint.className, style: tint.style };
-    }
-
     return {
-        className: tint.className,
-        style: {
-            ...tint.style,
-            backgroundImage: `url("${image}")`,
-            ...(position ? { backgroundPosition: position } : {}),
-        },
+        className: image || color ? tint.className : fallbackClass,
+        style: image
+            ? { ...tint.style, backgroundImage: `url("${image}")`, ...(position && { backgroundPosition: position }) }
+            : tint.style,
     };
 }

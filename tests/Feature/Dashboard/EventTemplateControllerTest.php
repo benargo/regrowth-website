@@ -64,7 +64,7 @@ class EventTemplateControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_templates_and_raid_groups_on_index(): void
+    public function it_returns_raid_groups_on_index(): void
     {
         $raid = Raid::factory()->create();
         $template = Event::factory()->template()->create(['title' => 'SSC Setup']);
@@ -73,11 +73,11 @@ class EventTemplateControllerTest extends TestCase
         $response = $this->actingAs($this->officer)->get(route('management.event-templates.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('templates.data', 1)
-            ->where('templates.data.0.title', 'SSC Setup')
+            ->missing('templates')
             ->has('raidGroups', 1)
-            ->where('raidGroups.0.raid.data.id', $raid->id)
+            ->where('raidGroups.0.raid.data', ['id' => $raid->id, 'name' => $raid->name])
             ->has('raidGroups.0.templates.data', 1)
+            ->where('raidGroups.0.templates.data.0.title', 'SSC Setup')
         );
     }
 
@@ -90,7 +90,6 @@ class EventTemplateControllerTest extends TestCase
         $response = $this->actingAs($this->officer)->get(route('management.event-templates.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('templates.data.0', fn (Assert $item) => $item->hasAll(['id', 'title', 'updated_at', 'raids']))
             ->has('raidGroups.0.templates.data.0', fn (Assert $item) => $item->hasAll(['id', 'title', 'updated_at', 'raids']))
         );
     }

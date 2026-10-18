@@ -49,6 +49,7 @@ class RaidSeeder extends Seeder
                 'name' => 'Serpentshrine Cavern',
                 'difficulty' => 'Normal',
                 'banner' => 'bg_serpentshrinecavern.webp',
+                'banner_position' => 'center bottom',
                 'color' => 0x226E73, // 34, 110, 115
                 'phase_id' => 2,
                 'max_players' => 25,
@@ -59,6 +60,7 @@ class RaidSeeder extends Seeder
                 'name' => 'Tempest Keep: The Eye',
                 'difficulty' => 'Normal',
                 'banner' => 'bg_tempestkeep.webp',
+                'banner_position' => 'center bottom',
                 'color' => 0xAE47EB, // 174, 71, 235
                 'phase_id' => 2,
                 'max_players' => 25,
@@ -109,12 +111,13 @@ class RaidSeeder extends Seeder
         foreach ($raids as $row) {
             $raid = Raid::updateOrCreate(
                 ['id' => $row['id']],
-                Arr::except($row, 'banner'),
+                Arr::except($row, ['banner', 'banner_position']),
             );
 
             if (! $raid->hasMedia(Raid::MEDIA_BANNER)) {
                 $raid->addMedia(resource_path("images/{$row['banner']}"))
                     ->preservingOriginal()
+                    ->withCustomProperties(isset($row['banner_position']) ? ['position' => $row['banner_position']] : [])
                     ->toMediaCollection(Raid::MEDIA_BANNER);
             }
         }

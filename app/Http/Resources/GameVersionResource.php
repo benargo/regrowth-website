@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Attributes\Http\Resources\ScopeDefinition;
 use App\Contracts\Http\Resources\ScopedResource;
 use App\Http\Resources\Concerns\HasScopes;
 use App\Models\GameVersion;
@@ -76,21 +75,12 @@ class GameVersionResource extends JsonResource implements ScopedResource
      */
     protected function scopeDefinitions(): array
     {
-        return ['management' => $this->management()];
-    }
-
-    /**
-     * Every field, for the Officers' game version management pages.
-     *
-     * @return list<string>
-     */
-    #[ScopeDefinition]
-    protected function management(): array
-    {
         return [
-            'id', 'title', 'slug', 'color', 'banner_url', 'icon_url', 'logo_url',
-            'realm', 'guild_name', 'uses_surnames', 'faction', 'release_date', 'blizzard', 'warcraftlogs',
-            'phases_count', 'items_count', 'characters_count', 'guild_ranks_count', 'links',
+            'management' => [
+                'id', 'title', 'slug', 'color', 'banner_url', 'icon_url', 'logo_url',
+                'realm', 'guild_name', 'uses_surnames', 'faction', 'release_date', 'blizzard', 'warcraftlogs',
+                'phases_count', 'items_count', 'characters_count', 'guild_ranks_count', 'links',
+            ],
         ];
     }
 

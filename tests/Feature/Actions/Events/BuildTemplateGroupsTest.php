@@ -106,7 +106,7 @@ class BuildTemplateGroupsTest extends TestCase
     private function buildGroups(): array
     {
         $request = new Request;
-        $templates = Event::templates()->with('raids.media')->orderBy('title')->get();
+        $templates = Event::templates()->with('raids')->orderBy('title')->get();
 
         return array_map(fn (array $group): array => [
             'raid' => $group['raid']->resolve($request),

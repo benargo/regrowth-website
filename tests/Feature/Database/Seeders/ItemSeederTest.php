@@ -37,11 +37,11 @@ class ItemSeederTest extends TestCase
     {
         parent::setUp();
 
+        Storage::fake('public');
+
         $this->seed([PhaseSeeder::class, RaidSeeder::class, BossSeeder::class]);
 
         $this->gameVersion = GameVersion::factory()->create();
-
-        Storage::fake('public');
     }
 
     /**

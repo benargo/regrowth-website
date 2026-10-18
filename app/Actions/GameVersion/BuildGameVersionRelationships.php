@@ -28,7 +28,7 @@ class BuildGameVersionRelationships
      */
     public function handle(GameVersion $gameVersion): array
     {
-        $phases = Phase::with(['gameVersion', 'raids' => fn ($query) => $query->orderBy('name'), 'raids.media'])
+        $phases = Phase::with(['gameVersion', 'raids' => fn ($query) => $query->orderBy('name')])
             ->inReleaseOrder()
             ->get();
         $ownPhases = $phases->where('game_version_id', $gameVersion->id);

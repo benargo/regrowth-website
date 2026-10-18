@@ -20,7 +20,7 @@ class BossStrategyController extends Controller
      */
     public function index(Request $request)
     {
-        $phases = Phase::with(['raids.media'])->inReleaseOrder()->get();
+        $phases = Phase::with('raids')->inReleaseOrder()->get();
 
         $route = $request->route()->getName();
 

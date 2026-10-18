@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Attributes\Http\Resources\ScopeDefinition;
 use App\Contracts\Http\Resources\ScopedResource;
 use App\Http\Resources\Concerns\HasScopes;
 use Illuminate\Http\Request;
@@ -73,20 +72,11 @@ class PhaseResource extends JsonResource implements ScopedResource
      */
     protected function scopeDefinitions(): array
     {
-        return ['management' => $this->management()];
-    }
-
-    /**
-     * Every field, for the Officers' phase management pages.
-     *
-     * @return list<string>
-     */
-    #[ScopeDefinition]
-    protected function management(): array
-    {
         return [
-            'id', 'number', 'name', 'description', 'start_date', 'has_started', 'is_current',
-            'game_version', 'raids', 'raids_count', 'reports_count', 'links',
+            'management' => [
+                'id', 'number', 'name', 'description', 'start_date', 'has_started', 'is_current',
+                'game_version', 'raids', 'raids_count', 'reports_count', 'links',
+            ],
         ];
     }
 }

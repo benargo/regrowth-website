@@ -36,10 +36,9 @@ class EventTemplateController extends Controller implements HasBlizzardIcons
     #[Authorize('viewTemplates', Event::class)]
     public function index(): Response
     {
-        $templates = Event::templates()->with('raids.media')->orderBy('title')->get();
+        $templates = Event::templates()->with('raids')->orderBy('title')->get();
 
         return Inertia::render('Manage/EventTemplates/Index', [
-            'templates' => EventResource::collection($templates)->scope('template'),
             'raidGroups' => BuildTemplateGroups::run($templates),
         ]);
     }
@@ -89,7 +88,7 @@ class EventTemplateController extends Controller implements HasBlizzardIcons
 
         return Inertia::render('Manage/EventTemplates/Edit', [
             'template' => (new EventResource($template))->resolve($request),
-            'raids' => RaidResource::collection(Raid::with('media')->orderBy('id')->get())->resolve($request),
+            'raids' => RaidResource::collection(Raid::orderBy('id')->get())->resolve($request),
             'targetMarkers' => TargetMarker::all()->map(fn (TargetMarker $m) => ['slug' => $m->slug, 'name' => $m->name])->values(),
             'characters' => Inertia::optional(function () use ($request) {
                 return Character::with('rank', 'playableClass')

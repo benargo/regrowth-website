@@ -181,6 +181,18 @@ class EventResourceTest extends TestCase
     }
 
     #[Test]
+    public function banner_is_missing_when_raid_media_is_not_loaded(): void
+    {
+        $event = Event::factory()->create();
+        $event->raids()->attach(Raid::factory()->create());
+
+        $array = (new EventResource($event->load('raids')))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('banner_url', $array);
+        $this->assertArrayNotHasKey('banner_position', $array);
+    }
+
+    #[Test]
     #[TestWith(['members'])]
     #[TestWith(['visitors'])]
     public function banner_is_not_in_the_members_or_visitors_scope(string $scope): void
