@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Attributes\Http\Resources\ScopeDefinition;
 use App\Contracts\Http\Resources\ScopedResource;
 use App\Http\Resources\Concerns\HasScopes;
 use Illuminate\Http\Request;
@@ -36,17 +35,6 @@ class PlayableClassResource extends JsonResource implements ScopedResource
      */
     protected function scopeDefinitions(): array
     {
-        return ['attendance' => $this->attendance()];
-    }
-
-    /**
-     * Id, name and icon URL.
-     *
-     * @return list<string>
-     */
-    #[ScopeDefinition]
-    protected function attendance(): array
-    {
-        return ['id', 'name', 'icon_url'];
+        return ['attendance' => ['id', 'name', 'icon_url']];
     }
 }

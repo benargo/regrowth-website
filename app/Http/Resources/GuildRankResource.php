@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Attributes\Http\Resources\ScopeDefinition;
 use App\Contracts\Http\Resources\ScopedResource;
 use App\Http\Resources\Concerns\HasScopes;
 use App\Models\GuildRank;
@@ -46,17 +45,6 @@ class GuildRankResource extends JsonResource implements ScopedResource
      */
     protected function scopeDefinitions(): array
     {
-        return ['attendance' => $this->attendance()];
-    }
-
-    /**
-     * Name and slug.
-     *
-     * @return list<string>
-     */
-    #[ScopeDefinition]
-    protected function attendance(): array
-    {
-        return ['name', 'slug'];
+        return ['attendance' => ['name', 'slug']];
     }
 }

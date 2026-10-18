@@ -3,21 +3,24 @@
 namespace App\Http\Resources\Concerns;
 
 use App\Attributes\Http\Resources\ResourceScope;
-use App\Attributes\Http\Resources\ScopeDefinition;
 use App\Contracts\Http\Resources\ScopedResource;
 use App\Http\Resources\ScopedResourceCollection;
+use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Resources\MergeValue;
+use Illuminate\Http\Resources\MissingValue;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use ReflectionAttribute;
 use ReflectionClass;
-use ReflectionMethod;
 
 /**
  * Lets a resource limit its output to a named scope's fields.
  *
  * Scopes come from `scopeDefinitions()` or, when that is empty,
- * `#[ResourceScope]` class attributes. Definitions are read once per class
+ * `#[ResourceScope]` class attributes. Each scope is a list of field keys;
+ * a dot-notation key such as `bosses.name` keeps only that field of a
+ * nested resource, collection or array. Definitions are read once per class
  * without calling the constructor, so they must not depend on the wrapped
  * resource.
  */
@@ -158,15 +161,93 @@ trait HasScopes
             $expanded[$key] = $value;
         }
 
-        $scopedData = array_intersect_key($expanded, array_flip(static::definedScopes()[$scope]));
+        $fieldTree = static::fieldTree(static::definedScopes()[$scope]);
+        $scopedData = array_intersect_key($expanded, $fieldTree);
 
-        foreach ($scopedData as $value) {
+        foreach ($scopedData as $key => $value) {
             if ($value instanceof ScopedResource) {
                 $this->applyScopeMapping($value, $scope);
+            }
+
+            if (is_array($fieldTree[$key])) {
+                $scopedData[$key] = static::onlyFields($value, $fieldTree[$key]);
             }
         }
 
         return $scopedData;
+    }
+
+    /**
+     * Turn a list of dot-notation fields into a tree keyed by field name. A
+     * field listed without nested fields keeps everything beneath it.
+     *
+     * @param  list<string>  $fields
+     * @return array<string, true|array<string, mixed>>
+     */
+    private static function fieldTree(array $fields): array
+    {
+        $nestedFields = [];
+
+        foreach ($fields as $field) {
+            [$key, $rest] = array_pad(explode('.', $field, 2), 2, null);
+
+            if ($rest === null) {
+                $nestedFields[$key] = true;
+
+                continue;
+            }
+
+            if (($nestedFields[$key] ?? null) !== true) {
+                $nestedFields[$key][] = $rest;
+            }
+        }
+
+        return array_map(
+            fn (true|array $nested): true|array => $nested === true ? true : static::fieldTree($nested),
+            $nestedFields,
+        );
+    }
+
+    /**
+     * Keep only the fields of the given tree in a nested value, resolving a
+     * nested resource and applying the tree to each item of a list or
+     * collection. Missing and scalar values are returned unchanged.
+     *
+     * @param  array<string, true|array<string, mixed>>  $fieldTree
+     */
+    private static function onlyFields(mixed $value, array $fieldTree): mixed
+    {
+        if ($value instanceof ResourceCollection) {
+            return $value->collection
+                ->map(fn (mixed $item): mixed => static::onlyFields($item, $fieldTree))
+                ->all();
+        }
+
+        if ($value instanceof JsonResource) {
+            if ($value->resource instanceof MissingValue) {
+                return $value;
+            }
+
+            $value = $value->resource === null ? null : $value->resolve();
+        }
+
+        if (! is_array($value)) {
+            return $value;
+        }
+
+        if (array_is_list($value)) {
+            return array_map(fn (mixed $item): mixed => static::onlyFields($item, $fieldTree), $value);
+        }
+
+        $filtered = array_intersect_key($value, $fieldTree);
+
+        foreach ($filtered as $key => $nestedValue) {
+            if (is_array($fieldTree[$key])) {
+                $filtered[$key] = static::onlyFields($nestedValue, $fieldTree[$key]);
+            }
+        }
+
+        return $filtered;
     }
 
     /**
@@ -225,8 +306,8 @@ trait HasScopes
     }
 
     /**
-     * Read the scopes, dropping `scopeDefinitions()` entries without a
-     * `#[ScopeDefinition]` method.
+     * Read the scopes from `scopeDefinitions()`, or from `#[ResourceScope]`
+     * attributes when it is empty.
      *
      * @return array<string, list<string>>
      */
@@ -235,27 +316,12 @@ trait HasScopes
         $class = new ReflectionClass(static::class);
         $definitions = $class->newInstanceWithoutConstructor()->scopeDefinitions();
 
-        if ($definitions === []) {
-            return static::resourceScopeAttributes($class)
-                ->mapWithKeys(fn (ResourceScope $scope): array => [$scope->name => $scope->fields])
-                ->all();
+        if ($definitions !== []) {
+            return $definitions;
         }
 
-        $backedKeys = collect($class->getMethods())
-            ->flatMap(fn (ReflectionMethod $method) => collect($method->getAttributes(ScopeDefinition::class))
-                ->map(fn (ReflectionAttribute $attribute): string => $attribute->newInstance()->key ?? $method->getName()))
-            ->flip();
-
-        return collect($definitions)
-            ->filter(function (array $fields, string $key) use ($backedKeys): bool {
-                if ($backedKeys->has($key)) {
-                    return true;
-                }
-
-                Log::error("Scope [{$key}] on [".static::class.'] is not backed by a #[ScopeDefinition] method.');
-
-                return false;
-            })
+        return static::resourceScopeAttributes($class)
+            ->mapWithKeys(fn (ResourceScope $scope): array => [$scope->name => $scope->fields])
             ->all();
     }
 

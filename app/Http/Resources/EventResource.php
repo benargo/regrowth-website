@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Attributes\Http\Resources\ScopeDefinition;
 use App\Contracts\Http\Resources\ScopedResource;
 use App\Enums\SignupStatus;
 use App\Http\Resources\Concerns\HasScopes;
@@ -79,29 +78,10 @@ class EventResource extends JsonResource implements ScopedResource
      */
     protected function scopeDefinitions(): array
     {
-        return ['members' => $this->members(), 'visitors' => $this->visitors()];
-    }
-
-    /**
-     * Id, title, start and end times, duration, raids and the Discord channel.
-     *
-     * @return list<string>
-     */
-    #[ScopeDefinition]
-    protected function members(): array
-    {
-        return ['id', 'title', 'start_time', 'end_time', 'duration', 'raids', 'channel'];
-    }
-
-    /**
-     * Id, title, start and end times, and raids.
-     *
-     * @return list<string>
-     */
-    #[ScopeDefinition]
-    protected function visitors(): array
-    {
-        return ['id', 'title', 'start_time', 'end_time', 'raids'];
+        return [
+            'members' => ['id', 'title', 'start_time', 'end_time', 'duration', 'raids', 'channel'],
+            'visitors' => ['id', 'title', 'start_time', 'end_time', 'raids'],
+        ];
     }
 
     /** @return array{groups: array<int, array<string, mixed>>, bench: array<int, array<string, mixed>>} */

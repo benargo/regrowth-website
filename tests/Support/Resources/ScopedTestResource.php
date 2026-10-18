@@ -2,7 +2,6 @@
 
 namespace Tests\Support\Resources;
 
-use App\Attributes\Http\Resources\ScopeDefinition;
 use App\Contracts\Http\Resources\ScopedResource;
 use App\Http\Resources\Concerns\HasScopes;
 use Illuminate\Http\Request;
@@ -42,7 +41,6 @@ class ScopedTestResource extends JsonResource implements ScopedResource
     /**
      * @return list<string>
      */
-    #[ScopeDefinition]
     protected function summary(): array
     {
         return ['id', 'name'];
@@ -51,7 +49,6 @@ class ScopedTestResource extends JsonResource implements ScopedResource
     /**
      * @return list<string>
      */
-    #[ScopeDefinition('detail')]
     protected function detailed(): array
     {
         return ['id', 'name', 'secret', 'extra', 'merged'];

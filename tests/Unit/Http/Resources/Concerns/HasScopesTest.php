@@ -3,7 +3,6 @@
 namespace Tests\Unit\Http\Resources\Concerns;
 
 use App\Attributes\Http\Resources\ResourceScope;
-use App\Attributes\Http\Resources\ScopeDefinition;
 use App\Contracts\Http\Resources\ScopedResource;
 use App\Http\Resources\Concerns\HasScopes;
 use Illuminate\Http\Request;
@@ -11,11 +10,14 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Support\Resources\ScopedTestResource;
 use Tests\TestCase;
 
 #[Group('platform')]
 class HasScopesTest extends TestCase
 {
+    // ==================== field scopes ====================
+
     #[Test]
     public function it_lists_scopes_from_scope_definitions(): void
     {
@@ -44,7 +46,7 @@ class HasScopesTest extends TestCase
     }
 
     #[Test]
-    public function it_uses_the_attribute_key_and_keeps_merged_and_conditional_filtering(): void
+    public function it_keeps_merged_and_conditionally_filtered_fields(): void
     {
         $this->assertSame(
             ['id' => 1, 'name' => 'Thrall', 'secret' => 's', 'merged' => 'm'],
@@ -73,16 +75,68 @@ class HasScopesTest extends TestCase
         Log::shouldHaveReceived('error')->once()->with('Scope [typo] is not defined on ['.$resource::class.'].');
     }
 
+    // ==================== definitions ====================
+
     #[Test]
-    #[Group('error-handling')]
-    public function it_logs_and_drops_a_definition_without_a_scope_definition_method(): void
+    public function it_accepts_a_plain_array_definition(): void
     {
         Log::spy();
-        $resource = $this->makeOrphanResource();
+        $resource = $this->makePlainArrayResource();
 
-        $this->assertSame([], $resource->scopes());
-        Log::shouldHaveReceived('error')->once()->with('Scope [orphan] on ['.$resource::class.'] is not backed by a #[ScopeDefinition] method.');
+        $array = $resource->scope('listing')->resolve(new Request);
+
+        $this->assertSame(['listing' => ['id']], $resource->scopes());
+        $this->assertSame(['id' => 1], $array);
+        Log::shouldNotHaveReceived('error');
     }
+
+    // ==================== dot notation ====================
+
+    #[Test]
+    public function dotted_fields_keep_only_those_fields_of_a_nested_resource_and_collection(): void
+    {
+        $resource = $this->makeDottedResource();
+
+        $array = $resource->scope('nested')->resolve(new Request);
+
+        $this->assertSame(['id' => 1, 'child' => ['name' => 'Jaina'], 'children' => [['id' => 3], ['id' => 4]]], $array);
+    }
+
+    #[Test]
+    public function dotted_fields_keep_only_those_fields_of_nested_arrays_at_any_depth(): void
+    {
+        $resource = $this->makeDottedResource();
+
+        $array = $resource->scope('arrays')->resolve(new Request);
+
+        $this->assertSame([
+            'resolved' => ['name' => 'Jaina'],
+            'nested' => ['raid' => ['boss' => ['name' => 'Illidan']]],
+            'list' => [['id' => 5], ['id' => 6]],
+        ], $array);
+    }
+
+    #[Test]
+    public function a_field_listed_with_and_without_a_dot_keeps_every_nested_field(): void
+    {
+        $resource = $this->makeDottedResource();
+
+        $array = json_decode(json_encode($resource->scope('overlap')->resolve(new Request)), true);
+
+        $this->assertSame(['child' => ['id' => 2, 'name' => 'Jaina', 'secret' => 's', 'merged' => 'm']], $array);
+    }
+
+    #[Test]
+    public function dotted_fields_of_a_missing_value_leave_the_field_out(): void
+    {
+        $resource = $this->makeDottedResource();
+
+        $array = $resource->scope('missing')->resolve(new Request);
+
+        $this->assertSame(['id' => 1], $array);
+    }
+
+    // ==================== attributes and caching ====================
 
     #[Test]
     public function it_reads_resource_scope_attributes_when_scope_definitions_is_empty(): void
@@ -141,7 +195,6 @@ class HasScopesTest extends TestCase
             /**
              * @return list<string>
              */
-            #[ScopeDefinition]
             protected function summary(): array
             {
                 return ['id', 'name'];
@@ -150,7 +203,6 @@ class HasScopesTest extends TestCase
             /**
              * @return list<string>
              */
-            #[ScopeDefinition('detail')]
             protected function detailed(): array
             {
                 return ['id', 'name', 'secret', 'extra', 'merged'];
@@ -158,18 +210,70 @@ class HasScopesTest extends TestCase
         };
     }
 
-    private function makeOrphanResource(): JsonResource&ScopedResource
+    private function makePlainArrayResource(): JsonResource&ScopedResource
     {
-        return new class(['id' => 1]) extends JsonResource implements ScopedResource
+        return new class(['id' => 1, 'name' => 'Thrall']) extends JsonResource implements ScopedResource
         {
             use HasScopes;
+
+            /**
+             * @return array<string, mixed>
+             */
+            public function toArray(Request $request): array
+            {
+                return $this->scoped(['id' => $this->resource['id'], 'name' => $this->resource['name']]);
+            }
 
             /**
              * @return array<string, list<string>>
              */
             protected function scopeDefinitions(): array
             {
-                return ['orphan' => ['id']];
+                return ['listing' => ['id']];
+            }
+        };
+    }
+
+    /**
+     * A resource with a nested resource, collection, arrays and a missing
+     * value, and scopes of dotted fields.
+     */
+    private function makeDottedResource(): JsonResource&ScopedResource
+    {
+        return new class([]) extends JsonResource implements ScopedResource
+        {
+            use HasScopes;
+
+            /**
+             * @return array<string, mixed>
+             */
+            public function toArray(Request $request): array
+            {
+                return $this->scoped([
+                    'id' => 1,
+                    'child' => new ScopedTestResource(['id' => 2, 'name' => 'Jaina', 'secret' => 's']),
+                    'children' => ScopedTestResource::collection([
+                        ['id' => 3, 'name' => 'Sylvanas', 'secret' => 's'],
+                        ['id' => 4, 'name' => 'Anduin', 'secret' => 's'],
+                    ]),
+                    'resolved' => (new ScopedTestResource(['id' => 2, 'name' => 'Jaina', 'secret' => 's']))->resolve($request),
+                    'nested' => ['raid' => ['id' => 7, 'boss' => ['id' => 8, 'name' => 'Illidan']]],
+                    'list' => [['id' => 5, 'name' => 'Varian'], ['id' => 6, 'name' => 'Tyrande']],
+                    'missing' => $this->when(false, ['name' => 'x']),
+                ]);
+            }
+
+            /**
+             * @return array<string, list<string>>
+             */
+            protected function scopeDefinitions(): array
+            {
+                return [
+                    'nested' => ['id', 'child.name', 'children.id'],
+                    'arrays' => ['resolved.name', 'nested.raid.boss.name', 'list.id'],
+                    'overlap' => ['child.name', 'child'],
+                    'missing' => ['id', 'missing.name'],
+                ];
             }
         };
     }
@@ -207,7 +311,6 @@ class HasScopesTest extends TestCase
             /**
              * @return list<string>
              */
-            #[ScopeDefinition]
             protected function summary(): array
             {
                 return ['id', 'name'];

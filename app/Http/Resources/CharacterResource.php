@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Attributes\Http\Resources\ScopeDefinition;
 use App\Contracts\HasCharacterMedia;
 use App\Contracts\Http\Resources\ScopedResource;
 use App\Http\Resources\Concerns\HasScopes;
@@ -63,7 +62,7 @@ class CharacterResource extends JsonResource implements ScopedResource
      */
     protected function scopeDefinitions(): array
     {
-        return ['attendance' => $this->attendance()];
+        return ['attendance' => ['id', 'name', 'playable_class', 'rank']];
     }
 
     /**
@@ -72,16 +71,5 @@ class CharacterResource extends JsonResource implements ScopedResource
     protected function scopeMappings(): array
     {
         return ['attendance' => [GuildRankResource::class => 'attendance', PlayableClassResource::class => 'attendance']];
-    }
-
-    /**
-     * Id, name, playable class and rank.
-     *
-     * @return list<string>
-     */
-    #[ScopeDefinition]
-    protected function attendance(): array
-    {
-        return ['id', 'name', 'playable_class', 'rank'];
     }
 }
