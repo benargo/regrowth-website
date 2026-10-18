@@ -249,26 +249,28 @@ function flattenRows(rows) {
 function PrioritiesTable({ phases, table }) {
     const [selectedPhaseId, setSelectedPhaseId] = useLocalStorage("loot.priorities.phase", phases[0]?.id ?? null);
 
-    if (table.length === 0) {
+    const rows = [...table.role_rows, ...table.class_groups];
+
+    if (rows.length === 0) {
         return <EmptyState />;
     }
 
-    const flatRows = flattenRows(table);
+    const flatRows = flattenRows(rows);
 
     const columnMax = Object.fromEntries(
         phases.map((phase) => [phase.id, Math.max(0, ...flatRows.map((row) => row.counts[phase.id] ?? 0))]),
     );
 
     const phaseTotals = Object.fromEntries(
-        phases.map((phase) => [phase.id, table.reduce((sum, row) => sum + (row.counts[phase.id] ?? 0), 0)]),
+        phases.map((phase) => [phase.id, rows.reduce((sum, row) => sum + (row.counts[phase.id] ?? 0), 0)]),
     );
 
     return (
         <>
-            <DesktopTable phases={phases} rows={table} columnMax={columnMax} phaseTotals={phaseTotals} />
+            <DesktopTable phases={phases} rows={rows} columnMax={columnMax} phaseTotals={phaseTotals} />
             <MobileTable
                 phases={phases}
-                rows={table}
+                rows={rows}
                 selectedPhaseId={selectedPhaseId}
                 onSelectPhase={setSelectedPhaseId}
                 phaseTotals={phaseTotals}

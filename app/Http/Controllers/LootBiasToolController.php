@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Items\BuildHighestPriorityStatsTable;
+use App\Actions\Items\ListPhasesWithTierOnePriorities;
+use App\Data\Items\HighestPriorityStatsTableData;
 use App\Http\Middleware\RemembersCurrentRaid;
 use App\Http\Resources\ItemResource;
 use App\Http\Resources\PhaseResource;
@@ -12,7 +15,6 @@ use App\Models\CommentReaction;
 use App\Models\Item;
 use App\Models\ItemPriority;
 use App\Models\Raid;
-use App\Services\LootPriorities\HighestPriorityStats;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
@@ -26,8 +28,6 @@ class LootBiasToolController extends Controller
 {
     /** @var int */
     private const PRIORITY_WEIGHT_THRESHOLD = 2;
-
-    public function __construct(private HighestPriorityStats $stats) {}
 
     public function index(): Response
     {
@@ -97,15 +97,15 @@ class LootBiasToolController extends Controller
     #[Middleware('auth')]
     public function priorities(): Response
     {
-        $phases = $this->stats->phases();
+        $phases = ListPhasesWithTierOnePriorities::run();
 
         return Inertia::render('Loot/Priorities', [
             'phases' => PhaseResource::collection($phases),
-            'table' => Inertia::defer(fn () => Cache::tags(['lootcouncil'])->remember(
+            'table' => Inertia::defer(fn () => HighestPriorityStatsTableData::from(Cache::tags(['lootcouncil'])->remember(
                 'loot:priorities:highest-priority-stats',
                 now()->addHours(24),
-                fn () => $this->stats->table($phases->pluck('id')->all()),
-            )),
+                fn (): array => BuildHighestPriorityStatsTable::run($phases->pluck('id'))->toArray(),
+            ))),
         ]);
     }
 }

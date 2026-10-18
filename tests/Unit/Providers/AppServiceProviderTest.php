@@ -8,7 +8,6 @@ use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\Report;
 use App\Models\User;
-use App\Services\LootPriorities\HighestPriorityStats;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -41,22 +40,6 @@ class AppServiceProviderTest extends TestCase
     }
 
     // ==================== container bindings ====================
-
-    #[Test]
-    public function it_registers_the_highest_priority_stats_service(): void
-    {
-        $this->assertTrue($this->app->bound(HighestPriorityStats::class));
-        $this->assertInstanceOf(HighestPriorityStats::class, $this->app->make(HighestPriorityStats::class));
-    }
-
-    #[Test]
-    public function it_registers_highest_priority_stats_as_a_singleton(): void
-    {
-        $first = $this->app->make(HighestPriorityStats::class);
-        $second = $this->app->make(HighestPriorityStats::class);
-
-        $this->assertSame($first, $second);
-    }
 
     #[Test]
     public function it_binds_served_from_cache_as_a_singleton(): void

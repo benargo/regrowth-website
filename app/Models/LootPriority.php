@@ -6,6 +6,8 @@ use App\Contracts\HasBlizzardIcons;
 use App\Enums\LootPriorityType;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,14 +33,22 @@ class LootPriority extends Model implements HasBlizzardIcons, HasMedia
         ];
     }
 
-    // ============ Media ============
+    // ============ Scopes ============
 
     /**
-     * Register media collections for the model.
+     * Scope a query to loot priorities that are not Meme priorities.
      */
+    #[Scope]
+    protected function withoutMemes(Builder $query): void
+    {
+        $query->where($query->qualifyColumn('type'), '!=', LootPriorityType::MEME);
+    }
+
+    // ============ Media ============
+
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('blizzard_icons')->singleFile();
+        $this->addMediaCollection(self::MEDIA_COLLECTION)->singleFile();
     }
 
     // ============ Relationships ============

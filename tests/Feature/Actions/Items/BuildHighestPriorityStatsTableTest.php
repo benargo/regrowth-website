@@ -1,102 +1,29 @@
 <?php
 
-namespace Tests\Unit\Services\LootPriorities;
+namespace Tests\Feature\Actions\Items;
 
+use App\Actions\Items\BuildHighestPriorityStatsTable;
+use App\Actions\Items\ListPhasesWithTierOnePriorities;
+use App\Data\Items\HighestPriorityStatsTableData;
 use App\Models\Item;
 use App\Models\LootPriority;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\Raid;
-use App\Services\LootPriorities\HighestPriorityStats;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 #[Group('loot')]
-class HighestPriorityStatsTest extends TestCase
+class BuildHighestPriorityStatsTableTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function service(): HighestPriorityStats
-    {
-        return app(HighestPriorityStats::class);
-    }
-
-    protected function itemInPhase(Phase $phase): Item
-    {
-        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
-        $item = Item::factory()->create();
-        $item->raids()->attach($raid->id);
-
-        return $item;
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    protected function table(): array
-    {
-        $service = $this->service();
-
-        return $service->table($service->phases()->pluck('id')->all());
-    }
-
-    // ==================== phases() ====================
+    // ==================== aggregation ====================
 
     #[Test]
-    public function phases_only_includes_phases_with_a_non_meme_priority_on_an_item(): void
-    {
-        $phaseWithPriority = Phase::factory()->create(['number' => 1]);
-        $phaseWithoutPriority = Phase::factory()->create(['number' => 2]);
-
-        $item = $this->itemInPhase($phaseWithPriority);
-        $priority = LootPriority::factory()->role()->create();
-        $item->priorities()->attach($priority->id, ['weight' => 0]);
-
-        $this->itemInPhase($phaseWithoutPriority);
-
-        $phases = $this->service()->phases();
-
-        $this->assertCount(1, $phases);
-        $this->assertSame($phaseWithPriority->id, $phases->first()->id);
-    }
-
-    #[Test]
-    public function phases_excludes_a_phase_whose_only_priority_is_meme(): void
-    {
-        $phase = Phase::factory()->create(['number' => 1]);
-        $item = $this->itemInPhase($phase);
-        $meme = LootPriority::factory()->meme()->create();
-        $item->priorities()->attach($meme->id, ['weight' => 0]);
-
-        $phases = $this->service()->phases();
-
-        $this->assertCount(0, $phases);
-    }
-
-    #[Test]
-    public function phases_are_listed_in_release_order(): void
-    {
-        $unscheduled = Phase::factory()->unscheduled()->create(['number' => 4]);
-        $later = Phase::factory()->create(['number' => 1, 'start_date' => '2026-05-15 00:00:00']);
-        $earlier = Phase::factory()->create(['number' => 3, 'start_date' => '2026-01-01 00:00:00']);
-
-        foreach ([$unscheduled, $later, $earlier] as $phase) {
-            $item = $this->itemInPhase($phase);
-            $priority = LootPriority::factory()->role()->create();
-            $item->priorities()->attach($priority->id, ['weight' => 0]);
-        }
-
-        $phases = $this->service()->phases();
-
-        $this->assertSame([$earlier->id, $later->id, $unscheduled->id], $phases->pluck('id')->all());
-    }
-
-    // ==================== table(): aggregation ====================
-
-    #[Test]
-    public function counts_an_item_only_for_its_lowest_weight_priority(): void
+    public function it_counts_an_item_only_for_its_lowest_weight_priority(): void
     {
         $phase = Phase::factory()->create(['number' => 1]);
         $item = $this->itemInPhase($phase);
@@ -105,17 +32,17 @@ class HighestPriorityStatsTest extends TestCase
         $item->priorities()->attach($tank->id, ['weight' => 0]);
         $item->priorities()->attach($healer->id, ['weight' => 1]);
 
-        $rows = $this->table();
+        $table = $this->table();
 
-        $tankRow = collect($rows)->firstWhere('id', $tank->id);
-        $healerRow = collect($rows)->firstWhere('id', $healer->id);
+        $tankRow = $table->roleRows->firstWhere('id', $tank->id);
+        $healerRow = $table->roleRows->firstWhere('id', $healer->id);
 
-        $this->assertSame(1, $tankRow['counts'][$phase->id]);
-        $this->assertSame(0, $healerRow['counts'][$phase->id]);
+        $this->assertSame(1, $tankRow->counts[$phase->id]);
+        $this->assertSame(0, $healerRow->counts[$phase->id]);
     }
 
     #[Test]
-    public function counts_every_priority_tied_at_the_lowest_weight(): void
+    public function it_counts_every_priority_tied_at_the_lowest_weight(): void
     {
         $phase = Phase::factory()->create(['number' => 1]);
         $item = $this->itemInPhase($phase);
@@ -124,32 +51,32 @@ class HighestPriorityStatsTest extends TestCase
         $item->priorities()->attach($tank->id, ['weight' => 0]);
         $item->priorities()->attach($healer->id, ['weight' => 0]);
 
-        $rows = $this->table();
+        $table = $this->table();
 
-        $tankRow = collect($rows)->firstWhere('id', $tank->id);
-        $healerRow = collect($rows)->firstWhere('id', $healer->id);
+        $tankRow = $table->roleRows->firstWhere('id', $tank->id);
+        $healerRow = $table->roleRows->firstWhere('id', $healer->id);
 
-        $this->assertSame(1, $tankRow['counts'][$phase->id]);
-        $this->assertSame(1, $healerRow['counts'][$phase->id]);
+        $this->assertSame(1, $tankRow->counts[$phase->id]);
+        $this->assertSame(1, $healerRow->counts[$phase->id]);
     }
 
     #[Test]
-    public function counts_a_sole_priority_as_tier_one_regardless_of_weight(): void
+    public function it_counts_a_sole_priority_as_tier_one_regardless_of_weight(): void
     {
         $phase = Phase::factory()->create(['number' => 1]);
         $item = $this->itemInPhase($phase);
         $tank = LootPriority::factory()->role()->create(['title' => 'Tank']);
         $item->priorities()->attach($tank->id, ['weight' => 7]);
 
-        $rows = $this->table();
+        $table = $this->table();
 
-        $tankRow = collect($rows)->firstWhere('id', $tank->id);
+        $tankRow = $table->roleRows->firstWhere('id', $tank->id);
 
-        $this->assertSame(1, $tankRow['counts'][$phase->id]);
+        $this->assertSame(1, $tankRow->counts[$phase->id]);
     }
 
     #[Test]
-    public function ignores_meme_weights_when_computing_the_minimum(): void
+    public function it_ignores_meme_weights_when_computing_the_minimum(): void
     {
         $phase = Phase::factory()->create(['number' => 1]);
         $item = $this->itemInPhase($phase);
@@ -158,15 +85,15 @@ class HighestPriorityStatsTest extends TestCase
         $item->priorities()->attach($meme->id, ['weight' => 0]);
         $item->priorities()->attach($role->id, ['weight' => 5]);
 
-        $rows = $this->table();
+        $table = $this->table();
 
-        $roleRow = collect($rows)->firstWhere('id', $role->id);
+        $roleRow = $table->roleRows->firstWhere('id', $role->id);
 
-        $this->assertSame(1, $roleRow['counts'][$phase->id]);
+        $this->assertSame(1, $roleRow->counts[$phase->id]);
     }
 
     #[Test]
-    public function excludes_meme_priorities_from_rows(): void
+    public function it_excludes_meme_priorities_from_rows(): void
     {
         $phase = Phase::factory()->create(['number' => 1]);
         $item = $this->itemInPhase($phase);
@@ -175,13 +102,13 @@ class HighestPriorityStatsTest extends TestCase
         $item->priorities()->attach($meme->id, ['weight' => 0]);
         $item->priorities()->attach($role->id, ['weight' => 1]);
 
-        $rows = $this->table();
+        $table = $this->table();
 
-        $this->assertNull(collect($rows)->firstWhere('id', $meme->id));
+        $this->assertNull($table->roleRows->firstWhere('id', $meme->id));
     }
 
     #[Test]
-    public function counts_an_item_once_per_phase_it_appears_in(): void
+    public function it_counts_an_item_once_per_phase_it_appears_in(): void
     {
         $phaseOne = Phase::factory()->create(['number' => 1]);
         $phaseTwo = Phase::factory()->create(['number' => 2]);
@@ -194,16 +121,16 @@ class HighestPriorityStatsTest extends TestCase
         $tank = LootPriority::factory()->role()->create();
         $item->priorities()->attach($tank->id, ['weight' => 0]);
 
-        $rows = $this->table();
+        $table = $this->table();
 
-        $tankRow = collect($rows)->firstWhere('id', $tank->id);
+        $tankRow = $table->roleRows->firstWhere('id', $tank->id);
 
-        $this->assertSame(1, $tankRow['counts'][$phaseOne->id]);
-        $this->assertSame(1, $tankRow['counts'][$phaseTwo->id]);
+        $this->assertSame(1, $tankRow->counts[$phaseOne->id]);
+        $this->assertSame(1, $tankRow->counts[$phaseTwo->id]);
     }
 
     #[Test]
-    public function does_not_double_count_an_item_in_two_raids_of_the_same_phase(): void
+    public function it_does_not_double_count_an_item_in_two_raids_of_the_same_phase(): void
     {
         $phase = Phase::factory()->create(['number' => 1]);
         $raidOne = Raid::factory()->create(['phase_id' => $phase->id]);
@@ -215,31 +142,31 @@ class HighestPriorityStatsTest extends TestCase
         $tank = LootPriority::factory()->role()->create();
         $item->priorities()->attach($tank->id, ['weight' => 0]);
 
-        $rows = $this->table();
+        $table = $this->table();
 
-        $tankRow = collect($rows)->firstWhere('id', $tank->id);
+        $tankRow = $table->roleRows->firstWhere('id', $tank->id);
 
-        $this->assertSame(1, $tankRow['counts'][$phase->id]);
+        $this->assertSame(1, $tankRow->counts[$phase->id]);
     }
 
-    // ==================== table(): structure ====================
+    // ==================== structure ====================
 
     #[Test]
-    public function role_rows_render_flat_and_first(): void
+    public function it_renders_role_rows_as_flat_priority_rows(): void
     {
         $phase = Phase::factory()->create(['number' => 1]);
         $item = $this->itemInPhase($phase);
         $tank = LootPriority::factory()->role()->create();
         $item->priorities()->attach($tank->id, ['weight' => 0]);
 
-        $rows = $this->table();
+        $table = $this->table();
 
-        $this->assertSame('priority', $rows[0]['kind']);
-        $this->assertSame($tank->id, $rows[0]['id']);
+        $this->assertSame('priority', $table->roleRows[0]->kind);
+        $this->assertSame($tank->id, $table->roleRows[0]->id);
     }
 
     #[Test]
-    public function class_groups_render_after_role_rows(): void
+    public function it_separates_role_rows_from_class_groups(): void
     {
         $phase = Phase::factory()->create(['number' => 1]);
         $item = $this->itemInPhase($phase);
@@ -250,13 +177,14 @@ class HighestPriorityStatsTest extends TestCase
         $item->priorities()->attach($tank->id, ['weight' => 0]);
         $item->priorities()->attach($classPriority->id, ['weight' => 1]);
 
-        $rows = $this->table();
+        $table = $this->table();
 
-        $this->assertSame(['priority', 'class'], collect($rows)->pluck('kind')->all());
+        $this->assertSame([$tank->id], $table->roleRows->pluck('id')->all());
+        $this->assertSame(['class'], $table->classGroups->pluck('kind')->all());
     }
 
     #[Test]
-    public function class_type_priority_renders_as_a_child_row(): void
+    public function it_renders_a_class_type_priority_as_a_child_row(): void
     {
         $phase = Phase::factory()->create(['number' => 1]);
         $item = $this->itemInPhase($phase);
@@ -264,17 +192,17 @@ class HighestPriorityStatsTest extends TestCase
         $classPriority = LootPriority::factory()->classType()->withPlayableClass($playableClass)->create();
         $item->priorities()->attach($classPriority->id, ['weight' => 0]);
 
-        $rows = $this->table();
+        $table = $this->table();
 
-        $classGroup = collect($rows)->firstWhere('kind', 'class');
+        $classGroup = $table->classGroups->first();
 
         $this->assertNotNull($classGroup);
-        $this->assertCount(1, $classGroup['children']);
-        $this->assertSame($classPriority->id, $classGroup['children'][0]['id']);
+        $this->assertCount(1, $classGroup->children);
+        $this->assertSame($classPriority->id, $classGroup->children[0]->id);
     }
 
     #[Test]
-    public function class_group_children_are_ordered_class_then_spec_then_custom(): void
+    public function it_orders_class_group_children_class_then_spec_then_custom(): void
     {
         $phase = Phase::factory()->create(['number' => 1]);
         $item = $this->itemInPhase($phase);
@@ -288,16 +216,16 @@ class HighestPriorityStatsTest extends TestCase
         $item->priorities()->attach($spec->id, ['weight' => 1]);
         $item->priorities()->attach($classType->id, ['weight' => 2]);
 
-        $rows = $this->table();
+        $table = $this->table();
 
-        $classGroup = collect($rows)->firstWhere('kind', 'class');
-        $childIds = collect($classGroup['children'])->pluck('id')->all();
+        $classGroup = $table->classGroups->first();
+        $childIds = collect($classGroup->children)->pluck('id')->all();
 
         $this->assertSame([$classType->id, $spec->id, $custom->id], $childIds);
     }
 
     #[Test]
-    public function class_group_counts_are_the_sum_of_child_counts(): void
+    public function it_sums_child_counts_into_the_class_group_counts(): void
     {
         $phase = Phase::factory()->create(['number' => 1]);
         $item = $this->itemInPhase($phase);
@@ -309,25 +237,25 @@ class HighestPriorityStatsTest extends TestCase
         $item->priorities()->attach($classType->id, ['weight' => 0]);
         $item->priorities()->attach($spec->id, ['weight' => 0]);
 
-        $rows = $this->table();
+        $table = $this->table();
 
-        $classGroup = collect($rows)->firstWhere('kind', 'class');
+        $classGroup = $table->classGroups->first();
 
-        $this->assertSame(2, $classGroup['counts'][$phase->id]);
+        $this->assertSame(2, $classGroup->counts[$phase->id]);
     }
 
     #[Test]
-    public function only_classes_with_priorities_render_a_group(): void
+    public function it_only_renders_a_group_for_classes_with_priorities(): void
     {
         PlayableClass::factory()->create();
 
-        $rows = $this->table();
+        $table = $this->table();
 
-        $this->assertCount(0, collect($rows)->where('kind', 'class'));
+        $this->assertCount(0, $table->classGroups);
     }
 
     #[Test]
-    public function class_groups_are_ordered_alphabetically_by_class_name(): void
+    public function it_orders_class_groups_alphabetically_by_class_name(): void
     {
         $phase = Phase::factory()->create(['number' => 1]);
         $item = $this->itemInPhase($phase);
@@ -341,18 +269,38 @@ class HighestPriorityStatsTest extends TestCase
             $item->priorities()->attach($priority->id, ['weight' => 0]);
         }
 
-        $rows = $this->table();
+        $table = $this->table();
 
-        $classGroupNames = collect($rows)->where('kind', 'class')->pluck('title')->values()->all();
+        $classGroupNames = $table->classGroups->pluck('title')->all();
 
         $this->assertSame(['Druid', 'Mage', 'Warrior'], $classGroupNames);
     }
 
     #[Test]
-    public function renders_an_empty_table_when_no_priorities_have_items(): void
+    public function it_returns_no_rows_when_given_no_phases(): void
     {
-        $rows = $this->table();
+        $phase = Phase::factory()->create(['number' => 1]);
+        $item = $this->itemInPhase($phase);
+        $tank = LootPriority::factory()->role()->create();
+        $item->priorities()->attach($tank->id, ['weight' => 0]);
 
-        $this->assertSame([], $rows);
+        $table = BuildHighestPriorityStatsTable::run(collect());
+
+        $this->assertCount(0, $table->roleRows);
+        $this->assertCount(0, $table->classGroups);
+    }
+
+    protected function itemInPhase(Phase $phase): Item
+    {
+        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
+        $item = Item::factory()->create();
+        $item->raids()->attach($raid->id);
+
+        return $item;
+    }
+
+    protected function table(): HighestPriorityStatsTableData
+    {
+        return BuildHighestPriorityStatsTable::run(ListPhasesWithTierOnePriorities::run()->pluck('id'));
     }
 }
