@@ -3,7 +3,6 @@
 namespace Tests\Unit\Models;
 
 use App\Casts\AsBinaryColor;
-use App\Enums\RaidBackground;
 use App\Enums\SignupStatus;
 use App\Models\Boss;
 use App\Models\Character;
@@ -51,7 +50,6 @@ class EventTest extends ModelTestCase
             'title',
             'start_time',
             'end_time',
-            'background_css_class',
             'color',
             'channel_id',
             'is_template',
@@ -69,7 +67,6 @@ class EventTest extends ModelTestCase
             'title',
             'start_time',
             'end_time',
-            'background_css_class',
             'color',
             'channel_id',
             'is_template',
@@ -92,7 +89,6 @@ class EventTest extends ModelTestCase
         $this->assertCasts($model, [
             'start_time' => 'datetime',
             'end_time' => 'datetime',
-            'background_css_class' => RaidBackground::class,
             'color' => AsBinaryColor::class,
             'is_template' => 'boolean',
         ]);
@@ -112,25 +108,6 @@ class EventTest extends ModelTestCase
         $event = Event::factory()->template()->make();
 
         $this->assertTrue($event->is_template);
-    }
-
-    // ==================== background_css_class ====================
-
-    #[Test]
-    public function background_css_class_is_cast_to_raid_background_enum(): void
-    {
-        $event = Event::factory()->make(['background_css_class' => RaidBackground::Karazhan]);
-
-        $this->assertInstanceOf(RaidBackground::class, $event->background_css_class);
-        $this->assertSame(RaidBackground::Karazhan, $event->background_css_class);
-    }
-
-    #[Test]
-    public function background_css_class_defaults_to_null(): void
-    {
-        $event = Event::factory()->make(['background_css_class' => null]);
-
-        $this->assertNull($event->background_css_class);
     }
 
     // ==================== color ====================

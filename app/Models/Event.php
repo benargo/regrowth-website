@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Casts\AsBinaryColor;
-use App\Enums\RaidBackground;
 use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -17,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 
-#[Fillable(['id', 'raid_helper_event_id', 'title', 'start_time', 'end_time', 'background_css_class', 'color', 'channel_id', 'is_template'])]
+#[Fillable(['id', 'raid_helper_event_id', 'title', 'start_time', 'end_time', 'color', 'channel_id', 'is_template'])]
 #[Hidden(['channel_id', 'is_template'])]
 class Event extends PrunableModel
 {
@@ -45,7 +44,6 @@ class Event extends PrunableModel
         return [
             'start_time' => 'datetime',
             'end_time' => 'datetime',
-            'background_css_class' => RaidBackground::class,
             'color' => AsBinaryColor::class,
             'is_template' => 'boolean',
         ];

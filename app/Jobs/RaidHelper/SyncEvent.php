@@ -163,7 +163,6 @@ class SyncEvent implements ShouldQueue
                 'title' => $this->data->title,
                 'start_time' => $this->data->startTime->setTimezone($this->timezone),
                 'end_time' => $this->data->endTime->setTimezone($this->timezone),
-                'background_css_class' => $this->raids->values()->firstWhere('background_css_class')?->background_css_class ?? null,
                 'color' => $this->data->color,
                 'channel_id' => $this->data->channelId,
             ]
