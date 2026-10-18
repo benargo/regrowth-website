@@ -83,7 +83,7 @@ const ALL_FORMATS = {
         hint: "[links](url)",
     },
     wowheadLink: {
-        label: <img src="/images/logo_wowhead_white.webp" alt="Wowhead Link" className="h-4 w-4" />,
+        label: <img src="/images/logo_wowhead_white.webp" alt="" className="h-4 w-4" />,
         title: "Wowhead Link",
         prefix: "!wh[",
         suffix: "](item=12345)",
@@ -412,10 +412,10 @@ export default function MarkdownEditor({
         <div className={className}>
             <div className="overflow-hidden rounded-md border border-ink-500 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary hover:border-ink-600">
                 {formatButtons.length > 0 && (
-                    <div className="flex items-center gap-0.5 border-b border-ink-500 bg-ground-700 px-2 py-1.5">
+                    <div className="flex flex-wrap items-center gap-x-0.5 gap-y-1 border-b border-ink-500 bg-ground-700 px-2 py-1.5">
                         {groupedButtons.map((group, groupIndex) => (
                             <div key={groupIndex} className="flex items-center gap-0.5">
-                                {groupIndex > 0 && <span className="mx-1.5 h-4 w-px bg-ink-500" />}
+                                {groupIndex > 0 && <span aria-hidden="true" className="mx-1.5 h-4 w-px bg-ink-500" />}
                                 {group.map((format) => (
                                     <FormatButton
                                         key={format.key}
@@ -428,7 +428,9 @@ export default function MarkdownEditor({
                         ))}
                         {ungroupedButtons.length > 0 && (
                             <div className="flex items-center gap-0.5">
-                                {groupedButtons.length > 0 && <span className="mx-1.5 h-4 w-px bg-ink-500" />}
+                                {groupedButtons.length > 0 && (
+                                    <span aria-hidden="true" className="mx-1.5 h-4 w-px bg-ink-500" />
+                                )}
                                 {ungroupedButtons.map((format) => (
                                     <FormatButton
                                         key={format.key}
