@@ -22,6 +22,7 @@ use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LootBiasToolController;
 use App\Http\Controllers\PhaseController;
 use App\Http\Controllers\PlannedAbsenceController;
+use App\Http\Controllers\RaidController;
 use App\Http\Controllers\RaidingController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SearchController;
@@ -190,6 +191,18 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
     Route::get('/permissions/{group}', [PermissionController::class, 'showGroup'])->name('permissions.group.show');
     Route::patch('/permissions/{group}/{permission}', [PermissionController::class, 'update'])->name('permissions.permission.update');
+
+    /**
+     * Raids management
+     */
+    Route::get('/raids', [RaidController::class, 'index'])->name('raids.index');
+    Route::get('/raids/create', [RaidController::class, 'create'])->name('raids.create');
+    Route::post('/raids', [RaidController::class, 'store'])->name('raids.store');
+    Route::get('/raids/{raid}/edit', [RaidController::class, 'edit'])->name('raids.edit');
+    Route::get('/raids/{raid}/setup/{step}', [RaidController::class, 'setup'])->name('raids.setup');
+    Route::get('/raids/{raid}/review', [RaidController::class, 'review'])->name('raids.review');
+    Route::patch('/raids/{raid}', [RaidController::class, 'update'])->name('raids.update');
+    Route::delete('/raids/{raid}', [RaidController::class, 'destroy'])->name('raids.destroy');
 
     /**
      * Warcraft Logs guilds management

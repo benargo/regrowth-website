@@ -7,8 +7,10 @@ use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
+use App\Models\Boss;
 use App\Models\GameVersion;
 use App\Models\Item;
+use App\Models\Raid;
 use Database\Seeders\BossSeeder;
 use Database\Seeders\ItemSeeder;
 use Database\Seeders\PhaseSeeder;
@@ -246,6 +248,18 @@ class ItemSeederTest extends TestCase
         $this->seedSpecificItems([32589], $this->gameVersion->slug);
 
         $this->assertSame(2, Item::where('blizzard_id', 32589)->first()->raids()->count());
+    }
+
+    #[Test]
+    public function seeder_skips_a_raid_link_whose_raid_was_deleted(): void
+    {
+        $this->fakeSaloon();
+        Boss::where('raid_id', 7)->delete();
+        Raid::find(7)->delete();
+
+        $this->seedSpecificItems([32589], $this->gameVersion->slug);
+
+        $this->assertSame([6], Item::where('blizzard_id', 32589)->first()->raids->pluck('id')->all());
     }
 
     #[Test]

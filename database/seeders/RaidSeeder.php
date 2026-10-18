@@ -5,14 +5,21 @@ namespace Database\Seeders;
 use App\Models\Raid;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 
 class RaidSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Seed the Burning Crusade raids, with their banners, into an empty raids table.
      */
     public function run(): void
     {
+        if (Raid::exists()) {
+            $this->command?->info('Raids already exist — skipping.');
+
+            return;
+        }
+
         $raids = [
             [
                 'id' => 1,
@@ -108,18 +115,15 @@ class RaidSeeder extends Seeder
             ],
         ];
 
-        foreach ($raids as $row) {
-            $raid = Raid::updateOrCreate(
-                ['id' => $row['id']],
-                Arr::except($row, ['banner', 'banner_position']),
-            );
+        DB::transaction(function () use ($raids): void {
+            foreach ($raids as $row) {
+                $raid = Raid::forceCreate(Arr::except($row, ['banner', 'banner_position']));
 
-            if (! $raid->hasMedia(Raid::MEDIA_BANNER)) {
                 $raid->addMedia(resource_path("images/{$row['banner']}"))
                     ->preservingOriginal()
                     ->withCustomProperties(isset($row['banner_position']) ? ['position' => $row['banner_position']] : [])
                     ->toMediaCollection(Raid::MEDIA_BANNER);
             }
-        }
+        });
     }
 }

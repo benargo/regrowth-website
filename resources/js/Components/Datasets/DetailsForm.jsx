@@ -18,7 +18,9 @@ import { AUTOSAVE_DELAY } from "@/Hooks/useRelationshipForm";
  * through `onSubmit`.
  *
  * `children` renders the fields, given text, slug, select and checkbox helpers
- * bound to `form`, and clear(name), which empties a field and saves.
+ * bound to `form`, clear(name), which empties a field and saves, and
+ * schedule(), which saves the changed fields (for controls such as a colour
+ * picker that set data themselves).
  */
 export default function DetailsForm({ form, autosave, onSubmit, submitLabel, processingLabel, cancelHref, children }) {
     const { data, setData, processing, errors } = form;
@@ -103,7 +105,7 @@ export default function DetailsForm({ form, autosave, onSubmit, submitLabel, pro
 
             <RequiredFieldsNote />
 
-            {children({ text, slug, select, checkbox, clear })}
+            {children({ text, slug, select, checkbox, clear, schedule })}
 
             {!autosave && (
                 <div className="flex flex-wrap items-center gap-4">

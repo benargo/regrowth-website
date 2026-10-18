@@ -121,6 +121,14 @@ export default function Dashboard({ discordRoles }) {
                                 </p>
                             </DashboardCard>
                         </Can>
+                        <Can permission="edit-datasets">
+                            <DashboardCard href={route("management.raids.index")} icon="dungeon">
+                                <h3 className="text-md">Manage raids</h3>
+                                <p className="mb-1 text-sm">
+                                    Set up each game version's raids, their banners and the order of their bosses.
+                                </p>
+                            </DashboardCard>
+                        </Can>
                         <Can permission="view-warcraft-logs-guilds">
                             <DashboardCard href={route("management.warcraftlogs.guilds.index")} icon="flag">
                                 <h3 className="text-md">Manage Warcraft Logs guilds</h3>

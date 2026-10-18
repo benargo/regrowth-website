@@ -57,6 +57,7 @@ export default function PhasesSection({
     autosave = false,
 }) {
     const { phases } = relationships;
+    const linkedPhases = phases.data.filter((phase) => phases.selected_ids.includes(phase.id));
     const { form, setIds, handleSubmit, containerProps } = useRelationshipForm({
         url: routes.update,
         key: "phases",
@@ -110,6 +111,24 @@ export default function PhasesSection({
                 </div>
             )}
 
+            {linkedPhases.length > 0 && (
+                <div className="flex flex-col gap-2">
+                    <h3 className="font-serif text-xl text-white">Add a raid</h3>
+                    <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                        {linkedPhases.map((phase) => (
+                            <li key={phase.id}>
+                                <Link
+                                    href={route("management.raids.create", { phase: phase.id })}
+                                    className={linkClassName}
+                                >
+                                    Add a raid to {phase.name}
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
             <p className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
                 <Link
                     href={route("management.phases.create", { game_version: gameVersion.id })}
@@ -119,6 +138,9 @@ export default function PhasesSection({
                 </Link>
                 <Link href={route("management.phases.index")} className={linkClassName}>
                     Manage all phases
+                </Link>
+                <Link href={route("management.raids.index")} className={linkClassName}>
+                    Manage all raids
                 </Link>
             </p>
         </Relationships>

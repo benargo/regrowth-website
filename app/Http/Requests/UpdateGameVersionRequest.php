@@ -50,15 +50,6 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             'phase_ids.*' => ['integer', 'distinct', Rule::exists(Phase::class, 'id')],
             'unscheduled_phase_ids' => ['sometimes', 'array'],
             'unscheduled_phase_ids.*' => ['integer', 'distinct'],
-            'new_raid' => ['sometimes', 'required', 'array:name,difficulty,phase_id,max_players'],
-            'new_raid.name' => ['required_with:new_raid', 'string', 'max:255'],
-            'new_raid.difficulty' => ['required_with:new_raid', 'string', 'max:50'],
-            'new_raid.phase_id' => [
-                'required_with:new_raid',
-                'integer',
-                Rule::exists(Phase::class, 'id')->where('game_version_id', $this->route('gameVersion')->getKey()),
-            ],
-            'new_raid.max_players' => ['nullable', 'integer', 'between:1,40'],
             'guild_ranks' => ['sometimes', 'array', 'max:10'],
             'guild_ranks.*' => ['required', 'array:id,name,count_attendance'],
             'guild_ranks.*.id' => [
@@ -88,10 +79,6 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             'playable_race_ids.*.exists' => 'One of the selected races no longer exists. Reload the page and try again.',
             'playable_class_ids.*.exists' => 'One of the selected classes no longer exists. Reload the page and try again.',
             'phase_ids.*.exists' => 'One of the selected phases no longer exists. Reload the page and try again.',
-            'new_raid.name.required_with' => 'Enter the raid name.',
-            'new_raid.difficulty.required_with' => 'Enter the raid difficulty, for example Normal.',
-            'new_raid.phase_id.required_with' => 'Choose which phase the raid belongs to.',
-            'new_raid.phase_id.exists' => "Choose one of this game version's phases.",
             'guild_ranks.max' => 'A guild can have up to 10 ranks.',
             'guild_ranks.*.id.exists' => 'One of these ranks no longer exists. Reload the page and try again.',
             'guild_ranks.*.name.required' => 'Enter a name for every rank.',
@@ -108,7 +95,6 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
     {
         return [
             ...parent::attributes(),
-            'new_raid.max_players' => 'maximum players',
             'guild_ranks.*.name' => 'rank name',
         ];
     }

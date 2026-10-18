@@ -3,23 +3,31 @@
 namespace Tests\Unit\Models;
 
 use App\Casts\AsBinaryColor;
+use App\Contracts\Models\BelongsToGameVersion;
+use App\Contracts\Models\DatasetModel;
 use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\Event;
 use App\Models\EventRaid;
+use App\Models\GameVersion;
 use App\Models\Item;
 use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
+use App\Policies\DatasetPolicy;
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
+use ReflectionClass;
 use Spatie\MediaLibrary\Conversions\Jobs\PerformConversionsJob;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileUnacceptableForCollection;
 use Tests\Support\ModelTestCase;
@@ -481,7 +489,206 @@ class RaidTest extends ModelTestCase
         $this->assertNotNull($pivot->sort_order);
     }
 
+    // ==================== dataset ====================
+
+    #[Test]
+    public function it_is_a_dataset_model_governed_by_the_dataset_policy(): void
+    {
+        $this->assertInstanceOf(DatasetModel::class, new Raid);
+
+        $attributes = (new ReflectionClass(Raid::class))->getAttributes(UsePolicy::class);
+
+        $this->assertNotEmpty($attributes);
+        $this->assertSame(DatasetPolicy::class, $attributes[0]->newInstance()->class);
+    }
+
+    #[Test]
+    public function it_keys_the_edit_lock_cache_entries_under_the_raids_prefix(): void
+    {
+        $raid = $this->create();
+        $officer = User::factory()->officer()->create();
+
+        $raid->acquireEditLock($officer);
+
+        $this->assertSame($officer->id, Cache::get("raids.{$raid->id}.editor"));
+        $this->assertTrue(Cache::lock("raids.{$raid->id}.editing")->isLocked());
+    }
+
+    #[Test]
+    #[TestWith(['heroic', 'Heroic'])]
+    #[TestWith(['mythic plus', 'Mythic Plus'])]
+    public function it_stores_the_difficulty_in_title_case(string $given, string $stored): void
+    {
+        $raid = $this->create(['difficulty' => $given]);
+
+        $this->assertSame($stored, $raid->fresh()->difficulty);
+    }
+
+    // ==================== usage ====================
+
+    #[Test]
+    public function it_is_not_in_use_without_bosses_or_upcoming_events(): void
+    {
+        $this->assertFalse($this->create()->isInUse());
+    }
+
+    #[Test]
+    public function it_is_in_use_while_it_has_bosses(): void
+    {
+        $raid = $this->create();
+        Boss::factory()->for($raid)->create();
+
+        $this->assertTrue($raid->isInUse());
+    }
+
+    #[Test]
+    public function it_is_in_use_while_an_upcoming_event_includes_it(): void
+    {
+        $this->freezeTime();
+        $raid = $this->create();
+        $this->attachEvent($raid, now()->addDay(), now()->addDay()->addHours(3));
+
+        $this->assertTrue($raid->isInUse());
+    }
+
+    #[Test]
+    public function it_is_in_use_while_an_event_that_includes_it_is_in_progress(): void
+    {
+        $this->freezeTime();
+        $raid = $this->create();
+        $this->attachEvent($raid, now()->subHour(), now()->addHour());
+
+        $this->assertTrue($raid->isInUse());
+    }
+
+    #[Test]
+    public function it_is_not_in_use_with_only_past_events_and_items(): void
+    {
+        $this->freezeTime();
+        $raid = $this->factory()->withItems(1)->create();
+        $this->attachEvent($raid, now()->subDays(2), now()->subDays(2)->addHours(3));
+
+        $this->assertFalse($raid->isInUse());
+    }
+
+    #[Test]
+    public function with_usage_counts_counts_bosses_and_upcoming_events(): void
+    {
+        $this->freezeTime();
+        $raid = $this->create();
+        Boss::factory()->for($raid)->count(2)->create();
+        $this->attachEvent($raid, now()->addDay(), now()->addDay()->addHours(3));
+        $this->attachEvent($raid, now()->subDay(), now()->subDay()->addHours(3));
+
+        $counted = Raid::withUsageCounts()->find($raid->id);
+
+        $this->assertSame(2, $counted->bosses_count);
+        $this->assertSame(1, $counted->upcoming_events_count);
+    }
+
+    // ==================== event timing ====================
+
+    #[Test]
+    public function past_events_are_the_events_that_have_ended(): void
+    {
+        $this->freezeTime();
+        $raid = $this->create();
+        $past = $this->attachEvent($raid, now()->subDays(2), now()->subDays(2)->addHours(3));
+        $this->attachEvent($raid, now()->subHour(), now()->addHour());
+
+        $this->assertSame([$past->id], $raid->pastEvents()->pluck('events.id')->all());
+    }
+
+    #[Test]
+    public function upcoming_events_include_events_still_in_progress(): void
+    {
+        $this->freezeTime();
+        $raid = $this->create();
+        $this->attachEvent($raid, now()->subDays(2), now()->subDays(2)->addHours(3));
+        $inProgress = $this->attachEvent($raid, now()->subHour(), now()->addHour());
+        $upcoming = $this->attachEvent($raid, now()->addDay(), now()->addDay()->addHours(3));
+
+        $this->assertEqualsCanonicalizing(
+            [$inProgress->id, $upcoming->id],
+            $raid->upcomingEvents()->pluck('events.id')->all(),
+        );
+    }
+
+    #[Test]
+    public function upcoming_events_include_an_event_ending_now(): void
+    {
+        $this->freezeTime();
+        $raid = $this->create();
+        $endingNow = $this->attachEvent($raid, now()->subHours(3), now());
+
+        $this->assertSame([$endingNow->id], $raid->upcomingEvents()->pluck('events.id')->all());
+        $this->assertSame([], $raid->pastEvents()->pluck('events.id')->all());
+    }
+
+    #[Test]
+    public function an_event_template_is_neither_past_nor_upcoming_and_does_not_mark_the_raid_in_use(): void
+    {
+        $this->freezeTime();
+        $raid = $this->create();
+        $template = Event::factory()->template()->create(['start_time' => null, 'end_time' => null]);
+        $raid->events()->attach($template->id, ['sort_order' => 1]);
+
+        $this->assertSame([$template->id], $raid->templateEvents()->pluck('events.id')->all());
+        $this->assertSame([], $raid->pastEvents()->pluck('events.id')->all());
+        $this->assertSame([], $raid->upcomingEvents()->pluck('events.id')->all());
+        $this->assertFalse($raid->isInUse());
+    }
+
+    // ==================== game version ====================
+
+    #[Test]
+    public function in_game_version_keeps_the_raids_whose_phase_belongs_to_the_version(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $inVersion = Raid::factory()->for(Phase::factory()->for($gameVersion))->create();
+        Raid::factory()->for(Phase::factory()->for(GameVersion::factory()))->create();
+        Raid::factory()->for(Phase::factory()->state(['game_version_id' => null]))->create();
+
+        $this->assertSame([$inVersion->id], Raid::inGameVersion($gameVersion)->pluck('id')->all());
+    }
+
+    #[Test]
+    public function in_game_version_without_a_version_keeps_the_raids_whose_phase_has_none(): void
+    {
+        Raid::factory()->for(Phase::factory()->for(GameVersion::factory()))->create();
+        $unowned = Raid::factory()->for(Phase::factory()->state(['game_version_id' => null]))->create();
+
+        $this->assertSame([$unowned->id], Raid::inGameVersion(null)->pluck('id')->all());
+    }
+
+    #[Test]
+    public function it_belongs_to_its_phases_game_version(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $raid = Raid::factory()->for(Phase::factory()->for($gameVersion))->create();
+
+        $this->assertInstanceOf(BelongsToGameVersion::class, $raid);
+        $this->assertTrue($raid->owningGameVersion()->is($gameVersion));
+    }
+
+    #[Test]
+    public function it_has_no_owning_game_version_when_its_phase_has_none(): void
+    {
+        $raid = Raid::factory()->for(Phase::factory()->state(['game_version_id' => null]))->create();
+
+        $this->assertNull($raid->owningGameVersion());
+    }
+
     // ==================== media ====================
+
+    #[Test]
+    public function it_lists_the_mime_types_the_banner_accepts(): void
+    {
+        $this->assertSame(
+            ['image/jpeg', 'image/png', 'image/webp'],
+            (new Raid)->acceptedMimeTypes(Raid::MEDIA_BANNER),
+        );
+    }
 
     #[Group('laravel-media-library')]
     #[Test]
@@ -583,5 +790,15 @@ class RaidTest extends ModelTestCase
 
         $this->assertArrayNotHasKey('banner_url', $array);
         $this->assertArrayNotHasKey('banner_position', $array);
+    }
+
+    // ==================== helpers ====================
+
+    private function attachEvent(Raid $raid, CarbonInterface $startTime, CarbonInterface $endTime): Event
+    {
+        $event = Event::factory()->create(['start_time' => $startTime, 'end_time' => $endTime]);
+        $raid->events()->attach($event->id, ['sort_order' => 1]);
+
+        return $event;
     }
 }

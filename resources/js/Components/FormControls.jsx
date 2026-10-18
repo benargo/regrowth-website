@@ -173,17 +173,19 @@ export function DangerButton(props) {
 }
 
 /**
- * A HeadlessUI select built from `options` (`[{ value, label }]`). The empty
- * placeholder option renders only when `placeholder` is given. onChange
- * receives the chosen value as a string. `className` is merged over
- * controlClassName.
+ * A HeadlessUI select built from `options` (`[{ value, label }]`) and, when
+ * given, `groups` (`[{ label, options }]`), each rendered as a headed
+ * <optgroup> after the ungrouped options. The empty placeholder option
+ * renders only when `placeholder` is given. onChange receives the chosen
+ * value as a string. `className` is merged over controlClassName.
  */
 export function OptionSelect({
     name,
     id = name,
     value,
     onChange,
-    options,
+    options = [],
+    groups = null,
     placeholder,
     invalid,
     required = false,
@@ -206,6 +208,15 @@ export function OptionSelect({
                 <option key={option.value} value={option.value}>
                     {option.label}
                 </option>
+            ))}
+            {groups?.map((group, index) => (
+                <optgroup key={`${index}-${group.label}`} label={group.label}>
+                    {group.options.map((option) => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                        </option>
+                    ))}
+                </optgroup>
             ))}
         </Select>
     );

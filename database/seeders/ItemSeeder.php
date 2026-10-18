@@ -16,6 +16,7 @@ use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\GameVersion;
 use App\Models\Item;
+use App\Models\Raid;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 use Saloon\Exceptions\Request\FatalRequestException;
@@ -764,6 +765,8 @@ class ItemSeeder extends Seeder
             return;
         }
 
+        $raidIds = Raid::pluck('id')->all();
+
         foreach ($this->items as $item) {
             try {
                 /** @var ItemData $itemDto */
@@ -790,7 +793,7 @@ class ItemSeeder extends Seeder
                 );
             });
 
-            $model->raids()->sync($item['raid_ids']);
+            $model->raids()->sync(array_values(array_intersect($item['raid_ids'], $raidIds)));
 
             if (! $model->hasMedia('blizzard_icons')) {
                 $asset = $mediaDto->assets[0] ?? null;

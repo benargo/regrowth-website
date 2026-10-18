@@ -6,13 +6,34 @@ use App\Contracts\Http\Resources\ScopedResource;
 use App\Http\Resources\Concerns\HasScopes;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Spatie\MediaLibrary\MediaCollections\MediaCollection;
 
 /**
- * Transform a raid, optionally limited to the `summary` scope.
+ * Transform a raid, optionally limited to the `management` or `summary`
+ * scope. The management fields appear only in the management scope, where
+ * `phase_id` is always included and the rest only when loaded, counted or
+ * attached.
  */
 class RaidResource extends JsonResource implements ScopedResource
 {
     use HasScopes;
+
+    /**
+     * @var array<string, string>|null
+     */
+    protected ?array $links = null;
+
+    /**
+     * Attach the management action links for this raid.
+     *
+     * @param  array<string, string>  $links
+     */
+    public function withLinks(array $links): static
+    {
+        $this->links = $links;
+
+        return $this;
+    }
 
     /**
      * Transform the resource into an array.
@@ -35,6 +56,16 @@ class RaidResource extends JsonResource implements ScopedResource
             'has_trash_items' => $this->whenExistsLoaded('trashItems'),
             'trash_comments_count' => $this->whenCounted('trash_comments_count'),
             'bosses' => $this->whenLoaded('bosses', fn () => $this->bosses->toResourceCollection()->resolve($request)),
+            $this->mergeWhen($this->activeScope() === 'management', fn (): array => [
+                'phase_id' => $this->phase_id,
+                'phase' => $this->whenLoaded('phase', fn () => $this->phase->toResource()->resolve($request)),
+                'bosses_count' => $this->whenCounted('bosses'),
+                'upcoming_events_count' => $this->whenCounted('upcomingEvents'),
+                'past_events_count' => $this->whenCounted('pastEvents'),
+                'template_events_count' => $this->whenCounted('templateEvents'),
+                'items_count' => $this->whenCounted('items'),
+                'links' => $this->when($this->links !== null, fn (): ?array => $this->links),
+            ]),
         ]);
     }
 
@@ -43,6 +74,33 @@ class RaidResource extends JsonResource implements ScopedResource
      */
     protected function scopeDefinitions(): array
     {
-        return ['summary' => ['id', 'name']];
+        return [
+            'management' => [
+                'id', 'name', 'slug', 'difficulty', 'color', 'banner_url', 'banner_position', 'max_players', 'max_loot_councillors',
+                'bosses', 'phase_id', 'phase', 'bosses_count', 'upcoming_events_count', 'past_events_count', 'template_events_count', 'items_count', 'links',
+            ],
+            'summary' => ['id', 'name'],
+        ];
+    }
+
+    /**
+     * Get additional data returned with the resource in the management
+     * scope: the MIME types each media collection accepts.
+     *
+     * @return array{media?: array<string, array{accepts: list<string>}>}
+     */
+    public function with(Request $request): array
+    {
+        if ($this->activeScope() !== 'management') {
+            return [];
+        }
+
+        return [
+            'media' => $this->getRegisteredMediaCollections()
+                ->mapWithKeys(fn (MediaCollection $collection): array => [
+                    $collection->name => ['accepts' => $collection->acceptsMimeTypes],
+                ])
+                ->all(),
+        ];
     }
 }

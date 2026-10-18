@@ -1463,85 +1463,6 @@ class GameVersionControllerTest extends DashboardTestCase
         $response->assertValid();
     }
 
-    // ==================== update: new raid ====================
-
-    #[Group('happy-path')]
-    #[Test]
-    public function it_adds_a_new_raid_under_one_of_the_game_versions_phases(): void
-    {
-        $gameVersion = GameVersion::factory()->create();
-        $phase = Phase::factory()->for($gameVersion)->create();
-        $payload = [
-            'new_raid' => [
-                'name' => 'Karazhan',
-                'difficulty' => 'Normal',
-                'phase_id' => $phase->id,
-                'max_players' => 10,
-            ],
-        ];
-        $this->expectUpdate($gameVersion, $payload);
-
-        $response = $this->actingAs($this->officer)
-            ->from($this->editUrl($gameVersion))
-            ->patch(route('management.game-versions.update', $gameVersion), $payload);
-
-        $response->assertRedirect($this->editUrl($gameVersion));
-    }
-
-    #[Group('validation')]
-    #[Test]
-    public function it_requires_a_new_raid_name_difficulty_and_phase(): void
-    {
-        $gameVersion = GameVersion::factory()->create();
-        UpdateGameVersion::shouldNotRun();
-
-        $response = $this->actingAs($this->officer)
-            ->from($this->editUrl($gameVersion))
-            ->patch(route('management.game-versions.update', $gameVersion), [
-                'new_raid' => ['name' => '', 'difficulty' => '', 'phase_id' => '', 'max_players' => ''],
-            ]);
-
-        $response->assertInvalid([
-            'new_raid.name' => 'Enter the raid name.',
-            'new_raid.difficulty' => 'Enter the raid difficulty, for example Normal.',
-            'new_raid.phase_id' => 'Choose which phase the raid belongs to.',
-        ]);
-    }
-
-    #[Group('validation')]
-    #[Test]
-    public function it_rejects_a_new_raid_under_a_phase_from_another_game_version(): void
-    {
-        $gameVersion = GameVersion::factory()->create();
-        $foreignPhase = Phase::factory()->for(GameVersion::factory())->create();
-        UpdateGameVersion::shouldNotRun();
-
-        $response = $this->actingAs($this->officer)
-            ->from($this->editUrl($gameVersion))
-            ->patch(route('management.game-versions.update', $gameVersion), [
-                'new_raid' => ['name' => 'Karazhan', 'difficulty' => 'Normal', 'phase_id' => $foreignPhase->id],
-            ]);
-
-        $response->assertInvalid(['new_raid.phase_id' => "Choose one of this game version's phases."]);
-    }
-
-    #[Group('validation')]
-    #[Test]
-    public function it_rejects_a_maximum_player_count_above_forty(): void
-    {
-        $gameVersion = GameVersion::factory()->create();
-        $phase = Phase::factory()->for($gameVersion)->create();
-        UpdateGameVersion::shouldNotRun();
-
-        $response = $this->actingAs($this->officer)
-            ->from($this->editUrl($gameVersion))
-            ->patch(route('management.game-versions.update', $gameVersion), [
-                'new_raid' => ['name' => 'Karazhan', 'difficulty' => 'Normal', 'phase_id' => $phase->id, 'max_players' => 41],
-            ]);
-
-        $response->assertInvalid(['new_raid.max_players' => 'The maximum players field must be between 1 and 40.']);
-    }
-
     // ==================== update: removed fields ====================
 
     #[Test]
@@ -1572,6 +1493,24 @@ class GameVersionControllerTest extends DashboardTestCase
             ->patch(route('management.game-versions.update', $gameVersion), [
                 'realm' => 'Firemaw',
                 'new_phase' => ['number' => '2', 'description' => 'Second'],
+            ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect($this->editUrl($gameVersion));
+    }
+
+    #[Test]
+    public function it_ignores_a_new_raid_sent_by_a_stale_page(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $phase = Phase::factory()->for($gameVersion)->create();
+        $this->expectUpdate($gameVersion, ['realm' => 'Firemaw']);
+
+        $response = $this->actingAs($this->officer)
+            ->from($this->editUrl($gameVersion))
+            ->patch(route('management.game-versions.update', $gameVersion), [
+                'realm' => 'Firemaw',
+                'new_raid' => ['name' => 'Karazhan', 'difficulty' => 'Normal', 'phase_id' => $phase->id],
             ]);
 
         $response->assertSessionHasNoErrors();

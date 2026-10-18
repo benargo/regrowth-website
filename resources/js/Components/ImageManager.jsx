@@ -1,7 +1,8 @@
-import { useId, useState, useRef } from "react";
+import { useEffect, useId, useState, useRef } from "react";
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, horizontalListSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { focusRing } from "@/Components/Datasets/RecordCard";
 import Icon from "@/Components/FontAwesome/Icon";
 import { FieldError } from "@/Components/FormControls";
 
@@ -42,8 +43,9 @@ function SortableImage({ url, onDelete, disabled, sortable }) {
                     e.stopPropagation();
                     onDelete(url);
                 }}
-                className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 disabled:cursor-wait"
+                className={`absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full bg-red-600 text-xs text-white opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 disabled:cursor-wait [@media(hover:none)]:opacity-100 ${focusRing}`}
                 title="Delete image"
+                aria-label="Delete image"
             >
                 <Icon icon="times" style="solid" />
             </button>
@@ -77,7 +79,26 @@ export default function ImageManager({
     const remaining = max === null ? Infinity : max - images.length;
     const multiple = max !== 1;
     const fileInputRef = useRef(null);
+    const browseButtonRef = useRef(null);
+    const shouldFocusUpload = useRef(false);
     const hintId = useId();
+
+    /**
+     * Once a delete finishes, focus the "browse" button if it is showing.
+     */
+    useEffect(() => {
+        if (saving || !shouldFocusUpload.current) {
+            return;
+        }
+
+        shouldFocusUpload.current = false;
+        browseButtonRef.current?.focus();
+    }, [saving, images.length]);
+
+    const handleDelete = (url) => {
+        shouldFocusUpload.current = true;
+        onDelete(url);
+    };
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -143,7 +164,7 @@ export default function ImageManager({
                                     <SortableImage
                                         key={url}
                                         url={url}
-                                        onDelete={onDelete}
+                                        onDelete={handleDelete}
                                         disabled={saving}
                                         sortable={multiple}
                                     />
@@ -183,6 +204,7 @@ export default function ImageManager({
                             <span className="text-sm">
                                 Drag &amp; drop {multiple ? "images" : "an image"} here, or{" "}
                                 <button
+                                    ref={browseButtonRef}
                                     type="button"
                                     aria-describedby={hintId}
                                     onClick={(event) => {
