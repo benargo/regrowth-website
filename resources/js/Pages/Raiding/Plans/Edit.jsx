@@ -1357,7 +1357,7 @@ export default function Edit({ event, targetMarkers, templates }) {
 
     return (
         <Master title={`Editing: ${event.title}`}>
-            <SharedHeader title={event.title} backgroundClass={event.background} />
+            <SharedHeader title={event.title} image={event.banner_url} imagePosition={event.banner_position} />
             <ToolNav>
                 <div className="flex-initial space-x-4">
                     <ToolNavLink href={route("raiding.plans.show", event.id)} preserveScroll>

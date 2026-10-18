@@ -10,13 +10,13 @@ const USAGE_LABELS = [
 const BANNER_SEED = Math.floor(Math.random() * 1000);
 
 /**
- * One raid to paint the phase's banner: picked from its raids with artwork, or
- * from all of them when none has artwork, the same raid for a phase on every
+ * One raid to paint the phase's banner: picked from its raids with a banner, or
+ * from all of them when none has a banner, the same raid for a phase on every
  * render until the page reloads. Null without raids.
  */
 function pickBannerRaid(phaseId, raids) {
-    const withArtwork = raids.filter((raid) => raid.background);
-    const pool = withArtwork.length > 0 ? withArtwork : raids;
+    const withBanner = raids.filter((raid) => raid.banner_url);
+    const pool = withBanner.length > 0 ? withBanner : raids;
 
     return pool.length > 0 ? pool[(phaseId + BANNER_SEED) % pool.length] : null;
 }
@@ -33,7 +33,9 @@ export default function PhaseCard({ phase, dragHandle = null, onDelete }) {
             title={phase.name}
             subtitle={phase.description}
             headerColor={bannerRaid?.color}
-            headerClassName={bannerRaid ? (bannerRaid.background ?? "") : "bg-officer-meeting"}
+            headerImage={bannerRaid?.banner_url}
+            headerImagePosition={bannerRaid?.banner_position}
+            headerClassName={bannerRaid ? "" : "bg-officer-meeting"}
             badge={phase.is_current ? "Current phase" : null}
             handle={dragHandle}
             headingLevel={3}

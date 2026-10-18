@@ -1,12 +1,17 @@
 import { Link } from "@inertiajs/react";
 import cn from "@/Helpers/cn";
+import { modelBackground } from "@/Helpers/ModelColor";
 
 /**
  * A full-bleed image card with an optional eyebrow and a heading over a dark gradient.
  * Renders as a `Link` when `href` is set, otherwise as a button calling `onClick`.
- * A hex `color` (without `#`) tints the border on hover.
+ * The `image` sits over a hex `color` (without `#`), at the CSS background
+ * position `imagePosition` when given; `backgroundClass` paints the card when
+ * there is neither. The colour also tints the border on hover.
  */
 export default function ImageCard({
+    image,
+    imagePosition = null,
     backgroundClass,
     heading,
     eyebrow,
@@ -17,6 +22,8 @@ export default function ImageCard({
     className = "",
 }) {
     const Element = href ? Link : "button";
+    const background = modelBackground(color, image, imagePosition);
+    const backgroundClassName = image || color ? background.className : backgroundClass;
 
     return (
         <Element
@@ -29,7 +36,10 @@ export default function ImageCard({
             )}
             style={color ? { "--card-color": `#${color}` } : undefined}
         >
-            <div className={`${backgroundClass} relative aspect-video w-full bg-cover bg-center`}>
+            <div
+                className={`${backgroundClassName} relative aspect-video w-full bg-cover bg-center`}
+                style={background.style}
+            >
                 <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-transparent" />
                 <div className="absolute right-0 bottom-0 left-0 p-4">
                     {eyebrow && (

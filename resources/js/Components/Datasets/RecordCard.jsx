@@ -19,8 +19,9 @@ export function usageSummary(record, labels) {
 /**
  * A record card for a dataset's Index page, with Edit and Delete actions.
  * Delete is disabled while the record is in use; omit `usage` or `onDelete`
- * to hide the usage sentence or the Delete button. `headerClassName` adds a
- * background class (e.g. raid artwork), `badge` a status label beside the
+ * to hide the usage sentence or the Delete button. `headerImage` paints over
+ * `headerColor`, at the CSS background position `headerImagePosition` when
+ * given. `headerClassName` adds a background class, `badge` a status label beside the
  * title, `handle` a drag handle before it, and `headingLevel` sets the
  * title's heading level. `hasBanner` shows the header background as a 14:3
  * banner that fades into the card, with the title over its foot.
@@ -30,6 +31,7 @@ export default function RecordCard({
     subtitle,
     headerColor,
     headerImage,
+    headerImagePosition = null,
     headerClassName = "",
     badge = null,
     handle = null,
@@ -43,7 +45,7 @@ export default function RecordCard({
     onDelete = null,
 }) {
     const usageId = useId();
-    const header = modelBackground(headerColor, headerImage);
+    const header = modelBackground(headerColor, headerImage, headerImagePosition);
     const hasUsage = usage !== null;
     const isInUse = hasUsage && usage.length > 0;
     const Heading = `h${headingLevel}`;

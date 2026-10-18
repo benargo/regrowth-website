@@ -2,11 +2,19 @@ import { modelBackground } from "@/Helpers/ModelColor";
 
 /**
  * The page masthead. A model's `image` and `color` (such as a game version's
- * banner and colour) replace the default background: the image sits over the
- * colour, so the colour shows while it loads or when there's no image.
+ * or raid's banner and colour) replace the default background: the image sits
+ * over the colour, so the colour shows while it loads or when there's no
+ * image. `imagePosition` is a CSS background position for the image.
  */
-export default function SharedHeader({ title, subtitle, backgroundClass = "bg-masthead", color, image }) {
-    const { className, style } = modelBackground(color, image);
+export default function SharedHeader({
+    title,
+    subtitle,
+    backgroundClass = "bg-masthead",
+    color,
+    image,
+    imagePosition,
+}) {
+    const { className, style } = modelBackground(color, image, imagePosition);
     const background = image || color ? className : backgroundClass;
 
     return (

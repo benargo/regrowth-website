@@ -44,15 +44,24 @@ export default function modelColor(color, utilities = ["bg"]) {
 /**
  * The className and style for a background that shows a model's image over
  * its colour, so the colour fills in while the image loads or when there is
- * none. Spread both onto the element alongside `bg-cover bg-center`.
+ * none. Spread both onto the element alongside `bg-cover bg-center`. A CSS
+ * `position`, such as "center bottom", overrides `bg-center` for the image.
  *
- *     const { className, style } = modelBackground(gameVersion.color, gameVersion.banner_url);
+ *     const { className, style } = modelBackground(raid.color, raid.banner_url, raid.banner_position);
  */
-export function modelBackground(color, image) {
+export function modelBackground(color, image, position = null) {
     const tint = modelColor(color);
+
+    if (!image) {
+        return { className: tint.className, style: tint.style };
+    }
 
     return {
         className: tint.className,
-        style: image ? { ...tint.style, backgroundImage: `url("${image}")` } : tint.style,
+        style: {
+            ...tint.style,
+            backgroundImage: `url("${image}")`,
+            ...(position ? { backgroundPosition: position } : {}),
+        },
     };
 }

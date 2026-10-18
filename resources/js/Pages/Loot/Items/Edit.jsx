@@ -554,7 +554,10 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
     return (
         <Master title={`Editing ${item.data.name}`}>
             <SharedHeader
-                backgroundClass={raid?.background ?? "bg-vashj-and-kaelthas"}
+                image={raid?.banner_url}
+                imagePosition={raid?.banner_position}
+                color={raid?.color}
+                backgroundClass="bg-vashj-and-kaelthas"
                 title="Edit Loot Biases"
                 subtitle={raid?.name}
             />

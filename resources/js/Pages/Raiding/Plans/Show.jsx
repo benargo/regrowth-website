@@ -57,7 +57,7 @@ export default function Show({ event }) {
 
     return (
         <Master title={event.title}>
-            <SharedHeader title={event.title} backgroundClass={event.background} />
+            <SharedHeader title={event.title} image={event.banner_url} imagePosition={event.banner_position} />
 
             <PageContainer>
                 {/* Event metadata card */}

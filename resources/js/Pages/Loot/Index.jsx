@@ -94,7 +94,9 @@ export default function Index({ raids, stats }) {
                         <ImageCard
                             key={raid.id}
                             href={route("loot.raids.show", { raid: raid.id, name: raid.slug })}
-                            backgroundClass={raid.background ?? "bg-brown-900"}
+                            image={raid.banner_url}
+                            imagePosition={raid.banner_position}
+                            backgroundClass="bg-brown-900"
                             color={raid.color}
                             eyebrow={raid.phase_number ? `Phase ${raid.phase_number}` : null}
                             heading={raid.name}

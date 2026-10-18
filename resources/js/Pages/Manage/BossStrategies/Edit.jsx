@@ -145,7 +145,13 @@ export default function EditBossStrategy({ boss }) {
 
     return (
         <Master title={`Edit Strategy — ${boss.name}`}>
-            <SharedHeader title={boss.name} backgroundClass={boss.raid.background ?? "bg-officer-meeting"} />
+            <SharedHeader
+                title={boss.name}
+                image={boss.raid.banner_url}
+                imagePosition={boss.raid.banner_position}
+                color={boss.raid.color}
+                backgroundClass="bg-officer-meeting"
+            />
             <ToolNav>
                 <ToolNavLink href={route("management.boss-strategies.index")}>
                     <Icon icon="arrow-left" style="solid" className="mr-2" />
