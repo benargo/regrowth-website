@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Http\Resources;
 
-use App\Enums\RaidBackground;
 use App\Http\Resources\RaidResource;
 use App\Models\Boss;
 use App\Models\Comment;
@@ -10,6 +9,7 @@ use App\Models\Item;
 use App\Models\Raid;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -146,7 +146,7 @@ class RaidResourceTest extends TestCase
         $this->assertNull($array['max_loot_councillors']);
     }
 
-    // ==================== color and background ====================
+    // ==================== color and banner ====================
 
     #[Test]
     public function it_returns_color(): void
@@ -160,23 +160,29 @@ class RaidResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_background_css_class_value(): void
+    public function it_returns_the_banner_url_and_position(): void
     {
-        $raid = Raid::factory()->withBackground(RaidBackground::Karazhan)->create();
+        Storage::fake('public');
+        $raid = Raid::factory()->withBanner('center top')->create()->load('media');
 
         $array = (new RaidResource($raid))->toArray(new Request);
 
-        $this->assertSame('bg-raid-karazhan', $array['background']);
+        $this->assertSame($raid->getFirstMediaUrl(Raid::MEDIA_BANNER, Raid::MEDIA_CONVERSION_HEADER), $array['banner_url']);
+        $this->assertSame('center top', $array['banner_position']);
     }
 
     #[Test]
-    public function it_returns_null_for_background_when_not_set(): void
+    public function it_returns_null_banner_fields_without_a_banner(): void
     {
         $raid = Raid::factory()->create();
 
         $array = (new RaidResource($raid))->toArray(new Request);
 
-        $this->assertNull($array['background']);
+        $this->assertArrayHasKey('banner_url', $array);
+        $this->assertArrayHasKey('banner_position', $array);
+        $this->assertNull($array['banner_url']);
+        $this->assertNull($array['banner_position']);
+        $this->assertArrayNotHasKey('background', $array);
     }
 
     // ==================== has trash items ====================
@@ -277,7 +283,8 @@ class RaidResourceTest extends TestCase
         $this->assertArrayHasKey('name', $array);
         $this->assertArrayHasKey('slug', $array);
         $this->assertArrayHasKey('color', $array);
-        $this->assertArrayHasKey('background', $array);
+        $this->assertArrayHasKey('banner_url', $array);
+        $this->assertArrayHasKey('banner_position', $array);
         $this->assertArrayHasKey('max_players', $array);
         $this->assertArrayHasKey('max_loot_councillors', $array);
     }
