@@ -41,11 +41,11 @@ export default function Create({ raids }) {
                     {/* Raids */}
                     <div className="flex flex-col gap-2">
                         <p className="text-sm font-semibold text-gray-300">Raids</p>
-                        {raids.length === 0 ? (
+                        {raids.data.length === 0 ? (
                             <p className="text-sm text-gray-400">No raids available.</p>
                         ) : (
                             <div className="flex flex-col gap-2">
-                                {raids.map((raid) => (
+                                {raids.data.map((raid) => (
                                     <label
                                         key={raid.id}
                                         className="flex cursor-pointer items-center gap-3 rounded border border-gray-700 px-3 py-2 transition-colors hover:border-amber-600/50 hover:bg-amber-600/10"

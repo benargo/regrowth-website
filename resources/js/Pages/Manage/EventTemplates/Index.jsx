@@ -93,7 +93,7 @@ export default function Index({ templates, raidGroups }) {
                     <p className="text-center text-gray-400">No templates yet. Create one to get started.</p>
                 ) : (
                     <div className="flex flex-col gap-12">
-                        {raidGroups.map(({ raid, templates: raidTemplates }) => (
+                        {raidGroups.map(({ raid: { data: raid }, templates: { data: raidTemplates } }) => (
                             <section key={raid.id}>
                                 <h2 className="mb-4 text-xl font-semibold text-amber-400">{raid.name}</h2>
                                 {raidTemplates.length === 0 ? (

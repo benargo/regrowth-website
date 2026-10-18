@@ -8,7 +8,9 @@ use App\Models\Event;
 use App\Models\Permission;
 use App\Models\Raid;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
@@ -71,12 +73,47 @@ class EventTemplateControllerTest extends TestCase
         $response = $this->actingAs($this->officer)->get(route('management.event-templates.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('templates', 1)
-            ->where('templates.0.title', 'SSC Setup')
+            ->has('templates.data', 1)
+            ->where('templates.data.0.title', 'SSC Setup')
             ->has('raidGroups', 1)
-            ->where('raidGroups.0.raid.id', $raid->id)
-            ->has('raidGroups.0.templates', 1)
+            ->where('raidGroups.0.raid.data.id', $raid->id)
+            ->has('raidGroups.0.templates.data', 1)
         );
+    }
+
+    #[Test]
+    public function it_limits_index_templates_to_the_template_scope(): void
+    {
+        $template = Event::factory()->template()->create();
+        $template->raids()->attach(Raid::factory()->create());
+
+        $response = $this->actingAs($this->officer)->get(route('management.event-templates.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('templates.data.0', fn (Assert $item) => $item->hasAll(['id', 'title', 'updated_at', 'raids']))
+            ->has('raidGroups.0.templates.data.0', fn (Assert $item) => $item->hasAll(['id', 'title', 'updated_at', 'raids']))
+        );
+    }
+
+    #[Test]
+    public function it_lists_templates_without_lazy_loading_raids_or_media(): void
+    {
+        Storage::fake('public');
+        foreach (range(1, 2) as $index) {
+            Event::factory()->template()->create()->raids()->attach(Raid::factory()->withBanner()->create());
+        }
+
+        config(['media-library.force_lazy_loading' => false]);
+        Model::preventLazyLoading();
+
+        try {
+            $response = $this->actingAs($this->officer)->get(route('management.event-templates.index'));
+
+            $response->assertOk();
+            $response->assertInertia(fn (Assert $page) => $page->has('raidGroups', 2));
+        } finally {
+            Model::preventLazyLoading(false);
+        }
     }
 
     #[Test]
@@ -125,9 +162,40 @@ class EventTemplateControllerTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Manage/EventTemplates/Create')
-            ->has('raids', 1)
-            ->where('raids.0.id', $raid->id)
+            ->has('raids.data', 1)
+            ->where('raids.data.0.id', $raid->id)
         );
+    }
+
+    #[Test]
+    public function it_limits_create_raids_to_the_summary_scope(): void
+    {
+        Raid::factory()->create();
+
+        $response = $this->actingAs($this->officer)->get(route('management.event-templates.create'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('raids.data.0', fn (Assert $raid) => $raid->hasAll(['id', 'name']))
+        );
+    }
+
+    #[Test]
+    public function it_lists_create_raids_without_lazy_loading_media(): void
+    {
+        Storage::fake('public');
+        Raid::factory()->withBanner()->count(2)->create();
+        config(['media-library.force_lazy_loading' => false]);
+
+        Model::preventLazyLoading();
+
+        try {
+            $response = $this->actingAs($this->officer)->get(route('management.event-templates.create'));
+        } finally {
+            Model::preventLazyLoading(false);
+        }
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page->has('raids.data', 2));
     }
 
     // ==================== store ====================
