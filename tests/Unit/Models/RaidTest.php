@@ -3,7 +3,6 @@
 namespace Tests\Unit\Models;
 
 use App\Casts\AsBinaryColor;
-use App\Enums\RaidBackground;
 use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\Event;
@@ -15,8 +14,14 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
+use Spatie\MediaLibrary\Conversions\Jobs\PerformConversionsJob;
+use Spatie\MediaLibrary\MediaCollections\Exceptions\FileUnacceptableForCollection;
 use Tests\Support\ModelTestCase;
 
 #[Group('raiding')]
@@ -52,7 +57,6 @@ class RaidTest extends ModelTestCase
         $this->assertFillable($model, [
             'name',
             'difficulty',
-            'background_css_class',
             'color',
             'phase_id',
             'max_players',
@@ -68,7 +72,6 @@ class RaidTest extends ModelTestCase
         $this->assertFillableAttribute($model, [
             'name',
             'difficulty',
-            'background_css_class',
             'color',
             'phase_id',
             'max_players',
@@ -82,7 +85,6 @@ class RaidTest extends ModelTestCase
         $model = new Raid;
 
         $this->assertCasts($model, [
-            'background_css_class' => RaidBackground::class,
             'color' => AsBinaryColor::class,
             'max_players' => 'integer',
             'max_loot_councillors' => 'integer',
@@ -104,26 +106,6 @@ class RaidTest extends ModelTestCase
 
         $this->assertTableHas(['name' => 'Karazhan']);
         $this->assertModelExists($raid);
-    }
-
-    // ==================== background_css_class ====================
-
-    #[Test]
-    public function background_css_class_is_nullable(): void
-    {
-        $raid = $this->create(['background_css_class' => null]);
-
-        $this->assertNull($raid->background_css_class);
-        $this->assertModelExists($raid);
-    }
-
-    #[Test]
-    public function background_css_class_is_cast_to_raid_background_enum(): void
-    {
-        $raid = $this->create(['background_css_class' => RaidBackground::Karazhan]);
-
-        $this->assertInstanceOf(RaidBackground::class, $raid->background_css_class);
-        $this->assertSame(RaidBackground::Karazhan, $raid->background_css_class);
     }
 
     // ==================== color ====================
@@ -497,5 +479,109 @@ class RaidTest extends ModelTestCase
 
         $this->assertInstanceOf(EventRaid::class, $pivot);
         $this->assertNotNull($pivot->sort_order);
+    }
+
+    // ==================== media ====================
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function a_new_banner_replaces_the_old_one(): void
+    {
+        Storage::fake('public');
+        $raid = $this->create();
+
+        $raid->addMedia(UploadedFile::fake()->image('old.png'))->toMediaCollection(Raid::MEDIA_BANNER);
+        $raid->addMedia(UploadedFile::fake()->image('new.png'))->toMediaCollection(Raid::MEDIA_BANNER);
+
+        $media = $raid->fresh()->getMedia(Raid::MEDIA_BANNER);
+        $this->assertCount(1, $media);
+        $this->assertSame('new.png', $media->first()->file_name);
+    }
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    #[TestWith(['banner.jpg'])]
+    #[TestWith(['banner.png'])]
+    #[TestWith(['banner.webp'])]
+    public function the_banner_accepts_raster_images(string $fileName): void
+    {
+        Storage::fake('public');
+        $raid = $this->create();
+
+        $raid->addMedia(UploadedFile::fake()->image($fileName))->toMediaCollection(Raid::MEDIA_BANNER);
+
+        $this->assertTrue($raid->fresh()->hasMedia(Raid::MEDIA_BANNER));
+    }
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function the_banner_rejects_other_files(): void
+    {
+        Storage::fake('public');
+        $raid = $this->create();
+
+        $this->expectException(FileUnacceptableForCollection::class);
+
+        $raid->addMedia(UploadedFile::fake()->create('banner.pdf', 10, 'application/pdf'))
+            ->toMediaCollection(Raid::MEDIA_BANNER);
+    }
+
+    #[Test]
+    public function banner_url_and_position_are_null_without_a_banner(): void
+    {
+        $raid = $this->create();
+
+        $this->assertNull($raid->banner_url);
+        $this->assertNull($raid->banner_position);
+    }
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function banner_url_is_the_original_until_the_header_conversion_exists(): void
+    {
+        Storage::fake('public');
+        Queue::fake([PerformConversionsJob::class]);
+
+        $raid = Raid::factory()->withBanner()->create();
+
+        Queue::assertPushed(PerformConversionsJob::class);
+        $media = $raid->getFirstMedia(Raid::MEDIA_BANNER);
+        $this->assertSame($media->getUrl(), $raid->fresh()->banner_url);
+    }
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function banner_url_is_the_header_conversion_once_generated(): void
+    {
+        Storage::fake('public');
+
+        $raid = Raid::factory()->withBanner()->create();
+
+        $media = $raid->getFirstMedia(Raid::MEDIA_BANNER);
+        $this->assertTrue($media->fresh()->hasGeneratedConversion(Raid::MEDIA_CONVERSION_HEADER));
+        $this->assertSame($media->getUrl(Raid::MEDIA_CONVERSION_HEADER), $raid->fresh()->banner_url);
+        $this->assertStringEndsWith('.webp', $raid->fresh()->banner_url);
+    }
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function banner_position_reads_the_position_custom_property(): void
+    {
+        Storage::fake('public');
+
+        $raid = Raid::factory()->withBanner('center bottom')->create();
+
+        $this->assertSame('center bottom', $raid->fresh()->banner_position);
+    }
+
+    #[Test]
+    public function banner_url_and_position_are_not_serialized(): void
+    {
+        Storage::fake('public');
+
+        $array = Raid::factory()->withBanner()->create()->fresh()->toArray();
+
+        $this->assertArrayNotHasKey('banner_url', $array);
+        $this->assertArrayNotHasKey('banner_position', $array);
     }
 }

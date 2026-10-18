@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Casts\AsBinaryColor;
-use App\Enums\RaidBackground;
 use App\Models\Concerns\FlushesRaidingCacheOnSave;
 use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,16 +13,32 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Str;
+use Spatie\Image\Enums\Fit;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 #[Appends(['slug'])]
-#[Fillable(['name', 'difficulty', 'background_css_class', 'color', 'phase_id', 'max_players', 'max_loot_councillors'])]
+#[Fillable(['name', 'difficulty', 'color', 'phase_id', 'max_players', 'max_loot_councillors'])]
 #[Hidden(['created_at', 'updated_at'])]
-class Raid extends Model
+class Raid extends Model implements HasMedia
 {
     use FlushesRaidingCacheOnSave;
     use HasFactory;
+    use InteractsWithMedia;
+
+    /**
+     * The wide header image shown on the raid's pages.
+     */
+    public const string MEDIA_BANNER = 'banner';
+
+    /**
+     * The resized webp version of the banner shown in page headers.
+     */
+    public const string MEDIA_CONVERSION_HEADER = 'header';
 
     /**
      * Get the attributes that should be cast.
@@ -33,7 +48,6 @@ class Raid extends Model
     protected function casts(): array
     {
         return [
-            'background_css_class' => RaidBackground::class,
             'color' => AsBinaryColor::class,
             'max_players' => 'integer',
             'max_loot_councillors' => 'integer',
@@ -43,7 +57,33 @@ class Raid extends Model
     // ============ Custom attributes ============
 
     /**
+     * Get the URL of the banner's header conversion, or of the original until the conversion exists.
+     *
+     * @return Attribute<string|null>
+     */
+    protected function bannerUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): ?string => $this->getFirstMedia(self::MEDIA_BANNER)?->getAvailableUrl([self::MEDIA_CONVERSION_HEADER]),
+        )->shouldCache();
+    }
+
+    /**
+     * Get the CSS background position stored on the banner, if any.
+     *
+     * @return Attribute<string|null>
+     */
+    protected function bannerPosition(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): ?string => $this->getFirstMedia(self::MEDIA_BANNER)?->getCustomProperty('position'),
+        )->shouldCache();
+    }
+
+    /**
      * Get the max_groups attribute for the raid, which is the maximum number of groups that can be formed based on the max_players attribute.
+     *
+     * @return Attribute<int>
      */
     protected function maxGroups(): Attribute
     {
@@ -55,13 +95,46 @@ class Raid extends Model
     /**
      * Get the slug attribute for the raid, which is a URL-friendly version of the raid name.
      *
-     * This is not stored in the database, but is generated on the fly when accessed. It is used for creating SEO-friendly URLs for raids.
+     * @return Attribute<string>
      */
     protected function slug(): Attribute
     {
         return Attribute::make(
             get: fn () => Str::slug($this->name),
         );
+    }
+
+    // ============ Media ============
+
+    /**
+     * Get the media attached to the raid, each with its `model` relation set to the raid.
+     *
+     * @return MorphMany<Media, $this>
+     */
+    public function media(): MorphMany
+    {
+        return $this->morphMany($this->getMediaModel(), 'model')->chaperone('model');
+    }
+
+    /**
+     * Register the single-file banner collection.
+     */
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection(self::MEDIA_BANNER)
+            ->singleFile()
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
+    }
+
+    /**
+     * Register the webp header conversion of the banner, at most 1920×1080.
+     */
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion(self::MEDIA_CONVERSION_HEADER)
+            ->fit(Fit::Max, 1920, 1080)
+            ->format('webp')
+            ->performOnCollections(self::MEDIA_BANNER);
     }
 
     // ============ Dataset relationships ============
@@ -127,14 +200,6 @@ class Raid extends Model
 
     /**
      * Get the comments on the items that drop in this raid (including trash drops).
-     *
-     * A HasManyThrough cannot hop across a pivot table, so the item ids are
-     * resolved with a subquery over the pivot instead. The relation is built
-     * with Relation::noConstraints() because hasMany() would otherwise add
-     * its own `commentable_id = raids.id` constraint — comparing the item id
-     * stored in the polymorphic column against the raid's own key, which is
-     * meaningless here. The whereIn() subquery is the only constraint that
-     * should apply.
      *
      * @return HasMany<Comment, $this>
      */

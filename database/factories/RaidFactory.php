@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Enums\RaidBackground;
 use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\Item;
@@ -10,6 +9,7 @@ use App\Models\Phase;
 use App\Models\Raid;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\UploadedFile;
 
 /**
  * @extends Factory<Raid>
@@ -123,6 +123,22 @@ class RaidFactory extends Factory
     }
 
     /**
+     * Create the raid with a banner image, optionally carrying a CSS background position.
+     */
+    public function withBanner(?string $position = null): static
+    {
+        return $this->afterCreating(function (Raid $raid) use ($position): void {
+            $media = $raid->addMedia(UploadedFile::fake()->image('banner.webp', 32, 18));
+
+            if ($position !== null) {
+                $media->withCustomProperties(['position' => $position]);
+            }
+
+            $media->toMediaCollection(Raid::MEDIA_BANNER);
+        });
+    }
+
+    /**
      * Attach the given items to the raid without detaching existing ones.
      *
      * @param  array<int, int>  $itemIds
@@ -130,15 +146,5 @@ class RaidFactory extends Factory
     private function attachItems(Raid $raid, array $itemIds): void
     {
         $raid->items()->syncWithoutDetaching($itemIds);
-    }
-
-    /**
-     * Indicate that the raid has a background CSS class set.
-     */
-    public function withBackground(?RaidBackground $background = null): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'background_css_class' => $background ?? fake()->randomElement(RaidBackground::cases()),
-        ]);
     }
 }
