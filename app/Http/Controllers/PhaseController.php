@@ -88,7 +88,7 @@ class PhaseController extends Controller
 
         return Inertia::render('Manage/Phases/Edit', [
             'phase' => fn (): PhaseResource => $phase
-                ->loadMissing(['gameVersion', 'raids' => fn (HasMany $query) => $query->orderBy('name')])
+                ->loadMissing(['gameVersion', 'raids' => fn (HasMany $query) => $query->orderBy('name'), 'raids.media'])
                 ->toResource(),
             'options' => fn (): array => BuildPhaseFormOptions::run(),
             'routes' => fn (): array => $routes->forEdit($phase),

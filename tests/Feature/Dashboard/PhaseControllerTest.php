@@ -10,6 +10,8 @@ use App\Models\Raid;
 use App\Models\Report;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
 use Mockery\Matcher\MatcherInterface;
@@ -103,6 +105,26 @@ class PhaseControllerTest extends DashboardTestCase
             ->where('gameVersion.data.title', 'Era')
             ->where('groups.0.game_version.data.title', 'Era')
         );
+    }
+
+    #[Test]
+    public function it_lists_raids_without_lazy_loading_media(): void
+    {
+        Storage::fake('public');
+        $gameVersion = GameVersion::factory()->create();
+        $phase = Phase::factory()->for($gameVersion)->create(['start_date' => now()->subMonth()]);
+        Raid::factory()->count(2)->for($phase)->withBanner()->create();
+
+        config(['media-library.force_lazy_loading' => false]);
+        Model::preventLazyLoading();
+
+        try {
+            $response = $this->withoutExceptionHandling()->actingAs($this->officer)->get(route('management.phases.index'));
+
+            $response->assertInertia(fn (Assert $page) => $page->whereNot('groups.0.phases.data.0.raids.0.banner_url', null));
+        } finally {
+            Model::preventLazyLoading(false);
+        }
     }
 
     // ==================== create ====================

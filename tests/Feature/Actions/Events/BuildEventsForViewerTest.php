@@ -7,8 +7,10 @@ use App\Http\Integrations\Discord\Requests\Channels\GetChannelRequest;
 use App\Models\Event;
 use App\Models\Raid;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Laravel\Facades\Saloon;
@@ -35,6 +37,27 @@ class BuildEventsForViewerTest extends TestCase
         $this->assertSame(['id', 'title', 'start_time', 'end_time', 'raids'], array_keys($array[0]));
         $this->assertSame('Black Temple', $array[0]['raids'][0]['name']);
         $this->assertArrayNotHasKey('bosses', $array[0]['raids'][0]);
+    }
+
+    #[Test]
+    public function it_lists_events_without_lazy_loading_raid_media(): void
+    {
+        Storage::fake('public');
+        $this->fakeDiscord([]);
+        foreach (range(1, 2) as $index) {
+            Event::factory()->live()->create()->raids()->attach(Raid::factory()->withBanner()->create(), ['sort_order' => 1]);
+        }
+
+        config(['media-library.force_lazy_loading' => false]);
+        Model::preventLazyLoading();
+
+        try {
+            $array = BuildEventsForViewer::run(Event::live(), new Request)->resolve(new Request);
+
+            $this->assertCount(2, $array);
+        } finally {
+            Model::preventLazyLoading(false);
+        }
     }
 
     #[Test]

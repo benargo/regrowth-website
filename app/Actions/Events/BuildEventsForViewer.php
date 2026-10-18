@@ -23,7 +23,7 @@ class BuildEventsForViewer
     public function handle(Builder $events, Request $request): ScopedResourceCollection
     {
         /** @var ScopedResourceCollection $resources */
-        $resources = EventResource::collection($events->clone()->with('raids')->get());
+        $resources = EventResource::collection($events->clone()->with('raids.media')->get());
 
         if ($request->user() === null) {
             return $resources->scope('visitors');

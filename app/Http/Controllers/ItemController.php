@@ -152,6 +152,7 @@ class ItemController extends Controller
                     fn (Builder $q) => $q->where('raids.id', $originRaidId),
                     fn (Builder $q) => $q->orderBy('raids.id')->limit(1),
                 ),
+            'raids.media',
             'boss',
             'priorities' => fn (BelongsToMany $query) => $query->orderByPivot('weight', 'desc'),
         ]);

@@ -32,7 +32,7 @@ class LootBiasToolController extends Controller
     public function index(): Response
     {
         $raids = RaidResource::collection(
-            Raid::with('phase')->orderBy('phase_id')->orderBy('id')->get()
+            Raid::with('phase', 'media')->orderBy('phase_id')->orderBy('id')->get()
         );
 
         return Inertia::render('Loot/Index', [
@@ -65,7 +65,7 @@ class LootBiasToolController extends Controller
             ->where('commentable_type', Item::class)
             ->whereIn('commentable_id', $raid->trashItems()->select('items.id'))
             ->count();
-        $raid->load(['bosses' => fn ($q) => $q->orderBy('sort_order')->withCount('comments')]);
+        $raid->load(['bosses' => fn ($q) => $q->orderBy('sort_order')->withCount('comments'), 'media']);
 
         return Inertia::render('Loot/Raids/Show', [
             'raid' => new RaidResource($raid),

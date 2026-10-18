@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Actions\EventBossResolver;
+use App\Actions\Events\BuildTemplateGroups;
 use App\Contracts\HasBlizzardIcons;
 use App\Http\Resources\CharacterSummaryResource;
 use App\Http\Resources\EventResource;
-use App\Http\Resources\EventTemplateCollection;
 use App\Http\Resources\PlayableClassResource;
 use App\Http\Resources\RaidResource;
 use App\Http\Resources\SpellResource;
@@ -36,9 +36,12 @@ class EventTemplateController extends Controller implements HasBlizzardIcons
     #[Authorize('viewTemplates', Event::class)]
     public function index(): Response
     {
-        $templates = Event::templates()->with('raids')->orderBy('title')->get();
+        $templates = Event::templates()->with('raids.media')->orderBy('title')->get();
 
-        return Inertia::render('Manage/EventTemplates/Index', (new EventTemplateCollection($templates))->toArray(request()));
+        return Inertia::render('Manage/EventTemplates/Index', [
+            'templates' => EventResource::collection($templates)->scope('template'),
+            'raidGroups' => BuildTemplateGroups::run($templates),
+        ]);
     }
 
     /**
@@ -48,7 +51,9 @@ class EventTemplateController extends Controller implements HasBlizzardIcons
     public function create(): Response
     {
         return Inertia::render('Manage/EventTemplates/Create', [
-            'raids' => Raid::orderBy('id')->get(),
+            'raids' => Raid::select('id', 'name')->orderBy('id')->get()
+                ->toResourceCollection()
+                ->scope('summary'),
         ]);
     }
 
@@ -80,11 +85,11 @@ class EventTemplateController extends Controller implements HasBlizzardIcons
     #[Authorize('update', 'template')]
     public function edit(Event $template, Request $request): Response
     {
-        $template->load('raids.bosses.media', 'bosses.media', 'assignments.group');
+        $template->load('raids.bosses.media', 'raids.media', 'bosses.media', 'assignments.group');
 
         return Inertia::render('Manage/EventTemplates/Edit', [
             'template' => (new EventResource($template))->resolve($request),
-            'raids' => RaidResource::collection(Raid::orderBy('id')->get())->resolve($request),
+            'raids' => RaidResource::collection(Raid::with('media')->orderBy('id')->get())->resolve($request),
             'targetMarkers' => TargetMarker::all()->map(fn (TargetMarker $m) => ['slug' => $m->slug, 'name' => $m->name])->values(),
             'characters' => Inertia::optional(function () use ($request) {
                 return Character::with('rank', 'playableClass')

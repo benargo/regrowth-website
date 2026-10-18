@@ -9,8 +9,10 @@ use App\Models\ItemPriority;
 use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -78,11 +80,32 @@ class LandingPageTest extends TestCase
                 ->has('name')
                 ->has('slug')
                 ->has('color')
-                ->has('background')
+                ->has('banner_url')
+                ->has('banner_position')
                 ->has('phase_number')
                 ->etc()
             )
         );
+    }
+
+    #[Test]
+    public function it_lists_raids_without_lazy_loading_media(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->member()->create();
+        $phase = Phase::factory()->started()->create();
+        Raid::factory()->count(2)->withBanner()->create(['phase_id' => $phase->id]);
+
+        config(['media-library.force_lazy_loading' => false]);
+        Model::preventLazyLoading();
+
+        try {
+            $response = $this->withoutExceptionHandling()->actingAs($user)->get('/loot');
+
+            $response->assertInertia(fn ($page) => $page->whereNot('raids.data.0.banner_url', null));
+        } finally {
+            Model::preventLazyLoading(false);
+        }
     }
 
     #[Test]

@@ -27,7 +27,7 @@ class BuildPhaseIndexGroups
      */
     public function handle(?GameVersion $gameVersion, BuildPhaseRoutes $routes): array
     {
-        $phasesByGameVersion = Phase::with(['raids' => fn (HasMany $query) => $query->orderBy('name')])
+        $phasesByGameVersion = Phase::with(['raids' => fn (HasMany $query) => $query->orderBy('name'), 'raids.media'])
             ->withUsageCounts()
             ->where(fn (Builder $query) => $query
                 ->whereNull('game_version_id')

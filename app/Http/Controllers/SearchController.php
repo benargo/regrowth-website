@@ -27,7 +27,7 @@ class SearchController extends Controller
             ->matchingName($query)
             ->when($raidId, fn ($q, $id) => $q->whereHas('raids', fn ($r) => $r->where('raids.id', $id)))
             ->orderBy('name')
-            ->with(['raids', 'boss', 'media', 'priorities'])
+            ->with(['raids.media', 'boss', 'media', 'priorities'])
             ->withCount('comments')
             ->paginate(self::PER_PAGE)
             ->withQueryString();
@@ -35,7 +35,7 @@ class SearchController extends Controller
         return Inertia::render('Search', [
             'results' => ItemResource::collection($results)->toResponse($request)->getData(true),
             'q' => $query,
-            'scoped_raid' => $raidId ? new RaidResource(Raid::find($raidId)) : null,
+            'scoped_raid' => $raidId ? new RaidResource(Raid::with('media')->find($raidId)) : null,
         ]);
     }
 }
