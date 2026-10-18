@@ -78,8 +78,8 @@ class BossStrategyControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->get(route('management.boss-strategies.index'));
 
         $response->assertInertia(fn ($page) => $page
-            ->where('phases.0.id', $earlier->id)
-            ->where('phases.1.id', $unscheduled->id)
+            ->where('phases.data.0.id', $earlier->id)
+            ->where('phases.data.1.id', $unscheduled->id)
         );
     }
 

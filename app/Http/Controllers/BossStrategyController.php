@@ -10,7 +10,6 @@ use App\Models\Phase;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
-use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
@@ -21,9 +20,9 @@ class BossStrategyController extends Controller
      */
     public function index(Request $request)
     {
-        $phases = Phase::with(['raids'])->inReleaseOrder()->get();
+        $phases = Phase::with(['raids.media'])->inReleaseOrder()->get();
 
-        $route = Route::currentRouteName();
+        $route = $request->route()->getName();
 
         $view = match ($route) {
             'raiding.boss-strategies.index' => 'Raiding/BossStrategies/Index',
@@ -33,7 +32,7 @@ class BossStrategyController extends Controller
 
         return Inertia::render($view, [
             'bosses' => new RaidBossesCollection(Boss::orderBy('raid_id')->ordered()->get()),
-            'phases' => PhaseResource::collection($phases)->resolve($request),
+            'phases' => PhaseResource::collection($phases),
         ]);
     }
 
@@ -43,7 +42,7 @@ class BossStrategyController extends Controller
     public function show(Boss $boss, string $slug)
     {
         return Inertia::render('Raiding/BossStrategies/Show', [
-            'boss' => $boss->load('raid')->toResource(),
+            'boss' => $boss->load('raid.media')->toResource(),
         ]);
     }
 
@@ -54,7 +53,7 @@ class BossStrategyController extends Controller
     public function edit(Request $request, Boss $boss, string $slug)
     {
         return Inertia::render('Manage/BossStrategies/Edit', [
-            'boss' => $boss->load('raid')->toResource(),
+            'boss' => $boss->load('raid.media')->toResource(),
         ]);
     }
 

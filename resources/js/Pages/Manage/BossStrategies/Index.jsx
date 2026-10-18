@@ -5,8 +5,8 @@ import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
 
 export default function BossStrategiesIndex({ bosses, phases }) {
-    bosses = bosses.data ?? bosses ?? [];
-    phases = phases.data ?? phases ?? [];
+    bosses = bosses.data;
+    phases = phases.data;
     return (
         <Master title="Boss Strategies">
             <SharedHeader title="Boss Strategies" backgroundClass="bg-karazhan-chess" />
