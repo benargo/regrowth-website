@@ -121,6 +121,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_prop_is_deferred_and_not_in_initial_response(): void
     {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
@@ -195,17 +196,54 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function invoke_deferred_prop_returns_empty_when_no_data(): void
+    public function invoke_deferred_prop_returns_no_rows_when_no_one_attended(): void
     {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('matrix.columns', [])
+                ->has('matrix.columns', 1)
                 ->where('matrix.rows', [])
             )
+        );
+    }
+
+    // ==================== matrix: Game Version ====================
+
+    #[Test]
+    public function invoke_follows_the_session_version(): void
+    {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $other = $this->createAttendanceVersion(['release_date' => '2020-01-01']);
+        $this->createReport($other, '2025-01-01 20:00');
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)
+            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $other->slug])
+            ->get(route('raiding.attendance.matrix'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('gameVersion.data.id', $other->id)
+            ->where('hasAttendance', true)
+        );
+    }
+
+    #[Test]
+    public function invoke_shows_the_empty_state_for_a_version_without_counted_attendance(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['rank_ids' => '1,2']));
+
+        $response->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('hasAttendance', false)
+            ->where('gameVersion.data.id', $this->gameVersion->id)
+            ->missing('matrix')
+            ->missing('filters')
+            ->missing('ranks')
         );
     }
 
@@ -223,7 +261,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/Attendance/Matrix')
             ->has('gameVersion.data')
-            ->has('gameVersions.data', 1)
+            ->where('hasAttendance', true)
             ->has('ranks.data')
             ->has('zones.data')
             ->has('guildTags.data')
@@ -257,6 +295,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_character_filter_is_null_when_not_specified(): void
     {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
@@ -574,14 +613,14 @@ class AttendanceMatrixControllerTest extends TestCase
     // ==================== matrix: Earliest Date Prop ====================
 
     #[Test]
-    public function invoke_earliest_date_is_null_when_no_reports_exist(): void
+    public function invoke_earliest_date_is_omitted_when_no_reports_exist(): void
     {
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('earliestDate', null)
+            ->missing('earliestDate')
         );
     }
 
@@ -714,6 +753,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_filters_include_combine_linked_characters_filter(): void
     {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
@@ -726,6 +766,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_combine_linked_characters_defaults_to_true_when_not_specified(): void
     {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
@@ -738,6 +779,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_combine_linked_characters_can_be_set_to_false(): void
     {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['combine_linked_characters' => false]));
@@ -1024,20 +1066,18 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function invoke_renders_empty_props_without_a_game_version(): void
+    public function invoke_renders_the_empty_state_without_a_game_version(): void
     {
+        GameVersion::query()->delete();
+
         $this->actingAs(User::factory()->officer()->create())
             ->get(route('raiding.attendance.matrix'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('gameVersion', null)
-                ->has('gameVersions.data', 0)
-                ->has('ranks.data', 0)
-                ->has('zones.data', 0)
-                ->has('guildTags.data', 0)
-                ->where('earliestDate', null)
-                ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->where('matrix', ['columns' => [], 'rows' => []])));
+                ->where('hasAttendance', false)
+                ->missing('matrix')
+                ->missing('ranks'));
     }
 
     #[Test]
@@ -1110,6 +1150,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_sends_no_separate_attendance_names_prop(): void
     {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
         $this->actingAs(User::factory()->officer()->create())
             ->get(route('raiding.attendance.matrix'))
             ->assertInertia(fn (Assert $page) => $page

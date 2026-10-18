@@ -6,40 +6,34 @@ use App\Actions\Attendance\BuildAttendanceDashboardStats;
 use App\Actions\Attendance\FindReportDateRange;
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Data\Attendance\AttendanceDashboardStatsData;
-use App\Http\Middleware\RemembersCurrentGameVersion;
 use App\Http\Resources\GameVersionResource;
-use App\Models\GameVersion;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Inertia\Inertia;
 use Inertia\Response;
 
 #[Middleware('auth')]
-#[Middleware(RemembersCurrentGameVersion::class)]
 #[Authorize('view-attendance')]
 class AttendanceDashboardController extends Controller
 {
     /**
-     * Display the attendance dashboard of the current game version, with blank
-     * statistics when no game version has counted attendance.
+     * Display the attendance dashboard of the current game version, or an empty
+     * state when that version has no counted attendance.
      */
     public function __invoke(): Response
     {
-        $gameVersions = GameVersion::withCountedAttendance()->get();
-        $gameVersion = ResolveCurrentGameVersion::run($gameVersions);
+        $gameVersion = ResolveCurrentGameVersion::run();
 
-        if ($gameVersion === null) {
+        if ($gameVersion === null || ! $gameVersion->hasCountedAttendance()) {
             return Inertia::render('Raiding/Attendance/Dashboard', [
-                'gameVersion' => null,
-                'gameVersions' => GameVersionResource::collection($gameVersions),
-                'latestReportDate' => null,
-                'stats' => Inertia::defer(fn (): AttendanceDashboardStatsData => AttendanceDashboardStatsData::blank()),
+                'gameVersion' => $gameVersion === null ? null : new GameVersionResource($gameVersion),
+                'hasAttendance' => false,
             ]);
         }
 
         return Inertia::render('Raiding/Attendance/Dashboard', [
             'gameVersion' => new GameVersionResource($gameVersion),
-            'gameVersions' => GameVersionResource::collection($gameVersions),
+            'hasAttendance' => true,
             'latestReportDate' => FindReportDateRange::run($gameVersion)->latest?->toDateString(),
             'stats' => Inertia::defer(fn (): AttendanceDashboardStatsData => BuildAttendanceDashboardStats::run($gameVersion)),
         ]);

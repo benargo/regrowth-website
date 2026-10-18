@@ -8,7 +8,6 @@ import Icon from "@/Components/FontAwesome/Icon";
 import Alert from "@/Components/Alert";
 import EmptyState from "@/Components/EmptyState";
 import BattleNetLoginButton from "@/Components/Blizzard/BattleNetLoginButton";
-import GameVersionSelector from "@/Components/GameVersions/GameVersionSelector";
 import CharacterPortrait from "@/Components/Characters/CharacterPortrait";
 import CharacterSearch from "@/Components/Characters/CharacterSearch";
 import ClassPill from "@/Components/Characters/ClassPill";
@@ -162,13 +161,12 @@ function AccountAbsenceForm({ gameVersion, plannedAbsence, action, canBackdate, 
 
 export default function Form() {
     const {
-        game_versions: gameVersionsResource = null,
         game_version: gameVersionResource = null,
+        has_roster: hasRoster = false,
         planned_absence: plannedAbsenceResource = null,
         action,
         reasons = [],
     } = usePage().props;
-    const gameVersions = gameVersionsResource?.data ?? null;
     const gameVersion = gameVersionResource?.data ?? null;
     const plannedAbsence = plannedAbsenceResource?.data ?? null;
 
@@ -201,13 +199,7 @@ export default function Form() {
             </ToolNav>
 
             <PageContainer>
-                {!plannedAbsence && gameVersions && (
-                    <div className="mb-10">
-                        <GameVersionSelector gameVersions={gameVersions} currentGameVersion={gameVersion} />
-                    </div>
-                )}
-
-                {plannedAbsence || gameVersion ? (
+                {plannedAbsence || (gameVersion && hasRoster) ? (
                     <FormPageLayout sections={ABSENCE_SECTIONS} note={canBackdate ? null : ticketNote}>
                         <FormPageSection>
                             <AccountAbsenceForm
@@ -223,7 +215,7 @@ export default function Form() {
                 ) : (
                     <EmptyState
                         icon="calendar-times"
-                        message="There's no guild roster to log an absence against yet."
+                        message="Absences are not available for this game version."
                     />
                 )}
             </PageContainer>

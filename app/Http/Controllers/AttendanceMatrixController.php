@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Actions\Attendance\BuildAttendanceMatrix;
 use App\Data\Attendance\AttendanceMatrixData;
-use App\Http\Middleware\RemembersCurrentGameVersion;
 use App\Http\Requests\Raid\AttendanceMatrixRequest;
 use App\Http\Resources\GameVersionResource;
 use App\Http\Resources\GuildRankResource;
@@ -21,7 +20,6 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 #[Middleware('auth')]
-#[Middleware(RemembersCurrentGameVersion::class)]
 #[Authorize('view-attendance')]
 class AttendanceMatrixController extends Controller
 {
@@ -32,9 +30,16 @@ class AttendanceMatrixController extends Controller
     {
         $gameVersion = $request->gameVersion();
 
+        if ($gameVersion === null || ! $request->hasCountedAttendance()) {
+            return Inertia::render('Raiding/Attendance/Matrix', [
+                'gameVersion' => $gameVersion === null ? null : new GameVersionResource($gameVersion),
+                'hasAttendance' => false,
+            ]);
+        }
+
         return Inertia::render('Raiding/Attendance/Matrix', [
-            'gameVersion' => $this->gameVersion($gameVersion),
-            'gameVersions' => GameVersionResource::collection($request->gameVersions()),
+            'gameVersion' => new GameVersionResource($gameVersion),
+            'hasAttendance' => true,
             'ranks' => $this->ranks($gameVersion),
             'zones' => $this->zones($gameVersion),
             'guildTags' => $this->guildTags($gameVersion),
@@ -45,30 +50,18 @@ class AttendanceMatrixController extends Controller
     }
 
     /**
-     * The selected game version as a resource, or null when none is selected.
-     */
-    private function gameVersion(?GameVersion $gameVersion): ?GameVersionResource
-    {
-        return $gameVersion === null ? null : new GameVersionResource($gameVersion);
-    }
-
-    /**
      * The game version's guild ranks in rank order.
      */
-    private function ranks(?GameVersion $gameVersion): AnonymousResourceCollection
+    private function ranks(GameVersion $gameVersion): AnonymousResourceCollection
     {
-        return GuildRankResource::collection($gameVersion?->guildRanks()->ordered()->get() ?? collect());
+        return GuildRankResource::collection($gameVersion->guildRanks()->ordered()->get());
     }
 
     /**
      * The zones of the game version's reports, ordered by name.
      */
-    private function zones(?GameVersion $gameVersion): AnonymousResourceCollection
+    private function zones(GameVersion $gameVersion): AnonymousResourceCollection
     {
-        if ($gameVersion === null) {
-            return ZoneResource::collection(collect());
-        }
-
         return ZoneResource::collection(Zone::whereIn(
             'id',
             $gameVersion->reports()->select('zone_id')->whereNotNull('zone_id')->distinct(),
@@ -78,12 +71,8 @@ class AttendanceMatrixController extends Controller
     /**
      * The guild tags of the game version's reports, ordered by name.
      */
-    private function guildTags(?GameVersion $gameVersion): AnonymousResourceCollection
+    private function guildTags(GameVersion $gameVersion): AnonymousResourceCollection
     {
-        if ($gameVersion === null) {
-            return GuildTagResource::collection(collect());
-        }
-
         return GuildTagResource::collection(GuildTag::whereIn(
             'id',
             $gameVersion->reports()->select('guild_tag_id')->whereNotNull('guild_tag_id')->distinct(),
@@ -95,12 +84,8 @@ class AttendanceMatrixController extends Controller
      *
      * @return array{columns: array<int, mixed>, rows: array<int, mixed>}
      */
-    private function matrix(AttendanceMatrixRequest $request, ?GameVersion $gameVersion): array
+    private function matrix(AttendanceMatrixRequest $request, GameVersion $gameVersion): array
     {
-        if ($gameVersion === null) {
-            return (new AttendanceMatrixData(columns: collect(), rows: collect()))->toArray();
-        }
-
         return Cache::tags(['attendance'])->remember(
             $request->cacheKey('attendance:matrix:'),
             now()->addHours(24),

@@ -12,7 +12,6 @@ import SpecIcon from "@/Components/Characters/SpecIcon";
 import SearchInput from "@/Components/Search/SearchInput";
 import { Can } from "@/Components/Authorizable";
 import SortableTable from "@/Components/SortableTable";
-import GameVersionSelector from "@/Components/GameVersions/GameVersionSelector";
 import useLocalStorage from "@/Hooks/useLocalStorage";
 import raidSpec from "@/Helpers/RaidSpec";
 
@@ -154,12 +153,26 @@ function IndexSkeleton() {
     );
 }
 
-export default function Index({ gameVersion, gameVersions, characters, classes, ranks, races }) {
+export default function Index({ gameVersion, hasRoster, characters, classes, ranks, races }) {
+    if (!hasRoster) {
+        return (
+            <Master title="Guild Roster">
+                <SharedHeader
+                    title="Guild Roster"
+                    color={gameVersion.data.color}
+                    image={gameVersion.data.banner_url}
+                />
+                <PageContainer>
+                    <EmptyState icon="users" message="Roster data is not available for this game version." />
+                </PageContainer>
+            </Master>
+        );
+    }
+
     return (
         <RosterContent
             key={gameVersion.data.slug}
             gameVersion={gameVersion.data}
-            gameVersions={gameVersions.data}
             characters={characters?.data}
             classes={classes.data}
             ranks={ranks}
@@ -168,7 +181,7 @@ export default function Index({ gameVersion, gameVersions, characters, classes, 
     );
 }
 
-function RosterContent({ gameVersion, gameVersions, characters, classes, ranks, races }) {
+function RosterContent({ gameVersion, characters, classes, ranks, races }) {
     const isLoading = characters === undefined;
 
     // Filters persist client-side in localStorage so the user's last selection
@@ -290,7 +303,6 @@ function RosterContent({ gameVersion, gameVersions, characters, classes, ranks, 
         <Master title="Guild Roster">
             <SharedHeader title="Guild Roster" color={gameVersion.color} image={gameVersion.banner_url} />
             <PageContainer>
-                <GameVersionSelector gameVersions={gameVersions} currentGameVersion={gameVersion} />
                 {isLoading ? (
                     <IndexSkeleton />
                 ) : (

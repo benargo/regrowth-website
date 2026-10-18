@@ -4,7 +4,7 @@ import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import Tooltip from "@/Components/Tooltip";
 import PageContainer from "@/Components/PageContainer";
-import GameVersionSelector from "@/Components/GameVersions/GameVersionSelector";
+import EmptyState from "@/Components/EmptyState";
 
 function formatAbsenceDate(isoDate) {
     if (!isoDate) return "";
@@ -288,25 +288,24 @@ function PlayerListRows({ stats }) {
     );
 }
 
-export default function Dashboard({ latestReportDate, stats, gameVersion, gameVersions }) {
+export default function Dashboard({ latestReportDate, stats, hasAttendance }) {
     return (
         <Master title="Attendance Dashboard">
             <SharedHeader title="Attendance Dashboard" backgroundClass="bg-illidan" />
             <PageContainer>
-                {gameVersion && (
-                    <GameVersionSelector
-                        gameVersions={gameVersions.data}
-                        currentGameVersion={gameVersion.data}
-                        href={(version) => route("raiding.attendance.dashboard", { game_version: version.slug })}
-                    />
-                )}
-                    <Deferred data="stats" fallback={<HeaderRowSkeleton />}>
-                        <StatsHeaderRow stats={stats} latestReportDate={latestReportDate} />
-                    </Deferred>
+                {hasAttendance ? (
+                    <>
+                        <Deferred data="stats" fallback={<HeaderRowSkeleton />}>
+                            <StatsHeaderRow stats={stats} latestReportDate={latestReportDate} />
+                        </Deferred>
 
-                    <Deferred data="stats" fallback={<PlayerRowsSkeleton />}>
-                        <PlayerListRows stats={stats} />
-                    </Deferred>
+                        <Deferred data="stats" fallback={<PlayerRowsSkeleton />}>
+                            <PlayerListRows stats={stats} />
+                        </Deferred>
+                    </>
+                ) : (
+                    <EmptyState icon="chart-line" message="Attendance data is not available for this game version." />
+                )}
             </PageContainer>
         </Master>
     );

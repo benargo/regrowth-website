@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Dashboard;
 
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Actions\Phase\ReorderPhases;
 use App\Actions\Phase\UpdatePhase;
 use App\Models\GameVersion;
@@ -73,37 +74,22 @@ class PhaseControllerTest extends DashboardTestCase
     }
 
     #[Test]
-    public function it_shows_the_newest_game_version_by_default_with_every_version_selectable(): void
-    {
-        GameVersion::factory()->create(['title' => 'Era', 'release_date' => '2019-08-27']);
-        GameVersion::factory()->create(['title' => 'Anniversary', 'release_date' => '2026-02-06']);
-
-        $response = $this->actingAs($this->officer)->get(route('management.phases.index'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->where('gameVersion.data.title', 'Anniversary')
-            ->where('gameVersions.data.0.title', 'Anniversary')
-            ->where('gameVersions.data.1.title', 'Era')
-            ->has('groups', 1)
-            ->where('groups.0.game_version.data.title', 'Anniversary')
-        );
-    }
-
-    #[Test]
-    public function it_shows_the_game_version_chosen_in_the_query(): void
+    public function it_lists_every_version_whatever_the_session_holds(): void
     {
         $era = GameVersion::factory()->create(['title' => 'Era', 'release_date' => '2019-08-27']);
         GameVersion::factory()->create(['title' => 'Anniversary', 'release_date' => '2026-02-06']);
+        Phase::factory()->create(['game_version_id' => null]);
 
-        $this->actingAs($this->officer)
-            ->get(route('management.phases.index', ['game_version' => $era->slug]))
-            ->assertRedirect(route('management.phases.index'));
-
-        $response = $this->actingAs($this->officer)->get(route('management.phases.index'));
+        $response = $this->actingAs($this->officer)
+            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $era->slug])
+            ->get(route('management.phases.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('gameVersion.data.title', 'Era')
-            ->where('groups.0.game_version.data.title', 'Era')
+            ->missing('gameVersion')
+            ->has('groups', 3)
+            ->where('groups.0.game_version.data.title', 'Anniversary')
+            ->where('groups.1.game_version.data.title', 'Era')
+            ->where('groups.2.game_version', null)
         );
     }
 

@@ -9,12 +9,15 @@ import Pill from "@/Components/Pill";
 import ResponsiveNavLink from "@/Components/ResponsiveNavLink";
 import { Can } from "@/Components/Authorizable";
 import WarcraftLogsLogo from "@/Components/WarcraftLogs/Logo";
+import GameVersionSwitcher, { GameVersionSwitchList } from "@/Components/GameVersions/GameVersionSwitcher";
+import GameVersionIcon from "@/Components/GameVersions/GameVersionIcon";
+import useGameVersionSwitch, { GAME_VERSION_SWITCH_ERROR_BAG } from "@/Hooks/useGameVersionSwitch";
 import SearchPalette from "@/Components/Search/SearchPalette";
 import cn from "@/Helpers/cn";
 
 const MOBILE_LINK = "flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:text-white";
 
-const FOOTER_LINK = "flex h-8 flex-row items-center gap-2 p-1 transition-colors md:ml-2";
+const FOOTER_COLUMN_LINK = "flex min-h-8 flex-row items-center gap-2 py-1 transition-colors";
 
 const NAV_CLASSES = {
     classic: {
@@ -23,6 +26,9 @@ const NAV_CLASSES = {
         iconButton: "hover:bg-brown-700 text-gray-400",
         searchButton: "hover:bg-brown-700 border-brown-600 bg-brown-800 focus:ring-amber-500 text-gray-300",
         searchShortcut: "bg-brown-900 text-gray-400",
+        switcherButton: "hover:bg-brown-700 border-brown-600 bg-brown-800 focus:ring-amber-500 text-gray-300",
+        switcherOptions: "bg-brown-800",
+        switcherOption: "data-focus:bg-brown-700",
         mobileMenu: "bg-brown-900",
         mobileLink: "hover:bg-amber-700 text-gray-300",
         mobileDivider: "border-amber-700",
@@ -36,6 +42,9 @@ const NAV_CLASSES = {
         iconButton: "hover:bg-forever-700 text-verdant-400",
         searchButton: "hover:bg-forever-700 border-forever-600 bg-forever-800 focus:ring-camel-500 text-verdant-300",
         searchShortcut: "bg-forever-900 text-verdant-300",
+        switcherButton: "hover:bg-forever-700 border-forever-600 bg-forever-800 focus:ring-camel-500 text-verdant-300",
+        switcherOptions: "bg-forever-800",
+        switcherOption: "data-focus:bg-forever-700",
         navLink: "hover:bg-forever-700/80 focus-visible:outline-camel-400",
         responsiveNavLink: "text-verdant-300 hover:bg-camel-800 focus-visible:outline-camel-400",
         dropdownContent: "py-1 bg-forever-800",
@@ -50,10 +59,12 @@ const NAV_CLASSES = {
 };
 
 export default function Master({ title, isHomepage = false, children }) {
-    const { auth, flash, discordInviteUrl } = usePage().props;
+    const { auth, flash, errors, discordInviteUrl, gameVersions = [] } = usePage().props;
+    const hasGameVersionColumn = gameVersions.length > 1;
+    const { current: currentGameVersion, switchTo, isSwitching } = useGameVersionSwitch();
     const classes = isHomepage ? NAV_CLASSES.forever : NAV_CLASSES.classic;
     const mobileLinkClass = cn(MOBILE_LINK, classes.mobileLink);
-    const footerLinkClass = cn(FOOTER_LINK, classes.footerLink);
+    const footerLinkClass = cn(FOOTER_COLUMN_LINK, classes.footerLink);
     const isRosterActive = route().current("roster.*") || route().current("characters.show");
     const isRaidingActive = route().current("raiding.*");
     const isLootActive = route().current("loot.*");
@@ -71,6 +82,14 @@ export default function Master({ title, isHomepage = false, children }) {
         setFlashError(flash?.error);
         setFlashSuccess(flash?.success);
     }, [flash?.error, flash?.success]);
+
+    // Surface game version switch validation errors as a flash error.
+    const gameVersionSwitchError = errors?.[GAME_VERSION_SWITCH_ERROR_BAG]?.game_version;
+    useEffect(() => {
+        if (gameVersionSwitchError) {
+            setFlashError(gameVersionSwitchError);
+        }
+    }, [gameVersionSwitchError]);
 
     // Ctrl/Cmd+K opens the search palette from anywhere in the app.
     useEffect(() => {
@@ -201,6 +220,7 @@ export default function Master({ title, isHomepage = false, children }) {
                                         <Kbd>{isMac ? "⌘K" : "Ctrl K"}</Kbd>
                                     </span>
                                 </button>
+                                {user && <GameVersionSwitcher classes={classes} />}
                                 {user ? (
                                     <Dropdown>
                                         <Dropdown.Trigger>
@@ -346,6 +366,7 @@ export default function Master({ title, isHomepage = false, children }) {
                                         )}
                                     </div>
                                 </div>
+                                <GameVersionSwitchList className="space-y-1" linkClassName={mobileLinkClass} />
                                 <Link href={route("account.index")} className={mobileLinkClass}>
                                     <Icon icon="user-cog" style="regular" className="mr-2" />
                                     Account Settings
@@ -390,69 +411,130 @@ export default function Master({ title, isHomepage = false, children }) {
                 </main>
 
                 <footer className={cn("border-t-8 py-5", classes.footer)} id="footer">
-                    <div className="container mx-auto">
-                        <div className="my-4 flex flex-col-reverse items-center justify-between md:my-6 md:flex-row">
-                            {/* Logos Section */}
-                            <div className="my-4 flex flex-none items-center md:my-0 md:gap-6">
-                                <Link href="/" title="Regrowth" className="flex flex-1 items-center md:flex-none">
+                    <div className="container mx-auto px-4 md:px-0">
+                        <div
+                            className={cn(
+                                "my-4 grid grid-cols-1 gap-8 md:my-6 md:gap-7",
+                                hasGameVersionColumn
+                                    ? "md:grid-cols-[1fr_repeat(3,max-content)]"
+                                    : "md:grid-cols-[1fr_repeat(2,max-content)]",
+                            )}
+                        >
+                            {/* Brand */}
+                            <div className="flex flex-col gap-3">
+                                <div className="flex items-center gap-4">
+                                    <Link href="/" title="Regrowth" className="flex-none">
+                                        <img src="/images/guild_emblem.webp" alt="" className="h-20 object-contain" />
+                                        <span className="sr-only">Regrowth</span>
+                                    </Link>
                                     <img
-                                        src="/images/guild_emblem.webp"
-                                        alt=""
-                                        className="h-20 w-1/2 object-contain md:w-auto"
+                                        src="/images/logo_forever.webp"
+                                        alt="World of Warcraft: Forever logo"
+                                        className="h-20 min-w-0 object-contain"
                                     />
-                                    <span className="sr-only">Regrowth</span>
-                                </Link>
-                                <img
-                                    src="/images/logo_forever.webp"
-                                    alt="World of Warcraft: Forever logo"
-                                    className="h-20 w-1/2 flex-1 object-contain md:mr-4 md:w-auto"
-                                />
-                            </div>
-                            {/* Footer Links */}
-                            <nav
-                                aria-label="Footer"
-                                className="flex flex-col items-center justify-start gap-4 md:flex-row md:flex-wrap md:gap-2"
-                            >
-                                <div className={cn("flex h-8 flex-row items-center p-1 md:ml-2", classes.footerText)}>
+                                </div>
+                                <div className={cn("flex items-center", classes.footerText)}>
                                     <Icon icon="copyright" style="regular" className="mr-2 h-5 w-5" />
                                     <span className="text-nowrap">{new Date().getFullYear()} Regrowth</span>
                                 </div>
-                                <a
-                                    href="https://www.warcraftlogs.com/guilds/774848-regrowth"
-                                    className={footerLinkClass}
-                                    rel="noopener noreferrer"
-                                >
-                                    <WarcraftLogsLogo className="h-5 w-5" />
-                                    <span className="text-nowrap">Warcraft Logs</span>
-                                </a>
-                                <a
-                                    href={discordInviteUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className={footerLinkClass}
-                                >
-                                    <Icon icon="discord" style="brands" className="h-5 w-5" />
-                                    <span className="text-nowrap">Discord</span>
-                                </a>
-                                <Link href={route("privacypolicy")} className={footerLinkClass}>
-                                    <Icon icon="user-secret" style="solid" className="h-5 w-5" />
-                                    <span className="text-nowrap">Privacy policy</span>
-                                </Link>
-                                <Link href={route("battlenet-usage")} className={footerLinkClass}>
-                                    <Icon icon="battle-net" style="brands" className="h-5 w-5" />
-                                    <span className="text-nowrap">Battle.net API Usage</span>
-                                </Link>
+                            </div>
 
-                                <a
-                                    href="https://benargo.com"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    title="Ben Argo"
-                                    className={cn("mt-0", footerLinkClass)}
-                                >
-                                    <Icon icon="safari" style="brands" className="h-5 w-5" />
-                                    <span className="text-nowrap">A Fizzywigs Production</span>
-                                </a>
+                            {/* Game version */}
+                            {hasGameVersionColumn && (
+                                <nav aria-label="Game version">
+                                    <h2 className={cn("mb-2 text-sm opacity-70", classes.footerText)}>Game version</h2>
+                                    <ul className="flex flex-col">
+                                        {gameVersions.map((gameVersion) => {
+                                            const isCurrent = gameVersion.slug === currentGameVersion?.slug;
+
+                                            return (
+                                                <li key={gameVersion.slug}>
+                                                    <button
+                                                        type="button"
+                                                        disabled={isSwitching}
+                                                        onClick={() => switchTo(gameVersion.slug)}
+                                                        aria-current={isCurrent ? "true" : undefined}
+                                                        className={cn(
+                                                            FOOTER_COLUMN_LINK,
+                                                            "w-full text-left disabled:opacity-60",
+                                                            classes.footerLink,
+                                                            isCurrent && "font-bold",
+                                                        )}
+                                                    >
+                                                        <GameVersionIcon gameVersion={gameVersion} />
+                                                        <span className="min-w-0">
+                                                            {gameVersion.title}
+                                                            {isCurrent && (
+                                                                <span className="ml-2 inline-block rounded-full border border-current px-2 align-middle text-xs font-normal whitespace-nowrap opacity-70">
+                                                                    Current
+                                                                </span>
+                                                            )}
+                                                        </span>
+                                                    </button>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </nav>
+                            )}
+
+                            {/* Guild */}
+                            <nav aria-label="Guild">
+                                <h2 className={cn("mb-2 text-sm opacity-70", classes.footerText)}>Guild</h2>
+                                <ul className="flex flex-col">
+                                    <li>
+                                        <a
+                                            href="https://www.warcraftlogs.com/guilds/774848-regrowth"
+                                            className={footerLinkClass}
+                                            rel="noopener noreferrer"
+                                        >
+                                            <WarcraftLogsLogo className="h-5 w-5" />
+                                            <span className="text-nowrap">Warcraft Logs</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a
+                                            href={discordInviteUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className={footerLinkClass}
+                                        >
+                                            <Icon icon="discord" style="brands" className="h-5 w-5" />
+                                            <span className="text-nowrap">Discord</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+
+                            {/* About */}
+                            <nav aria-label="About">
+                                <h2 className={cn("mb-2 text-sm opacity-70", classes.footerText)}>About</h2>
+                                <ul className="flex flex-col">
+                                    <li>
+                                        <Link href={route("privacypolicy")} className={footerLinkClass}>
+                                            <Icon icon="user-secret" style="solid" className="h-5 w-5" />
+                                            <span className="text-nowrap">Privacy policy</span>
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link href={route("battlenet-usage")} className={footerLinkClass}>
+                                            <Icon icon="battle-net" style="brands" className="h-5 w-5" />
+                                            <span className="text-nowrap">Battle.net API Usage</span>
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <a
+                                            href="https://benargo.com"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            title="Ben Argo"
+                                            className={footerLinkClass}
+                                        >
+                                            <Icon icon="safari" style="brands" className="h-5 w-5" />
+                                            <span className="text-nowrap">A Fizzywigs Production</span>
+                                        </a>
+                                    </li>
+                                </ul>
                             </nav>
                         </div>
                         <div className="mt-4 md:mt-2">

@@ -59,6 +59,23 @@ class GameVersionControllerTest extends DashboardTestCase
 
     #[Group('happy-path')]
     #[Test]
+    public function index_does_not_shadow_the_shared_game_versions_prop(): void
+    {
+        GameVersion::factory()->create(['release_date' => now()->subYear()]);
+        GameVersion::factory()->create(['release_date' => now()->subWeek()]);
+
+        $response = $this->actingAs($this->officer)->get(route('management.game-versions.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('gameVersions', 2)
+            ->has('gameVersions.0.meta.is_current')
+            ->has('versions.data', 2)
+            ->has('versions.data.0.phases_count')
+        );
+    }
+
+    #[Group('happy-path')]
+    #[Test]
     public function it_lists_game_versions_by_release_date_with_usage_counts(): void
     {
         $later = GameVersion::factory()->create(['title' => 'Later', 'release_date' => Carbon::create(2026, 6, 1)]);
@@ -70,13 +87,13 @@ class GameVersionControllerTest extends DashboardTestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Manage/GameVersions/Index')
-            ->has('gameVersions.data', 2)
-            ->where('gameVersions.data.0.title', 'Earlier')
-            ->where('gameVersions.data.0.phases_count', 0)
-            ->where('gameVersions.data.1.title', 'Later')
-            ->where('gameVersions.data.1.phases_count', 1)
-            ->has('gameVersions.data.1.characters_count')
-            ->where('gameVersions.data.1.links', [
+            ->has('versions.data', 2)
+            ->where('versions.data.0.title', 'Earlier')
+            ->where('versions.data.0.phases_count', 0)
+            ->where('versions.data.1.title', 'Later')
+            ->where('versions.data.1.phases_count', 1)
+            ->has('versions.data.1.characters_count')
+            ->where('versions.data.1.links', [
                 'edit' => route('management.game-versions.edit', $later),
                 'destroy' => route('management.game-versions.destroy', $later),
             ])

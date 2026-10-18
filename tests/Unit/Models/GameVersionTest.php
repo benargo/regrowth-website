@@ -487,6 +487,26 @@ class GameVersionTest extends ModelTestCase
         $this->assertFalse(GameVersion::withCountedAttendance()->exists());
     }
 
+    // ==================== hasCountedAttendance ====================
+
+    #[Test]
+    public function has_counted_attendance_is_true_with_a_counted_report(): void
+    {
+        $gameVersion = $this->createAttendanceVersion();
+        $this->createReport($gameVersion, '2025-01-01 20:00');
+
+        $this->assertTrue($gameVersion->hasCountedAttendance());
+    }
+
+    #[Test]
+    public function has_counted_attendance_is_false_without_one(): void
+    {
+        $gameVersion = $this->createAttendanceVersion();
+        $this->createReport($gameVersion, '2025-01-01 20:00', $this->createTag($gameVersion, countsAttendance: false));
+
+        $this->assertFalse($gameVersion->hasCountedAttendance());
+    }
+
     // ==================== current rosters ====================
 
     #[Test]

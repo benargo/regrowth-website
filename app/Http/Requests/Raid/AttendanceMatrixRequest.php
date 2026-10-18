@@ -9,12 +9,11 @@ use App\Models\GameVersion;
 use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * Validates the attendance filters and exposes their values, scoped to the
- * user's current attendance game version.
+ * user's current game version.
  */
 class AttendanceMatrixRequest extends FormRequest
 {
@@ -44,21 +43,19 @@ class AttendanceMatrixRequest extends FormRequest
     }
 
     /**
-     * The game versions with counted attendance, newest release first.
-     *
-     * @return EloquentCollection<int, GameVersion>
-     */
-    public function gameVersions(): EloquentCollection
-    {
-        return once(fn (): EloquentCollection => GameVersion::withCountedAttendance()->get());
-    }
-
-    /**
-     * The user's current attendance game version, or null when none has counted attendance.
+     * The user's current game version.
      */
     public function gameVersion(): ?GameVersion
     {
-        return once(fn (): ?GameVersion => ResolveCurrentGameVersion::run($this->gameVersions()));
+        return ResolveCurrentGameVersion::run();
+    }
+
+    /**
+     * Whether the current game version has counted attendance; false without a version.
+     */
+    public function hasCountedAttendance(): bool
+    {
+        return once(fn (): bool => $this->gameVersion()?->hasCountedAttendance() ?? false);
     }
 
     /**
@@ -96,7 +93,9 @@ class AttendanceMatrixRequest extends FormRequest
         return once(function (): ?Character {
             $characterId = $this->validated('character');
 
-            return $characterId === null ? null : $this->gameVersion()?->characters()->find($characterId);
+            return $characterId === null || ! $this->hasCountedAttendance()
+                ? null
+                : $this->gameVersion()->characters()->find($characterId);
         });
     }
 
@@ -170,11 +169,9 @@ class AttendanceMatrixRequest extends FormRequest
     public function earliestDate(): ?string
     {
         return once(function (): ?string {
-            $gameVersion = $this->gameVersion();
-
-            return $gameVersion === null
-                ? null
-                : FindReportDateRange::run($gameVersion)->earliest?->subDay()->toDateString();
+            return $this->hasCountedAttendance()
+                ? FindReportDateRange::run($this->gameVersion())->earliest?->subDay()->toDateString()
+                : null;
         });
     }
 
@@ -201,7 +198,7 @@ class AttendanceMatrixRequest extends FormRequest
     {
         $value = $this->validated($key);
 
-        if ($value === null || $value === 'all' || $this->gameVersion() === null) {
+        if ($value === null || $value === 'all' || ! $this->hasCountedAttendance()) {
             return null;
         }
 

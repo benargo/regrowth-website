@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Contracts\Http\Resources\ScopedResource;
 use App\Http\Resources\Concerns\HasScopes;
 use App\Models\GameVersion;
@@ -10,8 +11,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Spatie\MediaLibrary\MediaCollections\MediaCollection;
 
 /**
- * Transform a game version, optionally limited to the `management` scope.
- * warcraftlogs and the usage counts are omitted unless loaded.
+ * Transform a game version, optionally limited to the `management` or `switcher` scope.
+ * The media URLs, warcraftlogs and the usage counts are omitted unless loaded.
  */
 class GameVersionResource extends JsonResource implements ScopedResource
 {
@@ -46,9 +47,9 @@ class GameVersionResource extends JsonResource implements ScopedResource
             'title' => $this->title,
             'slug' => $this->slug,
             'color' => $this->color,
-            'banner_url' => $this->getFirstMediaUrl(GameVersion::MEDIA_BANNER) ?: null,
-            'icon_url' => $this->getFirstMediaUrl(GameVersion::MEDIA_ICON) ?: null,
-            'logo_url' => $this->getFirstMediaUrl(GameVersion::MEDIA_LOGO) ?: null,
+            'banner_url' => $this->whenLoaded('media', fn (): ?string => $this->getFirstMediaUrl(GameVersion::MEDIA_BANNER) ?: null),
+            'icon_url' => $this->whenLoaded('media', fn (): ?string => $this->getFirstMediaUrl(GameVersion::MEDIA_ICON) ?: null),
+            'logo_url' => $this->whenLoaded('media', fn (): ?string => $this->getFirstMediaUrl(GameVersion::MEDIA_LOGO) ?: null),
             'realm' => $this->realm,
             'guild_name' => $this->guild_name,
             'uses_surnames' => $this->uses_surnames,
@@ -67,6 +68,9 @@ class GameVersionResource extends JsonResource implements ScopedResource
             'characters_count' => $this->whenCounted('characters'),
             'guild_ranks_count' => $this->whenCounted('guildRanks'),
             'links' => $this->when($this->links !== null, fn (): ?array => $this->links),
+            'meta' => $this->when($this->activeScope() === 'switcher', fn (): array => [
+                'is_current' => ResolveCurrentGameVersion::run()?->is($this->resource) ?? false,
+            ]),
         ]);
     }
 
@@ -81,6 +85,7 @@ class GameVersionResource extends JsonResource implements ScopedResource
                 'realm', 'guild_name', 'uses_surnames', 'faction', 'release_date', 'blizzard', 'warcraftlogs',
                 'phases_count', 'items_count', 'characters_count', 'guild_ranks_count', 'links',
             ],
+            'switcher' => ['id', 'title', 'slug', 'color', 'icon_url', 'release_date', 'meta'],
         ];
     }
 

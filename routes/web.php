@@ -25,14 +25,18 @@ use App\Http\Controllers\PlannedAbsenceController;
 use App\Http\Controllers\RaidingController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\Session\GameVersionController as SessionGameVersionController;
 use App\Http\Controllers\WarcraftLogs\GuildController;
 use App\Http\Controllers\WarcraftLogs\GuildTagController;
+use App\Http\Middleware\RemembersCurrentGameVersion;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', HomeController::class)->name('home');
 
 Route::get('/search', SearchController::class)->name('search');
+
+Route::patch('/session/game-version', [SessionGameVersionController::class, 'update'])->name('session.game-version.update');
 
 /**
  * User account settings
@@ -60,10 +64,12 @@ Route::get('/roster/characters/{character}/{slug?}', [CharacterController::class
 /**
  * Character management
  */
-Route::get('/manage/characters/{character}/{slug}/edit', [CharacterController::class, 'edit'])
-    ->name('characters.edit');
-Route::patch('/manage/characters/{character}', [CharacterController::class, 'update'])
-    ->name('characters.update');
+Route::withoutMiddleware(RemembersCurrentGameVersion::class)->group(function () {
+    Route::get('/manage/characters/{character}/{slug}/edit', [CharacterController::class, 'edit'])
+        ->name('characters.edit');
+    Route::patch('/manage/characters/{character}', [CharacterController::class, 'update'])
+        ->name('characters.update');
+});
 
 /**
  * Loot Bias Tools
@@ -84,14 +90,16 @@ Route::group(['prefix' => 'loot', 'as' => 'loot.'], function () {
 Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
     Route::get('/', [RaidingController::class, 'index'])->name('index');
 
-    // Planned absences routes
-    Route::get('/absences', [PlannedAbsenceController::class, 'index'])->name('absences.index');
-    Route::get('/absences/create', [PlannedAbsenceController::class, 'create'])->name('absences.create');
-    Route::post('/absences', [PlannedAbsenceController::class, 'store'])->name('absences.store');
-    Route::get('/absences/{plannedAbsence}/edit', [PlannedAbsenceController::class, 'edit'])->name('absences.edit');
-    Route::patch('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'update'])->name('absences.update');
-    Route::delete('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'destroy'])->name('absences.destroy');
-    Route::post('/absences/{plannedAbsence}/restore', [PlannedAbsenceController::class, 'restore'])->withTrashed()->name('absences.restore');
+    // Planned absences routes (version-independent)
+    Route::withoutMiddleware(RemembersCurrentGameVersion::class)->group(function () {
+        Route::get('/absences', [PlannedAbsenceController::class, 'index'])->name('absences.index');
+        Route::get('/absences/create', [PlannedAbsenceController::class, 'create'])->name('absences.create');
+        Route::post('/absences', [PlannedAbsenceController::class, 'store'])->name('absences.store');
+        Route::get('/absences/{plannedAbsence}/edit', [PlannedAbsenceController::class, 'edit'])->name('absences.edit');
+        Route::patch('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'update'])->name('absences.update');
+        Route::delete('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'destroy'])->name('absences.destroy');
+        Route::post('/absences/{plannedAbsence}/restore', [PlannedAbsenceController::class, 'restore'])->withTrashed()->name('absences.restore');
+    });
 
     // Attendance routes
     Route::get('/attendance', AttendanceDashboardController::class)->name('attendance.dashboard');
@@ -118,7 +126,7 @@ Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
 /*
  * Officers' Dashboard
  */
-Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['auth']], function () {
+Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['auth'], 'excluded_middleware' => [RemembersCurrentGameVersion::class]], function () {
     Route::get('/', fn () => redirect()->route('management.dashboard'))->name('index');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
 

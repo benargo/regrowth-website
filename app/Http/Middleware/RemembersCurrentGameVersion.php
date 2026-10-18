@@ -2,7 +2,8 @@
 
 namespace App\Http\Middleware;
 
-use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Actions\GameVersion\ListSelectableGameVersions;
+use App\Actions\GameVersion\RememberGameVersion;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -10,8 +11,12 @@ use Symfony\Component\HttpFoundation\Response;
 class RemembersCurrentGameVersion
 {
     /**
-     * Remember the game version named by `?game_version=` as the user's
-     * current one, then redirect to the same URL without it.
+     * Remember the game version named by a `?game_version=` query-string slug
+     * as the user's current one, then redirect to the same URL without it.
+     *
+     * Applies to non-prefetch GET requests whose query-string value is the slug
+     * of a selectable game version; anything else passes through untouched,
+     * including values in the request body and numeric ids.
      *
      * The redirect keeps the parameter out of the address bar, so a refresh,
      * or a later reload of deferred props, can't re-select a stale version
@@ -21,14 +26,18 @@ class RemembersCurrentGameVersion
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $request->filled('game_version') || $request->prefetch()) {
+        $slug = $request->query('game_version');
+
+        if (
+            ! $request->isMethod('GET')
+            || $request->prefetch()
+            || ! is_string($slug)
+            || ! ListSelectableGameVersions::run()->contains('slug', $slug)
+        ) {
             return $next($request);
         }
 
-        $request->session()->put(
-            ResolveCurrentGameVersion::SESSION_KEY,
-            $request->string('game_version')->toString(),
-        );
+        RememberGameVersion::run($slug);
 
         // Keep flashed messages, such as an upload's success notice, for the page we redirect to.
         $request->session()->reflash();

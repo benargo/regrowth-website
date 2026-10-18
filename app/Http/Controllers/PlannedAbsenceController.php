@@ -4,11 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Actions\Characters\RefreshCharacterPortrait;
 use App\Actions\Discord\LookUpGuildMembers;
-use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Actions\GameVersion\PreselectGameVersion;
 use App\Contracts\HasCharacterMedia;
 use App\Data\PlannedAbsenceReasonData;
 use App\Http\Controllers\Concerns\SharesCharacterPortrait;
-use App\Http\Middleware\RemembersCurrentGameVersion;
 use App\Http\Requests\StorePlannedAbsenceRequest;
 use App\Http\Requests\UpdatePlannedAbsenceRequest;
 use App\Http\Resources\CharacterResource;
@@ -118,14 +117,13 @@ class PlannedAbsenceController extends Controller
      * Show the form for creating a new resource.
      */
     #[Authorize('create', PlannedAbsence::class)]
-    #[Middleware(RemembersCurrentGameVersion::class)]
     public function create(Request $request): Response
     {
         $selectable = function () use (&$selectableVersions): Collection {
             return $selectableVersions ??= $this->selectableGameVersions();
         };
-        $gameVersion = function () use (&$resolvedVersion, $selectable): ?GameVersion {
-            return $resolvedVersion ??= ResolveCurrentGameVersion::run($selectable());
+        $gameVersion = function () use (&$resolvedVersion, $selectable, $request): ?GameVersion {
+            return $resolvedVersion ??= PreselectGameVersion::run($selectable(), $request->query('game_version'));
         };
 
         return Inertia::render('Raiding/Absences/Form', [
@@ -169,7 +167,7 @@ class PlannedAbsenceController extends Controller
         };
         $gameVersion = function () use (&$resolvedVersion, $loadedAbsence): ?GameVersion {
             return $resolvedVersion ??= $loadedAbsence()->character?->gameVersion
-                ?? ResolveCurrentGameVersion::run($this->selectableGameVersions());
+                ?? PreselectGameVersion::run($this->selectableGameVersions(), null);
         };
 
         return Inertia::render('Raiding/Absences/Form', [

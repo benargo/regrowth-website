@@ -118,11 +118,13 @@ class AttendanceGraphsControllerTest extends TestCase
     #[Test]
     public function invoke_scatter_points_prop_is_deferred_and_not_in_initial_response(): void
     {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.graphs.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
+            ->where('hasAttendance', true)
             ->missing('scatterPoints')
         );
     }
@@ -223,20 +225,6 @@ class AttendanceGraphsControllerTest extends TestCase
     }
 
     #[Test]
-    public function invoke_scatter_points_returns_empty_array_when_no_data(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.attendance.graphs.index'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('scatterPoints', [])
-            )
-        );
-    }
-
-    #[Test]
     public function invoke_scatter_character_carries_an_unwrapped_playable_class(): void
     {
         $character = $this->createCharacter($this->gameVersion, $this->rank, ['playable_class_id' => PlayableClass::factory()->create(['name' => 'Hunter'])->id]);
@@ -252,18 +240,33 @@ class AttendanceGraphsControllerTest extends TestCase
     }
 
     #[Test]
-    public function invoke_renders_empty_scatter_points_without_a_game_version(): void
+    public function invoke_shows_the_empty_state_for_a_version_without_counted_attendance(): void
     {
         $this->actingAs(User::factory()->officer()->create())
             ->get(route('raiding.attendance.graphs.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->where('gameVersion', null)
-                ->loadDeferredProps(fn (Assert $reload) => $reload->where('scatterPoints', [])));
+                ->where('hasAttendance', false)
+                ->where('gameVersion.data.slug', $this->gameVersion->slug)
+                ->missing('scatterPoints'));
     }
 
     #[Test]
-    public function invoke_uses_the_session_game_version(): void
+    public function invoke_shows_the_empty_state_without_a_game_version(): void
+    {
+        $this->gameVersion->delete();
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.graphs.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('hasAttendance', false)
+                ->where('gameVersion', null)
+                ->missing('scatterPoints'));
+    }
+
+    #[Test]
+    public function invoke_follows_the_session_version(): void
     {
         $newer = $this->createAttendanceVersion(['release_date' => '2024-06-01']);
         $this->createReport($newer, '2025-01-01 20:00');
@@ -272,7 +275,9 @@ class AttendanceGraphsControllerTest extends TestCase
         $this->actingAs(User::factory()->officer()->create())
             ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $this->gameVersion->slug])
             ->get(route('raiding.attendance.graphs.index'))
-            ->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', $this->gameVersion->slug));
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('hasAttendance', true)
+                ->where('gameVersion.data.slug', $this->gameVersion->slug));
     }
 
     #[Test]

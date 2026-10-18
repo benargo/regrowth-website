@@ -226,18 +226,39 @@ class RosterTest extends TestCase
     }
 
     #[Test]
-    public function it_falls_back_to_the_default_roster_for_a_game_version_without_a_current_roster(): void
+    public function it_follows_the_session_version_outside_the_roster_list(): void
     {
-        GameVersion::factory()->fetchableRoster()->create(['slug' => 'later', 'release_date' => Carbon::now()->addMonth()]);
+        GameVersion::factory()->create(['slug' => 'later', 'release_date' => Carbon::now()->addMonth()]);
 
-        $this->followingRedirects()->get(route('roster.index', ['game_version' => 'later']))->assertInertia(fn (Assert $page) => $page
+        $this->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'later'])
+            ->get(route('roster.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Roster/Index')
+                ->where('gameVersion.data.slug', 'later')
+                ->where('hasRoster', false)
+                ->missing('characters')
+                ->missing('classes')
+                ->missing('ranks')
+                ->missing('races')
+            );
+    }
+
+    #[Test]
+    public function it_shows_the_roster_of_a_roster_version(): void
+    {
+        $this->get(route('roster.index'))->assertInertia(fn (Assert $page) => $page
             ->where('gameVersion.data.slug', 'tbc')
+            ->where('hasRoster', true)
+            ->has('classes.data')
         );
     }
 
     #[Test]
-    public function it_is_not_found_when_no_game_version_has_a_roster(): void
+    public function it_returns_404_only_when_there_are_no_game_versions(): void
     {
+        $this->get(route('roster.index'))->assertOk();
+
         GameVersion::query()->delete();
 
         $this->get(route('roster.index'))->assertNotFound();
@@ -285,14 +306,10 @@ class RosterTest extends TestCase
     }
 
     #[Test]
-    public function switcher_lists_every_current_roster_newest_first(): void
+    public function the_shared_switcher_list_is_present_and_the_page_sends_no_own_list(): void
     {
-        GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'release_date' => Carbon::now()->subDay()]);
-
         $this->get(route('roster.index'))->assertInertia(fn (Assert $page) => $page
-            ->has('gameVersions.data', 2)
-            ->where('gameVersions.data.0.slug', 'newer')
-            ->where('gameVersions.data.1.slug', 'tbc')
+            ->has('gameVersions.0.meta')
         );
     }
 

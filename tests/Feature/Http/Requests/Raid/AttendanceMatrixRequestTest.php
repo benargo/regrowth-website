@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Http\Requests\Raid;
 
+use App\Actions\GameVersion\ListSelectableGameVersions;
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Http\Requests\Raid\AttendanceMatrixRequest;
 use App\Models\Character;
@@ -54,6 +55,28 @@ class AttendanceMatrixRequestTest extends TestCase
         session([ResolveCurrentGameVersion::SESSION_KEY => $this->gameVersion->slug]);
 
         $this->assertTrue($this->request()->gameVersion()->is($this->gameVersion));
+    }
+
+    #[Test]
+    public function it_ignores_id_filters_for_a_version_without_counted_attendance(): void
+    {
+        $empty = $this->createAttendanceVersion(['release_date' => '2030-01-01']);
+        $character = $this->createCharacter($empty);
+        session([ResolveCurrentGameVersion::SESSION_KEY => $empty->slug]);
+
+        $request = $this->request([
+            'rank_ids' => '1,2',
+            'zone_ids' => '1,2',
+            'guild_tag_ids' => '1,2',
+            'character' => $character->id,
+        ]);
+
+        $this->assertFalse($request->hasCountedAttendance());
+        $this->assertNull($request->rankIds());
+        $this->assertNull($request->zoneIds());
+        $this->assertNull($request->guildTagIds());
+        $this->assertNull($request->character());
+        $this->assertNull($request->earliestDate());
     }
 
     // ==================== id lists ====================
@@ -435,6 +458,8 @@ class AttendanceMatrixRequestTest extends TestCase
      */
     private function request(array $input = []): AttendanceMatrixRequest
     {
+        ResolveCurrentGameVersion::forget();
+        request()->attributes->remove(ListSelectableGameVersions::class);
         $request = AttendanceMatrixRequest::create('/raiding/attendance/matrix', 'GET', $input);
         $request->setContainer($this->app)->setRedirector($this->app->make(Redirector::class));
         $request->validateResolved();

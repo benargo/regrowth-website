@@ -3,12 +3,12 @@
 namespace App\Actions\GameVersion;
 
 use App\Models\GameVersion;
-use Illuminate\Support\Collection;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 /**
- * Picks the game version a page shows from the versions it can select,
- * preferring the one the user last chose.
+ * Resolves the site's current game version: the one stored in the session,
+ * otherwise the most recently released version, otherwise the newest version.
+ * The result is memoised for the duration of the request.
  */
 class ResolveCurrentGameVersion
 {
@@ -16,12 +16,26 @@ class ResolveCurrentGameVersion
 
     public const string SESSION_KEY = 'current_game_version';
 
-    /**
-     * @param  Collection<int, GameVersion>  $selectable  In the page's display order, default first
-     */
-    public function handle(Collection $selectable): ?GameVersion
+    public function handle(): ?GameVersion
     {
-        return $selectable->firstWhere('slug', session(self::SESSION_KEY))
-            ?? $selectable->first();
+        $attributes = request()->attributes;
+
+        if (! $attributes->has(self::class)) {
+            $list = ListSelectableGameVersions::run();
+
+            $attributes->set(self::class, $list->firstWhere('slug', session(self::SESSION_KEY))
+                ?? $list->first(fn (GameVersion $version) => $version->release_date <= now())
+                ?? $list->first());
+        }
+
+        return $attributes->get(self::class);
+    }
+
+    /**
+     * Clears the memoised current version for this request.
+     */
+    public static function forget(): void
+    {
+        request()->attributes->remove(self::class);
     }
 }

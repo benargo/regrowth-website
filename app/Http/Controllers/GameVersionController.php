@@ -33,7 +33,7 @@ class GameVersionController extends Controller
     #[Authorize('viewAny', GameVersion::class)]
     public function index(BuildGameVersionRoutes $routes): Response
     {
-        $gameVersions = GameVersion::with('warcraftLogsGuild')
+        $gameVersions = GameVersion::with(['media', 'warcraftLogsGuild'])
             ->withUsageCounts()
             ->orderBy('release_date')
             ->get();
@@ -44,7 +44,7 @@ class GameVersionController extends Controller
         );
 
         return Inertia::render('Manage/GameVersions/Index', [
-            'gameVersions' => $gameVersionResources,
+            'versions' => $gameVersionResources,
             'routes' => $routes->forIndex(),
         ]);
     }
@@ -82,7 +82,7 @@ class GameVersionController extends Controller
     public function edit(Request $request, GameVersion $gameVersion, BuildGameVersionRoutes $routes): Response
     {
         $editLock = ResolveEditLock::run($request, $gameVersion);
-        $gameVersion->loadMissing('warcraftLogsGuild');
+        $gameVersion->loadMissing(['media', 'warcraftLogsGuild']);
 
         return Inertia::render('Manage/GameVersions/Edit', [
             'gameVersion' => $gameVersion->toResource(),
@@ -106,7 +106,7 @@ class GameVersionController extends Controller
         BuildGameVersionRoutes $routes,
     ): Response {
         $editLock = ResolveEditLock::run($request, $gameVersion);
-        $gameVersion->loadMissing('warcraftLogsGuild');
+        $gameVersion->loadMissing(['media', 'warcraftLogsGuild']);
 
         return Inertia::render('Manage/GameVersions/Setup', [
             'gameVersion' => $gameVersion->toResource(),
@@ -128,7 +128,7 @@ class GameVersionController extends Controller
     #[Authorize('update', 'gameVersion')]
     public function review(GameVersion $gameVersion, BuildGameVersionRoutes $routes): Response
     {
-        $gameVersion->loadMissing('warcraftLogsGuild');
+        $gameVersion->loadMissing(['media', 'warcraftLogsGuild']);
 
         return Inertia::render('Manage/GameVersions/Review', [
             'gameVersion' => $gameVersion->toResource(),

@@ -4,7 +4,7 @@ import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import AttendanceScatterChart from "@/Components/AttendanceScatterChart";
 import PageContainer from "@/Components/PageContainer";
-import GameVersionSelector from "@/Components/GameVersions/GameVersionSelector";
+import EmptyState from "@/Components/EmptyState";
 
 function BoxLabel({ icon, label }) {
     return (
@@ -24,24 +24,21 @@ function ScatterSkeleton() {
     );
 }
 
-export default function Graphs({ scatterPoints, gameVersion, gameVersions }) {
+export default function Graphs({ scatterPoints, hasAttendance }) {
     return (
         <Master title="Attendance Graphs">
             <SharedHeader title="Attendance Graphs" backgroundClass="bg-illidan" />
             <PageContainer>
-                {gameVersion && (
-                    <GameVersionSelector
-                        gameVersions={gameVersions.data}
-                        currentGameVersion={gameVersion.data}
-                        href={(version) => route("raiding.attendance.graphs.index", { game_version: version.slug })}
-                    />
+                {hasAttendance ? (
+                    <Deferred data="scatterPoints" fallback={<ScatterSkeleton />}>
+                        <div className="rounded border border-amber-600 p-4">
+                            <BoxLabel icon="chart-scatter" label="Attendance distribution" />
+                            <AttendanceScatterChart points={scatterPoints} />
+                        </div>
+                    </Deferred>
+                ) : (
+                    <EmptyState icon="chart-scatter" message="Attendance data is not available for this game version." />
                 )}
-                <Deferred data="scatterPoints" fallback={<ScatterSkeleton />}>
-                    <div className="rounded border border-amber-600 p-4">
-                        <BoxLabel icon="chart-scatter" label="Attendance distribution" />
-                        <AttendanceScatterChart points={scatterPoints} />
-                    </div>
-                </Deferred>
             </PageContainer>
         </Master>
     );

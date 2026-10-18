@@ -271,18 +271,34 @@ class PlannedAbsenceControllerTest extends TestCase
     }
 
     #[Test]
-    public function create_falls_back_when_the_session_version_is_not_a_current_roster(): void
+    public function it_preselects_the_session_version_on_create(): void
     {
-        $currentRoster = GameVersion::factory()->fetchableRoster()->create();
+        GameVersion::factory()->fetchableRoster()->create(['release_date' => now()->subDay()]);
+        $selected = GameVersion::factory()->fetchableRoster()->create(['release_date' => now()->subYear()]);
+
+        $this->actingAs($this->member())
+            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $selected->slug])
+            ->get(route('account.absences.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('game_version.data.id', $selected->id)
+                ->where('has_roster', true)
+                ->missing('game_versions'));
+    }
+
+    #[Test]
+    public function it_shows_the_empty_state_for_a_version_without_a_roster(): void
+    {
+        GameVersion::factory()->fetchableRoster()->create(['release_date' => now()->subYear()]);
         $officerOnly = GameVersion::factory()->create(['blizzard_namespace' => null, 'release_date' => now()->subDay()]);
 
         $this->actingAs($this->member())
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $officerOnly->slug])
+            ->withSession(array_merge($this->battleNetSession(), [ResolveCurrentGameVersion::SESSION_KEY => $officerOnly->slug]))
             ->get(route('account.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
-                ->where('game_version.data.id', $currentRoster->id)
-                ->where('game_versions.data', fn ($gameVersions) => collect($gameVersions)->pluck('id')->all() === [$currentRoster->id]))
-            ->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, $officerOnly->slug);
+                ->where('game_version.data.id', $officerOnly->id)
+                ->where('has_roster', false)
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->where('account_characters.characters.data', [])));
     }
 
     // ==================== store ====================

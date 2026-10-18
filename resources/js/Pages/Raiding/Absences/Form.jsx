@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useForm, usePage } from "@inertiajs/react";
+import { router, useForm, usePage } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
@@ -7,9 +7,8 @@ import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import Icon from "@/Components/FontAwesome/Icon";
 import EmptyState from "@/Components/EmptyState";
 import UserSearch from "@/Components/Discord/UserSearch";
-import GameVersionSelector from "@/Components/GameVersions/GameVersionSelector";
 import CharacterSearch from "@/Components/Characters/CharacterSearch";
-import { FormRow, FormSection } from "@/Components/FormControls";
+import { FormRow, FormSection, OptionSelect } from "@/Components/FormControls";
 import FormPageLayout, { FormPageSection } from "@/Components/FormPage";
 import AbsenceForm, { ABSENCE_SECTIONS } from "@/Components/PlannedAbsences/AbsenceForm";
 import AbsenceDetailsFields from "@/Components/PlannedAbsences/AbsenceDetailsFields";
@@ -27,7 +26,7 @@ function matchNickname(characters, nickname) {
     return matches.length === 1 ? matches[0] : null;
 }
 
-function OfficerAbsenceForm({ gameVersion, characters, plannedAbsence, action, reasons }) {
+function OfficerAbsenceForm({ gameVersion, gameVersions, characters, plannedAbsence, action, reasons }) {
     const isEditing = plannedAbsence !== null;
     const originalCharacterId = plannedAbsence?.character?.id ?? null;
 
@@ -68,6 +67,17 @@ function OfficerAbsenceForm({ gameVersion, characters, plannedAbsence, action, r
         }
     }
 
+    function selectGameVersion(slug) {
+        const version = gameVersions.find((candidate) => candidate.slug === slug);
+
+        if (!version || version.id === data.game_version) {
+            return;
+        }
+
+        setData((previous) => ({ ...previous, game_version: version.id, character: null }));
+        router.reload({ only: ["characters", "game_version"], data: { game_version: slug } });
+    }
+
     function submit(visitOptions) {
         transform(({ game_version, character, user, ...rest }) => ({
             ...rest,
@@ -106,6 +116,17 @@ function OfficerAbsenceForm({ gameVersion, characters, plannedAbsence, action, r
                         invalid={Boolean(resolutionError ?? errors.user)}
                     />
                 </FormRow>
+
+                {gameVersions && (
+                    <FormRow htmlFor="game_version" label="Game version" error={errors.game_version}>
+                        <OptionSelect
+                            name="game_version"
+                            value={gameVersions.find((version) => version.id === data.game_version)?.slug ?? gameVersion.slug}
+                            onChange={selectGameVersion}
+                            options={gameVersions.map((version) => ({ value: version.slug, label: version.title }))}
+                        />
+                    </FormRow>
+                )}
 
                 <FormRow htmlFor="character" label="Character" required error={errors.character}>
                     <CharacterSearch
@@ -158,18 +179,12 @@ export default function Form() {
             </ToolNav>
 
             <PageContainer>
-                {gameVersions && (
-                    <div className="mb-10">
-                        <GameVersionSelector gameVersions={gameVersions} currentGameVersion={gameVersion} />
-                    </div>
-                )}
-
                 {gameVersion ? (
                     <FormPageLayout sections={ABSENCE_SECTIONS}>
                         <FormPageSection>
                             <OfficerAbsenceForm
-                                key={gameVersion.slug}
                                 gameVersion={gameVersion}
+                                gameVersions={gameVersions}
                                 characters={characters}
                                 plannedAbsence={plannedAbsence}
                                 action={action}

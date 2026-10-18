@@ -45,7 +45,7 @@ function GameVersionCard({ gameVersion, onDelete }) {
     );
 }
 
-export default function Index({ gameVersions: { data: gameVersions }, routes }) {
+export default function Index({ versions: { data: versions }, routes }) {
     const deletion = useRecordDeletion();
 
     return (
@@ -56,11 +56,11 @@ export default function Index({ gameVersions: { data: gameVersions }, routes }) 
                 intro="The game versions the guild plays. Phases (and through them raids and bosses), items and characters are attached to one of these."
                 addHref={routes.create}
                 addLabel="Add game version"
-                isEmpty={gameVersions.length === 0}
+                isEmpty={versions.length === 0}
                 emptyIcon="gamepad"
                 emptyMessage="No game versions yet. Add one to get started."
             >
-                {gameVersions.map((gameVersion) => (
+                {versions.map((gameVersion) => (
                     <GameVersionCard
                         key={gameVersion.id}
                         gameVersion={gameVersion}

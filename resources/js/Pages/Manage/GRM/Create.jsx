@@ -1,9 +1,11 @@
 import { useRef } from "react";
+import { router } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
-import GameVersionSelector from "@/Components/GameVersions/GameVersionSelector";
+import GameVersionIcon from "@/Components/GameVersions/GameVersionIcon";
+import { FormRow, OptionSelect } from "@/Components/FormControls";
 import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import UploadForm from "@/Components/GuildRosterManager/UploadForm";
 import UploadProgressModal from "@/Components/GuildRosterManager/UploadProgressModal";
@@ -20,7 +22,7 @@ const STATUS_DETAIL = {
 
 /**
  * One line summarising the selected version's latest upload, with the status
- * spelled out so the tab dots are never the only signal.
+ * spelled out in words.
  */
 function UploadStatusSummary({ gameVersion, status, lastUploadTimestamp }) {
     const detail = STATUS_DETAIL[status];
@@ -40,7 +42,7 @@ function UploadStatusSummary({ gameVersion, status, lastUploadTimestamp }) {
 
 export default function Create({
     gameVersion: gameVersionResource,
-    gameVersions: { data: gameVersions },
+    rosterVersions: { data: rosterVersions },
     lastUploadTimestamp,
     memberCount,
     uploadStatuses,
@@ -49,6 +51,13 @@ export default function Create({
     // The modal sits outside the per-version subtree, and switching versions
     // preserves page state, so an upload's progress stays on screen.
     const progressModalRef = useRef(null);
+
+    function selectGameVersion(slug) {
+        router.reload({
+            data: { game_version: slug },
+            only: ["gameVersion", "lastUploadTimestamp", "memberCount"],
+        });
+    }
 
     return (
         <Master title="GRM Data Upload">
@@ -71,11 +80,24 @@ export default function Create({
                     </p>
                 ) : (
                     <>
-                        <GameVersionSelector
-                            gameVersions={gameVersions}
-                            currentGameVersion={gameVersion}
-                            indicator={(version) => <UploadStatusDot status={uploadStatuses?.[version.slug]} />}
-                        />
+                        <ul className="mb-6 flex flex-col gap-2" aria-label="Upload status by game version">
+                            {rosterVersions.map((version) => (
+                                <li key={version.slug} className="flex items-center gap-2 text-gray-300">
+                                    <GameVersionIcon gameVersion={version} />
+                                    <span>{version.title}</span>
+                                    <UploadStatusDot status={uploadStatuses?.[version.slug]} />
+                                </li>
+                            ))}
+                        </ul>
+
+                        <FormRow htmlFor="game_version" label="Game version" className="mb-6 max-w-xs">
+                            <OptionSelect
+                                name="game_version"
+                                value={gameVersion.slug}
+                                onChange={selectGameVersion}
+                                options={rosterVersions.map((version) => ({ value: version.slug, label: version.title }))}
+                            />
+                        </FormRow>
 
                         <h2 className="mb-2 text-xl font-bold">
                             Upload GRM data for <span className="text-amber-500">{gameVersion.title}</span>

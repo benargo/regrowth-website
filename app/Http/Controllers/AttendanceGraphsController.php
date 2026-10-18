@@ -5,48 +5,35 @@ namespace App\Http\Controllers;
 use App\Actions\Attendance\BuildAttendanceMatrix;
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Data\Attendance\AttendanceScatterPointData;
-use App\Http\Middleware\RemembersCurrentGameVersion;
 use App\Http\Resources\GameVersionResource;
-use App\Models\GameVersion;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
-use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
 #[Middleware('auth')]
-#[Middleware(RemembersCurrentGameVersion::class)]
 #[Authorize('view-attendance')]
 class AttendanceGraphsController extends Controller
 {
     /**
-     * Display the attendance graphs of the current game version.
+     * Display the attendance graphs of the current game version, or an empty
+     * state when that version has no counted attendance.
      */
     public function __invoke(): Response
     {
-        $gameVersions = GameVersion::withCountedAttendance()->get();
-        $gameVersion = ResolveCurrentGameVersion::run($gameVersions);
+        $gameVersion = ResolveCurrentGameVersion::run();
 
-        return Inertia::render('Raiding/Attendance/Graphs', [
-            'gameVersion' => $gameVersion === null ? null : new GameVersionResource($gameVersion),
-            'gameVersions' => GameVersionResource::collection($gameVersions),
-            'scatterPoints' => Inertia::defer(fn () => $this->getScatterPoints($gameVersion)),
-        ]);
-    }
-
-    /**
-     * Get the scatter points for the attendance graph of the given game version.
-     *
-     * @return Collection<int, AttendanceScatterPointData>
-     */
-    private function getScatterPoints(?GameVersion $gameVersion): Collection
-    {
-        if ($gameVersion === null) {
-            return collect();
+        if ($gameVersion === null || ! $gameVersion->hasCountedAttendance()) {
+            return Inertia::render('Raiding/Attendance/Graphs', [
+                'gameVersion' => $gameVersion === null ? null : new GameVersionResource($gameVersion),
+                'hasAttendance' => false,
+            ]);
         }
 
-        $matrix = BuildAttendanceMatrix::run($gameVersion);
-
-        return AttendanceScatterPointData::collect($matrix->rows);
+        return Inertia::render('Raiding/Attendance/Graphs', [
+            'gameVersion' => new GameVersionResource($gameVersion),
+            'hasAttendance' => true,
+            'scatterPoints' => Inertia::defer(fn () => AttendanceScatterPointData::collect(BuildAttendanceMatrix::run($gameVersion)->rows)),
+        ]);
     }
 }

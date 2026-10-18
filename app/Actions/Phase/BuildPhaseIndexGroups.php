@@ -2,19 +2,19 @@
 
 namespace App\Actions\Phase;
 
+use App\Actions\GameVersion\ListSelectableGameVersions;
 use App\Http\Resources\GameVersionResource;
 use App\Http\Resources\PhaseResource;
 use App\Models\GameVersion;
 use App\Models\Phase;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 /**
- * Builds the phase Index page's groups: the given game version with its
- * phases in release order, then the phases with no game version when there
+ * Builds the phase Index page's groups: every game version in
+ * selectable order, each with its phases in release order, then the phases with no game version when there
  * are any. Each phase carries its management links, whether it is its
  * version's current phase, its usage counts and its raids.
  */
@@ -25,22 +25,17 @@ class BuildPhaseIndexGroups
     /**
      * @return list<array{game_version: GameVersionResource|null, phases: AnonymousResourceCollection}>
      */
-    public function handle(?GameVersion $gameVersion, BuildPhaseRoutes $routes): array
+    public function handle(BuildPhaseRoutes $routes): array
     {
         $phasesByGameVersion = Phase::with(['raids' => fn (HasMany $query) => $query->orderBy('name'), 'raids.media'])
             ->withUsageCounts()
-            ->where(fn (Builder $query) => $query
-                ->whereNull('game_version_id')
-                ->when($gameVersion, fn (Builder $query, GameVersion $gameVersion) => $query->orWhereBelongsTo($gameVersion)))
             ->inReleaseOrder()
             ->get()
             ->groupBy('game_version_id');
 
-        $groups = [];
-
-        if ($gameVersion !== null) {
-            $groups[] = $this->group($gameVersion, $phasesByGameVersion->get($gameVersion->id, new Collection), $routes);
-        }
+        $groups = ListSelectableGameVersions::run()
+            ->map(fn (GameVersion $gameVersion): array => $this->group($gameVersion, $phasesByGameVersion->get($gameVersion->id, new Collection), $routes))
+            ->all();
 
         $unownedPhases = $phasesByGameVersion->get('', new Collection);
 

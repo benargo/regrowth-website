@@ -596,14 +596,59 @@ class PlannedAbsenceControllerTest extends TestCase
     }
 
     #[Test]
-    public function create_remembers_the_requested_game_version(): void
+    public function it_preselects_the_version_in_its_own_query(): void
+    {
+        [, $older] = $this->twoReleasedVersions();
+        $main = Character::factory()->main()->forGameVersion($older)->create(['name' => 'Sylvanas']);
+
+        $this->actingAs($this->officer())
+            ->get(route('raiding.absences.create', ['game_version' => $older->slug]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('game_version.data.id', $older->id)
+                ->where('characters.data', fn ($characters) => collect($characters)->pluck('id')->all() === [$main->id]));
+    }
+
+    #[Test]
+    public function it_preselects_the_session_version_when_released(): void
     {
         [, $older] = $this->twoReleasedVersions();
 
         $this->actingAs($this->officer())
+            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $older->slug])
+            ->get(route('raiding.absences.create'))
+            ->assertInertia(fn (Assert $page) => $page->where('game_version.data.id', $older->id));
+    }
+
+    #[Test]
+    public function viewing_the_create_form_never_writes_the_session(): void
+    {
+        [$newer, $older] = $this->twoReleasedVersions();
+
+        $this->actingAs($this->officer())
+            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $newer->slug])
             ->get(route('raiding.absences.create', ['game_version' => $older->slug]))
-            ->assertRedirect(route('raiding.absences.create'))
-            ->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, $older->slug);
+            ->assertOk()
+            ->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, $newer->slug);
+    }
+
+    #[Test]
+    public function an_officer_can_create_an_absence_for_a_version_other_than_the_current_one(): void
+    {
+        [$newer, $older] = $this->twoReleasedVersions();
+        $main = Character::factory()->main()->forGameVersion($older)->create(['name' => 'Sylvanas']);
+
+        $this->actingAs($this->officer())
+            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $newer->slug])
+            ->post(route('raiding.absences.store'), [
+                'game_version' => $older->id,
+                'character' => $main->id,
+                'start_date' => now()->addDay()->toDateString(),
+                'reason' => PlannedAbsenceReason::Holiday->value,
+            ])
+            ->assertRedirect(route('raiding.absences.index'));
+
+        $this->assertDatabaseHas('planned_absences', ['character_id' => $main->id]);
     }
 
     // ==================== create: action prop ====================
@@ -779,6 +824,20 @@ class PlannedAbsenceControllerTest extends TestCase
             ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $older->slug])
             ->get(route('raiding.absences.edit', $absence))
             ->assertInertia(fn (Assert $page) => $page->where('game_version.data.id', $older->id));
+    }
+
+    #[Test]
+    public function edit_falls_back_to_a_released_version_when_the_current_one_is_unreleased(): void
+    {
+        [$newer] = $this->twoReleasedVersions();
+        $unreleased = GameVersion::factory()->fetchableRoster()->create(['release_date' => now()->addMonth()]);
+        $versionless = Character::factory()->main()->create(['game_version_id' => null]);
+        $absence = PlannedAbsence::factory()->create(['character_id' => $versionless->id]);
+
+        $this->actingAs($this->officer())
+            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $unreleased->slug])
+            ->get(route('raiding.absences.edit', $absence))
+            ->assertInertia(fn (Assert $page) => $page->where('game_version.data.id', $newer->id));
     }
 
     // ==================== store: Access Control ====================

@@ -2,8 +2,10 @@ import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
 import { router, usePage, useHttp } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
+import GameVersionResultRow from "@/Components/Search/GameVersionResultRow";
 import ItemResultRow from "@/Components/Search/ItemResultRow";
 import useDebouncedValue from "@/Hooks/useDebouncedValue";
+import useGameVersionSwitch from "@/Hooks/useGameVersionSwitch";
 
 const MIN_QUERY_LENGTH = 2;
 
@@ -41,6 +43,21 @@ export default function SearchPalette({ open, onClose }) {
     const listRef = useRef(null);
 
     const http = useHttp({ q: "", raid_id: null });
+    const { gameVersions = [] } = page.props;
+    const { switchTo } = useGameVersionSwitch();
+
+    const trimmedQuery = query.trim();
+    const hasQuery = trimmedQuery.length >= MIN_QUERY_LENGTH;
+    const needle = trimmedQuery.toLowerCase();
+    const versionMatches = hasQuery
+        ? gameVersions.filter(
+              (gameVersion) =>
+                  gameVersion.title.toLowerCase().includes(needle) || gameVersion.slug.toLowerCase().includes(needle),
+          )
+        : [];
+    const versionCount = versionMatches.length;
+    const visibleResults = http.processing ? [] : results;
+    const optionCount = versionCount + visibleResults.length;
 
     const debouncedQuery = useDebouncedValue(query, 300);
     const activeRaidId = scopeDismissed ? null : (raidScope?.id ?? null);
@@ -70,7 +87,7 @@ export default function SearchPalette({ open, onClose }) {
             onSuccess: (data) => {
                 setResults(data.data ?? []);
                 setTotal(data.total ?? 0);
-                setHighlightedIndex(-1);
+                setHighlightedIndex((previous) => (previous < versionCount ? previous : -1));
             },
             onError: () => {
                 setResults([]);
@@ -89,17 +106,16 @@ export default function SearchPalette({ open, onClose }) {
     }, [highlightedIndex]);
 
     const goToResults = () => {
-        const trimmed = query.trim();
-        if (trimmed.length < MIN_QUERY_LENGTH) return;
+        if (!hasQuery) return;
         onClose();
-        router.visit(route("search", { q: trimmed, raid_id: activeRaidId }));
+        router.visit(route("search", { q: trimmedQuery, raid_id: activeRaidId }));
     };
 
     const handleKeyDown = (e) => {
         switch (e.key) {
             case "ArrowDown":
                 e.preventDefault();
-                setHighlightedIndex((prev) => (prev < results.length - 1 ? prev + 1 : prev));
+                setHighlightedIndex((prev) => (prev < optionCount - 1 ? prev + 1 : prev));
                 break;
             case "ArrowUp":
                 e.preventDefault();
@@ -107,8 +123,12 @@ export default function SearchPalette({ open, onClose }) {
                 break;
             case "Enter":
                 e.preventDefault();
-                if (highlightedIndex >= 0 && results[highlightedIndex]) {
-                    const item = results[highlightedIndex];
+                if (highlightedIndex >= 0 && highlightedIndex < versionCount) {
+                    const gameVersion = versionMatches[highlightedIndex];
+                    onClose();
+                    switchTo(gameVersion.slug);
+                } else if (highlightedIndex >= versionCount && visibleResults[highlightedIndex - versionCount]) {
+                    const item = visibleResults[highlightedIndex - versionCount];
                     onClose();
                     router.visit(route("loot.items.show", { item: item.id, slug: item.slug }));
                 } else {
@@ -136,12 +156,15 @@ export default function SearchPalette({ open, onClose }) {
                             ref={inputRef}
                             type="text"
                             value={query}
-                            onChange={(e) => setQuery(e.target.value)}
+                            onChange={(e) => {
+                                setQuery(e.target.value);
+                                setHighlightedIndex(-1);
+                            }}
                             onKeyDown={handleKeyDown}
                             aria-label="Search"
                             placeholder="Search…"
                             role="combobox"
-                            aria-expanded={results.length > 0}
+                            aria-expanded={optionCount > 0}
                             aria-controls="search-palette-listbox"
                             aria-autocomplete="list"
                             aria-activedescendant={
@@ -163,30 +186,56 @@ export default function SearchPalette({ open, onClose }) {
 
                     {http.processing && <ResultSkeleton />}
 
-                    {!http.processing && query.trim().length >= MIN_QUERY_LENGTH && results.length === 0 && (
+                    {!http.processing && hasQuery && optionCount === 0 && (
                         <p className="px-4 py-6 text-center text-sm text-gray-400">No items found</p>
                     )}
 
-                    {!http.processing && results.length > 0 && (
+                    {(versionCount > 0 || visibleResults.length > 0) && (
                         <div
                             ref={listRef}
                             id="search-palette-listbox"
                             role="listbox"
                             className="max-h-96 space-y-1 overflow-auto p-2"
                         >
-                            {results.map((item, index) => (
-                                <ItemResultRow
-                                    key={item.id}
-                                    item={item}
-                                    index={index}
-                                    isHighlighted={index === highlightedIndex}
-                                    onMouseEnter={() => setHighlightedIndex(index)}
-                                />
-                            ))}
+                            {versionCount > 0 && (
+                                <div role="group" aria-labelledby="search-palette-versions-heading" className="space-y-1">
+                                    <h3
+                                        id="search-palette-versions-heading"
+                                        className="px-2 pt-1 text-xs font-semibold text-gray-300"
+                                    >
+                                        Game versions
+                                    </h3>
+                                    {versionMatches.map((gameVersion, index) => (
+                                        <GameVersionResultRow
+                                            key={gameVersion.id}
+                                            gameVersion={gameVersion}
+                                            index={index}
+                                            isHighlighted={index === highlightedIndex}
+                                            onMouseEnter={() => setHighlightedIndex(index)}
+                                            onSelect={() => {
+                                                onClose();
+                                                switchTo(gameVersion.slug);
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                            {visibleResults.map((item, itemIndex) => {
+                                    const index = versionCount + itemIndex;
+                                    return (
+                                        <ItemResultRow
+                                            key={item.id}
+                                            item={item}
+                                            index={index}
+                                            isHighlighted={index === highlightedIndex}
+                                            onMouseEnter={() => setHighlightedIndex(index)}
+                                        />
+                                    );
+                                })}
                         </div>
                     )}
 
-                    {!http.processing && query.trim().length >= MIN_QUERY_LENGTH && total > 0 && (
+                    {!http.processing && hasQuery && total > 0 && (
                         <button
                             type="button"
                             onClick={goToResults}

@@ -3,7 +3,7 @@ import { router } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
-import GameVersionSelector from "@/Components/GameVersions/GameVersionSelector";
+import EmptyState from "@/Components/EmptyState";
 import Icon from "@/Components/FontAwesome/Icon";
 import { TableHeader } from "@/Components/Table";
 import DateFilterButton from "@/Components/DateFilterButton";
@@ -15,6 +15,7 @@ import RankLabel from "@/Components/GuildRanks/RankLabel";
 import FilterDropdown from "@/Components/FilterDropdown";
 import SearchInput from "@/Components/Search/SearchInput";
 import ToggleFilter from "@/Components/ToggleFilter";
+import { useResetQueryOnGameVersionSwitch } from "@/Hooks/useGameVersionSwitch";
 
 // ─── Matrix components ────────────────────────────────────────────────────────
 
@@ -181,7 +182,24 @@ function MatrixTable({ raids, rows }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-export default function Matrix({ matrix, ranks: { data: ranks }, zones: { data: zones }, guildTags: { data: guildTags }, filters, earliestDate, gameVersion, gameVersions }) {
+export default function Matrix({ hasAttendance, ...props }) {
+    useResetQueryOnGameVersionSwitch();
+
+    return (
+        <Master title="Attendance Matrix">
+            <SharedHeader title="Attendance Matrix" backgroundClass="bg-illidan" />
+            <PageContainer>
+                {hasAttendance ? (
+                    <MatrixContent {...props} />
+                ) : (
+                    <EmptyState icon="table" message="Attendance data is not available for this game version." />
+                )}
+            </PageContainer>
+        </Master>
+    );
+}
+
+function MatrixContent({ matrix, ranks: { data: ranks }, zones: { data: zones }, guildTags: { data: guildTags }, filters, earliestDate }) {
     // ── Client-side filter state (no server reload) ──────────────────────────
     const [characterName, setCharacterName] = useState(filters.character?.name ?? "");
     const [characterId, setCharacterId] = useState(filters.character?.id ?? null);
@@ -296,16 +314,7 @@ export default function Matrix({ matrix, ranks: { data: ranks }, zones: { data: 
     const showSkeleton = !hasEmptyFilter && (isReloading || !matrix);
 
     return (
-        <Master title="Attendance Matrix">
-            <SharedHeader title="Attendance Matrix" backgroundClass="bg-illidan" />
-            <PageContainer>
-                {gameVersion && (
-                    <GameVersionSelector
-                        gameVersions={gameVersions.data}
-                        currentGameVersion={gameVersion.data}
-                        href={(version) => route("raiding.attendance.matrix", { game_version: version.slug })}
-                    />
-                )}
+        <>
                 {/* Filter controls */}
                 <div className="mb-6 space-y-3">
                     {/* Row 1: Client-side filters */}
@@ -366,7 +375,6 @@ export default function Matrix({ matrix, ranks: { data: ranks }, zones: { data: 
                         rows={filteredRows}
                     />
                 )}
-            </PageContainer>
-        </Master>
+        </>
     );
 }

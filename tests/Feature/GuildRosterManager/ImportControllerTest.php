@@ -131,20 +131,19 @@ class ImportControllerTest extends DashboardTestCase
     }
 
     #[Test]
-    public function create_shows_and_remembers_the_game_version_named_in_the_query_string(): void
+    public function it_preselects_the_version_in_its_own_query(): void
     {
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'release_date' => now()->subWeek()]);
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'older', 'release_date' => now()->subYear()]);
 
         $response = $this->actingAs($this->officer)->get(route('management.grm.create', ['game_version' => 'older']));
 
-        $response->assertRedirect(route('management.grm.create'));
-        $response->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, 'older');
-        $this->get(route('management.grm.create'))->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', 'older'));
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', 'older'));
     }
 
     #[Test]
-    public function create_shows_the_remembered_game_version(): void
+    public function it_preselects_the_session_version_when_it_is_a_roster(): void
     {
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'release_date' => now()->subWeek()]);
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'older', 'release_date' => now()->subYear()]);
@@ -154,6 +153,52 @@ class ImportControllerTest extends DashboardTestCase
             ->get(route('management.grm.create'));
 
         $response->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', 'older'));
+    }
+
+    #[Test]
+    public function viewing_the_page_never_writes_the_session(): void
+    {
+        GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'release_date' => now()->subWeek()]);
+        GameVersion::factory()->fetchableRoster()->create(['slug' => 'older', 'release_date' => now()->subYear()]);
+
+        $response = $this->actingAs($this->officer)
+            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'newer'])
+            ->get(route('management.grm.create', ['game_version' => 'older']));
+
+        $response->assertOk();
+        $response->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, 'newer');
+    }
+
+    #[Test]
+    public function an_upload_leaves_the_session_alone_and_redirects_to_its_version(): void
+    {
+        Queue::fake([ProcessGrmUpload::class]);
+        GameVersion::factory()->fetchableRoster()->create(['slug' => 'other', 'release_date' => now()->subWeek()]);
+        $version = GameVersion::factory()->fetchableRoster()->create(['slug' => 'target', 'release_date' => now()->subYear()]);
+
+        $response = $this->actingAs($this->officer)
+            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'other'])
+            ->post($this->storeUrl($version), ['grm_data' => self::CSV]);
+
+        $response->assertRedirect(route('management.grm.create', ['game_version' => $version->slug]));
+        $response->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, 'other');
+        $this->get(route('management.grm.create', ['game_version' => $version->slug]))
+            ->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', 'target'));
+        $this->assertSame('other', session(ResolveCurrentGameVersion::SESSION_KEY));
+    }
+
+    #[Test]
+    public function it_does_not_shadow_the_shared_game_versions_prop(): void
+    {
+        GameVersion::factory()->fetchableRoster()->create(['release_date' => now()->subWeek()]);
+        GameVersion::factory()->create(['blizzard_namespace' => null, 'release_date' => now()->subYear()]);
+
+        $response = $this->actingAs($this->officer)->get(route('management.grm.create'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('gameVersions', 2)
+            ->has('rosterVersions.data', 1)
+        );
     }
 
     #[Test]
@@ -168,9 +213,9 @@ class ImportControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->get(route('management.grm.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('gameVersions.data', 2)
-            ->where('gameVersions.data.0.title', 'Newer')
-            ->where('gameVersions.data.1.title', 'Older')
+            ->has('rosterVersions.data', 2)
+            ->where('rosterVersions.data.0.title', 'Newer')
+            ->where('rosterVersions.data.1.title', 'Older')
         );
     }
 
@@ -205,7 +250,7 @@ class ImportControllerTest extends DashboardTestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->where('gameVersion', null)
-            ->has('gameVersions.data', 0)
+            ->has('rosterVersions.data', 0)
             ->where('lastUploadTimestamp', null)
         );
     }

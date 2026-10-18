@@ -1,13 +1,12 @@
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import IndexLayout from "@/Components/Datasets/IndexLayout";
-import GameVersionSelector from "@/Components/GameVersions/GameVersionSelector";
 import GameVersionPhases from "@/Components/Phases/GameVersionPhases";
 import SharedHeader from "@/Components/SharedHeader";
 import { AutosaveProvider } from "@/Hooks/useAutosave";
 import useRecordDeletion from "@/Hooks/useRecordDeletion";
 import Master from "@/Layouts/Master";
 
-export default function Index({ gameVersion, gameVersions, groups, routes }) {
+export default function Index({ groups, routes }) {
     const deletion = useRecordDeletion();
 
     return (
@@ -25,7 +24,6 @@ export default function Index({ gameVersion, gameVersions, groups, routes }) {
                     emptyMessage="No game versions or phases yet. Add a phase to get started."
                 >
                     <div>
-                        <GameVersionSelector gameVersions={gameVersions.data} currentGameVersion={gameVersion?.data} />
                         <div className="flex flex-col gap-12">
                             {groups.map((group) => (
                                 <GameVersionPhases

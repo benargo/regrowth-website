@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Http\Resources;
 
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
@@ -27,7 +28,7 @@ class GameVersionResourceTest extends TestCase
     #[Test]
     public function it_returns_all_expected_keys(): void
     {
-        $gameVersion = GameVersion::factory()->create();
+        $gameVersion = GameVersion::factory()->create()->load('media');
 
         $array = (new GameVersionResource($gameVersion))->resolve(new Request);
 
@@ -93,7 +94,7 @@ class GameVersionResourceTest extends TestCase
     #[Test]
     public function it_does_not_expose_extra_keys(): void
     {
-        $gameVersion = GameVersion::factory()->create();
+        $gameVersion = GameVersion::factory()->create()->load('media');
 
         $array = (new GameVersionResource($gameVersion))->resolve(new Request);
 
@@ -116,7 +117,7 @@ class GameVersionResourceTest extends TestCase
         $gameVersion = GameVersion::factory()->create();
         $media = $gameVersion->addMedia(UploadedFile::fake()->image("{$collection}.png"))->toMediaCollection($collection);
 
-        $array = (new GameVersionResource($gameVersion->fresh()))->resolve(new Request);
+        $array = (new GameVersionResource($gameVersion->fresh('media')))->resolve(new Request);
 
         $this->assertSame($media->getUrl(), $array[$key]);
     }
@@ -124,13 +125,25 @@ class GameVersionResourceTest extends TestCase
     #[Test]
     public function it_returns_null_urls_when_no_images_are_uploaded(): void
     {
-        $gameVersion = GameVersion::factory()->create();
+        $gameVersion = GameVersion::factory()->create()->load('media');
 
         $array = (new GameVersionResource($gameVersion))->resolve(new Request);
 
         $this->assertNull($array['banner_url']);
         $this->assertNull($array['icon_url']);
         $this->assertNull($array['logo_url']);
+    }
+
+    #[Test]
+    public function it_omits_the_image_urls_when_media_is_not_loaded(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        $array = (new GameVersionResource($gameVersion))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('banner_url', $array);
+        $this->assertArrayNotHasKey('icon_url', $array);
+        $this->assertArrayNotHasKey('logo_url', $array);
     }
 
     // ==================== management scope ====================
@@ -155,7 +168,7 @@ class GameVersionResourceTest extends TestCase
             'namespace' => WarcraftLogsNamespace::Anniversary,
         ]));
 
-        $array = $gameVersion->loadMissing('warcraftLogsGuild')->toResource()->scope('management')->resolve(new Request);
+        $array = $gameVersion->loadMissing(['media', 'warcraftLogsGuild'])->toResource()->scope('management')->resolve(new Request);
 
         $this->assertSame([
             'id' => 7,
@@ -258,6 +271,40 @@ class GameVersionResourceTest extends TestCase
         $collection->collection->first()->withLinks($links);
 
         $this->assertSame($links, $collection->resolve(new Request)[0]['links']);
+    }
+
+    // ==================== switcher scope ====================
+
+    #[Test]
+    public function the_switcher_scope_exposes_only_the_switcher_fields(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        $array = $gameVersion->load('media')->toResource()->scope('switcher')->resolve(new Request);
+
+        $this->assertSame(['id', 'title', 'slug', 'color', 'icon_url', 'release_date', 'meta'], array_keys($array));
+    }
+
+    #[Test]
+    public function the_switcher_scope_marks_the_current_version(): void
+    {
+        $a = GameVersion::factory()->create(['release_date' => '2024-01-01']);
+        $b = GameVersion::factory()->create(['release_date' => '2025-01-01']);
+        session([ResolveCurrentGameVersion::SESSION_KEY => $a->slug]);
+
+        $arrays = GameVersionResource::collection(GameVersion::all())->scope('switcher')->resolve(new Request);
+        $bySlug = collect($arrays)->keyBy('slug');
+
+        $this->assertTrue($bySlug[$a->slug]['meta']['is_current']);
+        $this->assertFalse($bySlug[$b->slug]['meta']['is_current']);
+    }
+
+    #[Test]
+    public function the_unscoped_resource_has_no_meta(): void
+    {
+        $array = GameVersion::factory()->create()->toResource()->resolve(new Request);
+
+        $this->assertArrayNotHasKey('meta', $array);
     }
 
     // ==================== metadata ====================

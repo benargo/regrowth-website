@@ -4,18 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Actions\Datasets\DeleteDatasetRecord;
 use App\Actions\Datasets\ResolveEditLock;
-use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Actions\Phase\BuildPhaseFormOptions;
 use App\Actions\Phase\BuildPhaseIndexGroups;
 use App\Actions\Phase\BuildPhaseRoutes;
 use App\Actions\Phase\ReorderPhases;
 use App\Actions\Phase\UpdatePhase;
 use App\Attributes\Http\Controllers\ScopesResourceTo;
-use App\Http\Middleware\RemembersCurrentGameVersion;
 use App\Http\Requests\ReorderPhasesRequest;
 use App\Http\Requests\StorePhaseRequest;
 use App\Http\Requests\UpdatePhaseRequest;
-use App\Http\Resources\GameVersionResource;
 use App\Http\Resources\PhaseResource;
 use App\Models\GameVersion;
 use App\Models\Phase;
@@ -23,7 +20,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
-use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -32,21 +28,14 @@ use Inertia\Response;
 class PhaseController extends Controller
 {
     /**
-     * Display the current game version's phases, newest release selected by
-     * default, alongside the phases with no game version.
+     * Display every game version's phases, then the phases with no game version.
      */
-    #[Middleware(RemembersCurrentGameVersion::class)]
     #[ScopesResourceTo(PhaseResource::class, 'management')]
     #[Authorize('viewAny', Phase::class)]
     public function index(BuildPhaseRoutes $routes): Response
     {
-        $gameVersions = GameVersion::orderByDesc('release_date')->get();
-        $gameVersion = ResolveCurrentGameVersion::run($gameVersions);
-
         return Inertia::render('Manage/Phases/Index', [
-            'gameVersion' => $gameVersion?->toResource(),
-            'gameVersions' => GameVersionResource::collection($gameVersions),
-            'groups' => BuildPhaseIndexGroups::run($gameVersion, $routes),
+            'groups' => BuildPhaseIndexGroups::run($routes),
             'routes' => $routes->forIndex(),
         ]);
     }

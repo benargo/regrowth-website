@@ -6,7 +6,6 @@ use App\Actions\Characters\RefreshCharacterPortrait;
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
-use App\Http\Middleware\RemembersCurrentGameVersion;
 use App\Http\Requests\UpdateCharacterRequest;
 use App\Http\Resources\CharacterResource;
 use App\Http\Resources\GameVersionResource;
@@ -15,7 +14,6 @@ use App\Http\Resources\PlayableClassResource;
 use App\Http\Resources\PlayableRaceResource;
 use App\Http\Resources\PlayableSpecializationResource;
 use App\Models\Character;
-use App\Models\GameVersion;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
@@ -31,19 +29,24 @@ class CharacterController extends Controller
     ) {}
 
     /**
-     * Display the guild roster of the user's current game version.
+     * Display the guild roster of the current game version, or an empty state when it has none.
      */
-    #[Middleware(RemembersCurrentGameVersion::class)]
-    public function index(ResolveCurrentGameVersion $resolveCurrentGameVersion): Response
+    public function index(): Response
     {
-        $rosters = GameVersion::currentRosters()->load('media');
-        $gameVersion = $resolveCurrentGameVersion->handle($rosters);
+        $gameVersion = ResolveCurrentGameVersion::run();
 
         abort_if($gameVersion === null, 404);
 
+        if (! $gameVersion->ownsCurrentRoster()) {
+            return Inertia::render('Roster/Index', [
+                'gameVersion' => new GameVersionResource($gameVersion),
+                'hasRoster' => false,
+            ]);
+        }
+
         return Inertia::render('Roster/Index', [
             'gameVersion' => new GameVersionResource($gameVersion),
-            'gameVersions' => GameVersionResource::collection($rosters),
+            'hasRoster' => true,
             'classes' => PlayableClassResource::collection($gameVersion->playableClasses()->orderBy('name')->get()),
             'ranks' => $gameVersion->guildRanks()->select('name')->ordered()->pluck('name')->unique()->values(),
             'races' => PlayableRaceResource::collection($gameVersion->playableRaces()->orderBy('name')->get()),

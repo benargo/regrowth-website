@@ -2,11 +2,16 @@
 
 namespace Tests\Feature\Middleware;
 
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Models\DiscordRole;
+use App\Models\GameVersion;
 use App\Models\Permission;
 use App\Models\Phase;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -213,5 +218,66 @@ class HandleInertiaRequestsTest extends TestCase
         $this->actingAs($user)
             ->get(route('loot.index'))
             ->assertInertia(fn (AssertableInertia $page) => $page->where('discordInviteUrl', config('guild.discord_invite_url')));
+    }
+
+    // ==================== game versions ====================
+
+    #[Test]
+    public function it_shares_every_game_version_in_switcher_shape_and_order(): void
+    {
+        $unreleased = GameVersion::factory()->create(['release_date' => now()->addYear()->toDateString()]);
+        GameVersion::factory()->create(['release_date' => now()->subYear()->toDateString()]);
+        GameVersion::factory()->create(['release_date' => now()->subYears(2)->toDateString()]);
+
+        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('gameVersions', 3)
+            ->where('gameVersions.0.slug', $unreleased->slug)
+            ->has('gameVersions.0.meta.is_current')
+            ->has('gameVersions.0', fn (AssertableInertia $version) => $version
+                ->hasAll(['id', 'title', 'slug', 'color', 'icon_url', 'release_date', 'meta'])));
+    }
+
+    #[Test]
+    public function it_marks_exactly_one_game_version_current(): void
+    {
+        GameVersion::factory()->count(3)->sequence(
+            ['release_date' => '2022-01-01'],
+            ['release_date' => '2023-01-01'],
+            ['release_date' => '2024-01-01'],
+        )->create();
+
+        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('gameVersions', fn ($versions) => collect($versions)->where('meta.is_current', true)->count() === 1));
+    }
+
+    #[Test]
+    public function it_marks_the_default_version_current_when_the_session_slug_is_stale(): void
+    {
+        GameVersion::factory()->create(['release_date' => now()->addYear()->toDateString()]);
+        $latestReleased = GameVersion::factory()->create(['release_date' => now()->subYear()->toDateString()]);
+        GameVersion::factory()->create(['release_date' => now()->subYears(2)->toDateString()]);
+
+        $this->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'gone'])
+            ->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('gameVersions', fn ($versions) => collect($versions)->where('meta.is_current', true)->pluck('slug')->all() === [$latestReleased->slug]));
+    }
+
+    #[Test]
+    public function it_shares_game_versions_without_lazy_loading_media(): void
+    {
+        Storage::fake('public');
+        config(['media-library.force_lazy_loading' => false]);
+        $gameVersion = GameVersion::factory()->create();
+        GameVersion::factory()->create();
+        $gameVersion->addMedia(UploadedFile::fake()->image('icon.png'))->toMediaCollection(GameVersion::MEDIA_ICON);
+
+        Model::preventLazyLoading();
+
+        try {
+            $this->get('/')->assertOk()->assertInertia(fn ($page) => $page->has('gameVersions', 2));
+        } finally {
+            Model::preventLazyLoading(false);
+        }
     }
 }

@@ -135,25 +135,15 @@ class AttendanceDashboardControllerTest extends TestCase
     }
 
     #[Test]
-    public function invoke_returns_null_latest_report_date_when_no_reports(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->where('latestReportDate', null)
-        );
-    }
-
-    #[Test]
     public function invoke_stats_prop_is_deferred_and_not_in_initial_response(): void
     {
+        $this->createReport($this->gameVersion, now()->subDay());
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
+            ->where('hasAttendance', true)
             ->missing('stats')
         );
     }
@@ -240,24 +230,34 @@ class AttendanceDashboardControllerTest extends TestCase
     }
 
     #[Test]
-    public function invoke_renders_empty_stats_without_a_game_version(): void
+    public function invoke_shows_the_empty_state_for_a_version_without_counted_attendance(): void
     {
         $this->actingAs(User::factory()->officer()->create())
             ->get(route('raiding.attendance.dashboard'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->where('gameVersion', null)
-                ->where('latestReportDate', null)
-                ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->where('stats.totalPlayers', 0)
-                    ->where('stats.phaseAttendance', null)
-                    ->has('stats.percentageGroups', 0)
-                    ->has('stats.droppingOff', 0)
-                    ->has('stats.upcomingAbsences', 0)));
+                ->where('hasAttendance', false)
+                ->where('gameVersion.data.slug', $this->gameVersion->slug)
+                ->missing('latestReportDate')
+                ->missing('stats'));
     }
 
     #[Test]
-    public function invoke_uses_the_session_game_version(): void
+    public function invoke_shows_the_empty_state_without_a_game_version(): void
+    {
+        $this->gameVersion->delete();
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.dashboard'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('hasAttendance', false)
+                ->where('gameVersion', null)
+                ->missing('stats'));
+    }
+
+    #[Test]
+    public function invoke_follows_the_session_version(): void
     {
         $newer = $this->createAttendanceVersion(['release_date' => '2024-06-01']);
         $this->createReport($newer, now()->subDay());
@@ -266,7 +266,9 @@ class AttendanceDashboardControllerTest extends TestCase
         $this->actingAs(User::factory()->officer()->create())
             ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $this->gameVersion->slug])
             ->get(route('raiding.attendance.dashboard'))
-            ->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', $this->gameVersion->slug));
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('hasAttendance', true)
+                ->where('gameVersion.data.slug', $this->gameVersion->slug));
     }
 
     #[Test]

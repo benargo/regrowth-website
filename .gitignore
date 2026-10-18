@@ -17,6 +17,7 @@
 /.playwright
 /.playwright-cli
 /.playwright-mcp
+/.superpowers
 /.vscode
 /.zed
 /auth.json

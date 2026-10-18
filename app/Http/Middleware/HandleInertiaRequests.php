@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Actions\GameVersion\ListSelectableGameVersions;
+use App\Http\Resources\GameVersionResource;
 use App\Http\Resources\UserPermissionResource;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
@@ -40,6 +42,7 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => $user ? (new UserPermissionResource($user))->resolve($request) : [],
                 'impersonating' => $request->session()->has('impersonating_user_id'),
             ],
+            'gameVersions' => fn (): array => GameVersionResource::collection(ListSelectableGameVersions::run())->scope('switcher')->resolve($request),
             'flash' => [
                 'error' => fn () => $request->session()->get('error'),
                 'success' => fn () => $request->session()->get('success'),

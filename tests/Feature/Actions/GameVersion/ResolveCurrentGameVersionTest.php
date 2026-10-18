@@ -16,40 +16,66 @@ class ResolveCurrentGameVersionTest extends TestCase
 
     #[Group('happy-path')]
     #[Test]
-    public function it_returns_the_session_version_when_it_is_selectable(): void
+    public function it_returns_the_session_version(): void
     {
-        $defaultRoster = GameVersion::factory()->fetchableRoster()->create();
-        $other = GameVersion::factory()->create(['release_date' => now()->addMonth()]);
+        GameVersion::factory()->create(['release_date' => now()->subDay()]);
+        $unreleased = GameVersion::factory()->create(['release_date' => now()->addMonth()]);
 
-        session()->put(ResolveCurrentGameVersion::SESSION_KEY, $other->slug);
+        session()->put(ResolveCurrentGameVersion::SESSION_KEY, $unreleased->slug);
 
-        $this->assertTrue(ResolveCurrentGameVersion::run(collect([$defaultRoster, $other]))->is($other));
+        $this->assertTrue(ResolveCurrentGameVersion::run()->is($unreleased));
     }
 
     #[Test]
-    public function it_returns_the_first_selectable_version_when_the_session_is_empty(): void
+    public function it_defaults_to_the_most_recently_released_version(): void
     {
-        $first = GameVersion::factory()->create();
-        $second = GameVersion::factory()->create();
+        GameVersion::factory()->create(['release_date' => now()->subYear()]);
+        $latest = GameVersion::factory()->create(['release_date' => now()->subDay()]);
+        GameVersion::factory()->create(['release_date' => now()->addMonth()]);
 
-        $this->assertTrue(ResolveCurrentGameVersion::run(collect([$first, $second]))->is($first));
+        $this->assertTrue(ResolveCurrentGameVersion::run()->is($latest));
     }
 
     #[Test]
-    public function it_returns_the_first_selectable_version_when_the_session_version_is_not_selectable(): void
+    public function it_defaults_to_the_newest_version_when_none_is_released(): void
     {
-        $first = GameVersion::factory()->create();
-        $unselectable = GameVersion::factory()->create();
+        GameVersion::factory()->create(['release_date' => now()->addMonth()]);
+        $newest = GameVersion::factory()->create(['release_date' => now()->addYear()]);
 
-        session()->put(ResolveCurrentGameVersion::SESSION_KEY, $unselectable->slug);
-
-        $this->assertTrue(ResolveCurrentGameVersion::run(collect([$first]))->is($first));
-        $this->assertSame($unselectable->slug, session(ResolveCurrentGameVersion::SESSION_KEY));
+        $this->assertTrue(ResolveCurrentGameVersion::run()->is($newest));
     }
 
     #[Test]
-    public function it_returns_null_when_nothing_is_selectable(): void
+    public function it_falls_back_to_the_default_and_keeps_a_stale_session_slug(): void
     {
-        $this->assertNull(ResolveCurrentGameVersion::run(collect()));
+        $default = GameVersion::factory()->create(['release_date' => now()->subDay()]);
+
+        session()->put(ResolveCurrentGameVersion::SESSION_KEY, 'gone');
+
+        $this->assertTrue(ResolveCurrentGameVersion::run()->is($default));
+        $this->assertSame('gone', session(ResolveCurrentGameVersion::SESSION_KEY));
+    }
+
+    #[Test]
+    public function it_keeps_the_resolved_version_for_the_request_until_forgotten(): void
+    {
+        $latest = GameVersion::factory()->create(['release_date' => now()->subDay()]);
+        $older = GameVersion::factory()->create(['release_date' => now()->subYear()]);
+
+        $this->assertTrue(ResolveCurrentGameVersion::run()->is($latest));
+
+        session()->put(ResolveCurrentGameVersion::SESSION_KEY, $older->slug);
+
+        $this->assertTrue(ResolveCurrentGameVersion::run()->is($latest));
+
+        ResolveCurrentGameVersion::forget();
+
+        $this->assertTrue(ResolveCurrentGameVersion::run()->is($older));
+    }
+
+    #[Test]
+    public function it_returns_null_when_there_are_no_versions(): void
+    {
+        $this->assertNull(ResolveCurrentGameVersion::run());
     }
 }

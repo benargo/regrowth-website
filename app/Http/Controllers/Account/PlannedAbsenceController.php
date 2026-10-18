@@ -12,7 +12,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Integrations\Blizzard\Exceptions\BattleNetSessionException;
 use App\Http\Integrations\Blizzard\Support\BattleNetSession;
 use App\Http\Integrations\Blizzard\Support\BattleNetSessionError;
-use App\Http\Middleware\RemembersCurrentGameVersion;
 use App\Http\Requests\StoreAccountPlannedAbsenceRequest;
 use App\Http\Requests\UpdateAccountPlannedAbsenceRequest;
 use App\Http\Resources\CharacterResource;
@@ -28,7 +27,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
-use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -45,25 +43,21 @@ class PlannedAbsenceController extends Controller
      * Show the form for logging an absence.
      */
     #[Authorize('create', PlannedAbsence::class)]
-    #[Middleware(RemembersCurrentGameVersion::class)]
     public function create(Request $request, BattleNetSession $battleNet): Response
     {
-        $selectable = function () use (&$selectableVersions): Collection {
-            return $selectableVersions ??= GameVersion::currentRosters()->values();
-        };
-        $gameVersion = function () use (&$resolvedVersion, $selectable): ?GameVersion {
-            return $resolvedVersion ??= ResolveCurrentGameVersion::run($selectable());
+        $hasRoster = function () use (&$ownsRoster): bool {
+            return $ownsRoster ??= ResolveCurrentGameVersion::run()?->ownsCurrentRoster() ?? false;
         };
 
         return Inertia::render('Account/Absences/Form', [
-            'game_versions' => fn () => GameVersionResource::collection($selectable()),
-            'game_version' => fn () => $gameVersion() ? new GameVersionResource($gameVersion()) : null,
+            'game_version' => fn (): ?GameVersionResource => ResolveCurrentGameVersion::run()?->toResource(),
+            'has_roster' => $hasRoster,
             'battle_net' => function () use ($battleNet, $request): array {
                 $battleNet->rememberIntendedUrl($request->fullUrlWithoutQuery(['character_portrait']));
 
                 return ['connected' => $battleNet->isConnected()];
             },
-            'account_characters' => Inertia::defer(fn (): array => $this->accountCharacters($battleNet, $gameVersion(), $request->user())),
+            'account_characters' => Inertia::defer(fn (): array => $this->accountCharacters($battleNet, $hasRoster() ? ResolveCurrentGameVersion::run() : null, $request->user())),
             'action' => route('account.absences.store'),
             'reasons' => fn () => PlannedAbsenceReasonData::options(),
             'character_portrait' => Inertia::optional(fn (): array => $this->characterPortrait($request)),

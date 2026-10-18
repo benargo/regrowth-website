@@ -241,6 +241,14 @@ class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia,
     }
 
     /**
+     * Determine whether this version has any report that counts towards attendance.
+     */
+    public function hasCountedAttendance(): bool
+    {
+        return static::query()->withCountedAttendance()->whereKey($this->getKey())->exists();
+    }
+
+    /**
      * Build the key that identifies this version's guild roster on Blizzard's side.
      */
     public function rosterKey(): string
