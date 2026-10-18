@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Items\BuildHighestPriorityStatsTable;
 use App\Actions\Items\ListPhasesWithTierOnePriorities;
+use App\Data\Items\HighestPriorityStatsTableData;
 use App\Http\Middleware\RemembersCurrentRaid;
 use App\Http\Resources\ItemResource;
 use App\Http\Resources\PhaseResource;
@@ -100,11 +101,11 @@ class LootBiasToolController extends Controller
 
         return Inertia::render('Loot/Priorities', [
             'phases' => PhaseResource::collection($phases),
-            'table' => Inertia::defer(fn () => Cache::tags(['lootcouncil'])->remember(
+            'table' => Inertia::defer(fn () => HighestPriorityStatsTableData::from(Cache::tags(['lootcouncil'])->remember(
                 'loot:priorities:highest-priority-stats',
                 now()->addHours(24),
-                fn () => BuildHighestPriorityStatsTable::run($phases->pluck('id')),
-            )),
+                fn (): array => BuildHighestPriorityStatsTable::run($phases->pluck('id'))->toArray(),
+            ))),
         ]);
     }
 }

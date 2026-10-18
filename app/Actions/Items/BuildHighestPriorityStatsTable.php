@@ -3,6 +3,7 @@
 namespace App\Actions\Items;
 
 use App\Data\Items\ClassStatsGroupData;
+use App\Data\Items\HighestPriorityStatsTableData;
 use App\Data\Items\PriorityStatsRowData;
 use App\Enums\LootPriorityType;
 use App\Models\ItemPriority;
@@ -21,12 +22,11 @@ class BuildHighestPriorityStatsTable
 
     /**
      * @param  Collection<int, int>  $phaseIds
-     * @return array<int, PriorityStatsRowData|ClassStatsGroupData>
      */
-    public function handle(Collection $phaseIds): array
+    public function handle(Collection $phaseIds): HighestPriorityStatsTableData
     {
         if ($phaseIds->isEmpty()) {
-            return [];
+            return new HighestPriorityStatsTableData(roleRows: collect(), classGroups: collect());
         }
 
         $priorities = LootPriority::withoutMemes()
@@ -61,7 +61,7 @@ class BuildHighestPriorityStatsTable
             ))
             ->values();
 
-        return $roleRows->concat($classGroups)->all();
+        return new HighestPriorityStatsTableData(roleRows: $roleRows, classGroups: $classGroups);
     }
 
     /**

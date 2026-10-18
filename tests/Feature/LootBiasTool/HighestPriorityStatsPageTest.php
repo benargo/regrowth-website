@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\LootBiasTool;
 
+use App\Enums\LootPriorityType;
 use App\Models\DiscordRole;
 use App\Models\Item;
 use App\Models\LootPriority;
@@ -126,10 +127,41 @@ class HighestPriorityStatsPageTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('table', 1)
-                ->where('table.0.title', 'Tank')
+                ->has('table.role_rows', 1)
+                ->where('table.role_rows.0.title', 'Tank')
             )
         );
+    }
+
+    #[Test]
+    public function priorities_table_prop_loads_from_a_cache_store_that_disallows_object_unserialization(): void
+    {
+        config([
+            'cache.stores.array.serialize' => true,
+            'cache.serializable_classes' => false,
+        ]);
+        Cache::purge('array');
+
+        $phase = Phase::factory()->create(['number' => 1]);
+        $item = $this->itemInPhase($phase);
+        $priority = LootPriority::factory()->spec()->withPlayableClass()->create(['title' => 'Feral']);
+        $item->priorities()->attach($priority->id, ['weight' => 0]);
+
+        $user = User::factory()->officer()->create();
+
+        foreach ([1, 2] as $request) {
+            $this->actingAs($user)->get(route('loot.priorities'))
+                ->assertInertia(fn (Assert $page) => $page
+                    ->loadDeferredProps(fn (Assert $reload) => $reload
+                        ->has('table.class_groups', 1)
+                        ->missing('table.class_groups.0.__PHP_Incomplete_Class_Name')
+                        ->where('table.class_groups.0.kind', 'class')
+                        ->has('table.class_groups.0.children', 1)
+                        ->where('table.class_groups.0.children.0.title', 'Feral')
+                        ->where('table.class_groups.0.children.0.type', LootPriorityType::SPEC->value)
+                    )
+                );
+        }
     }
 
     #[Test]
@@ -141,7 +173,8 @@ class HighestPriorityStatsPageTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('table', 0)
+                ->has('table.role_rows', 0)
+                ->has('table.class_groups', 0)
             )
         );
     }

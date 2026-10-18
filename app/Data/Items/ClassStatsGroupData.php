@@ -4,6 +4,7 @@ namespace App\Data\Items;
 
 use App\Models\PlayableClass;
 use Illuminate\Support\Collection;
+use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Data;
 
 /**
@@ -22,6 +23,7 @@ final class ClassStatsGroupData extends Data
         public readonly ?string $icon,
         public readonly array $counts,
         public readonly int $total,
+        #[DataCollectionOf(PriorityStatsRowData::class)]
         public readonly Collection $children,
         public readonly string $kind = 'class',
     ) {}

@@ -41,7 +41,7 @@ class LootPriority extends Model implements HasBlizzardIcons, HasMedia
     #[Scope]
     protected function withoutMemes(Builder $query): void
     {
-        $query->where('type', '!=', LootPriorityType::MEME);
+        $query->where($query->qualifyColumn('type'), '!=', LootPriorityType::MEME);
     }
 
     // ============ Media ============
