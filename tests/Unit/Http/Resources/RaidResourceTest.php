@@ -174,7 +174,7 @@ class RaidResourceTest extends TestCase
     #[Test]
     public function it_returns_null_banner_fields_without_a_banner(): void
     {
-        $raid = Raid::factory()->create();
+        $raid = Raid::factory()->create()->load('media');
 
         $array = (new RaidResource($raid))->toArray(new Request);
 
@@ -183,6 +183,18 @@ class RaidResourceTest extends TestCase
         $this->assertNull($array['banner_url']);
         $this->assertNull($array['banner_position']);
         $this->assertArrayNotHasKey('background', $array);
+    }
+
+    #[Test]
+    public function it_excludes_banner_fields_when_media_is_not_loaded(): void
+    {
+        Storage::fake('public');
+        $raid = Raid::factory()->withBanner('center top')->create()->fresh();
+
+        $array = (new RaidResource($raid))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('banner_url', $array);
+        $this->assertArrayNotHasKey('banner_position', $array);
     }
 
     // ==================== has trash items ====================
@@ -275,7 +287,7 @@ class RaidResourceTest extends TestCase
     #[Test]
     public function it_returns_all_expected_keys(): void
     {
-        $raid = Raid::factory()->create();
+        $raid = Raid::factory()->create()->load('media');
 
         $array = (new RaidResource($raid))->toArray(new Request);
 
@@ -287,5 +299,18 @@ class RaidResourceTest extends TestCase
         $this->assertArrayHasKey('banner_position', $array);
         $this->assertArrayHasKey('max_players', $array);
         $this->assertArrayHasKey('max_loot_councillors', $array);
+    }
+
+    // ==================== scopes ====================
+
+    #[Test]
+    public function the_summary_scope_emits_only_the_id_and_name(): void
+    {
+        Storage::fake('public');
+        $raid = Raid::factory()->withBanner()->create()->load('media', 'phase');
+
+        $array = (new RaidResource($raid))->scope('summary')->resolve(new Request);
+
+        $this->assertSame(['id', 'name'], array_keys($array));
     }
 }

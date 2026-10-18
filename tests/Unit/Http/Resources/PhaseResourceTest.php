@@ -109,14 +109,15 @@ class PhaseResourceTest extends TestCase
     {
         $phase = Phase::factory()->create();
         $raids = Raid::factory()->count(2)->create(['phase_id' => $phase->id]);
-        $phase->load('raids');
+        $phase->load('raids.media');
 
         $resource = new PhaseResource($phase);
         $array = $resource->toArray(new Request);
 
         $this->assertArrayHasKey('raids', $array);
         $this->assertSame($raids->pluck('id')->all(), array_column($array['raids'], 'id'));
-        $this->assertArrayHasKey('background', $array['raids'][0]);
+        $this->assertArrayHasKey('banner_url', $array['raids'][0]);
+        $this->assertArrayHasKey('banner_position', $array['raids'][0]);
     }
 
     #[Test]
