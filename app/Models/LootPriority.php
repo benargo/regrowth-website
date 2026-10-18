@@ -46,12 +46,9 @@ class LootPriority extends Model implements HasBlizzardIcons, HasMedia
 
     // ============ Media ============
 
-    /**
-     * Register media collections for the model.
-     */
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('blizzard_icons')->singleFile();
+        $this->addMediaCollection(self::MEDIA_COLLECTION)->singleFile();
     }
 
     // ============ Relationships ============
