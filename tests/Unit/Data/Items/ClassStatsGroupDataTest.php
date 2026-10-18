@@ -17,11 +17,11 @@ class ClassStatsGroupDataTest extends TestCase
     // ==================== fromPlayableClass ====================
 
     #[Test]
-    public function from_playable_class_carries_the_class_fields_counts_and_children(): void
+    public function from_playable_class_carries_the_class_fields_and_children(): void
     {
-        $children = collect([$this->child()]);
+        $children = collect([$this->child([1 => 2, 2 => 5])]);
 
-        $data = ClassStatsGroupData::fromPlayableClass($this->playableClass('https://example.com/druid.jpg'), [1 => 2, 2 => 5], $children);
+        $data = ClassStatsGroupData::fromPlayableClass($this->playableClass('https://example.com/druid.jpg'), $children);
 
         $this->assertSame('class', $data->kind);
         $this->assertSame(11, $data->id);
@@ -33,17 +33,23 @@ class ClassStatsGroupDataTest extends TestCase
     }
 
     #[Test]
-    public function from_playable_class_sums_the_counts_into_the_total(): void
+    public function from_playable_class_sums_the_children_counts_per_phase_and_into_the_total(): void
     {
-        $data = ClassStatsGroupData::fromPlayableClass($this->playableClass(), [1 => 2, 2 => 5, 3 => 0], collect());
+        $children = collect([
+            $this->child([1 => 2, 2 => 5, 3 => 0]),
+            $this->child([1 => 1, 2 => 0, 3 => 0]),
+        ]);
 
-        $this->assertSame(7, $data->total);
+        $data = ClassStatsGroupData::fromPlayableClass($this->playableClass(), $children);
+
+        $this->assertSame([1 => 3, 2 => 5, 3 => 0], $data->counts);
+        $this->assertSame(8, $data->total);
     }
 
     #[Test]
     public function from_playable_class_sets_a_null_icon_when_the_class_has_no_media(): void
     {
-        $data = ClassStatsGroupData::fromPlayableClass($this->playableClass(''), [1 => 0], collect());
+        $data = ClassStatsGroupData::fromPlayableClass($this->playableClass(''), collect());
 
         $this->assertNull($data->icon);
     }
@@ -53,7 +59,7 @@ class ClassStatsGroupDataTest extends TestCase
     #[Test]
     public function to_array_emits_the_stats_table_group_shape_with_nested_children(): void
     {
-        $data = ClassStatsGroupData::fromPlayableClass($this->playableClass('https://example.com/druid.jpg'), [1 => 2], collect([$this->child()]));
+        $data = ClassStatsGroupData::fromPlayableClass($this->playableClass('https://example.com/druid.jpg'), collect([$this->child([1 => 2])]));
 
         $this->assertEquals([
             'kind' => 'class',
@@ -86,15 +92,18 @@ class ClassStatsGroupDataTest extends TestCase
         return $playableClass;
     }
 
-    private function child(): PriorityStatsRowData
+    /**
+     * @param  array<int, int>  $counts
+     */
+    private function child(array $counts): PriorityStatsRowData
     {
         return new PriorityStatsRowData(
             id: 7,
             title: 'Feral',
             type: LootPriorityType::SPEC,
             icon: null,
-            counts: [1 => 2],
-            total: 2,
+            counts: $counts,
+            total: array_sum($counts),
         );
     }
 }

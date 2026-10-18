@@ -29,7 +29,7 @@ class BuildHighestPriorityStatsTable
             return [];
         }
 
-        $priorities = LootPriority::where('type', '!=', LootPriorityType::MEME)
+        $priorities = LootPriority::withoutMemes()
             ->with(['media', 'playableClass.media'])
             ->orderBy('id')
             ->get();
@@ -55,15 +55,10 @@ class BuildHighestPriorityStatsTable
                 fn (LootPriority $a, LootPriority $b) => $a->title <=> $b->title,
             ])
             ->groupBy('playable_class_id')
-            ->map(function (Collection $group) use ($priorityRow, $phaseIds): ClassStatsGroupData {
-                $children = $group->map($priorityRow);
-
-                $groupCounts = $phaseIds
-                    ->mapWithKeys(fn (int $phaseId) => [$phaseId => $children->sum("counts.{$phaseId}")])
-                    ->all();
-
-                return ClassStatsGroupData::fromPlayableClass($group->first()->playableClass, $groupCounts, $children);
-            })
+            ->map(fn (Collection $group) => ClassStatsGroupData::fromPlayableClass(
+                $group->first()->playableClass,
+                $group->map($priorityRow),
+            ))
             ->values();
 
         return $roleRows->concat($classGroups)->all();
@@ -77,7 +72,7 @@ class BuildHighestPriorityStatsTable
      */
     private function tierOneCounts(Collection $phaseIds): Collection
     {
-        $excludeMemes = fn (Builder $query) => $query->where('type', '!=', LootPriorityType::MEME);
+        $excludeMemes = fn (Builder $query) => $query->withoutMemes();
 
         $tierOneWeights = ItemPriority::whereHas('priority', $excludeMemes)
             ->groupBy('item_id')

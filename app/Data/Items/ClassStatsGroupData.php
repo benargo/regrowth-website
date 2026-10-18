@@ -27,13 +27,20 @@ final class ClassStatsGroupData extends Data
     ) {}
 
     /**
-     * Build the group for a playable class.
+     * Build the group for a playable class, summing its children's counts per phase.
      *
-     * @param  array<int, int>  $counts  tier-1 item counts keyed by phase id
      * @param  Collection<int, PriorityStatsRowData>  $children
      */
-    public static function fromPlayableClass(PlayableClass $playableClass, array $counts, Collection $children): self
+    public static function fromPlayableClass(PlayableClass $playableClass, Collection $children): self
     {
+        $counts = [];
+
+        foreach ($children as $child) {
+            foreach ($child->counts as $phaseId => $count) {
+                $counts[$phaseId] = ($counts[$phaseId] ?? 0) + $count;
+            }
+        }
+
         return new self(
             id: $playableClass->id,
             title: $playableClass->name,

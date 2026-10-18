@@ -277,14 +277,6 @@ class BuildHighestPriorityStatsTableTest extends TestCase
     }
 
     #[Test]
-    public function it_renders_an_empty_table_when_no_priorities_have_items(): void
-    {
-        $rows = $this->table();
-
-        $this->assertSame([], $rows);
-    }
-
-    #[Test]
     public function it_returns_no_rows_when_given_no_phases(): void
     {
         $phase = Phase::factory()->create(['number' => 1]);

@@ -2,8 +2,8 @@
 
 namespace App\Actions\Items;
 
-use App\Enums\LootPriorityType;
 use App\Models\Phase;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Lorisleiva\Actions\Concerns\AsAction;
 
@@ -19,12 +19,7 @@ class ListPhasesWithTierOnePriorities
      */
     public function handle(): Collection
     {
-        return Phase::whereExists(fn ($query) => $query->from('raids')
-            ->join('pivot_items_raids as pir', 'pir.raid_id', '=', 'raids.id')
-            ->join('pivot_items_priorities as pip', 'pip.item_id', '=', 'pir.item_id')
-            ->join('loot_priorities as lp', 'lp.id', '=', 'pip.priority_id')
-            ->where('lp.type', '!=', LootPriorityType::MEME->value)
-            ->whereColumn('raids.phase_id', 'phases.id'))
+        return Phase::whereHas('raids.items.priorities', fn (Builder $query) => $query->withoutMemes())
             ->inReleaseOrder()
             ->get();
     }
