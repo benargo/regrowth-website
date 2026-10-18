@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Http\Resources;
 
-use App\Enums\RaidBackground;
 use App\Enums\SignupStatus;
 use App\Http\Resources\EventResource;
 use App\Models\Boss;
@@ -13,8 +12,10 @@ use App\Models\Raid;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
@@ -34,7 +35,7 @@ class EventResourceTest extends TestCase
         $array = (new EventResource($event))->withChannel(['id' => '1', 'name' => 'raid-chat', 'position' => 3])->resolve(new Request);
 
         $this->assertSame(
-            ['id', 'title', 'start_time', 'end_time', 'duration', 'color', 'background', 'assignments', 'composition', 'raids', 'channel'],
+            ['id', 'title', 'start_time', 'end_time', 'duration', 'updated_at', 'color', 'banner_url', 'banner_position', 'assignments', 'composition', 'raids', 'channel'],
             array_keys($array),
         );
     }
@@ -122,27 +123,76 @@ class EventResourceTest extends TestCase
         $this->assertSame('226e73', $array['color']);
     }
 
-    // ==================== background ====================
+    // ==================== banner ====================
 
+    #[Group('laravel-media-library')]
     #[Test]
-    public function it_returns_null_background_when_no_raids_attached(): void
+    public function banner_comes_from_the_first_raid_in_pivot_order_that_has_one(): void
     {
+        Storage::fake('public');
+        $plain = Raid::factory()->create();
+        $second = Raid::factory()->withBanner()->create();
+        $first = Raid::factory()->withBanner('center bottom')->create();
         $event = Event::factory()->create();
+        $event->raids()->attach($second->id, ['sort_order' => 3]);
+        $event->raids()->attach($plain->id, ['sort_order' => 1]);
+        $event->raids()->attach($first->id, ['sort_order' => 2]);
 
-        $array = $this->makeResource($event);
+        $array = (new EventResource($event->load('raids.media')))->resolve(new Request);
 
-        $this->assertNull($array['background']);
+        $this->assertSame($first->getFirstMediaUrl(Raid::MEDIA_BANNER, Raid::MEDIA_CONVERSION_HEADER), $array['banner_url']);
+        $this->assertSame('center bottom', $array['banner_position']);
     }
 
     #[Test]
-    public function it_returns_background_string_based_on_event_background_css_class(): void
+    public function banner_is_null_when_no_attached_raid_has_one(): void
     {
+        $event = Event::factory()->create();
+        $event->raids()->attach(Raid::factory()->create()->id, ['sort_order' => 1]);
 
-        $event = Event::factory()->withBackground(RaidBackground::Karazhan)->create();
+        $array = (new EventResource($event->load('raids.media')))->resolve(new Request);
 
-        $array = $this->makeResource($event);
+        $this->assertArrayHasKey('banner_url', $array);
+        $this->assertArrayHasKey('banner_position', $array);
+        $this->assertNull($array['banner_url']);
+        $this->assertNull($array['banner_position']);
+    }
 
-        $this->assertSame(RaidBackground::Karazhan->value, $array['background']);
+    #[Test]
+    public function banner_is_null_when_the_event_has_no_raids(): void
+    {
+        $event = Event::factory()->create();
+
+        $array = (new EventResource($event->load('raids.media')))->resolve(new Request);
+
+        $this->assertArrayHasKey('banner_url', $array);
+        $this->assertArrayHasKey('banner_position', $array);
+        $this->assertNull($array['banner_url']);
+        $this->assertNull($array['banner_position']);
+    }
+
+    #[Test]
+    public function banner_is_missing_when_raids_are_not_loaded(): void
+    {
+        $array = (new EventResource(Event::factory()->create()->fresh()))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('banner_url', $array);
+        $this->assertArrayNotHasKey('banner_position', $array);
+    }
+
+    #[Test]
+    #[TestWith(['members'])]
+    #[TestWith(['visitors'])]
+    public function banner_is_not_in_the_members_or_visitors_scope(string $scope): void
+    {
+        Storage::fake('public');
+        $event = Event::factory()->create();
+        $event->raids()->attach(Raid::factory()->withBanner()->create()->id, ['sort_order' => 1]);
+
+        $array = (new EventResource($event->load('raids.media')))->scope($scope)->resolve(new Request);
+
+        $this->assertArrayNotHasKey('banner_url', $array);
+        $this->assertArrayNotHasKey('banner_position', $array);
     }
 
     // ==================== assignments ====================
@@ -646,6 +696,39 @@ class EventResourceTest extends TestCase
         Saloon::assertNothingSent();
     }
 
+    // ==================== template scope ====================
+
+    #[Test]
+    public function the_template_scope_returns_exactly_the_expected_keys(): void
+    {
+        $event = Event::factory()->template()->create();
+
+        $array = $this->makeTemplateResource($event);
+
+        $this->assertSame(['id', 'title', 'updated_at', 'raids'], array_keys($array));
+    }
+
+    #[Test]
+    public function the_template_scope_returns_updated_at_as_iso8601(): void
+    {
+        $event = Event::factory()->template()->create();
+
+        $array = $this->makeTemplateResource($event);
+
+        $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/', $array['updated_at']);
+    }
+
+    #[Test]
+    public function the_template_scope_lists_the_template_raids(): void
+    {
+        $event = Event::factory()->template()->create();
+        $event->raids()->attach(Raid::factory()->create(['name' => 'Black Temple']), ['sort_order' => 1]);
+
+        $raids = $this->makeTemplateResource($event)['raids'];
+
+        $this->assertSame(['Black Temple'], array_column($raids, 'name'));
+    }
+
     #[Test]
     public function the_default_scope_still_returns_raids_as_full_objects(): void
     {
@@ -693,9 +776,9 @@ class EventResourceTest extends TestCase
 
     #[Test]
     #[Group('contract')]
-    public function event_resource_declares_the_members_and_visitors_scopes(): void
+    public function event_resource_declares_the_members_visitors_and_template_scopes(): void
     {
-        $this->assertSame(['members', 'visitors'], array_keys(EventResource::definedScopes()));
+        $this->assertSame(['members', 'template', 'visitors'], array_keys(EventResource::definedScopes()));
     }
 
     // ==================== helpers ====================
@@ -732,5 +815,10 @@ class EventResourceTest extends TestCase
     private function makeVisitorResource(Event $event): array
     {
         return (new EventResource($event->load('raids')))->scope('visitors')->resolve(new Request);
+    }
+
+    private function makeTemplateResource(Event $event): array
+    {
+        return (new EventResource($event->load('raids')))->scope('template')->resolve(new Request);
     }
 }

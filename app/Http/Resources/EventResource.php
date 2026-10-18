@@ -14,10 +14,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
 
 /**
- * Transform an event, optionally limited to the `members` or `visitors` scope.
+ * Transform an event, optionally limited to the `members`, `visitors` or `template` scope.
  *
  * Fields whose relation is not loaded are omitted:
  *   - assignments:  'assignments.group'
+ *   - banner:       'raids.media'
  *   - composition:  'characters.rank' (and 'raids' for the party size)
  *   - raids:        'raids'; bosses need 'raids.bosses.media', 'bosses.media'
  *                   and 'assignments.group'
@@ -61,8 +62,10 @@ class EventResource extends JsonResource implements ScopedResource
             'start_time' => $this->start_time?->toIso8601String(),
             'end_time' => $this->end_time?->toIso8601String(),
             'duration' => $this->start_time && $this->end_time ? $this->duration : null,
+            'updated_at' => $this->updated_at?->toIso8601String(),
             'color' => $this->color,
-            'background' => $this->background_css_class?->value,
+            'banner_url' => $this->whenLoaded('raids', fn (): ?string => $this->bannerRaid()?->banner_url),
+            'banner_position' => $this->whenLoaded('raids', fn (): ?string => $this->bannerRaid()?->banner_position),
             'assignments' => $this->whenLoaded('assignments', fn (): array => (new EventAssignmentsCollection(
                 $this->assignments->whereNull('boss_id')->values()
             ))->resolve($request)),
@@ -80,6 +83,7 @@ class EventResource extends JsonResource implements ScopedResource
     {
         return [
             'members' => ['id', 'title', 'start_time', 'end_time', 'duration', 'raids', 'channel'],
+            'template' => ['id', 'title', 'updated_at', 'raids'],
             'visitors' => ['id', 'title', 'start_time', 'end_time', 'raids'],
         ];
     }
@@ -170,6 +174,14 @@ class EventResource extends JsonResource implements ScopedResource
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * The first of the event's raids, in pivot order, that has a banner.
+     */
+    private function bannerRaid(): ?Raid
+    {
+        return $this->raids->first(fn (Raid $raid): bool => $raid->banner_url !== null);
     }
 
     /**
