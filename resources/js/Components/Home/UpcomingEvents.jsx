@@ -1,6 +1,8 @@
 import { Link } from "@inertiajs/react";
 import Section from "@/Components/Home/Section";
 import DisplayHeading from "@/Components/Home/DisplayHeading";
+import GameVersionIcon from "@/Components/GameVersions/GameVersionIcon";
+import Tooltip from "@/Components/Tooltip";
 
 /**
  * Format an ISO timestamp in the viewer's own timezone. The server sends
@@ -28,8 +30,28 @@ function SkeletonRow() {
     return (
         <li className="border-forever-600/60 flex animate-pulse items-center gap-4 border-b py-4">
             <div className="bg-forever-600/60 h-4 w-28 rounded" />
+            <div className="bg-forever-600/40 size-8 shrink-0 rounded-full" />
             <div className="bg-forever-600/40 h-4 w-44 rounded" />
         </li>
+    );
+}
+
+/**
+ * The event's game version icon, named by the version's title for assistive
+ * technology and shown in a tooltip on hover, without describing the icon a
+ * second time. Renders nothing without a version.
+ */
+function GameVersionMark({ gameVersion }) {
+    if (!gameVersion) {
+        return null;
+    }
+
+    return (
+        <Tooltip as="span" body={gameVersion.title} describe={false} className="flex shrink-0">
+            <span role="img" aria-label={gameVersion.title} className="flex">
+                <GameVersionIcon gameVersion={gameVersion} className="size-8" />
+            </span>
+        </Tooltip>
     );
 }
 
@@ -38,6 +60,9 @@ function SkeletonRow() {
  * anonymous visitors and members see exactly the same information.
  */
 function EventRow({ event }) {
+    const raidNames = event.raids.map((raid) => raid.name).join(", ");
+    const shouldShowRaidNames = raidNames !== "" && raidNames !== event.title;
+
     return (
         <>
             <span className="text-camel-400 w-full shrink-0 text-sm tabular-nums sm:w-44">
@@ -45,18 +70,19 @@ function EventRow({ event }) {
                     {formatDate(event.start_time)} · {formatTime(event.start_time)}
                 </time>
             </span>
-            <span className="text-camel-200 font-serif text-lg">{event.title}</span>
-            {event.raids.length > 0 && (
-                <span className="text-camel-500 hidden text-sm md:inline">
-                    {event.raids.map((raid) => raid.name).join(", ")}
-                </span>
+            <span className="flex items-center gap-3">
+                <GameVersionMark gameVersion={event.game_version} />
+                <span className="text-camel-200 font-serif text-lg">{event.title}</span>
+            </span>
+            {shouldShowRaidNames && (
+                <span className="text-camel-500 hidden text-sm md:inline">{raidNames}</span>
             )}
         </>
     );
 }
 
 /**
- * Upcoming raids, visible to everyone.
+ * Upcoming raids, visible to everyone. Each row shows its game version's icon.
  *
  * Rows link to the raid plan only for authenticated users: raiding.plans.show
  * is not a public route, so linking it for anonymous visitors would be a dead
@@ -88,12 +114,12 @@ export default function UpcomingEvents({ events, canViewPlans = false }) {
                             {canViewPlans ? (
                                 <Link
                                     href={route("raiding.plans.show", event.id)}
-                                    className="hover:bg-forever-700/60 focus-visible:outline-camel-400 flex flex-wrap items-baseline gap-x-4 gap-y-1 px-2 py-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+                                    className="hover:bg-forever-700/60 focus-visible:outline-camel-400 flex flex-wrap items-center gap-x-4 gap-y-1 px-2 py-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
                                 >
                                     <EventRow event={event} />
                                 </Link>
                             ) : (
-                                <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 px-2 py-4">
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-2 py-4">
                                     <EventRow event={event} />
                                 </div>
                             )}

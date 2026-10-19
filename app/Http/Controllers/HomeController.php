@@ -35,6 +35,7 @@ class HomeController extends Controller
                     fn () => BuildEventsForViewer::run(
                         Event::live()
                             ->where('end_time', '>=', now())
+                            ->with('gameVersion.media')
                             ->orderBy('start_time')
                             ->take(self::UPCOMING_EVENT_LIMIT),
                         $request,

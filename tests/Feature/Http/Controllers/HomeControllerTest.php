@@ -6,9 +6,12 @@ use App\Contracts\HasCharacterMedia;
 use App\Jobs\AttachRenderToCharacter;
 use App\Models\Character;
 use App\Models\Event;
+use App\Models\GameVersion;
 use App\Models\PlayableRace;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -155,7 +158,7 @@ class HomeControllerTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->missing('upcomingEvents')
                 ->loadDeferredProps(fn (Assert $reload) => $reload->has('upcomingEvents.0', fn (Assert $event) => $event
-                    ->hasAll(['id', 'title', 'start_time', 'end_time', 'raids'])
+                    ->hasAll(['id', 'title', 'start_time', 'end_time', 'game_version', 'raids'])
                     ->missing('channel')
                     ->missing('channel_id')
                 )->etc())
@@ -217,6 +220,82 @@ class HomeControllerTest extends TestCase
                     ->etc()
                 )->etc())
             );
+    }
+
+    #[Test]
+    #[Group('laravel-media-library')]
+    public function it_tags_each_upcoming_event_with_its_game_version_icon_fields(): void
+    {
+        Storage::fake('public');
+        $gameVersion = GameVersion::factory()->create(['title' => 'World of Warcraft: Forever', 'color' => '226e73']);
+        $gameVersion->addMedia(UploadedFile::fake()->image('icon.png'))->toMediaCollection(GameVersion::MEDIA_ICON);
+        Event::factory()->live()->for($gameVersion)->create([
+            'start_time' => now()->addDay(),
+            'end_time' => now()->addDay()->addHours(3),
+        ]);
+
+        $this->get(route('home'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('upcomingEvents.0.game_version', fn (Assert $version) => $version
+                        ->where('id', $gameVersion->id)
+                        ->where('title', 'World of Warcraft: Forever')
+                        ->where('color', '226e73')
+                        ->where('icon_url', fn (?string $url): bool => $url !== null && str_contains($url, 'icon'))
+                    )
+                    ->etc()
+                )
+            );
+    }
+
+    #[Test]
+    public function it_sends_a_null_game_version_for_an_event_without_one(): void
+    {
+        Event::factory()->live()->create([
+            'start_time' => now()->addDay(),
+            'end_time' => now()->addDay()->addHours(3),
+        ]);
+
+        $this->get(route('home'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->where('upcomingEvents.0.game_version', null)
+                    ->etc()
+                )
+            );
+    }
+
+    #[Test]
+    #[Group('laravel-media-library')]
+    public function it_lists_upcoming_events_without_lazy_loading_game_version_media(): void
+    {
+        Storage::fake('public');
+        config(['media-library.force_lazy_loading' => false]);
+
+        foreach (range(1, 2) as $index) {
+            $gameVersion = GameVersion::factory()->create();
+            $gameVersion->addMedia(UploadedFile::fake()->image("icon-{$index}.png"))->toMediaCollection(GameVersion::MEDIA_ICON);
+            Event::factory()->live()->for($gameVersion)->create([
+                'start_time' => now()->addDay(),
+                'end_time' => now()->addDay()->addHours(3),
+            ]);
+        }
+
+        Model::preventLazyLoading();
+
+        try {
+            $this->get(route('home'))
+                ->assertInertia(fn (Assert $page) => $page
+                    ->loadDeferredProps(fn (Assert $reload) => $reload
+                        ->has('upcomingEvents', 2)
+                        ->where('upcomingEvents.0.game_version.icon_url', fn (?string $url): bool => $url !== null)
+                        ->where('upcomingEvents.1.game_version.icon_url', fn (?string $url): bool => $url !== null)
+                        ->etc()
+                    )
+                );
+        } finally {
+            Model::preventLazyLoading(false);
+        }
     }
 
     #[Test]

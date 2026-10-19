@@ -31,9 +31,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 #[ObservedBy([GameVersionObserver::class])]
 #[Fillable([
@@ -167,6 +169,16 @@ class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia,
     }
 
     // ============ Media ===========
+
+    /**
+     * Get the media attached to the game version, each with its `model` relation set to the game version.
+     *
+     * @return MorphMany<Media, $this>
+     */
+    public function media(): MorphMany
+    {
+        return $this->morphMany($this->getMediaModel(), 'model')->chaperone('model');
+    }
 
     /**
      * Register the image collections; the icon also accepts SVGs.
