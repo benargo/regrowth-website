@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Actions\Boss\BuildBossRoutes;
+use App\Contracts\Actions\Boss\SharesRaidPageOrigins;
 use App\Models\Boss;
 use App\Models\Raid;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -10,7 +10,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 
-class StoreBossRequest extends FormRequest
+class StoreBossRequest extends FormRequest implements SharesRaidPageOrigins
 {
     /**
      * Get the validation rules that apply to the request.
@@ -22,7 +22,7 @@ class StoreBossRequest extends FormRequest
         return [
             'raid_id' => ['required', 'integer', Rule::exists(Raid::class, 'id')],
             'name' => ['required', 'string', 'max:255', $this->uniqueNameRule($this->input('raid_id'))],
-            'from' => ['nullable', 'string', Rule::in(BuildBossRoutes::FROM_RAID_PAGES)],
+            'from' => ['nullable', 'string', Rule::in(self::FROM_RAID_PAGES)],
         ];
     }
 

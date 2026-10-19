@@ -4,25 +4,38 @@ namespace App\Http\Controllers;
 
 use App\Actions\Datasets\DeleteDatasetRecord;
 use App\Actions\Datasets\ResolveEditLock;
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Actions\Raid\BuildRaidFormOptions;
 use App\Actions\Raid\BuildRaidIndexGroups;
 use App\Actions\Raid\BuildRaidRoutes;
+use App\Actions\Raid\ListPhasesWithRaids;
 use App\Actions\Raid\UpdateRaid;
 use App\Attributes\Http\Controllers\ScopesResourceTo;
+use App\Contracts\Http\Controllers\SharesPriorityWeightThreshold;
 use App\Enums\RaidSetupStep;
+use App\Enums\SiteSection;
+use App\Http\Middleware\RemembersCurrentRaid;
+use App\Http\Middleware\RemembersRecordGameVersion;
 use App\Http\Requests\StoreRaidRequest;
 use App\Http\Requests\UpdateRaidRequest;
+use App\Http\Resources\BossResource;
+use App\Http\Resources\ItemResource;
+use App\Http\Resources\PhaseResource;
 use App\Http\Resources\RaidResource;
+use App\Models\Comment;
+use App\Models\Item;
 use App\Models\Phase;
 use App\Models\Raid;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Inertia\Inertia;
 use Inertia\Response;
 
-#[Authorize('view-officer-dashboard')]
-class RaidController extends Controller
+#[Authorize('view-officer-dashboard', except: ['browse', 'show', 'trash'])]
+class RaidController extends Controller implements SharesPriorityWeightThreshold
 {
     /**
      * Display the raids grouped by game version, then those whose phase has none.
@@ -34,6 +47,71 @@ class RaidController extends Controller
         return Inertia::render('Manage/Raids/Index', [
             'groups' => BuildRaidIndexGroups::run(),
             'routes' => BuildRaidRoutes::make()->forIndex(),
+        ]);
+    }
+
+    /**
+     * Display the current game version's raids, grouped by phase, for the route's section.
+     */
+    public function browse(Request $request): Response
+    {
+        $gameVersion = ResolveCurrentGameVersion::run();
+
+        return Inertia::render('Raids/Index', [
+            'section' => SiteSection::fromRoute($request),
+            'phases' => PhaseResource::collection($gameVersion === null ? new Collection : ListPhasesWithRaids::run($gameVersion)),
+        ]);
+    }
+
+    /**
+     * Display a raid's bosses for the route's section, redirecting to the canonical slug.
+     * The Loot section adds comment counts per boss and for the raid's trash.
+     */
+    #[Middleware(RemembersCurrentRaid::class)]
+    #[Middleware(RemembersRecordGameVersion::class.':raid')]
+    public function show(Request $request, Raid $raid): Response|RedirectResponse
+    {
+        $section = SiteSection::fromRoute($request);
+
+        if ($request->route('slug') !== $raid->slug) {
+            return redirect()->route("{$section->value}.raids.show", ['raid' => $raid, 'slug' => $raid->slug], 303);
+        }
+
+        $raid->load('media')->loadExists('trashItems');
+        $bosses = $raid->bosses()->withCount('media')->get();
+
+        if ($section === SiteSection::Loot) {
+            $bosses->loadCount('comments');
+            $raid->trash_comments_count = Comment::where('commentable_type', Item::class)
+                ->whereIn('commentable_id', $raid->trashItems()->select('items.id'))
+                ->count();
+        }
+
+        return Inertia::render('Raids/Show', [
+            'section' => $section,
+            'raid' => new RaidResource($raid),
+            'bosses' => BossResource::collection($bosses)->scope('navigation'),
+        ]);
+    }
+
+    /**
+     * Display a raid's trash items for the route's section, redirecting to the canonical slug.
+     */
+    #[Middleware(RemembersCurrentRaid::class)]
+    #[Middleware(RemembersRecordGameVersion::class.':raid')]
+    public function trash(Request $request, Raid $raid): Response|RedirectResponse
+    {
+        $section = SiteSection::fromRoute($request);
+
+        if ($request->route('slug') !== $raid->slug) {
+            return redirect()->route("{$section->value}.raids.trash", ['raid' => $raid, 'slug' => $raid->slug], 303);
+        }
+
+        return Inertia::render('Raids/Trash', [
+            'section' => $section,
+            'raid' => new RaidResource($raid->load('media')),
+            'items' => Inertia::defer(fn () => ItemResource::collection($raid->trashItems()->withLootListData()->get())),
+            'priorityWeightThreshold' => self::DISPLAY_WEIGHT_THRESHOLD,
         ]);
     }
 

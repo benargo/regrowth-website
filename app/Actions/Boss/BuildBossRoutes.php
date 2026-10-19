@@ -3,6 +3,7 @@
 namespace App\Actions\Boss;
 
 use App\Actions\Datasets\BuildDatasetRoutes;
+use App\Contracts\Actions\Boss\SharesRaidPageOrigins;
 use App\Enums\RaidSetupStep;
 use App\Models\Raid;
 use Illuminate\Database\Eloquent\Model;
@@ -12,25 +13,8 @@ use Illuminate\Support\Facades\URL;
  * Resolves the URLs the boss management pages link to. A form opened from a
  * raid's Bosses step or Edit page leads back there.
  */
-class BuildBossRoutes extends BuildDatasetRoutes
+class BuildBossRoutes extends BuildDatasetRoutes implements SharesRaidPageOrigins
 {
-    /**
-     * The `from` value of a Create form opened from a raid's Edit page.
-     */
-    public const string FROM_RAID_EDIT = 'raid-edit';
-
-    /**
-     * The `from` value of a Create form opened from a raid's Bosses setup step.
-     */
-    public const string FROM_RAID_SETUP = 'raid-setup';
-
-    /**
-     * Every `from` value a Create form accepts.
-     *
-     * @var list<string>
-     */
-    public const array FROM_RAID_PAGES = [self::FROM_RAID_EDIT, self::FROM_RAID_SETUP];
-
     protected function routePrefix(): string
     {
         return 'management.bosses';

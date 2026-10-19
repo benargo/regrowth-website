@@ -9,20 +9,59 @@ use App\Actions\Boss\UpdateBoss;
 use App\Actions\Datasets\DeleteDatasetRecord;
 use App\Actions\Datasets\ResolveEditLock;
 use App\Attributes\Http\Controllers\ScopesResourceTo;
+use App\Contracts\Actions\Boss\SharesRaidPageOrigins;
+use App\Contracts\Http\Controllers\SharesPriorityWeightThreshold;
+use App\Enums\SiteSection;
+use App\Http\Middleware\RemembersCurrentRaid;
+use App\Http\Middleware\RemembersRecordGameVersion;
 use App\Http\Requests\StoreBossRequest;
 use App\Http\Requests\UpdateBossRequest;
 use App\Http\Resources\BossResource;
+use App\Http\Resources\ItemResource;
 use App\Models\Boss;
 use App\Models\Raid;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Inertia\Inertia;
 use Inertia\Response;
 
-#[Authorize('view-officer-dashboard')]
-class BossController extends Controller
+#[Authorize('view-officer-dashboard', except: ['show'])]
+class BossController extends Controller implements SharesPriorityWeightThreshold, SharesRaidPageOrigins
 {
+    /**
+     * Display a boss for the route's section, redirecting to the canonical slug.
+     * Raiding shows its Strategy tab, or its Items tab with `?tab=items`; Loot shows its items.
+     * Items are sent, deferred, only on the items tab.
+     */
+    #[Middleware(RemembersCurrentRaid::class.':boss')]
+    #[Middleware(RemembersRecordGameVersion::class.':boss')]
+    public function show(Request $request, Boss $boss): Response|RedirectResponse
+    {
+        $section = SiteSection::fromRoute($request);
+
+        if ($request->route('slug') !== $boss->slug) {
+            return redirect()->route(
+                "{$section->value}.bosses.show",
+                ['boss' => $boss, 'slug' => $boss->slug, ...$request->only('tab')],
+                303,
+            );
+        }
+
+        $tab = $section === SiteSection::Raiding && $request->query('tab') !== 'items' ? 'strategy' : 'items';
+
+        return Inertia::render('Bosses/Show', [
+            'section' => $section,
+            'tab' => $tab,
+            'boss' => new BossResource($boss->load(['media', 'raid.media'])),
+            ...($tab === 'items'
+                ? ['items' => Inertia::defer(fn () => ItemResource::collection($boss->items()->withLootListData()->get()))]
+                : []),
+            'priorityWeightThreshold' => self::DISPLAY_WEIGHT_THRESHOLD,
+        ]);
+    }
+
     /**
      * Display every game version's raids and their bosses, then the raids
      * whose phase has no game version.
@@ -46,7 +85,7 @@ class BossController extends Controller
     public function create(Request $request): Response
     {
         $raid = Raid::find($request->integer('raid'));
-        $from = in_array($request->query('from'), BuildBossRoutes::FROM_RAID_PAGES, true) ? $request->query('from') : null;
+        $from = in_array($request->query('from'), self::FROM_RAID_PAGES, true) ? $request->query('from') : null;
 
         return Inertia::render('Manage/Bosses/Create', [
             'raidId' => $raid?->id,
