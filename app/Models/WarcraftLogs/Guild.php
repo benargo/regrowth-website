@@ -3,6 +3,7 @@
 namespace App\Models\WarcraftLogs;
 
 use App\Events\WarcraftLogsGuildDeleted;
+use App\Events\WarcraftLogsGuildSaved;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\GameVersion;
 use App\Models\Report;
@@ -16,7 +17,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Support\Facades\Cache;
 
 #[UsePolicy(WarcraftLogsGuildPolicy::class)]
 #[Fillable(['id', 'namespace'])]
@@ -32,22 +32,9 @@ class Guild extends Model
      * @var array<string, string>
      */
     protected $dispatchesEvents = [
+        'saved' => WarcraftLogsGuildSaved::class,
         'deleted' => WarcraftLogsGuildDeleted::class,
     ];
-
-    /**
-     * Flush cached API responses when a guild is added or changes namespace.
-     */
-    protected static function booted(): void
-    {
-        static::saved(function (Guild $guild): void {
-            if (! $guild->isDirty('namespace')) {
-                return;
-            }
-
-            Cache::tags(['warcraftlogs-api-response'])->flush();
-        });
-    }
 
     /**
      * Get the attributes that should be cast.
