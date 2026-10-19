@@ -86,8 +86,7 @@ class StoreRaidRequest extends FormRequest
     }
 
     /**
-     * The value a field will hold once the request is saved: the one sent,
-     * or the stored raid's when there is a raid and the field wasn't sent.
+     * A field's value once saved: the one sent, else the stored raid's.
      */
     protected function intended(string $key): mixed
     {

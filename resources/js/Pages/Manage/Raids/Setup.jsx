@@ -4,10 +4,7 @@ import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
 import Master from "@/Layouts/Master";
 
-/**
- * Every {Name}Section.jsx raid section, which Relationships.Step picks from
- * by the step's component name (RaidSetupStep::component()).
- */
+/** Every {Name}Section.jsx raid section, keyed by step component name (`RaidSetupStep::component()`). */
 const sections = import.meta.glob("/resources/js/Components/Raids/*Section.jsx", {
     eager: true,
     import: "default",

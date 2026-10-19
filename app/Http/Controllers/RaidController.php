@@ -25,8 +25,7 @@ use Inertia\Response;
 class RaidController extends Controller
 {
     /**
-     * Display every game version's raids, then the raids whose phase has no
-     * game version.
+     * Display the raids grouped by game version, then those whose phase has none.
      */
     #[ScopesResourceTo(RaidResource::class, 'management')]
     #[Authorize('viewAny', Raid::class)]
@@ -39,8 +38,7 @@ class RaidController extends Controller
     }
 
     /**
-     * Show the form for adding a raid, with the phase given in the query
-     * (?phase=) preselected.
+     * Show the form for adding a raid, preselecting the phase given as `?phase=`.
      */
     #[Authorize('create', Raid::class)]
     public function create(Request $request, BuildRaidRoutes $routes): Response

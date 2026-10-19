@@ -150,8 +150,7 @@ class Raid extends Model implements BelongsToGameVersion, DatasetModel, EditLock
     }
 
     /**
-     * Scope a query to the raids whose phase belongs to the given game
-     * version, or to no game version when it is null.
+     * Scope a query to raids whose phase belongs to the given game version, or to none when null.
      */
     #[Scope]
     protected function inGameVersion(Builder $query, ?GameVersion $gameVersion): void

@@ -5,10 +5,7 @@ import Icon from "@/Components/FontAwesome/Icon";
 import { linkClassName } from "@/Components/FormControls";
 import modelColor from "@/Helpers/ModelColor";
 
-/**
- * The raids in a phase, each linking to its Edit page, and a link to add a
- * raid to the phase.
- */
+/** The raids in a phase, each linking to its Edit page, and a link to add a raid to the phase. */
 export default function PhaseRaids({ phase }) {
     const list = Object.values(phase.raids ?? {});
 

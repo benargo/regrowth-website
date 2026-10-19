@@ -23,9 +23,7 @@ export function raidFormData(raid = null, phaseId = null) {
     };
 }
 
-/**
- * The banner as page headers show it, at the chosen position.
- */
+/** The banner as page headers show it, at the chosen position. */
 function BannerPreview({ color, url, position }) {
     const background = modelBackground(color, url, position || null);
 

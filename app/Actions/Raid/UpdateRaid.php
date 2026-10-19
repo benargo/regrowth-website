@@ -63,8 +63,7 @@ class UpdateRaid
     }
 
     /**
-     * Store the uploaded banner with the given position, replacing the
-     * previous one, or remove the banner when no file is given.
+     * Store the uploaded banner at the given position, replacing the old one, or remove it when no file is given.
      */
     private function replaceBanner(Raid $raid, ?UploadedFile $file, ?string $position): void
     {

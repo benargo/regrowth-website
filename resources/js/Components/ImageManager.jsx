@@ -83,9 +83,7 @@ export default function ImageManager({
     const shouldFocusUpload = useRef(false);
     const hintId = useId();
 
-    /**
-     * Once a delete finishes, focus the "browse" button if it is showing.
-     */
+    /** Once a delete finishes, focus the "browse" button if it is showing. */
     useEffect(() => {
         if (saving || !shouldFocusUpload.current) {
             return;

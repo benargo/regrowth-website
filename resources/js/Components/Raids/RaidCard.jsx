@@ -12,10 +12,7 @@ const LINK_LABELS = [
 
 const LIST_FORMAT = new Intl.ListFormat("en-GB", { type: "conjunction" });
 
-/**
- * The sentence naming what deleting the raid also removes: its links to past
- * events, event templates and items. Null when there are none.
- */
+/** What deleting the raid also unlinks (past events, event templates, items), or null when nothing. */
 export function raidDeleteWarning(raid) {
     const linked = usageSummary(raid, LINK_LABELS);
     const [items] = usageSummary(raid, [["items_count", "item", "items"]]);
@@ -29,18 +26,14 @@ export function raidDeleteWarning(raid) {
     return consequences.length > 0 ? `Deleting ${raid.name} also ${consequences.join(separator)}.` : null;
 }
 
-/**
- * "Phase 1 · Normal · 10 players", leaving out the parts that aren't set.
- */
+/** "Phase 1 · Normal · 10 players", leaving out the parts that aren't set. */
 function raidSubtitle(raid) {
     return [raid.phase?.name, raid.difficulty, raid.max_players ? `${raid.max_players} players` : null]
         .filter(Boolean)
         .join(" · ");
 }
 
-/**
- * A raid's card on the Index page, under its banner.
- */
+/** A raid's card on the Index page, under its banner. */
 export default function RaidCard({ raid, onDelete }) {
     return (
         <RecordCard

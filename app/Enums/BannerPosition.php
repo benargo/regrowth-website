@@ -5,8 +5,7 @@ namespace App\Enums;
 use App\Enums\Concerns\HasSelectOptions;
 
 /**
- * The CSS background position of a raid's banner: which part of the image
- * stays in view when it is cropped.
+ * The CSS background position of a raid's banner: which part stays in view when cropped.
  */
 enum BannerPosition: string
 {

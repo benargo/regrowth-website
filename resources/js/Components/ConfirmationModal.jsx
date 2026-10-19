@@ -2,11 +2,7 @@ import { Description, DialogTitle } from '@headlessui/react';
 import Modal from '@/Components/Modal';
 import { DangerButton, PrimaryButton, SecondaryButton } from '@/Components/FormControls';
 
-/**
- * A confirm/cancel dialog. `title` names the dialog and `children` describe
- * it, so assistive technology reads both (including any delete warning)
- * before the buttons.
- */
+/** A confirm/cancel dialog. `title` labels the dialog and `children` describe it. */
 export default function ConfirmationModal({
     show = false,
     onClose,

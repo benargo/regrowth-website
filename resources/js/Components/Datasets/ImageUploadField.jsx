@@ -7,13 +7,11 @@ import { autosaveVisit, useAutosaveQueue } from "@/Hooks/useAutosave";
 /**
  * One image upload for a dataset record, showing the image at `url`. Files
  * are sent to `updateUrl` as soon as they are chosen, as `{ [field]: file }`
- * with the PATCH spoofed over POST because browsers can't send files in a
- * real PATCH; deleting sends `{ [field]: null }`. `accepts` lists the MIME
- * types the server takes.
+ * in a POST with a spoofed PATCH method; deleting sends `{ [field]: null }`.
+ * `accepts` lists the MIME types the server takes.
  *
  * On an autosaving page, each upload or delete waits its turn in the save
- * queue, so its visit neither cancels nor is cancelled by an autosave.
- * Memoised, so dragging a colour picker beside it doesn't re-render it.
+ * queue. Memoised.
  */
 const ImageUploadField = memo(function ImageUploadField({ field, label, hint, url, accepts, updateUrl }) {
     const [saving, setSaving] = useState(false);

@@ -7,7 +7,7 @@ import { toHex } from "@/Helpers/ModelColor";
 import { useFormAutosave } from "@/Hooks/useAutosave";
 import { AUTOSAVE_DELAY } from "@/Hooks/useRelationshipForm";
 
-/** A stable fallback, so a missing `media` prop doesn't defeat ImageUploadField's memo. */
+/** A stable fallback for a missing `media` prop. */
 const NO_MEDIA = {};
 
 export default function ThemeSection({
