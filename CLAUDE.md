@@ -33,6 +33,7 @@ Use Laravel facades only as a last resort. Prefer constructor/method dependency 
 - Where an existing helper exposes a facade (`Blizzard::send(...)`, `BlizzardAsset::...`), refactor the caller to receive the connector by DI and migrate the call to `$blizzard->send(...)`.
 - Resources/Models cannot accept constructor injection — there `app(BlizzardConnector::class)` is acceptable, but call it out explicitly and minimise it (e.g. resolve once into a property).
 - New code should never reach for `App\Facades\Blizzard` or `App\Facades\BlizzardAsset` unless DI is genuinely impossible.
+- Laravel Actions (`AsAction`) are the exception: never inject them. Call `ActionClassName::run(...)` instead; when the same action runs repeatedly in one scope (e.g. a loop), resolve it once with `ActionClassName::make()` and call `->handle(...)` each time.
 
 ## Catch the abstract `NotFoundException` in Blizzard batch loops
 
