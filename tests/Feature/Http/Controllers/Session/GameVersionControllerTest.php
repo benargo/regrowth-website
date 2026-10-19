@@ -3,7 +3,7 @@
 namespace Tests\Feature\Http\Controllers\Session;
 
 use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
-use App\Http\Middleware\RemembersRecordGameVersion;
+use App\Contracts\Http\Middleware\SharesGameVersionSwitchFlash;
 use App\Models\GameVersion;
 use App\Models\User;
 use Carbon\Carbon;
@@ -57,7 +57,7 @@ class GameVersionControllerTest extends TestCase
         $response = $this->from(route('loot.index'))
             ->patch(route('session.game-version.update'), ['game_version' => $gameVersion->slug]);
 
-        $response->assertSessionHas(RemembersRecordGameVersion::SWITCHED_FLASH_KEY, true);
+        $response->assertSessionHas(SharesGameVersionSwitchFlash::SWITCHED_FLASH_KEY, true);
     }
 
     #[Test]
@@ -69,7 +69,7 @@ class GameVersionControllerTest extends TestCase
             ->patch(route('session.game-version.update'), ['game_version' => $gameVersion->slug, 'reset_query' => true]);
 
         $response->assertRedirect(route('raiding.reports.index'))->assertStatus(303);
-        $response->assertSessionHas(RemembersRecordGameVersion::SWITCHED_FLASH_KEY, true);
+        $response->assertSessionHas(SharesGameVersionSwitchFlash::SWITCHED_FLASH_KEY, true);
     }
 
     // ==================== query string ====================

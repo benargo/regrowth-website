@@ -4,6 +4,7 @@ namespace Tests\Feature\Middleware;
 
 use App\Actions\GameVersion\ListSelectableGameVersions;
 use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
+use App\Contracts\Http\Middleware\SharesGameVersionSwitchFlash;
 use App\Http\Middleware\RemembersRecordGameVersion;
 use App\Models\GameVersion;
 use App\Models\Item;
@@ -58,7 +59,7 @@ class RemembersRecordGameVersionTest extends TestCase
         $request->headers->add($headers);
 
         if ($wasJustSwitched) {
-            $request->session()->put(RemembersRecordGameVersion::SWITCHED_FLASH_KEY, true);
+            $request->session()->put(SharesGameVersionSwitchFlash::SWITCHED_FLASH_KEY, true);
         }
 
         $response = (new RemembersRecordGameVersion)->handle($request, fn () => response('next'), 'record');
@@ -84,11 +85,11 @@ class RemembersRecordGameVersionTest extends TestCase
     public function it_forgets_the_explicit_switch_flag_once_it_has_skipped_a_record_page(): void
     {
         $request = $this->requestFor($this->itemOwnedBy($this->otherVersion));
-        $request->session()->put(RemembersRecordGameVersion::SWITCHED_FLASH_KEY, true);
+        $request->session()->put(SharesGameVersionSwitchFlash::SWITCHED_FLASH_KEY, true);
 
         (new RemembersRecordGameVersion)->handle($request, fn () => response('next'), 'record');
 
-        $this->assertFalse($request->session()->has(RemembersRecordGameVersion::SWITCHED_FLASH_KEY));
+        $this->assertFalse($request->session()->has(SharesGameVersionSwitchFlash::SWITCHED_FLASH_KEY));
         $this->assertNull($request->session()->get(SharesCurrentGameVersionSession::SESSION_KEY));
     }
 
