@@ -2,30 +2,40 @@ import SortableList from "@/Components/Datasets/SortableList";
 import useOrderAutosave from "@/Hooks/useOrderAutosave";
 
 /**
- * The unscheduled phases of one game version, in the order officers expect
- * them to arrive. Dragging one saves the new order straight away; a status
- * line announces the save. renderPhase(phase, dragHandle) draws each phase.
+ * A list of records officers drag into order. Dropping one saves the new
+ * order straight away, as the records' ids in `field` alongside `data`, in
+ * the save queue as `saveKey`; a status line announces the save.
+ * renderItem(record, { index, dragHandle }) draws each record.
  */
-export default function UnscheduledPhaseOrder({ phases, url, field, data = {}, label, renderPhase, className = "" }) {
+export default function AutosavedSortableList({
+    items,
+    url,
+    field,
+    data = {},
+    saveKey,
+    label,
+    renderItem,
+    className = "",
+}) {
     const { ordered, move, isSaving, hasSaved, error } = useOrderAutosave({
-        items: phases,
-        getKey: (phase) => phase.id,
+        items,
+        getKey: (item) => item.id,
         url,
         field,
         data,
-        key: `phase-order-${data.game_version_id ?? "none"}`,
+        key: saveKey,
     });
 
     return (
         <div className="flex flex-col gap-3">
             <SortableList
                 items={ordered}
-                getKey={(phase) => phase.id}
-                getLabel={(phase) => phase.name}
+                getKey={(item) => item.id}
+                getLabel={(item) => item.name}
                 label={label}
                 className={className}
                 onMove={move}
-                renderItem={(phase, { dragHandle }) => renderPhase(phase, dragHandle)}
+                renderItem={renderItem}
             />
             <p role="status" aria-live="polite" className="min-h-5 text-sm text-gray-300">
                 {isSaving ? "Saving the order…" : hasSaved ? "Order saved." : ""}

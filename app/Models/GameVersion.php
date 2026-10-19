@@ -12,6 +12,7 @@ use App\Events\GameVersionChanged;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Support\NameSlug;
 use App\Models\Concerns\HasEditLock;
+use App\Models\Concerns\InteractsWithChaperonedMedia;
 use App\Models\Concerns\TracksUsage;
 use App\Models\WarcraftLogs\Guild;
 use App\Observers\GameVersionObserver;
@@ -31,10 +32,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 #[ObservedBy([GameVersionObserver::class])]
@@ -58,7 +57,7 @@ class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia,
     /** @use HasFactory<GameVersionFactory> */
     use HasFactory;
 
-    use InteractsWithMedia;
+    use InteractsWithChaperonedMedia;
     use TracksUsage;
 
     /**
@@ -171,16 +170,6 @@ class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia,
     // ============ Media ===========
 
     /**
-     * Get the media attached to the game version, each with its `model` relation set to the game version.
-     *
-     * @return MorphMany<Media, $this>
-     */
-    public function media(): MorphMany
-    {
-        return $this->morphMany($this->getMediaModel(), 'model')->chaperone('model');
-    }
-
-    /**
      * Register the image collections; the icon also accepts SVGs.
      */
     public function registerMediaCollections(): void
@@ -198,16 +187,6 @@ class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia,
         $this->addMediaCollection(self::MEDIA_LOGO)
             ->singleFile()
             ->acceptsMimeTypes($rasterImages);
-    }
-
-    /**
-     * Get the MIME types a media collection accepts.
-     *
-     * @return list<string>
-     */
-    public function acceptedMimeTypes(string $collection): array
-    {
-        return $this->getRegisteredMediaCollections()->firstWhere('name', $collection)->acceptsMimeTypes ?? [];
     }
 
     // ============ Guild roster ===========

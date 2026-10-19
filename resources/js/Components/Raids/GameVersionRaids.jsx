@@ -1,5 +1,5 @@
+import GameVersionGroupHeader from "@/Components/GameVersions/GameVersionGroupHeader";
 import RaidCard from "@/Components/Raids/RaidCard";
-import modelColor from "@/Helpers/ModelColor";
 
 /**
  * One game version's raids on the Index page. A group with no game version
@@ -11,20 +11,10 @@ export default function GameVersionRaids({ group, onDelete }) {
     const raids = group.raids.data;
     const title = gameVersion?.title ?? "No game version";
     const headingId = `raids-${gameVersion?.id ?? "none"}`;
-    const rule = modelColor(gameVersion?.color, ["bg"]);
 
     return (
         <section aria-labelledby={headingId} className="flex flex-col gap-6">
-            <header className="flex flex-col gap-2">
-                <h2 id={headingId} className="font-serif text-3xl text-white">
-                    {title}
-                </h2>
-                <div
-                    aria-hidden="true"
-                    className={`h-0.5 w-full ${rule.className || "bg-amber-600/60"}`}
-                    style={rule.style}
-                />
-            </header>
+            <GameVersionGroupHeader gameVersion={gameVersion} headingId={headingId} />
 
             {raids.length === 0 ? (
                 <p className="text-gray-300">No raids in {title} yet.</p>

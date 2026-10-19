@@ -62,16 +62,17 @@ class ListPhasesWithRaids
      */
     private function hydrate(array $rows): Collection
     {
-        $media = Media::hydrate($rows['media']);
+        $mediaByModel = Media::hydrate($rows['media'])->groupBy('model_id');
 
-        $raids = Raid::hydrate($rows['raids'])->each(function (Raid $raid) use ($media): void {
-            $raid->setRelation('media', $media
-                ->where('model_id', $raid->getKey())
-                ->each->setRelation('model', $raid)
-                ->values());
-        });
+        $raidsByPhase = Raid::hydrate($rows['raids'])
+            ->each(function (Raid $raid) use ($mediaByModel): void {
+                $raid->setRelation('media', $mediaByModel
+                    ->get($raid->getKey(), new Collection)
+                    ->each->setRelation('model', $raid));
+            })
+            ->groupBy('phase_id');
 
         return Phase::hydrate($rows['phases'])
-            ->each(fn (Phase $phase) => $phase->setRelation('raids', $raids->where('phase_id', $phase->id)->values()));
+            ->each(fn (Phase $phase) => $phase->setRelation('raids', $raidsByPhase->get($phase->id, new Collection)));
     }
 }

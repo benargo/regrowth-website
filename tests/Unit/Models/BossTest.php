@@ -369,7 +369,7 @@ class BossTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_splits_its_assignments_and_assignment_groups_into_past_and_upcoming(): void
+    public function it_splits_its_assignments_into_past_and_upcoming_and_lists_its_upcoming_assignment_groups(): void
     {
         $this->freezeTime();
         $boss = $this->create();
@@ -377,13 +377,11 @@ class BossTest extends ModelTestCase
         $upcoming = $this->eventInHours(24, 27);
         $pastAssignment = EventAssignment::factory()->forBoss($boss)->create(['event_id' => $past->id]);
         $upcomingAssignment = EventAssignment::factory()->forBoss($boss)->create(['event_id' => $upcoming->id]);
-        $pastGroup = EventAssignmentGroup::factory()->forBoss($boss)->create(['event_id' => $past->id]);
         $upcomingGroup = EventAssignmentGroup::factory()->forBoss($boss)->create(['event_id' => $upcoming->id]);
 
         $this->assertInstanceOf(HasMany::class, $boss->assignmentGroups());
         $this->assertSame([$pastAssignment->id], $boss->pastAssignments->modelKeys());
         $this->assertSame([$upcomingAssignment->id], $boss->upcomingAssignments->modelKeys());
-        $this->assertSame([$pastGroup->id], $boss->pastAssignmentGroups->modelKeys());
         $this->assertSame([$upcomingGroup->id], $boss->upcomingAssignmentGroups->modelKeys());
     }
 

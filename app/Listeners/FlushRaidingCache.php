@@ -12,14 +12,6 @@ class FlushRaidingCache
      */
     public function handle(FlushesRaidingCache $event): void
     {
-        $this->flush();
-    }
-
-    /**
-     * Flush every cached entry tagged `raiding` and `events`.
-     */
-    public function flush(): void
-    {
         Cache::tags(['raiding', 'events'])->flush();
     }
 }

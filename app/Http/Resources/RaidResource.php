@@ -3,10 +3,10 @@
 namespace App\Http\Resources;
 
 use App\Contracts\Http\Resources\ScopedResource;
+use App\Http\Resources\Concerns\DescribesMediaCollections;
 use App\Http\Resources\Concerns\HasScopes;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Spatie\MediaLibrary\MediaCollections\MediaCollection;
 
 /**
  * Transform a raid, optionally limited to the `management` or `summary`
@@ -16,6 +16,7 @@ use Spatie\MediaLibrary\MediaCollections\MediaCollection;
  */
 class RaidResource extends JsonResource implements ScopedResource
 {
+    use DescribesMediaCollections;
     use HasScopes;
 
     /**
@@ -96,11 +97,7 @@ class RaidResource extends JsonResource implements ScopedResource
         }
 
         return [
-            'media' => $this->getRegisteredMediaCollections()
-                ->mapWithKeys(fn (MediaCollection $collection): array => [
-                    $collection->name => ['accepts' => $collection->acceptsMimeTypes],
-                ])
-                ->all(),
+            'media' => $this->mediaCollections(),
         ];
     }
 }

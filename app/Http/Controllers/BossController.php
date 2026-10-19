@@ -12,6 +12,7 @@ use App\Attributes\Http\Controllers\ScopesResourceTo;
 use App\Contracts\Actions\Boss\SharesRaidPageOrigins;
 use App\Contracts\Http\Controllers\SharesPriorityWeightThreshold;
 use App\Enums\SiteSection;
+use App\Http\Middleware\EnsureRecordSlugIsValid;
 use App\Http\Middleware\RemembersCurrentRaid;
 use App\Http\Middleware\RemembersRecordGameVersion;
 use App\Http\Requests\StoreBossRequest;
@@ -37,24 +38,17 @@ class BossController extends Controller implements SharesPriorityWeightThreshold
      */
     #[Middleware(RemembersCurrentRaid::class.':boss')]
     #[Middleware(RemembersRecordGameVersion::class.':boss')]
-    public function show(Request $request, Boss $boss): Response|RedirectResponse
+    #[Middleware(EnsureRecordSlugIsValid::class.':boss')]
+    public function show(Request $request, Boss $boss): Response
     {
         $section = SiteSection::fromRoute($request);
-
-        if ($request->route('slug') !== $boss->slug) {
-            return redirect()->route(
-                "{$section->value}.bosses.show",
-                ['boss' => $boss, 'slug' => $boss->slug, ...$request->only('tab')],
-                303,
-            );
-        }
 
         $tab = $section === SiteSection::Raiding && $request->query('tab') !== 'items' ? 'strategy' : 'items';
 
         return Inertia::render('Bosses/Show', [
             'section' => $section,
             'tab' => $tab,
-            'boss' => new BossResource($boss->load(['media', 'raid.media'])),
+            'boss' => new BossResource($boss->loadMissing(['media', 'raid.media'])),
             ...($tab === 'items'
                 ? ['items' => Inertia::defer(fn () => ItemResource::collection($boss->items()->withLootListData()->get()))]
                 : []),

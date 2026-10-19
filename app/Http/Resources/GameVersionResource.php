@@ -3,11 +3,11 @@
 namespace App\Http\Resources;
 
 use App\Contracts\Http\Resources\ScopedResource;
+use App\Http\Resources\Concerns\DescribesMediaCollections;
 use App\Http\Resources\Concerns\HasScopes;
 use App\Models\GameVersion;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Spatie\MediaLibrary\MediaCollections\MediaCollection;
 
 /**
  * Transform a game version, optionally limited to the `management` or `switcher` scope.
@@ -16,6 +16,7 @@ use Spatie\MediaLibrary\MediaCollections\MediaCollection;
  */
 class GameVersionResource extends JsonResource implements ScopedResource
 {
+    use DescribesMediaCollections;
     use HasScopes;
 
     /**
@@ -97,11 +98,7 @@ class GameVersionResource extends JsonResource implements ScopedResource
     public function with(Request $request): array
     {
         return [
-            'media' => $this->getRegisteredMediaCollections()
-                ->mapWithKeys(fn (MediaCollection $collection): array => [
-                    $collection->name => ['accepts' => $collection->acceptsMimeTypes],
-                ])
-                ->all(),
+            'media' => $this->mediaCollections(),
         ];
     }
 }

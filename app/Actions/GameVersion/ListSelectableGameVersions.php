@@ -68,14 +68,13 @@ class ListSelectableGameVersions implements CachesSelectableGameVersions
      */
     private function hydrate(array $rows): Collection
     {
-        $media = Media::hydrate($rows['media']);
+        $mediaByModel = Media::hydrate($rows['media'])->groupBy('model_id');
         $guilds = Guild::hydrate($rows['guilds'])->keyBy('id');
 
-        return GameVersion::hydrate($rows['versions'])->each(function (GameVersion $gameVersion) use ($media, $guilds): void {
-            $gameVersion->setRelation('media', $media
-                ->where('model_id', $gameVersion->getKey())
-                ->each->setRelation('model', $gameVersion)
-                ->values());
+        return GameVersion::hydrate($rows['versions'])->each(function (GameVersion $gameVersion) use ($mediaByModel, $guilds): void {
+            $gameVersion->setRelation('media', $mediaByModel
+                ->get($gameVersion->getKey(), new Collection)
+                ->each->setRelation('model', $gameVersion));
             $gameVersion->setRelation('warcraftLogsGuild', $guilds->get($gameVersion->warcraft_logs_guild_id));
         });
     }

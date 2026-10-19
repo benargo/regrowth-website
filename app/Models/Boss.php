@@ -9,6 +9,7 @@ use App\Contracts\Models\HasUsage;
 use App\Events\BossChanged;
 use App\Http\Resources\BossResource;
 use App\Models\Concerns\HasEditLock;
+use App\Models\Concerns\InteractsWithChaperonedMedia;
 use App\Models\Concerns\TracksUsage;
 use App\Policies\DatasetPolicy;
 use Illuminate\Broadcasting\PrivateChannel;
@@ -25,20 +26,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Str;
 use Spatie\EloquentSortable\Sortable;
 use Spatie\EloquentSortable\SortableTrait;
 use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 #[Fillable(['name', 'sort_order', 'notes'])]
 #[Hidden(['created_at', 'updated_at'])]
 #[UsePolicy(DatasetPolicy::class)]
 class Boss extends Model implements BelongsToGameVersion, DatasetModel, EditLockable, HasMedia, HasUsage, Sortable
 {
-    use BroadcastsEvents, HasEditLock, HasFactory, InteractsWithMedia, SortableTrait, TracksUsage;
+    use BroadcastsEvents, HasEditLock, HasFactory, InteractsWithChaperonedMedia, SortableTrait, TracksUsage;
 
     /**
      * The event map for the model.
@@ -114,18 +112,6 @@ class Boss extends Model implements BelongsToGameVersion, DatasetModel, EditLock
         });
     }
 
-    // ============ Media ============
-
-    /**
-     * Get the media attached to the boss, each with its `model` relation set to the boss.
-     *
-     * @return MorphMany<Media, $this>
-     */
-    public function media(): MorphMany
-    {
-        return $this->morphMany($this->getMediaModel(), 'model')->chaperone('model');
-    }
-
     // ============ Custom attributes ===========
 
     /**
@@ -160,16 +146,6 @@ class Boss extends Model implements BelongsToGameVersion, DatasetModel, EditLock
     public function assignmentGroups(): HasMany
     {
         return $this->hasMany(EventAssignmentGroup::class);
-    }
-
-    /**
-     * Get the assignment groups for this boss in events that have ended.
-     *
-     * @return HasMany<EventAssignmentGroup, $this>
-     */
-    public function pastAssignmentGroups(): HasMany
-    {
-        return $this->assignmentGroups()->whereHas('event', fn (Builder $query) => $query->where('end_time', '<', now()));
     }
 
     /**
@@ -253,7 +229,7 @@ class Boss extends Model implements BelongsToGameVersion, DatasetModel, EditLock
      */
     public function templateEvents(): BelongsToMany
     {
-        return $this->events()->where('events.is_template', true);
+        return $this->events()->templates();
     }
 
     /**

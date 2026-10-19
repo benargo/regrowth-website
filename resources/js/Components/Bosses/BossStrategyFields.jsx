@@ -4,10 +4,15 @@ import Relationships from "@/Components/Datasets/Relationships";
 import { firstError } from "@/Components/FormControls";
 import ImageManager from "@/Components/ImageManager";
 import MarkdownEditor from "@/Components/MarkdownEditor";
-import { autosaveVisit, useAutosaveQueue, useAutosaveStatus, useFormAutosave } from "@/Hooks/useAutosave";
+import {
+    AUTOSAVE_HEADERS,
+    autosaveVisit,
+    enqueueOrRun,
+    useAutosaveQueue,
+    useAutosaveStatus,
+    useFormAutosave,
+} from "@/Hooks/useAutosave";
 import { AUTOSAVE_DELAY } from "@/Hooks/useRelationshipForm";
-
-const AUTOSAVE_HEADERS = { "X-Autosave": "1" };
 
 /**
  * The boss's strategy on its Edit page: markdown notes that save shortly
@@ -41,13 +46,9 @@ export default function BossStrategyFields({ boss, url, canEdit = true }) {
             return;
         }
 
-        const run = () => autosaveVisit(router, "patch", url, { data, headers: AUTOSAVE_HEADERS, ...options });
-
-        if (queue) {
-            queue.enqueue(key, run);
-        } else {
-            run();
-        }
+        enqueueOrRun(queue, key, () =>
+            autosaveVisit(router, "patch", url, { data, headers: AUTOSAVE_HEADERS, ...options }),
+        );
     }
 
     function handleUpload(files) {

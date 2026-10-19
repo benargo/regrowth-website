@@ -42,21 +42,11 @@ class FlushRaidingCacheTest extends TestCase
     }
 
     #[Test]
-    public function flush_flushes_the_raiding_and_events_tags(): void
-    {
-        $this->primeCache();
-
-        (new FlushRaidingCache)->flush();
-
-        $this->assertFalse($this->cacheIsPrimed());
-    }
-
-    #[Test]
     public function it_leaves_other_cache_tags_alone(): void
     {
         Cache::tags(['reports'])->put('probe', true, 60);
 
-        (new FlushRaidingCache)->flush();
+        (new FlushRaidingCache)->handle(new class implements FlushesRaidingCache {});
 
         $this->assertTrue(Cache::tags(['reports'])->has('probe'));
     }

@@ -5,17 +5,18 @@ namespace App\Http\Requests;
 use App\Actions\GameVersion\ListSelectableGameVersions;
 use App\Enums\BannerPosition;
 use App\Http\Requests\Concerns\ChecksEditLock;
+use App\Http\Requests\Concerns\ValidatesImageUploads;
 use App\Models\Phase;
 use App\Models\Raid;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class UpdateRaidRequest extends StoreRaidRequest
 {
     use ChecksEditLock;
+    use ValidatesImageUploads;
 
     /**
      * Get the validation rules that apply to the request. Every key is
@@ -27,7 +28,7 @@ class UpdateRaidRequest extends StoreRaidRequest
     {
         return [
             ...collect($this->detailsRules())->map(fn (array $rules): array => ['sometimes', ...$rules])->all(),
-            'banner' => ['sometimes', 'nullable', 'file', 'mimetypes:'.implode(',', $this->bannerMimeTypes()), 'max:2048'],
+            'banner' => $this->imageRules($this->route('raid'), Raid::MEDIA_BANNER),
             'banner_position' => ['sometimes', 'nullable', Rule::enum(BannerPosition::class)],
             'boss_ids' => ['sometimes', 'array'],
             'boss_ids.*' => ['integer'],
@@ -41,15 +42,9 @@ class UpdateRaidRequest extends StoreRaidRequest
      */
     public function messages(): array
     {
-        $types = collect($this->bannerMimeTypes())
-            ->map(fn (string $mimeType): string => Str::of($mimeType)->after('/')->upper()->toString())
-            ->join(', ', ' or ');
-
         return [
             ...parent::messages(),
-            'banner.file' => "The banner must be a {$types} image.",
-            'banner.mimetypes' => "The banner must be a {$types} image.",
-            'banner.max' => 'The banner must be 2 MB or smaller.',
+            ...$this->imageMessages($this->route('raid'), Raid::MEDIA_BANNER),
         ];
     }
 
@@ -80,16 +75,6 @@ class UpdateRaidRequest extends StoreRaidRequest
             $this->bannerPositionNeedsBannerCheck(),
             $this->ownBossesCheck(),
         ];
-    }
-
-    /**
-     * The MIME types the raid's banner collection accepts.
-     *
-     * @return list<string>
-     */
-    private function bannerMimeTypes(): array
-    {
-        return $this->route('raid')->acceptedMimeTypes(Raid::MEDIA_BANNER);
     }
 
     /**

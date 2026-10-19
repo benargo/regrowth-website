@@ -7,6 +7,7 @@ use App\Enums\SignupStatus;
 use App\Models\Event;
 use App\Models\PlannedAbsence;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 /**
@@ -21,10 +22,10 @@ class DescribeViewerSignup
     {
         $characterIds = $user->characters()->pluck('characters.id');
 
-        $absence = PlannedAbsence::query()
-            ->where(fn ($query) => $query->where('user_id', $user->id)->orWhereIn('character_id', $characterIds))
-            ->get()
-            ->first(fn (PlannedAbsence $absence): bool => $absence->covers($event->start_time));
+        $absence = PlannedAbsence::where(fn (Builder $query) => $query->where('user_id', $user->id)->orWhereIn('character_id', $characterIds))
+            ->whereDate('start_date', '<=', $event->start_time)
+            ->where(fn (Builder $query) => $query->whereNull('end_date')->orWhereDate('end_date', '>=', $event->start_time))
+            ->first();
 
         if ($absence !== null) {
             return new SignupLineData($absence->reason->key->navigationLabel(), $absence->reason->icon);

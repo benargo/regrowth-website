@@ -9,18 +9,15 @@ import { router } from "@inertiajs/react";
  * outcome.
  */
 export default function useRecordDeletion() {
-    const [record, setRecord] = useState(null);
-    const [deleteWarning, setDeleteWarning] = useState(null);
+    const [{ record, deleteWarning }, setPending] = useState({ record: null, deleteWarning: null });
     const [deleting, setDeleting] = useState(false);
 
     function request(nextRecord, warning = null) {
-        setRecord(nextRecord);
-        setDeleteWarning(warning);
+        setPending({ record: nextRecord, deleteWarning: warning });
     }
 
     function cancel() {
-        setRecord(null);
-        setDeleteWarning(null);
+        setPending({ record: null, deleteWarning: null });
     }
 
     function confirm() {

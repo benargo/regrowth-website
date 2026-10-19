@@ -7,6 +7,7 @@ use App\Contracts\HasBlizzardIcons;
 use App\Contracts\Models\BelongsToGameVersion;
 use App\Enums\ItemQuality;
 use App\Http\Integrations\Blizzard\Data\Item\ItemData;
+use App\Models\Concerns\InteractsWithChaperonedMedia;
 use App\Observers\ItemObserver;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -25,7 +26,6 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 #[ObservedBy([ItemObserver::class])]
@@ -35,7 +35,7 @@ class Item extends Model implements BelongsToGameVersion, Commentable, HasBlizza
 {
     use HasFactory;
     use HasUuids;
-    use InteractsWithMedia;
+    use InteractsWithChaperonedMedia;
 
     /**
      * Get the attributes that should be cast.
@@ -83,16 +83,6 @@ class Item extends Model implements BelongsToGameVersion, Commentable, HasBlizza
     }
 
     // ============ Media ============
-
-    /**
-     * Get the media attached to the item, each with its `model` relation set to the item.
-     *
-     * @return MorphMany<Media, $this>
-     */
-    public function media(): MorphMany
-    {
-        return $this->morphMany($this->getMediaModel(), 'model')->chaperone('model');
-    }
 
     public function registerMediaCollections(): void
     {

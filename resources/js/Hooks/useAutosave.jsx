@@ -201,10 +201,26 @@ export function AutosaveProvider({ children }) {
 }
 
 /**
+ * The headers that mark a visit as an autosave, so the server sends no flash message.
+ */
+export const AUTOSAVE_HEADERS = { "X-Autosave": "1" };
+
+/**
  * The nearest provider's queue controls and status, or null outside one.
  */
 export function useAutosaveQueue() {
     return useContext(AutosaveContext);
+}
+
+/**
+ * Run `run` in its turn in the save queue, as `key`, or straight away without a queue.
+ */
+export function enqueueOrRun(queue, key, run) {
+    if (queue) {
+        queue.enqueue(key, run);
+    } else {
+        run();
+    }
 }
 
 /**
@@ -315,7 +331,7 @@ export function useFormAutosave({ form, url, saved, method = "patch", ...options
             const payload = changes();
             form.transform(() => payload);
 
-            return autosaveVisit(form, method, url, { headers: { "X-Autosave": "1" } });
+            return autosaveVisit(form, method, url, { headers: AUTOSAVE_HEADERS });
         },
     });
 }

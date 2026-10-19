@@ -9,6 +9,7 @@ use App\Contracts\Models\EditLockable;
 use App\Contracts\Models\HasUsage;
 use App\Events\RaidChanged;
 use App\Models\Concerns\HasEditLock;
+use App\Models\Concerns\InteractsWithChaperonedMedia;
 use App\Models\Concerns\TracksUsage;
 use App\Policies\DatasetPolicy;
 use Illuminate\Database\Eloquent\Attributes\Appends;
@@ -23,12 +24,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Str;
 use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 #[Appends(['slug'])]
@@ -39,7 +38,7 @@ class Raid extends Model implements BelongsToGameVersion, DatasetModel, EditLock
 {
     use HasEditLock;
     use HasFactory;
-    use InteractsWithMedia;
+    use InteractsWithChaperonedMedia;
     use TracksUsage;
 
     /**
@@ -175,16 +174,6 @@ class Raid extends Model implements BelongsToGameVersion, DatasetModel, EditLock
     // ============ Media ============
 
     /**
-     * Get the media attached to the raid, each with its `model` relation set to the raid.
-     *
-     * @return MorphMany<Media, $this>
-     */
-    public function media(): MorphMany
-    {
-        return $this->morphMany($this->getMediaModel(), 'model')->chaperone('model');
-    }
-
-    /**
      * Register the single-file banner collection.
      */
     public function registerMediaCollections(): void
@@ -192,16 +181,6 @@ class Raid extends Model implements BelongsToGameVersion, DatasetModel, EditLock
         $this->addMediaCollection(self::MEDIA_BANNER)
             ->singleFile()
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
-    }
-
-    /**
-     * Get the MIME types a media collection accepts.
-     *
-     * @return list<string>
-     */
-    public function acceptedMimeTypes(string $collection): array
-    {
-        return $this->getRegisteredMediaCollections()->firstWhere('name', $collection)->acceptsMimeTypes ?? [];
     }
 
     /**
@@ -270,7 +249,7 @@ class Raid extends Model implements BelongsToGameVersion, DatasetModel, EditLock
      */
     public function templateEvents(): BelongsToMany
     {
-        return $this->events()->where('events.is_template', true);
+        return $this->events()->templates();
     }
 
     /**

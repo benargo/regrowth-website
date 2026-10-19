@@ -1,8 +1,8 @@
 import { Link } from "@inertiajs/react";
+import AutosavedSortableList from "@/Components/Datasets/AutosavedSortableList";
 import RecordChecklist from "@/Components/Datasets/RecordChecklist";
 import Relationships from "@/Components/Datasets/Relationships";
 import { SaveButton, firstError, linkClassName } from "@/Components/FormControls";
-import UnscheduledPhaseOrder from "@/Components/Phases/UnscheduledPhaseOrder";
 import Pill from "@/Components/Pill";
 import useRelationshipForm from "@/Hooks/useRelationshipForm";
 
@@ -94,13 +94,14 @@ export default function PhasesSection({
                     <p className="max-w-prose text-sm text-gray-300">
                         Drag this version's phases without a start date into the order you expect them to arrive.
                     </p>
-                    <UnscheduledPhaseOrder
-                        phases={relationships.unscheduled_phases.data}
+                    <AutosavedSortableList
+                        items={relationships.unscheduled_phases.data}
                         url={routes.update}
                         field="unscheduled_phase_ids"
+                        saveKey="unscheduled-phase-order"
                         label={`Unscheduled ${gameVersion.title} phases`}
                         className="divide-y divide-amber-600/40 rounded border border-amber-600/40"
-                        renderPhase={(phase, dragHandle) => (
+                        renderItem={(phase, { dragHandle }) => (
                             <div className="bg-brown-900 flex items-center gap-3 px-3 py-2">
                                 {dragHandle}
                                 <span className="text-white">{phase.name}</span>

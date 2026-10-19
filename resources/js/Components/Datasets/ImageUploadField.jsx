@@ -2,7 +2,7 @@ import { memo, useState } from "react";
 import { router } from "@inertiajs/react";
 import { FormRow } from "@/Components/FormControls";
 import ImageManager from "@/Components/ImageManager";
-import { autosaveVisit, useAutosaveQueue } from "@/Hooks/useAutosave";
+import { autosaveVisit, enqueueOrRun, useAutosaveQueue } from "@/Hooks/useAutosave";
 
 /**
  * One image upload for a dataset record, showing the image at `url`. Files
@@ -19,7 +19,7 @@ const ImageUploadField = memo(function ImageUploadField({ field, label, hint, ur
     const queue = useAutosaveQueue();
 
     function send(method, data, options = {}) {
-        const run = () =>
+        enqueueOrRun(queue, `image-${field}`, () =>
             autosaveVisit(router, method, updateUrl, {
                 data,
                 ...options,
@@ -27,14 +27,8 @@ const ImageUploadField = memo(function ImageUploadField({ field, label, hint, ur
                 onSuccess: () => setError(null),
                 onError: (errors) => setError(errors[field] ?? null),
                 onFinish: () => setSaving(false),
-            });
-
-        if (queue) {
-            queue.enqueue(`image-${field}`, run);
-            return;
-        }
-
-        run();
+            }),
+        );
     }
 
     return (

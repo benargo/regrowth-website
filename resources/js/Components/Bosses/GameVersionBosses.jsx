@@ -1,7 +1,7 @@
 import { Link } from "@inertiajs/react";
 import BossCard from "@/Components/Bosses/BossCard";
 import { focusRing } from "@/Components/Datasets/RecordCard";
-import modelColor from "@/Helpers/ModelColor";
+import GameVersionGroupHeader from "@/Components/GameVersions/GameVersionGroupHeader";
 
 /**
  * One raid's bosses in encounter order, with a link to add another.
@@ -26,7 +26,10 @@ function RaidBosses({ raid, bosses, onDelete }) {
             {bosses.length === 0 ? (
                 <p className="text-gray-300">No bosses in {raid.name} yet.</p>
             ) : (
-                <ol aria-label={`${raid.name} bosses in encounter order`} className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <ol
+                    aria-label={`${raid.name} bosses in encounter order`}
+                    className="grid grid-cols-1 gap-6 lg:grid-cols-2"
+                >
                     {bosses.map((boss) => (
                         <li key={boss.id}>
                             <BossCard boss={boss} raidName={raid.name} onDelete={onDelete} />
@@ -44,22 +47,11 @@ function RaidBosses({ raid, bosses, onDelete }) {
  */
 export default function GameVersionBosses({ group, onDelete }) {
     const gameVersion = group.game_version?.data ?? null;
-    const title = gameVersion?.title ?? "No game version";
     const headingId = `bosses-${gameVersion?.id ?? "none"}`;
-    const rule = modelColor(gameVersion?.color, ["bg"]);
 
     return (
         <section aria-labelledby={headingId} className="flex flex-col gap-8">
-            <header className="flex flex-col gap-2">
-                <h2 id={headingId} className="font-serif text-3xl text-white">
-                    {title}
-                </h2>
-                <div
-                    aria-hidden="true"
-                    className={`h-0.5 w-full ${rule.className || "bg-amber-600/60"}`}
-                    style={rule.style}
-                />
-            </header>
+            <GameVersionGroupHeader gameVersion={gameVersion} headingId={headingId} />
 
             {group.raids.length === 0 && <p className="text-gray-300">No raids in this game version yet.</p>}
 

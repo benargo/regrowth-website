@@ -12,8 +12,10 @@ use App\Actions\Raid\ListPhasesWithRaids;
 use App\Actions\Raid\UpdateRaid;
 use App\Attributes\Http\Controllers\ScopesResourceTo;
 use App\Contracts\Http\Controllers\SharesPriorityWeightThreshold;
+use App\Enums\BannerPosition;
 use App\Enums\RaidSetupStep;
 use App\Enums\SiteSection;
+use App\Http\Middleware\EnsureRecordSlugIsValid;
 use App\Http\Middleware\RemembersCurrentRaid;
 use App\Http\Middleware\RemembersRecordGameVersion;
 use App\Http\Requests\StoreRaidRequest;
@@ -69,13 +71,10 @@ class RaidController extends Controller implements SharesPriorityWeightThreshold
      */
     #[Middleware(RemembersCurrentRaid::class)]
     #[Middleware(RemembersRecordGameVersion::class.':raid')]
-    public function show(Request $request, Raid $raid): Response|RedirectResponse
+    #[Middleware(EnsureRecordSlugIsValid::class.':raid')]
+    public function show(Request $request, Raid $raid): Response
     {
         $section = SiteSection::fromRoute($request);
-
-        if ($request->route('slug') !== $raid->slug) {
-            return redirect()->route("{$section->value}.raids.show", ['raid' => $raid, 'slug' => $raid->slug], 303);
-        }
 
         $raid->load('media')->loadExists('trashItems');
         $bosses = $raid->bosses()->withCount('media')->get();
@@ -99,13 +98,10 @@ class RaidController extends Controller implements SharesPriorityWeightThreshold
      */
     #[Middleware(RemembersCurrentRaid::class)]
     #[Middleware(RemembersRecordGameVersion::class.':raid')]
-    public function trash(Request $request, Raid $raid): Response|RedirectResponse
+    #[Middleware(EnsureRecordSlugIsValid::class.':raid')]
+    public function trash(Request $request, Raid $raid): Response
     {
         $section = SiteSection::fromRoute($request);
-
-        if ($request->route('slug') !== $raid->slug) {
-            return redirect()->route("{$section->value}.raids.trash", ['raid' => $raid, 'slug' => $raid->slug], 303);
-        }
 
         return Inertia::render('Raids/Trash', [
             'section' => $section,
@@ -194,7 +190,7 @@ class RaidController extends Controller implements SharesPriorityWeightThreshold
 
         return Inertia::render('Manage/Raids/Review', [
             'raid' => $raid->loadMissing(['media', 'phase', 'bosses'])->toResource(),
-            'options' => BuildRaidFormOptions::run(),
+            'options' => ['banner_positions' => BannerPosition::options()],
             'steps' => $routes->steps($raid),
             'routes' => $routes->forReview($raid),
         ]);

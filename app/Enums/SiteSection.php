@@ -17,8 +17,6 @@ enum SiteSection: string
      */
     public static function fromRoute(Request $request): self
     {
-        $section = $request->route('section');
-
-        return $section instanceof self ? $section : self::from($section);
+        return self::from($request->route('section'));
     }
 }

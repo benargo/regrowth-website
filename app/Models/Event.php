@@ -79,7 +79,7 @@ class Event extends PrunableModel implements BelongsToGameVersion
     #[Scope]
     protected function templates(Builder $query): void
     {
-        $query->where('is_template', true);
+        $query->where($query->qualifyColumn('is_template'), true);
     }
 
     // ========== Custom attributes ============

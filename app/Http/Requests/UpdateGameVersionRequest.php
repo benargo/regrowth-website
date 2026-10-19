@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Requests\Concerns\ChecksEditLock;
+use App\Http\Requests\Concerns\ValidatesImageUploads;
 use App\Http\Requests\Concerns\ValidatesUnscheduledPhaseOrder;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
@@ -14,7 +15,6 @@ use App\Models\PlayableRace;
 use App\Models\WarcraftLogs\Guild;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 use Illuminate\Validation\Validator;
@@ -22,6 +22,7 @@ use Illuminate\Validation\Validator;
 class UpdateGameVersionRequest extends StoreGameVersionRequest
 {
     use ChecksEditLock;
+    use ValidatesImageUploads;
     use ValidatesUnscheduledPhaseOrder;
 
     /**
@@ -61,7 +62,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             'guild_ranks.*.name' => ['required', 'string', 'max:255'],
             'guild_ranks.*.count_attendance' => ['required', 'boolean'],
             ...collect(GameVersion::MEDIA_COLLECTIONS)
-                ->mapWithKeys(fn (string $collection): array => [$collection => $this->imageRules($collection)]),
+                ->mapWithKeys(fn (string $collection): array => [$collection => $this->imageRules($this->route('gameVersion'), $collection)]),
         ];
     }
 
@@ -82,7 +83,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             'guild_ranks.max' => 'A guild can have up to 10 ranks.',
             'guild_ranks.*.id.exists' => 'One of these ranks no longer exists. Reload the page and try again.',
             'guild_ranks.*.name.required' => 'Enter a name for every rank.',
-            ...collect(GameVersion::MEDIA_COLLECTIONS)->flatMap($this->imageMessages(...)),
+            ...collect(GameVersion::MEDIA_COLLECTIONS)->flatMap(fn (string $collection): array => $this->imageMessages($this->route('gameVersion'), $collection)),
         ];
     }
 
@@ -146,41 +147,6 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
                 $validator->errors()->add('phase_ids', "Unticking {$clash->name} would leave two phases without a game version numbered {$clash->number}. Change its number first.");
             }
         };
-    }
-
-    /**
-     * The rules for an image replacing one of the game version's media
-     * collections, accepting the types the collection accepts. Null removes
-     * the image.
-     *
-     * @return list<string>
-     */
-    protected function imageRules(string $collection): array
-    {
-        $mimeTypes = $this->route('gameVersion')->acceptedMimeTypes($collection);
-
-        return ['sometimes', 'nullable', 'file', 'mimetypes:'.implode(',', $mimeTypes), 'max:2048'];
-    }
-
-    /**
-     * The messages for an image field, naming the image it replaces and the
-     * types it accepts.
-     *
-     * @return array<string, string>
-     */
-    protected function imageMessages(string $field): array
-    {
-        $types = collect($this->route('gameVersion')->acceptedMimeTypes($field))
-            ->map(fn (string $mimeType): string => Str::of($mimeType)->after('/')->before('+')->upper()->toString())
-            ->join(', ', ' or ');
-
-        $typeMessage = "The {$field} must be a {$types} image.";
-
-        return [
-            "{$field}.file" => $typeMessage,
-            "{$field}.mimetypes" => $typeMessage,
-            "{$field}.max" => "The {$field} must be 2 MB or smaller.",
-        ];
     }
 
     /**

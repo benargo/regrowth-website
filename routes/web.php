@@ -74,30 +74,34 @@ Route::withoutMiddleware(RemembersCurrentGameVersion::class)->group(function () 
 });
 
 /**
+ * Register the raid and boss pages shared by a member section.
+ */
+$raidAndBossRoutes = function (SiteSection $section): void {
+    Route::get('/raids', [RaidController::class, 'browse'])->defaults('section', $section->value)->name('raids.index');
+    Route::get('/raids/{raid}/{slug}/trash', [RaidController::class, 'trash'])->defaults('section', $section->value)->name('raids.trash');
+    Route::get('/raids/{raid}/{slug?}', [RaidController::class, 'show'])->defaults('section', $section->value)->name('raids.show');
+    Route::get('/bosses/{boss}/{slug?}', [BossController::class, 'show'])->defaults('section', $section->value)->name('bosses.show');
+};
+
+/**
  * Loot Bias Tools
  */
-Route::group(['prefix' => 'loot', 'as' => 'loot.'], function () {
+Route::group(['prefix' => 'loot', 'as' => 'loot.'], function () use ($raidAndBossRoutes) {
     Route::get('/', [LootBiasToolController::class, 'index'])->name('index');
-    Route::get('/raids', [RaidController::class, 'browse'])->defaults('section', SiteSection::Loot->value)->name('raids.index');
+    $raidAndBossRoutes(SiteSection::Loot);
     Route::get('/comments', [CommentController::class, 'index'])->name('comments');
     Route::patch('/items/{item}', [ItemController::class, 'update'])->name('items.update');
     Route::get('/items/{item}/{slug?}', [ItemController::class, 'show'])->name('items.show');
     Route::get('/items/{item}/{slug}/edit', [ItemController::class, 'edit'])->name('items.edit');
-    Route::get('/raids/{raid}/{slug}/trash', [RaidController::class, 'trash'])->defaults('section', SiteSection::Loot->value)->name('raids.trash');
-    Route::get('/raids/{raid}/{slug?}', [RaidController::class, 'show'])->defaults('section', SiteSection::Loot->value)->name('raids.show');
-    Route::get('/bosses/{boss}/{slug?}', [BossController::class, 'show'])->defaults('section', SiteSection::Loot->value)->name('bosses.show');
     Route::get('/priorities', [LootBiasToolController::class, 'priorities'])->name('priorities');
 });
 
 /**
  * Raid planning and attendance
  */
-Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
+Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () use ($raidAndBossRoutes) {
     Route::get('/', [RaidingController::class, 'index'])->name('index');
-    Route::get('/raids', [RaidController::class, 'browse'])->defaults('section', SiteSection::Raiding->value)->name('raids.index');
-    Route::get('/raids/{raid}/{slug}/trash', [RaidController::class, 'trash'])->defaults('section', SiteSection::Raiding->value)->name('raids.trash');
-    Route::get('/raids/{raid}/{slug?}', [RaidController::class, 'show'])->defaults('section', SiteSection::Raiding->value)->name('raids.show');
-    Route::get('/bosses/{boss}/{slug?}', [BossController::class, 'show'])->defaults('section', SiteSection::Raiding->value)->name('bosses.show');
+    $raidAndBossRoutes(SiteSection::Raiding);
 
     // Planned absences routes (version-independent)
     Route::withoutMiddleware(RemembersCurrentGameVersion::class)->group(function () {
