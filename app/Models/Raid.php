@@ -7,7 +7,7 @@ use App\Contracts\Models\BelongsToGameVersion;
 use App\Contracts\Models\DatasetModel;
 use App\Contracts\Models\EditLockable;
 use App\Contracts\Models\HasUsage;
-use App\Models\Concerns\FlushesRaidingCacheOnSave;
+use App\Events\RaidChanged;
 use App\Models\Concerns\HasEditLock;
 use App\Models\Concerns\TracksUsage;
 use App\Policies\DatasetPolicy;
@@ -37,7 +37,6 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 #[UsePolicy(DatasetPolicy::class)]
 class Raid extends Model implements BelongsToGameVersion, DatasetModel, EditLockable, HasMedia, HasUsage
 {
-    use FlushesRaidingCacheOnSave;
     use HasEditLock;
     use HasFactory;
     use InteractsWithMedia;
@@ -52,6 +51,17 @@ class Raid extends Model implements BelongsToGameVersion, DatasetModel, EditLock
      * The resized webp version of the banner shown in page headers.
      */
     public const string MEDIA_CONVERSION_HEADER = 'header';
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'created' => RaidChanged::class,
+        'updated' => RaidChanged::class,
+        'deleted' => RaidChanged::class,
+    ];
 
     /**
      * Relationships whose existing rows mark this raid as in use.

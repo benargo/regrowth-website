@@ -29,9 +29,9 @@ export default function BossStrategyFields({ boss, url, canEdit = true }) {
     const queue = useAutosaveQueue();
     const status = useAutosaveStatus();
     const { errors } = usePage().props;
-    const [images, setImages] = useState(boss.strategy_images);
+    const [images, setImages] = useState(boss.images);
 
-    useEffect(() => setImages(boss.strategy_images), [boss.strategy_images]);
+    useEffect(() => setImages(boss.images), [boss.images]);
 
     const imageError =
         firstError(errors, "images") ?? firstError(errors, "removed_image_ids") ?? firstError(errors, "image_ids");
@@ -58,7 +58,7 @@ export default function BossStrategyFields({ boss, url, canEdit = true }) {
      * Put the saved images back after a removal or reorder the server refused.
      */
     function rollBackImages() {
-        setImages(boss.strategy_images);
+        setImages(boss.images);
     }
 
     function handleDelete(imageUrl) {

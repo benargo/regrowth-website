@@ -573,10 +573,10 @@ function BossStrategySection({ boss, raid, commonContainerProps, groupsByBossId,
                 {bossImages.length > 0 || bossNotes ? (
                     <div className="col-span-2 flex flex-col gap-4">
                         <h3 className="text-sm font-semibold tracking-wider text-amber-500/80 uppercase">Strategy</h3>
-                        {bossImages.map((url, i) => (
+                        {bossImages.map((image, i) => (
                             <img
-                                key={i}
-                                src={url}
+                                key={image.id}
+                                src={image.url}
                                 alt={`${boss.name} strategy ${i + 1}`}
                                 className="rounded-lg border border-amber-600/30"
                             />

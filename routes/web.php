@@ -1,12 +1,12 @@
 <?php
 
+use App\Enums\SiteSection;
 use App\Http\Controllers\Account\AccountController;
 use App\Http\Controllers\Account\PlannedAbsenceController as AccountPlannedAbsenceController;
 use App\Http\Controllers\AttendanceDashboardController;
 use App\Http\Controllers\AttendanceGraphsController;
 use App\Http\Controllers\AttendanceMatrixController;
 use App\Http\Controllers\BossController;
-use App\Http\Controllers\BossStrategyController;
 use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\Dashboard\AddonController;
@@ -78,11 +78,14 @@ Route::withoutMiddleware(RemembersCurrentGameVersion::class)->group(function () 
  */
 Route::group(['prefix' => 'loot', 'as' => 'loot.'], function () {
     Route::get('/', [LootBiasToolController::class, 'index'])->name('index');
+    Route::get('/raids', [RaidController::class, 'browse'])->defaults('section', SiteSection::Loot->value)->name('raids.index');
     Route::get('/comments', [CommentController::class, 'index'])->name('comments');
     Route::patch('/items/{item}', [ItemController::class, 'update'])->name('items.update');
     Route::get('/items/{item}/{slug?}', [ItemController::class, 'show'])->name('items.show');
     Route::get('/items/{item}/{slug}/edit', [ItemController::class, 'edit'])->name('items.edit');
-    Route::get('/raids/{raid}/{name?}', [LootBiasToolController::class, 'showRaid'])->name('raids.show');
+    Route::get('/raids/{raid}/{slug}/trash', [RaidController::class, 'trash'])->defaults('section', SiteSection::Loot->value)->name('raids.trash');
+    Route::get('/raids/{raid}/{slug?}', [RaidController::class, 'show'])->defaults('section', SiteSection::Loot->value)->name('raids.show');
+    Route::get('/bosses/{boss}/{slug?}', [BossController::class, 'show'])->defaults('section', SiteSection::Loot->value)->name('bosses.show');
     Route::get('/priorities', [LootBiasToolController::class, 'priorities'])->name('priorities');
 });
 
@@ -91,6 +94,10 @@ Route::group(['prefix' => 'loot', 'as' => 'loot.'], function () {
  */
 Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
     Route::get('/', [RaidingController::class, 'index'])->name('index');
+    Route::get('/raids', [RaidController::class, 'browse'])->defaults('section', SiteSection::Raiding->value)->name('raids.index');
+    Route::get('/raids/{raid}/{slug}/trash', [RaidController::class, 'trash'])->defaults('section', SiteSection::Raiding->value)->name('raids.trash');
+    Route::get('/raids/{raid}/{slug?}', [RaidController::class, 'show'])->defaults('section', SiteSection::Raiding->value)->name('raids.show');
+    Route::get('/bosses/{boss}/{slug?}', [BossController::class, 'show'])->defaults('section', SiteSection::Raiding->value)->name('bosses.show');
 
     // Planned absences routes (version-independent)
     Route::withoutMiddleware(RemembersCurrentGameVersion::class)->group(function () {
@@ -109,13 +116,10 @@ Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
     Route::get('/attendance/matrix', AttendanceMatrixController::class)->name('attendance.matrix');
 
     // Upcoming events comps and plans routes
+    Route::get('/events', [EventController::class, 'index'])->name('events.index');
     Route::get('/plans/{event}', [EventController::class, 'show'])->name('plans.show');
     Route::get('/plans/{event}/edit', [EventController::class, 'edit'])->name('plans.edit');
     Route::post('/plans/{event}/apply-template', [EventController::class, 'applyTemplate'])->name('plans.apply-template');
-
-    // Boss strategies routes
-    Route::get('/boss-strategies', [BossStrategyController::class, 'index'])->name('boss-strategies.index');
-    Route::get('/boss-strategies/{boss}/{slug}', [BossStrategyController::class, 'show'])->name('boss-strategies.show');
 
     // Reports routes
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');

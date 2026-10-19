@@ -4,6 +4,7 @@ namespace Tests\Feature\Middleware;
 
 use App\Contracts\Http\Middleware\SharesOriginRaidSession;
 use App\Http\Middleware\RemembersCurrentRaid;
+use App\Models\Boss;
 use App\Models\Raid;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\Request;
@@ -18,6 +19,25 @@ use Tests\TestCase;
 #[Group('loot')]
 class RemembersCurrentRaidTest extends TestCase
 {
+    #[Test]
+    public function it_remembers_the_raid_of_the_boss_in_the_route(): void
+    {
+        $boss = Boss::factory()->make(['raid_id' => null])->forceFill(['raid_id' => 7]);
+
+        $session = Mockery::mock(Session::class);
+        $session->shouldReceive('put')->once()->with(SharesOriginRaidSession::SESSION_KEY, 7);
+
+        /** @var Route&MockInterface $route */
+        $route = Mockery::mock(Route::class);
+        $route->shouldReceive('parameter')->with('boss', null)->andReturn($boss);
+
+        $request = Request::create('/raiding/bosses/1/moroes', 'GET');
+        $request->setRouteResolver(fn () => $route);
+        $request->setLaravelSession($session);
+
+        (new RemembersCurrentRaid)->handle($request, fn () => response('next'), 'boss');
+    }
+
     #[Test]
     #[Group('happy-path')]
     public function it_remembers_the_current_raid_in_the_session(): void

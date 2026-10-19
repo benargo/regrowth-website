@@ -42,3 +42,7 @@ Route::get('/manage/boss-strategies/{boss}/{slug}', fn (Boss $boss) => redirect(
 
 // Old boss strategy update, now part of PATCH /manage/bosses/{boss}, which takes image ids rather than URLs. Returns 410 Gone.
 Route::patch('/manage/boss-strategies/{boss}', fn () => abort(410));
+
+// Old boss strategy member pages, now the raid index and each boss's Raiding page.
+Route::get('/raiding/boss-strategies', fn () => redirect()->route('raiding.raids.index', status: 301));
+Route::get('/raiding/boss-strategies/{boss}/{slug}', fn (Boss $boss) => redirect()->route('raiding.bosses.show', ['boss' => $boss, 'slug' => $boss->slug], 301));

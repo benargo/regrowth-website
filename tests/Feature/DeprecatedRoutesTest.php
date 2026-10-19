@@ -169,6 +169,28 @@ class DeprecatedRoutesTest extends DashboardTestCase
 
     #[Test]
     #[Group('deprecated')]
+    public function the_boss_strategies_index_redirects_to_the_raiding_raids_index(): void
+    {
+        $response = $this->get('/raiding/boss-strategies');
+
+        $response->assertMovedPermanently();
+        $response->assertRedirect(route('raiding.raids.index'));
+    }
+
+    #[Test]
+    #[Group('deprecated')]
+    public function a_boss_strategy_redirects_to_the_raiding_boss_page(): void
+    {
+        $boss = Boss::factory()->create(['name' => 'Moroes']);
+
+        $response = $this->get("/raiding/boss-strategies/{$boss->id}/an-old-slug");
+
+        $response->assertMovedPermanently();
+        $response->assertRedirect(route('raiding.bosses.show', ['boss' => $boss, 'slug' => 'moroes']));
+    }
+
+    #[Test]
+    #[Group('deprecated')]
     public function boss_strategies_management_index_redirects_to_the_bosses_index(): void
     {
         $response = $this->actingAs($this->officer)->get('/manage/boss-strategies');

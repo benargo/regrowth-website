@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Actions\Events\RefreshEventGameVersion;
 use App\Jobs\BuildAddonExportFile;
 use App\Jobs\WarcraftLogs\RefreshGuildReports;
+use App\Listeners\FlushRaidingCache;
 use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\Phase;
@@ -12,12 +13,15 @@ use Illuminate\Database\Eloquent\Builder;
 
 class PhaseObserver
 {
+    public function __construct(private FlushRaidingCache $flushRaidingCache) {}
+
     /**
      * Handle the Phase "created" event.
      */
     public function created(Phase $phase): void
     {
         BuildAddonExportFile::schedule();
+        $this->flushRaidingCache->flush();
 
         $this->refreshReportsOfGameVersions([$phase->game_version_id]);
     }
@@ -42,6 +46,7 @@ class PhaseObserver
     public function updated(Phase $phase): void
     {
         BuildAddonExportFile::schedule();
+        $this->flushRaidingCache->flush();
 
         if (! $phase->wasChanged(['start_date', 'game_version_id'])) {
             return;
@@ -69,6 +74,7 @@ class PhaseObserver
     public function deleted(Phase $phase): void
     {
         BuildAddonExportFile::schedule();
+        $this->flushRaidingCache->flush();
 
         $this->refreshReportsOfGameVersions([$phase->game_version_id]);
     }

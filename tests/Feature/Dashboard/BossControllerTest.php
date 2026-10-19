@@ -306,7 +306,7 @@ class BossControllerTest extends DashboardTestCase
 
     #[Group('happy-path')]
     #[Test]
-    public function it_renders_the_edit_page_with_the_boss_its_raid_and_strategy_images(): void
+    public function it_renders_the_edit_page_with_the_boss_its_raid_and_images(): void
     {
         Storage::fake('public');
         $raid = Raid::factory()->create(['name' => 'Karazhan']);
@@ -319,10 +319,12 @@ class BossControllerTest extends DashboardTestCase
             ->component('Manage/Bosses/Edit')
             ->where('boss.data.name', 'Moroes')
             ->where('boss.data.notes', 'Vanish.')
-            ->where('boss.data.raid_id', $raid->id)
+            ->where('boss.data.raid.id', $raid->id)
             ->where('boss.data.raid.name', 'Karazhan')
-            ->where('boss.data.strategy_images', [['id' => $media->id, 'url' => $media->getUrl()]])
-            ->missing('boss.data.images')
+            ->missing('boss.data.raid_id')
+            ->missing('boss.data.raid.slug')
+            ->where('boss.data.images', [['id' => $media->id, 'url' => $media->getUrl()]])
+            ->missing('boss.data.strategy_images')
             ->where('routes', [
                 'index' => route('management.bosses.index'),
                 'update' => route('management.bosses.update', $boss),

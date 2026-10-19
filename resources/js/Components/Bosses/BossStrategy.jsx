@@ -3,13 +3,11 @@ import Icon from "@/Components/FontAwesome/Icon";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import { Can } from "@/Components/Authorizable";
 
-export default function BossStrategy({ boss }) {
+export default function BossStrategy({ boss, showEditLink = true }) {
     if (!(boss.images?.length > 0 || boss.notes)) {
         return (
             <div className="col-span-2 flex items-center justify-center gap-4 text-center">
-                <p className="text-center text-sm text-gray-400">
-                    No strategy notes or images for this boss yet.
-                </p>
+                <p className="text-center text-sm text-gray-400">No strategy notes or images for this boss yet.</p>
             </div>
         );
     }
@@ -18,26 +16,25 @@ export default function BossStrategy({ boss }) {
         <div className="col-span-2 flex flex-col gap-4">
             <div className="flex flex-row items-start gap-2">
                 <h2 className="flex-1 text-lg font-semibold text-amber-500">Strategy</h2>
-                <Can permission="view-officer-dashboard">
-                    <Can permission="edit-datasets">
-                        <Link
-                            href={route("management.bosses.edit", { boss: boss.id })}
-                            className="inline-flex items-center gap-2 rounded border border-amber-600 px-4 py-2 text-sm text-gray-200 transition-colors hover:bg-amber-600/20"
-                        >
-                            <Icon icon="pencil" className="text-sm" />
-                            Edit boss strategy
-                        </Link>
+                {showEditLink && (
+                    <Can permission="view-officer-dashboard">
+                        <Can permission="edit-datasets">
+                            <Link
+                                href={route("management.bosses.edit", { boss: boss.id })}
+                                className="inline-flex items-center gap-2 rounded border border-amber-600 px-4 py-2 text-sm text-gray-200 transition-colors hover:bg-amber-600/20"
+                            >
+                                <Icon icon="pencil" className="text-sm" />
+                                Edit boss strategy
+                            </Link>
+                        </Can>
                     </Can>
-                </Can>
+                )}
             </div>
             {boss.images?.length > 0 &&
-                boss.images.map((url, i) => (
-                    <div
-                        key={`${boss.id}_image_${i}`}
-                        className="flex items-center justify-center gap-4 text-center"
-                    >
+                boss.images.map((image, i) => (
+                    <div key={image.id} className="flex items-center justify-center gap-4 text-center">
                         <img
-                            src={url}
+                            src={image.url}
                             alt={`${boss.name} strategy ${i + 1}`}
                             className="rounded-lg border border-amber-600/30"
                         />

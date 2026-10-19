@@ -3,6 +3,8 @@
 namespace Tests\Unit\Models;
 
 use App\Casts\AsClassName;
+use App\Contracts\Events\FlushesRaidingCache;
+use App\Events\EventAssignmentChanged;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
@@ -10,8 +12,10 @@ use App\Models\EventAssignment;
 use App\Models\EventAssignmentGroup;
 use App\Models\Spell;
 use App\Models\TargetMarker;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Event as EventFacade;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
@@ -432,5 +436,49 @@ class EventAssignmentTest extends ModelTestCase
         $relation = $boss->assignments();
         $this->assertInstanceOf(HasMany::class, $relation);
         $this->assertCount(2, $boss->assignments);
+    }
+
+    // ==================== model events ====================
+
+    #[Test]
+    public function it_dispatches_event_assignment_changed_when_created(): void
+    {
+        EventFacade::fake([EventAssignmentChanged::class]);
+
+        $eventAssignment = EventAssignment::factory()->create();
+
+        EventFacade::assertDispatched(EventAssignmentChanged::class, fn (EventAssignmentChanged $event) => $event->eventAssignment->is($eventAssignment));
+    }
+
+    #[Test]
+    public function it_dispatches_event_assignment_changed_when_updated(): void
+    {
+        $eventAssignment = EventAssignment::factory()->create();
+        EventFacade::fake([EventAssignmentChanged::class]);
+
+        $eventAssignment->update(['sort_order' => 99]);
+
+        EventFacade::assertDispatched(EventAssignmentChanged::class, fn (EventAssignmentChanged $event) => $event->eventAssignment->is($eventAssignment));
+    }
+
+    #[Test]
+    public function it_dispatches_event_assignment_changed_when_deleted(): void
+    {
+        $eventAssignment = EventAssignment::factory()->create();
+        EventFacade::fake([EventAssignmentChanged::class]);
+
+        $eventAssignment->delete();
+
+        EventFacade::assertDispatched(EventAssignmentChanged::class, fn (EventAssignmentChanged $event) => $event->eventAssignment->is($eventAssignment));
+    }
+
+    #[Group('contract')]
+    #[Test]
+    public function event_assignment_changed_flushes_the_raiding_cache_after_commit(): void
+    {
+        $event = new EventAssignmentChanged(new EventAssignment);
+
+        $this->assertInstanceOf(FlushesRaidingCache::class, $event);
+        $this->assertInstanceOf(ShouldDispatchAfterCommit::class, $event);
     }
 }

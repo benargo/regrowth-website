@@ -2,6 +2,7 @@
 
 namespace App\Actions\Boss;
 
+use App\Events\BossChanged;
 use App\Models\Boss;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
@@ -12,8 +13,8 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 /**
  * Applies a partial update to a boss. Columns, image removals and image
  * order are written in one transaction, and uploaded images are added after
- * it commits. Any change then flushes the raiding cache and broadcasts
- * `updated` once.
+ * it commits. Any image change then dispatches `BossChanged`, and any change
+ * broadcasts `updated` once.
  */
 class UpdateBoss
 {
@@ -48,7 +49,9 @@ class UpdateBoss
             $boss->addMedia($image)->toMediaCollection();
         }
 
-        Boss::flushRaidingCache();
+        if ($hasMediaChanges) {
+            BossChanged::dispatch($boss);
+        }
 
         $boss->broadcastUpdated();
     }

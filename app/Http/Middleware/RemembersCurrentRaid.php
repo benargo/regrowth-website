@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Contracts\Http\Middleware\SharesOriginRaidSession;
+use App\Models\Boss;
 use App\Models\Raid;
 use Closure;
 use Illuminate\Http\Request;
@@ -11,20 +12,19 @@ use Symfony\Component\HttpFoundation\Response;
 class RemembersCurrentRaid implements SharesOriginRaidSession
 {
     /**
-     * Remember the raid the user is currently browsing.
+     * Remember the raid the user is currently browsing: the raid in the given
+     * route parameter, or the raid of the boss in it.
      *
-     * Written here, on the raid page itself, and read back by
-     * RemembersOriginRaid on item pages — simpler and safer than trying to
-     * reverse-engineer the previous page from a Referer header.
+     * Written on raid and boss pages, and read back by RemembersOriginRaid on item pages.
      *
      * @param  Closure(Request): (Response)  $next
      */
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next, string $parameter = 'raid'): Response
     {
-        /** @var Raid $raid */
-        $raid = $request->route('raid');
+        /** @var Raid|Boss $record */
+        $record = $request->route($parameter);
 
-        $request->session()->put(self::SESSION_KEY, $raid->id);
+        $request->session()->put(self::SESSION_KEY, $record instanceof Boss ? $record->raid_id : $record->id);
 
         return $next($request);
     }

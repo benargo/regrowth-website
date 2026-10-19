@@ -2,10 +2,12 @@
 
 namespace Tests\Unit\Models;
 
+use App\Contracts\Events\FlushesRaidingCache;
 use App\Contracts\Models\BelongsToGameVersion;
 use App\Contracts\Models\DatasetModel;
 use App\Contracts\Models\EditLockable;
 use App\Contracts\Models\HasUsage;
+use App\Events\BossChanged;
 use App\Jobs\BuildAddonExportFile;
 use App\Models\Boss;
 use App\Models\Comment;
@@ -18,12 +20,14 @@ use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
 use App\Policies\DatasetPolicy;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event as EventFacade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
@@ -455,6 +459,50 @@ class BossTest extends ModelTestCase
         $this->assertSame(1, $counted->upcoming_events_count);
         $this->assertSame(0, $counted->upcoming_assignments_count);
         $this->assertSame(0, $counted->upcoming_assignment_groups_count);
+    }
+
+    // ==================== model events ====================
+
+    #[Test]
+    public function it_dispatches_boss_changed_when_created(): void
+    {
+        EventFacade::fake([BossChanged::class]);
+
+        $boss = Boss::factory()->create();
+
+        EventFacade::assertDispatched(BossChanged::class, fn (BossChanged $event) => $event->boss->is($boss));
+    }
+
+    #[Test]
+    public function it_dispatches_boss_changed_when_updated(): void
+    {
+        $boss = Boss::factory()->create();
+        EventFacade::fake([BossChanged::class]);
+
+        $boss->update(['name' => 'Renamed']);
+
+        EventFacade::assertDispatched(BossChanged::class, fn (BossChanged $event) => $event->boss->is($boss));
+    }
+
+    #[Test]
+    public function it_dispatches_boss_changed_when_deleted(): void
+    {
+        $boss = Boss::factory()->create();
+        EventFacade::fake([BossChanged::class]);
+
+        $boss->delete();
+
+        EventFacade::assertDispatched(BossChanged::class, fn (BossChanged $event) => $event->boss->is($boss));
+    }
+
+    #[Group('contract')]
+    #[Test]
+    public function boss_changed_flushes_the_raiding_cache_after_commit(): void
+    {
+        $event = new BossChanged(new Boss);
+
+        $this->assertInstanceOf(FlushesRaidingCache::class, $event);
+        $this->assertInstanceOf(ShouldDispatchAfterCommit::class, $event);
     }
 
     // ==================== helpers ====================

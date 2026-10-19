@@ -3,12 +3,14 @@
 namespace Tests\Feature\Actions\Boss;
 
 use App\Actions\Boss\UpdateBoss;
+use App\Events\BossChanged;
 use App\Models\Boss;
 use Illuminate\Broadcasting\BroadcastEvent;
 use Illuminate\Database\Eloquent\BroadcastableModelEventOccurred;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
@@ -166,6 +168,42 @@ class UpdateBossTest extends TestCase
         UpdateBoss::run($boss, ['image_ids' => [$second->id, $first->id]]);
 
         $this->assertNull(Cache::tags(['raiding', 'events'])->get('canary'));
+    }
+
+    #[Test]
+    public function it_dispatches_boss_changed_when_images_are_reordered(): void
+    {
+        $boss = Boss::factory()->create();
+        $first = $this->addImage($boss, 'first.png');
+        $second = $this->addImage($boss, 'second.png');
+        Event::fake([BossChanged::class]);
+
+        UpdateBoss::run($boss, ['image_ids' => [$second->id, $first->id]]);
+
+        Event::assertDispatched(BossChanged::class, fn (BossChanged $event) => $event->boss->is($boss));
+    }
+
+    #[Test]
+    public function it_dispatches_boss_changed_when_images_are_removed(): void
+    {
+        $boss = Boss::factory()->create();
+        $image = $this->addImage($boss, 'first.png');
+        Event::fake([BossChanged::class]);
+
+        UpdateBoss::run($boss, ['removed_image_ids' => [$image->id]]);
+
+        Event::assertDispatched(BossChanged::class, fn (BossChanged $event) => $event->boss->is($boss));
+    }
+
+    #[Test]
+    public function it_dispatches_boss_changed_when_images_are_uploaded(): void
+    {
+        $boss = Boss::factory()->create();
+        Event::fake([BossChanged::class]);
+
+        UpdateBoss::run($boss, ['images' => [UploadedFile::fake()->image('first.png')]]);
+
+        Event::assertDispatched(BossChanged::class, fn (BossChanged $event) => $event->boss->is($boss));
     }
 
     // ==================== helpers ====================

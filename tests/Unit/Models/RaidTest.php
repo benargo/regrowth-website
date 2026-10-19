@@ -3,8 +3,10 @@
 namespace Tests\Unit\Models;
 
 use App\Casts\AsBinaryColor;
+use App\Contracts\Events\FlushesRaidingCache;
 use App\Contracts\Models\BelongsToGameVersion;
 use App\Contracts\Models\DatasetModel;
+use App\Events\RaidChanged;
 use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\Event;
@@ -16,12 +18,14 @@ use App\Models\Raid;
 use App\Models\User;
 use App\Policies\DatasetPolicy;
 use Carbon\CarbonInterface;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event as EventFacade;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
@@ -790,6 +794,50 @@ class RaidTest extends ModelTestCase
 
         $this->assertArrayNotHasKey('banner_url', $array);
         $this->assertArrayNotHasKey('banner_position', $array);
+    }
+
+    // ==================== model events ====================
+
+    #[Test]
+    public function it_dispatches_raid_changed_when_created(): void
+    {
+        EventFacade::fake([RaidChanged::class]);
+
+        $raid = Raid::factory()->create();
+
+        EventFacade::assertDispatched(RaidChanged::class, fn (RaidChanged $event) => $event->raid->is($raid));
+    }
+
+    #[Test]
+    public function it_dispatches_raid_changed_when_updated(): void
+    {
+        $raid = Raid::factory()->create();
+        EventFacade::fake([RaidChanged::class]);
+
+        $raid->update(['name' => 'Renamed']);
+
+        EventFacade::assertDispatched(RaidChanged::class, fn (RaidChanged $event) => $event->raid->is($raid));
+    }
+
+    #[Test]
+    public function it_dispatches_raid_changed_when_deleted(): void
+    {
+        $raid = Raid::factory()->create();
+        EventFacade::fake([RaidChanged::class]);
+
+        $raid->delete();
+
+        EventFacade::assertDispatched(RaidChanged::class, fn (RaidChanged $event) => $event->raid->is($raid));
+    }
+
+    #[Group('contract')]
+    #[Test]
+    public function raid_changed_flushes_the_raiding_cache_after_commit(): void
+    {
+        $event = new RaidChanged(new Raid);
+
+        $this->assertInstanceOf(FlushesRaidingCache::class, $event);
+        $this->assertInstanceOf(ShouldDispatchAfterCommit::class, $event);
     }
 
     // ==================== helpers ====================

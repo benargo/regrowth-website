@@ -6,8 +6,8 @@ use App\Contracts\Models\BelongsToGameVersion;
 use App\Contracts\Models\DatasetModel;
 use App\Contracts\Models\EditLockable;
 use App\Contracts\Models\HasUsage;
+use App\Events\BossChanged;
 use App\Http\Resources\BossResource;
-use App\Models\Concerns\FlushesRaidingCacheOnSave;
 use App\Models\Concerns\HasEditLock;
 use App\Models\Concerns\TracksUsage;
 use App\Policies\DatasetPolicy;
@@ -38,7 +38,18 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 #[UsePolicy(DatasetPolicy::class)]
 class Boss extends Model implements BelongsToGameVersion, DatasetModel, EditLockable, HasMedia, HasUsage, Sortable
 {
-    use BroadcastsEvents, FlushesRaidingCacheOnSave, HasEditLock, HasFactory, InteractsWithMedia, SortableTrait, TracksUsage;
+    use BroadcastsEvents, HasEditLock, HasFactory, InteractsWithMedia, SortableTrait, TracksUsage;
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'created' => BossChanged::class,
+        'updated' => BossChanged::class,
+        'deleted' => BossChanged::class,
+    ];
 
     /**
      * Relationships whose existing rows mark this boss as in use.

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Raid;
 
+use App\Events\RaidChanged;
 use App\Models\Boss;
 use App\Models\Raid;
 use Illuminate\Http\UploadedFile;
@@ -15,11 +16,11 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * data are touched, and a key given as null clears its column.
  *
  * `boss_ids` stores the raid's boss order, the first id first, in one
- * transaction with any columns, then flushes the raiding cache once that
- * transaction has committed. `banner` replaces the banner (null removes it)
+ * transaction with any columns. `banner` replaces the banner (null removes it)
  * and `banner_position` sets the banner's `position` custom property. A new
  * banner keeps the previous position unless a position comes with it. Media
- * is written once the database changes have committed.
+ * is written once the database changes have committed. Any change to the boss
+ * order or banner then dispatches `RaidChanged`.
  */
 class UpdateRaid
 {
@@ -44,8 +45,6 @@ class UpdateRaid
                 $raid->update($columns);
                 Boss::setNewOrder($data['boss_ids']);
             });
-
-            Raid::flushRaidingCache();
         } elseif ($columns !== []) {
             $raid->update($columns);
         }
@@ -53,12 +52,12 @@ class UpdateRaid
         if (Arr::exists($data, 'banner')) {
             $position = Arr::exists($data, 'banner_position') ? $data['banner_position'] : $raid->banner_position;
             $this->replaceBanner($raid, $data['banner'], $position);
-
-            return;
+        } elseif (Arr::exists($data, 'banner_position')) {
+            $this->positionBanner($raid->getFirstMedia(Raid::MEDIA_BANNER), $data['banner_position']);
         }
 
-        if (Arr::exists($data, 'banner_position')) {
-            $this->positionBanner($raid->getFirstMedia(Raid::MEDIA_BANNER), $data['banner_position']);
+        if (Arr::hasAny($data, self::NON_COLUMN_KEYS)) {
+            RaidChanged::dispatch($raid);
         }
     }
 

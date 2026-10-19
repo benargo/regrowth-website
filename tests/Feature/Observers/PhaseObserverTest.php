@@ -4,6 +4,7 @@ namespace Tests\Feature\Observers;
 
 use App\Actions\Events\RefreshEventGameVersion;
 use App\Jobs\BuildAddonExportFile;
+use App\Listeners\FlushRaidingCache;
 use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\Phase;
@@ -141,6 +142,32 @@ class PhaseObserverTest extends TestCase
         $phase->delete();
 
         Bus::assertDispatched(BuildAddonExportFile::class, fn (BuildAddonExportFile $job) => $job->delay !== null);
+    }
+
+    #[Test]
+    public function creating_a_phase_flushes_the_raiding_cache(): void
+    {
+        $this->mock(FlushRaidingCache::class)->shouldReceive('flush')->once();
+
+        Phase::factory()->create();
+    }
+
+    #[Test]
+    public function updating_a_phase_flushes_the_raiding_cache(): void
+    {
+        $phase = Phase::factory()->create();
+        $this->mock(FlushRaidingCache::class)->shouldReceive('flush')->once();
+
+        $phase->update(['description' => 'Renamed phase']);
+    }
+
+    #[Test]
+    public function deleting_a_phase_flushes_the_raiding_cache(): void
+    {
+        $phase = Phase::factory()->create();
+        $this->mock(FlushRaidingCache::class)->shouldReceive('flush')->once();
+
+        $phase->delete();
     }
 
     // ==================== sort order ====================

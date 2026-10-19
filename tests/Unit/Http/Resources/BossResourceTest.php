@@ -6,12 +6,14 @@ use App\Http\Resources\BossResource;
 use App\Http\Resources\ItemResource;
 use App\Http\Resources\RaidResource;
 use App\Models\Boss;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
@@ -77,14 +79,13 @@ class BossResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_raid_id_when_raid_not_loaded(): void
+    public function it_omits_raid_when_not_loaded(): void
     {
         $boss = Boss::factory()->create();
 
-        $array = (new BossResource($boss))->toArray(new Request);
+        $array = (new BossResource($boss))->resolve(new Request);
 
-        $this->assertArrayHasKey('raid', $array);
-        $this->assertSame($boss->raid_id, $array['raid']);
+        $this->assertArrayNotHasKey('raid', $array);
     }
 
     // ==================== items relation ====================
@@ -208,7 +209,7 @@ class BossResourceTest extends TestCase
         $boss = Boss::factory()->create();
 
         $this->assertSame(
-            ['id', 'name', 'slug', 'notes', 'images', 'sort_order', 'raid'],
+            ['id', 'name', 'slug', 'notes', 'images', 'sort_order'],
             array_keys((new BossResource($boss))->resolve(new Request)),
         );
     }
@@ -223,7 +224,7 @@ class BossResourceTest extends TestCase
 
         $array = (new BossResource($boss))->withLinks(['edit' => '/edit'])->resolve(new Request);
 
-        $this->assertSame(['id', 'name', 'slug', 'notes', 'images', 'sort_order', 'raid'], array_keys($array));
+        $this->assertSame(['id', 'name', 'slug', 'notes', 'images', 'sort_order'], array_keys($array));
     }
 
     #[Test]
@@ -240,14 +241,24 @@ class BossResourceTest extends TestCase
             ->resolve(new Request);
 
         $this->assertSame([
-            'id', 'name', 'slug', 'notes', 'sort_order', 'raid', 'items_count', 'links', 'meta',
-            'past_assignments_count', 'past_events_count', 'raid_id', 'template_events_count',
+            'id', 'name', 'slug', 'notes', 'sort_order', 'items_count', 'links', 'meta',
+            'past_assignments_count', 'past_events_count', 'template_events_count',
             'upcoming_assignment_groups_count', 'upcoming_assignments_count', 'upcoming_events_count',
         ], array_keys($array));
         $this->assertSame(['edit' => '/edit', 'destroy' => '/destroy'], $array['links']);
         $this->assertSame(['has_strategy' => false], $array['meta']);
-        $this->assertSame($boss->raid_id, $array['raid_id']);
         $this->assertSame(0, $array['items_count']);
+    }
+
+    #[Test]
+    public function the_management_scope_keeps_only_the_raids_header_fields(): void
+    {
+        $boss = Boss::factory()->create()->load('raid.media');
+
+        $array = (new BossResource($boss))->scope('management')->resolve(new Request);
+
+        $this->assertSame(['id', 'name', 'color', 'banner_url', 'banner_position'], array_keys($array['raid']));
+        $this->assertSame($boss->raid_id, $array['raid']['id']);
     }
 
     #[Test]
@@ -268,7 +279,9 @@ class BossResourceTest extends TestCase
     }
 
     #[Test]
-    public function the_management_scope_lists_strategy_images_by_id_in_their_order(): void
+    #[TestWith([null])]
+    #[TestWith(['management'])]
+    public function it_lists_images_by_id_and_url_in_their_order(?string $scope): void
     {
         Storage::fake('public');
         $boss = Boss::factory()->create();
@@ -276,12 +289,73 @@ class BossResourceTest extends TestCase
         $second = $boss->addMedia(UploadedFile::fake()->image('second.png'))->toMediaCollection();
         Media::setNewOrder([$second->id, $first->id]);
 
-        $array = (new BossResource($boss->fresh()->load('media')))->scope('management')->resolve(new Request);
+        $resource = new BossResource($boss->fresh()->load('media'));
+
+        if ($scope !== null) {
+            $resource->scope($scope);
+        }
 
         $this->assertSame([
             ['id' => $second->id, 'url' => $second->getUrl()],
             ['id' => $first->id, 'url' => $first->getUrl()],
-        ], $array['strategy_images']);
+        ], $resource->resolve(new Request)['images']);
+    }
+
+    // ==================== navigation scope ====================
+
+    #[Test]
+    public function the_navigation_scope_exposes_only_the_navigation_fields(): void
+    {
+        $boss = Boss::factory()->create();
+
+        $array = (new BossResource($boss->loadCount(['comments', 'media'])))->scope('navigation')->resolve(new Request);
+
+        $this->assertSame(['id', 'name', 'slug', 'sort_order', 'comments_count', 'meta'], array_keys($array));
+    }
+
+    #[Test]
+    #[TestWith(['Tank Moroes by the stairs.', false, true])]
+    #[TestWith([null, true, true])]
+    #[TestWith([null, false, false])]
+    #[TestWith(['', false, false])]
+    public function the_navigation_scope_flags_a_strategy(?string $notes, bool $hasImage, bool $expected): void
+    {
+        Storage::fake('public');
+        $boss = Boss::factory()->create(['notes' => $notes]);
+
+        if ($hasImage) {
+            $boss->addMedia(UploadedFile::fake()->image('strategy.png'))->toMediaCollection();
+        }
+
+        $array = (new BossResource($boss->refresh()->loadCount('media')))->scope('navigation')->resolve(new Request);
+
+        $this->assertSame($expected, $array['meta']['has_strategy']);
+    }
+
+    #[Test]
+    public function the_navigation_scope_does_not_read_the_media_relation(): void
+    {
+        $boss = Boss::query()->withCount('media')->find(Boss::factory()->create()->id);
+
+        Model::preventLazyLoading();
+
+        try {
+            $array = (new BossResource($boss))->scope('navigation')->resolve(new Request);
+        } finally {
+            Model::preventLazyLoading(false);
+        }
+
+        $this->assertFalse($boss->relationLoaded('media'));
         $this->assertArrayNotHasKey('images', $array);
+    }
+
+    #[Test]
+    public function the_unscoped_resource_has_no_navigation_meta(): void
+    {
+        $boss = Boss::factory()->create();
+
+        $array = (new BossResource($boss->loadCount('media')))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('meta', $array);
     }
 }
