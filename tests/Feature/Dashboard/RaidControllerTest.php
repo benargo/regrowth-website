@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Dashboard;
 
-use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Actions\Raid\UpdateRaid;
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
 use App\Enums\BannerPosition;
 use App\Models\Boss;
 use App\Models\Event;
@@ -78,7 +78,7 @@ class RaidControllerTest extends DashboardTestCase
         GameVersion::factory()->create(['title' => 'Anniversary', 'release_date' => '2026-02-06']);
 
         $response = $this->actingAs($this->officer)
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $era->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $era->slug])
             ->get(route('management.raids.index'));
 
         $response->assertInertia(fn (Assert $page) => $page

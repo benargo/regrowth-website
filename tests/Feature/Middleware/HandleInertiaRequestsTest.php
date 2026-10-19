@@ -2,8 +2,12 @@
 
 namespace Tests\Feature\Middleware;
 
-use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Actions\Navigation\BuildNavigationData;
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
+use App\Enums\SignupStatus;
+use App\Models\Character;
 use App\Models\DiscordRole;
+use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\Permission;
 use App\Models\Phase;
@@ -230,10 +234,10 @@ class HandleInertiaRequestsTest extends TestCase
         GameVersion::factory()->create(['release_date' => now()->subYears(2)->toDateString()]);
 
         $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page
-            ->has('gameVersions', 3)
-            ->where('gameVersions.0.slug', $unreleased->slug)
-            ->has('gameVersions.0.meta.is_current')
-            ->has('gameVersions.0', fn (AssertableInertia $version) => $version
+            ->has('gameVersions.data', 3)
+            ->where('gameVersions.data.0.slug', $unreleased->slug)
+            ->has('gameVersions.data.0.meta.is_current')
+            ->has('gameVersions.data.0', fn (AssertableInertia $version) => $version
                 ->hasAll(['id', 'title', 'slug', 'color', 'icon_url', 'release_date', 'meta'])));
     }
 
@@ -247,7 +251,7 @@ class HandleInertiaRequestsTest extends TestCase
         )->create();
 
         $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page
-            ->where('gameVersions', fn ($versions) => collect($versions)->where('meta.is_current', true)->count() === 1));
+            ->where('gameVersions.data', fn ($versions) => collect($versions)->where('meta.is_current', true)->count() === 1));
     }
 
     #[Test]
@@ -257,10 +261,10 @@ class HandleInertiaRequestsTest extends TestCase
         $latestReleased = GameVersion::factory()->create(['release_date' => now()->subYear()->toDateString()]);
         GameVersion::factory()->create(['release_date' => now()->subYears(2)->toDateString()]);
 
-        $this->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'gone'])
+        $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => 'gone'])
             ->get('/')
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('gameVersions', fn ($versions) => collect($versions)->where('meta.is_current', true)->pluck('slug')->all() === [$latestReleased->slug]));
+                ->where('gameVersions.data', fn ($versions) => collect($versions)->where('meta.is_current', true)->pluck('slug')->all() === [$latestReleased->slug]));
     }
 
     #[Test]
@@ -275,9 +279,92 @@ class HandleInertiaRequestsTest extends TestCase
         Model::preventLazyLoading();
 
         try {
-            $this->get('/')->assertOk()->assertInertia(fn ($page) => $page->has('gameVersions', 2));
+            $this->get('/')->assertOk()->assertInertia(fn ($page) => $page->has('gameVersions.data', 2));
         } finally {
             Model::preventLazyLoading(false);
         }
+    }
+
+    #[Test]
+    public function it_shares_a_fresh_switcher_icon_after_the_icon_changes(): void
+    {
+        Storage::fake('public');
+        $gameVersion = GameVersion::factory()->create();
+        $this->get('/')->assertOk();
+
+        $gameVersion->addMedia(UploadedFile::fake()->image('icon.png'))->toMediaCollection(GameVersion::MEDIA_ICON);
+
+        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('gameVersions.data.0.icon_url', $gameVersion->fresh()->getFirstMediaUrl(GameVersion::MEDIA_ICON)));
+    }
+
+    // ==================== navigation ====================
+
+    #[Test]
+    public function it_does_not_build_navigation_on_a_normal_visit(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        BuildNavigationData::shouldNotRun();
+
+        $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $gameVersion->slug])
+            ->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page->missing('navigation'));
+    }
+
+    #[Test]
+    public function it_sends_navigation_on_a_partial_reload(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $event = $this->eventTomorrow($gameVersion);
+
+        $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $gameVersion->slug])
+            ->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->missing('navigation')
+                ->reloadOnly('navigation', fn (AssertableInertia $reload) => $reload
+                    ->where('navigation.next_raid.id', $event->id)
+                    ->where('navigation.next_raid.signup', null)
+                    ->has('navigation.latest_discussions', 0)));
+    }
+
+    #[Test]
+    public function a_partial_reload_gives_a_member_their_signup_line(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $event = $this->eventTomorrow($gameVersion);
+        $user = User::factory()->member()->create();
+        $event->characters()->attach(Character::factory()->for($user)->create(), ['signup_status' => SignupStatus::Confirmed]);
+
+        $this->actingAs($user)
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $gameVersion->slug])
+            ->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->reloadOnly('navigation', fn (AssertableInertia $reload) => $reload
+                    ->where('navigation.next_raid.signup.label', "You're signed up.")));
+    }
+
+    #[Test]
+    public function a_partial_reload_follows_the_session_version(): void
+    {
+        $first = GameVersion::factory()->create(['release_date' => '2024-01-01']);
+        $second = GameVersion::factory()->create(['release_date' => '2023-01-01']);
+        $firstEvent = $this->eventTomorrow($first);
+        $secondEvent = $this->eventTomorrow($second);
+
+        foreach ([[$first, $firstEvent], [$second, $secondEvent]] as [$gameVersion, $event]) {
+            $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $gameVersion->slug])
+                ->get('/')
+                ->assertInertia(fn (AssertableInertia $page) => $page
+                    ->reloadOnly('navigation', fn (AssertableInertia $reload) => $reload
+                        ->where('navigation.next_raid.id', $event->id)));
+        }
+    }
+
+    private function eventTomorrow(GameVersion $gameVersion): Event
+    {
+        return Event::factory()->live()->forGameVersion($gameVersion)->create([
+            'start_time' => now()->addDay(),
+            'end_time' => now()->addDay()->addHours(3),
+        ]);
     }
 }

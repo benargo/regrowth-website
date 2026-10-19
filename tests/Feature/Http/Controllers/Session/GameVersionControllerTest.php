@@ -2,7 +2,8 @@
 
 namespace Tests\Feature\Http\Controllers\Session;
 
-use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
+use App\Http\Middleware\RemembersRecordGameVersion;
 use App\Models\GameVersion;
 use App\Models\User;
 use Carbon\Carbon;
@@ -18,6 +19,8 @@ class GameVersionControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    // ==================== switching ====================
+
     #[Test]
     #[Group('happy-path')]
     public function a_guest_can_switch_game_version(): void
@@ -28,7 +31,7 @@ class GameVersionControllerTest extends TestCase
             ->patch(route('session.game-version.update'), ['game_version' => $gameVersion->slug]);
 
         $response->assertRedirect(route('loot.index'))->assertStatus(303);
-        $response->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, $gameVersion->slug);
+        $response->assertSessionHas(SharesCurrentGameVersionSession::SESSION_KEY, $gameVersion->slug);
     }
 
     #[Test]
@@ -43,8 +46,33 @@ class GameVersionControllerTest extends TestCase
             ->patch(route('session.game-version.update'), ['game_version' => $gameVersion->slug]);
 
         $response->assertRedirect(route('loot.index'))->assertStatus(303);
-        $response->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, $gameVersion->slug);
+        $response->assertSessionHas(SharesCurrentGameVersionSession::SESSION_KEY, $gameVersion->slug);
     }
+
+    #[Test]
+    public function a_switch_flashes_that_it_was_explicit(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['release_date' => Carbon::parse('2024-01-01')]);
+
+        $response = $this->from(route('loot.index'))
+            ->patch(route('session.game-version.update'), ['game_version' => $gameVersion->slug]);
+
+        $response->assertSessionHas(RemembersRecordGameVersion::SWITCHED_FLASH_KEY, true);
+    }
+
+    #[Test]
+    public function a_switch_that_resets_the_query_flashes_that_it_was_explicit(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['release_date' => Carbon::parse('2024-01-01')]);
+
+        $response = $this->from(route('raiding.reports.index', ['page' => 3]))
+            ->patch(route('session.game-version.update'), ['game_version' => $gameVersion->slug, 'reset_query' => true]);
+
+        $response->assertRedirect(route('raiding.reports.index'))->assertStatus(303);
+        $response->assertSessionHas(RemembersRecordGameVersion::SWITCHED_FLASH_KEY, true);
+    }
+
+    // ==================== query string ====================
 
     #[Test]
     #[Group('happy-path')]
@@ -68,8 +96,10 @@ class GameVersionControllerTest extends TestCase
             ->patch(route('session.game-version.update'), ['game_version' => $gameVersion->slug, 'reset_query' => true]);
 
         $response->assertRedirect(route('raiding.attendance.matrix'))->assertStatus(303);
-        $response->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, $gameVersion->slug);
+        $response->assertSessionHas(SharesCurrentGameVersionSession::SESSION_KEY, $gameVersion->slug);
     }
+
+    // ==================== validation ====================
 
     #[Test]
     #[Group('validation')]
@@ -90,11 +120,11 @@ class GameVersionControllerTest extends TestCase
     {
         $gameVersion = GameVersion::factory()->create(['release_date' => Carbon::parse('2024-01-01')]);
 
-        $response = $this->withSession([ResolveCurrentGameVersion::SESSION_KEY => $gameVersion->slug])
+        $response = $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $gameVersion->slug])
             ->patch(route('session.game-version.update'), $payload);
 
         $response->assertSessionHasErrors('game_version');
-        $response->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, $gameVersion->slug);
+        $response->assertSessionHas(SharesCurrentGameVersionSession::SESSION_KEY, $gameVersion->slug);
     }
 
     #[Test]

@@ -4,6 +4,7 @@ namespace Tests\Feature\Actions\GameVersion;
 
 use App\Actions\GameVersion\RememberGameVersion;
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
 use App\Models\GameVersion;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
@@ -21,7 +22,7 @@ class RememberGameVersionTest extends TestCase
     {
         RememberGameVersion::run('some-slug');
 
-        $this->assertSame('some-slug', session(ResolveCurrentGameVersion::SESSION_KEY));
+        $this->assertSame('some-slug', session(SharesCurrentGameVersionSession::SESSION_KEY));
     }
 
     #[Test]

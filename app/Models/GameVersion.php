@@ -8,6 +8,7 @@ use App\Contracts\Models\DatasetModel;
 use App\Contracts\Models\EditLockable;
 use App\Contracts\Models\HasUsage;
 use App\Enums\Faction;
+use App\Events\GameVersionChanged;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Support\NameSlug;
 use App\Models\Concerns\HasEditLock;
@@ -82,6 +83,17 @@ class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia,
         self::MEDIA_BANNER,
         self::MEDIA_ICON,
         self::MEDIA_LOGO,
+    ];
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'created' => GameVersionChanged::class,
+        'updated' => GameVersionChanged::class,
+        'deleted' => GameVersionChanged::class,
     ];
 
     /**

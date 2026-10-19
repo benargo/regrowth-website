@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Raiding;
 
-use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
 use App\Enums\PlannedAbsenceReason;
 use App\Enums\Presence;
 use App\Models\DiscordRole;
@@ -222,7 +222,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $other->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $other->slug])
             ->get(route('raiding.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
@@ -1020,7 +1020,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $this->createReport($this->gameVersion, '2025-01-01 20:00');
 
         $this->actingAs(User::factory()->officer()->create())
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $this->gameVersion->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $this->gameVersion->slug])
             ->get(route('raiding.attendance.matrix'))
             ->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', $this->gameVersion->slug));
     }
@@ -1031,7 +1031,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $this->createReport($this->gameVersion, '2025-01-01 20:00');
 
         $this->actingAs(User::factory()->officer()->create())
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'retired-version'])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => 'retired-version'])
             ->get(route('raiding.attendance.matrix'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', $this->gameVersion->slug));
@@ -1046,7 +1046,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $character = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
 
         $this->actingAs(User::factory()->officer()->create())
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $newer->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $newer->slug])
             ->followingRedirects()
             ->get(route('raiding.attendance.matrix', ['game_version' => $this->gameVersion->slug, 'character' => $character->id]))
             ->assertInertia(fn (Assert $page) => $page
@@ -1062,7 +1062,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $this->actingAs(User::factory()->officer()->create())
             ->get(route('raiding.attendance.matrix', ['game_version' => $this->gameVersion->slug, 'rank_ids' => '1']))
             ->assertRedirect(route('raiding.attendance.matrix', ['rank_ids' => '1']))
-            ->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, $this->gameVersion->slug);
+            ->assertSessionHas(SharesCurrentGameVersionSession::SESSION_KEY, $this->gameVersion->slug);
     }
 
     #[Test]

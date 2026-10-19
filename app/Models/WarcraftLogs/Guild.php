@@ -2,6 +2,7 @@
 
 namespace App\Models\WarcraftLogs;
 
+use App\Events\WarcraftLogsGuildDeleted;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\GameVersion;
 use App\Models\Report;
@@ -24,6 +25,15 @@ class Guild extends Model
 {
     /** @use HasFactory<GuildFactory> */
     use HasFactory;
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'deleted' => WarcraftLogsGuildDeleted::class,
+    ];
 
     /**
      * Flush cached API responses when a guild is added or changes namespace.

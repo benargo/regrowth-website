@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Raiding;
 
-use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
 use App\Enums\PlannedAbsenceReason;
 use App\Enums\Presence;
 use App\Models\Character;
@@ -264,7 +264,7 @@ class AttendanceDashboardControllerTest extends TestCase
         $this->createReport($this->gameVersion, now()->subDay());
 
         $this->actingAs(User::factory()->officer()->create())
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $this->gameVersion->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $this->gameVersion->slug])
             ->get(route('raiding.attendance.dashboard'))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('hasAttendance', true)

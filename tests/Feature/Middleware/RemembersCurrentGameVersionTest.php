@@ -3,7 +3,7 @@
 namespace Tests\Feature\Middleware;
 
 use App\Actions\GameVersion\ListSelectableGameVersions;
-use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
 use App\Http\Middleware\RemembersCurrentGameVersion;
 use App\Models\GameVersion;
 use Illuminate\Database\Eloquent\Collection;
@@ -34,7 +34,7 @@ class RemembersCurrentGameVersionTest extends TestCase
 
         $response = (new RemembersCurrentGameVersion)->handle($request, fn () => response('next'));
 
-        $this->assertSame('mop', $request->session()->get(ResolveCurrentGameVersion::SESSION_KEY));
+        $this->assertSame('mop', $request->session()->get(SharesCurrentGameVersionSession::SESSION_KEY));
         $this->assertSame(303, $response->getStatusCode());
         $this->assertSame('http://localhost/roster?page=2', $response->headers->get('Location'));
     }
@@ -62,11 +62,11 @@ class RemembersCurrentGameVersionTest extends TestCase
     {
         $request = $this->requestWithSession($query, $method);
         $request->headers->add($headers);
-        $request->session()->put(ResolveCurrentGameVersion::SESSION_KEY, 'tbc');
+        $request->session()->put(SharesCurrentGameVersionSession::SESSION_KEY, 'tbc');
 
         $response = (new RemembersCurrentGameVersion)->handle($request, fn () => response('next'));
 
-        $this->assertSame('tbc', $request->session()->get(ResolveCurrentGameVersion::SESSION_KEY));
+        $this->assertSame('tbc', $request->session()->get(SharesCurrentGameVersionSession::SESSION_KEY));
         $this->assertSame('next', $response->getContent());
     }
 
@@ -75,11 +75,11 @@ class RemembersCurrentGameVersionTest extends TestCase
     {
         $request = Request::create('/roster', 'GET', server: ['CONTENT_TYPE' => 'application/json'], content: '{"game_version":"mop"}');
         $request->setLaravelSession(app('session.store'));
-        $request->session()->put(ResolveCurrentGameVersion::SESSION_KEY, 'tbc');
+        $request->session()->put(SharesCurrentGameVersionSession::SESSION_KEY, 'tbc');
 
         $response = (new RemembersCurrentGameVersion)->handle($request, fn () => response('next'));
 
-        $this->assertSame('tbc', $request->session()->get(ResolveCurrentGameVersion::SESSION_KEY));
+        $this->assertSame('tbc', $request->session()->get(SharesCurrentGameVersionSession::SESSION_KEY));
         $this->assertSame('next', $response->getContent());
     }
 

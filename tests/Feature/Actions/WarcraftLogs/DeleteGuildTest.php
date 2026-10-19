@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Actions\WarcraftLogs;
 
+use App\Actions\GameVersion\ListSelectableGameVersions;
 use App\Actions\WarcraftLogs\DeleteGuild;
+use App\Contracts\Actions\GameVersion\CachesSelectableGameVersions;
 use App\Jobs\BuildAddonExportFile;
 use App\Models\Character;
 use App\Models\GameVersion;
@@ -49,6 +51,18 @@ class DeleteGuildTest extends TestCase
 
         $this->assertNull($gameVersion->fresh()->warcraft_logs_guild_id);
         $this->assertNull($report->fresh()->warcraft_logs_guild_id);
+    }
+
+    #[Test]
+    public function it_refreshes_the_selectable_game_versions_cache(): void
+    {
+        [$guild, $gameVersion] = $this->guildWithData();
+        ListSelectableGameVersions::run();
+        request()->attributes->remove(CachesSelectableGameVersions::REQUEST_KEY);
+
+        DeleteGuild::run($guild);
+
+        $this->assertNull(ListSelectableGameVersions::run()->find($gameVersion->id)->warcraft_logs_guild_id);
     }
 
     #[Test]

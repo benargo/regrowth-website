@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Http\Requests\Raid;
 
-use App\Actions\GameVersion\ListSelectableGameVersions;
-use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Contracts\Actions\GameVersion\CachesSelectableGameVersions;
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
 use App\Http\Requests\Raid\AttendanceMatrixRequest;
 use App\Models\Character;
 use App\Models\GameVersion;
@@ -52,7 +52,7 @@ class AttendanceMatrixRequestTest extends TestCase
     {
         $newer = $this->createAttendanceVersion(['release_date' => '2024-06-01']);
         $this->createReport($newer, '2025-01-01 20:00');
-        session([ResolveCurrentGameVersion::SESSION_KEY => $this->gameVersion->slug]);
+        session([SharesCurrentGameVersionSession::SESSION_KEY => $this->gameVersion->slug]);
 
         $this->assertTrue($this->request()->gameVersion()->is($this->gameVersion));
     }
@@ -62,7 +62,7 @@ class AttendanceMatrixRequestTest extends TestCase
     {
         $empty = $this->createAttendanceVersion(['release_date' => '2030-01-01']);
         $character = $this->createCharacter($empty);
-        session([ResolveCurrentGameVersion::SESSION_KEY => $empty->slug]);
+        session([SharesCurrentGameVersionSession::SESSION_KEY => $empty->slug]);
 
         $request = $this->request([
             'rank_ids' => '1,2',
@@ -393,7 +393,7 @@ class AttendanceMatrixRequestTest extends TestCase
         $first = $this->request()->cacheKey('p:');
         $other = $this->createAttendanceVersion();
         $this->createReport($other, '2025-01-01 20:00');
-        session([ResolveCurrentGameVersion::SESSION_KEY => $other->slug]);
+        session([SharesCurrentGameVersionSession::SESSION_KEY => $other->slug]);
 
         $this->assertNotSame($first, $this->request()->cacheKey('p:'));
     }
@@ -458,8 +458,7 @@ class AttendanceMatrixRequestTest extends TestCase
      */
     private function request(array $input = []): AttendanceMatrixRequest
     {
-        ResolveCurrentGameVersion::forget();
-        request()->attributes->remove(ListSelectableGameVersions::class);
+        request()->attributes->remove(CachesSelectableGameVersions::REQUEST_KEY);
         $request = AttendanceMatrixRequest::create('/raiding/attendance/matrix', 'GET', $input);
         $request->setContainer($this->app)->setRedirector($this->app->make(Redirector::class));
         $request->validateResolved();

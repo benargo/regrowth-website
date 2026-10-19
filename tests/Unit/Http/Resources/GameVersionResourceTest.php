@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Http\Resources;
 
-use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
@@ -290,7 +290,7 @@ class GameVersionResourceTest extends TestCase
     {
         $a = GameVersion::factory()->create(['release_date' => '2024-01-01']);
         $b = GameVersion::factory()->create(['release_date' => '2025-01-01']);
-        session([ResolveCurrentGameVersion::SESSION_KEY => $a->slug]);
+        session([SharesCurrentGameVersionSession::SESSION_KEY => $a->slug]);
 
         $arrays = GameVersionResource::collection(GameVersion::all())->scope('switcher')->resolve(new Request);
         $bySlug = collect($arrays)->keyBy('slug');

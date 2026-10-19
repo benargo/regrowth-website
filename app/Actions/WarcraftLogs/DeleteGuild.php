@@ -16,9 +16,9 @@ use Lorisleiva\Actions\Concerns\AsAction;
  * Tags are deleted through Eloquent so GuildTagObserver flushes its caches;
  * the foreign key's cascade only backs this up.
  *
- * The bulk updates skip GameVersionObserver and ReportObserver on purpose: the
- * only reports a detach affects are this guild's, which are cleared here, and
- * the report caches are flushed once instead.
+ * The bulk updates skip GameVersionObserver and ReportObserver; the report
+ * caches are flushed once afterwards, and deleting the guild dispatches
+ * WarcraftLogsGuildDeleted, which flushes the selectable game versions cache.
  */
 class DeleteGuild
 {
