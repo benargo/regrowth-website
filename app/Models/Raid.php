@@ -142,11 +142,15 @@ class Raid extends Model implements BelongsToGameVersion, DatasetModel, EditLock
     // ============ Game version ============
 
     /**
-     * The game version of the raid's phase, or null when the phase has none.
+     * Get the game version key of the raid's phase, or null when the phase has none.
+     *
+     * @return Attribute<int|null>
      */
-    public function owningGameVersion(): ?GameVersion
+    protected function gameVersionId(): Attribute
     {
-        return $this->phase?->gameVersion;
+        return Attribute::make(
+            get: fn (): ?int => $this->phase?->game_version_id,
+        );
     }
 
     /**

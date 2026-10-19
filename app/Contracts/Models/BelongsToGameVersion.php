@@ -2,15 +2,8 @@
 
 namespace App\Contracts\Models;
 
-use App\Models\GameVersion;
-
 /**
- * A record that belongs to one game version, or to none.
+ * A record that belongs to one game version, or to none, exposing that
+ * version's key as its `game_version_id` attribute.
  */
-interface BelongsToGameVersion
-{
-    /**
-     * The game version this record belongs to, or null when it has none.
-     */
-    public function owningGameVersion(): ?GameVersion;
-}
+interface BelongsToGameVersion {}

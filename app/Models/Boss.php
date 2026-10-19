@@ -25,11 +25,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Str;
 use Spatie\EloquentSortable\Sortable;
 use Spatie\EloquentSortable\SortableTrait;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 #[Fillable(['name', 'sort_order', 'notes'])]
 #[Hidden(['created_at', 'updated_at'])]
@@ -46,14 +48,6 @@ class Boss extends Model implements BelongsToGameVersion, DatasetModel, EditLock
     public function usageRelations(): array
     {
         return ['items', 'upcomingAssignmentGroups', 'upcomingAssignments', 'upcomingEvents'];
-    }
-
-    /**
-     * The game version of the boss's raid's phase, if it has one.
-     */
-    public function owningGameVersion(): ?GameVersion
-    {
-        return $this->raid?->phase?->gameVersion;
     }
 
     // ============ Sorting ============
@@ -109,7 +103,31 @@ class Boss extends Model implements BelongsToGameVersion, DatasetModel, EditLock
         });
     }
 
+    // ============ Media ============
+
+    /**
+     * Get the media attached to the boss, each with its `model` relation set to the boss.
+     *
+     * @return MorphMany<Media, $this>
+     */
+    public function media(): MorphMany
+    {
+        return $this->morphMany($this->getMediaModel(), 'model')->chaperone('model');
+    }
+
     // ============ Custom attributes ===========
+
+    /**
+     * Get the game version key of the boss's raid's phase, or null when it has none.
+     *
+     * @return Attribute<int|null>
+     */
+    protected function gameVersionId(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): ?int => $this->raid?->phase?->game_version_id,
+        );
+    }
 
     /**
      * Get the slug for the boss, generated from the name.

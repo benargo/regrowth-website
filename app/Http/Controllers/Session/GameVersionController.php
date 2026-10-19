@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Session;
 
 use App\Actions\GameVersion\RememberGameVersion;
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\RemembersRecordGameVersion;
 use App\Http\Requests\UpdateSessionGameVersionRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
@@ -12,12 +13,13 @@ use Illuminate\Routing\Attributes\Controllers\Middleware;
 class GameVersionController extends Controller
 {
     /**
-     * Store the requested game version in the session and redirect back,
-     * without the previous page's query string when `reset_query` is set.
+     * Store the requested game version in the session, flag the switch as
+     * explicit for the next request, and redirect back, without the previous page's query string when `reset_query` is set.
      */
     public function update(UpdateSessionGameVersionRequest $request): RedirectResponse
     {
         RememberGameVersion::run($request->validated('game_version'));
+        session()->flash(RemembersRecordGameVersion::SWITCHED_FLASH_KEY, true);
 
         if ($request->boolean('reset_query')) {
             return redirect()->to(strtok(url()->previous(), '?'), 303);

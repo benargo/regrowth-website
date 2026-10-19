@@ -330,7 +330,7 @@ class BossTest extends ModelTestCase
         $gameVersion = GameVersion::factory()->create();
         $boss = Boss::factory()->for(Raid::factory()->for(Phase::factory()->for($gameVersion)))->create();
 
-        $this->assertTrue($boss->owningGameVersion()->is($gameVersion));
+        $this->assertSame($gameVersion->id, $boss->game_version_id);
     }
 
     #[Test]
@@ -338,7 +338,7 @@ class BossTest extends ModelTestCase
     {
         $boss = Boss::factory()->for(Raid::factory()->for(Phase::factory()->state(['game_version_id' => null])))->create();
 
-        $this->assertNull($boss->owningGameVersion());
+        $this->assertNull($boss->game_version_id);
     }
 
     // ==================== event relationships ====================

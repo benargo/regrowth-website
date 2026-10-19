@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Actions\GameVersion\ListSelectableGameVersions;
 use App\Enums\BannerPosition;
 use App\Http\Requests\Concerns\ChecksEditLock;
 use App\Models\Phase;
@@ -106,12 +107,11 @@ class UpdateRaidRequest extends StoreRaidRequest
 
             $raid = $this->route('raid');
             $targetPhase = Phase::find($this->input('phase_id'));
-            $currentGameVersion = $raid->owningGameVersion();
-
-            if ($targetPhase->game_version_id === $currentGameVersion?->id || ! $this->hasLinkedRecords($raid)) {
+            if ($targetPhase->game_version_id === $raid->game_version_id || ! $this->hasLinkedRecords($raid)) {
                 return;
             }
 
+            $currentGameVersion = ListSelectableGameVersions::run()->find($raid->game_version_id);
             $scope = $currentGameVersion === null ? 'with no game version' : "in {$currentGameVersion->title}";
 
             $validator->errors()->add('phase_id', "This raid already has bosses, events or items, so it can only move to a phase {$scope}.");

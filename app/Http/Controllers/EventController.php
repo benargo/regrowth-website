@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Events\AttachEventChannel;
+use App\Actions\Events\BuildEventsForViewer;
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Contracts\HasBlizzardIcons;
+use App\Http\Middleware\RemembersRecordGameVersion;
 use App\Http\Resources\CharacterSummaryResource;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\PlayableClassResource;
@@ -16,8 +19,10 @@ use App\Models\PlayableClass;
 use App\Models\Spell;
 use App\Models\TargetMarker;
 use Illuminate\Contracts\Queue\QueueableCollection;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
@@ -27,24 +32,50 @@ use Inertia\Response;
 
 class EventController extends Controller implements HasBlizzardIcons
 {
+    private const int PAST_EVENTS_PER_PAGE = 20;
+
     /**
-     * Display a listing of the resource.
+     * Display the current game version's upcoming events, soonest first, then its past events,
+     * newest first and paginated. Viewers without view-old-raid-plans only see past events that
+     * ended within the last two weeks. `hasAnyEvents` reports whether the version has any live event.
      */
-    public function index(): void
+    public function index(Request $request): Response
     {
-        // TODO: Implement listing of events
-        // This should display upcoming events, with past events accessible via a filter that is toggleable.
-        // The filter should be implemented client-side so that its setting is remembered on a per-user basis.
-        // The events can be fetched after the initial page load via Inertia::optional. We do not need to use
-        // pagination for events, as they are automatically pruned a month after they end.
-        // Each event listing should show basic details such as the title, date/time, and raids, and
-        // clicking on an event should navigate to the event details page.
+        $gameVersion = ResolveCurrentGameVersion::run();
+
+        if ($gameVersion === null) {
+            return Inertia::render('Raiding/Events/Index', [
+                'hasAnyEvents' => false,
+                'upcomingEvents' => EventResource::collection([]),
+                'pastEvents' => EventResource::collection(new LengthAwarePaginator([], 0, self::PAST_EVENTS_PER_PAGE)),
+            ]);
+        }
+
+        $events = Event::live()->where('game_version_id', $gameVersion->id);
+        $canViewOldEvents = $request->user()?->isAuthorizedTo('view-old-raid-plans') ?? false;
+
+        return Inertia::render('Raiding/Events/Index', [
+            'hasAnyEvents' => $events->clone()->exists(),
+            'upcomingEvents' => BuildEventsForViewer::run(
+                $events->clone()->where('end_time', '>=', now())->orderBy('start_time'),
+                $request,
+            ),
+            'pastEvents' => BuildEventsForViewer::run(
+                $events->clone()
+                    ->where('end_time', '<', now())
+                    ->unless($canViewOldEvents, fn (Builder $query) => $query->where('end_time', '>=', now()->subWeeks(2)))
+                    ->orderByDesc('start_time'),
+                $request,
+                self::PAST_EVENTS_PER_PAGE,
+            ),
+        ]);
     }
 
     /**
      * Display the specified resource.
      */
     #[Authorize('view', 'event')]
+    #[Middleware(RemembersRecordGameVersion::class.':event')]
     public function show(Event $event, Request $request): Response
     {
         $event->load('raids.bosses.media', 'raids.media', 'bosses.media', 'assignments.group', 'characters.rank');

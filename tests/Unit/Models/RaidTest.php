@@ -668,15 +668,15 @@ class RaidTest extends ModelTestCase
         $raid = Raid::factory()->for(Phase::factory()->for($gameVersion))->create();
 
         $this->assertInstanceOf(BelongsToGameVersion::class, $raid);
-        $this->assertTrue($raid->owningGameVersion()->is($gameVersion));
+        $this->assertSame($gameVersion->id, $raid->game_version_id);
     }
 
     #[Test]
-    public function it_has_no_owning_game_version_when_its_phase_has_none(): void
+    public function it_has_no_game_version_when_its_phase_has_none(): void
     {
         $raid = Raid::factory()->for(Phase::factory()->state(['game_version_id' => null]))->create();
 
-        $this->assertNull($raid->owningGameVersion());
+        $this->assertNull($raid->game_version_id);
     }
 
     // ==================== media ====================
