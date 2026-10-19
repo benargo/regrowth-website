@@ -11,7 +11,7 @@ use Lorisleiva\Actions\Concerns\AsAction;
 
 /**
  * Builds the events matching the query, with their raids, scoped to
- * `visitors` for guests or `members` (with Discord channels) for signed-in users.
+ * `visitors` for guests or `members` (with Discord channels) for signed-in users. A page size paginates them.
  */
 class BuildEventsForViewer
 {
@@ -20,10 +20,14 @@ class BuildEventsForViewer
     /**
      * @param  Builder<Event>  $events
      */
-    public function handle(Builder $events, Request $request): ScopedResourceCollection
+    public function handle(Builder $events, Request $request, ?int $perPage = null): ScopedResourceCollection
     {
+        $query = $events->clone()->with('raids');
+
         /** @var ScopedResourceCollection $resources */
-        $resources = EventResource::collection($events->clone()->with('raids')->get());
+        $resources = EventResource::collection(
+            $perPage === null ? $query->get() : $query->paginate($perPage)->withQueryString()
+        );
 
         if ($request->user() === null) {
             return $resources->scope('visitors');

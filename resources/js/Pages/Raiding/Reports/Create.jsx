@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, router, usePage } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
+import SectionNav from "@/Components/Navigation/SectionNav";
 import FormContainer from "@/Components/FormContainer";
 import { FieldError, FormRow, OptionSelect, PrimaryButton, TextInput } from "@/Components/FormControls";
 import Icon from "@/Components/FontAwesome/Icon";
@@ -152,6 +153,7 @@ export default function Create() {
     return (
         <Master title="Create Report">
             <SharedHeader title="Create Report" backgroundClass="bg-illidan" />
+            <SectionNav section="raiding" />
 
             <FormContainer maxWidth="2xl">
                     <div className="mb-6">

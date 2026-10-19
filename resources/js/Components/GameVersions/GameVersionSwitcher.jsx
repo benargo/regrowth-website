@@ -1,4 +1,12 @@
-import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/react";
+import {
+    Disclosure,
+    DisclosureButton,
+    DisclosurePanel,
+    Listbox,
+    ListboxButton,
+    ListboxOption,
+    ListboxOptions,
+} from "@headlessui/react";
 import { usePage } from "@inertiajs/react";
 import GameVersionIcon from "@/Components/GameVersions/GameVersionIcon";
 import Icon from "@/Components/FontAwesome/Icon";
@@ -42,7 +50,7 @@ function GameVersionLabel({ gameVersion, className = "", titleClassName = "" }) 
  * when there is only one game version. `classes` is the nav theme.
  */
 export default function GameVersionSwitcher({ classes = {} }) {
-    const { gameVersions = [] } = usePage().props;
+    const { gameVersions: { data: gameVersions = [] } = {} } = usePage().props;
     const { current: currentVersion, switchTo, isSwitching } = useGameVersionSwitch();
 
     if (gameVersions.length <= 1) {
@@ -70,6 +78,7 @@ export default function GameVersionSwitcher({ classes = {} }) {
                 </Tooltip>
                 <ListboxOptions
                     anchor={{ to: "bottom end", gap: 8 }}
+                    modal={false}
                     className={cn(
                         "z-30 w-64 rounded-md py-1 shadow-lg focus:outline-hidden",
                         classes.switcherOptions,
@@ -96,37 +105,52 @@ export default function GameVersionSwitcher({ classes = {} }) {
 }
 
 /**
- * Mobile list of buttons, one per game version. Renders nothing when there is
- * only one game version.
+ * Mobile row showing the current game version that expands to a list of
+ * buttons, one per game version. Renders nothing when there is only one game
+ * version.
  */
 export function GameVersionSwitchList({ className = "", linkClassName = "" }) {
-    const { gameVersions = [] } = usePage().props;
-    const { current, switchTo, isSwitching } = useGameVersionSwitch();
+    const { gameVersions: { data: gameVersions = [] } = {} } = usePage().props;
+    const { current: currentVersion, switchTo, isSwitching } = useGameVersionSwitch();
 
     if (gameVersions.length <= 1) {
         return null;
     }
 
-    return (
-        <div className={className} role="group" aria-label="Game version">
-            {gameVersions.map((gameVersion) => {
-                const isCurrent = gameVersion.slug === current?.slug;
+    const current = currentVersion ?? gameVersions[0];
 
-                return (
-                    <button
-                        key={gameVersion.slug}
-                        type="button"
-                        disabled={isSwitching}
-                        aria-pressed={isCurrent}
-                        onClick={() => switchTo(gameVersion.slug)}
-                        className={cn(linkClassName, "gap-3 disabled:opacity-60", isCurrent && "font-semibold")}
-                    >
-                        <GameVersionIcon gameVersion={gameVersion} />
-                        <GameVersionLabel gameVersion={gameVersion} className="items-start" />
-                        <CurrentMark isVisible={isCurrent} />
-                    </button>
-                );
-            })}
-        </div>
+    return (
+        <Disclosure as="div" className={className}>
+            <DisclosureButton className={cn(linkClassName, "group gap-3 font-medium")}>
+                <GameVersionIcon gameVersion={current} />
+                <span className="flex flex-1 flex-col items-start">
+                    <span className="text-xs opacity-70">Game version</span>
+                    <span>{current.title}</span>
+                </span>
+                <span className="flex transition-transform group-data-open:rotate-180" aria-hidden="true">
+                    <Icon icon="chevron-down" style="regular" className="h-4" />
+                </span>
+            </DisclosureButton>
+            <DisclosurePanel className="space-y-1 py-1 pl-6" role="group" aria-label="Game version">
+                {gameVersions.map((gameVersion) => {
+                    const isCurrent = gameVersion.slug === current.slug;
+
+                    return (
+                        <button
+                            key={gameVersion.slug}
+                            type="button"
+                            disabled={isSwitching}
+                            aria-pressed={isCurrent}
+                            onClick={() => switchTo(gameVersion.slug)}
+                            className={cn(linkClassName, "gap-3 disabled:opacity-60", isCurrent && "font-semibold")}
+                        >
+                            <GameVersionIcon gameVersion={gameVersion} />
+                            <GameVersionLabel gameVersion={gameVersion} className="items-start" />
+                            <CurrentMark isVisible={isCurrent} />
+                        </button>
+                    );
+                })}
+            </DisclosurePanel>
+        </Disclosure>
     );
 }

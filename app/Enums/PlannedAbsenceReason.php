@@ -33,4 +33,16 @@ enum PlannedAbsenceReason: string
             self::Other => 'portal-exit',
         };
     }
+
+    /**
+     * Get the line shown in the main navigation when this absence covers the next raid.
+     */
+    public function navigationLabel(): string
+    {
+        return match ($this) {
+            self::Holiday => 'You\'re on holiday',
+            self::Work => 'You\'re stuck at work',
+            self::Other => 'You\'re away',
+        };
+    }
 }

@@ -101,7 +101,7 @@ export default function AbsenceDetailsFields({
                         icon: reason.icon,
                     }))}
                     invalid={Boolean(errors.reason)}
-                    className="grid scroll-mt-48 grid-cols-1 gap-3 sm:grid-cols-2 lg:scroll-mt-28 lg:grid-cols-3"
+                    className="grid scroll-mt-4 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
                 />
                 <FieldError message={errors.reason} />
             </Fieldset>

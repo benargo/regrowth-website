@@ -6,6 +6,7 @@ import { BenchedTable, GroupTable } from "@/Components/Events/GroupTable";
 import MetaCard, { MetaItem } from "@/Components/MetaCard";
 import BossStrategy from "@/Components/Bosses/BossStrategy";
 import SharedHeader from "@/Components/SharedHeader";
+import SectionNav from "@/Components/Navigation/SectionNav";
 import PageContainer from "@/Components/PageContainer";
 import formatDate from "@/Helpers/FormatDate";
 import formatDuration from "@/Helpers/FormatDuration";
@@ -58,6 +59,7 @@ export default function Show({ event }) {
     return (
         <Master title={event.title}>
             <SharedHeader title={event.title} image={event.banner_url} imagePosition={event.banner_position} />
+            <SectionNav section="raiding" />
 
             <PageContainer>
                 {/* Event metadata card */}

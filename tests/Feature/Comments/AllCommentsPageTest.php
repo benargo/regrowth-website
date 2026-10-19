@@ -3,8 +3,11 @@
 namespace Tests\Feature\Comments;
 
 use App\Models\Comment;
+use App\Models\GameVersion;
 use App\Models\Item;
 use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
@@ -18,6 +21,15 @@ use Tests\TestCase;
 class AllCommentsPageTest extends TestCase
 {
     use RefreshDatabase;
+
+    private GameVersion $gameVersion;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->gameVersion = GameVersion::factory()->create(['release_date' => Carbon::parse('2024-01-01')]);
+    }
 
     #[Test]
     public function guest_users_can_access_comments_index(): void
@@ -150,7 +162,7 @@ class AllCommentsPageTest extends TestCase
     #[Test]
     public function the_index_lists_only_root_comments(): void
     {
-        $root = Comment::factory()->create();
+        $root = $this->rootComment()->create();
         Comment::factory()->replyTo($root)->count(2)->create();
 
         $response = $this->actingAs(User::factory()->officer()->create())->get(route('loot.comments'));
@@ -166,7 +178,7 @@ class AllCommentsPageTest extends TestCase
     #[Test]
     public function the_index_carries_the_first_page_of_replies_per_root(): void
     {
-        $root = Comment::factory()->create();
+        $root = $this->rootComment()->create();
 
         foreach (range(1, 8) as $index) {
             Comment::factory()->replyTo($root)->create([
@@ -186,7 +198,7 @@ class AllCommentsPageTest extends TestCase
     #[Test]
     public function the_index_replies_prop_is_absent_until_requested(): void
     {
-        $root = Comment::factory()->create();
+        $root = $this->rootComment()->create();
         Comment::factory()->replyTo($root)->count(8)->create();
 
         $response = $this->actingAs(User::factory()->officer()->create())->get(route('loot.comments'));
@@ -199,7 +211,7 @@ class AllCommentsPageTest extends TestCase
     #[Test]
     public function a_trashed_root_with_live_replies_is_still_listed_as_a_tombstone(): void
     {
-        $root = Comment::factory()->create();
+        $root = $this->rootComment()->create();
         Comment::factory()->replyTo($root)->create();
         $root->delete();
 
@@ -215,7 +227,7 @@ class AllCommentsPageTest extends TestCase
     #[Test]
     public function a_trashed_root_with_no_live_replies_is_not_listed(): void
     {
-        $root = Comment::factory()->create();
+        $root = $this->rootComment()->create();
         $root->delete();
 
         $response = $this->actingAs(User::factory()->officer()->create())->get(route('loot.comments'));
@@ -226,7 +238,7 @@ class AllCommentsPageTest extends TestCase
     #[Test]
     public function the_index_replies_prop_returns_the_next_page(): void
     {
-        $root = Comment::factory()->create();
+        $root = $this->rootComment()->create();
 
         $replies = collect(range(1, 8))->map(fn (int $index) => Comment::factory()
             ->replyTo($root)
@@ -241,7 +253,7 @@ class AllCommentsPageTest extends TestCase
     #[Test]
     public function the_index_replies_prop_still_paginates_a_tombstoned_root(): void
     {
-        $root = Comment::factory()->create();
+        $root = $this->rootComment()->create();
 
         $replies = collect(range(1, 8))->map(fn (int $index) => Comment::factory()
             ->replyTo($root)
@@ -258,7 +270,7 @@ class AllCommentsPageTest extends TestCase
     #[Test]
     public function the_index_replies_prop_omits_non_root_ids(): void
     {
-        $root = Comment::factory()->create();
+        $root = $this->rootComment()->create();
         $reply = Comment::factory()->replyTo($root)->create();
 
         $response = $this->partialReload([$reply->id => 0, 999999 => 0]);
@@ -271,7 +283,7 @@ class AllCommentsPageTest extends TestCase
     public function the_index_lists_a_tombstoned_root_that_still_has_live_replies(): void
     {
         $user = User::factory()->officer()->create();
-        $root = Comment::factory()->create();
+        $root = $this->rootComment()->create();
         Comment::factory()->replyTo($root)->create();
         $root->delete();
 
@@ -292,7 +304,7 @@ class AllCommentsPageTest extends TestCase
     public function the_index_omits_a_tombstoned_root_with_no_live_replies(): void
     {
         $user = User::factory()->officer()->create();
-        $root = Comment::factory()->create();
+        $root = $this->rootComment()->create();
         $root->delete();
 
         $response = $this->actingAs($user)->get(route('loot.comments'));
@@ -304,11 +316,39 @@ class AllCommentsPageTest extends TestCase
         );
     }
 
+    // ==================== game version ====================
+
+    #[Test]
+    public function it_lists_only_comments_on_the_current_versions_items(): void
+    {
+        $comment = Comment::factory()->for($this->createItem(), 'commentable')->create();
+        Comment::factory()->for(Item::factory()->create(['game_version_id' => GameVersion::factory()->create(['release_date' => Carbon::parse('2023-01-01')])->id]), 'commentable')->create();
+        Comment::factory()->for(Item::factory()->create(), 'commentable')->create();
+
+        $response = $this->get(route('loot.comments'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('comments.data', 1)
+            ->where('comments.data.0.id', $comment->id)
+        );
+    }
+
+    #[Test]
+    public function it_lists_nothing_without_any_game_version(): void
+    {
+        $this->gameVersion->delete();
+        Comment::factory()->for(Item::factory()->create(), 'commentable')->create();
+
+        $response = $this->get(route('loot.comments'));
+
+        $response->assertInertia(fn (Assert $page) => $page->has('comments.data', 0)->has('comments.meta'));
+    }
+
     // ==================== helpers ====================
 
     protected function createItem(): Item
     {
-        return Item::factory()->fromBoss()->withName('Test Item')->create();
+        return Item::factory()->fromBoss()->withName('Test Item')->create(['game_version_id' => $this->gameVersion->id]);
     }
 
     /**
@@ -327,5 +367,15 @@ class AllCommentsPageTest extends TestCase
             'X-Inertia-Partial-Component' => 'Loot/Comments',
             'X-Inertia-Partial-Data' => 'replies',
         ]);
+    }
+
+    /**
+     * A root comment on an item of the current game version.
+     *
+     * @return Factory<Comment>
+     */
+    private function rootComment(): Factory
+    {
+        return Comment::factory()->for($this->createItem(), 'commentable');
     }
 }

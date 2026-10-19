@@ -1,10 +1,9 @@
-import { Link } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
-import ImageCard from "@/Components/ImageCard";
 import Icon from "@/Components/FontAwesome/Icon";
-import { Can } from "@/Components/Authorizable";
+import SectionNav from "@/Components/Navigation/SectionNav";
+import SectionCards from "@/Components/Navigation/SectionCards";
 
 function StatSegment({ icon, label, value, index }) {
     return (
@@ -39,70 +38,18 @@ function StatsRow({ stats }) {
             {items.map((item, index) => (
                 <StatSegment key={item.label} index={index} {...item} />
             ))}
-            <Link
-                href={route("loot.comments")}
-                className="animate-fade-in-up group hover:bg-amber-600/10 flex flex-1 items-center gap-3 px-5 py-4 transition-colors duration-200"
-                style={{ animationDelay: `${items.length * 60}ms` }}
-            >
-                <Icon
-                    icon="external-link"
-                    style="light"
-                    className="text-amber-400 flex size-6 items-center justify-center text-xl"
-                />
-                <span className="flex items-center gap-1.5 text-sm font-semibold text-white">
-                    View all comments
-                    <Icon
-                        icon="chevron-right"
-                        style="solid"
-                        className="text-amber-400 flex size-3 items-center justify-center text-xs transition-transform duration-200 group-hover:translate-x-0.5"
-                    />
-                </span>
-            </Link>
-            <Can permission="view-priorities-page">
-                <Link
-                    href={route("loot.priorities")}
-                    className="animate-fade-in-up group hover:bg-amber-600/10 flex flex-1 items-center gap-3 px-5 py-4 transition-colors duration-200"
-                    style={{ animationDelay: `${(items.length + 1) * 60}ms` }}
-                >
-                    <Icon
-                        icon="external-link"
-                        style="light"
-                        className="text-amber-400 flex size-6 items-center justify-center text-xl"
-                    />
-                    <span className="flex items-center gap-1.5 text-sm font-semibold text-white">
-                        Priority stats
-                        <Icon
-                            icon="chevron-right"
-                            style="solid"
-                            className="text-amber-400 flex size-3 items-center justify-center text-xs transition-transform duration-200 group-hover:translate-x-0.5"
-                        />
-                    </span>
-                </Link>
-            </Can>
         </div>
     );
 }
 
-export default function Index({ raids, stats }) {
+export default function Index({ stats }) {
     return (
         <Master title="Loot biases">
             <SharedHeader backgroundClass="bg-vashj-and-kaelthas" title="Loot biases" />
+            <SectionNav section="loot" />
             <PageContainer>
+                <SectionCards section="loot" />
                 <StatsRow stats={stats} />
-                <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {raids.data.map((raid) => (
-                        <ImageCard
-                            key={raid.id}
-                            href={route("loot.raids.show", { raid: raid.id, name: raid.slug })}
-                            image={raid.banner_url}
-                            imagePosition={raid.banner_position}
-                            backgroundClass="bg-brown-900"
-                            color={raid.color}
-                            eyebrow={raid.phase_number ? `Phase ${raid.phase_number}` : null}
-                            heading={raid.name}
-                        />
-                    ))}
-                </div>
             </PageContainer>
         </Master>
     );

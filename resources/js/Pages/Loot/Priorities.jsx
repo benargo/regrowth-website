@@ -3,7 +3,8 @@ import { Deferred } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
-import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
+import EmptyState from "@/Components/EmptyState";
+import SectionNav from "@/Components/Navigation/SectionNav";
 import Icon from "@/Components/FontAwesome/Icon";
 import { TableHeader } from "@/Components/Table";
 import useLocalStorage from "@/Hooks/useLocalStorage";
@@ -233,7 +234,7 @@ function TableSkeleton() {
     );
 }
 
-function EmptyState() {
+function NoPrioritiesYet() {
     return (
         <div className="flex flex-col items-center gap-3 rounded border border-amber-600/30 py-16 text-center">
             <Icon icon="sack" style="light" className="text-4xl text-amber-500/70" />
@@ -252,7 +253,7 @@ function PrioritiesTable({ phases, table }) {
     const rows = [...table.role_rows, ...table.class_groups];
 
     if (rows.length === 0) {
-        return <EmptyState />;
+        return <NoPrioritiesYet />;
     }
 
     const flatRows = flattenRows(rows);
@@ -287,14 +288,7 @@ export default function Priorities({ phases, table }) {
     return (
         <Master title="Priority stats">
             <SharedHeader backgroundClass="bg-vashj-and-kaelthas" title="Highest priority stats" />
-            <ToolNav>
-                <div className="flex items-center space-x-4">
-                    <ToolNavLink href={route("loot.index")}>
-                        <Icon icon="arrow-left" style="solid" className="mr-2" />
-                        <span>Back to loot bias tool</span>
-                    </ToolNavLink>
-                </div>
-            </ToolNav>
+            <SectionNav section="loot" />
             <PageContainer>
                 <p className="mb-8 text-lg">
                     This table shows how loot priorities stack up across the raid. For each class, spec, or role, it
@@ -302,7 +296,7 @@ export default function Priorities({ phases, table }) {
                     for an item's drop currently sits.
                 </p>
                 {phases.length === 0 ? (
-                    <EmptyState />
+                    <EmptyState icon="sack" message="Loot priorities are not available for this game version." />
                 ) : (
                     <Deferred data="table" fallback={<TableSkeleton />}>
                         <PrioritiesTable phases={phases} table={table} />

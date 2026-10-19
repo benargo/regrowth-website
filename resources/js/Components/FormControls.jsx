@@ -374,7 +374,7 @@ export function FormSection({ id, legend, children }) {
     return (
         <Fieldset
             id={id}
-            className="border-amber-600/40 flex scroll-mt-48 flex-col gap-6 border-t pt-6 first:border-t-0 first:pt-0 lg:scroll-mt-28"
+            className="border-amber-600/40 flex scroll-mt-4 flex-col gap-6 border-t pt-6 first:border-t-0 first:pt-0"
         >
             <Legend className="font-serif text-xl text-white">{legend}</Legend>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">{children}</div>

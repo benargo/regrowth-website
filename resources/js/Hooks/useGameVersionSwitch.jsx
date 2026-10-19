@@ -44,7 +44,7 @@ export function useResetQueryOnGameVersionSwitch() {
  * for the current version or while a switch is in flight.
  */
 export default function useGameVersionSwitch() {
-    const { gameVersions = [] } = usePage().props;
+    const { gameVersions: { data: gameVersions = [], meta: { current: currentId } = {} } = {} } = usePage().props;
     const isSwitching = useSyncExternalStore(subscribe, () => switchState.isSwitching);
     const current = gameVersions.find((gameVersion) => gameVersion.id === currentId);
 

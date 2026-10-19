@@ -38,14 +38,14 @@ export function EventsSkeleton() {
     );
 }
 
-export default function EventsTable({ events }) {
+export default function EventsTable({ events, emptyMessage = "No events scheduled this week." }) {
     const rows = events?.data ?? events ?? [];
 
     if (rows.length === 0) {
         return (
             <div className="py-16 text-center text-gray-400">
-                <Icon icon="calendar-xmark" style="solid" className="mb-4 text-4xl" />
-                <p>No events scheduled this week.</p>
+                <Icon icon="calendar-times" style="solid" className="mb-4 text-4xl" />
+                <p>{emptyMessage}</p>
             </div>
         );
     }

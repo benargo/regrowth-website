@@ -27,7 +27,7 @@ export default function Index() {
                             <BandHeading level={2} headingClassName="text-5xl md:text-7xl">
                                 {user.display_name}
                             </BandHeading>
-                            <p className="text-gray-400 text-sm">@{user.username}</p>
+                            <p className="text-sm text-gray-400">@{user.username}</p>
                             {roles.length > 0 && (
                                 <div className="mt-2 flex flex-wrap gap-2">
                                     {roles.map((role) => (
@@ -47,7 +47,7 @@ export default function Index() {
             </Band>
 
             {/* Planned absences section */}
-            <Band tone="shaded" edge="top">
+            <Band tone="shaded" edge="both">
                 <header className="mb-4 flex flex-col items-center justify-between md:flex-row">
                     <BandHeading level={2} eyebrow="My Account">
                         Planned Absences
@@ -55,7 +55,7 @@ export default function Index() {
                     <Can permission="create-planned-absences">
                         <Link
                             href={route("account.absences.create")}
-                            className="bg-amber-700 hover:bg-amber-800 focus:bg-amber-800 focus:ring-amber-500 active:bg-amber-900 mt-3 inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:outline-hidden md:mt-0"
+                            className="mt-3 inline-flex items-center rounded-md border border-transparent bg-amber-700 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-amber-800 focus:bg-amber-800 focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:outline-hidden active:bg-amber-900 md:mt-0"
                         >
                             <Icon icon="plus" style="solid" className="mr-1.5 h-4" />
                             Add Absence
