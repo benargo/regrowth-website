@@ -10,8 +10,8 @@ import useOrderAutosave from "@/Hooks/useOrderAutosave";
 /**
  * The raid's bosses in the order they're fought. Dropping a boss saves the
  * order straight away as `boss_ids`. Each boss links to its Edit page, and an
- * "Add boss" link opens the boss Create page for this raid; both appear only
- * once the boss management routes exist. Outside autosave (the setup wizard),
+ * "Add boss" link opens the boss Create page for this raid; the Add boss link
+ * returns to whichever raid page opened it. Outside autosave (the setup wizard),
  * a button moves on through `onSaved`.
  */
 export default function BossesSection({ raid, routes, submitLabel = "Save and continue", onSaved, autosave = false }) {
@@ -23,7 +23,6 @@ export default function BossesSection({ raid, routes, submitLabel = "Save and co
         field: "boss_ids",
         key: `raid-${raid.id}-boss-order`,
     });
-    const hasBossPages = route().has("management.bosses.create");
 
     return (
         <Relationships
@@ -46,16 +45,12 @@ export default function BossesSection({ raid, routes, submitLabel = "Save and co
                             <div className="bg-brown-900 flex items-center gap-3 px-3 py-2">
                                 {dragHandle}
                                 <span className="w-6 shrink-0 text-right text-sm text-gray-300">{index + 1}.</span>
-                                {hasBossPages ? (
-                                    <Link
-                                        href={route("management.bosses.edit", boss.id)}
-                                        className={`rounded text-white underline hover:text-amber-200 ${focusRing}`}
-                                    >
-                                        {boss.name}
-                                    </Link>
-                                ) : (
-                                    <span className="text-white">{boss.name}</span>
-                                )}
+                                <Link
+                                    href={route("management.bosses.edit", boss.id)}
+                                    className={`rounded text-white underline hover:text-amber-200 ${focusRing}`}
+                                >
+                                    {boss.name}
+                                </Link>
                             </div>
                         )}
                     />
@@ -70,17 +65,15 @@ export default function BossesSection({ raid, routes, submitLabel = "Save and co
                 </div>
             )}
 
-            {hasBossPages && (
-                <p className="text-sm">
-                    <Link
-                        href={route("management.bosses.create", { raid: raid.id, from: "raid-setup" })}
-                        className={linkClassName}
-                    >
-                        <Icon icon="plus" className="mr-1" />
-                        Add boss<span className="sr-only"> to {raid.name}</span>
-                    </Link>
-                </p>
-            )}
+            <p className="text-sm">
+                <Link
+                    href={route("management.bosses.create", { raid: raid.id, from: autosave ? "raid-edit" : "raid-setup" })}
+                    className={linkClassName}
+                >
+                    <Icon icon="plus" className="mr-1" />
+                    Add boss<span className="sr-only"> to {raid.name}</span>
+                </Link>
+            </p>
 
             {!autosave && onSaved && (
                 <div>

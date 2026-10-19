@@ -5,6 +5,7 @@ use App\Http\Controllers\Account\PlannedAbsenceController as AccountPlannedAbsen
 use App\Http\Controllers\AttendanceDashboardController;
 use App\Http\Controllers\AttendanceGraphsController;
 use App\Http\Controllers\AttendanceMatrixController;
+use App\Http\Controllers\BossController;
 use App\Http\Controllers\BossStrategyController;
 use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\CommentController;
@@ -140,11 +141,14 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::get('/addon/settings', AddonSettingsController::class)->name('addon.settings');
 
     /**
-     * Boss strategies management
+     * Bosses management
      */
-    Route::get('/boss-strategies', [BossStrategyController::class, 'index'])->name('boss-strategies.index');
-    Route::get('/boss-strategies/{boss}/{slug}', [BossStrategyController::class, 'edit'])->name('boss-strategies.edit');
-    Route::patch('/boss-strategies/{boss}', [BossStrategyController::class, 'update'])->name('boss-strategies.update');
+    Route::get('/bosses', [BossController::class, 'index'])->name('bosses.index');
+    Route::get('/bosses/create', [BossController::class, 'create'])->name('bosses.create');
+    Route::post('/bosses', [BossController::class, 'store'])->name('bosses.store');
+    Route::get('/bosses/{boss}/edit', [BossController::class, 'edit'])->name('bosses.edit');
+    Route::patch('/bosses/{boss}', [BossController::class, 'update'])->name('bosses.update');
+    Route::delete('/bosses/{boss}', [BossController::class, 'destroy'])->name('bosses.destroy');
 
     /**
      * Event templates

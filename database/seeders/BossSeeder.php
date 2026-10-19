@@ -8,10 +8,15 @@ use Illuminate\Database\Seeder;
 class BossSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Seed the TBC bosses into an empty bosses table, with their seeded ids
+     * and encounter order. Does nothing once the table holds any boss.
      */
     public function run(): void
     {
+        if (Boss::exists()) {
+            return;
+        }
+
         $bosses = [
             // Karazhan (raid_id: 1)
             ['id' => 2, 'name' => 'Servants\' Quarters', 'raid_id' => 1, 'sort_order' => 1],
@@ -84,10 +89,9 @@ class BossSeeder extends Seeder
         ];
 
         foreach ($bosses as $boss) {
-            // Boss auto-assigns sort_order on create, so the seeded value is
-            // reapplied via a plain update() afterwards to force it to stick.
-            Boss::query()->updateOrCreate(['id' => $boss['id']], $boss)
-                ->update(['sort_order' => $boss['sort_order']]);
+            Boss::withoutEvents(function () use ($boss): void {
+                Boss::forceCreate($boss)->update(['sort_order' => $boss['sort_order']]);
+            });
         }
     }
 }

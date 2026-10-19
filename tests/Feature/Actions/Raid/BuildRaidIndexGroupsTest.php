@@ -3,7 +3,6 @@
 namespace Tests\Feature\Actions\Raid;
 
 use App\Actions\Raid\BuildRaidIndexGroups;
-use App\Actions\Raid\BuildRaidRoutes;
 use App\Http\Resources\RaidResource;
 use App\Models\Boss;
 use App\Models\Event;
@@ -92,7 +91,7 @@ class BuildRaidIndexGroupsTest extends TestCase
         Raid::factory()->for(Phase::factory()->for($second))->count(2)->create();
 
         DB::enableQueryLog();
-        BuildRaidIndexGroups::run(new BuildRaidRoutes);
+        BuildRaidIndexGroups::run();
         $countQueries = collect(DB::getQueryLog())->filter(
             fn (array $query): bool => str_contains($query['query'], 'as `bosses_count`'),
         );
@@ -112,6 +111,6 @@ class BuildRaidIndexGroupsTest extends TestCase
         return array_map(fn (array $group): array => [
             'game_version' => $group['game_version']?->resolve(new Request),
             'raids' => array_values($group['raids']->resolve(new Request)),
-        ], BuildRaidIndexGroups::run(new BuildRaidRoutes));
+        ], BuildRaidIndexGroups::run());
     }
 }

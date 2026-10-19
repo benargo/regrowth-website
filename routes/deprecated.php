@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\RaidingController;
+use App\Models\Boss;
 use Illuminate\Support\Facades\Route;
 
 // Old officers' dashboard route, now redirects to /manage
@@ -34,3 +35,10 @@ Route::get('/daily-quests', fn () => abort(410));
 Route::get('/manage/daily-quests', fn () => abort(410));
 Route::post('/manage/daily-quests', fn () => abort(410));
 Route::get('/manage/daily-quests/audit', fn () => abort(410));
+
+// Old boss strategy pages, now the boss management pages under /manage/bosses.
+Route::get('/manage/boss-strategies', fn () => redirect()->route('management.bosses.index', [], 301));
+Route::get('/manage/boss-strategies/{boss}/{slug}', fn (Boss $boss) => redirect()->route('management.bosses.edit', $boss, 301));
+
+// Old boss strategy update, now part of PATCH /manage/bosses/{boss}, which takes image ids rather than URLs. Returns 410 Gone.
+Route::patch('/manage/boss-strategies/{boss}', fn () => abort(410));

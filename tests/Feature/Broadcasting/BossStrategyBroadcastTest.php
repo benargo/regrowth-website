@@ -64,18 +64,14 @@ class BossStrategyBroadcastTest extends TestCase
     }
 
     #[Test]
-    public function boss_strategy_update_queues_model_broadcast(): void
+    public function a_boss_update_queues_the_model_broadcast(): void
     {
-        $user = User::factory()->withPermissions('manage-boss-strategies', 'view-officer-dashboard')->create();
         $boss = Boss::factory()->create();
-        $user->refresh();
-
+        $officer = User::factory()->withPermissions('view-officer-dashboard', 'edit-datasets')->create();
         Queue::fake();
 
-        $this->actingAs($user)
-            ->patch(route('management.boss-strategies.update', $boss), [
-                'notes' => 'Updated notes.',
-            ])
+        $this->actingAs($officer)
+            ->patch(route('management.bosses.update', $boss), ['notes' => 'Updated notes.'])
             ->assertRedirect();
 
         Queue::assertPushed(

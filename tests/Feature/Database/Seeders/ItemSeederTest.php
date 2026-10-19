@@ -263,6 +263,19 @@ class ItemSeederTest extends TestCase
     }
 
     #[Test]
+    public function seeder_leaves_out_a_boss_that_was_deleted(): void
+    {
+        $this->fakeSaloon();
+        Boss::find(1)->delete();
+
+        $this->seedSpecificItems([28453], $this->gameVersion->slug);
+
+        $item = Item::where('blizzard_id', 28453)->first();
+        $this->assertNull($item->boss_id);
+        $this->assertSame([1], $item->raids->pluck('id')->all());
+    }
+
+    #[Test]
     public function every_seeder_row_declares_at_least_one_raid(): void
     {
         $seeder = app(ItemSeeder::class);

@@ -16,7 +16,7 @@ class BuildRaidRoutesTest extends TestCase
     {
         $this->assertSame(
             ['create' => 'http://localhost/manage/raids/create'],
-            (new BuildRaidRoutes)->forIndex(),
+            BuildRaidRoutes::make()->forIndex(),
         );
     }
 
@@ -27,7 +27,7 @@ class BuildRaidRoutesTest extends TestCase
             'index' => 'http://localhost/manage/raids',
             'update' => 'http://localhost/manage/raids/7',
             'review' => 'http://localhost/manage/raids/7/review',
-        ], (new BuildRaidRoutes)->forEdit($this->raid()));
+        ], BuildRaidRoutes::make()->forEdit($this->raid()));
     }
 
     #[Test]
@@ -35,7 +35,7 @@ class BuildRaidRoutesTest extends TestCase
     {
         $this->assertSame(
             'http://localhost/manage/raids/7/setup/bosses',
-            (new BuildRaidRoutes)->afterStore($this->raid()),
+            BuildRaidRoutes::make()->afterStore($this->raid()),
         );
     }
 
@@ -44,7 +44,7 @@ class BuildRaidRoutesTest extends TestCase
     {
         $this->assertSame([
             ['value' => 'bosses', 'label' => 'Bosses', 'component' => 'BossesSection', 'href' => 'http://localhost/manage/raids/7/setup/bosses'],
-        ], (new BuildRaidRoutes)->steps($this->raid()));
+        ], BuildRaidRoutes::make()->steps($this->raid()));
     }
 
     #[Test]
@@ -53,7 +53,7 @@ class BuildRaidRoutesTest extends TestCase
         $this->assertSame([
             'edit' => 'http://localhost/manage/raids/7/edit',
             'destroy' => 'http://localhost/manage/raids/7',
-        ], (new BuildRaidRoutes)->links($this->raid()));
+        ], BuildRaidRoutes::make()->links($this->raid()));
     }
 
     // ==================== helpers ====================

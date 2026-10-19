@@ -8,8 +8,11 @@ use App\Http\Resources\RaidResource;
 use App\Models\Boss;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
@@ -195,5 +198,90 @@ class BossResourceTest extends TestCase
         $this->assertArrayHasKey('notes', $array);
         $this->assertArrayHasKey('images', $array);
         $this->assertArrayHasKey('sort_order', $array);
+    }
+
+    // ==================== management ====================
+
+    #[Test]
+    public function the_default_shape_is_unchanged(): void
+    {
+        $boss = Boss::factory()->create();
+
+        $this->assertSame(
+            ['id', 'name', 'slug', 'notes', 'images', 'sort_order', 'raid'],
+            array_keys((new BossResource($boss))->resolve(new Request)),
+        );
+    }
+
+    #[Group('contract')]
+    #[Test]
+    public function the_default_shape_leaves_out_the_management_fields_even_when_counted(): void
+    {
+        $boss = Boss::withUsageCounts()
+            ->withCount(['media', 'pastAssignments', 'pastEvents', 'templateEvents'])
+            ->find(Boss::factory()->create()->id);
+
+        $array = (new BossResource($boss))->withLinks(['edit' => '/edit'])->resolve(new Request);
+
+        $this->assertSame(['id', 'name', 'slug', 'notes', 'images', 'sort_order', 'raid'], array_keys($array));
+    }
+
+    #[Test]
+    public function the_management_scope_adds_links_usage_and_past_link_counts_and_the_strategy_flag(): void
+    {
+        $boss = Boss::factory()->create(['notes' => null]);
+        $counted = Boss::withUsageCounts()
+            ->withCount(['media', 'pastAssignments', 'pastEvents', 'templateEvents'])
+            ->find($boss->id);
+
+        $array = (new BossResource($counted))
+            ->withLinks(['edit' => '/edit', 'destroy' => '/destroy'])
+            ->scope('management')
+            ->resolve(new Request);
+
+        $this->assertSame([
+            'id', 'name', 'slug', 'notes', 'sort_order', 'raid', 'items_count', 'links', 'meta',
+            'past_assignments_count', 'past_events_count', 'raid_id', 'template_events_count',
+            'upcoming_assignment_groups_count', 'upcoming_assignments_count', 'upcoming_events_count',
+        ], array_keys($array));
+        $this->assertSame(['edit' => '/edit', 'destroy' => '/destroy'], $array['links']);
+        $this->assertSame(['has_strategy' => false], $array['meta']);
+        $this->assertSame($boss->raid_id, $array['raid_id']);
+        $this->assertSame(0, $array['items_count']);
+    }
+
+    #[Test]
+    public function the_management_scope_flags_a_strategy_from_notes_or_images(): void
+    {
+        Storage::fake('public');
+        $withNotes = Boss::factory()->create(['notes' => 'Interrupt the cast.']);
+        $withImage = Boss::factory()->create(['notes' => null]);
+        $withImage->addMedia(UploadedFile::fake()->image('room.png'))->toMediaCollection();
+
+        $flags = Boss::withCount('media')
+            ->whereKey([$withNotes->id, $withImage->id])
+            ->get()
+            ->map(fn (Boss $boss): bool => (new BossResource($boss))->scope('management')->resolve(new Request)['meta']['has_strategy'])
+            ->all();
+
+        $this->assertSame([true, true], $flags);
+    }
+
+    #[Test]
+    public function the_management_scope_lists_strategy_images_by_id_in_their_order(): void
+    {
+        Storage::fake('public');
+        $boss = Boss::factory()->create();
+        $first = $boss->addMedia(UploadedFile::fake()->image('first.png'))->toMediaCollection();
+        $second = $boss->addMedia(UploadedFile::fake()->image('second.png'))->toMediaCollection();
+        Media::setNewOrder([$second->id, $first->id]);
+
+        $array = (new BossResource($boss->fresh()->load('media')))->scope('management')->resolve(new Request);
+
+        $this->assertSame([
+            ['id' => $second->id, 'url' => $second->getUrl()],
+            ['id' => $first->id, 'url' => $first->getUrl()],
+        ], $array['strategy_images']);
+        $this->assertArrayNotHasKey('images', $array);
     }
 }

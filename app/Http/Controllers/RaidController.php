@@ -29,11 +29,11 @@ class RaidController extends Controller
      */
     #[ScopesResourceTo(RaidResource::class, 'management')]
     #[Authorize('viewAny', Raid::class)]
-    public function index(BuildRaidRoutes $routes): Response
+    public function index(): Response
     {
         return Inertia::render('Manage/Raids/Index', [
-            'groups' => BuildRaidIndexGroups::run($routes),
-            'routes' => $routes->forIndex(),
+            'groups' => BuildRaidIndexGroups::run(),
+            'routes' => BuildRaidRoutes::make()->forIndex(),
         ]);
     }
 
@@ -41,8 +41,10 @@ class RaidController extends Controller
      * Show the form for adding a raid, preselecting the phase given as `?phase=`.
      */
     #[Authorize('create', Raid::class)]
-    public function create(Request $request, BuildRaidRoutes $routes): Response
+    public function create(Request $request): Response
     {
+        $routes = BuildRaidRoutes::make();
+
         return Inertia::render('Manage/Raids/Create', [
             'phaseId' => Phase::find($request->integer('phase'))?->id,
             'options' => BuildRaidFormOptions::run(),
@@ -55,11 +57,11 @@ class RaidController extends Controller
      * Store a new raid and continue to its setup wizard.
      */
     #[Authorize('create', Raid::class)]
-    public function store(StoreRaidRequest $request, BuildRaidRoutes $routes): RedirectResponse
+    public function store(StoreRaidRequest $request): RedirectResponse
     {
         $raid = Raid::create($request->validated());
 
-        return redirect($routes->afterStore($raid))->with('success', "Added {$raid->name}.");
+        return redirect(BuildRaidRoutes::make()->afterStore($raid))->with('success', "Added {$raid->name}.");
     }
 
     /**
@@ -67,8 +69,9 @@ class RaidController extends Controller
      */
     #[ScopesResourceTo(RaidResource::class, 'management')]
     #[Authorize('update', 'raid')]
-    public function edit(Request $request, Raid $raid, BuildRaidRoutes $routes): Response
+    public function edit(Request $request, Raid $raid): Response
     {
+        $routes = BuildRaidRoutes::make();
         $editLock = ResolveEditLock::run($request, $raid);
 
         return Inertia::render('Manage/Raids/Edit', [
@@ -85,8 +88,9 @@ class RaidController extends Controller
      */
     #[ScopesResourceTo(RaidResource::class, 'management')]
     #[Authorize('update', 'raid')]
-    public function setup(Request $request, Raid $raid, RaidSetupStep $step, BuildRaidRoutes $routes): Response
+    public function setup(Request $request, Raid $raid, RaidSetupStep $step): Response
     {
+        $routes = BuildRaidRoutes::make();
         $editLock = ResolveEditLock::run($request, $raid);
 
         return Inertia::render('Manage/Raids/Setup', [
@@ -106,8 +110,10 @@ class RaidController extends Controller
      */
     #[ScopesResourceTo(RaidResource::class, 'management')]
     #[Authorize('update', 'raid')]
-    public function review(Raid $raid, BuildRaidRoutes $routes): Response
+    public function review(Raid $raid): Response
     {
+        $routes = BuildRaidRoutes::make();
+
         return Inertia::render('Manage/Raids/Review', [
             'raid' => $raid->loadMissing(['media', 'phase', 'bosses'])->toResource(),
             'options' => BuildRaidFormOptions::run(),

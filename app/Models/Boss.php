@@ -2,11 +2,19 @@
 
 namespace App\Models;
 
+use App\Contracts\Models\BelongsToGameVersion;
+use App\Contracts\Models\DatasetModel;
+use App\Contracts\Models\EditLockable;
+use App\Contracts\Models\HasUsage;
 use App\Http\Resources\BossResource;
 use App\Models\Concerns\FlushesRaidingCacheOnSave;
+use App\Models\Concerns\HasEditLock;
+use App\Models\Concerns\TracksUsage;
+use App\Policies\DatasetPolicy;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\BroadcastableModelEventOccurred;
 use Illuminate\Database\Eloquent\BroadcastsEvents;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,6 +22,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Str;
@@ -22,11 +31,30 @@ use Spatie\EloquentSortable\SortableTrait;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-#[Fillable(['name', 'raid_id', 'sort_order', 'notes'])]
+#[Fillable(['name', 'sort_order', 'notes'])]
 #[Hidden(['created_at', 'updated_at'])]
-class Boss extends Model implements HasMedia, Sortable
+#[UsePolicy(DatasetPolicy::class)]
+class Boss extends Model implements BelongsToGameVersion, DatasetModel, EditLockable, HasMedia, HasUsage, Sortable
 {
-    use BroadcastsEvents, FlushesRaidingCacheOnSave, HasFactory, InteractsWithMedia, SortableTrait;
+    use BroadcastsEvents, FlushesRaidingCacheOnSave, HasEditLock, HasFactory, InteractsWithMedia, SortableTrait, TracksUsage;
+
+    /**
+     * Relationships whose existing rows mark this boss as in use.
+     *
+     * @return list<string>
+     */
+    public function usageRelations(): array
+    {
+        return ['items', 'upcomingAssignmentGroups', 'upcomingAssignments', 'upcomingEvents'];
+    }
+
+    /**
+     * The game version of the boss's raid's phase, if it has one.
+     */
+    public function owningGameVersion(): ?GameVersion
+    {
+        return $this->raid?->phase?->gameVersion;
+    }
 
     // ============ Sorting ============
 
@@ -52,7 +80,7 @@ class Boss extends Model implements HasMedia, Sortable
     // ============ Broadcasting ============
 
     /**
-     * Only broadcast on update events — boss creation/deletion is managed in seeders/migrations.
+     * Broadcasts `BossStrategyChanged` on update only.
      *
      * @return array<int, PrivateChannel>
      */
@@ -96,13 +124,33 @@ class Boss extends Model implements HasMedia, Sortable
     // ============ Relationships ===========
 
     /**
-     * Get the raid that this boss belongs to.
+     * Get the assignment groups for this boss.
      *
-     * @return BelongsTo<Raid, $this>
+     * @return HasMany<EventAssignmentGroup, $this>
      */
-    public function raid(): BelongsTo
+    public function assignmentGroups(): HasMany
     {
-        return $this->belongsTo(Raid::class);
+        return $this->hasMany(EventAssignmentGroup::class);
+    }
+
+    /**
+     * Get the assignment groups for this boss in events that have ended.
+     *
+     * @return HasMany<EventAssignmentGroup, $this>
+     */
+    public function pastAssignmentGroups(): HasMany
+    {
+        return $this->assignmentGroups()->whereHas('event', fn (Builder $query) => $query->where('end_time', '<', now()));
+    }
+
+    /**
+     * Get the assignment groups for this boss in events that have not ended.
+     *
+     * @return HasMany<EventAssignmentGroup, $this>
+     */
+    public function upcomingAssignmentGroups(): HasMany
+    {
+        return $this->assignmentGroups()->whereHas('event', fn (Builder $query) => $query->where('end_time', '>=', now()));
     }
 
     /**
@@ -116,13 +164,23 @@ class Boss extends Model implements HasMedia, Sortable
     }
 
     /**
-     * Get the items that drop from this boss.
+     * Get the assignments for this boss in events that have ended.
      *
-     * @return HasMany<Item>
+     * @return HasMany<EventAssignment, $this>
      */
-    public function items(): HasMany
+    public function pastAssignments(): HasMany
     {
-        return $this->hasMany(Item::class, 'boss_id');
+        return $this->assignments()->whereHas('event', fn (Builder $query) => $query->where('end_time', '<', now()));
+    }
+
+    /**
+     * Get the assignments for this boss in events that have not ended.
+     *
+     * @return HasMany<EventAssignment, $this>
+     */
+    public function upcomingAssignments(): HasMany
+    {
+        return $this->assignments()->whereHas('event', fn (Builder $query) => $query->where('end_time', '>=', now()));
     }
 
     /**
@@ -134,5 +192,68 @@ class Boss extends Model implements HasMedia, Sortable
     {
         return $this->hasManyThrough(Comment::class, Item::class, 'boss_id', 'commentable_id')
             ->where('commentable_type', Item::class);
+    }
+
+    /**
+     * Get the events and event templates that include this boss.
+     *
+     * @return BelongsToMany<Event, $this>
+     */
+    public function events(): BelongsToMany
+    {
+        return $this->belongsToMany(Event::class, 'pivot_events_bosses', 'boss_id', 'event_id')
+            ->using(EventBoss::class)
+            ->withPivot('sort_order')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the events that include this boss and have ended.
+     *
+     * @return BelongsToMany<Event, $this>
+     */
+    public function pastEvents(): BelongsToMany
+    {
+        return $this->events()->where('events.end_time', '<', now());
+    }
+
+    /**
+     * Get the event templates that include this boss.
+     *
+     * @return BelongsToMany<Event, $this>
+     */
+    public function templateEvents(): BelongsToMany
+    {
+        return $this->events()->where('events.is_template', true);
+    }
+
+    /**
+     * Get the events that include this boss and have not ended.
+     *
+     * @return BelongsToMany<Event, $this>
+     */
+    public function upcomingEvents(): BelongsToMany
+    {
+        return $this->events()->where('events.end_time', '>=', now());
+    }
+
+    /**
+     * Get the items that drop from this boss.
+     *
+     * @return HasMany<Item, $this>
+     */
+    public function items(): HasMany
+    {
+        return $this->hasMany(Item::class, 'boss_id');
+    }
+
+    /**
+     * Get the raid that this boss belongs to.
+     *
+     * @return BelongsTo<Raid, $this>
+     */
+    public function raid(): BelongsTo
+    {
+        return $this->belongsTo(Raid::class);
     }
 }

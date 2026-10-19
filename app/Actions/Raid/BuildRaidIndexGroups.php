@@ -21,8 +21,10 @@ class BuildRaidIndexGroups
     /**
      * @return list<array{game_version: GameVersionResource|null, raids: AnonymousResourceCollection}>
      */
-    public function handle(BuildRaidRoutes $routes): array
+    public function handle(): array
     {
+        $routes = BuildRaidRoutes::make();
+
         $groups = GroupRaidsByGameVersion::run();
 
         (new Collection(collect($groups)->flatMap(fn (array $group): array => $group['raids']->all())->all()))

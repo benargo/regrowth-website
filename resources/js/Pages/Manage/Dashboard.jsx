@@ -61,12 +61,6 @@ export default function Dashboard({ discordRoles }) {
                                 <p className="mb-1 text-sm">Review raid attendance records.</p>
                             </DashboardCard>
                         </Can>
-                        <Can permission="manage-boss-strategies">
-                            <DashboardCard href={route("management.boss-strategies.index")} icon="book">
-                                <h3 className="text-md">Boss strategies</h3>
-                                <p className="mb-1 text-sm">Create and manage boss strategies for raids.</p>
-                            </DashboardCard>
-                        </Can>
                         <Can permission="manage-raid-plans">
                             <DashboardCard href={route("management.event-templates.index")} icon="copy">
                                 <h3 className="text-md">Event templates</h3>
@@ -126,6 +120,14 @@ export default function Dashboard({ discordRoles }) {
                                 <h3 className="text-md">Manage raids</h3>
                                 <p className="mb-1 text-sm">
                                     Set up each game version's raids, their banners and the order of their bosses.
+                                </p>
+                            </DashboardCard>
+                        </Can>
+                        <Can permission="edit-datasets">
+                            <DashboardCard href={route("management.bosses.index")} icon="skull">
+                                <h3 className="text-md">Manage bosses</h3>
+                                <p className="mb-1 text-sm">
+                                    Add each raid's bosses in encounter order and write their strategies.
                                 </p>
                             </DashboardCard>
                         </Can>
