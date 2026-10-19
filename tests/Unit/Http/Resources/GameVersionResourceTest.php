@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Http\Resources;
 
-use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
@@ -190,6 +189,7 @@ class GameVersionResourceTest extends TestCase
                     'value' => WarcraftLogsNamespace::Anniversary,
                     'label' => 'The Burning Crusade Classic Anniversary',
                 ],
+                'url' => 'https://fresh.warcraftlogs.com/guilds/774848-regrowth',
             ],
         ], $array);
     }
@@ -211,6 +211,7 @@ class GameVersionResourceTest extends TestCase
         $this->assertNull($array['blizzard']['namespace']);
         $this->assertNull($array['warcraftlogs']['guild']);
         $this->assertSame(['value' => null, 'label' => null], $array['warcraftlogs']['namespace']);
+        $this->assertNull($array['warcraftlogs']['url']);
     }
 
     #[Test]
@@ -280,31 +281,23 @@ class GameVersionResourceTest extends TestCase
     {
         $gameVersion = GameVersion::factory()->create();
 
-        $array = $gameVersion->load('media')->toResource()->scope('switcher')->resolve(new Request);
+        $array = $gameVersion->load(['media', 'warcraftLogsGuild'])->toResource()->scope('switcher')->resolve(new Request);
 
-        $this->assertSame(['id', 'title', 'slug', 'color', 'icon_url', 'release_date', 'meta'], array_keys($array));
+        $this->assertSame(['id', 'title', 'slug', 'color', 'icon_url', 'release_date', 'warcraftlogs'], array_keys($array));
     }
 
     #[Test]
-    public function the_switcher_scope_marks_the_current_version(): void
+    public function the_switcher_scope_includes_the_warcraft_logs_guild_url(): void
     {
-        $a = GameVersion::factory()->create(['release_date' => '2024-01-01']);
-        $b = GameVersion::factory()->create(['release_date' => '2025-01-01']);
-        session([SharesCurrentGameVersionSession::SESSION_KEY => $a->slug]);
+        $gameVersion = GameVersion::factory()->make(['guild_name' => 'Regrowth', 'warcraft_logs_guild_id' => 774848]);
+        $gameVersion->setRelation('warcraftLogsGuild', Guild::factory()->make([
+            'id' => 774848,
+            'namespace' => WarcraftLogsNamespace::Forever,
+        ]));
 
-        $arrays = GameVersionResource::collection(GameVersion::all())->scope('switcher')->resolve(new Request);
-        $bySlug = collect($arrays)->keyBy('slug');
+        $array = $gameVersion->toResource()->scope('switcher')->resolve(new Request);
 
-        $this->assertTrue($bySlug[$a->slug]['meta']['is_current']);
-        $this->assertFalse($bySlug[$b->slug]['meta']['is_current']);
-    }
-
-    #[Test]
-    public function the_unscoped_resource_has_no_meta(): void
-    {
-        $array = GameVersion::factory()->create()->toResource()->resolve(new Request);
-
-        $this->assertArrayNotHasKey('meta', $array);
+        $this->assertSame('https://forever.warcraftlogs.com/guilds/774848-regrowth', $array['warcraftlogs']['url']);
     }
 
     // ==================== metadata ====================

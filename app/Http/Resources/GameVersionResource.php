@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Contracts\Http\Resources\ScopedResource;
 use App\Http\Resources\Concerns\HasScopes;
 use App\Models\GameVersion;
@@ -12,7 +11,8 @@ use Spatie\MediaLibrary\MediaCollections\MediaCollection;
 
 /**
  * Transform a game version, optionally limited to the `management` or `switcher` scope.
- * The media URLs, warcraftlogs and the usage counts are omitted unless loaded.
+ * The media URLs, warcraftlogs (with the guild page URL) and the usage counts
+ * are omitted unless loaded.
  */
 class GameVersionResource extends JsonResource implements ScopedResource
 {
@@ -62,15 +62,13 @@ class GameVersionResource extends JsonResource implements ScopedResource
                     'value' => $this->warcraftLogsGuild?->namespace,
                     'label' => $this->warcraftLogsGuild?->namespace->label(),
                 ],
+                'url' => $this->warcraftLogsGuild?->namespace->guildUrl($this->warcraft_logs_guild_id, $this->guild_slug),
             ]),
             'phases_count' => $this->whenCounted('phases'),
             'items_count' => $this->whenCounted('items'),
             'characters_count' => $this->whenCounted('characters'),
             'guild_ranks_count' => $this->whenCounted('guildRanks'),
             'links' => $this->when($this->links !== null, fn (): ?array => $this->links),
-            'meta' => $this->when($this->activeScope() === 'switcher', fn (): array => [
-                'is_current' => ResolveCurrentGameVersion::run()?->is($this->resource) ?? false,
-            ]),
         ]);
     }
 
@@ -85,7 +83,7 @@ class GameVersionResource extends JsonResource implements ScopedResource
                 'realm', 'guild_name', 'uses_surnames', 'faction', 'release_date', 'blizzard', 'warcraftlogs',
                 'phases_count', 'items_count', 'characters_count', 'guild_ranks_count', 'links',
             ],
-            'switcher' => ['id', 'title', 'slug', 'color', 'icon_url', 'release_date', 'meta'],
+            'switcher' => ['id', 'title', 'slug', 'color', 'icon_url', 'release_date', 'warcraftlogs'],
         ];
     }
 

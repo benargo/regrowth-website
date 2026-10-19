@@ -309,7 +309,7 @@ class RosterTest extends TestCase
     public function the_shared_switcher_list_is_present_and_the_page_sends_no_own_list(): void
     {
         $this->get(route('roster.index'))->assertInertia(fn (Assert $page) => $page
-            ->has('gameVersions.data.0.meta')
+            ->has('gameVersions.meta.current')
         );
     }
 

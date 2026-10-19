@@ -67,8 +67,8 @@ class GameVersionControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->get(route('management.game-versions.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('gameVersions', 2)
-            ->has('gameVersions.0.meta.is_current')
+            ->has('gameVersions.data', 2)
+            ->has('gameVersions.meta.current')
             ->has('versions.data', 2)
             ->has('versions.data.0.phases_count')
         );

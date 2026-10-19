@@ -44,7 +44,7 @@ export default function SearchPalette({ open, onClose }) {
 
     const http = useHttp({ q: "", raid_id: null });
     const { gameVersions = [] } = page.props;
-    const { switchTo } = useGameVersionSwitch();
+    const { current: currentGameVersion, switchTo } = useGameVersionSwitch();
 
     const trimmedQuery = query.trim();
     const hasQuery = trimmedQuery.length >= MIN_QUERY_LENGTH;
@@ -210,6 +210,7 @@ export default function SearchPalette({ open, onClose }) {
                                             key={gameVersion.id}
                                             gameVersion={gameVersion}
                                             index={index}
+                                            isCurrent={gameVersion.id === currentGameVersion?.id}
                                             isHighlighted={index === highlightedIndex}
                                             onMouseEnter={() => setHighlightedIndex(index)}
                                             onSelect={() => {

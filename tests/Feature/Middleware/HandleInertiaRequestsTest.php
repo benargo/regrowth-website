@@ -236,22 +236,22 @@ class HandleInertiaRequestsTest extends TestCase
         $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page
             ->has('gameVersions.data', 3)
             ->where('gameVersions.data.0.slug', $unreleased->slug)
-            ->has('gameVersions.data.0.meta.is_current')
+            ->has('gameVersions.meta.current')
             ->has('gameVersions.data.0', fn (AssertableInertia $version) => $version
-                ->hasAll(['id', 'title', 'slug', 'color', 'icon_url', 'release_date', 'meta'])));
+                ->hasAll(['id', 'title', 'slug', 'color', 'icon_url', 'release_date', 'warcraftlogs'])));
     }
 
     #[Test]
-    public function it_marks_exactly_one_game_version_current(): void
+    public function it_shares_the_key_of_the_current_game_version(): void
     {
-        GameVersion::factory()->count(3)->sequence(
-            ['release_date' => '2022-01-01'],
-            ['release_date' => '2023-01-01'],
-            ['release_date' => '2024-01-01'],
-        )->create();
+        $current = GameVersion::factory()->create(['release_date' => '2022-01-01']);
+        GameVersion::factory()->create(['release_date' => '2023-01-01']);
 
-        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page
-            ->where('gameVersions.data', fn ($versions) => collect($versions)->where('meta.is_current', true)->count() === 1));
+        $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $current->slug])
+            ->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('gameVersions.meta.current', $current->id)
+                ->missing('gameVersions.data.0.meta'));
     }
 
     #[Test]
@@ -264,7 +264,7 @@ class HandleInertiaRequestsTest extends TestCase
         $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => 'gone'])
             ->get('/')
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('gameVersions.data', fn ($versions) => collect($versions)->where('meta.is_current', true)->pluck('slug')->all() === [$latestReleased->slug]));
+                ->where('gameVersions.meta.current', $latestReleased->id));
     }
 
     #[Test]

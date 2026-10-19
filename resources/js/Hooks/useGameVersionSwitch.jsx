@@ -38,14 +38,15 @@ export function useResetQueryOnGameVersionSwitch() {
 }
 
 /**
- * Switch the site-wide current game version and expose the `current` one.
+ * Switch the site-wide current game version and expose the `current` one,
+ * found by the key in the shared `gameVersions.meta.current`.
  * `isSwitching` is shared by every caller, and `switchTo(slug)` does nothing
  * for the current version or while a switch is in flight.
  */
 export default function useGameVersionSwitch() {
     const { gameVersions = [] } = usePage().props;
     const isSwitching = useSyncExternalStore(subscribe, () => switchState.isSwitching);
-    const current = gameVersions.find((gameVersion) => gameVersion.meta?.is_current);
+    const current = gameVersions.find((gameVersion) => gameVersion.id === currentId);
 
     const switchTo = (slug) => {
         if (switchState.isSwitching || current?.slug === slug) {

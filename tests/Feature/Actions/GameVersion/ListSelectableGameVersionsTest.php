@@ -4,7 +4,9 @@ namespace Tests\Feature\Actions\GameVersion;
 
 use App\Actions\GameVersion\ListSelectableGameVersions;
 use App\Contracts\Actions\GameVersion\CachesSelectableGameVersions;
+use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\GameVersion;
+use App\Models\WarcraftLogs\Guild;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -53,6 +55,14 @@ class ListSelectableGameVersionsTest extends TestCase
     }
 
     #[Test]
+    public function it_eager_loads_the_warcraft_logs_guild(): void
+    {
+        GameVersion::factory()->forGuild()->create();
+
+        $this->assertTrue(ListSelectableGameVersions::run()->every->relationLoaded('warcraftLogsGuild'));
+    }
+
+    #[Test]
     public function it_queries_once_per_request(): void
     {
         GameVersion::factory()->create();
@@ -98,6 +108,26 @@ class ListSelectableGameVersionsTest extends TestCase
         $this->assertSame([], DB::getQueryLog());
         $this->assertTrue($listed->exists);
         $this->assertSame('ff8800', $listed->color);
+    }
+
+    #[Test]
+    public function it_hydrates_cached_versions_with_their_warcraft_logs_guild(): void
+    {
+        $guild = Guild::factory()->create(['namespace' => WarcraftLogsNamespace::Forever]);
+        $withGuild = GameVersion::factory()->forGuild($guild)->create();
+        $withoutGuild = GameVersion::factory()->create(['warcraft_logs_guild_id' => null]);
+        ListSelectableGameVersions::run();
+        $this->forgetRequestMemo();
+
+        DB::enableQueryLog();
+        $listed = ListSelectableGameVersions::run()->keyBy('id');
+
+        $this->assertSame([], DB::getQueryLog());
+        $this->assertTrue($listed[$withGuild->id]->warcraftLogsGuild->is($guild));
+        $this->assertTrue($listed[$withGuild->id]->warcraftLogsGuild->exists);
+        $this->assertSame(WarcraftLogsNamespace::Forever, $listed[$withGuild->id]->warcraftLogsGuild->namespace);
+        $this->assertTrue($listed[$withoutGuild->id]->relationLoaded('warcraftLogsGuild'));
+        $this->assertNull($listed[$withoutGuild->id]->warcraftLogsGuild);
     }
 
     // ==================== game version events ====================
@@ -194,6 +224,21 @@ class ListSelectableGameVersionsTest extends TestCase
         $gameVersion->addMedia(UploadedFile::fake()->image('icon.png'))->toMediaCollection(GameVersion::MEDIA_ICON);
 
         $this->assertNotSame('', ListSelectableGameVersions::run()->sole()->getFirstMediaUrl(GameVersion::MEDIA_ICON));
+    }
+
+    // ==================== warcraft logs guild events ====================
+
+    #[Test]
+    public function it_refreshes_the_cache_when_a_warcraft_logs_guild_is_saved(): void
+    {
+        $guild = Guild::factory()->create(['namespace' => WarcraftLogsNamespace::Classic]);
+        GameVersion::factory()->forGuild($guild)->create();
+        ListSelectableGameVersions::run();
+        $this->forgetRequestMemo();
+
+        $guild->update(['namespace' => WarcraftLogsNamespace::Forever]);
+
+        $this->assertSame(WarcraftLogsNamespace::Forever, ListSelectableGameVersions::run()->sole()->warcraftLogsGuild->namespace);
     }
 
     // ==================== helpers ====================
