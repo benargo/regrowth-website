@@ -36,3 +36,6 @@ Reconciling old rows (pivots, attendance, event links) written under earlier mat
 
 ## Call Actions with ::run(), not dependency injection
 Never inject Laravel Actions (`AsAction`) through constructor or method DI. For a single call, use `ActionClassName::run(...)`. When the same action runs multiple times in one scope (e.g. a loop or collection pipeline), resolve it once with `$action = ActionClassName::make()` and call `$action->handle(...)` each time. This overrides the general "inject dependencies" rule for Action classes only.
+
+## Don't reference public constants on other classes
+A class must not reference public constants defined on another concrete class (e.g. `OtherClass::SOME_CONSTANT`). When classes need to share a constant, define it on a contract (interface in `app/Contracts/**`) and have each class that needs it implement that contract, then reference it via `self::`/`static::`.
