@@ -27,7 +27,7 @@ export default function SectionDisclosure({ section, active = false, classes = {
 
                     <DisclosureButton
                         className={cn(
-                            "group flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm font-medium text-gray-300 hover:bg-amber-700 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400",
+                            "group flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white active:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400",
                             classes.responsiveNavLink,
                         )}
                         aria-current={active ? "page" : undefined}

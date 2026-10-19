@@ -76,6 +76,9 @@ function computePosition(triggerRect, tooltipRect, position) {
  *
  * `as` sets the trigger wrapper's element; pass "span" when the tooltip sits
  * inside inline content such as a paragraph.
+ *
+ * `describe={false}` leaves `aria-describedby` off, for a trigger whose
+ * accessible name already carries the tooltip's text.
  */
 export default function Tooltip({
     children,
@@ -83,6 +86,7 @@ export default function Tooltip({
     position = "top",
     className = "",
     as: Element = "div",
+    describe = true,
     onMouseEnter,
     onMouseLeave,
     onFocus,
@@ -127,7 +131,7 @@ export default function Tooltip({
         return () => document.removeEventListener("keydown", handleKeyDown);
     }, [isVisible]);
 
-    const describedBy = isVisible ? tooltipId : undefined;
+    const describedBy = describe && isVisible ? tooltipId : undefined;
     const isSingleElement = isValidElement(children) && children.type !== Fragment;
     const trigger = isSingleElement
         ? cloneElement(children, {

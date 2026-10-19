@@ -17,7 +17,8 @@ import SectionFlyout from "@/Components/Navigation/SectionFlyout";
 import Footer from "@/Layouts/Footer";
 import cn from "@/Helpers/cn";
 
-const MOBILE_LINK = "flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:text-white";
+const MOBILE_LINK =
+    "flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:bg-white/5 hover:text-white active:bg-white/10";
 
 const NAV_CLASSES = {
     classic: {
@@ -31,7 +32,7 @@ const NAV_CLASSES = {
         switcherOption: "data-focus:bg-brown-700",
         mobileMenu: "bg-brown-900",
         flyoutPanel: "bg-brown-900/95 border-brown-700/50",
-        mobileLink: "hover:bg-amber-700 text-gray-300",
+        mobileLink: "text-gray-300",
         mobileDivider: "border-amber-700",
         footer: "border-transparent",
         footerHeading: "text-amber-400",
@@ -49,7 +50,7 @@ const NAV_CLASSES = {
         switcherOptions: "bg-forever-800",
         switcherOption: "data-focus:bg-forever-700",
         navLink: "hover:bg-forever-700/80 focus-visible:outline-camel-400",
-        responsiveNavLink: "text-verdant-300 hover:bg-camel-800 focus-visible:outline-camel-400",
+        responsiveNavLink: "text-verdant-300 focus-visible:outline-camel-400",
         dropdownContent: "py-1 bg-forever-800",
         dropdownLink: "bg-forever-800 data-focus:bg-forever-700",
         mobileMenu: "bg-forever-900",
@@ -62,7 +63,7 @@ const NAV_CLASSES = {
         nextRaidIcon: "bg-camel-600/20 text-camel-300",
         nextRaidSignup: "text-camel-200",
         nextRaidButton: "bg-camel-700 hover:bg-camel-800 focus-visible:outline-camel-300",
-        mobileLink: "hover:bg-camel-800 text-verdant-300",
+        mobileLink: "text-verdant-300",
         mobileDivider: "border-camel-700",
         footer: "bg-footer-forever border-camel-600",
         footerHeading: "text-camel-400",
