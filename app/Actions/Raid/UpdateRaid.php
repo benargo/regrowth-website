@@ -2,6 +2,7 @@
 
 namespace App\Actions\Raid;
 
+use App\Contracts\Models\SharesRaidBannerCollection;
 use App\Events\RaidChanged;
 use App\Models\Boss;
 use App\Models\Raid;
@@ -22,7 +23,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * is written once the database changes have committed. Any change to the boss
  * order or banner then dispatches `RaidChanged`.
  */
-class UpdateRaid
+class UpdateRaid implements SharesRaidBannerCollection
 {
     use AsAction;
 
@@ -53,7 +54,7 @@ class UpdateRaid
             $position = Arr::exists($data, 'banner_position') ? $data['banner_position'] : $raid->banner_position;
             $this->replaceBanner($raid, $data['banner'], $position);
         } elseif (Arr::exists($data, 'banner_position')) {
-            $this->positionBanner($raid->getFirstMedia(Raid::MEDIA_BANNER), $data['banner_position']);
+            $this->positionBanner($raid->getFirstMedia(self::MEDIA_BANNER), $data['banner_position']);
         }
 
         if (Arr::hasAny($data, self::NON_COLUMN_KEYS)) {
@@ -67,14 +68,14 @@ class UpdateRaid
     private function replaceBanner(Raid $raid, ?UploadedFile $file, ?string $position): void
     {
         if ($file === null) {
-            $raid->clearMediaCollection(Raid::MEDIA_BANNER);
+            $raid->clearMediaCollection(self::MEDIA_BANNER);
 
             return;
         }
 
         $raid->addMedia($file)
             ->withCustomProperties($position === null ? [] : ['position' => $position])
-            ->toMediaCollection(Raid::MEDIA_BANNER);
+            ->toMediaCollection(self::MEDIA_BANNER);
     }
 
     /**

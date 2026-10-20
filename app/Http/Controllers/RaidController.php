@@ -149,7 +149,7 @@ class RaidController extends Controller implements SharesPriorityWeightThreshold
         $editLock = ResolveEditLock::run($request, $raid);
 
         return Inertia::render('Manage/Raids/Edit', [
-            'raid' => fn (): RaidResource => $raid->loadMissing(['media', 'phase', 'bosses'])->toResource(),
+            'raid' => fn (): RaidResource => $raid->loadMissing(['media', 'phase', 'bosses.media'])->toResource(),
             'options' => fn (): array => BuildRaidFormOptions::run(),
             'steps' => fn (): array => $routes->steps($raid),
             'routes' => fn (): array => $routes->forEdit($raid),
@@ -168,7 +168,7 @@ class RaidController extends Controller implements SharesPriorityWeightThreshold
         $editLock = ResolveEditLock::run($request, $raid);
 
         return Inertia::render('Manage/Raids/Setup', [
-            'raid' => fn (): RaidResource => $raid->loadMissing(['media', 'phase', 'bosses'])->toResource(),
+            'raid' => fn (): RaidResource => $raid->loadMissing(['media', 'phase', 'bosses.media'])->toResource(),
             'step' => $step->toOption(),
             'previousStep' => $step->previous()?->toOption(),
             'nextStep' => $step->next()?->toOption(),
@@ -189,7 +189,7 @@ class RaidController extends Controller implements SharesPriorityWeightThreshold
         $routes = BuildRaidRoutes::make();
 
         return Inertia::render('Manage/Raids/Review', [
-            'raid' => $raid->loadMissing(['media', 'phase', 'bosses'])->toResource(),
+            'raid' => $raid->loadMissing(['media', 'phase', 'bosses.media'])->toResource(),
             'options' => ['banner_positions' => BannerPosition::options()],
             'steps' => $routes->steps($raid),
             'routes' => $routes->forReview($raid),

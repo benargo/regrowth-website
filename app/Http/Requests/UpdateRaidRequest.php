@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Actions\GameVersion\ListSelectableGameVersions;
+use App\Contracts\Models\SharesRaidBannerCollection;
 use App\Enums\BannerPosition;
 use App\Http\Requests\Concerns\ChecksEditLock;
 use App\Http\Requests\Concerns\ValidatesImageUploads;
@@ -13,7 +14,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
-class UpdateRaidRequest extends StoreRaidRequest
+class UpdateRaidRequest extends StoreRaidRequest implements SharesRaidBannerCollection
 {
     use ChecksEditLock;
     use ValidatesImageUploads;
@@ -28,7 +29,7 @@ class UpdateRaidRequest extends StoreRaidRequest
     {
         return [
             ...collect($this->detailsRules())->map(fn (array $rules): array => ['sometimes', ...$rules])->all(),
-            'banner' => $this->imageRules($this->route('raid'), Raid::MEDIA_BANNER),
+            'banner' => $this->imageRules($this->route('raid'), self::MEDIA_BANNER),
             'banner_position' => ['sometimes', 'nullable', Rule::enum(BannerPosition::class)],
             'boss_ids' => ['sometimes', 'array'],
             'boss_ids.*' => ['integer'],
@@ -44,7 +45,7 @@ class UpdateRaidRequest extends StoreRaidRequest
     {
         return [
             ...parent::messages(),
-            ...$this->imageMessages($this->route('raid'), Raid::MEDIA_BANNER),
+            ...$this->imageMessages($this->route('raid'), self::MEDIA_BANNER),
         ];
     }
 
@@ -126,7 +127,7 @@ class UpdateRaidRequest extends StoreRaidRequest
 
             $isUploading = $this->hasFile('banner');
             $isRemoving = $this->has('banner') && ! $isUploading;
-            $keepsBanner = $isUploading || (! $isRemoving && $this->route('raid')->hasMedia(Raid::MEDIA_BANNER));
+            $keepsBanner = $isUploading || (! $isRemoving && $this->route('raid')->hasMedia(self::MEDIA_BANNER));
 
             if (! $keepsBanner) {
                 $validator->errors()->add('banner_position', 'Upload a banner before choosing its position.');

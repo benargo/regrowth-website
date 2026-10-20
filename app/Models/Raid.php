@@ -7,6 +7,7 @@ use App\Contracts\Models\BelongsToGameVersion;
 use App\Contracts\Models\DatasetModel;
 use App\Contracts\Models\EditLockable;
 use App\Contracts\Models\HasUsage;
+use App\Contracts\Models\SharesRaidBannerCollection;
 use App\Events\RaidChanged;
 use App\Models\Concerns\HasEditLock;
 use App\Models\Concerns\InteractsWithChaperonedMedia;
@@ -34,17 +35,12 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 #[Fillable(['name', 'difficulty', 'color', 'phase_id', 'max_players', 'max_loot_councillors'])]
 #[Hidden(['created_at', 'updated_at'])]
 #[UsePolicy(DatasetPolicy::class)]
-class Raid extends Model implements BelongsToGameVersion, DatasetModel, EditLockable, HasMedia, HasUsage
+class Raid extends Model implements BelongsToGameVersion, DatasetModel, EditLockable, HasMedia, HasUsage, SharesRaidBannerCollection
 {
     use HasEditLock;
     use HasFactory;
     use InteractsWithChaperonedMedia;
     use TracksUsage;
-
-    /**
-     * The wide header image shown on the raid's pages.
-     */
-    public const string MEDIA_BANNER = 'banner';
 
     /**
      * The resized webp version of the banner shown in page headers.

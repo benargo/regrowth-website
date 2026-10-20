@@ -89,9 +89,7 @@ class BossSeeder extends Seeder
         ];
 
         foreach ($bosses as $boss) {
-            Boss::withoutEvents(function () use ($boss): void {
-                Boss::forceCreate($boss)->update(['sort_order' => $boss['sort_order']]);
-            });
+            Boss::withoutEvents(fn (): Boss => Boss::forceCreate($boss));
         }
     }
 }
