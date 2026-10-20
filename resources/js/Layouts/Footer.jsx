@@ -9,6 +9,18 @@ import cn from "@/Helpers/cn";
 const FOOTER_COLUMN_LINK = "flex min-h-8 flex-row items-center gap-2 py-1 transition-colors";
 
 /**
+ * A fixed-width slot that centres a footer link's icon. Renders an empty slot
+ * of the same width when given no children.
+ */
+function FooterLinkIcon({ children }) {
+    return (
+        <span aria-hidden="true" className="flex w-5 shrink-0 items-center justify-center">
+            {children}
+        </span>
+    );
+}
+
+/**
  * A footer column heading, rendered as a link with hover states when `href`
  * is given.
  */
@@ -45,7 +57,9 @@ function SectionColumn({ section, classes, permissions, linkClass }) {
                 {visibleSectionItems(section, permissions).map((item) => (
                     <li key={item.key}>
                         <Link href={route(item.routeName)} className={linkClass}>
-                            <Icon icon={item.icon} style="solid" className="h-5 w-5" />
+                            <FooterLinkIcon>
+                                <Icon icon={item.icon} style="solid" className="h-5 w-5" />
+                            </FooterLinkIcon>
                             <span className="text-nowrap">{item.label}</span>
                         </Link>
                     </li>
@@ -59,7 +73,9 @@ function RosterLink({ linkClass }) {
     return (
         <li>
             <Link href={route("roster.index")} className={linkClass}>
-                <Icon icon="users" style="solid" className="h-5 w-5" />
+                <FooterLinkIcon>
+                    <Icon icon="users" style="solid" className="h-5 w-5" />
+                </FooterLinkIcon>
                 <span className="text-nowrap">Roster</span>
             </Link>
         </li>
@@ -74,7 +90,9 @@ function WarcraftLogsLink({ linkClass, url }) {
     return (
         <li>
             <a href={url} className={linkClass} rel="noopener noreferrer">
-                <WarcraftLogsLogo className="h-5 w-5" />
+                <FooterLinkIcon>
+                    <WarcraftLogsLogo className="h-5 w-5" />
+                </FooterLinkIcon>
                 <span className="text-nowrap">Warcraft Logs</span>
             </a>
         </li>
@@ -85,7 +103,9 @@ function DiscordLink({ linkClass, discordInviteUrl }) {
     return (
         <li>
             <a href={discordInviteUrl} target="_blank" rel="noopener noreferrer" className={linkClass}>
-                <Icon icon="discord" style="brands" className="h-5 w-5" />
+                <FooterLinkIcon>
+                    <Icon icon="discord" style="brands" className="h-5 w-5" />
+                </FooterLinkIcon>
                 <span className="text-nowrap">Discord</span>
             </a>
         </li>
@@ -152,11 +172,13 @@ export default function Footer({ classes, discordInviteUrl, gameVersions = [], p
                             <RosterLink linkClass={footerLinkClass} />
                             <li>
                                 <Link href={route("raiding.index")} className={footerLinkClass}>
+                                    <FooterLinkIcon />
                                     <span className="text-nowrap">Raiding</span>
                                 </Link>
                             </li>
                             <li>
                                 <Link href={route("loot.index")} className={footerLinkClass}>
+                                    <FooterLinkIcon />
                                     <span className="text-nowrap">Loot</span>
                                 </Link>
                             </li>
@@ -204,7 +226,9 @@ export default function Footer({ classes, discordInviteUrl, gameVersions = [], p
                                                     isCurrent && "font-bold",
                                                 )}
                                             >
-                                                <GameVersionIcon gameVersion={gameVersion} />
+                                                <FooterLinkIcon>
+                                                    <GameVersionIcon gameVersion={gameVersion} />
+                                                </FooterLinkIcon>
                                                 <span className="min-w-0">
                                                     {gameVersion.title}
                                                     {isCurrent && (
@@ -227,13 +251,17 @@ export default function Footer({ classes, discordInviteUrl, gameVersions = [], p
                         <ul className="flex flex-col">
                             <li>
                                 <Link href={route("privacypolicy")} className={footerLinkClass}>
-                                    <Icon icon="user-secret" style="solid" className="h-5 w-5" />
+                                    <FooterLinkIcon>
+                                        <Icon icon="user-secret" style="solid" className="h-5 w-5" />
+                                    </FooterLinkIcon>
                                     <span className="text-nowrap">Privacy policy</span>
                                 </Link>
                             </li>
                             <li>
                                 <Link href={route("battlenet-usage")} className={footerLinkClass}>
-                                    <Icon icon="battle-net" style="brands" className="h-5 w-5" />
+                                    <FooterLinkIcon>
+                                        <Icon icon="battle-net" style="brands" className="h-5 w-5" />
+                                    </FooterLinkIcon>
                                     <span className="text-nowrap">Battle.net API Usage</span>
                                 </Link>
                             </li>
@@ -245,7 +273,9 @@ export default function Footer({ classes, discordInviteUrl, gameVersions = [], p
                                     title="Ben Argo"
                                     className={footerLinkClass}
                                 >
-                                    <Icon icon="safari" style="brands" className="h-5 w-5" />
+                                    <FooterLinkIcon>
+                                        <Icon icon="safari" style="brands" className="h-5 w-5" />
+                                    </FooterLinkIcon>
                                     <span className="text-nowrap">A Fizzywigs Production</span>
                                 </a>
                             </li>
