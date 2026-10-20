@@ -88,18 +88,6 @@ class WarcraftLogsNamespaceTest extends TestCase
         $this->assertSame('https://fresh.warcraftlogs.com/api/v2/client', WarcraftLogsNamespace::Anniversary->apiUrl());
     }
 
-    // ==================== guildUrl ====================
-
-    #[Test]
-    #[Group('happy-path')]
-    public function guild_url_builds_the_guild_page_url(): void
-    {
-        $this->assertSame(
-            'https://forever.warcraftlogs.com/guilds/774848-regrowth',
-            WarcraftLogsNamespace::Forever->guildUrl(774848, 'regrowth'),
-        );
-    }
-
     // ==================== label ====================
 
     #[Test]

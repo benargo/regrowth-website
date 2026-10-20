@@ -26,7 +26,6 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 #[ObservedBy([ItemObserver::class])]
 #[Fillable(['boss_id', 'name', 'quality', 'group', 'notes', 'blizzard_id', 'game_version_id'])]

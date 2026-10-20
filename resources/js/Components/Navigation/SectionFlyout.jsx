@@ -48,11 +48,11 @@ export default function SectionFlyout({ section, active = false, classes = {} })
                             "group hover:bg-brown-700/80 flex min-h-9 flex-row items-center rounded-sm border-b border-transparent px-4 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400",
                             classes.navLink,
                         )}
-                        aria-current={active ? "page" : undefined}
+                        aria-current={active ? "true" : undefined}
                     >
                         <Icon icon={headerIcon.icon} style="solid" className={cn("mr-2", headerIcon.className)} />
                         {SITE_SECTIONS[section].label}
-                        <span className="ml-2 flex transition-transform group-data-open:rotate-180" aria-hidden="true">
+                        <span className="ml-2 flex transition-transform group-data-open:rotate-180 motion-reduce:transition-none" aria-hidden="true">
                             <Icon icon="chevron-down" style="regular" className="h-4" />
                         </span>
                     </PopoverButton>

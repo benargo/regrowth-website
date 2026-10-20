@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[UsePolicy(WarcraftLogsGuildPolicy::class)]
-#[Fillable(['id', 'namespace'])]
+#[Fillable(['id', 'namespace', 'logs_url'])]
 #[Table('warcraft_logs_guilds', incrementing: false)]
 class Guild extends Model
 {

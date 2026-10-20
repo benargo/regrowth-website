@@ -3,7 +3,6 @@
 namespace Tests\Unit\Models;
 
 use App\Casts\AsBinaryColor;
-use App\Contracts\Events\FlushesRaidingCache;
 use App\Contracts\Models\BelongsToGameVersion;
 use App\Contracts\Models\DatasetModel;
 use App\Events\RaidChanged;
@@ -18,20 +17,19 @@ use App\Models\Raid;
 use App\Models\User;
 use App\Policies\DatasetPolicy;
 use Carbon\CarbonInterface;
-use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
-use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event as EventFacade;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
-use ReflectionClass;
 use Spatie\MediaLibrary\Conversions\Jobs\PerformConversionsJob;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileUnacceptableForCollection;
 use Tests\Support\ModelTestCase;
@@ -499,11 +497,7 @@ class RaidTest extends ModelTestCase
     public function it_is_a_dataset_model_governed_by_the_dataset_policy(): void
     {
         $this->assertInstanceOf(DatasetModel::class, new Raid);
-
-        $attributes = (new ReflectionClass(Raid::class))->getAttributes(UsePolicy::class);
-
-        $this->assertNotEmpty($attributes);
-        $this->assertSame(DatasetPolicy::class, $attributes[0]->newInstance()->class);
+        $this->assertInstanceOf(DatasetPolicy::class, Gate::getPolicyFor(Raid::class));
     }
 
     #[Test]
@@ -830,14 +824,19 @@ class RaidTest extends ModelTestCase
         EventFacade::assertDispatched(RaidChanged::class, fn (RaidChanged $event) => $event->raid->is($raid));
     }
 
-    #[Group('contract')]
     #[Test]
-    public function raid_changed_flushes_the_raiding_cache_after_commit(): void
+    public function it_flushes_the_raiding_cache_after_the_transaction_commits(): void
     {
-        $event = new RaidChanged(new Raid);
+        $raid = $this->create();
+        Cache::tags(['raiding', 'events'])->put('probe', true);
 
-        $this->assertInstanceOf(FlushesRaidingCache::class, $event);
-        $this->assertInstanceOf(ShouldDispatchAfterCommit::class, $event);
+        DB::transaction(function () use ($raid): void {
+            $raid->update(['name' => 'Renamed']);
+
+            $this->assertTrue(Cache::tags(['raiding', 'events'])->has('probe'));
+        });
+
+        $this->assertFalse(Cache::tags(['raiding', 'events'])->has('probe'));
     }
 
     // ==================== helpers ====================

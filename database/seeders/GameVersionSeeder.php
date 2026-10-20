@@ -32,7 +32,7 @@ class GameVersionSeeder extends Seeder
                 'release_date' => Carbon::create(2021, 9, 4, 0, 0, 0, CarbonTimeZone::create('Europe/Paris')),
                 'color' => 0x00FF98, // 0, 255, 152
                 'blizzard_namespace' => BlizzardNamespace::CLASSIC->value,
-                'warcraft_logs_guild' => ['id' => 598032, 'namespace' => WarcraftLogsNamespace::Classic],
+                'warcraft_logs_guild' => ['id' => 598032, 'namespace' => WarcraftLogsNamespace::Classic, 'logs_url' => 'https://classic.warcraftlogs.com/guilds/598032-regrowth'],
             ],
             [
                 'title' => 'Burning Crusade Classic (Anniversary)',
@@ -44,7 +44,7 @@ class GameVersionSeeder extends Seeder
                 'release_date' => Carbon::create(2026, 2, 6, 0, 0, 0, CarbonTimeZone::create('Europe/Paris')),
                 'color' => 0x4AE832, // 74, 232, 50
                 'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY->value,
-                'warcraft_logs_guild' => ['id' => 774848, 'namespace' => WarcraftLogsNamespace::Anniversary],
+                'warcraft_logs_guild' => ['id' => 774848, 'namespace' => WarcraftLogsNamespace::Anniversary, 'logs_url' => 'https://fresh.warcraftlogs.com/guilds/774848-regrowth'],
             ],
             [
                 'title' => 'World of Warcraft: Forever',
@@ -70,7 +70,7 @@ class GameVersionSeeder extends Seeder
             $guild = Arr::pull($definition, 'warcraft_logs_guild');
 
             if ($guild !== null) {
-                Guild::firstOrCreate(['id' => $guild['id']], ['namespace' => $guild['namespace']]);
+                Guild::updateOrCreate(['id' => $guild['id']], ['namespace' => $guild['namespace'], 'logs_url' => $guild['logs_url']]);
             }
 
             GameVersion::updateOrCreate(

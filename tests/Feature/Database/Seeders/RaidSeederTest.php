@@ -2,8 +2,9 @@
 
 namespace Tests\Feature\Database\Seeders;
 
+use App\Models\GameVersion;
+use App\Models\Phase;
 use App\Models\Raid;
-use Database\Seeders\PhaseSeeder;
 use Database\Seeders\RaidSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -22,7 +23,11 @@ class RaidSeederTest extends TestCase
         parent::setUp();
 
         Storage::fake('public');
-        $this->seed(PhaseSeeder::class);
+        $gameVersion = GameVersion::factory()->create();
+
+        foreach (range(1, 5) as $phaseId) {
+            Phase::factory()->for($gameVersion)->create(['id' => $phaseId]);
+        }
     }
 
     #[Test]

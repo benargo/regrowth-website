@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useId, useState } from "react";
 import { router } from "@inertiajs/react";
 import { FormRow } from "@/Components/FormControls";
 import ImageManager from "@/Components/ImageManager";
@@ -17,6 +17,7 @@ const ImageUploadField = memo(function ImageUploadField({ field, label, hint, ur
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
     const queue = useAutosaveQueue();
+    const inputId = useId();
 
     function send(method, data, options = {}) {
         enqueueOrRun(queue, `image-${field}`, () =>
@@ -32,9 +33,11 @@ const ImageUploadField = memo(function ImageUploadField({ field, label, hint, ur
     }
 
     return (
-        <FormRow label={label} hint={hint}>
+        <FormRow htmlFor={inputId} label={label} hint={hint}>
             <ImageManager
-                images={url ? [url] : []}
+                inputId={inputId}
+                label={label.toLowerCase()}
+                images={url ? [{ id: field, url }] : []}
                 saving={saving}
                 error={error}
                 max={1}

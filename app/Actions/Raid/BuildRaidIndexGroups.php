@@ -46,9 +46,9 @@ class BuildRaidIndexGroups
     {
         $resources = RaidResource::collection($raids->values());
 
-        $resources->collection->each(
-            fn (RaidResource $resource): RaidResource => $resource->withLinks($routes->links($resource->resource)),
-        );
+        foreach ($resources->collection as $resource) {
+            $resource->withLinks($routes->links($resource->resource));
+        }
 
         return $resources;
     }

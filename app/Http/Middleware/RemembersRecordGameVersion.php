@@ -27,7 +27,15 @@ class RemembersRecordGameVersion implements SharesGameVersionSwitchFlash
      */
     public function handle(Request $request, Closure $next, string $parameter): Response
     {
-        if (! $request->isMethod('GET') || $request->prefetch() || $request->hasHeader(Header::PARTIAL_COMPONENT)) {
+        if (! $request->isMethod('GET')) {
+            return $next($request);
+        }
+
+        if ($request->prefetch()) {
+            return $next($request);
+        }
+
+        if ($request->hasHeader(Header::PARTIAL_COMPONENT)) {
             return $next($request);
         }
 
@@ -36,11 +44,17 @@ class RemembersRecordGameVersion implements SharesGameVersionSwitchFlash
             ? ListSelectableGameVersions::run()->find($record->game_version_id)
             : null;
 
-        if (
-            $gameVersion === null
-            || $request->session()->pull(self::SWITCHED_FLASH_KEY, false)
-            || ResolveCurrentGameVersion::run()?->slug === $gameVersion->slug
-        ) {
+        if ($gameVersion === null) {
+            return $next($request);
+        }
+
+        $switched = $request->session()->pull(self::SWITCHED_FLASH_KEY, false);
+
+        if ($switched) {
+            return $next($request);
+        }
+
+        if (ResolveCurrentGameVersion::run()?->slug === $gameVersion->slug) {
             return $next($request);
         }
 

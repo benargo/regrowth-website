@@ -28,7 +28,7 @@ export default function TabNav({ tabs, currentTab, ariaLabel, scrollable = false
             <nav
                 ref={navRef}
                 aria-label={ariaLabel}
-                className={cn("-mb-px flex gap-4", scrollable && "relative overflow-x-auto [scrollbar-width:none]")}
+                className={cn("-mb-px flex gap-4", scrollable && "relative overflow-x-auto [scrollbar-width:thin]")}
             >
                 {tabs.map((tab) => {
                     const TabElement = tab.href ? Link : "button";

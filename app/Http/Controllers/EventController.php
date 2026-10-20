@@ -64,7 +64,8 @@ class EventController extends Controller implements HasBlizzardIcons
                 $events->clone()
                     ->where('end_time', '<', now())
                     ->unless($canViewOldEvents, fn (Builder $query) => $query->where('end_time', '>=', now()->subWeeks(2)))
-                    ->orderByDesc('start_time'),
+                    ->orderByDesc('start_time')
+                    ->orderByDesc('id'),
                 $request,
                 self::PAST_EVENTS_PER_PAGE,
             ),

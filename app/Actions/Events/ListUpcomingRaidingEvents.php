@@ -26,8 +26,10 @@ class ListUpcomingRaidingEvents
             return [];
         }
 
+        $prefix = $request->user() ? 'events:upcoming' : 'events:upcoming:guests';
+
         return Cache::tags('raiding', 'events')->remember(
-            ($request->user() ? 'events:upcoming' : 'events:upcoming:guests').":{$gameVersion->id}",
+            "{$prefix}:{$gameVersion->id}",
             now()->addMinutes(10),
             fn (): array => BuildEventsForViewer::run(
                 Event::live()->where('game_version_id', $gameVersion->id)

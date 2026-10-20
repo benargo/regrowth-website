@@ -61,7 +61,7 @@ class GuildTest extends ModelTestCase
     #[Test]
     public function it_declares_fillable_via_attribute(): void
     {
-        $this->assertFillableAttribute(new Guild, ['id', 'namespace']);
+        $this->assertFillableAttribute(new Guild, ['id', 'namespace', 'logs_url']);
     }
 
     #[Test]

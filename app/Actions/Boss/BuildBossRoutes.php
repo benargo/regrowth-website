@@ -7,7 +7,6 @@ use App\Contracts\Actions\Boss\SharesRaidPageOrigins;
 use App\Enums\RaidSetupStep;
 use App\Models\Raid;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\URL;
 
 /**
  * Resolves the URLs the boss management pages link to. A form opened from a
@@ -48,7 +47,7 @@ class BuildBossRoutes extends BuildDatasetRoutes implements SharesRaidPageOrigin
     {
         return [
             ...parent::forEdit($record),
-            'raid' => URL::route('management.raids.edit', $record->raid_id),
+            'raid' => route('management.raids.edit', $record->raid_id),
         ];
     }
 
@@ -68,8 +67,8 @@ class BuildBossRoutes extends BuildDatasetRoutes implements SharesRaidPageOrigin
     private function raidPageUrl(Raid|int $raid, ?string $from): ?string
     {
         return match ($from) {
-            self::FROM_RAID_SETUP => URL::route('management.raids.setup', [$raid, RaidSetupStep::Bosses]),
-            self::FROM_RAID_EDIT => URL::route('management.raids.edit', $raid),
+            self::FROM_RAID_SETUP => route('management.raids.setup', [$raid, RaidSetupStep::Bosses]),
+            self::FROM_RAID_EDIT => route('management.raids.edit', $raid),
             default => null,
         };
     }

@@ -19,7 +19,9 @@ trait ValidatesImageUploads
      */
     protected function imageRules(HasMedia $model, string $collection): array
     {
-        return ['sometimes', 'nullable', 'file', 'mimetypes:'.implode(',', $model->acceptedMimeTypes($collection)), 'max:2048'];
+        $mimeTypes = implode(',', $model->acceptedMimeTypes($collection));
+
+        return ['sometimes', 'nullable', 'file', "mimetypes:{$mimeTypes}", 'max:2048'];
     }
 
     /**

@@ -35,7 +35,7 @@ export default function BossesSection({ raid, routes, submitLabel = "Save and co
                     renderItem={(boss, { index, dragHandle }) => (
                         <div className="bg-brown-900 flex items-center gap-3 px-3 py-2">
                             {dragHandle}
-                            <span className="w-6 shrink-0 text-right text-sm text-gray-300">{index + 1}.</span>
+                            <span aria-hidden="true" className="w-6 shrink-0 text-right text-sm text-gray-300 tabular-nums">{index + 1}.</span>
                             <Link
                                 href={route("management.bosses.edit", boss.id)}
                                 className={`rounded text-white underline hover:text-amber-200 ${focusRing}`}

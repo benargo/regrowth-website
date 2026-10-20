@@ -93,7 +93,12 @@ class UpdateRaidRequest extends StoreRaidRequest implements SharesRaidBannerColl
 
             $raid = $this->route('raid');
             $targetPhase = Phase::find($this->input('phase_id'));
-            if ($targetPhase->game_version_id === $raid->game_version_id || ! $this->hasLinkedRecords($raid)) {
+
+            if ($targetPhase->game_version_id === $raid->game_version_id) {
+                return;
+            }
+
+            if (! $this->hasLinkedRecords($raid)) {
                 return;
             }
 

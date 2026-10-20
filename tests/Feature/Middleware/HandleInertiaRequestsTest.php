@@ -12,6 +12,7 @@ use App\Models\GameVersion;
 use App\Models\Permission;
 use App\Models\Phase;
 use App\Models\User;
+use App\Models\WarcraftLogs\Guild;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -224,6 +225,48 @@ class HandleInertiaRequestsTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page->where('discordInviteUrl', config('guild.discord_invite_url')));
     }
 
+    #[Test]
+    public function it_shares_the_current_versions_warcraft_logs_url(): void
+    {
+        $guild = Guild::factory()->withLogsUrl('https://fresh.warcraftlogs.com/guilds/774848-regrowth')->create();
+        GameVersion::factory()->for($guild, 'warcraftLogsGuild')->create(['release_date' => now()->subYear()->toDateString()]);
+
+        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('warcraftLogsUrl', 'https://fresh.warcraftlogs.com/guilds/774848-regrowth'));
+    }
+
+    #[Test]
+    public function it_shares_a_null_warcraft_logs_url_without_a_guild(): void
+    {
+        GameVersion::factory()->create(['release_date' => now()->subYear()->toDateString(), 'warcraft_logs_guild_id' => null]);
+
+        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page->where('warcraftLogsUrl', null));
+    }
+
+    #[Test]
+    public function it_shares_a_null_warcraft_logs_url_when_the_guild_has_none(): void
+    {
+        GameVersion::factory()->for(Guild::factory(), 'warcraftLogsGuild')->create(['release_date' => now()->subYear()->toDateString()]);
+
+        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page->where('warcraftLogsUrl', null));
+    }
+
+    #[Test]
+    public function it_shares_the_warcraft_logs_url_of_the_sessions_version(): void
+    {
+        $older = GameVersion::factory()
+            ->for(Guild::factory()->withLogsUrl('https://classic.warcraftlogs.com/guilds/598032-regrowth'), 'warcraftLogsGuild')
+            ->create(['release_date' => now()->subYears(2)->toDateString()]);
+        GameVersion::factory()
+            ->for(Guild::factory()->withLogsUrl('https://fresh.warcraftlogs.com/guilds/774848-regrowth'), 'warcraftLogsGuild')
+            ->create(['release_date' => now()->subYear()->toDateString()]);
+
+        $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $older->slug])
+            ->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('warcraftLogsUrl', 'https://classic.warcraftlogs.com/guilds/598032-regrowth'));
+    }
+
     // ==================== game versions ====================
 
     #[Test]
@@ -238,7 +281,7 @@ class HandleInertiaRequestsTest extends TestCase
             ->where('gameVersions.data.0.slug', $unreleased->slug)
             ->has('gameVersions.meta.current')
             ->has('gameVersions.data.0', fn (AssertableInertia $version) => $version
-                ->hasAll(['id', 'title', 'slug', 'color', 'icon_url', 'release_date', 'warcraftlogs'])));
+                ->hasAll(['id', 'title', 'slug', 'color', 'icon_url', 'release_date'])));
     }
 
     #[Test]

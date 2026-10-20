@@ -63,7 +63,6 @@ class GameVersionResource extends JsonResource implements ScopedResource
                     'value' => $this->warcraftLogsGuild?->namespace,
                     'label' => $this->warcraftLogsGuild?->namespace->label(),
                 ],
-                'url' => $this->warcraftLogsGuild?->namespace->guildUrl($this->warcraft_logs_guild_id, $this->guild_slug),
             ]),
             'phases_count' => $this->whenCounted('phases'),
             'items_count' => $this->whenCounted('items'),
@@ -84,7 +83,7 @@ class GameVersionResource extends JsonResource implements ScopedResource
                 'realm', 'guild_name', 'uses_surnames', 'faction', 'release_date', 'blizzard', 'warcraftlogs',
                 'phases_count', 'items_count', 'characters_count', 'guild_ranks_count', 'links',
             ],
-            'switcher' => ['id', 'title', 'slug', 'color', 'icon_url', 'release_date', 'warcraftlogs'],
+            'switcher' => ['id', 'title', 'slug', 'color', 'icon_url', 'release_date'],
         ];
     }
 

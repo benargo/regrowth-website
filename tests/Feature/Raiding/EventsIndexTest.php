@@ -32,6 +32,8 @@ class EventsIndexTest extends TestCase
         $this->gameVersion = GameVersion::factory()->create(['release_date' => Carbon::parse('2025-01-01')]);
     }
 
+    // ==================== upcoming events ====================
+
     #[Test]
     #[Group('happy-path')]
     public function it_lists_the_current_versions_upcoming_events_soonest_first(): void
@@ -80,6 +82,8 @@ class EventsIndexTest extends TestCase
         );
     }
 
+    // ==================== past events ====================
+
     #[Test]
     public function it_lists_past_events_newest_first(): void
     {
@@ -92,6 +96,21 @@ class EventsIndexTest extends TestCase
             ->has('pastEvents.data', 2)
             ->where('pastEvents.data.0.id', $newer->id)
             ->where('pastEvents.data.1.id', $older->id)
+        );
+    }
+
+    #[Test]
+    public function it_orders_past_events_with_the_same_start_by_newest_id(): void
+    {
+        $first = $this->eventEndingIn(days: -2);
+        $second = $this->eventEndingIn(days: -2);
+        $second->update(['start_time' => $first->start_time]);
+
+        $response = $this->get(route('raiding.events.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('pastEvents.data.0.id', $second->id)
+            ->where('pastEvents.data.1.id', $first->id)
         );
     }
 
@@ -143,6 +162,8 @@ class EventsIndexTest extends TestCase
         $secondPage->assertInertia(fn (Assert $page) => $page->has('pastEvents.data', 1));
     }
 
+    // ==================== empty states ====================
+
     #[Test]
     public function it_shows_nothing_without_any_game_version(): void
     {
@@ -181,6 +202,8 @@ class EventsIndexTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page->where('hasAnyEvents', false));
     }
+
+    // ==================== helpers ====================
 
     private function eventEndingIn(int $days, int $hours = 0): Event
     {

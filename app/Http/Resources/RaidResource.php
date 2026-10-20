@@ -77,8 +77,8 @@ class RaidResource extends JsonResource implements ScopedResource
     {
         return [
             'management' => [
-                'id', 'name', 'slug', 'difficulty', 'color', 'banner_url', 'banner_position', 'max_players', 'max_loot_councillors',
-                'bosses', 'phase_id', 'phase', 'bosses_count', 'upcoming_events_count', 'past_events_count', 'template_events_count', 'items_count', 'links',
+                'banner_position', 'banner_url', 'bosses', 'bosses_count', 'color', 'difficulty', 'id', 'items_count', 'links',
+                'max_loot_councillors', 'max_players', 'name', 'past_events_count', 'phase', 'phase_id', 'slug', 'template_events_count', 'upcoming_events_count',
             ],
             'summary' => ['id', 'name'],
         ];

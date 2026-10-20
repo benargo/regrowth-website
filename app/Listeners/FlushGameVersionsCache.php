@@ -5,6 +5,8 @@ namespace App\Listeners;
 use App\Contracts\Actions\GameVersion\CachesSelectableGameVersions;
 use App\Contracts\Events\FlushesGameVersionsCache;
 use App\Models\GameVersion;
+use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Spatie\MediaLibrary\MediaCollections\Events\CollectionHasBeenClearedEvent;
 use Spatie\MediaLibrary\MediaCollections\Events\MediaHasBeenAddedEvent;
@@ -12,8 +14,10 @@ use Spatie\MediaLibrary\MediaCollections\Events\MediaHasBeenAddedEvent;
 /**
  * Flushes the selectable game versions cache and the list memoised for the current request.
  */
-class FlushGameVersionsCache
+class FlushGameVersionsCache implements CachesSelectableGameVersions
 {
+    public function __construct(private Application $app, private Request $request) {}
+
     /**
      * Handle the event.
      */
@@ -30,7 +34,7 @@ class FlushGameVersionsCache
     {
         if ($event->media->model_type === (new GameVersion)->getMorphClass()) {
             $this->flush();
-            app()->terminating(fn () => $this->flush());
+            $this->app->terminating(fn () => $this->flush());
         }
     }
 
@@ -46,7 +50,7 @@ class FlushGameVersionsCache
 
     private function flush(): void
     {
-        Cache::tags([CachesSelectableGameVersions::CACHE_TAG])->flush();
-        request()->attributes->remove(CachesSelectableGameVersions::REQUEST_KEY);
+        Cache::tags([self::CACHE_TAG])->flush();
+        $this->request->attributes->remove(self::REQUEST_KEY);
     }
 }

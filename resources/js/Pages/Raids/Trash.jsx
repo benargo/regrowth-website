@@ -28,13 +28,18 @@ export default function Trash({ section, raid, items, priorityWeightThreshold })
             <SectionNav section={section} />
             <PageContainer>
                 <Breadcrumbs crumbs={crumbs} />
-                <Deferred data="items" fallback={<ItemListSkeleton />}>
-                    <ItemList
-                        items={items?.data ?? []}
-                        weightThreshold={priorityWeightThreshold}
-                        emptyMessage="No trash items drop in this raid."
-                    />
-                </Deferred>
+                <section aria-labelledby="raid-trash-items-heading">
+                    <h2 id="raid-trash-items-heading" className="sr-only">
+                        Items
+                    </h2>
+                    <Deferred data="items" fallback={<ItemListSkeleton />}>
+                        <ItemList
+                            items={items?.data ?? []}
+                            weightThreshold={priorityWeightThreshold}
+                            emptyMessage="No trash items drop in this raid."
+                        />
+                    </Deferred>
+                </section>
             </PageContainer>
         </Master>
     );

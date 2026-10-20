@@ -56,6 +56,7 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success'),
             ],
             'discordInviteUrl' => config('guild.discord_invite_url'),
+            'warcraftLogsUrl' => fn (): ?string => ResolveCurrentGameVersion::run()?->warcraftLogsGuild?->logs_url,
         ];
     }
 }

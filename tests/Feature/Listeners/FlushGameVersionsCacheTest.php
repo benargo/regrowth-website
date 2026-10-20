@@ -31,7 +31,7 @@ class FlushGameVersionsCacheTest extends TestCase
     #[Test]
     public function it_runs_synchronously(): void
     {
-        $this->assertNotInstanceOf(ShouldQueue::class, new FlushGameVersionsCache);
+        $this->assertNotInstanceOf(ShouldQueue::class, $this->app->make(FlushGameVersionsCache::class));
     }
 
     #[Group('contract')]
@@ -69,7 +69,7 @@ class FlushGameVersionsCacheTest extends TestCase
     {
         $this->primeCache();
 
-        (new FlushGameVersionsCache)->handle(new GameVersionChanged(new GameVersion));
+        $this->app->make(FlushGameVersionsCache::class)->handle(new GameVersionChanged(new GameVersion));
 
         $this->assertFalse($this->cacheIsPrimed());
     }
@@ -79,7 +79,7 @@ class FlushGameVersionsCacheTest extends TestCase
     {
         $this->primeCache();
 
-        (new FlushGameVersionsCache)->handle(new WarcraftLogsGuildDeleted(new Guild));
+        $this->app->make(FlushGameVersionsCache::class)->handle(new WarcraftLogsGuildDeleted(new Guild));
 
         $this->assertFalse($this->cacheIsPrimed());
     }
@@ -89,7 +89,7 @@ class FlushGameVersionsCacheTest extends TestCase
     {
         request()->attributes->set(CachesSelectableGameVersions::REQUEST_KEY, new Collection);
 
-        (new FlushGameVersionsCache)->handle(new GameVersionChanged(new GameVersion));
+        $this->app->make(FlushGameVersionsCache::class)->handle(new GameVersionChanged(new GameVersion));
 
         $this->assertFalse(request()->attributes->has(CachesSelectableGameVersions::REQUEST_KEY));
     }
@@ -99,7 +99,7 @@ class FlushGameVersionsCacheTest extends TestCase
     {
         Cache::tags(['raiding'])->put('probe', true, 60);
 
-        (new FlushGameVersionsCache)->handle(new GameVersionChanged(new GameVersion));
+        $this->app->make(FlushGameVersionsCache::class)->handle(new GameVersionChanged(new GameVersion));
 
         $this->assertTrue(Cache::tags(['raiding'])->has('probe'));
     }
@@ -112,7 +112,7 @@ class FlushGameVersionsCacheTest extends TestCase
     {
         $this->primeCache();
 
-        (new FlushGameVersionsCache)->handleMediaAdded(new MediaHasBeenAddedEvent($this->mediaFor(new GameVersion)));
+        $this->app->make(FlushGameVersionsCache::class)->handleMediaAdded(new MediaHasBeenAddedEvent($this->mediaFor(new GameVersion)));
 
         $this->assertFalse($this->cacheIsPrimed());
     }
@@ -121,7 +121,7 @@ class FlushGameVersionsCacheTest extends TestCase
     #[Test]
     public function it_flushes_the_cache_again_when_the_application_terminates_after_media_is_added(): void
     {
-        (new FlushGameVersionsCache)->handleMediaAdded(new MediaHasBeenAddedEvent($this->mediaFor(new GameVersion)));
+        $this->app->make(FlushGameVersionsCache::class)->handleMediaAdded(new MediaHasBeenAddedEvent($this->mediaFor(new GameVersion)));
         $this->primeCache();
 
         $this->app->terminate();
@@ -135,7 +135,7 @@ class FlushGameVersionsCacheTest extends TestCase
     {
         $this->primeCache();
 
-        (new FlushGameVersionsCache)->handleMediaAdded(new MediaHasBeenAddedEvent($this->mediaFor(new Raid)));
+        $this->app->make(FlushGameVersionsCache::class)->handleMediaAdded(new MediaHasBeenAddedEvent($this->mediaFor(new Raid)));
 
         $this->assertTrue($this->cacheIsPrimed());
     }
@@ -148,7 +148,7 @@ class FlushGameVersionsCacheTest extends TestCase
     {
         $this->primeCache();
 
-        (new FlushGameVersionsCache)->handleCollectionCleared(new CollectionHasBeenClearedEvent(new GameVersion, GameVersion::MEDIA_ICON));
+        $this->app->make(FlushGameVersionsCache::class)->handleCollectionCleared(new CollectionHasBeenClearedEvent(new GameVersion, GameVersion::MEDIA_ICON));
 
         $this->assertFalse($this->cacheIsPrimed());
     }
@@ -159,7 +159,7 @@ class FlushGameVersionsCacheTest extends TestCase
     {
         $this->primeCache();
 
-        (new FlushGameVersionsCache)->handleCollectionCleared(new CollectionHasBeenClearedEvent(new Raid, Raid::MEDIA_BANNER));
+        $this->app->make(FlushGameVersionsCache::class)->handleCollectionCleared(new CollectionHasBeenClearedEvent(new Raid, Raid::MEDIA_BANNER));
 
         $this->assertTrue($this->cacheIsPrimed());
     }

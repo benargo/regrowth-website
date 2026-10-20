@@ -16,9 +16,9 @@ use Inertia\Response;
 
 class CommentController extends Controller
 {
-    private const int PER_PAGE = 20;
-
     use PaginatesCommentReplies;
+
+    private const int PER_PAGE = 20;
 
     /**
      * Display a listing of every root comment on the current game version's items.

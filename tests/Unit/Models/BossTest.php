@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Models;
 
-use App\Contracts\Events\FlushesRaidingCache;
 use App\Contracts\Models\BelongsToGameVersion;
 use App\Contracts\Models\DatasetModel;
 use App\Contracts\Models\EditLockable;
@@ -20,13 +19,14 @@ use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
 use App\Policies\DatasetPolicy;
-use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event as EventFacade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -118,6 +118,27 @@ class BossTest extends ModelTestCase
 
         $this->assertTableHas(['notes' => $notes]);
         $this->assertSame($notes, $boss->notes);
+    }
+
+    #[Test]
+    public function it_refuses_two_bosses_with_the_same_name_in_one_raid(): void
+    {
+        $raid = Raid::factory()->create();
+        $this->create(['name' => 'Moroes', 'raid_id' => $raid->id]);
+
+        $this->expectException(UniqueConstraintViolationException::class);
+
+        $this->create(['name' => 'Moroes', 'raid_id' => $raid->id]);
+    }
+
+    #[Test]
+    public function it_allows_the_same_name_in_different_raids(): void
+    {
+        $first = $this->create(['name' => 'Moroes', 'raid_id' => Raid::factory()->create()->id]);
+        $second = $this->create(['name' => 'Moroes', 'raid_id' => Raid::factory()->create()->id]);
+
+        $this->assertModelExists($first);
+        $this->assertModelExists($second);
     }
 
     #[Test]
@@ -493,14 +514,19 @@ class BossTest extends ModelTestCase
         EventFacade::assertDispatched(BossChanged::class, fn (BossChanged $event) => $event->boss->is($boss));
     }
 
-    #[Group('contract')]
     #[Test]
-    public function boss_changed_flushes_the_raiding_cache_after_commit(): void
+    public function it_flushes_the_raiding_cache_after_the_transaction_commits(): void
     {
-        $event = new BossChanged(new Boss);
+        $boss = $this->create();
+        Cache::tags(['raiding', 'events'])->put('probe', true);
 
-        $this->assertInstanceOf(FlushesRaidingCache::class, $event);
-        $this->assertInstanceOf(ShouldDispatchAfterCommit::class, $event);
+        DB::transaction(function () use ($boss): void {
+            $boss->update(['name' => 'Renamed']);
+
+            $this->assertTrue(Cache::tags(['raiding', 'events'])->has('probe'));
+        });
+
+        $this->assertFalse(Cache::tags(['raiding', 'events'])->has('probe'));
     }
 
     // ==================== helpers ====================

@@ -151,7 +151,11 @@ class StoreRaidRequest extends FormRequest
             $maxPlayers = $this->intended('max_players');
             $maxLootCouncillors = $this->intended('max_loot_councillors');
 
-            if ($maxPlayers === null || $maxLootCouncillors === null || (int) $maxLootCouncillors <= (int) $maxPlayers) {
+            if ($maxPlayers === null || $maxLootCouncillors === null) {
+                return;
+            }
+
+            if ((int) $maxLootCouncillors <= (int) $maxPlayers) {
                 return;
             }
 

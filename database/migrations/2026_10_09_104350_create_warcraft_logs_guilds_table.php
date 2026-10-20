@@ -15,6 +15,7 @@ return new class extends Migration
         Schema::create('warcraft_logs_guilds', function (Blueprint $table): void {
             $table->unsignedBigInteger('id')->primary();
             $table->string('namespace');
+            $table->string('logs_url')->nullable();
             $table->timestamps();
         });
     }

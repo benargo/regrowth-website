@@ -18,7 +18,7 @@ class GuildResourceTest extends TestCase
 {
     #[Test]
     #[Group('resource')]
-    public function it_returns_only_the_id_and_namespace_by_default(): void
+    public function it_returns_only_the_id_namespace_and_logs_url_by_default(): void
     {
         $array = GuildResource::make($this->guild())->resolve(new Request);
 
@@ -28,6 +28,7 @@ class GuildResourceTest extends TestCase
                 'value' => WarcraftLogsNamespace::Anniversary,
                 'label' => 'The Burning Crusade Classic Anniversary',
             ],
+            'logs_url' => 'https://fresh.warcraftlogs.com/guilds/774848-regrowth',
         ], $array);
     }
 
@@ -66,6 +67,10 @@ class GuildResourceTest extends TestCase
 
     private function guild(): Guild
     {
-        return Guild::factory()->make(['id' => 774848, 'namespace' => WarcraftLogsNamespace::Anniversary]);
+        return Guild::factory()->make([
+            'id' => 774848,
+            'namespace' => WarcraftLogsNamespace::Anniversary,
+            'logs_url' => 'https://fresh.warcraftlogs.com/guilds/774848-regrowth',
+        ]);
     }
 }

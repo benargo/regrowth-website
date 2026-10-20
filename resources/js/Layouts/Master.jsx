@@ -74,7 +74,7 @@ const NAV_CLASSES = {
 };
 
 export default function Master({ title, isHomepage = false, children }) {
-    const { auth, flash, errors, discordInviteUrl, gameVersions: { data: gameVersions = [] } = {} } = usePage().props;
+    const { auth, flash, errors, discordInviteUrl, warcraftLogsUrl, gameVersions: { data: gameVersions = [] } = {} } = usePage().props;
     const classes = isHomepage ? NAV_CLASSES.forever : NAV_CLASSES.classic;
     const mobileLinkClass = cn(MOBILE_LINK, classes.mobileLink);
     const isRosterActive = route().current("roster.*") || route().current("characters.show");
@@ -446,6 +446,7 @@ export default function Master({ title, isHomepage = false, children }) {
                     <Footer
                         classes={classes}
                         discordInviteUrl={discordInviteUrl}
+                        warcraftLogsUrl={warcraftLogsUrl}
                         gameVersions={gameVersions}
                         permissions={auth?.permissions ?? []}
                     />

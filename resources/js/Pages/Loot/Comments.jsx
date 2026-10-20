@@ -153,7 +153,7 @@ export default function Comments({ comments, replies }) {
                         <Pagination links={comments.meta.links} meta={comments.meta} itemName="comments" />
                     </>
                 ) : (
-                    <EmptyState icon="comments" message="Comments are not available for this game version." />
+                    <EmptyState icon="comments" message="No comments for this game version yet." />
                 )}
             </PageContainer>
         </Master>

@@ -9,6 +9,7 @@ use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\GameVersion;
 use App\Models\Permission;
+use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\Raid;
 use App\Models\User;
@@ -183,6 +184,33 @@ class DashboardPagesTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('management.grm.create'));
+
+        $response->assertOk();
+        $response->assertSee('Regrowth');
+    }
+
+    // ==================== raid pages ====================
+
+    #[Group('happy-path')]
+    #[Test]
+    public function manage_raids_page_loads(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('management.raids.index'));
+
+        $response->assertOk();
+        $response->assertSee('Regrowth');
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function edit_raid_page_loads(): void
+    {
+        $user = User::factory()->officer()->create();
+        $raid = Raid::factory()->for(Phase::factory())->create();
+
+        $response = $this->actingAs($user)->get(route('management.raids.edit', $raid));
 
         $response->assertOk();
         $response->assertSee('Regrowth');

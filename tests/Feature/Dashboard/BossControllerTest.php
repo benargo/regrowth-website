@@ -33,6 +33,7 @@ use Tests\Support\DashboardTestCase;
 #[Group('raiding')]
 class BossControllerTest extends DashboardTestCase
 {
+    #[Group('authorization')]
     #[Test]
     public function it_redirects_guests_to_login(): void
     {
@@ -457,6 +458,34 @@ class BossControllerTest extends DashboardTestCase
             ->patch(route('management.bosses.update', $boss), ['name' => 'Moroes']);
 
         $response->assertSessionHasErrors(['name' => 'Karazhan already has a boss called Moroes.']);
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_rejects_a_name_sent_as_null(): void
+    {
+        $boss = Boss::factory()->create();
+        UpdateBoss::shouldNotRun();
+
+        $response = $this->actingAs($this->officer)
+            ->from($this->editUrl($boss))
+            ->patch(route('management.bosses.update', $boss), ['name' => null]);
+
+        $response->assertInvalid(['name' => 'Enter the boss name.']);
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_rejects_an_image_larger_than_2_mb(): void
+    {
+        $boss = Boss::factory()->create();
+        UpdateBoss::shouldNotRun();
+
+        $response = $this->actingAs($this->officer)
+            ->from($this->editUrl($boss))
+            ->patch(route('management.bosses.update', $boss), ['images' => [UploadedFile::fake()->image('big.png')->size(2049)]]);
+
+        $response->assertInvalid(['images.0' => 'Each image must be 2 MB or smaller.']);
     }
 
     #[Group('validation')]

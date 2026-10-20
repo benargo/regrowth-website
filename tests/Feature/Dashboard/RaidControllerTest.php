@@ -8,6 +8,7 @@ use App\Enums\BannerPosition;
 use App\Models\Boss;
 use App\Models\Event;
 use App\Models\GameVersion;
+use App\Models\Item;
 use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
 use Mockery\Matcher\MatcherInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
@@ -641,11 +643,12 @@ class RaidControllerTest extends DashboardTestCase
 
     #[Group('validation')]
     #[Test]
-    public function it_rejects_moving_a_used_raid_to_another_game_versions_phase(): void
+    #[DataProvider('linkedRecords')]
+    public function it_rejects_moving_a_used_raid_to_another_game_versions_phase(string $link): void
     {
         $gameVersion = GameVersion::factory()->create(['title' => 'Anniversary']);
         $raid = Raid::factory()->for(Phase::factory()->for($gameVersion))->create();
-        Boss::factory()->for($raid)->create();
+        $this->linkRecord($raid, $link);
         $otherPhase = Phase::factory()->for(GameVersion::factory())->create();
         UpdateRaid::shouldNotRun();
 
@@ -1042,6 +1045,18 @@ class RaidControllerTest extends DashboardTestCase
         $this->assertModelExists($raid);
     }
 
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function linkedRecords(): array
+    {
+        return [
+            'a boss' => ['boss'],
+            'an event' => ['event'],
+            'an item' => ['item'],
+        ];
+    }
+
     // ==================== helpers ====================
 
     private function editUrl(Raid $raid): string
@@ -1076,5 +1091,14 @@ class RaidControllerTest extends DashboardTestCase
         $raid->events()->attach($event->id, ['sort_order' => 1]);
 
         return $event;
+    }
+
+    private function linkRecord(Raid $raid, string $link): void
+    {
+        match ($link) {
+            'boss' => Boss::factory()->for($raid)->create(),
+            'event' => $this->attachEvent($raid, now()->addDay(), now()->addDay()->addHours(3)),
+            'item' => $raid->items()->attach(Item::factory()->create()),
+        };
     }
 }

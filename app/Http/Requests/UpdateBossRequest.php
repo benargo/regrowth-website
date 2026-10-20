@@ -59,6 +59,7 @@ class UpdateBossRequest extends StoreBossRequest
     public function after(): array
     {
         return [
+            ...parent::after(),
             $this->editLockCheck('boss', 'boss'),
             $this->imageOrderCheck(),
         ];

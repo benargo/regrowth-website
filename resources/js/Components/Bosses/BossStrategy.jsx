@@ -36,6 +36,8 @@ export default function BossStrategy({ boss, showEditLink = true }) {
                         <img
                             src={image.url}
                             alt={`${boss.name} strategy ${i + 1}`}
+                            loading="lazy"
+                            decoding="async"
                             className="rounded-lg border border-amber-600/30"
                         />
                     </div>

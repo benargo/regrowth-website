@@ -20,6 +20,7 @@ class GuildResource extends JsonResource
                 'value' => $this->namespace,
                 'label' => $this->namespace->label(),
             ],
+            'logs_url' => $this->logs_url,
             'game_versions' => $this->whenLoaded('gameVersions', fn () => $this->gameVersions->toResourceCollection()->resolve($request)),
             'guild_tags' => $this->whenLoaded('guildTags', fn () => $this->guildTags->toResourceCollection()->resolve($request)),
             'game_versions_count' => $this->whenCounted('gameVersions'),

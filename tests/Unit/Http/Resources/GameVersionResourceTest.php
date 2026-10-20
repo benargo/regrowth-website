@@ -189,7 +189,6 @@ class GameVersionResourceTest extends TestCase
                     'value' => WarcraftLogsNamespace::Anniversary,
                     'label' => 'The Burning Crusade Classic Anniversary',
                 ],
-                'url' => 'https://fresh.warcraftlogs.com/guilds/774848-regrowth',
             ],
         ], $array);
     }
@@ -211,7 +210,7 @@ class GameVersionResourceTest extends TestCase
         $this->assertNull($array['blizzard']['namespace']);
         $this->assertNull($array['warcraftlogs']['guild']);
         $this->assertSame(['value' => null, 'label' => null], $array['warcraftlogs']['namespace']);
-        $this->assertNull($array['warcraftlogs']['url']);
+        $this->assertArrayNotHasKey('url', $array['warcraftlogs']);
     }
 
     #[Test]
@@ -283,21 +282,7 @@ class GameVersionResourceTest extends TestCase
 
         $array = $gameVersion->load(['media', 'warcraftLogsGuild'])->toResource()->scope('switcher')->resolve(new Request);
 
-        $this->assertSame(['id', 'title', 'slug', 'color', 'icon_url', 'release_date', 'warcraftlogs'], array_keys($array));
-    }
-
-    #[Test]
-    public function the_switcher_scope_includes_the_warcraft_logs_guild_url(): void
-    {
-        $gameVersion = GameVersion::factory()->make(['guild_name' => 'Regrowth', 'warcraft_logs_guild_id' => 774848]);
-        $gameVersion->setRelation('warcraftLogsGuild', Guild::factory()->make([
-            'id' => 774848,
-            'namespace' => WarcraftLogsNamespace::Forever,
-        ]));
-
-        $array = $gameVersion->toResource()->scope('switcher')->resolve(new Request);
-
-        $this->assertSame('https://forever.warcraftlogs.com/guilds/774848-regrowth', $array['warcraftlogs']['url']);
+        $this->assertSame(['id', 'title', 'slug', 'color', 'icon_url', 'release_date'], array_keys($array));
     }
 
     // ==================== metadata ====================

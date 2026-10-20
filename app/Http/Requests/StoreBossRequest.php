@@ -5,10 +5,12 @@ namespace App\Http\Requests;
 use App\Contracts\Actions\Boss\SharesRaidPageOrigins;
 use App\Models\Boss;
 use App\Models\Raid;
+use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
+use Illuminate\Validation\Validator;
 
 class StoreBossRequest extends FormRequest implements SharesRaidPageOrigins
 {
@@ -38,7 +40,6 @@ class StoreBossRequest extends FormRequest implements SharesRaidPageOrigins
             'raid_id.exists' => 'Choose one of the listed raids.',
             'name.required' => 'Enter the boss name.',
             'name.max' => 'The boss name must be 255 characters or fewer.',
-            'name.unique' => "{$this->raidName()} already has a boss called {$this->input('name')}.",
             'from.in' => "Open this form from the bosses list or a raid's Bosses step.",
         ];
     }
@@ -56,12 +57,42 @@ class StoreBossRequest extends FormRequest implements SharesRaidPageOrigins
     }
 
     /**
+     * Get the "after" validation callables for the request.
+     *
+     * @return list<callable(Validator): void>
+     */
+    public function after(): array
+    {
+        return [
+            $this->uniqueNameMessageCheck(),
+        ];
+    }
+
+    /**
      * The rule that keeps a boss name unique within its raid.
      */
     protected function uniqueNameRule(mixed $raidId): Unique
     {
         return Rule::unique(Boss::class, 'name')
             ->where('raid_id', is_numeric($raidId) ? (int) $raidId : null);
+    }
+
+    /**
+     * An after() hook that replaces a failed unique-name error with one that
+     * names the raid.
+     *
+     * @return Closure(Validator): void
+     */
+    protected function uniqueNameMessageCheck(): Closure
+    {
+        return function (Validator $validator): void {
+            if (! isset($validator->failed()['name']['Unique'])) {
+                return;
+            }
+
+            $validator->errors()->forget('name');
+            $validator->errors()->add('name', "{$this->raidName()} already has a boss called {$this->input('name')}.");
+        };
     }
 
     /**

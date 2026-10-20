@@ -30,11 +30,11 @@ export default function SectionDisclosure({ section, active = false, classes = {
                             "group flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white active:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400",
                             classes.responsiveNavLink,
                         )}
-                        aria-current={active ? "page" : undefined}
+                        aria-current={active ? "true" : undefined}
                     >
                         <Icon icon={headerIcon.icon} style="solid" className="mr-2 h-6" />
                         <span className="flex-1">{SITE_SECTIONS[section].label}</span>
-                        <span className="flex transition-transform group-data-open:rotate-180" aria-hidden="true">
+                        <span className="flex transition-transform group-data-open:rotate-180 motion-reduce:transition-none" aria-hidden="true">
                             <Icon icon="chevron-down" style="regular" className="h-4" />
                         </span>
                     </DisclosureButton>

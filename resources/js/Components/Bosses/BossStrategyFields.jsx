@@ -62,32 +62,30 @@ export default function BossStrategyFields({ boss, url, canEdit = true }) {
         setImages(boss.images);
     }
 
-    function handleDelete(imageUrl) {
-        const image = images.find((candidate) => candidate.url === imageUrl);
-
-        if (!canEdit || !image) {
+    function handleDelete(id) {
+        if (!canEdit) {
             return;
         }
 
-        setImages((current) => current.filter((candidate) => candidate.id !== image.id));
+        setImages((current) => current.filter((image) => image.id !== id));
         saveImages(
-            `strategy-images-remove-${image.id}`,
-            { removed_image_ids: [image.id] },
+            `strategy-images-remove-${id}`,
+            { removed_image_ids: [id] },
             { onError: rollBackImages, onNetworkError: rollBackImages },
         );
     }
 
-    function handleReorder(imageUrls) {
-        const reordered = imageUrls.map((imageUrl) => images.find((image) => image.url === imageUrl));
-
-        if (!canEdit || reordered.includes(undefined)) {
+    function handleReorder(ids) {
+        if (!canEdit) {
             return;
         }
 
-        setImages(reordered);
+        const imagesById = new Map(images.map((image) => [image.id, image]));
+
+        setImages(ids.map((id) => imagesById.get(id)));
         saveImages(
             "strategy-images-order",
-            { image_ids: reordered.map((image) => image.id) },
+            { image_ids: ids },
             { onError: rollBackImages, onNetworkError: rollBackImages },
         );
     }
@@ -117,7 +115,8 @@ export default function BossStrategyFields({ boss, url, canEdit = true }) {
             <div className="flex flex-col gap-1.5">
                 <h3 className="text-sm font-medium text-gray-300">Strategy images</h3>
                 <ImageManager
-                    images={images.map((image) => image.url)}
+                    images={images}
+                    label="strategy image"
                     saving={status?.status === "saving"}
                     disabled={!canEdit}
                     error={imageError}

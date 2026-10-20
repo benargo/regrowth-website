@@ -20,6 +20,7 @@ class StoreGuildRequest extends FormRequest
         return [
             'id' => ['required', 'integer', 'min:1', Rule::unique(Guild::class, 'id')],
             'namespace' => ['required', Rule::enum(WarcraftLogsNamespace::class)],
+            'logs_url' => ['nullable', 'url:https', 'max:255'],
         ];
     }
 
@@ -34,6 +35,7 @@ class StoreGuildRequest extends FormRequest
             'id.required' => 'Enter the Warcraft Logs guild ID.',
             'id.unique' => 'This Warcraft Logs guild has already been added.',
             'namespace.required' => 'Choose which Warcraft Logs site the guild is on.',
+            'logs_url.url' => "Enter the full https:// address of the guild's Warcraft Logs page.",
         ];
     }
 
@@ -47,6 +49,7 @@ class StoreGuildRequest extends FormRequest
         return [
             'id' => 'Warcraft Logs guild ID',
             'namespace' => 'Warcraft Logs site',
+            'logs_url' => 'Warcraft Logs guild page',
         ];
     }
 }

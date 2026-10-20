@@ -79,7 +79,8 @@ class BossController extends Controller implements SharesPriorityWeightThreshold
     public function create(Request $request): Response
     {
         $raid = Raid::find($request->integer('raid'));
-        $from = in_array($request->query('from'), self::FROM_RAID_PAGES, true) ? $request->query('from') : null;
+        $from = $request->query('from');
+        $from = in_array($from, self::FROM_RAID_PAGES, true) ? $from : null;
 
         return Inertia::render('Manage/Bosses/Create', [
             'raidId' => $raid?->id,
@@ -97,7 +98,7 @@ class BossController extends Controller implements SharesPriorityWeightThreshold
     public function store(StoreBossRequest $request): RedirectResponse
     {
         $boss = new Boss($request->safe()->only(['name']));
-        $boss->raid()->associate($request->integer('raid_id'));
+        $boss->raid()->associate($request->validated('raid_id'));
         $boss->save();
 
         return redirect(BuildBossRoutes::make()->afterStore($boss, $request->validated('from')))

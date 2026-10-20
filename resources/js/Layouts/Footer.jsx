@@ -116,11 +116,10 @@ function DiscordLink({ linkClass, discordInviteUrl }) {
  * The site footer: brand, section columns (lg and up), guild links, game
  * version switcher, about links and the disclaimer.
  */
-export default function Footer({ classes, discordInviteUrl, gameVersions = [], permissions = [] }) {
+export default function Footer({ classes, discordInviteUrl, warcraftLogsUrl, gameVersions = [], permissions = [] }) {
     const { current: currentGameVersion, switchTo, isSwitching } = useGameVersionSwitch();
     const hasGameVersionColumn = gameVersions.length > 1;
     const footerLinkClass = cn(FOOTER_COLUMN_LINK, classes.footerLink);
-    const warcraftLogsUrl = currentGameVersion?.warcraftlogs?.url;
 
     return (
         <footer className={cn("border-t-8 py-5", classes.footer)} id="footer">

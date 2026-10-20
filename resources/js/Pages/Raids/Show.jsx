@@ -6,6 +6,7 @@ import Icon from "@/Components/FontAwesome/Icon";
 import EmptyState from "@/Components/EmptyState";
 import Breadcrumbs from "@/Components/Navigation/Breadcrumbs";
 import SectionNav from "@/Components/Navigation/SectionNav";
+import cn from "@/Helpers/cn";
 import { SITE_SECTIONS, sectionCrumbs } from "@/Helpers/siteSections";
 
 const ROW_CLASSES =
@@ -91,20 +92,18 @@ export default function Show({ section, raid, bosses }) {
                         </ol>
                     )}
                 </section>
-                {raidData.has_trash_items && (
-                    <Link
-                        href={route(`${section}.raids.trash`, { raid: raidData.id, slug: raidData.slug })}
-                        className={`${ROW_CLASSES} mt-6`}
-                    >
-                        <Icon icon="sack" style="light" aria-hidden="true" className="w-8 text-center text-xl text-amber-400" />
-                        <span className="flex-1 font-semibold text-white">Trash items</span>
-                        <CommentCount
-                            count={raidData.trash_comments_count ?? 0}
-                            hidden={!(section === "loot" && raidData.trash_comments_count > 0)}
-                        />
-                        <Icon icon="chevron-right" style="solid" aria-hidden="true" className="text-amber-500" />
-                    </Link>
-                )}
+                <Link
+                    href={route(`${section}.raids.trash`, { raid: raidData.id, slug: raidData.slug })}
+                    className={cn(ROW_CLASSES, "mt-6", !raidData.has_trash_items && "hidden")}
+                >
+                    <Icon icon="sack" style="light" aria-hidden="true" className="w-8 text-center text-xl text-amber-400" />
+                    <span className="flex-1 font-semibold text-white">Trash items</span>
+                    <CommentCount
+                        count={raidData.trash_comments_count ?? 0}
+                        hidden={!(section === "loot" && raidData.trash_comments_count > 0)}
+                    />
+                    <Icon icon="chevron-right" style="solid" aria-hidden="true" className="text-amber-500" />
+                </Link>
             </PageContainer>
         </Master>
     );

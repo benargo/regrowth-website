@@ -38,14 +38,6 @@ enum WarcraftLogsNamespace: string
         return "{$this->baseUrl()}/api/v2/client";
     }
 
-    /**
-     * The public page of the given guild on this namespace's site.
-     */
-    public function guildUrl(int $guildId, string $guildName): string
-    {
-        return "{$this->baseUrl()}/guilds/{$guildId}-{$guildName}";
-    }
-
     public function label(): string
     {
         return match ($this) {

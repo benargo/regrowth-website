@@ -127,7 +127,7 @@ export function GameVersionSwitchList({ className = "", linkClassName = "" }) {
                     <span className="text-xs opacity-70">Game version</span>
                     <span>{current.title}</span>
                 </span>
-                <span className="flex transition-transform group-data-open:rotate-180" aria-hidden="true">
+                <span className="flex transition-transform group-data-open:rotate-180 motion-reduce:transition-none" aria-hidden="true">
                     <Icon icon="chevron-down" style="regular" className="h-4" />
                 </span>
             </DisclosureButton>

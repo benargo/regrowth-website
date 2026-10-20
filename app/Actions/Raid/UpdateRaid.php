@@ -39,27 +39,59 @@ class UpdateRaid implements SharesRaidBannerCollection
      */
     public function handle(Raid $raid, array $data): void
     {
-        $columns = Arr::except($data, self::NON_COLUMN_KEYS);
-
-        if (Arr::exists($data, 'boss_ids')) {
-            DB::transaction(function () use ($raid, $columns, $data): void {
-                $raid->update($columns);
-                Boss::setNewOrder($data['boss_ids']);
-            });
-        } elseif ($columns !== []) {
-            $raid->update($columns);
-        }
-
-        if (Arr::exists($data, 'banner')) {
-            $position = Arr::exists($data, 'banner_position') ? $data['banner_position'] : $raid->banner_position;
-            $this->replaceBanner($raid, $data['banner'], $position);
-        } elseif (Arr::exists($data, 'banner_position')) {
-            $this->positionBanner($raid->getFirstMedia(self::MEDIA_BANNER), $data['banner_position']);
-        }
+        $this->updateColumns($raid, Arr::except($data, self::NON_COLUMN_KEYS), Arr::get($data, 'boss_ids'));
+        $this->updateBanner($raid, $data);
 
         if (Arr::hasAny($data, self::NON_COLUMN_KEYS)) {
             RaidChanged::dispatch($raid);
         }
+    }
+
+    /**
+     * Write the given columns, together with the boss order in one transaction
+     * when boss ids are given.
+     *
+     * @param  array<string, mixed>  $columns
+     * @param  ?list<int>  $bossIds
+     */
+    private function updateColumns(Raid $raid, array $columns, ?array $bossIds): void
+    {
+        if ($bossIds !== null) {
+            DB::transaction(function () use ($raid, $columns, $bossIds): void {
+                $raid->update($columns);
+                Boss::setNewOrder($bossIds);
+            });
+
+            return;
+        }
+
+        if ($columns === []) {
+            return;
+        }
+
+        $raid->update($columns);
+    }
+
+    /**
+     * Replace the banner when `banner` is present, otherwise reposition it when
+     * `banner_position` is present.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function updateBanner(Raid $raid, array $data): void
+    {
+        if (Arr::exists($data, 'banner')) {
+            $position = Arr::exists($data, 'banner_position') ? $data['banner_position'] : $raid->banner_position;
+            $this->replaceBanner($raid, $data['banner'], $position);
+
+            return;
+        }
+
+        if (! Arr::exists($data, 'banner_position')) {
+            return;
+        }
+
+        $this->positionBanner($raid->getFirstMedia(self::MEDIA_BANNER), $data['banner_position']);
     }
 
     /**
@@ -87,11 +119,9 @@ class UpdateRaid implements SharesRaidBannerCollection
             return;
         }
 
-        if ($position === null) {
-            $banner->forgetCustomProperty('position');
-        } else {
-            $banner->setCustomProperty('position', $position);
-        }
+        $position === null
+            ? $banner->forgetCustomProperty('position')
+            : $banner->setCustomProperty('position', $position);
 
         $banner->save();
     }

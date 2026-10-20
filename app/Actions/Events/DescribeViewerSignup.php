@@ -5,6 +5,7 @@ namespace App\Actions\Events;
 use App\Data\Navigation\SignupLineData;
 use App\Enums\SignupStatus;
 use App\Models\Event;
+use App\Models\EventCharacter;
 use App\Models\PlannedAbsence;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -37,7 +38,7 @@ class DescribeViewerSignup
             return new SignupLineData("You haven't signed up yet.");
         }
 
-        if ($signups->every(fn ($pivot): bool => $pivot->signup_status === SignupStatus::Cancelled)) {
+        if ($signups->every(fn (EventCharacter $pivot): bool => $pivot->signup_status === SignupStatus::Cancelled)) {
             return new SignupLineData("You said you can't make it.");
         }
 
@@ -45,7 +46,7 @@ class DescribeViewerSignup
             return new SignupLineData("You're signed up.");
         }
 
-        $isInTeam = $signups->contains(fn ($pivot): bool => $pivot->slot_number !== null && ! $pivot->is_benched);
+        $isInTeam = $signups->contains(fn (EventCharacter $pivot): bool => $pivot->slot_number !== null && ! $pivot->is_benched);
 
         return new SignupLineData($isInTeam ? "You're in the team." : "You're on the bench.");
     }

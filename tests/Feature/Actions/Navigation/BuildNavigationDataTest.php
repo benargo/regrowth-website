@@ -40,6 +40,8 @@ class BuildNavigationDataTest extends TestCase
         $this->event = $this->eventStartingAt($this->gameVersion, now()->addDay());
     }
 
+    // ==================== navigation data ====================
+
     #[Test]
     public function it_describes_the_next_raid_and_the_members_place_in_it(): void
     {
@@ -84,25 +86,27 @@ class BuildNavigationDataTest extends TestCase
         $this->assertSame([], $navigation->latestDiscussions);
     }
 
+    // ==================== cache ====================
+
     #[Test]
     public function it_caches_arrays_under_the_version_and_viewer(): void
     {
         BuildNavigationData::run($this->user, $this->gameVersion);
         BuildNavigationData::run(null, $this->gameVersion);
 
-        $this->assertIsArray(Cache::tags(['navigation'])->get("navigation:{$this->gameVersion->id}:{$this->user->id}"));
-        $this->assertIsArray(Cache::tags(['navigation'])->get("navigation:{$this->gameVersion->id}:guest"));
+        $this->assertIsArray(Cache::tags(['navigation', 'raiding', 'events'])->get("navigation:{$this->gameVersion->id}:{$this->user->id}"));
+        $this->assertIsArray(Cache::tags(['navigation', 'raiding', 'events'])->get("navigation:{$this->gameVersion->id}:guest"));
 
         BuildNavigationData::run($this->user, null);
 
-        $this->assertIsArray(Cache::tags(['navigation'])->get("navigation:none:{$this->user->id}"));
+        $this->assertIsArray(Cache::tags(['navigation', 'raiding', 'events'])->get("navigation:none:{$this->user->id}"));
     }
 
     #[Test]
     public function it_serves_the_cached_data_for_five_minutes(): void
     {
         $first = BuildNavigationData::run($this->user, $this->gameVersion);
-        $sooner = $this->eventStartingAt($this->gameVersion, now()->addHour());
+        $sooner = Event::withoutEvents(fn (): Event => $this->eventStartingAt($this->gameVersion, now()->addHour()));
 
         $second = BuildNavigationData::run($this->user, $this->gameVersion);
 
@@ -146,6 +150,34 @@ class BuildNavigationDataTest extends TestCase
 
         $this->assertSame($secondEvent->id, BuildNavigationData::run($this->user, $second)->nextRaid->id);
     }
+
+    #[Test]
+    public function it_is_flushed_with_the_raiding_cache(): void
+    {
+        BuildNavigationData::run($this->user, $this->gameVersion);
+        $key = "navigation:{$this->gameVersion->id}:{$this->user->id}";
+
+        $this->assertIsArray(Cache::tags(['navigation', 'raiding', 'events'])->get($key));
+
+        Cache::tags(['raiding', 'events'])->flush();
+
+        $this->assertNull(Cache::tags(['navigation', 'raiding', 'events'])->get($key));
+    }
+
+    #[Test]
+    public function it_is_flushed_with_the_events_cache(): void
+    {
+        BuildNavigationData::run($this->user, $this->gameVersion);
+        $key = "navigation:{$this->gameVersion->id}:{$this->user->id}";
+
+        $this->assertIsArray(Cache::tags(['navigation', 'raiding', 'events'])->get($key));
+
+        Cache::tags(['events'])->flush();
+
+        $this->assertNull(Cache::tags(['navigation', 'raiding', 'events'])->get($key));
+    }
+
+    // ==================== helpers ====================
 
     private function eventStartingAt(GameVersion $gameVersion, Carbon $startTime): Event
     {
