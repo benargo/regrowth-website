@@ -239,31 +239,6 @@ class UpdateGameVersionTest extends TestCase
         $this->assertFalse($gameVersion->raids()->exists());
     }
 
-    // ==================== new raid ====================
-
-    #[Group('happy-path')]
-    #[Test]
-    public function it_creates_a_raid_under_the_given_phase(): void
-    {
-        $gameVersion = GameVersion::factory()->create();
-        $phase = Phase::factory()->for($gameVersion)->create();
-
-        $this->updateGameVersion($gameVersion, [
-            'new_raid' => [
-                'name' => 'Karazhan',
-                'difficulty' => 'Normal',
-                'phase_id' => $phase->id,
-                'max_players' => 10,
-            ],
-        ]);
-
-        $raid = Raid::sole();
-        $this->assertSame($phase->id, $raid->phase_id);
-        $this->assertSame('Karazhan', $raid->name);
-        $this->assertSame('Normal', $raid->difficulty);
-        $this->assertSame(10, $raid->max_players);
-    }
-
     // ==================== guild ranks ====================
 
     #[Test]

@@ -47,8 +47,8 @@ function GuildDetails({ guild }) {
     );
 }
 
-function NamespaceForm({ guild, namespaces }) {
-    const form = useForm({ namespace: guild.namespace.value });
+function GuildDetailsForm({ guild, namespaces }) {
+    const form = useForm({ namespace: guild.namespace.value, logs_url: guild.logs_url ?? "" });
 
     return (
         <DetailsForm
@@ -63,8 +63,8 @@ function NamespaceForm({ guild, namespaces }) {
             processingLabel="Saving…"
             cancelHref={route("management.warcraftlogs.guilds.index")}
         >
-            {({ select }) => (
-                <FormSection legend="Warcraft Logs site">
+            {({ text, select }) => (
+                <FormSection legend="Warcraft Logs guild">
                     <FormRow
                         htmlFor="namespace"
                         label="Warcraft Logs site"
@@ -74,6 +74,15 @@ function NamespaceForm({ guild, namespaces }) {
                         className="md:col-span-2"
                     >
                         {select("namespace", { options: namespaces, placeholder: "Choose a site", required: true })}
+                    </FormRow>
+                    <FormRow
+                        htmlFor="logs_url"
+                        label="Guild page URL"
+                        hint="The guild's page on Warcraft Logs, linked from the site footer."
+                        error={form.errors.logs_url}
+                        className="md:col-span-2"
+                    >
+                        {text("logs_url", { type: "url", autoComplete: "url" })}
                     </FormRow>
                 </FormSection>
             )}
@@ -199,7 +208,7 @@ export default function Show({ guild: { data: guild }, namespaces }) {
                     <GuildDetails guild={guild} />
 
                     <Can permission="update-warcraft-logs-guilds">
-                        <NamespaceForm guild={guild} namespaces={namespaces} />
+                        <GuildDetailsForm guild={guild} namespaces={namespaces} />
                     </Can>
 
                     <section aria-labelledby="guild-tags-heading" className="flex flex-col gap-4">

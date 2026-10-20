@@ -79,8 +79,8 @@ class GuildController extends Controller
     }
 
     /**
-     * Change the guild's namespace. Guild flushes the cached Warcraft Logs
-     * responses when it does.
+     * Change the guild's namespace or Warcraft Logs page URL. Guild flushes
+     * the cached Warcraft Logs responses when it does.
      */
     #[Authorize('update', 'guild')]
     public function update(UpdateGuildRequest $request, Guild $guild): RedirectResponse

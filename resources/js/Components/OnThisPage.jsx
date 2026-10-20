@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Pixels from the viewport top below which a section counts as "being read":
@@ -51,6 +51,26 @@ function useActiveSection(ids) {
 }
 
 /**
+ * Publish the element's rendered height as `--on-this-page-height` on the
+ * document root while mounted, keeping it current as the element resizes.
+ */
+function useHeightProperty(ref) {
+    useEffect(() => {
+        const root = document.documentElement;
+        const observer = new ResizeObserver(([entry]) => {
+            root.style.setProperty("--on-this-page-height", `${entry.target.offsetHeight}px`);
+        });
+
+        observer.observe(ref.current);
+
+        return () => {
+            observer.disconnect();
+            root.style.removeProperty("--on-this-page-height");
+        };
+    }, [ref]);
+}
+
+/**
  * In-page section links. A sticky vertical rail on large viewports (give it a
  * width via `className`), and a sticky, wrapping row above the content on
  * smaller ones. `children` render beneath the links, e.g. a save status.
@@ -59,9 +79,13 @@ function useActiveSection(ids) {
  */
 export default function OnThisPage({ sections, className = "", children }) {
     const activeId = useActiveSection(sections.map((section) => section.value));
+    const asideRef = useRef(null);
+    useHeightProperty(asideRef);
 
     return (
         <aside
+            ref={asideRef}
+            data-on-this-page
             className={`bg-brown-900 border-amber-700/60 sticky top-24 z-10 -my-2 flex flex-wrap items-center justify-between gap-x-6 rounded-lg border p-2 shadow-lg shadow-black/30 lg:top-28 lg:my-0 lg:flex-col lg:flex-nowrap lg:items-stretch lg:justify-start lg:gap-4 lg:gap-y-2 lg:rounded-none lg:border-0 lg:bg-transparent lg:px-0 lg:py-0 lg:shadow-none ${className}`}
         >
             <nav aria-label="On this page" className="min-w-0">

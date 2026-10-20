@@ -1,6 +1,6 @@
 import GameVersionIcon from "@/Components/GameVersions/GameVersionIcon";
 
-export default function GameVersionResultRow({ gameVersion, index, isHighlighted, onMouseEnter, onSelect }) {
+export default function GameVersionResultRow({ gameVersion, index, isCurrent, isHighlighted, onMouseEnter, onSelect }) {
     return (
         <button
             type="button"
@@ -16,7 +16,7 @@ export default function GameVersionResultRow({ gameVersion, index, isHighlighted
         >
             <GameVersionIcon gameVersion={gameVersion} className="h-8 w-8" />
             <span className="text-md min-w-0 flex-1 truncate font-bold text-white">{gameVersion.title}</span>
-            {gameVersion.meta?.is_current && <span className="flex-none text-xs text-amber-500">Current</span>}
+            {isCurrent && <span className="flex-none text-xs text-amber-500">Current</span>}
         </button>
     );
 }

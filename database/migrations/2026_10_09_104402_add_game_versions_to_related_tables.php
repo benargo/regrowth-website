@@ -50,6 +50,7 @@ return new class extends Migration
         $this->repointItemForeignKeysToUuid();
         $this->widenMediaModelIdForUuidKeys();
         $this->addGameVersionIdToCharactersTable();
+        $this->addRaidNameUniqueIndexToBossesTable();
         $this->addGameVersionIdToDerivedTables();
         $this->addWarcraftLogsGuildToGameVersionsAndGuildTagsTables();
         $this->addWarcraftLogsGuildAndPhaseToReportsTable();
@@ -57,6 +58,7 @@ return new class extends Migration
 
     public function down(): void
     {
+        $this->dropRaidNameUniqueIndexFromBossesTable();
         $this->dropGameVersionIdFromCharactersTable();
         $this->restoreMediaModelIdWidth();
 
@@ -317,6 +319,20 @@ return new class extends Migration
         Schema::table('characters', function (Blueprint $table): void {
             $table->foreignIdFor(GameVersion::class)->nullable()->after('id')->constrained()->nullOnDelete();
             $table->unique(['game_version_id', 'name']);
+        });
+    }
+
+    private function addRaidNameUniqueIndexToBossesTable(): void
+    {
+        Schema::table('bosses', function (Blueprint $table): void {
+            $table->unique(['raid_id', 'name']);
+        });
+    }
+
+    private function dropRaidNameUniqueIndexFromBossesTable(): void
+    {
+        Schema::table('bosses', function (Blueprint $table): void {
+            $table->dropUnique(['raid_id', 'name']);
         });
     }
 

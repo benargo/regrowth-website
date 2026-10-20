@@ -173,17 +173,19 @@ export function DangerButton(props) {
 }
 
 /**
- * A HeadlessUI select built from `options` (`[{ value, label }]`). The empty
- * placeholder option renders only when `placeholder` is given. onChange
- * receives the chosen value as a string. `className` is merged over
- * controlClassName.
+ * A HeadlessUI select built from `options` (`[{ value, label }]`) and, when
+ * given, `groups` (`[{ label, options }]`), each rendered as a headed
+ * <optgroup> after the ungrouped options. The empty placeholder option
+ * renders only when `placeholder` is given. onChange receives the chosen
+ * value as a string. `className` is merged over controlClassName.
  */
 export function OptionSelect({
     name,
     id = name,
     value,
     onChange,
-    options,
+    options = [],
+    groups = null,
     placeholder,
     invalid,
     required = false,
@@ -206,6 +208,15 @@ export function OptionSelect({
                 <option key={option.value} value={option.value}>
                     {option.label}
                 </option>
+            ))}
+            {groups?.map((group, index) => (
+                <optgroup key={`${index}-${group.label}`} label={group.label}>
+                    {group.options.map((option) => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                        </option>
+                    ))}
+                </optgroup>
             ))}
         </Select>
     );
@@ -363,7 +374,7 @@ export function FormSection({ id, legend, children }) {
     return (
         <Fieldset
             id={id}
-            className="border-amber-600/40 flex scroll-mt-48 flex-col gap-6 border-t pt-6 first:border-t-0 first:pt-0 lg:scroll-mt-28"
+            className="border-amber-600/40 flex scroll-mt-4 flex-col gap-6 border-t pt-6 first:border-t-0 first:pt-0"
         >
             <Legend className="font-serif text-xl text-white">{legend}</Legend>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">{children}</div>

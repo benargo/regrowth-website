@@ -301,6 +301,6 @@ class BuildHighestPriorityStatsTableTest extends TestCase
 
     protected function table(): HighestPriorityStatsTableData
     {
-        return BuildHighestPriorityStatsTable::run(ListPhasesWithTierOnePriorities::run()->pluck('id'));
+        return BuildHighestPriorityStatsTable::run(ListPhasesWithTierOnePriorities::run(null)->pluck('id'));
     }
 }

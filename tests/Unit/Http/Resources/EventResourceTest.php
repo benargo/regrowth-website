@@ -8,8 +8,10 @@ use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\EventAssignment;
+use App\Models\GameVersion;
 use App\Models\Raid;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -592,7 +594,7 @@ class EventResourceTest extends TestCase
     {
         $array = (new EventResource(Event::factory()->create()->fresh()))->resolve(new Request);
 
-        foreach (['assignments', 'composition', 'raids', 'users'] as $key) {
+        foreach (['assignments', 'composition', 'raids', 'users', 'game_version'] as $key) {
             $this->assertArrayNotHasKey($key, $array);
         }
     }
@@ -754,6 +756,63 @@ class EventResourceTest extends TestCase
         $this->assertSame('Black Temple', $raids[0]['name']);
     }
 
+    // ==================== game version ====================
+
+    #[Test]
+    public function the_member_scope_includes_the_game_version_icon_fields_when_loaded(): void
+    {
+        $array = (new EventResource($this->unsavedEventInGameVersion()))
+            ->withChannel(['id' => '1', 'name' => 'raid-chat', 'position' => 3])
+            ->scope('members')
+            ->resolve(new Request);
+
+        $this->assertSame(['id', 'title', 'start_time', 'end_time', 'duration', 'game_version', 'channel'], array_keys($array));
+        $this->assertSame(['id' => 7, 'title' => 'World of Warcraft: Forever', 'color' => '226e73', 'icon_url' => null], $array['game_version']);
+    }
+
+    #[Test]
+    public function the_visitor_scope_includes_the_game_version_icon_fields_when_loaded(): void
+    {
+        $event = $this->unsavedEventInGameVersion()->setRelation('raids', new EloquentCollection);
+
+        $array = (new EventResource($event))->scope('visitors')->resolve(new Request);
+
+        $this->assertSame(['id', 'title', 'start_time', 'end_time', 'game_version', 'raids'], array_keys($array));
+        $this->assertSame(['id' => 7, 'title' => 'World of Warcraft: Forever', 'color' => '226e73', 'icon_url' => null], $array['game_version']);
+    }
+
+    #[Test]
+    public function game_version_is_null_when_the_loaded_event_has_none(): void
+    {
+        $event = $this->unsavedEventInGameVersion()
+            ->setRelation('gameVersion', null)
+            ->setRelation('raids', new EloquentCollection);
+
+        $array = (new EventResource($event))->scope('visitors')->resolve(new Request);
+
+        $this->assertArrayHasKey('game_version', $array);
+        $this->assertNull($array['game_version']);
+    }
+
+    #[Test]
+    public function the_template_scope_never_includes_the_game_version(): void
+    {
+        $event = $this->unsavedEventInGameVersion()->setRelation('raids', new EloquentCollection);
+
+        $array = (new EventResource($event))->scope('template')->resolve(new Request);
+
+        $this->assertSame(['id', 'title', 'updated_at', 'raids'], array_keys($array));
+    }
+
+    #[Test]
+    public function the_default_shape_places_the_full_game_version_after_color(): void
+    {
+        $array = (new EventResource($this->unsavedEventInGameVersion()))->resolve(new Request);
+
+        $this->assertSame(['id', 'title', 'start_time', 'end_time', 'duration', 'updated_at', 'color', 'game_version'], array_keys($array));
+        $this->assertSame('forever', $array['game_version']['slug']);
+    }
+
     // ==================== collections ====================
 
     #[Test]
@@ -832,5 +891,24 @@ class EventResourceTest extends TestCase
     private function makeTemplateResource(Event $event): array
     {
         return (new EventResource($event->load('raids')))->scope('template')->resolve(new Request);
+    }
+
+    private function unsavedEventInGameVersion(): Event
+    {
+        $gameVersion = (new GameVersion)->forceFill([
+            'id' => 7,
+            'title' => 'World of Warcraft: Forever',
+            'slug' => 'forever',
+            'color' => '226e73',
+        ])->setRelation('media', new EloquentCollection);
+
+        return (new Event)
+            ->forceFill([
+                'id' => '0199f2a4-6c1e-7a51-9d1b-1f3c2e4a5b6c',
+                'title' => 'Karazhan',
+                'start_time' => '2026-11-07 19:00:00',
+                'end_time' => '2026-11-07 22:00:00',
+            ])
+            ->setRelation('gameVersion', $gameVersion);
     }
 }

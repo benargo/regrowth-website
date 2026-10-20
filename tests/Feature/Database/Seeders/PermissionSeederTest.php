@@ -42,6 +42,22 @@ class PermissionSeederTest extends TestCase
     }
 
     #[Test]
+    public function it_no_longer_defines_the_manage_boss_strategies_permission(): void
+    {
+        $this->assertNotContains('manage-boss-strategies', array_column($this->permissions, 'name'));
+    }
+
+    #[Test]
+    public function seeder_deletes_the_retired_manage_boss_strategies_permission(): void
+    {
+        Permission::create(['name' => 'manage-boss-strategies', 'guard_name' => 'web']);
+
+        $this->seed(PermissionSeeder::class);
+
+        $this->assertDatabaseMissing('permissions', ['name' => 'manage-boss-strategies']);
+    }
+
+    #[Test]
     public function every_permission_entry_has_a_name_key(): void
     {
         foreach ($this->permissions as $index => $permission) {

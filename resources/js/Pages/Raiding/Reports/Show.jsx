@@ -1,6 +1,7 @@
 import { Link } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
+import SectionNav from "@/Components/Navigation/SectionNav";
 import Icon from "@/Components/FontAwesome/Icon";
 import Tooltip from "@/Components/Tooltip";
 import PageContainer from "@/Components/PageContainer";
@@ -103,6 +104,7 @@ export default function Show({ report, nearbyReports, impactedReports }) {
     return (
         <Master title={data.title}>
             <SharedHeader title={data.title} backgroundClass="bg-illidan" />
+            <SectionNav section="raiding" />
 
             <PageContainer>
                 {/* Back link */}

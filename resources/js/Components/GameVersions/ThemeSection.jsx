@@ -1,64 +1,14 @@
-import { memo, useState } from "react";
-import { router, useForm } from "@inertiajs/react";
+import { useForm } from "@inertiajs/react";
 import ColorPicker from "@/Components/ColorPicker";
+import ImageUploadField from "@/Components/Datasets/ImageUploadField";
 import Relationships from "@/Components/Datasets/Relationships";
 import { FormRow, SaveButton } from "@/Components/FormControls";
-import ImageManager from "@/Components/ImageManager";
 import { toHex } from "@/Helpers/ModelColor";
-import { autosaveVisit, useAutosaveQueue, useFormAutosave } from "@/Hooks/useAutosave";
+import { useFormAutosave } from "@/Hooks/useAutosave";
 import { AUTOSAVE_DELAY } from "@/Hooks/useRelationshipForm";
 
-/** A stable fallback, so a missing `media` prop doesn't defeat ImageField's memo. */
+/** A stable fallback for a missing `media` prop. */
 const NO_MEDIA = {};
-
-/**
- * One image upload. Files are sent as soon as they are chosen, with the PATCH
- * spoofed over POST because browsers can't send files in a real PATCH.
- *
- * On an autosaving page, each upload or delete waits its turn in the save
- * queue, so its visit neither cancels nor is cancelled by an autosave.
- *
- * Memoised so dragging the colour picker doesn't re-render every uploader.
- */
-const ImageField = memo(function ImageField({ field, label, hint, gameVersion, media, routes }) {
-    const url = gameVersion[`${field}_url`];
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState(null);
-    const queue = useAutosaveQueue();
-
-    function send(method, data, options = {}) {
-        const run = () =>
-            autosaveVisit(router, method, routes.update, {
-                data,
-                ...options,
-                onStart: () => setSaving(true),
-                onSuccess: () => setError(null),
-                onError: (errors) => setError(errors[field] ?? null),
-                onFinish: () => setSaving(false),
-            });
-
-        if (queue) {
-            queue.enqueue(`image-${field}`, run);
-            return;
-        }
-
-        run();
-    }
-
-    return (
-        <FormRow label={label} hint={hint}>
-            <ImageManager
-                images={url ? [url] : []}
-                saving={saving}
-                error={error}
-                max={1}
-                accepts={media[field]?.accepts}
-                onUpload={([file]) => send("post", { _method: "patch", [field]: file }, { forceFormData: true })}
-                onDelete={() => send("patch", { [field]: null })}
-            />
-        </FormRow>
-    );
-});
 
 export default function ThemeSection({
     gameVersion,
@@ -102,38 +52,39 @@ export default function ThemeSection({
                 >
                     {/* The picker is controlled, so onChange keeps it in step while dragging. */}
                     <ColorPicker
+                        label="Colour"
                         color={form.data.color ?? "#000000"}
                         onChange={(color) => form.setData("color", color.hex)}
                         onChangeComplete={() => schedule()}
                     />
                 </FormRow>
 
-                <ImageField
+                <ImageUploadField
                     field="banner"
                     label="Banner"
                     hint="The wide header image shown at the top of this version's pages."
-                    gameVersion={gameVersion}
-                    media={media}
-                    routes={routes}
+                    url={gameVersion.banner_url}
+                    accepts={media.banner?.accepts}
+                    updateUrl={routes.update}
                 />
 
                 {/* The logo and icon are square, so they sit side by side on wider screens. */}
                 <div className="grid gap-8 md:grid-cols-2">
-                    <ImageField
+                    <ImageUploadField
                         field="logo"
                         label="Logo"
                         hint="The game's full-colour logo."
-                        gameVersion={gameVersion}
-                        media={media}
-                        routes={routes}
+                        url={gameVersion.logo_url}
+                        accepts={media.logo?.accepts}
+                        updateUrl={routes.update}
                     />
-                    <ImageField
+                    <ImageUploadField
                         field="icon"
                         label="Icon"
                         hint="A single-colour version of the logo, for small spaces such as menus."
-                        gameVersion={gameVersion}
-                        media={media}
-                        routes={routes}
+                        url={gameVersion.icon_url}
+                        accepts={media.icon?.accepts}
+                        updateUrl={routes.update}
                     />
                 </div>
 

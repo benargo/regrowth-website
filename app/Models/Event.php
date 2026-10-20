@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\AsBinaryColor;
+use App\Contracts\Models\BelongsToGameVersion;
 use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -18,7 +19,7 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 
 #[Fillable(['id', 'raid_helper_event_id', 'title', 'start_time', 'end_time', 'color', 'channel_id', 'is_template'])]
 #[Hidden(['channel_id', 'is_template'])]
-class Event extends PrunableModel
+class Event extends PrunableModel implements BelongsToGameVersion
 {
     /** @use HasFactory<EventFactory> */
     use HasFactory;
@@ -78,7 +79,7 @@ class Event extends PrunableModel
     #[Scope]
     protected function templates(Builder $query): void
     {
-        $query->where('is_template', true);
+        $query->where($query->qualifyColumn('is_template'), true);
     }
 
     // ========== Custom attributes ============

@@ -1,0 +1,65 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use App\Actions\GameVersion\ListSelectableGameVersions;
+use App\Actions\GameVersion\RememberGameVersion;
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Contracts\Http\Middleware\SharesGameVersionSwitchFlash;
+use App\Contracts\Models\BelongsToGameVersion;
+use Closure;
+use Illuminate\Http\Request;
+use Inertia\Support\Header;
+use Symfony\Component\HttpFoundation\Response;
+
+class RemembersRecordGameVersion implements SharesGameVersionSwitchFlash
+{
+    /**
+     * Remember the game version that owns the record in the given route
+     * parameter as the current one.
+     *
+     * Applies to GET requests that are neither prefetches nor partial reloads,
+     * whose record implements BelongsToGameVersion and is owned by a version
+     * other than the current one. It does nothing on the full page request
+     * that follows an explicit switch, and removes the switch flag there.
+     *
+     * @param  Closure(Request): (Response)  $next
+     */
+    public function handle(Request $request, Closure $next, string $parameter): Response
+    {
+        if (! $request->isMethod('GET')) {
+            return $next($request);
+        }
+
+        if ($request->prefetch()) {
+            return $next($request);
+        }
+
+        if ($request->hasHeader(Header::PARTIAL_COMPONENT)) {
+            return $next($request);
+        }
+
+        $record = $request->route($parameter);
+        $gameVersion = $record instanceof BelongsToGameVersion
+            ? ListSelectableGameVersions::run()->find($record->game_version_id)
+            : null;
+
+        if ($gameVersion === null) {
+            return $next($request);
+        }
+
+        $switched = $request->session()->pull(self::SWITCHED_FLASH_KEY, false);
+
+        if ($switched) {
+            return $next($request);
+        }
+
+        if (ResolveCurrentGameVersion::run()?->slug === $gameVersion->slug) {
+            return $next($request);
+        }
+
+        RememberGameVersion::run($gameVersion->slug);
+
+        return $next($request);
+    }
+}

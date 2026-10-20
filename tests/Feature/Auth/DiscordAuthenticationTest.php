@@ -5,10 +5,12 @@ namespace Tests\Feature\Auth;
 use App\Http\Integrations\Discord\Exceptions\ApiException;
 use App\Http\Integrations\Discord\Exceptions\RateLimitedException;
 use App\Http\Integrations\Discord\Requests\Guilds\GetGuildMemberRequest;
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\DiscordRole;
 use App\Models\User;
 use Exception;
 use Illuminate\Auth\SessionGuard;
+use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Exceptions;
@@ -52,6 +54,18 @@ class DiscordAuthenticationTest extends DashboardTestCase
         $scopes = explode(' ', $query['scope']);
         $this->assertContains('identify', $scopes);
         $this->assertContains('guilds.members.read', $scopes);
+    }
+
+    #[Test]
+    public function login_sends_inertia_requests_to_discord_with_a_location_response(): void
+    {
+        $response = $this->get('/login', [
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => app(HandleInertiaRequests::class)->version(Request::create('/login')),
+        ]);
+
+        $response->assertStatus(409);
+        $this->assertStringStartsWith('https://discord.com/', $response->headers->get('X-Inertia-Location'));
     }
 
     // ==================== callback ====================

@@ -8,6 +8,7 @@ use App\Models\Item;
 use App\Models\Raid;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<Boss>
@@ -29,7 +30,7 @@ class BossFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->randomElement(['Attumen the Huntsman', 'Moroes', 'Maiden of Virtue', 'Opera Event', 'The Curator', 'Shade of Aran', 'Netherspite', 'Prince Malchezaar', 'Illidan Stormrage', 'Kil\'jaeden']),
+            'name' => Str::title(fake()->unique()->words(3, true)),
             'raid_id' => Raid::factory(),
             'notes' => fake()->optional()->paragraph(),
         ];

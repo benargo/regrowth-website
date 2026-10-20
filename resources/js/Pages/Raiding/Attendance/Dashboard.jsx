@@ -1,6 +1,7 @@
 import { Deferred, Link } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
+import SectionNav from "@/Components/Navigation/SectionNav";
 import Icon from "@/Components/FontAwesome/Icon";
 import Tooltip from "@/Components/Tooltip";
 import PageContainer from "@/Components/PageContainer";
@@ -292,6 +293,7 @@ export default function Dashboard({ latestReportDate, stats, hasAttendance }) {
     return (
         <Master title="Attendance Dashboard">
             <SharedHeader title="Attendance Dashboard" backgroundClass="bg-illidan" />
+            <SectionNav section="raiding" />
             <PageContainer>
                 {hasAttendance ? (
                     <>

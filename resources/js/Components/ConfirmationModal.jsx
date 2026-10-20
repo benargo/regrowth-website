@@ -1,6 +1,8 @@
+import { Description, DialogTitle } from '@headlessui/react';
 import Modal from '@/Components/Modal';
 import { DangerButton, PrimaryButton, SecondaryButton } from '@/Components/FormControls';
 
+/** A confirm/cancel dialog. `title` labels the dialog and `children` describe it. */
 export default function ConfirmationModal({
     show = false,
     onClose,
@@ -19,8 +21,12 @@ export default function ConfirmationModal({
     return (
         <Modal show={show} onClose={onClose} maxWidth={maxWidth}>
             <div className="p-6 text-white">
-                <h2 className="mb-2 text-lg font-semibold">{title}</h2>
-                <div className="mb-6 text-sm text-gray-400">{children}</div>
+                <DialogTitle as="h2" className="mb-2 text-lg font-semibold">
+                    {title}
+                </DialogTitle>
+                <Description as="div" className="mb-6 text-sm text-gray-400">
+                    {children}
+                </Description>
                 <div className="flex justify-end gap-3">
                     <SecondaryButton onClick={onClose} disabled={processing}>
                         {cancelLabel}

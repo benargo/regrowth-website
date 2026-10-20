@@ -182,6 +182,18 @@
 }
 
 @layer base {
+    /* Offsets keyboard-focus and anchor scrolling below the fixed site header */
+    html {
+        scroll-padding-top: 6rem;
+    }
+
+    /* Below lg, also offsets below the sticky "On this page" bar, plus room for a field's label */
+    @media (width < 64rem) {
+        html:has([data-on-this-page]) {
+            scroll-padding-top: calc(6rem + var(--on-this-page-height, 0px) + 1.75rem);
+        }
+    }
+
     /* v3 default border + divide color was gray-200; v4 is currentColor */
     *,
     ::after,

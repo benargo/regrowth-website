@@ -25,6 +25,8 @@ export function usageSummary(record, labels) {
  * title, `handle` a drag handle before it, and `headingLevel` sets the
  * title's heading level. `hasBanner` shows the header background as a 14:3
  * banner that fades into the card, with the title over its foot.
+ * `deleteWarning` is passed to `onDelete`, so the page can show it in the
+ * delete confirmation.
  */
 export default function RecordCard({
     title,
@@ -43,6 +45,7 @@ export default function RecordCard({
     editLabel = "Edit",
     editIcon = "edit",
     onDelete = null,
+    deleteWarning = null,
 }) {
     const usageId = useId();
     const header = modelBackground(headerColor, headerImage, headerImagePosition);
@@ -120,7 +123,7 @@ export default function RecordCard({
                         <Button
                             disabled={isInUse}
                             aria-describedby={hasUsage ? usageId : undefined}
-                            onClick={onDelete}
+                            onClick={() => onDelete(deleteWarning)}
                             className="inline-flex items-center gap-1.5 rounded border border-red-400 px-3 py-1.5 text-sm text-red-300 data-disabled:cursor-not-allowed data-disabled:border-gray-600 data-disabled:text-gray-400 data-focus:outline-2 data-focus:outline-offset-2 data-focus:outline-red-400 data-hover:bg-red-600/20"
                         >
                             <Icon icon="trash" style="light" />

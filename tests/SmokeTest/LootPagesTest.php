@@ -9,7 +9,6 @@ use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\Blizzard\MocksBlizzardServices;
@@ -64,7 +63,7 @@ class LootPagesTest extends TestCase
         $phase = Phase::factory()->started()->create();
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
 
-        $response = $this->actingAs($user)->get(route('loot.raids.show', ['raid' => $raid->id, 'name' => Str::slug($raid->name)]));
+        $response = $this->actingAs($user)->get(route('loot.raids.show', ['raid' => $raid->id, 'slug' => $raid->slug]));
 
         $response->assertOk();
         $response->assertSee('Regrowth');

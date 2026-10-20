@@ -10,7 +10,7 @@ export default function Relationships({ id, title, description, children }) {
         <section
             id={id}
             aria-labelledby={`${id}-heading`}
-            className="border-amber-600/40 flex scroll-mt-48 flex-col gap-6 border-t pt-8 lg:scroll-mt-28"
+            className="border-amber-600/40 flex scroll-mt-4 flex-col gap-6 border-t pt-8"
         >
             <header className="flex flex-col gap-1">
                 <h2 id={`${id}-heading`} className="font-serif text-2xl text-white">

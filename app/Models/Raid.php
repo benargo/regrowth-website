@@ -3,42 +3,70 @@
 namespace App\Models;
 
 use App\Casts\AsBinaryColor;
-use App\Models\Concerns\FlushesRaidingCacheOnSave;
+use App\Contracts\Models\BelongsToGameVersion;
+use App\Contracts\Models\DatasetModel;
+use App\Contracts\Models\EditLockable;
+use App\Contracts\Models\HasUsage;
+use App\Contracts\Models\SharesRaidBannerCollection;
+use App\Events\RaidChanged;
+use App\Models\Concerns\HasEditLock;
+use App\Models\Concerns\InteractsWithChaperonedMedia;
+use App\Models\Concerns\TracksUsage;
+use App\Policies\DatasetPolicy;
 use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Attributes\UsePolicy;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Str;
 use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 #[Appends(['slug'])]
 #[Fillable(['name', 'difficulty', 'color', 'phase_id', 'max_players', 'max_loot_councillors'])]
 #[Hidden(['created_at', 'updated_at'])]
-class Raid extends Model implements HasMedia
+#[UsePolicy(DatasetPolicy::class)]
+class Raid extends Model implements BelongsToGameVersion, DatasetModel, EditLockable, HasMedia, HasUsage, SharesRaidBannerCollection
 {
-    use FlushesRaidingCacheOnSave;
+    use HasEditLock;
     use HasFactory;
-    use InteractsWithMedia;
-
-    /**
-     * The wide header image shown on the raid's pages.
-     */
-    public const string MEDIA_BANNER = 'banner';
+    use InteractsWithChaperonedMedia;
+    use TracksUsage;
 
     /**
      * The resized webp version of the banner shown in page headers.
      */
     public const string MEDIA_CONVERSION_HEADER = 'header';
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'created' => RaidChanged::class,
+        'updated' => RaidChanged::class,
+        'deleted' => RaidChanged::class,
+    ];
+
+    /**
+     * Relationships whose existing rows mark this raid as in use.
+     *
+     * @return list<string>
+     */
+    public function usageRelations(): array
+    {
+        return ['bosses', 'upcomingEvents'];
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -81,6 +109,18 @@ class Raid extends Model implements HasMedia
     }
 
     /**
+     * Store the difficulty in title case, e.g. "heroic" as "Heroic".
+     *
+     * @return Attribute<string, string>
+     */
+    protected function difficulty(): Attribute
+    {
+        return Attribute::make(
+            set: fn (string $value): string => Str::title($value),
+        );
+    }
+
+    /**
      * Get the max_groups attribute for the raid, which is the maximum number of groups that can be formed based on the max_players attribute.
      *
      * @return Attribute<int>
@@ -104,17 +144,30 @@ class Raid extends Model implements HasMedia
         );
     }
 
-    // ============ Media ============
+    // ============ Game version ============
 
     /**
-     * Get the media attached to the raid, each with its `model` relation set to the raid.
+     * Get the game version key of the raid's phase, or null when the phase has none.
      *
-     * @return MorphMany<Media, $this>
+     * @return Attribute<int|null>
      */
-    public function media(): MorphMany
+    protected function gameVersionId(): Attribute
     {
-        return $this->morphMany($this->getMediaModel(), 'model')->chaperone('model');
+        return Attribute::make(
+            get: fn (): ?int => $this->phase?->game_version_id,
+        );
     }
+
+    /**
+     * Scope a query to raids whose phase belongs to the given game version, or to none when null.
+     */
+    #[Scope]
+    protected function inGameVersion(Builder $query, ?GameVersion $gameVersion): void
+    {
+        $query->whereHas('phase', fn (Builder $phases) => $phases->where('game_version_id', $gameVersion?->getKey()));
+    }
+
+    // ============ Media ============
 
     /**
      * Register the single-file banner collection.
@@ -173,6 +226,36 @@ class Raid extends Model implements HasMedia
             ->withPivot('sort_order')
             ->withTimestamps()
             ->orderByPivot('sort_order');
+    }
+
+    /**
+     * Get the events with this raid that have ended.
+     *
+     * @return BelongsToMany<Event, $this>
+     */
+    public function pastEvents(): BelongsToMany
+    {
+        return $this->events()->where('events.end_time', '<', now());
+    }
+
+    /**
+     * Get the event templates with this raid.
+     *
+     * @return BelongsToMany<Event, $this>
+     */
+    public function templateEvents(): BelongsToMany
+    {
+        return $this->events()->templates();
+    }
+
+    /**
+     * Get the events with this raid that are upcoming or still in progress.
+     *
+     * @return BelongsToMany<Event, $this>
+     */
+    public function upcomingEvents(): BelongsToMany
+    {
+        return $this->events()->where('events.end_time', '>=', now());
     }
 
     // ========== Loot bias relationships ==========

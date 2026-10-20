@@ -1,9 +1,10 @@
 import { useMemo } from "react";
 import { Link } from "@inertiajs/react";
+import AutosavedSortableList from "@/Components/Datasets/AutosavedSortableList";
 import { focusRing } from "@/Components/Datasets/RecordCard";
 import Icon from "@/Components/FontAwesome/Icon";
+import GameVersionGroupHeader from "@/Components/GameVersions/GameVersionGroupHeader";
 import PhaseCard from "@/Components/Phases/PhaseCard";
-import UnscheduledPhaseOrder from "@/Components/Phases/UnscheduledPhaseOrder";
 import modelColor from "@/Helpers/ModelColor";
 
 /**
@@ -23,20 +24,15 @@ export default function GameVersionPhases({ group, reorderUrl, onDelete }) {
 
     return (
         <section aria-labelledby={headingId} className="flex flex-col gap-6">
-            <header className="flex flex-col gap-2">
-                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
-                    <h2 id={headingId} className="font-serif text-3xl text-white">
-                        {title}
-                    </h2>
+            <GameVersionGroupHeader
+                gameVersion={gameVersion}
+                headingId={headingId}
+                action={
                     <Link href={createHref} className={`text-sm text-gray-300 underline hover:text-white ${focusRing}`}>
                         Add a phase<span className="sr-only"> to {gameVersion?.title ?? "no game version"}</span>
                     </Link>
-                </div>
-                <div
-                    aria-hidden="true"
-                    className={`h-0.5 w-full ${rule.className || "bg-amber-600/60"}`}
-                    style={rule.style}
-                />
+                }
+            >
                 {gameVersion?.release_date && (
                     <p className="text-sm text-gray-300">
                         Released{" "}
@@ -49,7 +45,7 @@ export default function GameVersionPhases({ group, reorderUrl, onDelete }) {
                         </time>
                     </p>
                 )}
-            </header>
+            </GameVersionGroupHeader>
 
             {phases.length === 0 && <p className="text-gray-300">No phases yet. Add the first one.</p>}
 
@@ -84,14 +80,15 @@ export default function GameVersionPhases({ group, reorderUrl, onDelete }) {
                         Drag these into the order you expect them to arrive. Once a phase has a start date, it moves to
                         the timeline above.
                     </p>
-                    <UnscheduledPhaseOrder
-                        phases={unscheduled}
+                    <AutosavedSortableList
+                        items={unscheduled}
                         url={reorderUrl}
                         field="phase_ids"
                         data={{ game_version_id: gameVersion?.id ?? null }}
+                        saveKey={`phase-order-${gameVersion?.id ?? "none"}`}
                         label={`Unscheduled ${gameVersion?.title ?? "unlinked"} phases`}
                         className="flex flex-col gap-4"
-                        renderPhase={(phase, dragHandle) => (
+                        renderItem={(phase, { dragHandle }) => (
                             <PhaseCard phase={phase} dragHandle={dragHandle} onDelete={() => onDelete(phase)} />
                         )}
                     />

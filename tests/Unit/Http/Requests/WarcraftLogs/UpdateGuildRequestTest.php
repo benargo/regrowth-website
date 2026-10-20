@@ -16,9 +16,9 @@ class UpdateGuildRequestTest extends TestCase
     // ==================== rules ====================
 
     #[Test]
-    public function rules_only_cover_the_namespace(): void
+    public function rules_only_cover_the_namespace_and_logs_url(): void
     {
-        $this->assertSame(['namespace'], array_keys((new UpdateGuildRequest)->rules()));
+        $this->assertSame(['namespace', 'logs_url'], array_keys((new UpdateGuildRequest)->rules()));
     }
 
     #[Test]
@@ -56,6 +56,13 @@ class UpdateGuildRequestTest extends TestCase
             'missing' => [null],
             'unknown' => ['not-a-namespace'],
         ];
+    }
+
+    #[Test]
+    #[Group('validation')]
+    public function it_validates_the_logs_url(): void
+    {
+        $this->assertTrue($this->validate(['namespace' => 'retail', 'logs_url' => 'not a url'])->errors()->has('logs_url'));
     }
 
     #[Test]

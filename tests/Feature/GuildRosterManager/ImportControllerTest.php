@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\GuildRosterManager;
 
-use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRequest;
 use App\Jobs\ProcessGrmUpload;
 use App\Models\GameVersion;
@@ -149,7 +149,7 @@ class ImportControllerTest extends DashboardTestCase
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'older', 'release_date' => now()->subYear()]);
 
         $response = $this->actingAs($this->officer)
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'older'])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => 'older'])
             ->get(route('management.grm.create'));
 
         $response->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', 'older'));
@@ -162,11 +162,11 @@ class ImportControllerTest extends DashboardTestCase
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'older', 'release_date' => now()->subYear()]);
 
         $response = $this->actingAs($this->officer)
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'newer'])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => 'newer'])
             ->get(route('management.grm.create', ['game_version' => 'older']));
 
         $response->assertOk();
-        $response->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, 'newer');
+        $response->assertSessionHas(SharesCurrentGameVersionSession::SESSION_KEY, 'newer');
     }
 
     #[Test]
@@ -177,14 +177,14 @@ class ImportControllerTest extends DashboardTestCase
         $version = GameVersion::factory()->fetchableRoster()->create(['slug' => 'target', 'release_date' => now()->subYear()]);
 
         $response = $this->actingAs($this->officer)
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'other'])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => 'other'])
             ->post($this->storeUrl($version), ['grm_data' => self::CSV]);
 
         $response->assertRedirect(route('management.grm.create', ['game_version' => $version->slug]));
-        $response->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, 'other');
+        $response->assertSessionHas(SharesCurrentGameVersionSession::SESSION_KEY, 'other');
         $this->get(route('management.grm.create', ['game_version' => $version->slug]))
             ->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', 'target'));
-        $this->assertSame('other', session(ResolveCurrentGameVersion::SESSION_KEY));
+        $this->assertSame('other', session(SharesCurrentGameVersionSession::SESSION_KEY));
     }
 
     #[Test]
@@ -196,7 +196,7 @@ class ImportControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->get(route('management.grm.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('gameVersions', 2)
+            ->has('gameVersions.data', 2)
             ->has('rosterVersions.data', 1)
         );
     }
@@ -266,7 +266,7 @@ class ImportControllerTest extends DashboardTestCase
         $this->applyBlizzardMocks();
 
         $response = $this->actingAs($this->officer)
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $selected->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $selected->slug])
             ->get(route('management.grm.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
@@ -337,7 +337,7 @@ class ImportControllerTest extends DashboardTestCase
         touch(Storage::disk('local')->path('grm/uploads/beta/latest.csv'), 1790000000);
 
         $response = $this->actingAs($this->officer)
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'beta'])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => 'beta'])
             ->get(route('management.grm.create'));
 
         $response->assertInertia(fn (Assert $page) => $page->where('lastUploadTimestamp', 'Monday, 21 September 2026 at 16:13'));

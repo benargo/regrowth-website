@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { router, useForm, usePage } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
+import SectionNav from "@/Components/Navigation/SectionNav";
 import PageContainer from "@/Components/PageContainer";
 import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import Icon from "@/Components/FontAwesome/Icon";
@@ -170,6 +171,7 @@ export default function Form() {
     return (
         <Master title={pageTitle}>
             <SharedHeader title={pageTitle} backgroundClass="bg-illidan" />
+            <SectionNav section="raiding" />
 
             <ToolNav>
                 <ToolNavLink href={route("raiding.absences.index")}>

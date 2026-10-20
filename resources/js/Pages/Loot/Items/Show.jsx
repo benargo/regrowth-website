@@ -4,6 +4,7 @@ import useItemChannel from "@/Hooks/useItemChannel";
 import CommentsSection from "@/Components/Comments/CommentsSection";
 import Icon from "@/Components/FontAwesome/Icon";
 import SharedHeader from "@/Components/SharedHeader";
+import SectionNav from "@/Components/Navigation/SectionNav";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import { Can } from "@/Components/Authorizable";
 import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
@@ -112,11 +113,12 @@ export default function Show({ item, comments, replies }) {
                 title="Loot Bias"
                 subtitle={raid?.name}
             />
+            <SectionNav section="loot" />
             {/* Tool navigation */}
             <ToolNav>
                 {raid && (
                     <div className="flex-initial space-x-4">
-                        <ToolNavLink href={route("loot.raids.show", { raid: raid.id, name: raid.slug })}>
+                        <ToolNavLink href={route("loot.raids.show", { raid: raid.id, slug: raid.slug })}>
                             <Icon icon="arrow-left" style="solid" className="mr-2" />
                             <span>Back to {raid.name} loot</span>
                         </ToolNavLink>

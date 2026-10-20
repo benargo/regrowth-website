@@ -3,6 +3,7 @@ import { usePage, Link, router } from "@inertiajs/react";
 import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
+import SectionNav from "@/Components/Navigation/SectionNav";
 import PageContainer from "@/Components/PageContainer";
 import EmptyState from "@/Components/EmptyState";
 import Icon from "@/Components/FontAwesome/Icon";
@@ -139,6 +140,7 @@ export default function Index() {
     return (
         <Master title="Planned Absences">
             <SharedHeader title="Planned Absences" backgroundClass="bg-illidan" />
+            <SectionNav section="raiding" />
 
             {refreshingCharacterIds.map((characterId) => (
                 <PortraitListener key={characterId} characterId={characterId} />

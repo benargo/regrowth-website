@@ -2,12 +2,16 @@
 
 namespace Tests\Unit\Models;
 
+use App\Contracts\Events\FlushesRaidingCache;
+use App\Events\EventAssignmentGroupChanged;
 use App\Models\Boss;
 use App\Models\Event;
 use App\Models\EventAssignment;
 use App\Models\EventAssignmentGroup;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Event as EventFacade;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
@@ -279,5 +283,49 @@ class EventAssignmentGroupTest extends ModelTestCase
         $group->delete();
 
         $this->assertDatabaseMissing('event_assignments', ['id' => $assignment->id]);
+    }
+
+    // ==================== model events ====================
+
+    #[Test]
+    public function it_dispatches_event_assignment_group_changed_when_created(): void
+    {
+        EventFacade::fake([EventAssignmentGroupChanged::class]);
+
+        $eventAssignmentGroup = EventAssignmentGroup::factory()->create();
+
+        EventFacade::assertDispatched(EventAssignmentGroupChanged::class, fn (EventAssignmentGroupChanged $event) => $event->eventAssignmentGroup->is($eventAssignmentGroup));
+    }
+
+    #[Test]
+    public function it_dispatches_event_assignment_group_changed_when_updated(): void
+    {
+        $eventAssignmentGroup = EventAssignmentGroup::factory()->create();
+        EventFacade::fake([EventAssignmentGroupChanged::class]);
+
+        $eventAssignmentGroup->update(['name' => 'Renamed']);
+
+        EventFacade::assertDispatched(EventAssignmentGroupChanged::class, fn (EventAssignmentGroupChanged $event) => $event->eventAssignmentGroup->is($eventAssignmentGroup));
+    }
+
+    #[Test]
+    public function it_dispatches_event_assignment_group_changed_when_deleted(): void
+    {
+        $eventAssignmentGroup = EventAssignmentGroup::factory()->create();
+        EventFacade::fake([EventAssignmentGroupChanged::class]);
+
+        $eventAssignmentGroup->delete();
+
+        EventFacade::assertDispatched(EventAssignmentGroupChanged::class, fn (EventAssignmentGroupChanged $event) => $event->eventAssignmentGroup->is($eventAssignmentGroup));
+    }
+
+    #[Group('contract')]
+    #[Test]
+    public function event_assignment_group_changed_flushes_the_raiding_cache_after_commit(): void
+    {
+        $event = new EventAssignmentGroupChanged(new EventAssignmentGroup);
+
+        $this->assertInstanceOf(FlushesRaidingCache::class, $event);
+        $this->assertInstanceOf(ShouldDispatchAfterCommit::class, $event);
     }
 }

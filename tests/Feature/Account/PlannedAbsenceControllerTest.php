@@ -3,7 +3,7 @@
 namespace Tests\Feature\Account;
 
 use App\Actions\Characters\RefreshCharacterPortrait;
-use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
 use App\Data\PlannedAbsenceReasonData;
 use App\Enums\PlannedAbsenceReason;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
@@ -277,7 +277,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $selected = GameVersion::factory()->fetchableRoster()->create(['release_date' => now()->subYear()]);
 
         $this->actingAs($this->member())
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $selected->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $selected->slug])
             ->get(route('account.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('game_version.data.id', $selected->id)
@@ -292,7 +292,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $officerOnly = GameVersion::factory()->create(['blizzard_namespace' => null, 'release_date' => now()->subDay()]);
 
         $this->actingAs($this->member())
-            ->withSession(array_merge($this->battleNetSession(), [ResolveCurrentGameVersion::SESSION_KEY => $officerOnly->slug]))
+            ->withSession(array_merge($this->battleNetSession(), [SharesCurrentGameVersionSession::SESSION_KEY => $officerOnly->slug]))
             ->get(route('account.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('game_version.data.id', $officerOnly->id)

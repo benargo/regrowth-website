@@ -2,6 +2,8 @@
 
 namespace Tests\Unit\Models\WarcraftLogs;
 
+use App\Events\WarcraftLogsGuildDeleted;
+use App\Events\WarcraftLogsGuildSaved;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
 use App\Models\GameVersion;
 use App\Models\Report;
@@ -10,7 +12,7 @@ use App\Models\WarcraftLogs\GuildTag;
 use App\Policies\WarcraftLogsGuildPolicy;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -59,7 +61,7 @@ class GuildTest extends ModelTestCase
     #[Test]
     public function it_declares_fillable_via_attribute(): void
     {
-        $this->assertFillableAttribute(new Guild, ['id', 'namespace']);
+        $this->assertFillableAttribute(new Guild, ['id', 'namespace', 'logs_url']);
     }
 
     #[Test]
@@ -160,49 +162,27 @@ class GuildTest extends ModelTestCase
         $this->assertTrue($loaded->currentGameVersion->is($gameVersion));
     }
 
-    // ==================== warcraft logs cache ====================
+    // ==================== events ====================
 
     #[Test]
-    public function creating_a_guild_flushes_the_cached_warcraft_logs_api_responses(): void
+    public function saving_a_guild_dispatches_warcraft_logs_guild_saved(): void
     {
-        Cache::tags(['warcraftlogs', 'warcraftlogs-api-response'])->put('response_key', 'response', now()->addMinutes(5));
+        Event::fake([WarcraftLogsGuildSaved::class]);
 
-        $this->create();
+        $guild = $this->create();
 
-        $this->assertFalse(Cache::tags(['warcraftlogs', 'warcraftlogs-api-response'])->has('response_key'));
+        Event::assertDispatched(WarcraftLogsGuildSaved::class, fn (WarcraftLogsGuildSaved $event) => $event->guild->is($guild));
     }
 
     #[Test]
-    public function changing_the_namespace_flushes_the_cached_warcraft_logs_api_responses(): void
+    public function deleting_a_guild_dispatches_warcraft_logs_guild_deleted(): void
     {
-        $guild = $this->create(['namespace' => WarcraftLogsNamespace::Anniversary]);
-        Cache::tags(['warcraftlogs', 'warcraftlogs-api-response'])->put('response_key', 'response', now()->addMinutes(5));
+        $guild = $this->create();
+        Event::fake([WarcraftLogsGuildDeleted::class]);
 
-        $guild->update(['namespace' => WarcraftLogsNamespace::Classic]);
+        $guild->delete();
 
-        $this->assertFalse(Cache::tags(['warcraftlogs', 'warcraftlogs-api-response'])->has('response_key'));
-    }
-
-    #[Test]
-    public function saving_without_a_namespace_change_keeps_the_cached_responses(): void
-    {
-        $guild = $this->create(['namespace' => WarcraftLogsNamespace::Anniversary]);
-        Cache::tags(['warcraftlogs', 'warcraftlogs-api-response'])->put('response_key', 'response', now()->addMinutes(5));
-
-        $guild->touch();
-
-        $this->assertTrue(Cache::tags(['warcraftlogs', 'warcraftlogs-api-response'])->has('response_key'));
-    }
-
-    #[Test]
-    public function changing_the_namespace_leaves_unrelated_cache_tags_alone(): void
-    {
-        $guild = $this->create(['namespace' => WarcraftLogsNamespace::Anniversary]);
-        Cache::tags(['attendance'])->put('unrelated_key', 'unrelated', now()->addMinutes(5));
-
-        $guild->update(['namespace' => WarcraftLogsNamespace::Classic]);
-
-        $this->assertTrue(Cache::tags(['attendance'])->has('unrelated_key'));
+        Event::assertDispatched(WarcraftLogsGuildDeleted::class, fn (WarcraftLogsGuildDeleted $event) => $event->guild->is($guild));
     }
 
     #[Test]

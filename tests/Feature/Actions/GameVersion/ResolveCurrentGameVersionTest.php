@@ -3,6 +3,7 @@
 namespace Tests\Feature\Actions\GameVersion;
 
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
 use App\Models\GameVersion;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
@@ -21,7 +22,7 @@ class ResolveCurrentGameVersionTest extends TestCase
         GameVersion::factory()->create(['release_date' => now()->subDay()]);
         $unreleased = GameVersion::factory()->create(['release_date' => now()->addMonth()]);
 
-        session()->put(ResolveCurrentGameVersion::SESSION_KEY, $unreleased->slug);
+        session()->put(SharesCurrentGameVersionSession::SESSION_KEY, $unreleased->slug);
 
         $this->assertTrue(ResolveCurrentGameVersion::run()->is($unreleased));
     }
@@ -50,25 +51,21 @@ class ResolveCurrentGameVersionTest extends TestCase
     {
         $default = GameVersion::factory()->create(['release_date' => now()->subDay()]);
 
-        session()->put(ResolveCurrentGameVersion::SESSION_KEY, 'gone');
+        session()->put(SharesCurrentGameVersionSession::SESSION_KEY, 'gone');
 
         $this->assertTrue(ResolveCurrentGameVersion::run()->is($default));
-        $this->assertSame('gone', session(ResolveCurrentGameVersion::SESSION_KEY));
+        $this->assertSame('gone', session(SharesCurrentGameVersionSession::SESSION_KEY));
     }
 
     #[Test]
-    public function it_keeps_the_resolved_version_for_the_request_until_forgotten(): void
+    public function it_follows_a_session_change_within_the_same_request(): void
     {
         $latest = GameVersion::factory()->create(['release_date' => now()->subDay()]);
         $older = GameVersion::factory()->create(['release_date' => now()->subYear()]);
 
         $this->assertTrue(ResolveCurrentGameVersion::run()->is($latest));
 
-        session()->put(ResolveCurrentGameVersion::SESSION_KEY, $older->slug);
-
-        $this->assertTrue(ResolveCurrentGameVersion::run()->is($latest));
-
-        ResolveCurrentGameVersion::forget();
+        session()->put(SharesCurrentGameVersionSession::SESSION_KEY, $older->slug);
 
         $this->assertTrue(ResolveCurrentGameVersion::run()->is($older));
     }

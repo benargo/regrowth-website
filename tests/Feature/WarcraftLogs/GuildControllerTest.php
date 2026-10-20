@@ -100,6 +100,21 @@ class GuildControllerTest extends DashboardTestCase
     }
 
     #[Test]
+    #[Group('happy-path')]
+    public function it_stores_the_logs_url(): void
+    {
+        Queue::fake();
+
+        $this->actingAs($this->userWith('create-warcraft-logs-guilds'))->post(route('management.warcraftlogs.guilds.store'), [
+            'id' => 774848,
+            'namespace' => 'anniversary',
+            'logs_url' => 'https://fresh.warcraftlogs.com/guilds/774848-regrowth',
+        ]);
+
+        $this->assertDatabaseHas(Guild::class, ['id' => 774848, 'logs_url' => 'https://fresh.warcraftlogs.com/guilds/774848-regrowth']);
+    }
+
+    #[Test]
     #[Group('authorization')]
     public function it_forbids_store_without_create_guilds(): void
     {
@@ -252,6 +267,33 @@ class GuildControllerTest extends DashboardTestCase
         $response->assertRedirect(route('management.warcraftlogs.guilds.show', $guild));
         $response->assertSessionHas('success', 'Saved Warcraft Logs guild 774848.');
         $this->assertSame(WarcraftLogsNamespace::Classic, $guild->fresh()->namespace);
+    }
+
+    #[Test]
+    #[Group('happy-path')]
+    public function it_updates_the_logs_url(): void
+    {
+        $guild = Guild::factory()->create(['id' => 774848, 'namespace' => WarcraftLogsNamespace::Anniversary]);
+
+        $this->actingAs($this->userWith('update-warcraft-logs-guilds'))
+            ->patch(route('management.warcraftlogs.guilds.update', $guild), [
+                'namespace' => 'anniversary',
+                'logs_url' => 'https://fresh.warcraftlogs.com/guilds/774848-regrowth',
+            ]);
+
+        $this->assertDatabaseHas(Guild::class, ['id' => 774848, 'logs_url' => 'https://fresh.warcraftlogs.com/guilds/774848-regrowth']);
+    }
+
+    #[Test]
+    #[Group('happy-path')]
+    public function it_clears_the_logs_url(): void
+    {
+        $guild = Guild::factory()->withLogsUrl()->create(['id' => 774848, 'namespace' => WarcraftLogsNamespace::Anniversary]);
+
+        $this->actingAs($this->userWith('update-warcraft-logs-guilds'))
+            ->patch(route('management.warcraftlogs.guilds.update', $guild), ['namespace' => 'anniversary', 'logs_url' => '']);
+
+        $this->assertDatabaseHas(Guild::class, ['id' => 774848, 'logs_url' => null]);
     }
 
     #[Test]

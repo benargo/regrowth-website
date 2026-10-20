@@ -6,7 +6,7 @@ import SharedHeader from "@/Components/SharedHeader";
 import Master from "@/Layouts/Master";
 
 export default function Create({ namespaces }) {
-    const form = useForm({ id: "", namespace: "" });
+    const form = useForm({ id: "", namespace: "", logs_url: "" });
     const { errors } = form;
 
     return (
@@ -40,6 +40,14 @@ export default function Create({ namespaces }) {
                                 error={errors.namespace}
                             >
                                 {select("namespace", { options: namespaces, placeholder: "Choose a site", required: true })}
+                            </FormRow>
+                            <FormRow
+                                htmlFor="logs_url"
+                                label="Guild page URL"
+                                hint="The guild's page on Warcraft Logs, linked from the site footer."
+                                error={errors.logs_url}
+                            >
+                                {text("logs_url", { type: "url", autoComplete: "url" })}
                             </FormRow>
                         </FormSection>
                     )}

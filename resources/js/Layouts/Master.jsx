@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, Head, usePage } from "@inertiajs/react";
+import { PopoverGroup } from "@headlessui/react";
 import Dropdown from "@/Components/Dropdown";
 import FlashMessage from "@/Components/FlashMessage";
 import Icon from "@/Components/FontAwesome/Icon";
@@ -8,16 +9,16 @@ import Kbd from "@/Components/Kbd";
 import Pill from "@/Components/Pill";
 import ResponsiveNavLink from "@/Components/ResponsiveNavLink";
 import { Can } from "@/Components/Authorizable";
-import WarcraftLogsLogo from "@/Components/WarcraftLogs/Logo";
 import GameVersionSwitcher, { GameVersionSwitchList } from "@/Components/GameVersions/GameVersionSwitcher";
-import GameVersionIcon from "@/Components/GameVersions/GameVersionIcon";
-import useGameVersionSwitch, { GAME_VERSION_SWITCH_ERROR_BAG } from "@/Hooks/useGameVersionSwitch";
+import { GAME_VERSION_SWITCH_ERROR_BAG } from "@/Hooks/useGameVersionSwitch";
 import SearchPalette from "@/Components/Search/SearchPalette";
+import SectionDisclosure from "@/Components/Navigation/SectionDisclosure";
+import SectionFlyout from "@/Components/Navigation/SectionFlyout";
+import Footer from "@/Layouts/Footer";
 import cn from "@/Helpers/cn";
 
-const MOBILE_LINK = "flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:text-white";
-
-const FOOTER_COLUMN_LINK = "flex min-h-8 flex-row items-center gap-2 py-1 transition-colors";
+const MOBILE_LINK =
+    "flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:bg-white/5 hover:text-white active:bg-white/10";
 
 const NAV_CLASSES = {
     classic: {
@@ -30,11 +31,14 @@ const NAV_CLASSES = {
         switcherOptions: "bg-brown-800",
         switcherOption: "data-focus:bg-brown-700",
         mobileMenu: "bg-brown-900",
-        mobileLink: "hover:bg-amber-700 text-gray-300",
+        flyoutPanel: "bg-brown-900/95 border-brown-700/50",
+        mobileLink: "text-gray-300",
         mobileDivider: "border-amber-700",
         footer: "border-transparent",
-        footerText: "text-amber-400",
-        footerLink: "text-amber-400 hover:text-amber-300",
+        footerHeading: "text-amber-400",
+        footerHeadingLink: "text-amber-400 hover:text-amber-300",
+        footerText: "text-gray-400",
+        footerLink: "text-gray-300 hover:text-white",
     },
     forever: {
         wrapper: "bg-parchment-forever",
@@ -46,25 +50,33 @@ const NAV_CLASSES = {
         switcherOptions: "bg-forever-800",
         switcherOption: "data-focus:bg-forever-700",
         navLink: "hover:bg-forever-700/80 focus-visible:outline-camel-400",
-        responsiveNavLink: "text-verdant-300 hover:bg-camel-800 focus-visible:outline-camel-400",
+        responsiveNavLink: "text-verdant-300 focus-visible:outline-camel-400",
         dropdownContent: "py-1 bg-forever-800",
         dropdownLink: "bg-forever-800 data-focus:bg-forever-700",
         mobileMenu: "bg-forever-900",
-        mobileLink: "hover:bg-camel-800 text-verdant-300",
+        flyoutPanel: "bg-forever-900/95 border-forever-700/50",
+        flyoutTileIcon: "bg-camel-600/15 text-camel-400",
+        flyoutItemIcon: "text-camel-400",
+        flyoutHeading: "text-camel-400",
+        nextRaidCard: "border-camel-600 bg-camel-900/30",
+        nextRaidHeading: "text-camel-300",
+        nextRaidIcon: "bg-camel-600/20 text-camel-300",
+        nextRaidSignup: "text-camel-200",
+        nextRaidButton: "bg-camel-700 hover:bg-camel-800 focus-visible:outline-camel-300",
+        mobileLink: "text-verdant-300",
         mobileDivider: "border-camel-700",
         footer: "bg-footer-forever border-camel-600",
+        footerHeading: "text-camel-400",
+        footerHeadingLink: "text-camel-400 hover:text-camel-200",
         footerText: "text-camel-400",
         footerLink: "text-camel-400 hover:text-camel-200",
     },
 };
 
 export default function Master({ title, isHomepage = false, children }) {
-    const { auth, flash, errors, discordInviteUrl, gameVersions = [] } = usePage().props;
-    const hasGameVersionColumn = gameVersions.length > 1;
-    const { current: currentGameVersion, switchTo, isSwitching } = useGameVersionSwitch();
+    const { auth, flash, errors, discordInviteUrl, warcraftLogsUrl, gameVersions: { data: gameVersions = [] } = {} } = usePage().props;
     const classes = isHomepage ? NAV_CLASSES.forever : NAV_CLASSES.classic;
     const mobileLinkClass = cn(MOBILE_LINK, classes.mobileLink);
-    const footerLinkClass = cn(FOOTER_COLUMN_LINK, classes.footerLink);
     const isRosterActive = route().current("roster.*") || route().current("characters.show");
     const isRaidingActive = route().current("raiding.*");
     const isLootActive = route().current("loot.*");
@@ -72,6 +84,7 @@ export default function Master({ title, isHomepage = false, children }) {
     const impersonating = auth?.impersonating;
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
+    const mobileMenuToggleRef = useRef(null);
     const [flashError, setFlashError] = useState(flash?.error);
     const [flashSuccess, setFlashSuccess] = useState(flash?.success);
     const [searchOpen, setSearchOpen] = useState(false);
@@ -103,6 +116,53 @@ export default function Master({ title, isHomepage = false, children }) {
         return () => document.removeEventListener("keydown", handler);
     }, []);
 
+    // Lock page scrolling while the full-screen mobile menu is open, keeping any scrollbar's gutter in place.
+    useEffect(() => {
+        if (!showingNavigationDropdown) {
+            return;
+        }
+        const root = document.documentElement;
+        const { overflow: previousOverflow, scrollbarGutter: previousScrollbarGutter } = root.style;
+        if (window.innerWidth > root.clientWidth) {
+            root.style.scrollbarGutter = "stable";
+        }
+        root.style.overflow = "hidden";
+        return () => {
+            root.style.overflow = previousOverflow;
+            root.style.scrollbarGutter = previousScrollbarGutter;
+        };
+    }, [showingNavigationDropdown]);
+
+    // Escape closes the mobile menu and returns focus to its toggle.
+    useEffect(() => {
+        if (!showingNavigationDropdown) {
+            return;
+        }
+        const handler = (e) => {
+            if (e.key === "Escape") {
+                setShowingNavigationDropdown(false);
+                mobileMenuToggleRef.current?.focus();
+            }
+        };
+        document.addEventListener("keydown", handler);
+        return () => document.removeEventListener("keydown", handler);
+    }, [showingNavigationDropdown]);
+
+    // Close the mobile menu once the viewport reaches the desktop breakpoint.
+    useEffect(() => {
+        if (!showingNavigationDropdown) {
+            return;
+        }
+        const desktopQuery = window.matchMedia("(min-width: 64rem)");
+        const handler = (e) => {
+            if (e.matches) {
+                setShowingNavigationDropdown(false);
+            }
+        };
+        desktopQuery.addEventListener("change", handler);
+        return () => desktopQuery.removeEventListener("change", handler);
+    }, [showingNavigationDropdown]);
+
     return (
         <>
             <Head title={title} />
@@ -114,30 +174,31 @@ export default function Master({ title, isHomepage = false, children }) {
                 >
                     Skip to main content
                 </a>
-                <div className="fixed inset-x-0 top-4 z-20 px-4">
+                <div className="fixed inset-x-0 top-4 z-30 px-4">
                     <nav
                         aria-label="Main"
                         className={cn(
-                            "grid grid-cols-[auto_1fr_auto] items-center overflow-visible rounded-lg border py-3 pr-3 pl-4 shadow-lg backdrop-blur-xl lg:flex lg:flex-wrap lg:gap-10 lg:px-4",
+                            "relative grid grid-cols-[auto_1fr_auto] items-center overflow-visible rounded-lg border py-3 pr-3 pl-4 shadow-lg backdrop-blur-xl lg:flex lg:flex-wrap lg:gap-10 lg:px-4",
                             classes.nav,
                         )}
                     >
                         {/* Mobile menu toggle */}
                         <button
                             className={cn(
-                                "inline-flex items-center justify-center rounded-md p-2 hover:text-white focus:outline-hidden focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-inset lg:hidden",
+                                "inline-flex size-10 items-center justify-center rounded-md hover:text-white focus:outline-hidden focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-inset lg:hidden",
                                 classes.iconButton,
                             )}
                             type="button"
+                            ref={mobileMenuToggleRef}
                             onClick={() => setShowingNavigationDropdown(!showingNavigationDropdown)}
                             aria-controls="mobile-menu"
                             aria-expanded={showingNavigationDropdown}
-                            aria-label="Toggle navigation"
+                            aria-label={showingNavigationDropdown ? "Close menu" : "Open menu"}
                         >
-                            <span className={showingNavigationDropdown ? "hidden" : "block"}>
+                            <span aria-hidden="true" className={showingNavigationDropdown ? "hidden" : "block"}>
                                 <Icon icon="bars" style="regular" className="h-6 w-6" />
                             </span>
-                            <span className={showingNavigationDropdown ? "block" : "hidden"}>
+                            <span aria-hidden="true" className={showingNavigationDropdown ? "block" : "hidden"}>
                                 <Icon icon="times" style="regular" className="h-6 w-6" />
                             </span>
                         </button>
@@ -149,7 +210,9 @@ export default function Master({ title, isHomepage = false, children }) {
                             <img
                                 src="/images/logo_regrowthforever.webp"
                                 alt="Regrowth Forever logo"
-                                className="mr-2 inline-block max-h-8 lg:max-h-14"
+                                width={1325}
+                                height={1325}
+                                className="mr-2 inline-block max-h-8 w-auto lg:max-h-14"
                             />
                             <span className="hidden lg:inline">Regrowth</span>
                         </Link>
@@ -169,7 +232,7 @@ export default function Master({ title, isHomepage = false, children }) {
 
                         {/* Desktop menu */}
                         <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-between">
-                            <div className="flex items-center gap-1">
+                            <PopoverGroup className="flex items-center gap-1">
                                 <NavLink
                                     className={classes.navLink}
                                     href={route("roster.index")}
@@ -178,18 +241,8 @@ export default function Master({ title, isHomepage = false, children }) {
                                     <Icon icon="users" style="solid" className="mr-2 h-6" />
                                     Roster
                                 </NavLink>
-                                <NavLink
-                                    className={classes.navLink}
-                                    href={route("raiding.index")}
-                                    active={isRaidingActive}
-                                >
-                                    <Icon icon="dragon" style="solid" className="mr-2 h-9" />
-                                    Raiding
-                                </NavLink>
-                                <NavLink className={classes.navLink} href={route("loot.index")} active={isLootActive}>
-                                    <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
-                                    Loot
-                                </NavLink>
+                                <SectionFlyout section="raiding" active={isRaidingActive} classes={classes} />
+                                <SectionFlyout section="loot" active={isLootActive} classes={classes} />
                                 <NavLink
                                     className={classes.navLink}
                                     href={discordInviteUrl}
@@ -199,7 +252,7 @@ export default function Master({ title, isHomepage = false, children }) {
                                     <Icon icon="discord" style="brands" className="mr-2 h-6" />
                                     Discord
                                 </NavLink>
-                            </div>
+                            </PopoverGroup>
 
                             <div className="flex items-center gap-3">
                                 <button
@@ -294,13 +347,15 @@ export default function Master({ title, isHomepage = false, children }) {
                 {/* Mobile menu */}
                 <div
                     className={cn(
-                        "fixed inset-x-0 top-19 z-20 max-h-[calc(100vh-4.75rem)] overflow-y-auto lg:hidden",
+                        "fixed inset-0 z-20 scroll-pt-24 overflow-y-auto overscroll-contain pt-24 pb-6 transition-[opacity,display] transition-discrete duration-150 motion-reduce:transition-none lg:hidden starting:opacity-0",
                         showingNavigationDropdown ? "block" : "hidden",
                         classes.mobileMenu,
                     )}
                     id="mobile-menu"
                 >
                     <div className="space-y-1 px-2 pt-2 pb-3">
+                        <SectionDisclosure section="raiding" active={isRaidingActive} classes={classes} />
+                        <SectionDisclosure section="loot" active={isLootActive} classes={classes} />
                         <ResponsiveNavLink
                             className={classes.responsiveNavLink}
                             href={route("roster.index")}
@@ -309,67 +364,31 @@ export default function Master({ title, isHomepage = false, children }) {
                             <Icon icon="users" style="solid" className="mr-2 h-6" />
                             Roster
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink
-                            className={classes.responsiveNavLink}
-                            href={route("raiding.index")}
-                            active={isRaidingActive}
-                        >
-                            <Icon icon="dragon" style="solid" className="mr-2 h-6" />
-                            Raiding
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
-                            className={classes.responsiveNavLink}
-                            href={route("loot.index")}
-                            active={isLootActive}
-                        >
-                            <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
-                            Loot
-                        </ResponsiveNavLink>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setShowingNavigationDropdown(false);
-                                setSearchOpen(true);
-                            }}
-                            className={cn(
-                                "flex w-full flex-row items-center rounded-md px-3 py-2 text-sm font-medium hover:text-white",
-                                classes.mobileLink,
-                            )}
-                        >
-                            <Icon icon="search" style="solid" className="mr-2 h-6" />
-                            Search
-                        </button>
-                        <ResponsiveNavLink
-                            className={classes.responsiveNavLink}
-                            href={discordInviteUrl}
-                            external
-                            rel="noopener noreferrer"
-                        >
-                            <Icon icon="discord" style="brands" className="mr-2 h-6" />
-                            Discord
-                        </ResponsiveNavLink>
                     </div>
+
+                    {user && gameVersions.length > 1 && (
+                        <div className={cn("border-t px-2 py-3", classes.mobileDivider)}>
+                            <GameVersionSwitchList linkClassName={mobileLinkClass} />
+                        </div>
+                    )}
 
                     <div className={cn("border-t pt-4 pb-3", classes.mobileDivider)}>
                         {user ? (
                             <div className="space-y-2 px-2">
-                                <div className="mx-2 flex items-center space-x-3">
+                                <Link href={route("account.index")} className={cn(mobileLinkClass, "gap-3")}>
                                     <img src={user.avatar} alt="" className="h-10 w-10 rounded-full" />
-                                    <div>
-                                        <div className="text-base font-medium text-white">{user.display_name}</div>
+                                    <span className="flex flex-1 flex-col">
+                                        <span className="text-base font-medium text-white">{user.display_name}</span>
                                         {user.highest_role && (
-                                            <div
+                                            <span
                                                 className={`text-sm text-discord-${user.highest_role.replace(/\s+/g, "").toLowerCase()}`}
                                             >
                                                 {user.highest_role}
-                                            </div>
+                                            </span>
                                         )}
-                                    </div>
-                                </div>
-                                <GameVersionSwitchList className="space-y-1" linkClassName={mobileLinkClass} />
-                                <Link href={route("account.index")} className={mobileLinkClass}>
-                                    <Icon icon="user-cog" style="regular" className="mr-2" />
-                                    Account Settings
+                                    </span>
+                                    <span className="sr-only">Account settings</span>
+                                    <Icon icon="chevron-right" style="regular" className="h-4" />
                                 </Link>
                                 {impersonating && (
                                     <Link href={route("auth.return-to-self")} className={mobileLinkClass}>
@@ -400,154 +419,38 @@ export default function Master({ title, isHomepage = false, children }) {
                             </div>
                         )}
                     </div>
+
+                    <div className={cn("border-t px-2 pt-3", classes.mobileDivider)}>
+                        <ResponsiveNavLink
+                            className={classes.responsiveNavLink}
+                            href={discordInviteUrl}
+                            external
+                            rel="noopener noreferrer"
+                        >
+                            <Icon icon="discord" style="brands" className="mr-2 h-6" />
+                            <span className="flex-1">Discord</span>
+                            <Icon icon="external-link" style="regular" className="h-4" aria-hidden="true" />
+                        </ResponsiveNavLink>
+                    </div>
                 </div>
 
-                {/* Flash Messages */}
-                <FlashMessage type="error" message={flashError} onDismiss={() => setFlashError(null)} />
-                <FlashMessage type="success" message={flashSuccess} onDismiss={() => setFlashSuccess(null)} />
+                <div inert={showingNavigationDropdown} className="contents">
+                    {/* Flash Messages */}
+                    <FlashMessage type="error" message={flashError} onDismiss={() => setFlashError(null)} />
+                    <FlashMessage type="success" message={flashSuccess} onDismiss={() => setFlashSuccess(null)} />
 
-                <main id="main-content" tabIndex={-1} className="flex flex-1 flex-col focus:outline-none">
-                    {children}
-                </main>
+                    <main id="main-content" tabIndex={-1} className="flex flex-1 flex-col focus:outline-none">
+                        {children}
+                    </main>
 
-                <footer className={cn("border-t-8 py-5", classes.footer)} id="footer">
-                    <div className="container mx-auto px-4 md:px-0">
-                        <div
-                            className={cn(
-                                "my-4 grid grid-cols-1 gap-8 md:my-6 md:gap-7",
-                                hasGameVersionColumn
-                                    ? "md:grid-cols-[1fr_repeat(3,max-content)]"
-                                    : "md:grid-cols-[1fr_repeat(2,max-content)]",
-                            )}
-                        >
-                            {/* Brand */}
-                            <div className="flex flex-col gap-3">
-                                <div className="flex items-center gap-4">
-                                    <Link href="/" title="Regrowth" className="flex-none">
-                                        <img src="/images/guild_emblem.webp" alt="" className="h-20 object-contain" />
-                                        <span className="sr-only">Regrowth</span>
-                                    </Link>
-                                    <img
-                                        src="/images/logo_forever.webp"
-                                        alt="World of Warcraft: Forever logo"
-                                        className="h-20 min-w-0 object-contain"
-                                    />
-                                </div>
-                                <div className={cn("flex items-center", classes.footerText)}>
-                                    <Icon icon="copyright" style="regular" className="mr-2 h-5 w-5" />
-                                    <span className="text-nowrap">{new Date().getFullYear()} Regrowth</span>
-                                </div>
-                            </div>
-
-                            {/* Game version */}
-                            {hasGameVersionColumn && (
-                                <nav aria-label="Game version">
-                                    <h2 className={cn("mb-2 text-sm opacity-70", classes.footerText)}>Game version</h2>
-                                    <ul className="flex flex-col">
-                                        {gameVersions.map((gameVersion) => {
-                                            const isCurrent = gameVersion.slug === currentGameVersion?.slug;
-
-                                            return (
-                                                <li key={gameVersion.slug}>
-                                                    <button
-                                                        type="button"
-                                                        disabled={isSwitching}
-                                                        onClick={() => switchTo(gameVersion.slug)}
-                                                        aria-current={isCurrent ? "true" : undefined}
-                                                        className={cn(
-                                                            FOOTER_COLUMN_LINK,
-                                                            "w-full text-left disabled:opacity-60",
-                                                            classes.footerLink,
-                                                            isCurrent && "font-bold",
-                                                        )}
-                                                    >
-                                                        <GameVersionIcon gameVersion={gameVersion} />
-                                                        <span className="min-w-0">
-                                                            {gameVersion.title}
-                                                            {isCurrent && (
-                                                                <span className="ml-2 inline-block rounded-full border border-current px-2 align-middle text-xs font-normal whitespace-nowrap opacity-70">
-                                                                    Current
-                                                                </span>
-                                                            )}
-                                                        </span>
-                                                    </button>
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                </nav>
-                            )}
-
-                            {/* Guild */}
-                            <nav aria-label="Guild">
-                                <h2 className={cn("mb-2 text-sm opacity-70", classes.footerText)}>Guild</h2>
-                                <ul className="flex flex-col">
-                                    <li>
-                                        <a
-                                            href="https://www.warcraftlogs.com/guilds/774848-regrowth"
-                                            className={footerLinkClass}
-                                            rel="noopener noreferrer"
-                                        >
-                                            <WarcraftLogsLogo className="h-5 w-5" />
-                                            <span className="text-nowrap">Warcraft Logs</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a
-                                            href={discordInviteUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className={footerLinkClass}
-                                        >
-                                            <Icon icon="discord" style="brands" className="h-5 w-5" />
-                                            <span className="text-nowrap">Discord</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </nav>
-
-                            {/* About */}
-                            <nav aria-label="About">
-                                <h2 className={cn("mb-2 text-sm opacity-70", classes.footerText)}>About</h2>
-                                <ul className="flex flex-col">
-                                    <li>
-                                        <Link href={route("privacypolicy")} className={footerLinkClass}>
-                                            <Icon icon="user-secret" style="solid" className="h-5 w-5" />
-                                            <span className="text-nowrap">Privacy policy</span>
-                                        </Link>
-                                    </li>
-                                    <li>
-                                        <Link href={route("battlenet-usage")} className={footerLinkClass}>
-                                            <Icon icon="battle-net" style="brands" className="h-5 w-5" />
-                                            <span className="text-nowrap">Battle.net API Usage</span>
-                                        </Link>
-                                    </li>
-                                    <li>
-                                        <a
-                                            href="https://benargo.com"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            title="Ben Argo"
-                                            className={footerLinkClass}
-                                        >
-                                            <Icon icon="safari" style="brands" className="h-5 w-5" />
-                                            <span className="text-nowrap">A Fizzywigs Production</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </nav>
-                        </div>
-                        <div className="mt-4 md:mt-2">
-                            <p className="text-center text-xs text-gray-400 md:text-left">
-                                Disclaimer: Classic is a trademark, and World of Warcraft and Warcraft are trademarks or
-                                registered trademarks of Blizzard Entertainment, Inc., in the U.S. and/or other
-                                countries. All related materials, logos, and images are copyright &copy; Blizzard
-                                Entertainment, Inc. Regrowth is in no way associated with or endorsed by Blizzard
-                                Entertainment.
-                            </p>
-                        </div>
-                    </div>
-                </footer>
+                    <Footer
+                        classes={classes}
+                        discordInviteUrl={discordInviteUrl}
+                        warcraftLogsUrl={warcraftLogsUrl}
+                        gameVersions={gameVersions}
+                        permissions={auth?.permissions ?? []}
+                    />
+                </div>
             </div>
 
             <SearchPalette open={searchOpen} onClose={() => setSearchOpen(false)} />

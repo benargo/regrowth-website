@@ -13,11 +13,11 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
     return (
         <Master title="Home" isHomepage>
             <div className="text-base">
-                <div className="flex flex-col lg:h-screen">
-                    <section className="bg-masthead-forever relative lg:flex-1">
+                <div className="flex min-h-svh flex-col lg:h-screen">
+                    <section className="bg-masthead-forever relative flex flex-1 flex-col">
                         <div className="hidden h-[60vh] overflow-hidden md:block md:h-[800px] lg:h-full" />
 
-                        <div className="relative flex flex-col items-center justify-center py-20 md:absolute md:inset-0 md:py-0">
+                        <div className="relative flex flex-1 flex-col items-center justify-center py-20 md:absolute md:inset-0 md:py-0">
                             <div className="my-10 flex flex-row items-center">
                                 <div className="md:mr-10">
                                     <img

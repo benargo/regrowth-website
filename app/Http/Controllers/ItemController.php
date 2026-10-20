@@ -11,6 +11,7 @@ use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Middleware\EnsureItemSlugIsValid;
 use App\Http\Middleware\RemembersOriginRaid;
+use App\Http\Middleware\RemembersRecordGameVersion;
 use App\Http\Requests\Items\UpdateItemRequest;
 use App\Http\Resources\CommentResource;
 use App\Http\Resources\ItemResource;
@@ -44,6 +45,7 @@ class ItemController extends Controller
     /** Display a specific loot item. */
     #[Middleware(EnsureItemSlugIsValid::class)]
     #[Middleware(RemembersOriginRaid::class)]
+    #[Middleware(RemembersRecordGameVersion::class.':item')]
     public function show(
         Request $request,
         BlizzardConnector $blizzardConnector,

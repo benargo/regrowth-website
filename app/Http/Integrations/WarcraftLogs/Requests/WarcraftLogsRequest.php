@@ -29,7 +29,7 @@ abstract class WarcraftLogsRequest extends GraphQLRequest implements Cacheable
 
     public function resolveEndpoint(): string
     {
-        return $this->namespace->baseUrl();
+        return $this->namespace->apiUrl();
     }
 
     public function namespace(): WarcraftLogsNamespace

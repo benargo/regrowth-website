@@ -3,10 +3,15 @@
 namespace App\Http\Middleware;
 
 use App\Actions\GameVersion\ListSelectableGameVersions;
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Actions\Navigation\BuildNavigationData;
+use App\Data\Navigation\NavigationData;
 use App\Http\Resources\GameVersionResource;
 use App\Http\Resources\UserPermissionResource;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Inertia\Inertia;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -42,12 +47,16 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => $user ? (new UserPermissionResource($user))->resolve($request) : [],
                 'impersonating' => $request->session()->has('impersonating_user_id'),
             ],
-            'gameVersions' => fn (): array => GameVersionResource::collection(ListSelectableGameVersions::run())->scope('switcher')->resolve($request),
+            'gameVersions' => fn (): AnonymousResourceCollection => GameVersionResource::collection(ListSelectableGameVersions::run())
+                ->scope('switcher')
+                ->additional(['meta' => ['current' => ResolveCurrentGameVersion::run()?->getKey()]]),
+            'navigation' => Inertia::optional(fn (): NavigationData => BuildNavigationData::run($request->user(), ResolveCurrentGameVersion::run())),
             'flash' => [
                 'error' => fn () => $request->session()->get('error'),
                 'success' => fn () => $request->session()->get('success'),
             ],
             'discordInviteUrl' => config('guild.discord_invite_url'),
+            'warcraftLogsUrl' => fn (): ?string => ResolveCurrentGameVersion::run()?->warcraftLogsGuild?->logs_url,
         ];
     }
 }

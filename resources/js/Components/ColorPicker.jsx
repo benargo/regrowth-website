@@ -50,11 +50,16 @@ function HuePointer() {
 /**
  * A colour picker in the site's palette: a saturation square, a hue slider and
  * a hex field beside a swatch of the current colour. Takes the same `color`,
- * `onChange` and `onChangeComplete` props as react-color's own pickers.
+ * `onChange` and `onChangeComplete` props as react-color's own pickers. An
+ * optional `label` names the picker as a group for assistive technology.
  */
-function ColorPicker({ hex, hsl, hsv, onChange }) {
+function ColorPicker({ hex, hsl, hsv, onChange, label }) {
     return (
-        <div className="border-amber-600 bg-brown-900 flex w-64 flex-col gap-3 rounded-md border p-3 shadow-lg">
+        <div
+            role={label ? "group" : undefined}
+            aria-label={label}
+            className="border-amber-600 bg-brown-900 flex w-64 flex-col gap-3 rounded-md border p-3 shadow-lg"
+        >
             <div className="relative h-40">
                 <Saturation hsl={hsl} hsv={hsv} pointer={SaturationPointer} style={styles.saturation} onChange={onChange} />
             </div>

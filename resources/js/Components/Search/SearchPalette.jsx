@@ -27,9 +27,9 @@ function ResultSkeleton() {
 
 export default function SearchPalette({ open, onClose }) {
     const page = usePage();
-    // Scoping key: see LootBiasToolController::show, which renders this component name.
+    // Scoping key: the loot raid page renders this component.
     const raidScope =
-        page.component === "Loot/Raids/Show" && page.props.raid?.data?.id
+        page.component === "Raids/Show" && page.props.section === "loot" && page.props.raid?.data?.id
             ? { id: page.props.raid.data.id, name: page.props.raid.data.name }
             : null;
 
@@ -43,8 +43,8 @@ export default function SearchPalette({ open, onClose }) {
     const listRef = useRef(null);
 
     const http = useHttp({ q: "", raid_id: null });
-    const { gameVersions = [] } = page.props;
-    const { switchTo } = useGameVersionSwitch();
+    const { gameVersions: { data: gameVersions = [] } = {} } = page.props;
+    const { current: currentGameVersion, switchTo } = useGameVersionSwitch();
 
     const trimmedQuery = query.trim();
     const hasQuery = trimmedQuery.length >= MIN_QUERY_LENGTH;
@@ -198,7 +198,11 @@ export default function SearchPalette({ open, onClose }) {
                             className="max-h-96 space-y-1 overflow-auto p-2"
                         >
                             {versionCount > 0 && (
-                                <div role="group" aria-labelledby="search-palette-versions-heading" className="space-y-1">
+                                <div
+                                    role="group"
+                                    aria-labelledby="search-palette-versions-heading"
+                                    className="space-y-1"
+                                >
                                     <h3
                                         id="search-palette-versions-heading"
                                         className="px-2 pt-1 text-xs font-semibold text-gray-300"
@@ -210,6 +214,7 @@ export default function SearchPalette({ open, onClose }) {
                                             key={gameVersion.id}
                                             gameVersion={gameVersion}
                                             index={index}
+                                            isCurrent={gameVersion.id === currentGameVersion?.id}
                                             isHighlighted={index === highlightedIndex}
                                             onMouseEnter={() => setHighlightedIndex(index)}
                                             onSelect={() => {
@@ -221,17 +226,17 @@ export default function SearchPalette({ open, onClose }) {
                                 </div>
                             )}
                             {visibleResults.map((item, itemIndex) => {
-                                    const index = versionCount + itemIndex;
-                                    return (
-                                        <ItemResultRow
-                                            key={item.id}
-                                            item={item}
-                                            index={index}
-                                            isHighlighted={index === highlightedIndex}
-                                            onMouseEnter={() => setHighlightedIndex(index)}
-                                        />
-                                    );
-                                })}
+                                const index = versionCount + itemIndex;
+                                return (
+                                    <ItemResultRow
+                                        key={item.id}
+                                        item={item}
+                                        index={index}
+                                        isHighlighted={index === highlightedIndex}
+                                        onMouseEnter={() => setHighlightedIndex(index)}
+                                    />
+                                );
+                            })}
                         </div>
                     )}
 

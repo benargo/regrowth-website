@@ -3,7 +3,7 @@
 namespace Tests\Feature\Raiding;
 
 use App\Actions\Characters\RefreshCharacterPortrait;
-use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
 use App\Data\PlannedAbsenceReasonData;
 use App\Enums\PlannedAbsenceReason;
 use App\Events\Broadcasts\DiscordMembersSearched;
@@ -505,7 +505,7 @@ class PlannedAbsenceControllerTest extends TestCase
         Character::factory()->main()->create(['name' => 'Versionless', 'game_version_id' => null]);
 
         $this->actingAs($this->officer())
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $current->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $current->slug])
             ->get(route('raiding.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Raiding/Absences/Form')
@@ -521,7 +521,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $main = Character::factory()->main()->forGameVersion($older)->create(['name' => 'Sylvanas']);
 
         $this->actingAs($this->officer())
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $older->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $older->slug])
             ->get(route('raiding.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('game_version.data.id', $older->id)
@@ -547,7 +547,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $unreleased = GameVersion::factory()->create(['release_date' => now()->addMonth()]);
 
         $this->actingAs($this->officer())
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $unreleased->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $unreleased->slug])
             ->get(route('raiding.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('game_version.data.id', $newer->id)
@@ -563,12 +563,12 @@ class PlannedAbsenceControllerTest extends TestCase
         $officer = $this->officer();
 
         $this->actingAs($officer)
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $newer->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $newer->slug])
             ->get(route('raiding.absences.create'))
             ->assertOk();
 
         $this->actingAs($officer)
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $older->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $older->slug])
             ->get(route('raiding.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('characters.data', fn ($characters) => collect($characters)->pluck('id')->all() === [$olderMain->id]));
@@ -582,14 +582,14 @@ class PlannedAbsenceControllerTest extends TestCase
         $officer = $this->officer();
 
         $this->actingAs($officer)
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $current->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $current->slug])
             ->get(route('raiding.absences.create'))
             ->assertInertia(fn (Assert $page) => $page->where('characters.data', []));
 
         $character->update(['is_main' => true]);
 
         $this->actingAs($officer)
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $current->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $current->slug])
             ->get(route('raiding.absences.create'))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('characters.data', fn ($characters) => collect($characters)->pluck('id')->all() === [$character->id]));
@@ -615,7 +615,7 @@ class PlannedAbsenceControllerTest extends TestCase
         [, $older] = $this->twoReleasedVersions();
 
         $this->actingAs($this->officer())
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $older->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $older->slug])
             ->get(route('raiding.absences.create'))
             ->assertInertia(fn (Assert $page) => $page->where('game_version.data.id', $older->id));
     }
@@ -626,10 +626,10 @@ class PlannedAbsenceControllerTest extends TestCase
         [$newer, $older] = $this->twoReleasedVersions();
 
         $this->actingAs($this->officer())
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $newer->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $newer->slug])
             ->get(route('raiding.absences.create', ['game_version' => $older->slug]))
             ->assertOk()
-            ->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, $newer->slug);
+            ->assertSessionHas(SharesCurrentGameVersionSession::SESSION_KEY, $newer->slug);
     }
 
     #[Test]
@@ -639,7 +639,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $main = Character::factory()->main()->forGameVersion($older)->create(['name' => 'Sylvanas']);
 
         $this->actingAs($this->officer())
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $newer->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $newer->slug])
             ->post(route('raiding.absences.store'), [
                 'game_version' => $older->id,
                 'character' => $main->id,
@@ -805,7 +805,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $absence = PlannedAbsence::factory()->create(['character_id' => $character->id]);
 
         $this->actingAs($this->officer())
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $newer->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $newer->slug])
             ->get(route('raiding.absences.edit', $absence))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('game_version.data.id', $older->id)
@@ -821,7 +821,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $absence = PlannedAbsence::factory()->create(['character_id' => $versionless->id]);
 
         $this->actingAs($this->officer())
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $older->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $older->slug])
             ->get(route('raiding.absences.edit', $absence))
             ->assertInertia(fn (Assert $page) => $page->where('game_version.data.id', $older->id));
     }
@@ -835,7 +835,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $absence = PlannedAbsence::factory()->create(['character_id' => $versionless->id]);
 
         $this->actingAs($this->officer())
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $unreleased->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $unreleased->slug])
             ->get(route('raiding.absences.edit', $absence))
             ->assertInertia(fn (Assert $page) => $page->where('game_version.data.id', $newer->id));
     }

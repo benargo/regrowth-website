@@ -15,16 +15,27 @@ enum WarcraftLogsNamespace: string
     case Retail = 'retail';
     case SeasonOfDiscovery = 'season_of_discovery';
 
+    /**
+     * The root URL of this namespace's Warcraft Logs site.
+     */
     public function baseUrl(): string
     {
         return match ($this) {
-            self::Anniversary => 'https://fresh.warcraftlogs.com/api/v2/client',
-            self::Classic => 'https://classic.warcraftlogs.com/api/v2/client',
-            self::Era => 'https://vanilla.warcraftlogs.com/api/v2/client',
-            self::Forever => 'https://forever.warcraftlogs.com/api/v2/client',
-            self::Retail => 'https://www.warcraftlogs.com/api/v2/client',
-            self::SeasonOfDiscovery => 'https://sod.warcraftlogs.com/api/v2/client',
+            self::Anniversary => 'https://fresh.warcraftlogs.com',
+            self::Classic => 'https://classic.warcraftlogs.com',
+            self::Era => 'https://vanilla.warcraftlogs.com',
+            self::Forever => 'https://forever.warcraftlogs.com',
+            self::Retail => 'https://www.warcraftlogs.com',
+            self::SeasonOfDiscovery => 'https://sod.warcraftlogs.com',
         };
+    }
+
+    /**
+     * The GraphQL client API endpoint for this namespace.
+     */
+    public function apiUrl(): string
+    {
+        return "{$this->baseUrl()}/api/v2/client";
     }
 
     public function label(): string

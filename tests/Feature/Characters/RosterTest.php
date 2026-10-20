@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Characters;
 
-use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Region;
@@ -208,7 +208,7 @@ class RosterTest extends TestCase
     {
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'release_date' => Carbon::now()->subDay()]);
 
-        $this->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'tbc'])
+        $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => 'tbc'])
             ->get(route('roster.index'))
             ->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', 'tbc'));
     }
@@ -220,7 +220,7 @@ class RosterTest extends TestCase
 
         $this->get(route('roster.index', ['game_version' => 'tbc']))
             ->assertRedirect(route('roster.index'))
-            ->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, 'tbc');
+            ->assertSessionHas(SharesCurrentGameVersionSession::SESSION_KEY, 'tbc');
 
         $this->get(route('roster.index'))->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', 'tbc'));
     }
@@ -230,7 +230,7 @@ class RosterTest extends TestCase
     {
         GameVersion::factory()->create(['slug' => 'later', 'release_date' => Carbon::now()->addMonth()]);
 
-        $this->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'later'])
+        $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => 'later'])
             ->get(route('roster.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
@@ -259,7 +259,7 @@ class RosterTest extends TestCase
     {
         $this->get(route('roster.index'))->assertOk();
 
-        GameVersion::query()->delete();
+        GameVersion::all()->each->delete();
 
         $this->get(route('roster.index'))->assertNotFound();
     }
@@ -297,7 +297,7 @@ class RosterTest extends TestCase
         $horde = PlayableRace::factory()->create(['faction' => Faction::HORDE]);
         $this->gameVersion->playableRaces()->attach($horde);
 
-        $this->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'tbc'])->get(route('roster.index'))->assertInertia(fn (Assert $page) => $page
+        $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => 'tbc'])->get(route('roster.index'))->assertInertia(fn (Assert $page) => $page
             ->where('ranks', ['Guild Master'])
             ->has('classes.data', 1)
             ->has('races.data', 1)
@@ -309,7 +309,7 @@ class RosterTest extends TestCase
     public function the_shared_switcher_list_is_present_and_the_page_sends_no_own_list(): void
     {
         $this->get(route('roster.index'))->assertInertia(fn (Assert $page) => $page
-            ->has('gameVersions.0.meta')
+            ->has('gameVersions.meta.current')
         );
     }
 

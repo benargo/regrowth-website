@@ -1,8 +1,8 @@
 import { Link } from "@inertiajs/react";
+import AutosavedSortableList from "@/Components/Datasets/AutosavedSortableList";
 import RecordChecklist from "@/Components/Datasets/RecordChecklist";
 import Relationships from "@/Components/Datasets/Relationships";
 import { SaveButton, firstError, linkClassName } from "@/Components/FormControls";
-import UnscheduledPhaseOrder from "@/Components/Phases/UnscheduledPhaseOrder";
 import Pill from "@/Components/Pill";
 import useRelationshipForm from "@/Hooks/useRelationshipForm";
 
@@ -57,6 +57,7 @@ export default function PhasesSection({
     autosave = false,
 }) {
     const { phases } = relationships;
+    const linkedPhases = phases.data.filter((phase) => phases.selected_ids.includes(phase.id));
     const { form, setIds, handleSubmit, containerProps } = useRelationshipForm({
         url: routes.update,
         key: "phases",
@@ -93,13 +94,14 @@ export default function PhasesSection({
                     <p className="max-w-prose text-sm text-gray-300">
                         Drag this version's phases without a start date into the order you expect them to arrive.
                     </p>
-                    <UnscheduledPhaseOrder
-                        phases={relationships.unscheduled_phases.data}
+                    <AutosavedSortableList
+                        items={relationships.unscheduled_phases.data}
                         url={routes.update}
                         field="unscheduled_phase_ids"
+                        saveKey="unscheduled-phase-order"
                         label={`Unscheduled ${gameVersion.title} phases`}
                         className="divide-y divide-amber-600/40 rounded border border-amber-600/40"
-                        renderPhase={(phase, dragHandle) => (
+                        renderItem={(phase, { dragHandle }) => (
                             <div className="bg-brown-900 flex items-center gap-3 px-3 py-2">
                                 {dragHandle}
                                 <span className="text-white">{phase.name}</span>
@@ -107,6 +109,24 @@ export default function PhasesSection({
                             </div>
                         )}
                     />
+                </div>
+            )}
+
+            {linkedPhases.length > 0 && (
+                <div className="flex flex-col gap-2">
+                    <h3 className="font-serif text-xl text-white">Add a raid</h3>
+                    <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                        {linkedPhases.map((phase) => (
+                            <li key={phase.id}>
+                                <Link
+                                    href={route("management.raids.create", { phase: phase.id })}
+                                    className={linkClassName}
+                                >
+                                    Add a raid to {phase.name}
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
                 </div>
             )}
 
@@ -119,6 +139,9 @@ export default function PhasesSection({
                 </Link>
                 <Link href={route("management.phases.index")} className={linkClassName}>
                     Manage all phases
+                </Link>
+                <Link href={route("management.raids.index")} className={linkClassName}>
+                    Manage all raids
                 </Link>
             </p>
         </Relationships>

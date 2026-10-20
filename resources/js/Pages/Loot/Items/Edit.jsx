@@ -27,6 +27,7 @@ import Modal from "@/Components/Modal";
 import RemoveButton from "@/Components/RemoveButton";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
+import SectionNav from "@/Components/Navigation/SectionNav";
 import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import Master from "@/Layouts/Master";
 import getItemRaid from "@/Helpers/GetItemRaid";
@@ -561,6 +562,7 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
                 title="Edit Loot Biases"
                 subtitle={raid?.name}
             />
+            <SectionNav section="loot" />
             {/* Tool navigation */}
             <ToolNav>
                 <div className="flex-initial space-x-4">

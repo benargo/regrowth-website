@@ -17,7 +17,7 @@ function DashboardCard({ href, icon, external = false, children }) {
     return (
         <LinkComponent
             href={href}
-            className="border-amber-600 hover:bg-amber-600/20 focus-visible:outline-amber-300 flex items-center gap-4 rounded border px-2 py-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="flex items-center gap-4 rounded border border-amber-600 px-2 py-4 transition-colors hover:bg-amber-600/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
         >
             <div className="mx-2 text-center">
                 <Icon icon={icon} style="light" className="text-3xl" />
@@ -41,7 +41,7 @@ export default function Dashboard({ discordRoles }) {
                     <BandHeading level={2} eyebrow="Raiding" className="mb-4">
                         Teams &amp; Attendance
                     </BandHeading>
-                    <p className="text-amber-400 mb-4">
+                    <p className="mb-4 text-amber-400">
                         Manage raid team compositions, planned absences, and attendance tracking.
                     </p>
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -61,12 +61,6 @@ export default function Dashboard({ discordRoles }) {
                                 <p className="mb-1 text-sm">Review raid attendance records.</p>
                             </DashboardCard>
                         </Can>
-                        <Can permission="manage-boss-strategies">
-                            <DashboardCard href={route("management.boss-strategies.index")} icon="book">
-                                <h3 className="text-md">Boss strategies</h3>
-                                <p className="mb-1 text-sm">Create and manage boss strategies for raids.</p>
-                            </DashboardCard>
-                        </Can>
                         <Can permission="manage-raid-plans">
                             <DashboardCard href={route("management.event-templates.index")} icon="copy">
                                 <h3 className="text-md">Event templates</h3>
@@ -83,7 +77,7 @@ export default function Dashboard({ discordRoles }) {
                     <BandHeading level={2} eyebrow="Loot Council" className="mb-4">
                         Distribution &amp; Addons
                     </BandHeading>
-                    <p className="text-amber-400 mb-4">Manage loot distribution priorities and addon settings.</p>
+                    <p className="mb-4 text-amber-400">Manage loot distribution priorities and addon settings.</p>
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                         <DashboardCard href={route("management.addon.export")} icon="file-export">
                             <h3 className="text-md">Export addon data</h3>
@@ -103,7 +97,7 @@ export default function Dashboard({ discordRoles }) {
                     <BandHeading level={2} eyebrow="Datasets" className="mb-4">
                         Game &amp; Guild Data
                     </BandHeading>
-                    <p className="text-amber-400 mb-4">Manage core datasets that power the site&rsquo;s features.</p>
+                    <p className="mb-4 text-amber-400">Manage core datasets that power the site&rsquo;s features.</p>
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                         <Can permission="edit-datasets">
                             <DashboardCard href={route("management.game-versions.index")} icon="gamepad">
@@ -118,6 +112,22 @@ export default function Dashboard({ discordRoles }) {
                                 <h3 className="text-md">Manage phases</h3>
                                 <p className="mb-1 text-sm">
                                     Set the content phases of each game version, their start dates and order.
+                                </p>
+                            </DashboardCard>
+                        </Can>
+                        <Can permission="edit-datasets">
+                            <DashboardCard href={route("management.raids.index")} icon="dungeon">
+                                <h3 className="text-md">Manage raids</h3>
+                                <p className="mb-1 text-sm">
+                                    Set up each game version's raids, their banners and the order of their bosses.
+                                </p>
+                            </DashboardCard>
+                        </Can>
+                        <Can permission="edit-datasets">
+                            <DashboardCard href={route("management.bosses.index")} icon="skull">
+                                <h3 className="text-md">Manage bosses</h3>
+                                <p className="mb-1 text-sm">
+                                    Add each raid's bosses in encounter order and write their strategies.
                                 </p>
                             </DashboardCard>
                         </Can>
@@ -147,19 +157,17 @@ export default function Dashboard({ discordRoles }) {
             </Band>
 
             {/* Site Management */}
-            <Band tone="shaded" edge="top">
+            <Band tone="shaded" edge="both">
                 <div className="container mx-auto px-4">
                     <BandHeading level={2} eyebrow="Site Management" className="mb-4">
                         Settings &amp; Testing
                     </BandHeading>
-                    <p className="text-amber-400 mb-4">Manage site-wide settings and test the site as other roles.</p>
+                    <p className="mb-4 text-amber-400">Manage site-wide settings and test the site as other roles.</p>
 
                     <div className="flex flex-col gap-4">
                         {/* Site options */}
                         <Collapsible title="Site options" style="gray">
-                            <p className="text-md text-gray-400 mb-4">
-                                Configure site-wide options and permissions.
-                            </p>
+                            <p className="text-md mb-4 text-gray-400">Configure site-wide options and permissions.</p>
                             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                                 <DashboardCard href={route("management.permissions.index")} icon="shield-check">
                                     <h4 className="text-md">Site permissions</h4>
@@ -176,7 +184,7 @@ export default function Dashboard({ discordRoles }) {
 
                         {/* Testing */}
                         <Collapsible title="Testing" style="gray">
-                            <p className="text-md text-gray-400 mb-4">
+                            <p className="text-md mb-4 text-gray-400">
                                 View the site as different user roles for testing purposes. Use the user menu to switch
                                 back to your own account.
                             </p>

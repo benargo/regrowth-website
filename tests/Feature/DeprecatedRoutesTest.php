@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\ProcessGrmUpload;
+use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Phase;
 use App\Models\WarcraftLogs\GuildTag;
@@ -162,5 +163,63 @@ class DeprecatedRoutesTest extends DashboardTestCase
         ]);
 
         $response->assertGone();
+    }
+
+    // ==================== boss strategies ====================
+
+    #[Test]
+    #[Group('deprecated')]
+    public function the_boss_strategies_index_redirects_to_the_raiding_raids_index(): void
+    {
+        $response = $this->get('/raiding/boss-strategies');
+
+        $response->assertMovedPermanently();
+        $response->assertRedirect(route('raiding.raids.index'));
+    }
+
+    #[Test]
+    #[Group('deprecated')]
+    public function a_boss_strategy_redirects_to_the_raiding_boss_page(): void
+    {
+        $boss = Boss::factory()->create(['name' => 'Moroes']);
+
+        $response = $this->get("/raiding/boss-strategies/{$boss->id}/an-old-slug");
+
+        $response->assertMovedPermanently();
+        $response->assertRedirect(route('raiding.bosses.show', ['boss' => $boss, 'slug' => 'moroes']));
+    }
+
+    #[Test]
+    #[Group('deprecated')]
+    public function boss_strategies_management_index_redirects_to_the_bosses_index(): void
+    {
+        $response = $this->actingAs($this->officer)->get('/manage/boss-strategies');
+
+        $response->assertMovedPermanently();
+        $response->assertRedirect(route('management.bosses.index'));
+    }
+
+    #[Test]
+    #[Group('deprecated')]
+    public function boss_strategy_edit_page_redirects_to_the_boss_edit_page(): void
+    {
+        $boss = Boss::factory()->create();
+
+        $response = $this->actingAs($this->officer)->get("/manage/boss-strategies/{$boss->id}/{$boss->slug}");
+
+        $response->assertMovedPermanently();
+        $response->assertRedirect(route('management.bosses.edit', $boss));
+    }
+
+    #[Test]
+    #[Group('deprecated')]
+    public function boss_strategy_update_endpoint_is_gone(): void
+    {
+        $boss = Boss::factory()->create(['notes' => 'Keep me.']);
+
+        $response = $this->actingAs($this->officer)->patch("/manage/boss-strategies/{$boss->id}", ['notes' => 'Changed.']);
+
+        $response->assertGone();
+        $this->assertSame('Keep me.', $boss->fresh()->notes);
     }
 }

@@ -18,20 +18,20 @@ class PlannedAbsenceReasonTest extends TestCase
     }
 
     /**
-     * @return array<string, array{PlannedAbsenceReason, string, string}>
+     * @return array<string, array{PlannedAbsenceReason, string, string, string}>
      */
     public static function reasonProvider(): array
     {
         return [
-            'holiday' => [PlannedAbsenceReason::Holiday, 'On holiday', 'umbrella-beach'],
-            'work' => [PlannedAbsenceReason::Work, 'Stuck at work', 'briefcase'],
-            'other' => [PlannedAbsenceReason::Other, 'Other', 'portal-exit'],
+            'holiday' => [PlannedAbsenceReason::Holiday, 'On holiday', 'umbrella-beach', 'You\'re on holiday'],
+            'work' => [PlannedAbsenceReason::Work, 'Stuck at work', 'briefcase', 'You\'re stuck at work'],
+            'other' => [PlannedAbsenceReason::Other, 'Other', 'portal-exit', 'You\'re away'],
         ];
     }
 
     #[Test]
     #[DataProvider('reasonProvider')]
-    public function each_case_has_correct_value(PlannedAbsenceReason $reason, string $value, string $icon): void
+    public function each_case_has_correct_value(PlannedAbsenceReason $reason, string $value, string $icon, string $navigationLabel): void
     {
         $this->assertSame($value, $reason->value);
         $this->assertSame($reason, PlannedAbsenceReason::from($value));
@@ -39,9 +39,16 @@ class PlannedAbsenceReasonTest extends TestCase
 
     #[Test]
     #[DataProvider('reasonProvider')]
-    public function each_case_has_correct_icon(PlannedAbsenceReason $reason, string $value, string $icon): void
+    public function each_case_has_correct_icon(PlannedAbsenceReason $reason, string $value, string $icon, string $navigationLabel): void
     {
         $this->assertSame($icon, $reason->icon());
+    }
+
+    #[Test]
+    #[DataProvider('reasonProvider')]
+    public function each_case_has_a_navigation_label(PlannedAbsenceReason $reason, string $value, string $icon, string $navigationLabel): void
+    {
+        $this->assertSame($navigationLabel, $reason->navigationLabel());
     }
 
     #[Test]

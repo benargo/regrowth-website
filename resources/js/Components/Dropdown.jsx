@@ -40,14 +40,15 @@ const Content = ({ align = "right", width = "48", contentClasses = "py-1 bg-brow
     return (
         <MenuItems
             transition
+            modal={false}
             className={cn(
                 "absolute z-50 mt-2 rounded-md shadow-lg focus:outline-hidden",
-                "transition ease-out data-closed:scale-95 data-closed:opacity-0 data-enter:duration-200 data-leave:duration-75 data-leave:ease-in",
+                "transition ease-out data-closed:scale-95 data-closed:opacity-0 data-enter:duration-200 data-leave:duration-75 data-leave:ease-in motion-reduce:transition-none",
                 alignmentClasses,
                 widthClasses,
             )}
         >
-            <div className={cn("ring-opacity-5 rounded-md ring-1 ring-black", contentClasses)}>{children}</div>
+            <div className={cn("rounded-md ring-1 ring-black/5", contentClasses)}>{children}</div>
         </MenuItems>
     );
 };

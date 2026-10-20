@@ -9,6 +9,7 @@ use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\GameVersion;
 use App\Models\Permission;
+use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\Raid;
 use App\Models\User;
@@ -40,7 +41,6 @@ class DashboardPagesTest extends TestCase
         );
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'view-officer-dashboard', 'guard_name' => 'web']));
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'edit-datasets', 'guard_name' => 'web']));
-        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'manage-boss-strategies', 'guard_name' => 'web']));
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'update-characters', 'guard_name' => 'web']));
 
         Storage::fake('public');
@@ -150,6 +150,33 @@ class DashboardPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    // ==================== boss pages ====================
+
+    #[Group('happy-path')]
+    #[Test]
+    public function manage_bosses_page_loads(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('management.bosses.index'));
+
+        $response->assertOk();
+        $response->assertSee('Regrowth');
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function edit_boss_page_loads(): void
+    {
+        $user = User::factory()->officer()->create();
+        $boss = Boss::factory()->for(Raid::factory())->create();
+
+        $response = $this->actingAs($user)->get(route('management.bosses.edit', $boss));
+
+        $response->assertOk();
+        $response->assertSee('Regrowth');
+    }
+
     #[Group('happy-path')]
     #[Test]
     public function grm_upload_page_loads(): void
@@ -157,6 +184,33 @@ class DashboardPagesTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('management.grm.create'));
+
+        $response->assertOk();
+        $response->assertSee('Regrowth');
+    }
+
+    // ==================== raid pages ====================
+
+    #[Group('happy-path')]
+    #[Test]
+    public function manage_raids_page_loads(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('management.raids.index'));
+
+        $response->assertOk();
+        $response->assertSee('Regrowth');
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function edit_raid_page_loads(): void
+    {
+        $user = User::factory()->officer()->create();
+        $raid = Raid::factory()->for(Phase::factory())->create();
+
+        $response = $this->actingAs($user)->get(route('management.raids.edit', $raid));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -184,35 +238,6 @@ class DashboardPagesTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('management.permissions.group.show', ['group' => 'test-group']));
-
-        $response->assertOk();
-        $response->assertSee('Regrowth');
-    }
-
-    // ==================== boss strategy pages ====================
-
-    #[Group('happy-path')]
-    #[Test]
-    public function boss_strategies_index_page_loads(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('management.boss-strategies.index'));
-
-        $response->assertOk();
-        $response->assertSee('Regrowth');
-    }
-
-    #[Group('happy-path')]
-    #[Test]
-    public function boss_strategies_edit_page_loads(): void
-    {
-        $user = User::factory()->withPermissions('view-officer-dashboard', 'manage-boss-strategies')->create();
-        $boss = Boss::factory()->for(Raid::factory())->create();
-
-        $response = $this->actingAs($user)->get(
-            route('management.boss-strategies.edit', ['boss' => $boss, 'slug' => $boss->slug])
-        );
 
         $response->assertOk();
         $response->assertSee('Regrowth');

@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Dashboard;
 
-use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Actions\Phase\ReorderPhases;
 use App\Actions\Phase\UpdatePhase;
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
 use App\Models\GameVersion;
 use App\Models\Phase;
 use App\Models\Raid;
@@ -81,7 +81,7 @@ class PhaseControllerTest extends DashboardTestCase
         Phase::factory()->create(['game_version_id' => null]);
 
         $response = $this->actingAs($this->officer)
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $era->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $era->slug])
             ->get(route('management.phases.index'));
 
         $response->assertInertia(fn (Assert $page) => $page

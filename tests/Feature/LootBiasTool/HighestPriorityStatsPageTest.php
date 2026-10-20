@@ -4,12 +4,14 @@ namespace Tests\Feature\LootBiasTool;
 
 use App\Enums\LootPriorityType;
 use App\Models\DiscordRole;
+use App\Models\GameVersion;
 use App\Models\Item;
 use App\Models\LootPriority;
 use App\Models\Permission;
 use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -22,6 +24,8 @@ use Tests\TestCase;
 class HighestPriorityStatsPageTest extends TestCase
 {
     use RefreshDatabase;
+
+    private GameVersion $gameVersion;
 
     protected function setUp(): void
     {
@@ -36,6 +40,8 @@ class HighestPriorityStatsPageTest extends TestCase
             ['name' => 'Officer', 'position' => 5, 'is_visible' => true]
         );
         $officerRole->givePermissionTo($permission);
+
+        $this->gameVersion = GameVersion::factory()->create(['release_date' => Carbon::parse('2024-01-01')]);
     }
 
     protected function itemInPhase(Phase $phase): Item
@@ -106,6 +112,8 @@ class HighestPriorityStatsPageTest extends TestCase
     #[Test]
     public function priorities_defers_the_table_prop(): void
     {
+        $this->itemInPhase(Phase::factory()->forGameVersion($this->gameVersion)->create(['number' => 1]))
+            ->priorities()->attach(LootPriority::factory()->role()->create()->id, ['weight' => 0]);
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('loot.priorities'));
@@ -116,7 +124,7 @@ class HighestPriorityStatsPageTest extends TestCase
     #[Test]
     public function priorities_table_prop_loads_via_deferred_props(): void
     {
-        $phase = Phase::factory()->create(['number' => 1]);
+        $phase = Phase::factory()->forGameVersion($this->gameVersion)->create(['number' => 1]);
         $item = $this->itemInPhase($phase);
         $priority = LootPriority::factory()->role()->create(['title' => 'Tank']);
         $item->priorities()->attach($priority->id, ['weight' => 0]);
@@ -142,7 +150,7 @@ class HighestPriorityStatsPageTest extends TestCase
         ]);
         Cache::purge('array');
 
-        $phase = Phase::factory()->create(['number' => 1]);
+        $phase = Phase::factory()->forGameVersion($this->gameVersion)->create(['number' => 1]);
         $item = $this->itemInPhase($phase);
         $priority = LootPriority::factory()->spec()->withPlayableClass()->create(['title' => 'Feral']);
         $item->priorities()->attach($priority->id, ['weight' => 0]);
@@ -165,17 +173,17 @@ class HighestPriorityStatsPageTest extends TestCase
     }
 
     #[Test]
-    public function priorities_renders_an_empty_table_when_no_priorities_have_items(): void
+    public function priorities_only_counts_the_current_versions_phases(): void
     {
-        $user = User::factory()->officer()->create();
+        $officer = User::factory()->officer()->create();
+        $otherPhase = Phase::factory()->forGameVersion(GameVersion::factory()->create(['release_date' => Carbon::parse('2023-01-01')]))->create();
+        $this->itemInPhase($otherPhase)->priorities()->attach(LootPriority::factory()->role()->create()->id, ['weight' => 0]);
 
-        $response = $this->actingAs($user)->get(route('loot.priorities'));
+        $response = $this->actingAs($officer)->get(route('loot.priorities'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('table.role_rows', 0)
-                ->has('table.class_groups', 0)
-            )
+            ->has('phases.data', 0)
+            ->where('table', null)
         );
     }
 }

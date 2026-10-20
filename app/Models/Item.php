@@ -4,8 +4,10 @@ namespace App\Models;
 
 use App\Contracts\Commentable;
 use App\Contracts\HasBlizzardIcons;
+use App\Contracts\Models\BelongsToGameVersion;
 use App\Enums\ItemQuality;
 use App\Http\Integrations\Blizzard\Data\Item\ItemData;
+use App\Models\Concerns\InteractsWithChaperonedMedia;
 use App\Observers\ItemObserver;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -24,16 +26,15 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
 
 #[ObservedBy([ItemObserver::class])]
 #[Fillable(['boss_id', 'name', 'quality', 'group', 'notes', 'blizzard_id', 'game_version_id'])]
 #[Hidden(['wowhead_url', 'created_at', 'updated_at'])]
-class Item extends Model implements Commentable, HasBlizzardIcons, HasMedia
+class Item extends Model implements BelongsToGameVersion, Commentable, HasBlizzardIcons, HasMedia
 {
     use HasFactory;
     use HasUuids;
-    use InteractsWithMedia;
+    use InteractsWithChaperonedMedia;
 
     /**
      * Get the attributes that should be cast.
@@ -172,6 +173,17 @@ class Item extends Model implements Commentable, HasBlizzardIcons, HasMedia
     protected function trash(Builder $query): void
     {
         $query->whereNull('boss_id');
+    }
+
+    // ============ Loot lists ============
+
+    /**
+     * Load what a loot item row shows: comment count, game version, icon, and priorities with their icons.
+     */
+    #[Scope]
+    protected function withLootListData(Builder $query): void
+    {
+        $query->withCount('comments')->with(['gameVersion', 'media', 'priorities.media']);
     }
 
     // ============ Search ============

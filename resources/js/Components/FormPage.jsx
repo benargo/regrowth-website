@@ -36,7 +36,7 @@ export function FormPageSection({ id, title = "Details", children }) {
     const headingId = `${id ?? "details"}-heading`;
 
     return (
-        <section id={id} aria-labelledby={headingId} className="flex scroll-mt-48 flex-col gap-6 lg:scroll-mt-28">
+        <section id={id} aria-labelledby={headingId} className="flex scroll-mt-4 flex-col gap-6">
             <h2 id={headingId} className="font-serif text-2xl text-white">
                 {title}
             </h2>

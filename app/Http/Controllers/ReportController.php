@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Http\Filters\Reports\FiltersDaysOfWeek;
 use App\Http\Filters\Reports\FiltersZoneIds;
+use App\Http\Middleware\RemembersRecordGameVersion;
 use App\Http\Requests\Raid\ReportsIndexRequest;
 use App\Http\Requests\Raid\StoreReportRequest;
 use App\Http\Requests\Raid\UpdateReportRequest;
@@ -36,7 +38,7 @@ class ReportController extends Controller
     // ============ Index ============
 
     /**
-     * Display a paginated index of WarcraftLogs reports with optional filters.
+     * Display a paginated, filterable index of the current game version's WarcraftLogs reports.
      */
     public function index(ReportsIndexRequest $request): Response
     {
@@ -47,6 +49,9 @@ class ReportController extends Controller
             ->push((object) ['id' => 0, 'name' => 'No zone']);
 
         $guildTags = GuildTag::orderBy('name')->get();
+
+        $gameVersion = ResolveCurrentGameVersion::run();
+        $hasReports = $gameVersion !== null && Report::where('game_version_id', $gameVersion->id)->exists();
 
         return Inertia::render('Raiding/Reports/Index', [
             'zones' => $zones,
@@ -59,9 +64,10 @@ class ReportController extends Controller
                 'before_date' => $request->input('filter.before_date'),
             ],
             'earliestDate' => $request->resolveMinDate(),
-            'reports' => Inertia::defer(function () use ($timezone) {
+            'hasReports' => $hasReports,
+            'reports' => $hasReports ? Inertia::defer(function () use ($timezone, $gameVersion) {
                 return new ReportCollection(
-                    QueryBuilder::for(Report::class)
+                    QueryBuilder::for(Report::where('game_version_id', $gameVersion->id))
                         ->with(['guildTag', 'zone'])
                         ->withCount('linkedReports')
                         ->allowedFilters(
@@ -79,7 +85,7 @@ class ReportController extends Controller
                         ->paginate(25)
                         ->withQueryString()
                 );
-            }),
+            }) : null,
         ]);
     }
 
@@ -88,6 +94,7 @@ class ReportController extends Controller
     /**
      * Display the details of a single WarcraftLogs report.
      */
+    #[Middleware(RemembersRecordGameVersion::class.':report')]
     public function show(Request $request, Report $report): Response
     {
         $report->load(['gameVersion', 'guildTag', 'zone', 'characters.rank', 'characters.playableClass', 'characters.playableRace', 'linkedReports']);

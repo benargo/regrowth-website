@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Raiding;
 
-use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
 use App\Enums\Presence;
 use App\Models\DiscordRole;
 use App\Models\GameVersion;
@@ -273,7 +273,7 @@ class AttendanceGraphsControllerTest extends TestCase
         $this->createReport($this->gameVersion, '2025-01-01 20:00');
 
         $this->actingAs(User::factory()->officer()->create())
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $this->gameVersion->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $this->gameVersion->slug])
             ->get(route('raiding.attendance.graphs.index'))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('hasAttendance', true)

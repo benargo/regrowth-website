@@ -12,19 +12,24 @@ use App\Http\Integrations\Discord\Exceptions\UserNotInGuildException;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 use Laravel\Socialite\Facades\Socialite;
 use Saloon\Exceptions\Request\FatalRequestException;
+use Symfony\Component\HttpFoundation\Response;
 
 class DiscordController extends Controller
 {
     /**
-     * Redirect to Discord OAuth.
+     * Redirect to Discord OAuth, as a full page visit for Inertia requests.
      */
-    public function redirect(): RedirectResponse
+    public function redirect(): Response
     {
-        return Socialite::driver('discord')
-            ->scopes(['identify', 'guilds.members.read'])
-            ->redirect();
+        return Inertia::location(
+            Socialite::driver('discord')
+                ->scopes(['identify', 'guilds.members.read'])
+                ->redirect()
+                ->getTargetUrl()
+        );
     }
 
     /**

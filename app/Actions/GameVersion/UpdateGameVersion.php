@@ -4,7 +4,6 @@ namespace App\Actions\GameVersion;
 
 use App\Actions\Phase\ReorderPhases;
 use App\Models\GameVersion;
-use App\Models\Raid;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -41,7 +40,6 @@ class UpdateGameVersion
         'playable_class_ids',
         'phase_ids',
         'unscheduled_phase_ids',
-        'new_raid',
         'guild_ranks',
     ];
 
@@ -67,10 +65,6 @@ class UpdateGameVersion
 
             if (Arr::exists($data, 'unscheduled_phase_ids')) {
                 ReorderPhases::run($data['unscheduled_phase_ids']);
-            }
-
-            if (Arr::exists($data, 'new_raid')) {
-                Raid::create($data['new_raid']);
             }
 
             if (Arr::exists($data, 'guild_ranks')) {

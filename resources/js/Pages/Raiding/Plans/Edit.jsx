@@ -22,6 +22,7 @@ import EditorPresence from "@/Components/Events/EditorPresence";
 import { BenchedTable, GroupTable } from "@/Components/Events/GroupTable";
 import MetaCard, { MetaItem } from "@/Components/MetaCard";
 import SharedHeader from "@/Components/SharedHeader";
+import SectionNav from "@/Components/Navigation/SectionNav";
 import Icon from "@/Components/FontAwesome/Icon";
 import IconButton from "@/Components/IconButton";
 import { PrimaryButton, SecondaryButton } from "@/Components/FormControls";
@@ -573,10 +574,10 @@ function BossStrategySection({ boss, raid, commonContainerProps, groupsByBossId,
                 {bossImages.length > 0 || bossNotes ? (
                     <div className="col-span-2 flex flex-col gap-4">
                         <h3 className="text-sm font-semibold tracking-wider text-amber-500/80 uppercase">Strategy</h3>
-                        {bossImages.map((url, i) => (
+                        {bossImages.map((image, i) => (
                             <img
-                                key={i}
-                                src={url}
+                                key={image.id}
+                                src={image.url}
                                 alt={`${boss.name} strategy ${i + 1}`}
                                 className="rounded-lg border border-amber-600/30"
                             />
@@ -1358,6 +1359,7 @@ export default function Edit({ event, targetMarkers, templates }) {
     return (
         <Master title={`Editing: ${event.title}`}>
             <SharedHeader title={event.title} image={event.banner_url} imagePosition={event.banner_position} />
+            <SectionNav section="raiding" />
             <ToolNav>
                 <div className="flex-initial space-x-4">
                     <ToolNavLink href={route("raiding.plans.show", event.id)} preserveScroll>

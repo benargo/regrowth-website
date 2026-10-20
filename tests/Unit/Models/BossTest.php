@@ -2,19 +2,37 @@
 
 namespace Tests\Unit\Models;
 
+use App\Contracts\Models\BelongsToGameVersion;
+use App\Contracts\Models\DatasetModel;
+use App\Contracts\Models\EditLockable;
+use App\Contracts\Models\HasUsage;
+use App\Events\BossChanged;
+use App\Jobs\BuildAddonExportFile;
 use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\Event;
 use App\Models\EventAssignment;
+use App\Models\EventAssignmentGroup;
+use App\Models\GameVersion;
 use App\Models\Item;
+use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
+use App\Policies\DatasetPolicy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event as EventFacade;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use Spatie\EloquentSortable\Sortable;
 use Spatie\MediaLibrary\HasMedia;
 use Tests\Support\ModelTestCase;
@@ -51,7 +69,6 @@ class BossTest extends ModelTestCase
 
         $this->assertFillable($model, [
             'name',
-            'raid_id',
             'sort_order',
             'notes',
         ]);
@@ -64,7 +81,6 @@ class BossTest extends ModelTestCase
 
         $this->assertFillableAttribute($model, [
             'name',
-            'raid_id',
             'sort_order',
             'notes',
         ]);
@@ -102,6 +118,27 @@ class BossTest extends ModelTestCase
 
         $this->assertTableHas(['notes' => $notes]);
         $this->assertSame($notes, $boss->notes);
+    }
+
+    #[Test]
+    public function it_refuses_two_bosses_with_the_same_name_in_one_raid(): void
+    {
+        $raid = Raid::factory()->create();
+        $this->create(['name' => 'Moroes', 'raid_id' => $raid->id]);
+
+        $this->expectException(UniqueConstraintViolationException::class);
+
+        $this->create(['name' => 'Moroes', 'raid_id' => $raid->id]);
+    }
+
+    #[Test]
+    public function it_allows_the_same_name_in_different_raids(): void
+    {
+        $first = $this->create(['name' => 'Moroes', 'raid_id' => Raid::factory()->create()->id]);
+        $second = $this->create(['name' => 'Moroes', 'raid_id' => Raid::factory()->create()->id]);
+
+        $this->assertModelExists($first);
+        $this->assertModelExists($second);
     }
 
     #[Test]
@@ -280,5 +317,225 @@ class BossTest extends ModelTestCase
         $this->assertInstanceOf(HasMany::class, $boss->assignments());
         $this->assertCount(2, $boss->assignments);
         $this->assertInstanceOf(EventAssignment::class, $boss->assignments->first());
+    }
+
+    // ==================== dataset contracts ====================
+
+    #[Test]
+    public function it_is_an_edit_locked_dataset_model_with_usage_and_a_game_version(): void
+    {
+        $boss = new Boss;
+
+        $this->assertInstanceOf(DatasetModel::class, $boss);
+        $this->assertInstanceOf(EditLockable::class, $boss);
+        $this->assertInstanceOf(HasUsage::class, $boss);
+        $this->assertInstanceOf(BelongsToGameVersion::class, $boss);
+    }
+
+    #[Test]
+    public function it_is_authorised_by_the_dataset_policy(): void
+    {
+        $this->assertInstanceOf(DatasetPolicy::class, Gate::getPolicyFor(Boss::class));
+    }
+
+    #[Test]
+    public function it_keeps_its_edit_lock_under_its_own_cache_key(): void
+    {
+        $boss = $this->create();
+        $user = User::factory()->create();
+
+        $boss->acquireEditLock($user);
+
+        $this->assertSame($user->id, Cache::get("bosses.{$boss->id}.editor"));
+    }
+
+    #[Test]
+    public function it_belongs_to_its_raids_game_version(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $boss = Boss::factory()->for(Raid::factory()->for(Phase::factory()->for($gameVersion)))->create();
+
+        $this->assertSame($gameVersion->id, $boss->game_version_id);
+    }
+
+    #[Test]
+    public function it_has_no_game_version_when_its_raids_phase_has_none(): void
+    {
+        $boss = Boss::factory()->for(Raid::factory()->for(Phase::factory()->state(['game_version_id' => null])))->create();
+
+        $this->assertNull($boss->game_version_id);
+    }
+
+    // ==================== event relationships ====================
+
+    #[Test]
+    public function it_splits_its_events_into_past_upcoming_and_templates(): void
+    {
+        $this->freezeTime();
+        $boss = $this->create();
+        $past = $this->eventInHours(-48, -45);
+        $inProgress = $this->eventInHours(-1, 2);
+        $upcoming = $this->eventInHours(24, 27);
+        $template = Event::factory()->template()->create(['start_time' => null, 'end_time' => null]);
+
+        foreach ([$past, $inProgress, $upcoming, $template] as $event) {
+            $event->bosses()->attach($boss->id, ['sort_order' => 1]);
+        }
+
+        $this->assertInstanceOf(BelongsToMany::class, $boss->events());
+        $this->assertEqualsCanonicalizing([$past->id, $inProgress->id, $upcoming->id, $template->id], $boss->events->modelKeys());
+        $this->assertSame([$past->id], $boss->pastEvents->modelKeys());
+        $this->assertEqualsCanonicalizing([$inProgress->id, $upcoming->id], $boss->upcomingEvents->modelKeys());
+        $this->assertSame([$template->id], $boss->templateEvents->modelKeys());
+    }
+
+    #[Test]
+    public function it_splits_its_assignments_into_past_and_upcoming_and_lists_its_upcoming_assignment_groups(): void
+    {
+        $this->freezeTime();
+        $boss = $this->create();
+        $past = $this->eventInHours(-48, -45);
+        $upcoming = $this->eventInHours(24, 27);
+        $pastAssignment = EventAssignment::factory()->forBoss($boss)->create(['event_id' => $past->id]);
+        $upcomingAssignment = EventAssignment::factory()->forBoss($boss)->create(['event_id' => $upcoming->id]);
+        $upcomingGroup = EventAssignmentGroup::factory()->forBoss($boss)->create(['event_id' => $upcoming->id]);
+
+        $this->assertInstanceOf(HasMany::class, $boss->assignmentGroups());
+        $this->assertSame([$pastAssignment->id], $boss->pastAssignments->modelKeys());
+        $this->assertSame([$upcomingAssignment->id], $boss->upcomingAssignments->modelKeys());
+        $this->assertSame([$upcomingGroup->id], $boss->upcomingAssignmentGroups->modelKeys());
+    }
+
+    // ==================== usage ====================
+
+    #[Test]
+    public function it_is_in_use_while_items_drop_from_it(): void
+    {
+        Bus::fake([BuildAddonExportFile::class]);
+        $boss = $this->create();
+        $this->assertFalse($boss->isInUse());
+
+        Item::factory()->fromBoss($boss)->create();
+
+        $this->assertTrue($boss->isInUse());
+    }
+
+    #[Test]
+    #[TestWith([24, 27], 'upcoming')]
+    #[TestWith([-1, 2], 'in progress')]
+    public function it_is_in_use_while_an_upcoming_or_in_progress_event_links_it(int $startsInHours, int $endsInHours): void
+    {
+        $this->freezeTime();
+        $boss = $this->create();
+
+        $this->eventInHours($startsInHours, $endsInHours)->bosses()->attach($boss->id, ['sort_order' => 1]);
+
+        $this->assertTrue($boss->isInUse());
+    }
+
+    #[Test]
+    public function it_is_in_use_while_an_upcoming_assignment_or_assignment_group_targets_it(): void
+    {
+        $this->freezeTime();
+        $withAssignment = $this->create();
+        $withGroup = $this->create();
+        $upcoming = $this->eventInHours(24, 27);
+
+        EventAssignment::factory()->forBoss($withAssignment)->create(['event_id' => $upcoming->id]);
+        EventAssignmentGroup::factory()->forBoss($withGroup)->create(['event_id' => $upcoming->id]);
+
+        $this->assertTrue($withAssignment->isInUse());
+        $this->assertTrue($withGroup->isInUse());
+    }
+
+    #[Test]
+    public function it_is_not_in_use_with_only_past_links_or_event_templates(): void
+    {
+        $this->freezeTime();
+        $boss = $this->create();
+        $past = $this->eventInHours(-48, -45);
+        $past->bosses()->attach($boss->id, ['sort_order' => 1]);
+        EventAssignment::factory()->forBoss($boss)->create(['event_id' => $past->id]);
+        EventAssignmentGroup::factory()->forBoss($boss)->create(['event_id' => $past->id]);
+        Event::factory()->template()->create(['start_time' => null, 'end_time' => null])
+            ->bosses()->attach($boss->id, ['sort_order' => 1]);
+
+        $this->assertFalse($boss->isInUse());
+    }
+
+    #[Test]
+    public function with_usage_counts_counts_items_and_upcoming_links(): void
+    {
+        $this->freezeTime();
+        Bus::fake([BuildAddonExportFile::class]);
+        $boss = $this->create();
+        Item::factory()->count(2)->fromBoss($boss)->create();
+        $this->eventInHours(24, 27)->bosses()->attach($boss->id, ['sort_order' => 1]);
+
+        $counted = Boss::withUsageCounts()->find($boss->id);
+
+        $this->assertSame(2, $counted->items_count);
+        $this->assertSame(1, $counted->upcoming_events_count);
+        $this->assertSame(0, $counted->upcoming_assignments_count);
+        $this->assertSame(0, $counted->upcoming_assignment_groups_count);
+    }
+
+    // ==================== model events ====================
+
+    #[Test]
+    public function it_dispatches_boss_changed_when_created(): void
+    {
+        EventFacade::fake([BossChanged::class]);
+
+        $boss = Boss::factory()->create();
+
+        EventFacade::assertDispatched(BossChanged::class, fn (BossChanged $event) => $event->boss->is($boss));
+    }
+
+    #[Test]
+    public function it_dispatches_boss_changed_when_updated(): void
+    {
+        $boss = Boss::factory()->create();
+        EventFacade::fake([BossChanged::class]);
+
+        $boss->update(['name' => 'Renamed']);
+
+        EventFacade::assertDispatched(BossChanged::class, fn (BossChanged $event) => $event->boss->is($boss));
+    }
+
+    #[Test]
+    public function it_dispatches_boss_changed_when_deleted(): void
+    {
+        $boss = Boss::factory()->create();
+        EventFacade::fake([BossChanged::class]);
+
+        $boss->delete();
+
+        EventFacade::assertDispatched(BossChanged::class, fn (BossChanged $event) => $event->boss->is($boss));
+    }
+
+    #[Test]
+    public function it_flushes_the_raiding_cache_after_the_transaction_commits(): void
+    {
+        $boss = $this->create();
+        Cache::tags(['raiding', 'events'])->put('probe', true);
+
+        DB::transaction(function () use ($boss): void {
+            $boss->update(['name' => 'Renamed']);
+
+            $this->assertTrue(Cache::tags(['raiding', 'events'])->has('probe'));
+        });
+
+        $this->assertFalse(Cache::tags(['raiding', 'events'])->has('probe'));
+    }
+
+    // ==================== helpers ====================
+
+    private function eventInHours(int $startsInHours, int $endsInHours): Event
+    {
+        return Event::factory()->live()->create([
+            'start_time' => now()->addHours($startsInHours),
+            'end_time' => now()->addHours($endsInHours),
+        ]);
     }
 }

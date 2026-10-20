@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Http\Controllers\Concerns\PaginatesCommentReplies;
 use App\Http\Resources\CommentResource;
 use App\Models\Comment;
+use App\Models\Item;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -14,16 +18,23 @@ class CommentController extends Controller
 {
     use PaginatesCommentReplies;
 
+    private const int PER_PAGE = 20;
+
     /**
-     * Display a listing of every root comment across all commentables.
+     * Display a listing of every root comment on the current game version's items.
      */
     public function index(Request $request): Response
     {
-        $comments = Comment::listableRoots()
-            ->withCount('replies')
-            ->with($this->replyEagerLoads())
-            ->latest()
-            ->paginate(20);
+        $gameVersion = ResolveCurrentGameVersion::run();
+
+        $comments = $gameVersion === null
+            ? new LengthAwarePaginator(new EloquentCollection, 0, self::PER_PAGE)
+            : Comment::listableRoots()
+                ->whereHasMorph('commentable', [Item::class], fn (Builder $query) => $query->where('game_version_id', $gameVersion->id))
+                ->withCount('replies')
+                ->with($this->replyEagerLoads())
+                ->latest()
+                ->paginate(self::PER_PAGE);
 
         $this->attachFirstRepliesPage($comments->getCollection());
 

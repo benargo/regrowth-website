@@ -105,6 +105,42 @@ class StoreGuildRequestTest extends TestCase
 
     #[Test]
     #[Group('validation')]
+    public function it_accepts_an_https_logs_url(): void
+    {
+        $validator = $this->validate(['id' => 12345, 'namespace' => 'anniversary', 'logs_url' => 'https://fresh.warcraftlogs.com/guilds/774848-regrowth']);
+
+        $this->assertTrue($validator->passes());
+    }
+
+    #[Test]
+    #[Group('validation')]
+    public function it_accepts_a_missing_logs_url(): void
+    {
+        $validator = $this->validate(['id' => 12345, 'namespace' => 'anniversary', 'logs_url' => null]);
+
+        $this->assertTrue($validator->passes());
+    }
+
+    #[Test]
+    #[Group('validation')]
+    public function it_rejects_a_logs_url_that_is_not_a_url(): void
+    {
+        $errors = $this->validate(['id' => 12345, 'namespace' => 'anniversary', 'logs_url' => 'not a url'])->errors();
+
+        $this->assertSame("Enter the full https:// address of the guild's Warcraft Logs page.", $errors->first('logs_url'));
+    }
+
+    #[Test]
+    #[Group('validation')]
+    public function it_rejects_an_http_logs_url(): void
+    {
+        $validator = $this->validate(['id' => 12345, 'namespace' => 'anniversary', 'logs_url' => 'http://fresh.warcraftlogs.com/guilds/774848-regrowth']);
+
+        $this->assertTrue($validator->errors()->has('logs_url'));
+    }
+
+    #[Test]
+    #[Group('validation')]
     public function it_uses_custom_messages_for_missing_fields(): void
     {
         $errors = $this->validate([])->errors();

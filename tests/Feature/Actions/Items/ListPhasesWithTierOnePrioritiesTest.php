@@ -3,6 +3,7 @@
 namespace Tests\Feature\Actions\Items;
 
 use App\Actions\Items\ListPhasesWithTierOnePriorities;
+use App\Models\GameVersion;
 use App\Models\Item;
 use App\Models\LootPriority;
 use App\Models\Phase;
@@ -29,7 +30,7 @@ class ListPhasesWithTierOnePrioritiesTest extends TestCase
 
         $this->itemInPhase($phaseWithoutPriority);
 
-        $phases = ListPhasesWithTierOnePriorities::run();
+        $phases = ListPhasesWithTierOnePriorities::run(null);
 
         $this->assertCount(1, $phases);
         $this->assertSame($phaseWithPriority->id, $phases->first()->id);
@@ -43,7 +44,7 @@ class ListPhasesWithTierOnePrioritiesTest extends TestCase
         $meme = LootPriority::factory()->meme()->create();
         $item->priorities()->attach($meme->id, ['weight' => 0]);
 
-        $phases = ListPhasesWithTierOnePriorities::run();
+        $phases = ListPhasesWithTierOnePriorities::run(null);
 
         $this->assertCount(0, $phases);
     }
@@ -61,9 +62,27 @@ class ListPhasesWithTierOnePrioritiesTest extends TestCase
             $item->priorities()->attach($priority->id, ['weight' => 0]);
         }
 
-        $phases = ListPhasesWithTierOnePriorities::run();
+        $phases = ListPhasesWithTierOnePriorities::run(null);
 
         $this->assertSame([$earlier->id, $later->id, $unscheduled->id], $phases->pluck('id')->all());
+    }
+
+    #[Test]
+    public function it_only_includes_the_given_versions_phases(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $phase = Phase::factory()->forGameVersion($gameVersion)->create(['number' => 1]);
+        $otherPhase = Phase::factory()->forGameVersion(GameVersion::factory()->create())->create(['number' => 1]);
+        $unversionedPhase = Phase::factory()->create(['number' => 1]);
+        $priority = LootPriority::factory()->role()->create();
+
+        foreach ([$phase, $otherPhase, $unversionedPhase] as $eachPhase) {
+            $this->itemInPhase($eachPhase)->priorities()->attach($priority->id, ['weight' => 0]);
+        }
+
+        $phases = ListPhasesWithTierOnePriorities::run($gameVersion);
+
+        $this->assertSame([$phase->id], $phases->pluck('id')->all());
     }
 
     protected function itemInPhase(Phase $phase): Item

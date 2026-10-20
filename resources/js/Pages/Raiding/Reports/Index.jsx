@@ -10,6 +10,9 @@ import Table, { Skeleton } from "@/Components/Raiding/Reports/Table";
 import { decodeFilter, encodeFilter } from "@/Helpers/EncodeFilter";
 import { Can } from "@/Components/Authorizable";
 import FilterDropdown from "@/Components/FilterDropdown";
+import EmptyState from "@/Components/EmptyState";
+import SectionNav from "@/Components/Navigation/SectionNav";
+import { useResetQueryOnGameVersionSwitch } from "@/Hooks/useGameVersionSwitch";
 
 // ─── Day options ──────────────────────────────────────────────────────────────
 
@@ -25,7 +28,9 @@ const DAYS = [
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-export default function Index({ reports, zones, guildTags, filters, earliestDate }) {
+export default function Index({ reports, zones, guildTags, filters, earliestDate, hasReports }) {
+    useResetQueryOnGameVersionSwitch();
+
     const [selectedZoneIds, setSelectedZoneIds] = useState(() =>
         decodeFilter(
             filters.zone_ids,
@@ -95,67 +100,74 @@ export default function Index({ reports, zones, guildTags, filters, earliestDate
     return (
         <Master title="Raid Reports">
             <SharedHeader title="Raid Reports" backgroundClass="bg-illidan" />
+            <SectionNav section="raiding" />
             <PageContainer>
-                    {/* Actions */}
-                    <Can permission="manage-reports">
-                        <div className="mb-4 flex justify-end">
-                            <Link
-                                href={route("raiding.reports.create")}
-                                className="inline-flex items-center gap-2 rounded-md border border-transparent bg-amber-700 px-4 py-2 text-sm font-semibold uppercase tracking-widest text-white transition hover:bg-amber-800focus:outline-hidden focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
-                            >
-                                <Icon icon="plus" style="solid" className="h-4" />
-                                Create a manual report
-                            </Link>
-                        </div>
-                    </Can>
-
-                    {/* Filter controls */}
-                    <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                        <FilterDropdown
-                            label={{ singular: "Zone", plural: "Zones" }}
-                            options={zones}
-                            selected={selectedZoneIds}
-                            onChange={setSelectedZoneIds}
-                        />
-                        <FilterDropdown
-                            label={{ singular: "Tag", plural: "Tags" }}
-                            options={guildTags}
-                            selected={selectedGuildTagIds}
-                            onChange={setSelectedGuildTagIds}
-                        />
-                        <FilterDropdown
-                            label={{ singular: "Day", plural: "Days" }}
-                            options={DAYS}
-                            selected={selectedDays}
-                            onChange={setSelectedDays}
-                        />
-                        <DateFilterButton
-                            label="After"
-                            value={sinceDate}
-                            onChange={setSinceDate}
-                            min={earliestDate}
-                            helpText="Leave blank to show all available dates."
-                        />
-                        <DateFilterButton
-                            label="Before"
-                            value={beforeDate}
-                            onChange={setBeforeDate}
-                            min={earliestDate}
-                            helpText="Leave blank to show all available dates."
-                        />
+                {/* Actions */}
+                <Can permission="manage-reports">
+                    <div className="mb-4 flex justify-end">
+                        <Link
+                            href={route("raiding.reports.create")}
+                            className="inline-flex items-center gap-2 rounded-md border border-transparent bg-amber-700 px-4 py-2 text-sm font-semibold tracking-widest text-white uppercase transition hover:bg-amber-800 focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:outline-hidden"
+                        >
+                            <Icon icon="plus" style="solid" className="h-4" />
+                            Create a manual report
+                        </Link>
                     </div>
+                </Can>
 
-                    {/* Reports */}
-                    {showSkeleton ? (
-                        <Skeleton />
-                    ) : hasEmptyFilter ? (
-                        <Table reports={{ data: [] }} />
-                    ) : (
-                        <>
-                            <Table reports={reports} />
-                            <Pagination links={reports.meta.links} meta={reports.meta} itemName="reports" />
-                        </>
-                    )}
+                {!hasReports ? (
+                    <EmptyState icon="scroll" message="Reports are not available for this game version." />
+                ) : (
+                    <>
+                        {/* Filter controls */}
+                        <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                            <FilterDropdown
+                                label={{ singular: "Zone", plural: "Zones" }}
+                                options={zones}
+                                selected={selectedZoneIds}
+                                onChange={setSelectedZoneIds}
+                            />
+                            <FilterDropdown
+                                label={{ singular: "Tag", plural: "Tags" }}
+                                options={guildTags}
+                                selected={selectedGuildTagIds}
+                                onChange={setSelectedGuildTagIds}
+                            />
+                            <FilterDropdown
+                                label={{ singular: "Day", plural: "Days" }}
+                                options={DAYS}
+                                selected={selectedDays}
+                                onChange={setSelectedDays}
+                            />
+                            <DateFilterButton
+                                label="After"
+                                value={sinceDate}
+                                onChange={setSinceDate}
+                                min={earliestDate}
+                                helpText="Leave blank to show all available dates."
+                            />
+                            <DateFilterButton
+                                label="Before"
+                                value={beforeDate}
+                                onChange={setBeforeDate}
+                                min={earliestDate}
+                                helpText="Leave blank to show all available dates."
+                            />
+                        </div>
+
+                        {/* Reports */}
+                        {showSkeleton ? (
+                            <Skeleton />
+                        ) : hasEmptyFilter ? (
+                            <Table reports={{ data: [] }} />
+                        ) : (
+                            <>
+                                <Table reports={reports} />
+                                <Pagination links={reports.meta.links} meta={reports.meta} itemName="reports" />
+                            </>
+                        )}
+                    </>
+                )}
             </PageContainer>
         </Master>
     );

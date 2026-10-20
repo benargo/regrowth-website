@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { router } from "@inertiajs/react";
 import { moveByKey } from "@/Components/Datasets/SortableList";
-import useAutosave, { autosaveVisit } from "@/Hooks/useAutosave";
+import useAutosave, { AUTOSAVE_HEADERS, autosaveVisit } from "@/Hooks/useAutosave";
 
 /**
  * Whether two key lists hold the same keys in the same order.
@@ -52,7 +52,7 @@ export default function useOrderAutosave({ items, getKey, url, field, data = {},
 
         const result = await autosaveVisit(router, "patch", url, {
             data: { ...data, [field]: sent },
-            headers: { "X-Autosave": "1" },
+            headers: AUTOSAVE_HEADERS,
         });
 
         setIsSaving(false);

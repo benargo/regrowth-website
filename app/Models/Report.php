@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Contracts\Models\BelongsToGameVersion;
 use App\Http\Resources\ReportCollection;
 use App\Models\WarcraftLogs\Guild;
 use App\Models\WarcraftLogs\GuildTag;
@@ -24,7 +25,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 #[ObservedBy([ReportObserver::class])]
 #[Table(keyType: 'string', incrementing: false)]
 #[UseResourceCollection(ReportCollection::class)]
-class Report extends Model
+class Report extends Model implements BelongsToGameVersion
 {
     use HasFactory;
     use HasUuids;

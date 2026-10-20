@@ -33,7 +33,7 @@ export default function Edit({ phase: { data: phase }, options, routes, canEdit,
                         <EditLayout.Details>
                             <PhaseForm form={form} options={options} autosave={{ url: routes.update, saved }} />
                         </EditLayout.Details>
-                        <PhaseRaids raids={phase.raids} />
+                        <PhaseRaids phase={phase} />
                     </EditLockGuard>
                 </EditLayout>
             </PageContainer>

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Http;
 
-use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\User;
@@ -24,7 +24,7 @@ class GameVersionDeepLinksTest extends DashboardTestCase
         $response = $this->get(route('loot.index', ['game_version' => $gameVersion->slug]));
 
         $response->assertStatus(303)->assertRedirect(route('loot.index'));
-        $response->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, $gameVersion->slug);
+        $response->assertSessionHas(SharesCurrentGameVersionSession::SESSION_KEY, $gameVersion->slug);
     }
 
     #[Test]
@@ -40,11 +40,11 @@ class GameVersionDeepLinksTest extends DashboardTestCase
         $user = User::factory()->withPermissions('view-officer-dashboard', 'edit-datasets', 'view-planned-absences', 'create-planned-absences', 'update-characters')->create();
 
         $response = $this->actingAs($user)
-            ->withSession([ResolveCurrentGameVersion::SESSION_KEY => $otherVersion->slug])
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $otherVersion->slug])
             ->get(route($routeName, $parameters + ['game_version' => $gameVersion->slug]));
 
         $response->assertOk();
-        $response->assertSessionHas(ResolveCurrentGameVersion::SESSION_KEY, $otherVersion->slug);
+        $response->assertSessionHas(SharesCurrentGameVersionSession::SESSION_KEY, $otherVersion->slug);
     }
 
     /**
@@ -68,6 +68,6 @@ class GameVersionDeepLinksTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->get(route('management.phases.create', ['game_version' => $gameVersion->id]));
 
         $response->assertOk();
-        $response->assertSessionMissing(ResolveCurrentGameVersion::SESSION_KEY);
+        $response->assertSessionMissing(SharesCurrentGameVersionSession::SESSION_KEY);
     }
 }

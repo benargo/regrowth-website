@@ -8,9 +8,11 @@ use App\Contracts\Models\DatasetModel;
 use App\Contracts\Models\EditLockable;
 use App\Contracts\Models\HasUsage;
 use App\Enums\Faction;
+use App\Events\GameVersionChanged;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Support\NameSlug;
 use App\Models\Concerns\HasEditLock;
+use App\Models\Concerns\InteractsWithChaperonedMedia;
 use App\Models\Concerns\TracksUsage;
 use App\Models\WarcraftLogs\Guild;
 use App\Observers\GameVersionObserver;
@@ -32,7 +34,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
 
 #[ObservedBy([GameVersionObserver::class])]
 #[Fillable([
@@ -55,7 +56,7 @@ class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia,
     /** @use HasFactory<GameVersionFactory> */
     use HasFactory;
 
-    use InteractsWithMedia;
+    use InteractsWithChaperonedMedia;
     use TracksUsage;
 
     /**
@@ -82,6 +83,17 @@ class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia,
         self::MEDIA_BANNER,
         self::MEDIA_ICON,
         self::MEDIA_LOGO,
+    ];
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'created' => GameVersionChanged::class,
+        'updated' => GameVersionChanged::class,
+        'deleted' => GameVersionChanged::class,
     ];
 
     /**
@@ -174,16 +186,6 @@ class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia,
         $this->addMediaCollection(self::MEDIA_LOGO)
             ->singleFile()
             ->acceptsMimeTypes($rasterImages);
-    }
-
-    /**
-     * Get the MIME types a media collection accepts.
-     *
-     * @return list<string>
-     */
-    public function acceptedMimeTypes(string $collection): array
-    {
-        return $this->getRegisteredMediaCollections()->firstWhere('name', $collection)->acceptsMimeTypes ?? [];
     }
 
     // ============ Guild roster ===========

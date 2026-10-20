@@ -2,12 +2,17 @@
 
 namespace Tests\Feature\Middleware;
 
-use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Actions\Navigation\BuildNavigationData;
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
+use App\Enums\SignupStatus;
+use App\Models\Character;
 use App\Models\DiscordRole;
+use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\Permission;
 use App\Models\Phase;
 use App\Models\User;
+use App\Models\WarcraftLogs\Guild;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -220,6 +225,48 @@ class HandleInertiaRequestsTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page->where('discordInviteUrl', config('guild.discord_invite_url')));
     }
 
+    #[Test]
+    public function it_shares_the_current_versions_warcraft_logs_url(): void
+    {
+        $guild = Guild::factory()->withLogsUrl('https://fresh.warcraftlogs.com/guilds/774848-regrowth')->create();
+        GameVersion::factory()->for($guild, 'warcraftLogsGuild')->create(['release_date' => now()->subYear()->toDateString()]);
+
+        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('warcraftLogsUrl', 'https://fresh.warcraftlogs.com/guilds/774848-regrowth'));
+    }
+
+    #[Test]
+    public function it_shares_a_null_warcraft_logs_url_without_a_guild(): void
+    {
+        GameVersion::factory()->create(['release_date' => now()->subYear()->toDateString(), 'warcraft_logs_guild_id' => null]);
+
+        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page->where('warcraftLogsUrl', null));
+    }
+
+    #[Test]
+    public function it_shares_a_null_warcraft_logs_url_when_the_guild_has_none(): void
+    {
+        GameVersion::factory()->for(Guild::factory(), 'warcraftLogsGuild')->create(['release_date' => now()->subYear()->toDateString()]);
+
+        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page->where('warcraftLogsUrl', null));
+    }
+
+    #[Test]
+    public function it_shares_the_warcraft_logs_url_of_the_sessions_version(): void
+    {
+        $older = GameVersion::factory()
+            ->for(Guild::factory()->withLogsUrl('https://classic.warcraftlogs.com/guilds/598032-regrowth'), 'warcraftLogsGuild')
+            ->create(['release_date' => now()->subYears(2)->toDateString()]);
+        GameVersion::factory()
+            ->for(Guild::factory()->withLogsUrl('https://fresh.warcraftlogs.com/guilds/774848-regrowth'), 'warcraftLogsGuild')
+            ->create(['release_date' => now()->subYear()->toDateString()]);
+
+        $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $older->slug])
+            ->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('warcraftLogsUrl', 'https://classic.warcraftlogs.com/guilds/598032-regrowth'));
+    }
+
     // ==================== game versions ====================
 
     #[Test]
@@ -230,24 +277,24 @@ class HandleInertiaRequestsTest extends TestCase
         GameVersion::factory()->create(['release_date' => now()->subYears(2)->toDateString()]);
 
         $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page
-            ->has('gameVersions', 3)
-            ->where('gameVersions.0.slug', $unreleased->slug)
-            ->has('gameVersions.0.meta.is_current')
-            ->has('gameVersions.0', fn (AssertableInertia $version) => $version
-                ->hasAll(['id', 'title', 'slug', 'color', 'icon_url', 'release_date', 'meta'])));
+            ->has('gameVersions.data', 3)
+            ->where('gameVersions.data.0.slug', $unreleased->slug)
+            ->has('gameVersions.meta.current')
+            ->has('gameVersions.data.0', fn (AssertableInertia $version) => $version
+                ->hasAll(['id', 'title', 'slug', 'color', 'icon_url', 'release_date'])));
     }
 
     #[Test]
-    public function it_marks_exactly_one_game_version_current(): void
+    public function it_shares_the_key_of_the_current_game_version(): void
     {
-        GameVersion::factory()->count(3)->sequence(
-            ['release_date' => '2022-01-01'],
-            ['release_date' => '2023-01-01'],
-            ['release_date' => '2024-01-01'],
-        )->create();
+        $current = GameVersion::factory()->create(['release_date' => '2022-01-01']);
+        GameVersion::factory()->create(['release_date' => '2023-01-01']);
 
-        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page
-            ->where('gameVersions', fn ($versions) => collect($versions)->where('meta.is_current', true)->count() === 1));
+        $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $current->slug])
+            ->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('gameVersions.meta.current', $current->id)
+                ->missing('gameVersions.data.0.meta'));
     }
 
     #[Test]
@@ -257,10 +304,10 @@ class HandleInertiaRequestsTest extends TestCase
         $latestReleased = GameVersion::factory()->create(['release_date' => now()->subYear()->toDateString()]);
         GameVersion::factory()->create(['release_date' => now()->subYears(2)->toDateString()]);
 
-        $this->withSession([ResolveCurrentGameVersion::SESSION_KEY => 'gone'])
+        $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => 'gone'])
             ->get('/')
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('gameVersions', fn ($versions) => collect($versions)->where('meta.is_current', true)->pluck('slug')->all() === [$latestReleased->slug]));
+                ->where('gameVersions.meta.current', $latestReleased->id));
     }
 
     #[Test]
@@ -275,9 +322,92 @@ class HandleInertiaRequestsTest extends TestCase
         Model::preventLazyLoading();
 
         try {
-            $this->get('/')->assertOk()->assertInertia(fn ($page) => $page->has('gameVersions', 2));
+            $this->get('/')->assertOk()->assertInertia(fn ($page) => $page->has('gameVersions.data', 2));
         } finally {
             Model::preventLazyLoading(false);
         }
+    }
+
+    #[Test]
+    public function it_shares_a_fresh_switcher_icon_after_the_icon_changes(): void
+    {
+        Storage::fake('public');
+        $gameVersion = GameVersion::factory()->create();
+        $this->get('/')->assertOk();
+
+        $gameVersion->addMedia(UploadedFile::fake()->image('icon.png'))->toMediaCollection(GameVersion::MEDIA_ICON);
+
+        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('gameVersions.data.0.icon_url', $gameVersion->fresh()->getFirstMediaUrl(GameVersion::MEDIA_ICON)));
+    }
+
+    // ==================== navigation ====================
+
+    #[Test]
+    public function it_does_not_build_navigation_on_a_normal_visit(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        BuildNavigationData::shouldNotRun();
+
+        $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $gameVersion->slug])
+            ->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page->missing('navigation'));
+    }
+
+    #[Test]
+    public function it_sends_navigation_on_a_partial_reload(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $event = $this->eventTomorrow($gameVersion);
+
+        $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $gameVersion->slug])
+            ->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->missing('navigation')
+                ->reloadOnly('navigation', fn (AssertableInertia $reload) => $reload
+                    ->where('navigation.next_raid.id', $event->id)
+                    ->where('navigation.next_raid.signup', null)
+                    ->has('navigation.latest_discussions', 0)));
+    }
+
+    #[Test]
+    public function a_partial_reload_gives_a_member_their_signup_line(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $event = $this->eventTomorrow($gameVersion);
+        $user = User::factory()->member()->create();
+        $event->characters()->attach(Character::factory()->for($user)->create(), ['signup_status' => SignupStatus::Confirmed]);
+
+        $this->actingAs($user)
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $gameVersion->slug])
+            ->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->reloadOnly('navigation', fn (AssertableInertia $reload) => $reload
+                    ->where('navigation.next_raid.signup.label', "You're signed up.")));
+    }
+
+    #[Test]
+    public function a_partial_reload_follows_the_session_version(): void
+    {
+        $first = GameVersion::factory()->create(['release_date' => '2024-01-01']);
+        $second = GameVersion::factory()->create(['release_date' => '2023-01-01']);
+        $firstEvent = $this->eventTomorrow($first);
+        $secondEvent = $this->eventTomorrow($second);
+
+        foreach ([[$first, $firstEvent], [$second, $secondEvent]] as [$gameVersion, $event]) {
+            $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $gameVersion->slug])
+                ->get('/')
+                ->assertInertia(fn (AssertableInertia $page) => $page
+                    ->reloadOnly('navigation', fn (AssertableInertia $reload) => $reload
+                        ->where('navigation.next_raid.id', $event->id)));
+        }
+    }
+
+    private function eventTomorrow(GameVersion $gameVersion): Event
+    {
+        return Event::factory()->live()->forGameVersion($gameVersion)->create([
+            'start_time' => now()->addDay(),
+            'end_time' => now()->addDay()->addHours(3),
+        ]);
     }
 }

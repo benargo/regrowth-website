@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -23,6 +24,19 @@ class BuildEventsForViewerTest extends TestCase
 {
     use MocksDiscordService;
     use RefreshDatabase;
+
+    #[Test]
+    public function it_paginates_when_given_a_page_size(): void
+    {
+        $this->fakeDiscord([]);
+        Event::factory()->live()->count(3)->create();
+
+        $resources = BuildEventsForViewer::run(Event::live()->orderBy('start_time'), new Request, 2);
+
+        $this->assertInstanceOf(LengthAwarePaginator::class, $resources->resource);
+        $this->assertSame(3, $resources->resource->total());
+        $this->assertCount(2, $resources->resolve(new Request));
+    }
 
     #[Test]
     #[Group('happy-path')]

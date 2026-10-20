@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Reports;
 
+use App\Models\GameVersion;
 use App\Models\Report;
 use App\Models\User;
+use App\Models\WarcraftLogs\Guild;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
 use Carbon\Carbon;
@@ -18,6 +20,18 @@ use Tests\TestCase;
 class IndexTest extends TestCase
 {
     use RefreshDatabase;
+
+    private Guild $guild;
+
+    private GameVersion $gameVersion;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->guild = Guild::factory()->create();
+        $this->gameVersion = GameVersion::factory()->forGuild($this->guild)->create(['release_date' => Carbon::parse('2024-01-01')]);
+    }
 
     // ==================== index ====================
 
@@ -44,6 +58,7 @@ class IndexTest extends TestCase
     #[Test]
     public function reports_prop_is_deferred_and_not_in_initial_response(): void
     {
+        Report::factory()->forGuild($this->guild)->create();
         $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index'));
@@ -58,7 +73,7 @@ class IndexTest extends TestCase
     public function reports_deferred_prop_returns_paginated_data(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->create();
-        Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
+        Report::factory()->forGuild($this->guild)->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
 
         $user = User::factory()->create();
 
@@ -80,7 +95,7 @@ class IndexTest extends TestCase
     public function pagination_links_preserve_filter_query_string(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->create();
-        Report::factory()->count(30)->withGuildTag($tag)->create([
+        Report::factory()->forGuild($this->guild)->count(30)->withGuildTag($tag)->create([
             'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC'),
         ]);
 
@@ -99,20 +114,6 @@ class IndexTest extends TestCase
                 ->where('reports.links.next', fn ($url) => str_contains($url, 'filter%5B')
                     || str_contains($url, 'filter[')
                 )
-            )
-        );
-    }
-
-    #[Test]
-    public function reports_deferred_prop_returns_empty_when_no_data(): void
-    {
-        $user = User::factory()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.reports.index'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('reports.data', [])
             )
         );
     }
@@ -148,7 +149,7 @@ class IndexTest extends TestCase
     public function reports_data_contains_expected_fields(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->create();
-        Report::factory()->withGuildTag($tag)->create([
+        Report::factory()->forGuild($this->guild)->withGuildTag($tag)->create([
             'title' => 'Test Raid',
             'start_time' => Carbon::parse('2025-01-06 20:00', 'UTC'),
             'end_time' => Carbon::parse('2025-01-06 23:30', 'UTC'),
@@ -180,8 +181,8 @@ class IndexTest extends TestCase
     public function reports_are_ordered_by_start_time_descending(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->create();
-        Report::factory()->withGuildTag($tag)->create(['title' => 'Old Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
-        Report::factory()->withGuildTag($tag)->create(['title' => 'New Raid', 'start_time' => Carbon::parse('2025-03-01 20:00', 'UTC')]);
+        Report::factory()->forGuild($this->guild)->withGuildTag($tag)->create(['title' => 'Old Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
+        Report::factory()->forGuild($this->guild)->withGuildTag($tag)->create(['title' => 'New Raid', 'start_time' => Carbon::parse('2025-03-01 20:00', 'UTC')]);
 
         $user = User::factory()->create();
 
@@ -203,8 +204,8 @@ class IndexTest extends TestCase
         $tag = GuildTag::factory()->countsAttendance()->create();
         $zoneA = Zone::factory()->create(['id' => 1, 'name' => 'Zone A']);
         $zoneB = Zone::factory()->create(['id' => 2, 'name' => 'Zone B']);
-        Report::factory()->withGuildTag($tag)->withZone($zoneA)->create(['title' => 'Zone A Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
-        Report::factory()->withGuildTag($tag)->withZone($zoneB)->create(['title' => 'Zone B Raid', 'start_time' => Carbon::parse('2025-01-08 20:00', 'UTC')]);
+        Report::factory()->forGuild($this->guild)->withGuildTag($tag)->withZone($zoneA)->create(['title' => 'Zone A Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
+        Report::factory()->forGuild($this->guild)->withGuildTag($tag)->withZone($zoneB)->create(['title' => 'Zone B Raid', 'start_time' => Carbon::parse('2025-01-08 20:00', 'UTC')]);
 
         $user = User::factory()->create();
 
@@ -223,8 +224,8 @@ class IndexTest extends TestCase
     {
         $tag1 = GuildTag::factory()->countsAttendance()->create();
         $tag2 = GuildTag::factory()->countsAttendance()->create();
-        Report::factory()->withGuildTag($tag1)->create(['title' => 'Tag 1 Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
-        Report::factory()->withGuildTag($tag2)->create(['title' => 'Tag 2 Raid', 'start_time' => Carbon::parse('2025-01-08 20:00', 'UTC')]);
+        Report::factory()->forGuild($this->guild)->withGuildTag($tag1)->create(['title' => 'Tag 1 Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
+        Report::factory()->forGuild($this->guild)->withGuildTag($tag2)->create(['title' => 'Tag 2 Raid', 'start_time' => Carbon::parse('2025-01-08 20:00', 'UTC')]);
 
         $user = User::factory()->create();
 
@@ -243,9 +244,9 @@ class IndexTest extends TestCase
     {
         $tag = GuildTag::factory()->countsAttendance()->create();
         // 2025-01-06 is a Monday (Carbon day 1)
-        Report::factory()->withGuildTag($tag)->create(['title' => 'Monday Raid', 'start_time' => Carbon::parse('2025-01-06 20:00', 'UTC')]);
+        Report::factory()->forGuild($this->guild)->withGuildTag($tag)->create(['title' => 'Monday Raid', 'start_time' => Carbon::parse('2025-01-06 20:00', 'UTC')]);
         // 2025-01-08 is a Wednesday (Carbon day 3)
-        Report::factory()->withGuildTag($tag)->create(['title' => 'Wednesday Raid', 'start_time' => Carbon::parse('2025-01-08 20:00', 'UTC')]);
+        Report::factory()->forGuild($this->guild)->withGuildTag($tag)->create(['title' => 'Wednesday Raid', 'start_time' => Carbon::parse('2025-01-08 20:00', 'UTC')]);
 
         $user = User::factory()->create();
 
@@ -264,8 +265,8 @@ class IndexTest extends TestCase
     public function since_date_filter_excludes_older_reports(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->create();
-        Report::factory()->withGuildTag($tag)->create(['title' => 'Old Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
-        Report::factory()->withGuildTag($tag)->create(['title' => 'New Raid', 'start_time' => Carbon::parse('2025-02-01 20:00', 'UTC')]);
+        Report::factory()->forGuild($this->guild)->withGuildTag($tag)->create(['title' => 'Old Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
+        Report::factory()->forGuild($this->guild)->withGuildTag($tag)->create(['title' => 'New Raid', 'start_time' => Carbon::parse('2025-02-01 20:00', 'UTC')]);
 
         $user = User::factory()->create();
 
@@ -283,8 +284,8 @@ class IndexTest extends TestCase
     public function before_date_filter_excludes_newer_reports(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->create();
-        Report::factory()->withGuildTag($tag)->create(['title' => 'Old Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
-        Report::factory()->withGuildTag($tag)->create(['title' => 'New Raid', 'start_time' => Carbon::parse('2025-02-01 20:00', 'UTC')]);
+        Report::factory()->forGuild($this->guild)->withGuildTag($tag)->create(['title' => 'Old Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
+        Report::factory()->forGuild($this->guild)->withGuildTag($tag)->create(['title' => 'New Raid', 'start_time' => Carbon::parse('2025-02-01 20:00', 'UTC')]);
 
         $user = User::factory()->create();
 
@@ -302,7 +303,7 @@ class IndexTest extends TestCase
     public function no_filters_returns_all_reports(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->create();
-        Report::factory()->count(3)->withGuildTag($tag)->create();
+        Report::factory()->forGuild($this->guild)->count(3)->withGuildTag($tag)->create();
 
         $user = User::factory()->create();
 
@@ -445,8 +446,8 @@ class IndexTest extends TestCase
     public function earliest_date_is_day_before_earliest_report(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->create();
-        Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-03-10 20:00', 'UTC')]);
-        Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'UTC')]);
+        Report::factory()->forGuild($this->guild)->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-03-10 20:00', 'UTC')]);
+        Report::factory()->forGuild($this->guild)->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'UTC')]);
 
         $user = User::factory()->create();
 
@@ -454,6 +455,38 @@ class IndexTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('earliestDate', '2025-01-04')
+        );
+    }
+
+    // ==================== game version ====================
+
+    #[Test]
+    public function it_lists_only_the_current_versions_reports(): void
+    {
+        $report = Report::factory()->forGuild($this->guild)->create();
+        Report::factory()->forGuild(Guild::factory()->create())->create();
+
+        $response = $this->get(route('raiding.reports.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('hasReports', true)
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('reports.data', 1)
+                ->where('reports.data.0.id', $report->id)
+            )
+        );
+    }
+
+    #[Test]
+    public function it_has_no_reports_for_a_version_without_any(): void
+    {
+        Report::factory()->forGuild(Guild::factory()->create())->create();
+
+        $response = $this->get(route('raiding.reports.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('hasReports', false)
+            ->where('reports', null)
         );
     }
 }

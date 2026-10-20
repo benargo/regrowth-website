@@ -14,11 +14,13 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
 
 /**
- * Transform an event, optionally limited to the `members`, `visitors` or `template` scope.
+ * Transform an event, optionally limited to the `members`, `visitors` or `template` scope;
+ * `members` and `visitors` keep only the game version's icon fields.
  *
  * Fields whose relation is not loaded are omitted:
  *   - assignments:  'assignments.group'
  *   - banner:       'raids.media'
+ *   - game_version: 'gameVersion.media'
  *   - composition:  'characters.rank' (and 'raids' for the party size)
  *   - raids:        'raids'; bosses need 'raids.bosses.media', 'bosses.media'
  *                   and 'assignments.group'
@@ -64,6 +66,7 @@ class EventResource extends JsonResource implements ScopedResource
             'duration' => $this->start_time && $this->end_time ? $this->duration : null,
             'updated_at' => $this->updated_at?->toIso8601String(),
             'color' => $this->color,
+            'game_version' => $this->whenLoaded('gameVersion', fn (): ?array => $this->gameVersion?->toResource()->resolve($request)),
             $this->mergeWhen($this->hasRaidMediaLoaded(), fn (): array => $this->banner()),
             'assignments' => $this->whenLoaded('assignments', fn (): array => (new EventAssignmentsCollection(
                 $this->assignments->whereNull('boss_id')->values()
@@ -81,9 +84,15 @@ class EventResource extends JsonResource implements ScopedResource
     protected function scopeDefinitions(): array
     {
         return [
-            'members' => ['id', 'title', 'start_time', 'end_time', 'duration', 'raids', 'channel'],
+            'members' => [
+                'id', 'title', 'start_time', 'end_time', 'duration', 'raids', 'channel',
+                'game_version.color', 'game_version.icon_url', 'game_version.id', 'game_version.title',
+            ],
             'template' => ['id', 'title', 'updated_at', 'raids'],
-            'visitors' => ['id', 'title', 'start_time', 'end_time', 'raids'],
+            'visitors' => [
+                'id', 'title', 'start_time', 'end_time', 'raids',
+                'game_version.color', 'game_version.icon_url', 'game_version.id', 'game_version.title',
+            ],
         ];
     }
 

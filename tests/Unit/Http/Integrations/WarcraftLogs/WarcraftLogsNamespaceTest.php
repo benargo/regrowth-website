@@ -38,27 +38,27 @@ class WarcraftLogsNamespaceTest extends TestCase
     public function base_url_resolves_the_correct_host_for_each_case(): void
     {
         $this->assertSame(
-            'https://fresh.warcraftlogs.com/api/v2/client',
+            'https://fresh.warcraftlogs.com',
             WarcraftLogsNamespace::Anniversary->baseUrl(),
         );
         $this->assertSame(
-            'https://classic.warcraftlogs.com/api/v2/client',
+            'https://classic.warcraftlogs.com',
             WarcraftLogsNamespace::Classic->baseUrl(),
         );
         $this->assertSame(
-            'https://vanilla.warcraftlogs.com/api/v2/client',
+            'https://vanilla.warcraftlogs.com',
             WarcraftLogsNamespace::Era->baseUrl(),
         );
         $this->assertSame(
-            'https://forever.warcraftlogs.com/api/v2/client',
+            'https://forever.warcraftlogs.com',
             WarcraftLogsNamespace::Forever->baseUrl(),
         );
         $this->assertSame(
-            'https://www.warcraftlogs.com/api/v2/client',
+            'https://www.warcraftlogs.com',
             WarcraftLogsNamespace::Retail->baseUrl(),
         );
         $this->assertSame(
-            'https://sod.warcraftlogs.com/api/v2/client',
+            'https://sod.warcraftlogs.com',
             WarcraftLogsNamespace::SeasonOfDiscovery->baseUrl(),
         );
     }
@@ -73,6 +73,19 @@ class WarcraftLogsNamespaceTest extends TestCase
         );
 
         $this->assertCount(count($urls), array_unique($urls));
+    }
+
+    // ==================== apiUrl ====================
+
+    #[Test]
+    #[Group('happy-path')]
+    public function api_url_appends_the_client_endpoint_to_the_base_url(): void
+    {
+        foreach (WarcraftLogsNamespace::cases() as $namespace) {
+            $this->assertSame("{$namespace->baseUrl()}/api/v2/client", $namespace->apiUrl());
+        }
+
+        $this->assertSame('https://fresh.warcraftlogs.com/api/v2/client', WarcraftLogsNamespace::Anniversary->apiUrl());
     }
 
     // ==================== label ====================

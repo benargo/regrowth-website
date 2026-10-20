@@ -2,15 +2,18 @@ import { useCallback, useEffect, useState } from "react";
 import Master from "@/Layouts/Master";
 import { Link, router, usePage } from "@inertiajs/react";
 import CommentThread from "@/Components/Comments/CommentThread";
-import Icon from "@/Components/FontAwesome/Icon";
+import EmptyState from "@/Components/EmptyState";
+import SectionNav from "@/Components/Navigation/SectionNav";
 import Pagination from "@/Components/Pagination";
 import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
 import ItemIcon from "@/Components/Items/ItemIcon";
-import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import useExpandedThreads from "@/Hooks/useExpandedThreads";
+import { useResetQueryOnGameVersionSwitch } from "@/Hooks/useGameVersionSwitch";
 
 export default function Comments({ comments, replies }) {
+    useResetQueryOnGameVersionSwitch();
+
     const { auth } = usePage().props;
     const { isExpanded, toggle } = useExpandedThreads(auth.user?.id);
     const [threadCache, setThreadCache] = useState({});
@@ -86,12 +89,7 @@ export default function Comments({ comments, replies }) {
         <Master title="All Comments">
             <SharedHeader backgroundClass="bg-vashj-and-kaelthas" title="Loot Bias" />
 
-            <ToolNav>
-                <ToolNavLink href={route("loot.index")}>
-                    <Icon icon="arrow-left" style="solid" className="mr-2" />
-                    <span>Back to loot biases</span>
-                </ToolNavLink>
-            </ToolNav>
+            <SectionNav section="loot" />
 
             {/* Content */}
             <PageContainer>
@@ -155,7 +153,7 @@ export default function Comments({ comments, replies }) {
                         <Pagination links={comments.meta.links} meta={comments.meta} itemName="comments" />
                     </>
                 ) : (
-                    <p className="py-8 text-center text-gray-400">No comments yet.</p>
+                    <EmptyState icon="comments" message="No comments for this game version yet." />
                 )}
             </PageContainer>
         </Master>

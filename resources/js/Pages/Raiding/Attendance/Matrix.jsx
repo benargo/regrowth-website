@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { router } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
+import SectionNav from "@/Components/Navigation/SectionNav";
 import PageContainer from "@/Components/PageContainer";
 import EmptyState from "@/Components/EmptyState";
 import Icon from "@/Components/FontAwesome/Icon";
@@ -188,6 +189,7 @@ export default function Matrix({ hasAttendance, ...props }) {
     return (
         <Master title="Attendance Matrix">
             <SharedHeader title="Attendance Matrix" backgroundClass="bg-illidan" />
+            <SectionNav section="raiding" />
             <PageContainer>
                 {hasAttendance ? (
                     <MatrixContent {...props} />

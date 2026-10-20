@@ -1,11 +1,12 @@
 <?php
 
+use App\Enums\SiteSection;
 use App\Http\Controllers\Account\AccountController;
 use App\Http\Controllers\Account\PlannedAbsenceController as AccountPlannedAbsenceController;
 use App\Http\Controllers\AttendanceDashboardController;
 use App\Http\Controllers\AttendanceGraphsController;
 use App\Http\Controllers\AttendanceMatrixController;
-use App\Http\Controllers\BossStrategyController;
+use App\Http\Controllers\BossController;
 use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\Dashboard\AddonController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LootBiasToolController;
 use App\Http\Controllers\PhaseController;
 use App\Http\Controllers\PlannedAbsenceController;
+use App\Http\Controllers\RaidController;
 use App\Http\Controllers\RaidingController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SearchController;
@@ -72,23 +74,34 @@ Route::withoutMiddleware(RemembersCurrentGameVersion::class)->group(function () 
 });
 
 /**
+ * Register the raid and boss pages shared by a member section.
+ */
+$raidAndBossRoutes = function (SiteSection $section): void {
+    Route::get('/raids', [RaidController::class, 'browse'])->defaults('section', $section->value)->name('raids.index');
+    Route::get('/raids/{raid}/{slug}/trash', [RaidController::class, 'trash'])->defaults('section', $section->value)->name('raids.trash');
+    Route::get('/raids/{raid}/{slug?}', [RaidController::class, 'show'])->defaults('section', $section->value)->name('raids.show');
+    Route::get('/bosses/{boss}/{slug?}', [BossController::class, 'show'])->defaults('section', $section->value)->name('bosses.show');
+};
+
+/**
  * Loot Bias Tools
  */
-Route::group(['prefix' => 'loot', 'as' => 'loot.'], function () {
+Route::group(['prefix' => 'loot', 'as' => 'loot.'], function () use ($raidAndBossRoutes) {
     Route::get('/', [LootBiasToolController::class, 'index'])->name('index');
+    $raidAndBossRoutes(SiteSection::Loot);
     Route::get('/comments', [CommentController::class, 'index'])->name('comments');
     Route::patch('/items/{item}', [ItemController::class, 'update'])->name('items.update');
     Route::get('/items/{item}/{slug?}', [ItemController::class, 'show'])->name('items.show');
     Route::get('/items/{item}/{slug}/edit', [ItemController::class, 'edit'])->name('items.edit');
-    Route::get('/raids/{raid}/{name?}', [LootBiasToolController::class, 'showRaid'])->name('raids.show');
     Route::get('/priorities', [LootBiasToolController::class, 'priorities'])->name('priorities');
 });
 
 /**
  * Raid planning and attendance
  */
-Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
+Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () use ($raidAndBossRoutes) {
     Route::get('/', [RaidingController::class, 'index'])->name('index');
+    $raidAndBossRoutes(SiteSection::Raiding);
 
     // Planned absences routes (version-independent)
     Route::withoutMiddleware(RemembersCurrentGameVersion::class)->group(function () {
@@ -107,13 +120,10 @@ Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
     Route::get('/attendance/matrix', AttendanceMatrixController::class)->name('attendance.matrix');
 
     // Upcoming events comps and plans routes
+    Route::get('/events', [EventController::class, 'index'])->name('events.index');
     Route::get('/plans/{event}', [EventController::class, 'show'])->name('plans.show');
     Route::get('/plans/{event}/edit', [EventController::class, 'edit'])->name('plans.edit');
     Route::post('/plans/{event}/apply-template', [EventController::class, 'applyTemplate'])->name('plans.apply-template');
-
-    // Boss strategies routes
-    Route::get('/boss-strategies', [BossStrategyController::class, 'index'])->name('boss-strategies.index');
-    Route::get('/boss-strategies/{boss}/{slug}', [BossStrategyController::class, 'show'])->name('boss-strategies.show');
 
     // Reports routes
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
@@ -139,11 +149,14 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::get('/addon/settings', AddonSettingsController::class)->name('addon.settings');
 
     /**
-     * Boss strategies management
+     * Bosses management
      */
-    Route::get('/boss-strategies', [BossStrategyController::class, 'index'])->name('boss-strategies.index');
-    Route::get('/boss-strategies/{boss}/{slug}', [BossStrategyController::class, 'edit'])->name('boss-strategies.edit');
-    Route::patch('/boss-strategies/{boss}', [BossStrategyController::class, 'update'])->name('boss-strategies.update');
+    Route::get('/bosses', [BossController::class, 'index'])->name('bosses.index');
+    Route::get('/bosses/create', [BossController::class, 'create'])->name('bosses.create');
+    Route::post('/bosses', [BossController::class, 'store'])->name('bosses.store');
+    Route::get('/bosses/{boss}/edit', [BossController::class, 'edit'])->name('bosses.edit');
+    Route::patch('/bosses/{boss}', [BossController::class, 'update'])->name('bosses.update');
+    Route::delete('/bosses/{boss}', [BossController::class, 'destroy'])->name('bosses.destroy');
 
     /**
      * Event templates
@@ -190,6 +203,18 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
     Route::get('/permissions/{group}', [PermissionController::class, 'showGroup'])->name('permissions.group.show');
     Route::patch('/permissions/{group}/{permission}', [PermissionController::class, 'update'])->name('permissions.permission.update');
+
+    /**
+     * Raids management
+     */
+    Route::get('/raids', [RaidController::class, 'index'])->name('raids.index');
+    Route::get('/raids/create', [RaidController::class, 'create'])->name('raids.create');
+    Route::post('/raids', [RaidController::class, 'store'])->name('raids.store');
+    Route::get('/raids/{raid}/edit', [RaidController::class, 'edit'])->name('raids.edit');
+    Route::get('/raids/{raid}/setup/{step}', [RaidController::class, 'setup'])->name('raids.setup');
+    Route::get('/raids/{raid}/review', [RaidController::class, 'review'])->name('raids.review');
+    Route::patch('/raids/{raid}', [RaidController::class, 'update'])->name('raids.update');
+    Route::delete('/raids/{raid}', [RaidController::class, 'destroy'])->name('raids.destroy');
 
     /**
      * Warcraft Logs guilds management

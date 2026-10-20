@@ -72,6 +72,16 @@ class PlannedAbsenceObserverTest extends TestCase
     }
 
     #[Test]
+    public function it_flushes_the_navigation_cache_when_an_absence_is_created(): void
+    {
+        Cache::tags(['navigation', 'raiding', 'events'])->put('navigation:x:y', []);
+
+        PlannedAbsence::factory()->create();
+
+        $this->assertNull(Cache::tags(['navigation', 'raiding', 'events'])->get('navigation:x:y'));
+    }
+
+    #[Test]
     public function observer_is_registered_on_planned_absence_model(): void
     {
         $attributes = (new \ReflectionClass(PlannedAbsence::class))
