@@ -1,0 +1,49 @@
+name: Performance
+description: Wasted work, slow pages, extra queries, redundant cache flushes or API calls.
+title: "Performance: "
+labels: ["optimisation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Write the title as the waste, e.g. `Performance: raid and boss autosaves flush the raiding cache twice`.
+        Measure what you can (query counts, timings, call counts) so the gain can be checked afterwards.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What work is wasted and where, with file and line references.
+    validations:
+      required: true
+  - type: textarea
+    id: cost
+    attributes:
+      label: Cost
+      description: How often it happens and how much it costs (queries, ms, API calls, rate-limit usage). Note how it was measured.
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: Why the obvious fix might be unsafe (ordering, transactions, cache staleness).
+  - type: textarea
+    id: options
+    attributes:
+      label: Options
+      description: Lettered options (A, B, C), each with its trade-offs and a recommendation.
+      value: |
+        - **A. Leave it.**
+        - **B.** 
+    validations:
+      required: true
+  - type: textarea
+    id: testing
+    attributes:
+      label: Testing
+      description: How a test will prove the waste is gone, e.g. `Event::assertDispatchedTimes(...)` or a query count assertion.
+  - type: textarea
+    id: related
+    attributes:
+      label: Related
+      description: Linked issues and PRs, and where the problem was found.

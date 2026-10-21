@@ -1,0 +1,85 @@
+name: Bug
+description: Something behaves wrongly. Describe what happens, how to reproduce it, and what should happen instead.
+title: "Bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Write the title as the observable symptom, e.g. `Bug: a game version switch on a record page is undone on the next visit`.
+        Reference code as `path/to/File.php:42` so it can be opened straight away.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One or two sentences describing the wrong behaviour and where it shows up.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps from a known starting state. Name the page, user role and game version where relevant.
+      placeholder: |
+        1. Sign in at /login/local as an officer.
+        2. Open a boss page that belongs to game version A.
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected-actual
+    attributes:
+      label: Expected and actual behaviour
+      value: |
+        **Expected:**
+
+        **Actual:**
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Where the bug lives, as far as you know.
+      multiple: true
+      options:
+        - Backend (controllers, actions, models)
+        - Frontend (React / Inertia pages and components)
+        - Integrations (Blizzard, Discord, Warcraft Logs, Raid Helper)
+        - Database (migrations, seeders, data)
+        - Queues, jobs and scheduling
+        - Caching
+        - Tests and tooling
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Log lines, stack traces, query output or screenshots. Long logs are formatted as code automatically.
+      render: shell
+  - type: textarea
+    id: cause
+    attributes:
+      label: Cause
+      description: The root cause, if known, with file and line references. Leave blank if it hasn't been diagnosed yet.
+  - type: textarea
+    id: fix
+    attributes:
+      label: Proposed fix
+      description: The fix, or lettered options (A, B, C) with trade-offs and a recommendation.
+  - type: textarea
+    id: testing
+    attributes:
+      label: Testing
+      description: The failing test that should be written first, and the test file it belongs in.
+      placeholder: Add a test to tests/Feature/... that asserts ... and fails on main today.
+  - type: textarea
+    id: related
+    attributes:
+      label: Related
+      description: Linked issues and PRs, and where the bug was found (e.g. a code review of a branch).
+      placeholder: |
+        - #123: ...
+        - Found by `/code-review high` of `branch-name`.

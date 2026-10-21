@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Project rules
+    url: https://github.com/benargo/regrowth-website/blob/main/.ai/rules/index.md
+    about: Conventions every change must follow. Check these before proposing a solution.
