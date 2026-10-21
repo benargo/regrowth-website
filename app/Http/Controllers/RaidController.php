@@ -65,12 +65,9 @@ class RaidController extends Controller implements SharesPriorityWeightThreshold
         ]);
     }
 
-    /**
-     * Display a raid's bosses for the route's section, redirecting to the canonical slug.
-     * The Loot section adds comment counts per boss and for the raid's trash.
-     */
+    /** Display a raid's bosses for the route's section, redirecting to the canonical slug. */
     #[Middleware(RemembersCurrentRaid::class)]
-    #[Middleware(RemembersRecordGameVersion::class.':raid')]
+    #[Middleware(RemembersRecordGameVersion::class.':raid,raids.index')]
     #[Middleware(EnsureRecordSlugIsValid::class.':raid')]
     public function show(Request $request, Raid $raid): Response
     {
@@ -93,11 +90,9 @@ class RaidController extends Controller implements SharesPriorityWeightThreshold
         ]);
     }
 
-    /**
-     * Display a raid's trash items for the route's section, redirecting to the canonical slug.
-     */
+    /** Display a raid's trash items for the route's section, redirecting to the canonical slug. */
     #[Middleware(RemembersCurrentRaid::class)]
-    #[Middleware(RemembersRecordGameVersion::class.':raid')]
+    #[Middleware(RemembersRecordGameVersion::class.':raid,raids.index')]
     #[Middleware(EnsureRecordSlugIsValid::class.':raid')]
     public function trash(Request $request, Raid $raid): Response
     {
