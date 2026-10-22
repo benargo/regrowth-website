@@ -4,6 +4,7 @@ namespace Tests\Feature\Middleware;
 
 use App\Actions\Navigation\BuildNavigationData;
 use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
+use App\Contracts\Actions\Navigation\CachesNavigationData;
 use App\Enums\SignupStatus;
 use App\Models\Character;
 use App\Models\DiscordRole;
@@ -11,12 +12,14 @@ use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\Permission;
 use App\Models\Phase;
+use App\Models\Raid;
 use App\Models\User;
 use App\Models\WarcraftLogs\Guild;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -403,11 +406,125 @@ class HandleInertiaRequestsTest extends TestCase
         }
     }
 
+    #[Test]
+    public function a_partial_reload_marks_navigation_as_a_once_prop(): void
+    {
+        $this->freezeTime();
+        $gameVersion = GameVersion::factory()->create();
+        $user = User::factory()->member()->create();
+
+        $response = $this->actingAs($user)
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $gameVersion->slug])
+            ->navigationReload();
+
+        $response->assertJsonPath('props.navigation.next_raid', null);
+        $this->assertSame([
+            "navigation:{$gameVersion->id}:{$user->id}" => [
+                'prop' => 'navigation',
+                'expiresAt' => now()->addMinutes(CachesNavigationData::TTL_MINUTES)->getTimestamp() * 1000,
+            ],
+        ], $response->json('onceProps'));
+    }
+
+    #[Test]
+    public function an_inertia_visit_keeps_navigation_once_metadata_without_building_it(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $key = "navigation:{$gameVersion->id}:guest";
+        BuildNavigationData::shouldNotRun();
+
+        $response = $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $gameVersion->slug])
+            ->inertiaRequest(['X-Inertia-Except-Once-Props' => $key]);
+
+        $response->assertJsonMissingPath('props.navigation');
+        $this->assertSame('navigation', $response->json("onceProps.{$key}.prop"));
+    }
+
+    #[Test]
+    public function navigation_once_key_changes_with_the_game_version_and_viewer(): void
+    {
+        $first = GameVersion::factory()->create(['release_date' => '2024-01-01']);
+        $second = GameVersion::factory()->create(['release_date' => '2023-01-01']);
+        $memberA = User::factory()->member()->create();
+        $memberB = User::factory()->member()->create();
+
+        $keys = [];
+
+        foreach ([[$second, null], [$first, null], [$first, $memberA], [$first, $memberB]] as [$gameVersion, $user]) {
+            if ($user !== null) {
+                $this->actingAs($user);
+            }
+
+            $response = $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $gameVersion->slug])
+                ->navigationReload();
+
+            $keys = [...$keys, ...array_keys($response->json('onceProps'))];
+        }
+
+        $this->assertSame([
+            "navigation:{$second->id}:guest",
+            "navigation:{$first->id}:guest",
+            "navigation:{$first->id}:{$memberA->id}",
+            "navigation:{$first->id}:{$memberB->id}",
+        ], $keys);
+    }
+
+    #[Test]
+    public function navigation_once_key_follows_a_switch_to_the_records_game_version(): void
+    {
+        $first = GameVersion::factory()->create(['release_date' => '2024-01-01']);
+        $second = GameVersion::factory()->create(['release_date' => '2023-01-01']);
+        $raid = Raid::factory()->for(Phase::factory()->state(['game_version_id' => $second->id]))->create();
+
+        $response = $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $first->slug])
+            ->inertiaRequest(
+                ['X-Inertia-Except-Once-Props' => "navigation:{$first->id}:guest"],
+                route('raiding.raids.show', ['raid' => $raid, 'slug' => $raid->slug]),
+            );
+
+        $this->assertSame(["navigation:{$second->id}:guest"], array_keys($response->json('onceProps')));
+    }
+
+    #[Test]
+    public function navigation_once_key_uses_none_without_a_game_version(): void
+    {
+        $this->assertSame(['navigation:none:guest'], array_keys($this->navigationReload()->json('onceProps')));
+    }
+
     private function eventTomorrow(GameVersion $gameVersion): Event
     {
         return Event::factory()->live()->forGameVersion($gameVersion)->create([
             'start_time' => now()->addDay(),
             'end_time' => now()->addDay()->addHours(3),
+        ]);
+    }
+
+    /**
+     * Reads the asset version from an initial `GET /`, then visits the URI as an Inertia request with the given headers.
+     *
+     * @param  array<string, string>  $headers
+     */
+    private function inertiaRequest(array $headers = [], string $uri = '/'): TestResponse
+    {
+        $page = $this->get('/')->viewData('page');
+
+        return $this->get($uri, [
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => $page['version'],
+            ...$headers,
+        ]);
+    }
+
+    /**
+     * Requests only the `navigation` prop with a partial reload of `/`.
+     */
+    private function navigationReload(): TestResponse
+    {
+        $component = $this->get('/')->viewData('page')['component'];
+
+        return $this->inertiaRequest([
+            'X-Inertia-Partial-Component' => $component,
+            'X-Inertia-Partial-Data' => 'navigation',
         ]);
     }
 }

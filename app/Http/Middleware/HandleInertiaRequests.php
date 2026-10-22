@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Actions\GameVersion\ListSelectableGameVersions;
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Actions\Navigation\BuildNavigationData;
+use App\Contracts\Actions\Navigation\CachesNavigationData;
 use App\Data\Navigation\NavigationData;
 use App\Http\Resources\GameVersionResource;
 use App\Http\Resources\UserPermissionResource;
@@ -14,7 +15,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Inertia\Inertia;
 use Inertia\Middleware;
 
-class HandleInertiaRequests extends Middleware
+class HandleInertiaRequests extends Middleware implements CachesNavigationData
 {
     /**
      * The root template that is loaded on the first page visit.
@@ -39,6 +40,7 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
+        $gameVersion = ResolveCurrentGameVersion::run();
 
         return [
             ...parent::share($request),
@@ -50,7 +52,11 @@ class HandleInertiaRequests extends Middleware
             'gameVersions' => fn (): AnonymousResourceCollection => GameVersionResource::collection(ListSelectableGameVersions::run())
                 ->scope('switcher')
                 ->additional(['meta' => ['current' => ResolveCurrentGameVersion::run()?->getKey()]]),
-            'navigation' => Inertia::optional(fn (): NavigationData => BuildNavigationData::run($request->user(), ResolveCurrentGameVersion::run())),
+            'navigation' => Inertia::optional(fn (): NavigationData => BuildNavigationData::run($user, $gameVersion))
+                ->once(
+                    as: sprintf(self::KEY_FORMAT, $gameVersion->id ?? 'none', $user->id ?? 'guest'),
+                    until: now()->addMinutes(self::TTL_MINUTES),
+                ),
             'flash' => [
                 'error' => fn () => $request->session()->get('error'),
                 'success' => fn () => $request->session()->get('success'),
