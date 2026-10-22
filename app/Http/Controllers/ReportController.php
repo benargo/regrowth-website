@@ -91,10 +91,8 @@ class ReportController extends Controller
 
     // ============ Show ============
 
-    /**
-     * Display the details of a single WarcraftLogs report.
-     */
-    #[Middleware(RemembersRecordGameVersion::class.':report')]
+    /** Display the details of a single WarcraftLogs report. */
+    #[Middleware(RemembersRecordGameVersion::class.':report,reports.index')]
     public function show(Request $request, Report $report): Response
     {
         $report->load(['gameVersion', 'guildTag', 'zone', 'characters.rank', 'characters.playableClass', 'characters.playableRace', 'linkedReports']);

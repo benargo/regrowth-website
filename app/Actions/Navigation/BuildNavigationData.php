@@ -24,11 +24,8 @@ class BuildNavigationData implements CachesNavigationData
 
     public function handle(?User $user, ?GameVersion $gameVersion): NavigationData
     {
-        $versionKey = $gameVersion->id ?? 'none';
-        $viewerKey = $user->id ?? 'guest';
-
         return NavigationData::from(Cache::tags([self::CACHE_TAG, 'raiding', 'events'])->remember(
-            "navigation:{$versionKey}:{$viewerKey}",
+            sprintf(self::KEY_FORMAT, $gameVersion->id ?? 'none', $user->id ?? 'guest'),
             now()->addMinutes(self::TTL_MINUTES),
             fn (): array => $this->build($user, $gameVersion)->toArray(),
         ));

@@ -9,23 +9,18 @@ use App\Contracts\Http\Middleware\SharesGameVersionSwitchFlash;
 use App\Contracts\Models\BelongsToGameVersion;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Support\Header;
 use Symfony\Component\HttpFoundation\Response;
 
 class RemembersRecordGameVersion implements SharesGameVersionSwitchFlash
 {
     /**
-     * Remember the game version that owns the record in the given route
-     * parameter as the current one.
-     *
-     * Applies to GET requests that are neither prefetches nor partial reloads,
-     * whose record implements BelongsToGameVersion and is owned by a version
-     * other than the current one. It does nothing on the full page request
-     * that follows an explicit switch, and removes the switch flag there.
+     * Remember the routed record's game version, or redirect to the section index right after a switch.
      *
      * @param  Closure(Request): (Response)  $next
      */
-    public function handle(Request $request, Closure $next, string $parameter): Response
+    public function handle(Request $request, Closure $next, string $parameter, string $indexRoute): Response
     {
         if (! $request->isMethod('GET')) {
             return $next($request);
@@ -50,12 +45,14 @@ class RemembersRecordGameVersion implements SharesGameVersionSwitchFlash
 
         $switched = $request->session()->pull(self::SWITCHED_FLASH_KEY, false);
 
-        if ($switched) {
+        if (ResolveCurrentGameVersion::run()?->slug === $gameVersion->slug) {
             return $next($request);
         }
 
-        if (ResolveCurrentGameVersion::run()?->slug === $gameVersion->slug) {
-            return $next($request);
+        if ($switched) {
+            $section = Str::before($request->route()->getName(), '.');
+
+            return redirect()->route("{$section}.{$indexRoute}");
         }
 
         RememberGameVersion::run($gameVersion->slug);
