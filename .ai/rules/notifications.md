@@ -1,4 +1,9 @@
-# Frontend (Inertia + React)
+---
+paths:
+  - 'app/Notifications/**'
+---
+
+# Notifications
 
 ## Never define `broadcastAs()` on Notification classes
 
