@@ -4,11 +4,14 @@ namespace Tests\Feature\Listeners;
 
 use App\Contracts\Events\FlushesRaidingCache;
 use App\Listeners\FlushRaidingCache;
+use App\Models\Boss;
 use App\Models\GameVersion;
 use App\Models\Raid;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -20,6 +23,8 @@ use Tests\TestCase;
 #[Group('raiding')]
 class FlushRaidingCacheTest extends TestCase
 {
+    use RefreshDatabase;
+
     #[Group('contract')]
     #[Test]
     public function it_runs_synchronously(): void
@@ -86,6 +91,21 @@ class FlushRaidingCacheTest extends TestCase
         (new FlushRaidingCache)->handleConversionCompleted($this->conversionCompletedFor(new GameVersion));
 
         $this->assertTrue($this->cacheIsPrimed());
+    }
+
+    #[Test]
+    public function it_flushes_only_after_the_transaction_commits(): void
+    {
+        $boss = Boss::factory()->create();
+        $this->primeCache();
+
+        DB::transaction(function () use ($boss): void {
+            $boss->update(['name' => 'Renamed']);
+
+            $this->assertTrue($this->cacheIsPrimed());
+        });
+
+        $this->assertFalse($this->cacheIsPrimed());
     }
 
     private function conversionCompletedFor(Model $model): ConversionHasBeenCompletedEvent

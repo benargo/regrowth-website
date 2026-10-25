@@ -3,7 +3,7 @@
 namespace App\Actions\Raid;
 
 use App\Contracts\Models\SharesRaidBannerCollection;
-use App\Events\RaidChanged;
+use App\Events\RaidingDataChanged;
 use App\Models\Boss;
 use App\Models\Raid;
 use Illuminate\Http\UploadedFile;
@@ -21,7 +21,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * and `banner_position` sets the banner's `position` custom property. A new
  * banner keeps the previous position unless a position comes with it. Media
  * is written once the database changes have committed. Any change to the boss
- * order or banner then dispatches `RaidChanged`.
+ * order or banner then dispatches `RaidingDataChanged`.
  */
 class UpdateRaid implements SharesRaidBannerCollection
 {
@@ -43,7 +43,7 @@ class UpdateRaid implements SharesRaidBannerCollection
         $this->updateBanner($raid, $data);
 
         if (Arr::hasAny($data, self::NON_COLUMN_KEYS)) {
-            RaidChanged::dispatch($raid);
+            RaidingDataChanged::dispatch($raid);
         }
     }
 

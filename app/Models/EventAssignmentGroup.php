@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Events\EventAssignmentGroupChanged;
+use App\Events\RaidingDataChanged;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -39,9 +39,9 @@ class EventAssignmentGroup extends Model implements Sortable
      * @var array<string, string>
      */
     protected $dispatchesEvents = [
-        'created' => EventAssignmentGroupChanged::class,
-        'updated' => EventAssignmentGroupChanged::class,
-        'deleted' => EventAssignmentGroupChanged::class,
+        'created' => RaidingDataChanged::class,
+        'updated' => RaidingDataChanged::class,
+        'deleted' => RaidingDataChanged::class,
     ];
 
     // ============ Sorting ============

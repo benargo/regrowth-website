@@ -5,7 +5,7 @@ namespace Tests\Unit\Models;
 use App\Casts\AsBinaryColor;
 use App\Contracts\Models\BelongsToGameVersion;
 use App\Contracts\Models\DatasetModel;
-use App\Events\RaidChanged;
+use App\Events\RaidingDataChanged;
 use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\Event;
@@ -17,6 +17,7 @@ use App\Models\Raid;
 use App\Models\User;
 use App\Policies\DatasetPolicy;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -793,35 +794,35 @@ class RaidTest extends ModelTestCase
     // ==================== model events ====================
 
     #[Test]
-    public function it_dispatches_raid_changed_when_created(): void
+    public function it_dispatches_raiding_data_changed_when_created(): void
     {
-        EventFacade::fake([RaidChanged::class]);
+        EventFacade::fake([RaidingDataChanged::class]);
 
         $raid = Raid::factory()->create();
 
-        EventFacade::assertDispatched(RaidChanged::class, fn (RaidChanged $event) => $event->raid->is($raid));
+        $this->assertSame(1, $this->dispatchedFor($raid));
     }
 
     #[Test]
-    public function it_dispatches_raid_changed_when_updated(): void
+    public function it_dispatches_raiding_data_changed_when_updated(): void
     {
         $raid = Raid::factory()->create();
-        EventFacade::fake([RaidChanged::class]);
+        EventFacade::fake([RaidingDataChanged::class]);
 
         $raid->update(['name' => 'Renamed']);
 
-        EventFacade::assertDispatched(RaidChanged::class, fn (RaidChanged $event) => $event->raid->is($raid));
+        $this->assertSame(1, $this->dispatchedFor($raid));
     }
 
     #[Test]
-    public function it_dispatches_raid_changed_when_deleted(): void
+    public function it_dispatches_raiding_data_changed_when_deleted(): void
     {
         $raid = Raid::factory()->create();
-        EventFacade::fake([RaidChanged::class]);
+        EventFacade::fake([RaidingDataChanged::class]);
 
         $raid->delete();
 
-        EventFacade::assertDispatched(RaidChanged::class, fn (RaidChanged $event) => $event->raid->is($raid));
+        $this->assertSame(1, $this->dispatchedFor($raid));
     }
 
     #[Test]
@@ -847,5 +848,10 @@ class RaidTest extends ModelTestCase
         $raid->events()->attach($event->id, ['sort_order' => 1]);
 
         return $event;
+    }
+
+    private function dispatchedFor(Model $model): int
+    {
+        return EventFacade::dispatched(RaidingDataChanged::class, fn (RaidingDataChanged $event): bool => $event->model->is($model))->count();
     }
 }

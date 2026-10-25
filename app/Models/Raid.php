@@ -8,7 +8,7 @@ use App\Contracts\Models\DatasetModel;
 use App\Contracts\Models\EditLockable;
 use App\Contracts\Models\HasUsage;
 use App\Contracts\Models\SharesRaidBannerCollection;
-use App\Events\RaidChanged;
+use App\Events\RaidingDataChanged;
 use App\Models\Concerns\HasEditLock;
 use App\Models\Concerns\InteractsWithChaperonedMedia;
 use App\Models\Concerns\TracksUsage;
@@ -53,9 +53,9 @@ class Raid extends Model implements BelongsToGameVersion, DatasetModel, EditLock
      * @var array<string, string>
      */
     protected $dispatchesEvents = [
-        'created' => RaidChanged::class,
-        'updated' => RaidChanged::class,
-        'deleted' => RaidChanged::class,
+        'created' => RaidingDataChanged::class,
+        'updated' => RaidingDataChanged::class,
+        'deleted' => RaidingDataChanged::class,
     ];
 
     /**

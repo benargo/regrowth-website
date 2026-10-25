@@ -3,10 +3,11 @@
 namespace Tests\Feature\Actions\Raid;
 
 use App\Actions\Raid\UpdateRaid;
-use App\Events\RaidChanged;
+use App\Events\RaidingDataChanged;
 use App\Models\Boss;
 use App\Models\Phase;
 use App\Models\Raid;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
@@ -203,56 +204,63 @@ class UpdateRaidTest extends TestCase
         $this->assertSame('center top', $fresh->banner_position);
     }
 
-    // ==================== raid changed ====================
+    // ==================== raiding data changed ====================
 
     #[Test]
-    public function it_dispatches_raid_changed_when_only_the_boss_order_changes(): void
+    public function it_dispatches_raiding_data_changed_when_only_the_boss_order_changes(): void
     {
         $raid = Raid::factory()->create();
         [$first, $second] = Boss::factory()->for($raid)->count(2)->create();
-        Event::fake([RaidChanged::class]);
+        Event::fake([RaidingDataChanged::class]);
 
         UpdateRaid::run($raid, ['boss_ids' => [$second->id, $first->id]]);
 
-        Event::assertDispatched(RaidChanged::class, fn (RaidChanged $event) => $event->raid->is($raid));
+        $this->assertSame(1, $this->dispatchedFor($raid));
     }
 
     #[Group('laravel-media-library')]
     #[Test]
-    public function it_dispatches_raid_changed_when_a_banner_is_uploaded(): void
+    public function it_dispatches_raiding_data_changed_when_a_banner_is_uploaded(): void
     {
         Storage::fake('public');
         $raid = Raid::factory()->create();
-        Event::fake([RaidChanged::class]);
+        Event::fake([RaidingDataChanged::class]);
 
         UpdateRaid::run($raid, ['banner' => UploadedFile::fake()->image('karazhan.webp')]);
 
-        Event::assertDispatched(RaidChanged::class, fn (RaidChanged $event) => $event->raid->is($raid));
+        $this->assertSame(1, $this->dispatchedFor($raid));
     }
 
     #[Group('laravel-media-library')]
     #[Test]
-    public function it_dispatches_raid_changed_when_the_banner_is_removed(): void
+    public function it_dispatches_raiding_data_changed_when_the_banner_is_removed(): void
     {
         Storage::fake('public');
         $raid = Raid::factory()->withBanner()->create();
-        Event::fake([RaidChanged::class]);
+        Event::fake([RaidingDataChanged::class]);
 
         UpdateRaid::run($raid, ['banner' => null]);
 
-        Event::assertDispatched(RaidChanged::class, fn (RaidChanged $event) => $event->raid->is($raid));
+        $this->assertSame(1, $this->dispatchedFor($raid));
     }
 
     #[Group('laravel-media-library')]
     #[Test]
-    public function it_dispatches_raid_changed_when_only_the_banner_position_changes(): void
+    public function it_dispatches_raiding_data_changed_when_only_the_banner_position_changes(): void
     {
         Storage::fake('public');
         $raid = Raid::factory()->withBanner()->create();
-        Event::fake([RaidChanged::class]);
+        Event::fake([RaidingDataChanged::class]);
 
         UpdateRaid::run($raid, ['banner_position' => 'center top']);
 
-        Event::assertDispatched(RaidChanged::class, fn (RaidChanged $event) => $event->raid->is($raid));
+        $this->assertSame(1, $this->dispatchedFor($raid));
+    }
+
+    // ==================== helpers ====================
+
+    private function dispatchedFor(Model $model): int
+    {
+        return Event::dispatched(RaidingDataChanged::class, fn (RaidingDataChanged $event): bool => $event->model->is($model))->count();
     }
 }

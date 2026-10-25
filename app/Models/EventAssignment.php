@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Casts\AsClassName;
-use App\Events\EventAssignmentChanged;
+use App\Events\RaidingDataChanged;
 use App\Http\Resources\EventAssignmentResource;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -27,9 +27,9 @@ class EventAssignment extends Model implements Sortable
      * @var array<string, string>
      */
     protected $dispatchesEvents = [
-        'created' => EventAssignmentChanged::class,
-        'updated' => EventAssignmentChanged::class,
-        'deleted' => EventAssignmentChanged::class,
+        'created' => RaidingDataChanged::class,
+        'updated' => RaidingDataChanged::class,
+        'deleted' => RaidingDataChanged::class,
     ];
 
     // ============ Casting ============

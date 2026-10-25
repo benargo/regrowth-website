@@ -6,7 +6,7 @@ use App\Contracts\Models\BelongsToGameVersion;
 use App\Contracts\Models\DatasetModel;
 use App\Contracts\Models\EditLockable;
 use App\Contracts\Models\HasUsage;
-use App\Events\BossChanged;
+use App\Events\RaidingDataChanged;
 use App\Http\Resources\BossResource;
 use App\Models\Concerns\HasEditLock;
 use App\Models\Concerns\InteractsWithChaperonedMedia;
@@ -44,9 +44,9 @@ class Boss extends Model implements BelongsToGameVersion, DatasetModel, EditLock
      * @var array<string, string>
      */
     protected $dispatchesEvents = [
-        'created' => BossChanged::class,
-        'updated' => BossChanged::class,
-        'deleted' => BossChanged::class,
+        'created' => RaidingDataChanged::class,
+        'updated' => RaidingDataChanged::class,
+        'deleted' => RaidingDataChanged::class,
     ];
 
     /**

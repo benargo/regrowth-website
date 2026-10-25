@@ -3,10 +3,11 @@
 namespace Tests\Feature\Actions\Boss;
 
 use App\Actions\Boss\UpdateBoss;
-use App\Events\BossChanged;
+use App\Events\RaidingDataChanged;
 use App\Models\Boss;
 use Illuminate\Broadcasting\BroadcastEvent;
 use Illuminate\Database\Eloquent\BroadcastableModelEventOccurred;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
@@ -171,39 +172,39 @@ class UpdateBossTest extends TestCase
     }
 
     #[Test]
-    public function it_dispatches_boss_changed_when_images_are_reordered(): void
+    public function it_dispatches_raiding_data_changed_when_images_are_reordered(): void
     {
         $boss = Boss::factory()->create();
         $first = $this->addImage($boss, 'first.png');
         $second = $this->addImage($boss, 'second.png');
-        Event::fake([BossChanged::class]);
+        Event::fake([RaidingDataChanged::class]);
 
         UpdateBoss::run($boss, ['image_ids' => [$second->id, $first->id]]);
 
-        Event::assertDispatched(BossChanged::class, fn (BossChanged $event) => $event->boss->is($boss));
+        $this->assertSame(1, $this->dispatchedFor($boss));
     }
 
     #[Test]
-    public function it_dispatches_boss_changed_when_images_are_removed(): void
+    public function it_dispatches_raiding_data_changed_when_images_are_removed(): void
     {
         $boss = Boss::factory()->create();
         $image = $this->addImage($boss, 'first.png');
-        Event::fake([BossChanged::class]);
+        Event::fake([RaidingDataChanged::class]);
 
         UpdateBoss::run($boss, ['removed_image_ids' => [$image->id]]);
 
-        Event::assertDispatched(BossChanged::class, fn (BossChanged $event) => $event->boss->is($boss));
+        $this->assertSame(1, $this->dispatchedFor($boss));
     }
 
     #[Test]
-    public function it_dispatches_boss_changed_when_images_are_uploaded(): void
+    public function it_dispatches_raiding_data_changed_when_images_are_uploaded(): void
     {
         $boss = Boss::factory()->create();
-        Event::fake([BossChanged::class]);
+        Event::fake([RaidingDataChanged::class]);
 
         UpdateBoss::run($boss, ['images' => [UploadedFile::fake()->image('first.png')]]);
 
-        Event::assertDispatched(BossChanged::class, fn (BossChanged $event) => $event->boss->is($boss));
+        $this->assertSame(1, $this->dispatchedFor($boss));
     }
 
     // ==================== helpers ====================
@@ -211,5 +212,10 @@ class UpdateBossTest extends TestCase
     private function addImage(Boss $boss, string $name): Media
     {
         return $boss->addMedia(UploadedFile::fake()->image($name))->toMediaCollection();
+    }
+
+    private function dispatchedFor(Model $model): int
+    {
+        return Event::dispatched(RaidingDataChanged::class, fn (RaidingDataChanged $event): bool => $event->model->is($model))->count();
     }
 }
