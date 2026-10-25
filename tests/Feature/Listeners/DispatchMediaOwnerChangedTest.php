@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Listeners;
 
+use App\Contracts\Http\Middleware\SharesDeferredCacheFlushes;
 use App\Events\GameVersionChanged;
 use App\Events\RaidingDataChanged;
 use App\Listeners\DispatchMediaOwnerChanged;
@@ -101,6 +102,20 @@ class DispatchMediaOwnerChangedTest extends TestCase
         $this->app->terminate();
 
         $this->assertSame(3, $this->dispatchedFor(RaidingDataChanged::class, fn (RaidingDataChanged $event) => $event->model, $boss));
+    }
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function it_skips_the_terminating_dispatch_while_cache_flushes_are_deferred(): void
+    {
+        $boss = Boss::factory()->create();
+        Event::fake([RaidingDataChanged::class]);
+        request()->attributes->set(SharesDeferredCacheFlushes::DEFERRING_KEY, true);
+
+        $this->listener()->handleMediaAdded(new MediaHasBeenAddedEvent($this->mediaFor($boss)));
+        $this->app->terminate();
+
+        $this->assertSame(1, $this->dispatchedFor(RaidingDataChanged::class, fn (RaidingDataChanged $event) => $event->model, $boss));
     }
 
     #[Group('laravel-media-library')]

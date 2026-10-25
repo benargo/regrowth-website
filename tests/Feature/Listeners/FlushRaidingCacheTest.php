@@ -3,6 +3,7 @@
 namespace Tests\Feature\Listeners;
 
 use App\Contracts\Events\FlushesRaidingCache;
+use App\Contracts\Http\Middleware\SharesDeferredCacheFlushes;
 use App\Listeners\FlushRaidingCache;
 use App\Models\Boss;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -23,7 +24,7 @@ class FlushRaidingCacheTest extends TestCase
     #[Test]
     public function it_runs_synchronously(): void
     {
-        $this->assertNotInstanceOf(ShouldQueue::class, new FlushRaidingCache);
+        $this->assertNotInstanceOf(ShouldQueue::class, $this->listener());
     }
 
     #[Group('contract')]
@@ -41,7 +42,7 @@ class FlushRaidingCacheTest extends TestCase
     {
         $this->primeCache();
 
-        (new FlushRaidingCache)->handle(new class implements FlushesRaidingCache {});
+        $this->listener()->handle(new class implements FlushesRaidingCache {});
 
         $this->assertFalse($this->cacheIsPrimed());
     }
@@ -51,7 +52,7 @@ class FlushRaidingCacheTest extends TestCase
     {
         Cache::tags(['reports'])->put('probe', true, 60);
 
-        (new FlushRaidingCache)->handle(new class implements FlushesRaidingCache {});
+        $this->listener()->handle(new class implements FlushesRaidingCache {});
 
         $this->assertTrue(Cache::tags(['reports'])->has('probe'));
     }
@@ -71,7 +72,30 @@ class FlushRaidingCacheTest extends TestCase
         $this->assertFalse($this->cacheIsPrimed());
     }
 
+    #[Test]
+    public function it_records_one_pending_flush_while_the_request_is_deferring(): void
+    {
+        $this->primeCache();
+        request()->attributes->set(SharesDeferredCacheFlushes::DEFERRING_KEY, true);
+
+        $this->listener()->handle(new class implements FlushesRaidingCache {});
+        $this->listener()->handle(new class implements FlushesRaidingCache {});
+
+        $pendingFlushes = request()->attributes->get(SharesDeferredCacheFlushes::PENDING_KEY);
+        $this->assertTrue($this->cacheIsPrimed());
+        $this->assertCount(1, $pendingFlushes);
+
+        reset($pendingFlushes)();
+
+        $this->assertFalse($this->cacheIsPrimed());
+    }
+
     // ==================== helpers ====================
+
+    private function listener(): FlushRaidingCache
+    {
+        return $this->app->make(FlushRaidingCache::class);
+    }
 
     private function primeCache(): void
     {

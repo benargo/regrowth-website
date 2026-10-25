@@ -2,6 +2,7 @@
 
 namespace App\Listeners;
 
+use App\Contracts\Http\Middleware\SharesDeferredCacheFlushes;
 use App\Contracts\Models\DispatchesChangesForMedia;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Model;
@@ -15,12 +16,13 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 /**
  * Dispatches the owning model's change event when media-library media is added, cleared or converted.
  */
-class DispatchMediaOwnerChanged
+class DispatchMediaOwnerChanged implements SharesDeferredCacheFlushes
 {
     public function __construct(private Application $app, private Request $request) {}
 
     /**
-     * Dispatch the owner's event now, and once more per owner when the application terminates.
+     * Dispatch the owner's event now and, unless the request defers cache
+     * flushes, once more per owner when the application terminates.
      */
     public function handleMediaAdded(MediaHasBeenAddedEvent $event): void
     {
@@ -31,6 +33,10 @@ class DispatchMediaOwnerChanged
         }
 
         $this->dispatchFor($owner);
+
+        if ($this->request->attributes->get(self::DEFERRING_KEY)) {
+            return;
+        }
 
         $key = "media-owner-changed:{$owner->getMorphClass()}:{$owner->getKey()}";
 

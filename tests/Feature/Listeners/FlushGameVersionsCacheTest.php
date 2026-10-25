@@ -4,6 +4,7 @@ namespace Tests\Feature\Listeners;
 
 use App\Contracts\Actions\GameVersion\CachesSelectableGameVersions;
 use App\Contracts\Events\FlushesGameVersionsCache;
+use App\Contracts\Http\Middleware\SharesDeferredCacheFlushes;
 use App\Events\GameVersionChanged;
 use App\Events\WarcraftLogsGuildDeleted;
 use App\Listeners\FlushGameVersionsCache;
@@ -79,6 +80,27 @@ class FlushGameVersionsCacheTest extends TestCase
         $this->app->make(FlushGameVersionsCache::class)->handle(new GameVersionChanged(new GameVersion));
 
         $this->assertTrue(Cache::tags(['raiding'])->has('probe'));
+    }
+
+    #[Test]
+    public function it_records_one_pending_flush_while_the_request_is_deferring(): void
+    {
+        $this->primeCache();
+        request()->attributes->set(CachesSelectableGameVersions::REQUEST_KEY, new Collection);
+        request()->attributes->set(SharesDeferredCacheFlushes::DEFERRING_KEY, true);
+
+        $this->app->make(FlushGameVersionsCache::class)->handle(new GameVersionChanged(new GameVersion));
+        $this->app->make(FlushGameVersionsCache::class)->handle(new GameVersionChanged(new GameVersion));
+
+        $pendingFlushes = request()->attributes->get(SharesDeferredCacheFlushes::PENDING_KEY);
+        $this->assertTrue($this->cacheIsPrimed());
+        $this->assertTrue(request()->attributes->has(CachesSelectableGameVersions::REQUEST_KEY));
+        $this->assertCount(1, $pendingFlushes);
+
+        reset($pendingFlushes)();
+
+        $this->assertFalse($this->cacheIsPrimed());
+        $this->assertFalse(request()->attributes->has(CachesSelectableGameVersions::REQUEST_KEY));
     }
 
     // ==================== helpers ====================

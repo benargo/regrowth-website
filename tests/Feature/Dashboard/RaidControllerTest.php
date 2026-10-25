@@ -13,8 +13,11 @@ use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
 use Carbon\CarbonInterface;
+use Illuminate\Cache\Events\CacheFlushed;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event as EventFacade;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
@@ -22,6 +25,8 @@ use Mockery\Matcher\MatcherInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\MediaLibrary\MediaCollections\Events\MediaHasBeenAddedEvent;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Tests\Support\DashboardTestCase;
 
 #[Group('raiding')]
@@ -786,6 +791,34 @@ class RaidControllerTest extends DashboardTestCase
 
         $response->assertRedirect($this->editUrl($raid));
         $this->assertSame('karazhan.webp', $raid->fresh()->getFirstMedia(Raid::MEDIA_BANNER)?->file_name);
+    }
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function it_flushes_the_raiding_cache_once_after_the_old_banner_is_replaced(): void
+    {
+        Storage::fake('public');
+        $raid = EventFacade::fakeFor(
+            fn () => Raid::factory()->withBanner()->create(['name' => 'Karazhan']),
+            [MediaHasBeenAddedEvent::class],
+        );
+        Cache::tags(['raiding', 'events'])->put('canary', true, 60);
+        $bannerCountsAtFlush = [];
+        EventFacade::listen(CacheFlushed::class, function () use ($raid, &$bannerCountsAtFlush): void {
+            $bannerCountsAtFlush[] = Media::where('model_id', $raid->id)->where('collection_name', Raid::MEDIA_BANNER)->count();
+        });
+
+        $this->actingAs($this->officer)
+            ->from($this->editUrl($raid))
+            ->post(route('management.raids.update', $raid), [
+                '_method' => 'PATCH',
+                'name' => 'Karazhan Remastered',
+                'banner' => UploadedFile::fake()->image('karazhan.webp'),
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame([1], $bannerCountsAtFlush);
+        $this->assertFalse(Cache::tags(['raiding', 'events'])->has('canary'));
     }
 
     #[Group('laravel-media-library')]

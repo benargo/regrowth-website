@@ -30,6 +30,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Session\GameVersionController as SessionGameVersionController;
 use App\Http\Controllers\WarcraftLogs\GuildController;
 use App\Http\Controllers\WarcraftLogs\GuildTagController;
+use App\Http\Middleware\DefersCacheFlushes;
 use App\Http\Middleware\RemembersCurrentGameVersion;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -155,7 +156,7 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::get('/bosses/create', [BossController::class, 'create'])->name('bosses.create');
     Route::post('/bosses', [BossController::class, 'store'])->name('bosses.store');
     Route::get('/bosses/{boss}/edit', [BossController::class, 'edit'])->name('bosses.edit');
-    Route::patch('/bosses/{boss}', [BossController::class, 'update'])->name('bosses.update');
+    Route::patch('/bosses/{boss}', [BossController::class, 'update'])->middleware(DefersCacheFlushes::class)->name('bosses.update');
     Route::delete('/bosses/{boss}', [BossController::class, 'destroy'])->name('bosses.destroy');
 
     /**
@@ -177,7 +178,7 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::get('/game-versions/{gameVersion}/edit', [GameVersionController::class, 'edit'])->name('game-versions.edit');
     Route::get('/game-versions/{gameVersion}/setup/{step}', [GameVersionController::class, 'setup'])->name('game-versions.setup');
     Route::get('/game-versions/{gameVersion}/review', [GameVersionController::class, 'review'])->name('game-versions.review');
-    Route::patch('/game-versions/{gameVersion}', [GameVersionController::class, 'update'])->name('game-versions.update');
+    Route::patch('/game-versions/{gameVersion}', [GameVersionController::class, 'update'])->middleware(DefersCacheFlushes::class)->name('game-versions.update');
     Route::delete('/game-versions/{gameVersion}', [GameVersionController::class, 'destroy'])->name('game-versions.destroy');
 
     /**
@@ -213,7 +214,7 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::get('/raids/{raid}/edit', [RaidController::class, 'edit'])->name('raids.edit');
     Route::get('/raids/{raid}/setup/{step}', [RaidController::class, 'setup'])->name('raids.setup');
     Route::get('/raids/{raid}/review', [RaidController::class, 'review'])->name('raids.review');
-    Route::patch('/raids/{raid}', [RaidController::class, 'update'])->name('raids.update');
+    Route::patch('/raids/{raid}', [RaidController::class, 'update'])->middleware(DefersCacheFlushes::class)->name('raids.update');
     Route::delete('/raids/{raid}', [RaidController::class, 'destroy'])->name('raids.destroy');
 
     /**
