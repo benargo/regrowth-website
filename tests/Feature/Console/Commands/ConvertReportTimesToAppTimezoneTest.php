@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Console\Commands;
 
+use App\Models\GameVersion;
+use App\Models\Phase;
 use App\Models\Report;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -46,8 +48,23 @@ class ConvertReportTimesToAppTimezoneTest extends TestCase
     }
 
     #[Test]
+    public function it_re_derives_the_phase_from_the_converted_start_time(): void
+    {
+        $gameVersion = GameVersion::factory()->forGuild()->create(['release_date' => '2024-12-01 00:00:00']);
+        $firstPhase = Phase::factory()->forGameVersion($gameVersion)->create(['start_date' => '2024-12-01 00:00:00']);
+        $secondPhase = Phase::factory()->forGameVersion($gameVersion)->create(['start_date' => '2025-01-15 00:00:00']);
+        $report = Report::factory()->forGameVersion($gameVersion)->create(['start_time' => '2025-01-14 23:30:00', 'end_time' => '2025-01-15 02:30:00']);
+        $this->assertSame($firstPhase->id, $report->phase_id);
+
+        $this->artisan('app:convert-report-times-to-app-timezone --force')->assertExitCode(0);
+
+        $this->assertSame($secondPhase->id, $report->fresh()->phase_id);
+    }
+
+    #[Test]
     public function it_flushes_the_cached_report_date_ranges(): void
     {
+        Report::factory()->create();
         Cache::tags(['reports'])->put('probe', 1);
         Cache::tags(['attendance'])->put('probe', 1);
 

@@ -177,8 +177,8 @@ class ReportController extends Controller
     {
         $report = Report::create([
             'title' => $request->title,
-            'start_time' => Carbon::parse($request->start_time, config('app.timezone')),
-            'end_time' => Carbon::parse($request->end_time, config('app.timezone')),
+            'start_time' => Carbon::parse($request->start_time, config('app.timezone'))->setTimezone(config('app.timezone')),
+            'end_time' => Carbon::parse($request->end_time, config('app.timezone'))->setTimezone(config('app.timezone')),
             'guild_tag_id' => $request->guild_tag_id,
             'warcraft_logs_guild_id' => GuildTag::whereKey($request->guild_tag_id)->value('warcraft_logs_guild_id'),
             'zone_id' => $request->zone_id,

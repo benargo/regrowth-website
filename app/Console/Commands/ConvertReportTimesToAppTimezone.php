@@ -2,12 +2,12 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Report;
+use App\Observers\ReportObserver;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 #[Signature('app:convert-report-times-to-app-timezone {--force : Convert without asking for confirmation}')]
@@ -16,7 +16,8 @@ class ConvertReportTimesToAppTimezone extends Command
 {
     /**
      * Rewrite every report's start and end time from UTC wall-clock time to the app
-     * timezone in a single transaction, then flush the cached report date ranges.
+     * timezone in a single transaction, re-saving each report so its game version and
+     * phase are re-derived, then flush the caches derived from reports.
      */
     public function handle(): int
     {
@@ -28,21 +29,17 @@ class ConvertReportTimesToAppTimezone extends Command
 
         $converted = 0;
 
-        DB::transaction(function () use (&$converted): void {
-            DB::table('reports')->select('id', 'start_time', 'end_time')->chunkById(500, function (Collection $reports) use (&$converted): void {
-                foreach ($reports as $report) {
-                    DB::table('reports')->where('id', $report->id)->update([
-                        'start_time' => $this->toAppTime($report->start_time),
-                        'end_time' => $this->toAppTime($report->end_time),
-                    ]);
+        ReportObserver::deferFlushing(function () use (&$converted): void {
+            DB::transaction(function () use (&$converted): void {
+                foreach (Report::lazyById(500) as $report) {
+                    $report->start_time = $this->toAppTime($report->getRawOriginal('start_time'));
+                    $report->end_time = $this->toAppTime($report->getRawOriginal('end_time'));
+                    $report->save();
 
                     $converted++;
                 }
             });
         });
-
-        Cache::tags(['reports'])->flush();
-        Cache::tags(['attendance'])->flush();
 
         $this->info("Converted {$converted} report(s).");
 

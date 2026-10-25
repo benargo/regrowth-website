@@ -146,6 +146,24 @@ class StoreTest extends TestCase
     }
 
     #[Test]
+    public function store_converts_submitted_times_with_an_offset_to_app_time(): void
+    {
+        $this->grantManageReports();
+        Zone::factory()->create(['id' => 1000, 'name' => 'Karazhan']);
+        $tag = GuildTag::factory()->create();
+        $user = User::factory()->officer()->create();
+
+        $this->actingAs($user)->post(route('raiding.reports.store'), [
+            ...$this->validStoreData($tag),
+            'start_time' => '2025-07-15T17:00:00Z',
+            'end_time' => '2025-07-15T20:30:00Z',
+        ]);
+
+        $this->assertSame('2025-07-15 19:00:00', DB::table('reports')->value('start_time'));
+        $this->assertSame('2025-07-15 22:30:00', DB::table('reports')->value('end_time'));
+    }
+
+    #[Test]
     public function store_redirects_to_show_with_success_flash(): void
     {
         $this->grantManageReports();
