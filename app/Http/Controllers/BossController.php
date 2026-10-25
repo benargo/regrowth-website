@@ -43,6 +43,7 @@ class BossController extends Controller implements SharesPriorityWeightThreshold
 
         return Inertia::render('Bosses/Show', [
             'section' => $section,
+            'features' => $section->features(),
             'tab' => $tab,
             'boss' => new BossResource($boss->loadMissing(['media', 'raid.media'])),
             ...($tab === 'items'

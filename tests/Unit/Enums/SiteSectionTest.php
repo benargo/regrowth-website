@@ -30,4 +30,22 @@ class SiteSectionTest extends TestCase
             'raiding hides item comments' => [SiteSection::Raiding, 'showsItemComments', false],
         ];
     }
+
+    #[Test]
+    #[DataProvider('featureFlags')]
+    public function it_lists_its_feature_flags_for_the_frontend(SiteSection $section, array $expected): void
+    {
+        $this->assertSame($expected, $section->features());
+    }
+
+    /**
+     * @return array<string, array{SiteSection, array{itemComments: bool, strategy: bool}}>
+     */
+    public static function featureFlags(): array
+    {
+        return [
+            'raiding' => [SiteSection::Raiding, ['itemComments' => false, 'strategy' => true]],
+            'loot' => [SiteSection::Loot, ['itemComments' => true, 'strategy' => false]],
+        ];
+    }
 }

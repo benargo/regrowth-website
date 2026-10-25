@@ -9,13 +9,13 @@ import Breadcrumbs from "@/Components/Navigation/Breadcrumbs";
 import SectionNav from "@/Components/Navigation/SectionNav";
 import ItemList, { ItemListSkeleton } from "@/Components/Loot/ItemList";
 import { Can } from "@/Components/Authorizable";
-import { SITE_SECTIONS, sectionCrumbs, sectionShows } from "@/Helpers/siteSections";
+import { SITE_SECTIONS, sectionCrumbs } from "@/Helpers/siteSections";
 
-export default function Show({ section, tab, boss, items, priorityWeightThreshold }) {
+export default function Show({ section, features, tab, boss, items, priorityWeightThreshold }) {
     const bossData = boss.data;
     const raid = bossData.raid;
     const sectionConfig = SITE_SECTIONS[section];
-    const shouldShowStrategy = sectionShows(section, "strategy");
+    const shouldShowStrategy = features.strategy;
     const bossRoute = (query = {}) =>
         route(`${section}.bosses.show`, { boss: bossData.id, slug: bossData.slug, ...query });
     const crumbs = sectionCrumbs(section, [

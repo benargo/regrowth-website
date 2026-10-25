@@ -21,7 +21,20 @@ enum SiteSection: string
     }
 
     /**
-     * Whether the section shows boss strategies. Pairs with the JS `features.strategy` flag.
+     * The section's feature flags, shared with its raid and boss pages as the `features` prop.
+     *
+     * @return array{itemComments: bool, strategy: bool}
+     */
+    public function features(): array
+    {
+        return [
+            'itemComments' => $this->showsItemComments(),
+            'strategy' => $this->showsStrategy(),
+        ];
+    }
+
+    /**
+     * Whether the section shows boss strategies.
      */
     public function showsStrategy(): bool
     {
@@ -32,7 +45,7 @@ enum SiteSection: string
     }
 
     /**
-     * Whether the section shows item comment counts. Pairs with the JS `features.itemComments` flag.
+     * Whether the section shows item comment counts.
      */
     public function showsItemComments(): bool
     {

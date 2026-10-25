@@ -85,6 +85,7 @@ class RaidController extends Controller implements SharesPriorityWeightThreshold
 
         return Inertia::render('Raids/Show', [
             'section' => $section,
+            'features' => $section->features(),
             'raid' => new RaidResource($raid),
             'bosses' => BossResource::collection($bosses)->scope('navigation'),
         ]);

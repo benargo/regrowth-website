@@ -1,8 +1,6 @@
 /**
  * The Raiding and Loot sections: their hub route, header background, the
- * features their raid and boss pages show, and the items of their
- * sub-navigation. `features.strategy` and `features.itemComments` pair with
- * `SiteSection::showsStrategy()` and `SiteSection::showsItemComments()`;
+ * client-only features they enable, and the items of their sub-navigation.
  * `features.raidScopedSearch` scopes the search palette to the raid page's raid.
  * Each item names the route it links to, the route patterns that mark it
  * current, the permission it needs (if any), and whether it appears as a card
@@ -13,7 +11,7 @@ export const SITE_SECTIONS = {
         label: "Raiding",
         hubRouteName: "raiding.index",
         headerBackgroundClass: "bg-illidan",
-        features: { strategy: true, itemComments: false, raidScopedSearch: false },
+        features: { raidScopedSearch: false },
         items: [
             {
                 key: "raids",
@@ -66,7 +64,7 @@ export const SITE_SECTIONS = {
         label: "Loot",
         hubRouteName: "loot.index",
         headerBackgroundClass: "bg-vashj-and-kaelthas",
-        features: { strategy: false, itemComments: true, raidScopedSearch: true },
+        features: { raidScopedSearch: true },
         items: [
             {
                 key: "raids",
