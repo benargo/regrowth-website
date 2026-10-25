@@ -2,29 +2,9 @@ import { CloseButton } from "@headlessui/react";
 import { Link } from "@inertiajs/react";
 import cn from "@/Helpers/cn";
 
-function LatestDiscussionsSkeleton() {
-    return (
-        <div className="animate-pulse divide-y divide-white/10" aria-hidden="true">
-            {[0, 1, 2].map((index) => (
-                <div key={index} className="flex items-start justify-between gap-6 py-3">
-                    <div className="flex min-w-0 flex-1 items-center gap-3">
-                        <div className="h-8 w-8 flex-none rounded bg-white/10" />
-                        <div className="flex min-w-0 flex-1 flex-col gap-2">
-                            <div className="h-4 w-1/2 rounded bg-white/10" />
-                            <div className="h-3 w-1/3 rounded bg-white/10" />
-                        </div>
-                    </div>
-                    <div className="h-3 w-20 rounded bg-white/10" />
-                </div>
-            ))}
-        </div>
-    );
-}
-
 /**
  * The latest root comments on the current game version's items, each with the
- * item's icon when it has one. A skeleton
- * while the navigation data loads, and an empty state when there are none.
+ * item's icon when it has one, and an empty state when there are none.
  * `classes` overrides the heading colour.
  */
 export default function LatestDiscussions({ navigation, classes = {} }) {
@@ -39,9 +19,7 @@ export default function LatestDiscussions({ navigation, classes = {} }) {
                 Latest discussions
             </h2>
 
-            {navigation === undefined ? (
-                <LatestDiscussionsSkeleton />
-            ) : discussions.length > 0 ? (
+            {discussions.length > 0 ? (
                 <ul className="divide-y divide-white/10 border-t border-white/10">
                     {discussions.map((discussion) => (
                         <li key={discussion.id}>

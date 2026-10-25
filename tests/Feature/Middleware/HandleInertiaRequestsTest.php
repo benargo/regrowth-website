@@ -6,6 +6,7 @@ use App\Actions\Navigation\BuildNavigationData;
 use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
 use App\Contracts\Actions\Navigation\CachesNavigationData;
 use App\Enums\SignupStatus;
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\Event;
@@ -17,6 +18,7 @@ use App\Models\User;
 use App\Models\WarcraftLogs\Guild;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
@@ -347,18 +349,7 @@ class HandleInertiaRequestsTest extends TestCase
     // ==================== navigation ====================
 
     #[Test]
-    public function it_does_not_build_navigation_on_a_normal_visit(): void
-    {
-        $gameVersion = GameVersion::factory()->create();
-        BuildNavigationData::shouldNotRun();
-
-        $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $gameVersion->slug])
-            ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->missing('navigation'));
-    }
-
-    #[Test]
-    public function it_sends_navigation_on_a_partial_reload(): void
+    public function it_sends_navigation_on_the_initial_page_load(): void
     {
         $gameVersion = GameVersion::factory()->create();
         $event = $this->eventTomorrow($gameVersion);
@@ -366,15 +357,13 @@ class HandleInertiaRequestsTest extends TestCase
         $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $gameVersion->slug])
             ->get('/')
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->missing('navigation')
-                ->reloadOnly('navigation', fn (AssertableInertia $reload) => $reload
-                    ->where('navigation.next_raid.id', $event->id)
-                    ->where('navigation.next_raid.signup', null)
-                    ->has('navigation.latest_discussions', 0)));
+                ->where('navigation.next_raid.id', $event->id)
+                ->where('navigation.next_raid.signup', null)
+                ->has('navigation.latest_discussions', 0));
     }
 
     #[Test]
-    public function a_partial_reload_gives_a_member_their_signup_line(): void
+    public function navigation_gives_a_member_their_signup_line(): void
     {
         $gameVersion = GameVersion::factory()->create();
         $event = $this->eventTomorrow($gameVersion);
@@ -385,12 +374,11 @@ class HandleInertiaRequestsTest extends TestCase
             ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $gameVersion->slug])
             ->get('/')
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->reloadOnly('navigation', fn (AssertableInertia $reload) => $reload
-                    ->where('navigation.next_raid.signup.label', "You're signed up.")));
+                ->where('navigation.next_raid.signup.label', "You're signed up."));
     }
 
     #[Test]
-    public function a_partial_reload_follows_the_session_version(): void
+    public function navigation_follows_the_session_version(): void
     {
         $first = GameVersion::factory()->create(['release_date' => '2024-01-01']);
         $second = GameVersion::factory()->create(['release_date' => '2023-01-01']);
@@ -401,13 +389,12 @@ class HandleInertiaRequestsTest extends TestCase
             $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $gameVersion->slug])
                 ->get('/')
                 ->assertInertia(fn (AssertableInertia $page) => $page
-                    ->reloadOnly('navigation', fn (AssertableInertia $reload) => $reload
-                        ->where('navigation.next_raid.id', $event->id)));
+                    ->where('navigation.next_raid.id', $event->id));
         }
     }
 
     #[Test]
-    public function a_partial_reload_marks_navigation_as_a_once_prop(): void
+    public function an_inertia_visit_marks_navigation_as_a_once_prop(): void
     {
         $this->freezeTime();
         $gameVersion = GameVersion::factory()->create();
@@ -415,7 +402,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $response = $this->actingAs($user)
             ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $gameVersion->slug])
-            ->navigationReload();
+            ->inertiaRequest();
 
         $response->assertJsonPath('props.navigation.next_raid', null);
         $this->assertSame([
@@ -456,7 +443,7 @@ class HandleInertiaRequestsTest extends TestCase
             }
 
             $response = $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $gameVersion->slug])
-                ->navigationReload();
+                ->inertiaRequest();
 
             $keys = [...$keys, ...array_keys($response->json('onceProps'))];
         }
@@ -488,7 +475,7 @@ class HandleInertiaRequestsTest extends TestCase
     #[Test]
     public function navigation_once_key_uses_none_without_a_game_version(): void
     {
-        $this->assertSame(['navigation:none:guest'], array_keys($this->navigationReload()->json('onceProps')));
+        $this->assertSame(['navigation:none:guest'], array_keys($this->inertiaRequest()->json('onceProps')));
     }
 
     private function eventTomorrow(GameVersion $gameVersion): Event
@@ -500,31 +487,16 @@ class HandleInertiaRequestsTest extends TestCase
     }
 
     /**
-     * Reads the asset version from an initial `GET /`, then visits the URI as an Inertia request with the given headers.
+     * Visits the URI as an Inertia request at the current asset version, with the given headers.
      *
      * @param  array<string, string>  $headers
      */
     private function inertiaRequest(array $headers = [], string $uri = '/'): TestResponse
     {
-        $page = $this->get('/')->viewData('page');
-
         return $this->get($uri, [
             'X-Inertia' => 'true',
-            'X-Inertia-Version' => $page['version'],
+            'X-Inertia-Version' => app(HandleInertiaRequests::class)->version(Request::create($uri)),
             ...$headers,
-        ]);
-    }
-
-    /**
-     * Requests only the `navigation` prop with a partial reload of `/`.
-     */
-    private function navigationReload(): TestResponse
-    {
-        $component = $this->get('/')->viewData('page')['component'];
-
-        return $this->inertiaRequest([
-            'X-Inertia-Partial-Component' => $component,
-            'X-Inertia-Partial-Data' => 'navigation',
         ]);
     }
 }

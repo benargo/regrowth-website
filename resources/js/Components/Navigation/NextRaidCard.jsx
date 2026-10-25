@@ -14,22 +14,10 @@ function formatStartTime(startTime) {
     return `${weekday} at ${time}`;
 }
 
-function NextRaidSkeleton({ compact }) {
-    return (
-        <div className="animate-pulse space-y-3" aria-hidden="true">
-            <div className={cn("rounded bg-white/10", compact ? "h-5 w-2/3" : "h-6 w-3/4")} />
-            <div className="h-4 w-1/2 rounded bg-white/10" />
-            <div className="h-4 w-2/3 rounded bg-white/10" />
-            <div className="h-9 w-32 rounded bg-white/10" />
-        </div>
-    );
-}
-
 /**
  * The next raid of the current game version: its title, start time, the
- * viewer's signup line and a link to its plan. A skeleton while the navigation
- * data loads, and an empty state when there is no upcoming raid. `classes`
- * overrides the card, heading, signup icon, signup label and button colours.
+ * viewer's signup line and a link to its plan, and an empty state when there
+ * is no upcoming raid. `classes` overrides the card, heading, signup icon, signup label and button colours.
  */
 export default function NextRaidCard({ navigation, compact = false, classes = {} }) {
     const nextRaid = navigation?.next_raid;
@@ -48,9 +36,7 @@ export default function NextRaidCard({ navigation, compact = false, classes = {}
                 <h2 className={cn("mb-3 text-sm font-semibold text-amber-300", classes.nextRaidHeading)}>Next raid</h2>
             )}
 
-            {navigation === undefined ? (
-                <NextRaidSkeleton compact={compact} />
-            ) : nextRaid ? (
+            {nextRaid ? (
                 <div className={cn("flex flex-col", compact ? "gap-2" : "gap-3")}>
                     <div>
                         <p className={cn("font-serif text-white", compact ? "text-lg" : "text-2xl")}>
