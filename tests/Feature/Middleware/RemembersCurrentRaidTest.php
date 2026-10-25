@@ -93,6 +93,6 @@ class RemembersCurrentRaidTest extends TestCase
      */
     private function makeRaid(int $id): Raid
     {
-        return Raid::factory()->make()->forceFill(['id' => $id]);
+        return Raid::factory()->withoutParents()->make()->forceFill(['id' => $id]);
     }
 }
