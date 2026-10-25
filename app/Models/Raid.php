@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Casts\AsBinaryColor;
 use App\Contracts\Models\BelongsToGameVersion;
 use App\Contracts\Models\DatasetModel;
+use App\Contracts\Models\DispatchesChangesForMedia;
 use App\Contracts\Models\EditLockable;
 use App\Contracts\Models\HasUsage;
 use App\Contracts\Models\SharesRaidBannerCollection;
@@ -35,7 +36,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 #[Fillable(['name', 'difficulty', 'color', 'phase_id', 'max_players', 'max_loot_councillors'])]
 #[Hidden(['created_at', 'updated_at'])]
 #[UsePolicy(DatasetPolicy::class)]
-class Raid extends Model implements BelongsToGameVersion, DatasetModel, EditLockable, HasMedia, HasUsage, SharesRaidBannerCollection
+class Raid extends Model implements BelongsToGameVersion, DatasetModel, DispatchesChangesForMedia, EditLockable, HasMedia, HasUsage, SharesRaidBannerCollection
 {
     use HasEditLock;
     use HasFactory;
@@ -66,6 +67,16 @@ class Raid extends Model implements BelongsToGameVersion, DatasetModel, EditLock
     public function usageRelations(): array
     {
         return ['bosses', 'upcomingEvents'];
+    }
+
+    /**
+     * The event dispatched with this model when its media changes.
+     *
+     * @return class-string<RaidingDataChanged>
+     */
+    public function mediaChangedEvent(): string
+    {
+        return RaidingDataChanged::class;
     }
 
     /**

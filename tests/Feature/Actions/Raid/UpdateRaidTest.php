@@ -12,6 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -218,13 +219,40 @@ class UpdateRaidTest extends TestCase
         $this->assertSame(1, $this->dispatchedFor($raid));
     }
 
+    #[Test]
+    public function it_dispatches_raiding_data_changed_once_when_columns_and_the_boss_order_change_together(): void
+    {
+        $raid = Raid::factory()->create();
+        [$first, $second] = Boss::factory()->for($raid)->count(2)->create();
+        Event::fake([RaidingDataChanged::class]);
+
+        UpdateRaid::run($raid, ['name' => 'Renamed', 'boss_ids' => [$second->id, $first->id]]);
+
+        $this->assertSame(1, $this->dispatchedFor($raid));
+    }
+
     #[Group('laravel-media-library')]
     #[Test]
-    public function it_dispatches_raiding_data_changed_when_a_banner_is_uploaded(): void
+    public function it_dispatches_raiding_data_changed_once_when_columns_and_the_banner_position_change_together(): void
+    {
+        Storage::fake('public');
+        $raid = Raid::factory()->withBanner()->create();
+        Event::fake([RaidingDataChanged::class]);
+
+        UpdateRaid::run($raid, ['name' => 'Renamed', 'banner_position' => 'center top']);
+
+        $this->assertSame(1, $this->dispatchedFor($raid));
+        $this->assertSame('center top', $raid->fresh()->banner_position);
+    }
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function it_dispatches_raiding_data_changed_once_for_a_banner_upload(): void
     {
         Storage::fake('public');
         $raid = Raid::factory()->create();
         Event::fake([RaidingDataChanged::class]);
+        Queue::fake();
 
         UpdateRaid::run($raid, ['banner' => UploadedFile::fake()->image('karazhan.webp')]);
 
@@ -233,7 +261,7 @@ class UpdateRaidTest extends TestCase
 
     #[Group('laravel-media-library')]
     #[Test]
-    public function it_dispatches_raiding_data_changed_when_the_banner_is_removed(): void
+    public function it_dispatches_raiding_data_changed_once_when_the_banner_is_removed(): void
     {
         Storage::fake('public');
         $raid = Raid::factory()->withBanner()->create();

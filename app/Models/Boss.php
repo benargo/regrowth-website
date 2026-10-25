@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Contracts\Models\BelongsToGameVersion;
 use App\Contracts\Models\DatasetModel;
+use App\Contracts\Models\DispatchesChangesForMedia;
 use App\Contracts\Models\EditLockable;
 use App\Contracts\Models\HasUsage;
 use App\Events\RaidingDataChanged;
@@ -34,7 +35,7 @@ use Spatie\MediaLibrary\HasMedia;
 #[Fillable(['name', 'sort_order', 'notes'])]
 #[Hidden(['created_at', 'updated_at'])]
 #[UsePolicy(DatasetPolicy::class)]
-class Boss extends Model implements BelongsToGameVersion, DatasetModel, EditLockable, HasMedia, HasUsage, Sortable
+class Boss extends Model implements BelongsToGameVersion, DatasetModel, DispatchesChangesForMedia, EditLockable, HasMedia, HasUsage, Sortable
 {
     use BroadcastsEvents, HasEditLock, HasFactory, InteractsWithChaperonedMedia, SortableTrait, TracksUsage;
 
@@ -57,6 +58,16 @@ class Boss extends Model implements BelongsToGameVersion, DatasetModel, EditLock
     public function usageRelations(): array
     {
         return ['items', 'upcomingAssignmentGroups', 'upcomingAssignments', 'upcomingEvents'];
+    }
+
+    /**
+     * The event dispatched with this model when its media changes.
+     *
+     * @return class-string<RaidingDataChanged>
+     */
+    public function mediaChangedEvent(): string
+    {
+        return RaidingDataChanged::class;
     }
 
     // ============ Sorting ============

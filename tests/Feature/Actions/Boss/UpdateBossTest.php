@@ -197,12 +197,37 @@ class UpdateBossTest extends TestCase
     }
 
     #[Test]
-    public function it_dispatches_raiding_data_changed_when_images_are_uploaded(): void
+    public function it_dispatches_raiding_data_changed_once_for_an_upload(): void
     {
         $boss = Boss::factory()->create();
         Event::fake([RaidingDataChanged::class]);
 
         UpdateBoss::run($boss, ['images' => [UploadedFile::fake()->image('first.png')]]);
+
+        $this->assertSame(1, $this->dispatchedFor($boss));
+    }
+
+    #[Test]
+    public function it_dispatches_raiding_data_changed_once_when_columns_and_image_order_change_together(): void
+    {
+        $boss = Boss::factory()->create();
+        $first = $this->addImage($boss, 'first.png');
+        $second = $this->addImage($boss, 'second.png');
+        Event::fake([RaidingDataChanged::class]);
+
+        UpdateBoss::run($boss, ['name' => 'Renamed', 'image_ids' => [$second->id, $first->id]]);
+
+        $this->assertSame(1, $this->dispatchedFor($boss));
+    }
+
+    #[Test]
+    public function it_dispatches_raiding_data_changed_once_when_columns_and_image_removals_change_together(): void
+    {
+        $boss = Boss::factory()->create();
+        $image = $this->addImage($boss, 'first.png');
+        Event::fake([RaidingDataChanged::class]);
+
+        UpdateBoss::run($boss, ['name' => 'Renamed', 'removed_image_ids' => [$image->id]]);
 
         $this->assertSame(1, $this->dispatchedFor($boss));
     }
