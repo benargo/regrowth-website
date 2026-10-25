@@ -53,14 +53,12 @@ class HomeControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_passes_the_launch_date_and_invite_url(): void
+    public function it_passes_the_launch_date_without_its_own_invite_url(): void
     {
-        config(['guild.discord_invite_url' => 'https://discord.gg/example-invite']);
-
         $this->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('foreverLaunchAt', config('guild.forever_launch_at'))
-                ->where('discordInviteUrl', 'https://discord.gg/example-invite')
+                ->missing('discordInviteUrl')
                 ->etc()
             );
     }

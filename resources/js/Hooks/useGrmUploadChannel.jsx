@@ -18,7 +18,7 @@ export default function useGrmUploadChannel(handlers = {}) {
     const handlersRef = useRef(handlers);
     handlersRef.current = handlers;
 
-    const userId = usePage().props.auth?.user?.id;
+    const userId = usePage().props.auth?.user?.data?.id;
     const channel = `App.Models.User.${userId}`;
 
     useEcho(channel, ".GrmUploadStarted", (p) => handlersRef.current.onStarted?.(p), [userId]);

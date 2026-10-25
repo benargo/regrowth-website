@@ -8,8 +8,9 @@ use App\Actions\Navigation\BuildNavigationData;
 use App\Contracts\Actions\Navigation\CachesNavigationData;
 use App\Data\Navigation\NavigationData;
 use App\Http\Resources\GameVersionResource;
-use App\Http\Resources\UserPermissionResource;
 use App\Http\Resources\UserResource;
+use App\Models\Permission;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Session;
@@ -46,11 +47,10 @@ class HandleInertiaRequests extends Middleware implements CachesNavigationData
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $user ? (new UserResource($user))->resolve($request) : null,
-                'permissions' => $user ? (new UserPermissionResource($user))->resolve($request) : [],
+                'user' => fn (): ?UserResource => $user?->toResource(),
+                'permissions' => fn (): array => $user === null ? [] : $this->permissionNames($user),
                 'impersonating' => fn () => Session::has('impersonating_user_id'),
             ],
-            'discordInviteUrl' => fn () => config('guild.discord_invite_url'),
             'flash' => [
                 'error' => fn () => session('error'),
                 'success' => fn () => session('success'),
@@ -65,7 +65,20 @@ class HandleInertiaRequests extends Middleware implements CachesNavigationData
                     ->as(sprintf(self::KEY_FORMAT, $gameVersion->id ?? 'none', $user?->id ?? 'guest'))
                     ->until(now()->addMinutes(self::TTL_MINUTES));
             },
-            'warcraftLogsUrl' => fn (): ?string => ResolveCurrentGameVersion::run()?->warcraftLogsGuild?->logs_url,
         ];
+    }
+
+    /**
+     * The names of every permission the user holds; admins hold them all.
+     *
+     * @return list<string>
+     */
+    protected function permissionNames(User $user): array
+    {
+        if ($user->is_admin) {
+            return Permission::pluck('name')->all();
+        }
+
+        return $user->permissions()->pluck('name')->all();
     }
 }

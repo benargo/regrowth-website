@@ -29,7 +29,7 @@ function DashboardCard({ href, icon, external = false, children }) {
 
 export default function Dashboard({ discordRoles }) {
     const { auth } = usePage().props;
-    const user = auth?.user;
+    const user = auth?.user?.data;
 
     return (
         <Master title="Officers’ Dashboard">

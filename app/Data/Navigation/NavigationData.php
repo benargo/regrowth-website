@@ -14,5 +14,7 @@ final class NavigationData extends Data
         public readonly ?NextRaidData $nextRaid,
         #[DataCollectionOf(LatestDiscussionData::class)]
         public readonly array $latestDiscussions,
+        public readonly ?string $discordInviteUrl,
+        public readonly ?string $warcraftLogsUrl,
     ) {}
 }

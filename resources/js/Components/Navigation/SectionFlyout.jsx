@@ -17,8 +17,7 @@ export const SECTION_HEADER_ICONS = {
  * navigation bar, with the section's highlights and pages.
  */
 export default function SectionFlyout({ section, active = false, classes = {} }) {
-    const { auth, navigation } = usePage().props;
-    const permissions = auth?.permissions ?? [];
+    const { navigation } = usePage().props;
     const headerIcon = SECTION_HEADER_ICONS[section];
 
     return (
@@ -50,7 +49,7 @@ export default function SectionFlyout({ section, active = false, classes = {} })
                 {section === "raiding" ? (
                     <div className="grid grid-cols-[1fr_2fr] gap-8">
                         <NextRaidCard navigation={navigation} classes={classes} />
-                        <FlyoutItems section="raiding" permissions={permissions} variant="tiles" classes={classes} />
+                        <FlyoutItems section="raiding" variant="tiles" classes={classes} />
                     </div>
                 ) : (
                     <div className="grid grid-cols-[2fr_1fr] gap-10">
@@ -59,7 +58,7 @@ export default function SectionFlyout({ section, active = false, classes = {} })
                             <h2 className={cn("mb-2 font-serif text-xl text-amber-300", classes.flyoutHeading)}>
                                 Browse
                             </h2>
-                            <FlyoutItems section="loot" permissions={permissions} variant="browse" classes={classes} />
+                            <FlyoutItems section="loot" variant="browse" classes={classes} />
                         </div>
                     </div>
                 )}

@@ -12,8 +12,7 @@ import cn from "@/Helpers/cn";
  * for Raiding the next raid.
  */
 export default function SectionDisclosure({ section, active = false, classes = {} }) {
-    const { auth, navigation } = usePage().props;
-    const permissions = auth?.permissions ?? [];
+    const { navigation } = usePage().props;
     const headerIcon = SECTION_HEADER_ICONS[section];
     const isRaiding = section === "raiding";
 
@@ -38,7 +37,7 @@ export default function SectionDisclosure({ section, active = false, classes = {
 
             <DisclosurePanel className="flex flex-col gap-2 py-2 pr-1 pl-9">
                 {isRaiding && <NextRaidCard navigation={navigation} compact classes={classes} />}
-                <FlyoutItems section={section} permissions={permissions} variant="list" classes={classes} />
+                <FlyoutItems section={section} variant="list" classes={classes} />
             </DisclosurePanel>
         </Disclosure>
     );

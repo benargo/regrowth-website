@@ -110,12 +110,12 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->has('auth.user')
-                ->where('auth.user.id', '123456789012345678')
-                ->where('auth.user.username', 'testuser')
-                ->where('auth.user.nickname', 'TestNick')
-                ->where('auth.user.display_name', 'TestNick')
-                ->where('auth.user.highest_role', 'Member')
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('auth.user.data')
+                ->where('auth.user.data.id', '123456789012345678')
+                ->where('auth.user.data.username', 'testuser')
+                ->where('auth.user.data.nickname', 'TestNick')
+                ->where('auth.user.data.display_name', 'TestNick')
+                ->where('auth.user.data.highest_role', 'Member')
             );
     }
 
@@ -131,7 +131,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.user.display_name', 'testuser')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.user.data.display_name', 'testuser')
             );
     }
 
@@ -156,7 +156,7 @@ class HandleInertiaRequestsTest extends TestCase
         $this->actingAs($user)
             ->get('/')
             ->assertInertia(fn (AssertableInertia $page) => $page->where(
-                'auth.user.avatar',
+                'auth.user.data.avatar',
                 'https://cdn.discordapp.com/guilds/'.config('services.discord.server_id').'/users/123456789012345678/avatars/avatarhash123.webp'
             )
             );
@@ -178,7 +178,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.user.highest_role', 'Officer')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.user.data.highest_role', 'Officer')
             );
     }
 
@@ -193,7 +193,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.user.highest_role', null)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.user.data.highest_role', null)
             );
     }
 
@@ -221,43 +221,16 @@ class HandleInertiaRequestsTest extends TestCase
     }
 
     #[Test]
-    public function it_shares_the_discord_invite_url(): void
+    public function it_does_not_share_loose_url_props(): void
     {
-        $user = User::factory()->member()->create();
-
-        $this->actingAs($user)
-            ->get(route('loot.index'))
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('discordInviteUrl', config('guild.discord_invite_url')));
+        $this->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->missing('discordInviteUrl')
+                ->missing('warcraftLogsUrl'));
     }
 
     #[Test]
-    public function it_shares_the_current_versions_warcraft_logs_url(): void
-    {
-        $guild = Guild::factory()->withLogsUrl('https://fresh.warcraftlogs.com/guilds/774848-regrowth')->create();
-        GameVersion::factory()->for($guild, 'warcraftLogsGuild')->create(['release_date' => now()->subYear()->toDateString()]);
-
-        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page
-            ->where('warcraftLogsUrl', 'https://fresh.warcraftlogs.com/guilds/774848-regrowth'));
-    }
-
-    #[Test]
-    public function it_shares_a_null_warcraft_logs_url_without_a_guild(): void
-    {
-        GameVersion::factory()->create(['release_date' => now()->subYear()->toDateString(), 'warcraft_logs_guild_id' => null]);
-
-        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page->where('warcraftLogsUrl', null));
-    }
-
-    #[Test]
-    public function it_shares_a_null_warcraft_logs_url_when_the_guild_has_none(): void
-    {
-        GameVersion::factory()->for(Guild::factory(), 'warcraftLogsGuild')->create(['release_date' => now()->subYear()->toDateString()]);
-
-        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page->where('warcraftLogsUrl', null));
-    }
-
-    #[Test]
-    public function it_shares_the_warcraft_logs_url_of_the_sessions_version(): void
+    public function it_shares_the_sessions_versions_warcraft_logs_url_in_the_navigation(): void
     {
         $older = GameVersion::factory()
             ->for(Guild::factory()->withLogsUrl('https://classic.warcraftlogs.com/guilds/598032-regrowth'), 'warcraftLogsGuild')
@@ -269,7 +242,7 @@ class HandleInertiaRequestsTest extends TestCase
         $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $older->slug])
             ->get('/')
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('warcraftLogsUrl', 'https://classic.warcraftlogs.com/guilds/598032-regrowth'));
+                ->where('navigation.warcraft_logs_url', 'https://classic.warcraftlogs.com/guilds/598032-regrowth'));
     }
 
     // ==================== game versions ====================

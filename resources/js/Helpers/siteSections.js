@@ -95,13 +95,6 @@ export const SITE_SECTIONS = {
 };
 
 /**
- * The section's items the viewer's permissions allow.
- */
-export function visibleSectionItems(section, permissions = []) {
-    return SITE_SECTIONS[section].items.filter((item) => !item.permission || permissions.includes(item.permission));
-}
-
-/**
  * The key of the section item whose route patterns match the current route, or null.
  */
 export function currentSectionItemKey(section) {

@@ -10,6 +10,7 @@ use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\Item;
 use App\Models\User;
+use App\Models\WarcraftLogs\Guild;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -84,6 +85,48 @@ class BuildNavigationDataTest extends TestCase
 
         $this->assertNull($navigation->nextRaid);
         $this->assertSame([], $navigation->latestDiscussions);
+    }
+
+    // ==================== community links ====================
+
+    #[Test]
+    public function it_includes_the_discord_invite_url(): void
+    {
+        config()->set('guild.discord_invite_url', 'https://discord.gg/example-invite');
+
+        $this->assertSame('https://discord.gg/example-invite', BuildNavigationData::run($this->user, $this->gameVersion)->discordInviteUrl);
+    }
+
+    #[Test]
+    public function it_includes_the_versions_warcraft_logs_url(): void
+    {
+        $gameVersion = GameVersion::factory()
+            ->forGuild(Guild::factory()->withLogsUrl('https://fresh.warcraftlogs.com/guilds/774848-regrowth')->create())
+            ->create();
+
+        $this->assertSame('https://fresh.warcraftlogs.com/guilds/774848-regrowth', BuildNavigationData::run($this->user, $gameVersion)->warcraftLogsUrl);
+    }
+
+    #[Test]
+    public function the_warcraft_logs_url_is_null_without_a_guild(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['warcraft_logs_guild_id' => null]);
+
+        $this->assertNull(BuildNavigationData::run($this->user, $gameVersion)->warcraftLogsUrl);
+    }
+
+    #[Test]
+    public function the_warcraft_logs_url_is_null_when_the_guild_has_none(): void
+    {
+        $gameVersion = GameVersion::factory()->forGuild(Guild::factory()->create())->create();
+
+        $this->assertNull(BuildNavigationData::run($this->user, $gameVersion)->warcraftLogsUrl);
+    }
+
+    #[Test]
+    public function the_warcraft_logs_url_is_null_without_any_game_version(): void
+    {
+        $this->assertNull(BuildNavigationData::run($this->user, null)->warcraftLogsUrl);
     }
 
     // ==================== cache ====================

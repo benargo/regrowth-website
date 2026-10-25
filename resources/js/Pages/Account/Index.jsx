@@ -11,7 +11,7 @@ import BandHeading from "@/Components/Band/BandHeading";
 
 export default function Index() {
     const { auth, roles, planned_absences } = usePage().props;
-    const user = auth.user;
+    const user = auth.user.data;
 
     return (
         <Master title="My Account">

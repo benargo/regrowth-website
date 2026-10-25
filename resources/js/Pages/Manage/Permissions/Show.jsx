@@ -13,9 +13,9 @@
  * @prop {Array}  permissions   - List of all available permissions for the current group { id, name, group }
  *
  * Auth (via usePage):
- * @prop {Object} auth.user              - The authenticated user
- * @prop {bool}   auth.user.admin        - Whether the user is a full admin
- * @prop {string} auth.user.highest_role - The user's highest Discord role name;
+ * @prop {Object} auth.user.data              - The authenticated user
+ * @prop {bool}   auth.user.data.admin        - Whether the user is a full admin
+ * @prop {string} auth.user.data.highest_role - The user's highest Discord role name;
  *                                         non-admins cannot toggle permissions for their own role
  *
  * Behaviour:
@@ -61,7 +61,7 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
     const [processing, setProcessing] = useState({});
 
     const isRoleDisabled = (role) => {
-        return !auth.user.admin && role.name === auth.user.highest_role;
+        return !auth.user.data.admin && role.name === auth.user.data.highest_role;
     };
 
     const hasPermission = (role, permission) => {
@@ -118,7 +118,7 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
                             </button>
                         </Dropdown.Trigger>
                         <Dropdown.Content align="left" width="48">
-                            <div className="rounded-md border border-amber-600 bg-brown-800 shadow-lg">
+                            <div className="bg-brown-800 rounded-md border border-amber-600 shadow-lg">
                                 {groups.map((group) => (
                                     <Dropdown.Link
                                         key={group.slug}
