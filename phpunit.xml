@@ -18,6 +18,14 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <env name="MEDIA_DISK" value="s3"/>
+        <env name="BLIZZARD_FILESYSTEM" value="s3"/>
+        <env name="AWS_DEFAULT_REGION" value="ams3"/>
+        <env name="AWS_BUCKET" value="testing"/>
+        <env name="AWS_URL" value="https://cdn.test"/>
+        <env name="AWS_ENDPOINT" value="http://127.0.0.1:9"/>
+        <env name="AWS_ACCESS_KEY_ID" value="testing"/>
+        <env name="AWS_SECRET_ACCESS_KEY" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>
