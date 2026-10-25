@@ -21,12 +21,15 @@ final class SharedPathFileRemover implements FileRemover
 {
     private DefaultFileRemover $default;
 
+    private readonly UnknownBlizzardIcon $unknownIcon;
+
     public function __construct(
         protected Filesystem $mediaFileSystem,
         protected Factory $filesystem,
-        private readonly UnknownBlizzardIcon $unknownIcon,
+        ?UnknownBlizzardIcon $unknownIcon = null,
     ) {
         $this->default = new DefaultFileRemover($mediaFileSystem, $filesystem);
+        $this->unknownIcon = $unknownIcon ?? app(UnknownBlizzardIcon::class);
     }
 
     public function removeAllFiles(Media $media): void
