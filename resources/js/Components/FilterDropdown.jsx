@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Icon from "@/Components/FontAwesome/Icon";
 import { Checkbox } from "@/Components/FormControls";
 
-export default function FilterDropdown({ label, options, selected, onChange, showIcon = false }) {
+export default function FilterDropdown({ label, options, selected, onChange }) {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
 
@@ -67,9 +67,6 @@ export default function FilterDropdown({ label, options, selected, onChange, sho
                                 className="flex cursor-pointer items-center gap-3 px-3 py-2 transition-colors hover:bg-brown-700"
                             >
                                 <Checkbox checked={selected.includes(option.id)} onChange={() => toggleOption(option.id)} />
-                                {showIcon && option.media?.assets?.[0]?.value && (
-                                    <img src={option.media.assets[0].value} alt="" className="h-5 w-5 rounded" />
-                                )}
                                 <span className="text-sm text-white">{option.name}</span>
                             </label>
                         ))}
