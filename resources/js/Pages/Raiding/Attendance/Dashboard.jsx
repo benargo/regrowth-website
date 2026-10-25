@@ -289,7 +289,32 @@ function PlayerListRows({ stats }) {
     );
 }
 
-export default function Dashboard({ latestReportDate, stats, hasAttendance }) {
+function NoAttendanceState({ hasUncountedReports, guildTagsUrl }) {
+    if (!hasUncountedReports) {
+        return <EmptyState icon="chart-line" message="Attendance data is not available for this game version." />;
+    }
+
+    return (
+        <EmptyState
+            icon="tags"
+            message="This game version has raid reports, but none of their guild tags count towards attendance."
+        >
+            {guildTagsUrl ? (
+                <p className="text-sm text-gray-400">
+                    If this is wrong,{" "}
+                    <Link href={guildTagsUrl} className="text-amber-400 hover:text-amber-300 hover:underline">
+                        choose which guild tags count towards attendance
+                    </Link>
+                    .
+                </p>
+            ) : (
+                <p className="text-sm text-gray-400">If this is wrong, please report it to the Guild Historian.</p>
+            )}
+        </EmptyState>
+    );
+}
+
+export default function Dashboard({ latestReportDate, stats, hasAttendance, hasUncountedReports, guildTagsUrl }) {
     return (
         <Master title="Attendance Dashboard">
             <SharedHeader title="Attendance Dashboard" backgroundClass="bg-illidan" />
@@ -306,7 +331,7 @@ export default function Dashboard({ latestReportDate, stats, hasAttendance }) {
                         </Deferred>
                     </>
                 ) : (
-                    <EmptyState icon="chart-line" message="Attendance data is not available for this game version." />
+                    <NoAttendanceState hasUncountedReports={hasUncountedReports} guildTagsUrl={guildTagsUrl} />
                 )}
             </PageContainer>
         </Master>

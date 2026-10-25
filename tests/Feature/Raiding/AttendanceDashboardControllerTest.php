@@ -237,9 +237,63 @@ class AttendanceDashboardControllerTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('hasAttendance', false)
+                ->where('hasUncountedReports', false)
                 ->where('gameVersion.data.slug', $this->gameVersion->slug)
                 ->missing('latestReportDate')
                 ->missing('stats'));
+    }
+
+    #[Test]
+    public function invoke_flags_reports_whose_guild_tags_do_not_count_attendance(): void
+    {
+        $this->createReport($this->gameVersion, now()->subDay(), $this->createTag($this->gameVersion, countsAttendance: false));
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('hasAttendance', false)
+                ->where('hasUncountedReports', true));
+    }
+
+    #[Group('authorization')]
+    #[Test]
+    public function invoke_links_to_the_guild_tags_for_users_who_can_update_them(): void
+    {
+        $this->createReport($this->gameVersion, now()->subDay(), $this->createTag($this->gameVersion, countsAttendance: false));
+        $this->grantOfficerPermissions('view-warcraft-logs-guilds', 'update-warcraft-logs-tags');
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('guildTagsUrl', route('management.warcraftlogs.guilds.show', $this->gameVersion->warcraftLogsGuild)));
+    }
+
+    #[Group('authorization')]
+    #[Test]
+    public function invoke_omits_the_guild_tags_link_for_users_who_cannot_update_them(): void
+    {
+        $this->createReport($this->gameVersion, now()->subDay(), $this->createTag($this->gameVersion, countsAttendance: false));
+        $this->grantOfficerPermissions('view-warcraft-logs-guilds');
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('hasUncountedReports', true)
+                ->where('guildTagsUrl', null));
+    }
+
+    #[Group('authorization')]
+    #[Test]
+    public function invoke_omits_the_guild_tags_link_for_users_who_cannot_view_the_guild(): void
+    {
+        $this->createReport($this->gameVersion, now()->subDay(), $this->createTag($this->gameVersion, countsAttendance: false));
+        $this->grantOfficerPermissions('update-warcraft-logs-tags');
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('hasUncountedReports', true)
+                ->where('guildTagsUrl', null));
     }
 
     #[Test]
@@ -290,6 +344,15 @@ class AttendanceDashboardControllerTest extends TestCase
     }
 
     // ==================== helpers ====================
+
+    private function grantOfficerPermissions(string ...$permissions): void
+    {
+        $officerRole = DiscordRole::findOrFail('829021769448816691');
+
+        foreach ($permissions as $permission) {
+            $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']));
+        }
+    }
 
     private function countDeferredQueries(User $user, string $routeName, string $prop): int
     {
