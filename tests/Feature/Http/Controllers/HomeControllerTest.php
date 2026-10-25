@@ -2,18 +2,13 @@
 
 namespace Tests\Feature\Http\Controllers;
 
-use App\Contracts\HasCharacterMedia;
-use App\Jobs\AttachRenderToCharacter;
-use App\Models\Character;
 use App\Models\Event;
 use App\Models\GameVersion;
-use App\Models\PlayableRace;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
@@ -64,10 +59,26 @@ class HomeControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_passes_all_eight_officers(): void
+    public function it_passes_the_configured_officers_verbatim(): void
+    {
+        $officers = [
+            ['name' => 'Testcouncil', 'nationality' => 'GBR', 'country_code' => 'gb', 'demonym' => 'British', 'tier' => 'council', 'role' => 'Guild Master', 'image' => '/images/testcouncil.webp'],
+            ['name' => 'Testofficer', 'nationality' => 'FRA', 'country_code' => 'fr', 'demonym' => 'French', 'tier' => 'officer', 'role' => null, 'image' => '/images/testofficer.webp', 'flag' => 'pride'],
+        ];
+        config(['guild.officers' => $officers]);
+
+        $this->get(route('home'))
+            ->assertInertia(fn (Assert $page) => $page->where('officers', $officers)->etc());
+    }
+
+    #[Test]
+    public function it_does_not_send_officer_renders(): void
     {
         $this->get(route('home'))
-            ->assertInertia(fn (Assert $page) => $page->has('officers', 8)->etc());
+            ->assertInertia(fn (Assert $page) => $page
+                ->missing('officerRenders')
+                ->loadDeferredProps(fn (Assert $reload) => $reload->missing('officerRenders')->etc())
+            );
     }
 
     #[Test]
@@ -327,187 +338,5 @@ class HomeControllerTest extends TestCase
         $content = $this->get(route('privacypolicy'))->assertOk()->getContent();
 
         $this->assertDoesNotMatchRegularExpression('/<body[^>]*\bbg-forever-800\b/', $content);
-    }
-
-    // ==================== officer renders ====================
-
-    #[Test]
-    public function it_returns_a_render_entry_for_every_configured_officer(): void
-    {
-        $this->get(route('home'))
-            ->assertInertia(fn (Assert $page) => $page
-                ->missing('officerRenders')
-                ->loadDeferredProps(fn (Assert $reload) => $reload->has('officerRenders', 8)->etc())
-            );
-    }
-
-    #[Test]
-    public function it_exposes_the_render_url_for_an_officer_with_attached_media(): void
-    {
-        Storage::fake('public');
-
-        $character = Character::factory()->create(['name' => 'Caldru']);
-        $character->addMediaFromString('RENDER')
-            ->usingFileName('main-raw.png')
-            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION_RENDER);
-
-        $this->get(route('home'))
-            ->assertInertia(fn (Assert $page) => $page
-                ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->where('officerRenders.Caldru.url', fn (?string $url) => $url !== null && str_contains($url, 'main-raw'))
-                    ->etc()
-                )
-            );
-    }
-
-    #[Test]
-    public function it_exposes_the_visible_bounds_for_an_officer_with_measured_media(): void
-    {
-        Storage::fake('public');
-
-        $character = Character::factory()->create(['name' => 'Caldru']);
-        $character->addMediaFromString('RENDER')
-            ->usingFileName('main-raw.png')
-            ->withCustomProperties(['visible_top' => 0.27, 'visible_bottom' => 0.86])
-            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION_RENDER);
-
-        $this->get(route('home'))
-            ->assertInertia(fn (Assert $page) => $page
-                ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->where('officerRenders.Caldru.visibleTop', 0.27)
-                    ->where('officerRenders.Caldru.visibleBottom', 0.86)
-                    ->etc()
-                )
-            );
-    }
-
-    #[Test]
-    public function it_defaults_visible_bounds_to_the_full_frame_when_unmeasured(): void
-    {
-        Storage::fake('public');
-
-        $character = Character::factory()->create(['name' => 'Caldru']);
-        $character->addMediaFromString('RENDER')
-            ->usingFileName('main-raw.png')
-            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION_RENDER);
-
-        $this->get(route('home'))
-            ->assertInertia(fn (Assert $page) => $page
-                ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->where('officerRenders.Caldru.visibleTop', 0)
-                    ->where('officerRenders.Caldru.visibleBottom', 1)
-                    ->etc()
-                )
-            );
-    }
-
-    #[Test]
-    public function it_flags_small_race_officers_for_a_smaller_render(): void
-    {
-        Storage::fake('public');
-
-        PlayableRace::factory()->create(['id' => 7]);
-        $character = Character::factory()->create(['name' => 'Caldru', 'playable_race_id' => 7]);
-        $character->addMediaFromString('RENDER')
-            ->usingFileName('main-raw.png')
-            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION_RENDER);
-
-        $this->get(route('home'))
-            ->assertInertia(fn (Assert $page) => $page
-                ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->where('officerRenders.Caldru.isSmallRace', true)
-                    ->etc()
-                )
-            );
-    }
-
-    #[Test]
-    public function it_does_not_flag_a_non_small_race_officer(): void
-    {
-        Storage::fake('public');
-
-        PlayableRace::factory()->create(['id' => 1]);
-        $character = Character::factory()->create(['name' => 'Caldru', 'playable_race_id' => 1]);
-        $character->addMediaFromString('RENDER')
-            ->usingFileName('main-raw.png')
-            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION_RENDER);
-
-        $this->get(route('home'))
-            ->assertInertia(fn (Assert $page) => $page
-                ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->where('officerRenders.Caldru.isSmallRace', false)
-                    ->etc()
-                )
-            );
-    }
-
-    #[Test]
-    public function it_returns_null_for_an_officer_with_no_character_row(): void
-    {
-        $this->get(route('home'))
-            ->assertInertia(fn (Assert $page) => $page
-                ->loadDeferredProps(fn (Assert $reload) => $reload->where('officerRenders.Zargoat', null)->etc())
-            );
-    }
-
-    #[Test]
-    public function it_dispatches_a_render_job_for_an_officer_whose_media_is_missing(): void
-    {
-        Queue::fake();
-        $character = Character::factory()->create(['name' => 'Caldru']);
-
-        $this->get(route('home'))
-            ->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload->etc()));
-
-        Queue::assertPushed(AttachRenderToCharacter::class, fn ($job) => $job->characterId === $character->id);
-    }
-
-    #[Test]
-    public function it_does_not_dispatch_a_render_job_when_media_already_exists(): void
-    {
-        Queue::fake();
-        Storage::fake('public');
-
-        $character = Character::factory()->create(['name' => 'Caldru']);
-        $character->addMediaFromString('RENDER')
-            ->usingFileName('main-raw.png')
-            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION_RENDER);
-
-        $this->get(route('home'))
-            ->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload->etc()));
-
-        Queue::assertNotPushed(AttachRenderToCharacter::class);
-    }
-
-    #[Test]
-    public function the_homepage_renders_and_dispatches_the_render_job_regardless_of_blizzard_state(): void
-    {
-        Queue::fake();
-        Character::factory()->create(['name' => 'Caldru']);
-
-        $this->get(route('home'))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload->etc()));
-
-        Queue::assertPushed(AttachRenderToCharacter::class);
-    }
-
-    #[Test]
-    public function officer_lookup_is_case_insensitive_on_name(): void
-    {
-        Storage::fake('public');
-
-        $character = Character::factory()->create(['name' => 'caldru']);
-        $character->addMediaFromString('RENDER')
-            ->usingFileName('main-raw.png')
-            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION_RENDER);
-
-        $this->get(route('home'))
-            ->assertInertia(fn (Assert $page) => $page
-                ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->where('officerRenders.Caldru', fn ($render) => $render !== null)
-                    ->etc()
-                )
-            );
     }
 }

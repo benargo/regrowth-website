@@ -343,7 +343,7 @@ svg.recharts-surface {
 .bg-mountains {
     background-image: url("../images/forever/bg_mountains.avif");
     background-position: 50% 100%;
-    background-size: 100% contain;
+    background-size: cover;
     background-repeat: no-repeat;
 }
 

@@ -29,12 +29,12 @@ class GuildConfigTest extends TestCase
     }
 
     #[Test]
-    public function all_eight_officers_are_configured(): void
+    public function officers_are_configured(): void
     {
         $officers = config('guild.officers');
 
         $this->assertIsArray($officers);
-        $this->assertCount(8, $officers);
+        $this->assertNotEmpty($officers);
     }
 
     #[Test]
@@ -49,16 +49,39 @@ class GuildConfigTest extends TestCase
             $this->assertSame(3, strlen($officer['nationality']), "{$officer['name']} needs an ISO 3166-1 alpha-3 code");
             $this->assertSame(2, strlen($officer['country_code']), "{$officer['name']} needs an ISO 3166-1 alpha-2 code");
             $this->assertNotEmpty($officer['demonym'], "{$officer['name']} needs a demonym for screen readers");
+
+            $this->assertContains($officer['tier'] ?? null, ['council', 'officer'], "{$officer['name']} needs a tier");
+            $this->assertArrayHasKey('role', $officer);
+            if ($officer['tier'] === 'council') {
+                $this->assertIsString($officer['role'], "{$officer['name']} is council and needs a role string");
+            } else {
+                $this->assertNull($officer['role'], "{$officer['name']} is an officer and has no role");
+            }
+            $this->assertMatchesRegularExpression('#^/images/[^/]+\.webp$#', $officer['image'] ?? '', "{$officer['name']} needs a web path under /images/");
+            $this->assertFileExists(public_path(ltrim($officer['image'], '/')), "{$officer['name']}'s image file is missing");
+            [$width, $height] = getimagesize(public_path(ltrim($officer['image'], '/')));
+            $this->assertSame([$width, $height], [$officer['width'] ?? null, $officer['height'] ?? null], "{$officer['name']}'s width and height must match the image file");
+            if (array_key_exists('flag', $officer)) {
+                $this->assertMatchesRegularExpression('/^[a-z-]+$/', $officer['flag'], "{$officer['name']}'s flag must be a lowercase custom flag key");
+            }
         }
     }
 
     #[Test]
-    public function officers_are_listed_alphabetically(): void
+    public function both_tiers_have_members(): void
     {
-        $names = array_column(config('guild.officers'), 'name');
-        $sorted = $names;
-        sort($sorted);
+        $tiers = array_column(config('guild.officers'), 'tier');
 
-        $this->assertSame($sorted, $names);
+        $this->assertContains('council', $tiers);
+        $this->assertContains('officer', $tiers);
+    }
+
+    #[Test]
+    public function officer_names_and_images_are_unique(): void
+    {
+        $officers = config('guild.officers');
+
+        $this->assertSame(array_unique(array_column($officers, 'name')), array_column($officers, 'name'));
+        $this->assertSame(array_unique(array_column($officers, 'image')), array_column($officers, 'image'));
     }
 }

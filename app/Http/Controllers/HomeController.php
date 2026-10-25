@@ -3,13 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Events\BuildEventsForViewer;
-use App\Contracts\HasCharacterMedia;
-use App\Jobs\AttachRenderToCharacter;
-use App\Models\Character;
 use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -17,16 +13,12 @@ class HomeController extends Controller
 {
     private const UPCOMING_EVENT_LIMIT = 5;
 
-    /** Gnome — small races that render visually oversized next to other races at the same visible-character height. */
-    private const SMALL_RACE_IDS = [7];
-
     public function __invoke(Request $request): Response
     {
         return Inertia::render('Home', [
             'foreverLaunchAt' => config('guild.forever_launch_at'),
             'officers' => config('guild.officers'),
             'canViewPlans' => $request->user() !== null,
-            'officerRenders' => Inertia::defer(fn () => $this->resolveOfficerRenders()),
             'upcomingEvents' => Inertia::defer(function () use ($request) {
                 return Cache::tags('raiding', 'events')->remember(
                     $request->user() ? 'events:upcoming:home:members' : 'events:upcoming:home:visitors',
@@ -42,55 +34,5 @@ class HomeController extends Controller
                 );
             }),
         ]);
-    }
-
-    /**
-     * @return array<string, array{url: string, visibleTop: float, visibleBottom: float, isSmallRace: bool}|null>
-     */
-    private function resolveOfficerRenders(): array
-    {
-        $officerNames = collect(config('guild.officers'))->pluck('name');
-
-        $charactersByLowerName = Character::query()
-            ->whereIn(DB::raw('LOWER(name)'), $officerNames->map(fn (string $name): string => mb_strtolower($name)))
-            ->with('media')
-            ->get()
-            ->keyBy(fn (Character $character): string => mb_strtolower($character->name));
-
-        return $officerNames
-            ->mapWithKeys(fn (string $name): array => [
-                $name => $this->renderFor($charactersByLowerName->get(mb_strtolower($name))),
-            ])
-            ->all();
-    }
-
-    /**
-     * @return array{url: string, visibleTop: float, visibleBottom: float, isSmallRace: bool}|null
-     */
-    private function renderFor(?Character $character): ?array
-    {
-        if ($character === null) {
-            return null;
-        }
-
-        if ($character->hasMedia(HasCharacterMedia::MEDIA_COLLECTION_RENDER)) {
-            $media = $character->getFirstMedia(HasCharacterMedia::MEDIA_COLLECTION_RENDER);
-            $url = $media->getUrl() ?: null;
-
-            if ($url === null) {
-                return null;
-            }
-
-            return [
-                'url' => $url,
-                'visibleTop' => (float) ($media->getCustomProperty('visible_top') ?? 0.0),
-                'visibleBottom' => (float) ($media->getCustomProperty('visible_bottom') ?? 1.0),
-                'isSmallRace' => in_array($character->playable_race_id, self::SMALL_RACE_IDS, true),
-            ];
-        }
-
-        AttachRenderToCharacter::dispatch($character->id);
-
-        return null;
     }
 }
