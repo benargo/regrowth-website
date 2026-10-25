@@ -89,7 +89,7 @@ class FetchCharacterMediaRequestTest extends TestCase
             FetchCharacterMediaRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
-        $connector = new RenderConnector(Region::EU, Storage::fake('public'));
+        $connector = new RenderConnector(Region::EU, Storage::fake('s3'));
         $connector->withMockClient($mock);
 
         $connector->send(new FetchCharacterMediaRequest(
@@ -149,7 +149,7 @@ class FetchCharacterMediaRequestTest extends TestCase
             FetchCharacterMediaRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
-        $connector = new RenderConnector(Region::EU, Storage::fake('public'));
+        $connector = new RenderConnector(Region::EU, Storage::fake('s3'));
         $connector->withMockClient($mock);
 
         $response = $connector->send(new FetchCharacterMediaRequest(
@@ -172,7 +172,7 @@ class FetchCharacterMediaRequestTest extends TestCase
             FetchCharacterMediaRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
-        $connector = new RenderConnector(Region::EU, Storage::fake('public'));
+        $connector = new RenderConnector(Region::EU, Storage::fake('s3'));
         $connector->withMockClient($mock);
 
         $connector->send(new FetchCharacterMediaRequest('thunderstrike/51042439-avatar'));
@@ -190,7 +190,7 @@ class FetchCharacterMediaRequestTest extends TestCase
             FetchCharacterMediaRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
-        $connector = new RenderConnector(Region::US, Storage::fake('public'));
+        $connector = new RenderConnector(Region::US, Storage::fake('s3'));
         $connector->withMockClient($mock);
 
         $connector->send(new FetchCharacterMediaRequest('thunderstrike/51042439-avatar'));
@@ -208,7 +208,7 @@ class FetchCharacterMediaRequestTest extends TestCase
             FetchCharacterMediaRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
-        $connector = new RenderConnector(Region::EU, Storage::fake('public'));
+        $connector = new RenderConnector(Region::EU, Storage::fake('s3'));
         $connector->withMockClient($mock);
 
         $connector->send(new FetchCharacterMediaRequest('thunderstrike/51042439-avatar', size: 56));
@@ -226,7 +226,7 @@ class FetchCharacterMediaRequestTest extends TestCase
             FetchCharacterMediaRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
-        $connector = new RenderConnector(Region::EU, Storage::fake('public'));
+        $connector = new RenderConnector(Region::EU, Storage::fake('s3'));
         $connector->withMockClient($mock);
 
         $connector->send(new FetchCharacterMediaRequest('thunderstrike/51042439-avatar.jpg'));

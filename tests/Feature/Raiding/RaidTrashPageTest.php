@@ -90,7 +90,7 @@ class RaidTrashPageTest extends TestCase
     #[Test]
     public function it_loads_trash_items_without_lazy_loading(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->create();
         $items = Item::factory()->count(2)->trashDrop()->inRaids([$raid])->create(['game_version_id' => GameVersion::factory()->create()->id]);
         $priority = LootPriority::factory()->create();

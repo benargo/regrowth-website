@@ -19,7 +19,7 @@ class RenderConnectorTest extends TestCase
 {
     private function makeConnector(Region $region = Region::EU): RenderConnector
     {
-        return new RenderConnector($region, Storage::fake('public'));
+        return new RenderConnector($region, Storage::fake('s3'));
     }
 
     #[Test]

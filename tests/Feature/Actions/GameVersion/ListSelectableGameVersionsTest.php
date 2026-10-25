@@ -95,7 +95,7 @@ class ListSelectableGameVersionsTest extends TestCase
     #[Test]
     public function it_hydrates_cached_versions_with_their_media_and_casts(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create(['color' => 'ff8800']);
         $gameVersion->addMedia(UploadedFile::fake()->image('icon.png'))->toMediaCollection(GameVersion::MEDIA_ICON);
         $iconUrl = $gameVersion->getFirstMediaUrl(GameVersion::MEDIA_ICON);
@@ -140,7 +140,7 @@ class ListSelectableGameVersionsTest extends TestCase
         ]);
         Cache::purge('array');
 
-        Storage::fake('public');
+        Storage::fake('s3');
         $guild = Guild::factory()->create();
         $gameVersion = GameVersion::factory()->forGuild($guild)->create();
         $gameVersion->addMedia(UploadedFile::fake()->image('icon.png'))->toMediaCollection(GameVersion::MEDIA_ICON);
@@ -202,7 +202,7 @@ class ListSelectableGameVersionsTest extends TestCase
     #[Test]
     public function it_refreshes_the_cache_when_game_version_media_is_added(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create();
         ListSelectableGameVersions::run();
         $this->forgetRequestMemo();
@@ -215,7 +215,7 @@ class ListSelectableGameVersionsTest extends TestCase
     #[Test]
     public function it_refreshes_the_cache_when_game_version_media_is_removed(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create();
         $gameVersion->addMedia(UploadedFile::fake()->image('icon.png'))->toMediaCollection(GameVersion::MEDIA_ICON);
         ListSelectableGameVersions::run();
@@ -230,7 +230,7 @@ class ListSelectableGameVersionsTest extends TestCase
     #[Test]
     public function it_refreshes_the_cache_when_game_version_media_is_replaced(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create();
         $gameVersion->addMedia(UploadedFile::fake()->image('old.png'))->toMediaCollection(GameVersion::MEDIA_ICON);
         ListSelectableGameVersions::run();
@@ -245,7 +245,7 @@ class ListSelectableGameVersionsTest extends TestCase
     #[Test]
     public function it_refreshes_the_list_within_the_same_request_when_media_changes(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create();
         ListSelectableGameVersions::run();
 

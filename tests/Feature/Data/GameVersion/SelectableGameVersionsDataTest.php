@@ -22,7 +22,7 @@ class SelectableGameVersionsDataTest extends TestCase
     #[Test]
     public function from_game_versions_carries_raw_version_media_and_guild_attributes(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $guild = Guild::factory()->create();
         $withIcon = GameVersion::factory()->forGuild($guild)->create();
         $withIcon->addMedia(UploadedFile::fake()->image('icon.png'))->toMediaCollection(GameVersion::MEDIA_ICON);
@@ -43,7 +43,7 @@ class SelectableGameVersionsDataTest extends TestCase
     #[Test]
     public function it_round_trips_through_a_cache_that_disallows_objects(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->forGuild()->create();
         $gameVersion->addMedia(UploadedFile::fake()->image('icon.png'))->toMediaCollection(GameVersion::MEDIA_ICON);
         $data = SelectableGameVersionsData::fromGameVersions(GameVersion::with(['media', 'warcraftLogsGuild'])->get());

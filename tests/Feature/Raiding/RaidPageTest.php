@@ -136,7 +136,7 @@ class RaidPageTest extends TestCase
     #[Test]
     public function it_lists_bosses_without_lazy_loading_media(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->withBanner()->create();
         Boss::factory()->for($raid)->count(2)->create()
             ->each(fn (Boss $boss) => $boss->addMedia(UploadedFile::fake()->image('strategy.png'))->toMediaCollection());

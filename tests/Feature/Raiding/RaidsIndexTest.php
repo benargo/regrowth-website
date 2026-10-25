@@ -80,7 +80,7 @@ class RaidsIndexTest extends TestCase
     #[Test]
     public function it_lists_raids_without_lazy_loading_media(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create(['release_date' => Carbon::parse('2025-01-01')]);
         Raid::factory()->count(2)->withBanner()->for(Phase::factory()->forGameVersion($gameVersion))->create();
 

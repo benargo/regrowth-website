@@ -24,14 +24,14 @@ class ServeMirroredAssetTest extends TestCase
     {
         $this->assertInstanceOf(RequestMiddleware::class, new ServeMirroredAsset(
             new MirrorPaths(Region::EU),
-            Storage::fake('public'),
+            Storage::fake('s3'),
         ));
     }
 
     #[Test]
     public function it_returns_a_fake_response_from_disk_when_the_file_exists(): void
     {
-        $disk = Storage::fake('public');
+        $disk = Storage::fake('s3');
         $disk->put('blizzard-cdn/icons/56/foo.jpg', 'CACHED');
 
         $mock = new MockClient([
@@ -50,7 +50,7 @@ class ServeMirroredAssetTest extends TestCase
     #[Test]
     public function it_passes_through_when_the_file_is_not_on_disk(): void
     {
-        $disk = Storage::fake('public');
+        $disk = Storage::fake('s3');
 
         $mock = new MockClient([
             FetchIconRequest::class => MockResponse::make(body: 'NETWORK', status: 200),
@@ -68,7 +68,7 @@ class ServeMirroredAssetTest extends TestCase
     #[Test]
     public function it_honours_a_mirrorable_request_path_override(): void
     {
-        $disk = Storage::fake('public');
+        $disk = Storage::fake('s3');
         $disk->put('custom/path.jpg', 'CUSTOM');
 
         $request = new class('https://render.worldofwarcraft.com/eu/anything.jpg') extends FetchIconRequest implements Mirrorable

@@ -164,7 +164,7 @@ class RaidResourceTest extends TestCase
     #[Test]
     public function it_returns_the_banner_url_and_position(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->withBanner('center top')->create()->load('media');
 
         $array = (new RaidResource($raid))->toArray(new Request);
@@ -190,7 +190,7 @@ class RaidResourceTest extends TestCase
     #[Test]
     public function it_excludes_banner_fields_when_media_is_not_loaded(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->withBanner('center top')->create()->fresh();
 
         $array = (new RaidResource($raid))->resolve(new Request);
@@ -338,7 +338,7 @@ class RaidResourceTest extends TestCase
     #[Test]
     public function the_summary_scope_emits_only_the_id_and_name(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->withBanner()->create()->load('media', 'phase');
 
         $array = (new RaidResource($raid))->scope('summary')->resolve(new Request);

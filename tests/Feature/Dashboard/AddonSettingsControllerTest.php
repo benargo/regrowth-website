@@ -94,7 +94,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
     #[Test]
     public function settings_councillors_include_portrait_url_when_media_attached(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $character = Character::factory()->main()->lootCouncillor()->create(['name' => 'SettingsCouncillor']);
         $character->addMediaFromString('BINARY')

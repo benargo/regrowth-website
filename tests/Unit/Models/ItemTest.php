@@ -509,7 +509,7 @@ class ItemTest extends ModelTestCase
     #[Test]
     public function it_stores_a_single_blizzard_icon(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $item = $this->create();
 

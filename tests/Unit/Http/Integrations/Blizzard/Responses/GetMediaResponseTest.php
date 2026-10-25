@@ -61,7 +61,7 @@ class GetMediaResponseTest extends BlizzardTestCase
     #[Test]
     public function mirror_sends_a_fetch_asset_request_per_asset_and_writes_to_disk(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $assetUrl = 'https://render.worldofwarcraft.com/eu/icons/56/inv_sword_39.jpg';
 
@@ -80,7 +80,7 @@ class GetMediaResponseTest extends BlizzardTestCase
             ),
         ]);
 
-        $renderConnector = new RenderConnector(Region::EU, Storage::disk('public'));
+        $renderConnector = new RenderConnector(Region::EU, Storage::disk('s3'));
 
         $response = $this->makeConnector()->send(new GetMediaRequest('item', 19019));
 
@@ -89,13 +89,13 @@ class GetMediaResponseTest extends BlizzardTestCase
 
         $asset = $response->dto()->assets[0];
         $this->assertNotNull($asset->mirroredPath());
-        Storage::disk('public')->assertExists($asset->mirroredPath());
+        Storage::disk('s3')->assertExists($asset->mirroredPath());
     }
 
     #[Test]
     public function mirror_returns_self_for_chaining(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $assetUrl = 'https://render.worldofwarcraft.com/eu/icons/56/inv_sword_39.jpg';
 
@@ -114,7 +114,7 @@ class GetMediaResponseTest extends BlizzardTestCase
             ),
         ]);
 
-        $renderConnector = new RenderConnector(Region::EU, Storage::disk('public'));
+        $renderConnector = new RenderConnector(Region::EU, Storage::disk('s3'));
 
         /** @var GetMediaResponse $response */
         $response = $this->makeConnector()->send(new GetMediaRequest('item', 19019));

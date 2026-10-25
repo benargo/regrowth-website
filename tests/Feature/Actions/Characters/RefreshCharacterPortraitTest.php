@@ -35,7 +35,7 @@ class RefreshCharacterPortraitTest extends TestCase
 
         $this->freezeSecond();
         Bus::fake([AttachPortraitToCharacter::class]);
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $this->gameVersion = GameVersion::factory()->create(['realm' => 'Thunderstrike', 'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY]);
     }

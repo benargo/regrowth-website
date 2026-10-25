@@ -31,7 +31,7 @@ class PlayableClassSeederTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('public');
+        Storage::fake('s3');
     }
 
     #[Test]
@@ -104,7 +104,7 @@ class PlayableClassSeederTest extends TestCase
 
         $media = PlayableClass::find(7)->getFirstMedia('blizzard_icons');
         $this->assertSame(56, $media->getCustomProperty('size'));
-        Storage::disk('public')->assertExists('blizzard-cdn/icons/56/classicon_7.jpg');
+        Storage::disk('s3')->assertExists('blizzard-cdn/icons/56/classicon_7.jpg');
     }
 
     #[Test]

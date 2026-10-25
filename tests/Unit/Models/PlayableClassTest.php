@@ -171,7 +171,7 @@ class PlayableClassTest extends ModelTestCase
     #[Test]
     public function it_can_add_media(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $class = $this->create();
         $class->addMediaFromString('fake image content')

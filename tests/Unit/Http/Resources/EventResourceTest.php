@@ -131,7 +131,7 @@ class EventResourceTest extends TestCase
     #[Test]
     public function banner_comes_from_the_first_raid_in_pivot_order_that_has_one(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $plain = Raid::factory()->create();
         $second = Raid::factory()->withBanner()->create();
         $first = Raid::factory()->withBanner('center bottom')->create();
@@ -199,7 +199,7 @@ class EventResourceTest extends TestCase
     #[TestWith(['visitors'])]
     public function banner_is_not_in_the_members_or_visitors_scope(string $scope): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $event = Event::factory()->create();
         $event->raids()->attach(Raid::factory()->withBanner()->create()->id, ['sort_order' => 1]);
 

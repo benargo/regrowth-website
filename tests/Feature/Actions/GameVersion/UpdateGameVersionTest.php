@@ -277,7 +277,7 @@ class UpdateGameVersionTest extends TestCase
     #[TestWith([GameVersion::MEDIA_LOGO])]
     public function it_attaches_an_uploaded_image_to_its_collection(string $collection): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create();
 
         $this->updateGameVersion($gameVersion, [$collection => UploadedFile::fake()->image("{$collection}.png")]);
@@ -289,7 +289,7 @@ class UpdateGameVersionTest extends TestCase
     #[Test]
     public function it_clears_only_the_collection_given_as_null(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create();
         $this->attachImage($gameVersion, GameVersion::MEDIA_BANNER);
         $this->attachImage($gameVersion, GameVersion::MEDIA_LOGO);
@@ -305,7 +305,7 @@ class UpdateGameVersionTest extends TestCase
     #[Test]
     public function it_leaves_images_alone_when_their_keys_are_not_given(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create();
         $this->attachImage($gameVersion, GameVersion::MEDIA_ICON);
 
@@ -317,7 +317,7 @@ class UpdateGameVersionTest extends TestCase
     #[Test]
     public function it_updates_columns_alongside_an_image(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create(['realm' => 'Gehennas']);
 
         $this->updateGameVersion($gameVersion, [
@@ -334,7 +334,7 @@ class UpdateGameVersionTest extends TestCase
     #[Test]
     public function it_flushes_the_game_versions_cache_now_and_when_the_application_terminates_after_an_upload(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create();
         $this->primeGameVersionsCache();
 

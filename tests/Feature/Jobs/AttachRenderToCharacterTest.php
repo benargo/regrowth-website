@@ -42,7 +42,7 @@ class AttachRenderToCharacterTest extends TestCase
     {
         parent::setUp();
         $this->gameVersion = GameVersion::factory()->create(['realm' => 'Thunderstrike', 'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY]);
-        Storage::fake('public');
+        Storage::fake('s3');
     }
 
     // ==================== job contract ====================

@@ -1531,7 +1531,7 @@ class GameVersionControllerTest extends DashboardTestCase
     #[TestWith([GameVersion::MEDIA_LOGO])]
     public function it_stores_an_image_uploaded_as_a_spoofed_patch(string $collection): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create(['title' => 'Era']);
 
         $response = $this->actingAs($this->officer)
@@ -1551,7 +1551,7 @@ class GameVersionControllerTest extends DashboardTestCase
     #[Test]
     public function it_stores_an_svg_icon(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create();
 
         $response = $this->actingAs($this->officer)
@@ -1644,7 +1644,7 @@ class GameVersionControllerTest extends DashboardTestCase
     public function it_flushes_each_cache_once_for_an_update_with_images_and_phases(): void
     {
         Queue::fake();
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create();
         $phases = Phase::factory()->count(2)->for($gameVersion)->create();
         Cache::tags([CachesSelectableGameVersions::CACHE_TAG])->put('canary', true, 60);

@@ -142,7 +142,7 @@ trait MocksBlizzardServices
      */
     protected function mockGetItem(array $responseData = []): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $itemRequest = $responseData
             ? MockResponse::make(body: array_merge([

@@ -29,7 +29,7 @@ class SpecializationSeederTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('public');
+        Storage::fake('s3');
 
         Saloon::fake([
             FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
@@ -97,7 +97,7 @@ class SpecializationSeederTest extends TestCase
         $media = $balance->getFirstMedia('blizzard_icons');
 
         $this->assertSame(HasBlizzardIcons::DEFAULT_MEDIA_SIZE, $media->getCustomProperty('size'));
-        Storage::disk('public')->assertExists('blizzard-cdn/icons/56/spell_nature_starfall.jpg');
+        Storage::disk('s3')->assertExists('blizzard-cdn/icons/56/spell_nature_starfall.jpg');
     }
 
     // ==================== idempotency ====================

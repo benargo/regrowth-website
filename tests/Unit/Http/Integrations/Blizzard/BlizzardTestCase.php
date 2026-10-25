@@ -17,7 +17,7 @@ abstract class BlizzardTestCase extends TestCase
     {
         $region ??= Region::EU;
 
-        $renderConnector = new RenderConnector($region, Storage::disk('public'));
+        $renderConnector = new RenderConnector($region, Storage::disk('s3'));
 
         return new BlizzardConnector(
             clientId: 'test_id',

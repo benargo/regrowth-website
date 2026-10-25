@@ -542,7 +542,7 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function the_portrait_collection_holds_only_one_file(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $character = $this->create();
 
@@ -561,7 +561,7 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function it_registers_the_portrait_and_render_collections_separately(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $character = $this->create();
 
@@ -584,7 +584,7 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function the_render_collection_holds_only_one_file(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $character = $this->create();
 

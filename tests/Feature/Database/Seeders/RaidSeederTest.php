@@ -22,7 +22,7 @@ class RaidSeederTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create();
 
         foreach (range(1, 5) as $phaseId) {

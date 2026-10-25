@@ -177,7 +177,7 @@ class PlannedAbsenceControllerTest extends TestCase
     #[Test]
     public function index_includes_character_portrait_url(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $character = Character::factory()->create();
         $character->addMediaFromString('BINARY')
             ->usingFileName('character_15678.jpg')
@@ -410,7 +410,7 @@ class PlannedAbsenceControllerTest extends TestCase
     public function index_character_portraits_maps_current_and_upcoming_characters_to_their_portraits(): void
     {
         Queue::fake();
-        Storage::fake('public');
+        Storage::fake('s3');
         $withPortrait = Character::factory()->create();
         $withPortrait->addMediaFromString('BINARY')
             ->usingFileName('character_15678.jpg')

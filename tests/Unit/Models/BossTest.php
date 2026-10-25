@@ -286,7 +286,7 @@ class BossTest extends ModelTestCase
     #[Test]
     public function it_can_add_media(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $boss = $this->create();
         $boss->addMediaFromString('fake image content')

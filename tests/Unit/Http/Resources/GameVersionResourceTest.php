@@ -112,7 +112,7 @@ class GameVersionResourceTest extends TestCase
     #[TestWith([GameVersion::MEDIA_LOGO, 'logo_url'])]
     public function it_returns_the_url_of_an_uploaded_image(string $collection, string $key): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create();
         $media = $gameVersion->addMedia(UploadedFile::fake()->image("{$collection}.png"))->toMediaCollection($collection);
 

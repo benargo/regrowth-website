@@ -224,7 +224,7 @@ class HomeControllerTest extends TestCase
     #[Group('laravel-media-library')]
     public function it_tags_each_upcoming_event_with_its_game_version_icon_fields(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create(['title' => 'World of Warcraft: Forever', 'color' => '226e73']);
         $gameVersion->addMedia(UploadedFile::fake()->image('icon.png'))->toMediaCollection(GameVersion::MEDIA_ICON);
         Event::factory()->live()->for($gameVersion)->create([
@@ -267,7 +267,7 @@ class HomeControllerTest extends TestCase
     #[Group('laravel-media-library')]
     public function it_lists_upcoming_events_without_lazy_loading_game_version_media(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         config(['media-library.force_lazy_loading' => false]);
 
         foreach (range(1, 2) as $index) {
@@ -344,7 +344,7 @@ class HomeControllerTest extends TestCase
     #[Test]
     public function it_exposes_the_render_url_for_an_officer_with_attached_media(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $character = Character::factory()->create(['name' => 'Caldru']);
         $character->addMediaFromString('RENDER')
@@ -363,7 +363,7 @@ class HomeControllerTest extends TestCase
     #[Test]
     public function it_exposes_the_visible_bounds_for_an_officer_with_measured_media(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $character = Character::factory()->create(['name' => 'Caldru']);
         $character->addMediaFromString('RENDER')
@@ -384,7 +384,7 @@ class HomeControllerTest extends TestCase
     #[Test]
     public function it_defaults_visible_bounds_to_the_full_frame_when_unmeasured(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $character = Character::factory()->create(['name' => 'Caldru']);
         $character->addMediaFromString('RENDER')
@@ -404,7 +404,7 @@ class HomeControllerTest extends TestCase
     #[Test]
     public function it_flags_small_race_officers_for_a_smaller_render(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         PlayableRace::factory()->create(['id' => 7]);
         $character = Character::factory()->create(['name' => 'Caldru', 'playable_race_id' => 7]);
@@ -424,7 +424,7 @@ class HomeControllerTest extends TestCase
     #[Test]
     public function it_does_not_flag_a_non_small_race_officer(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         PlayableRace::factory()->create(['id' => 1]);
         $character = Character::factory()->create(['name' => 'Caldru', 'playable_race_id' => 1]);
@@ -466,7 +466,7 @@ class HomeControllerTest extends TestCase
     public function it_does_not_dispatch_a_render_job_when_media_already_exists(): void
     {
         Queue::fake();
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $character = Character::factory()->create(['name' => 'Caldru']);
         $character->addMediaFromString('RENDER')
@@ -495,7 +495,7 @@ class HomeControllerTest extends TestCase
     #[Test]
     public function officer_lookup_is_case_insensitive_on_name(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $character = Character::factory()->create(['name' => 'caldru']);
         $character->addMediaFromString('RENDER')
