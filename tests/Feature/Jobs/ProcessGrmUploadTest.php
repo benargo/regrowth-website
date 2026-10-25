@@ -21,6 +21,7 @@ use App\Notifications\GrmUploadCompleted;
 use App\Notifications\GrmUploadFailed;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
@@ -485,6 +486,46 @@ class ProcessGrmUploadTest extends TestCase
         $job->handle(app(BlizzardConnector::class));
 
         Bus::assertNotDispatched(FetchGuildRoster::class);
+    }
+
+    // ==================== attendance cache ====================
+
+    #[Test]
+    public function it_flushes_the_attendance_cache_after_a_successful_batch(): void
+    {
+        $this->fakeCharacters(['GoodChar' => 11111]);
+        Cache::tags(['attendance'])->put('attendance:matrix:test', 'cached-matrix', 60);
+
+        $job = new ProcessGrmUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'GoodChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+            ],
+        ], $this->user->id, $this->gameVersion->id);
+
+        $job->handle(app(BlizzardConnector::class));
+
+        $this->assertNull(Cache::tags(['attendance'])->get('attendance:matrix:test'));
+    }
+
+    #[Test]
+    public function it_keeps_the_attendance_cache_when_no_characters_are_processed(): void
+    {
+        $this->fakeCharacters([], notFound: ['FailChar']);
+        Cache::tags(['attendance'])->put('attendance:matrix:test', 'cached-matrix', 60);
+
+        $job = new ProcessGrmUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'FailChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+            ],
+        ], $this->user->id, $this->gameVersion->id);
+
+        $job->handle(app(BlizzardConnector::class));
+
+        $this->assertSame('cached-matrix', Cache::tags(['attendance'])->get('attendance:matrix:test'));
     }
 
     #[Test]

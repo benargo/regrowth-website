@@ -25,6 +25,7 @@ use Illuminate\Queue\Attributes\Backoff;
 use Illuminate\Queue\Attributes\Timeout;
 use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Queue\Middleware\Skip;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 #[Tries(3)]
@@ -99,6 +100,7 @@ class ProcessGrmUpload implements RequiresMinimumCharacterLevel, ShouldQueue
 
         $this->notifyOfficers();
         $this->broadcastCompletion();
+        $this->flushAttendanceCacheIfChanged();
         $this->refreshRosterIfChanged($gameVersion);
     }
 
@@ -181,6 +183,19 @@ class ProcessGrmUpload implements RequiresMinimumCharacterLevel, ShouldQueue
             $this->warningCount,
             $this->errorCount,
         );
+    }
+
+    /**
+     * Flush the attendance cache, including the attendance matrix, when any
+     * character was written.
+     */
+    private function flushAttendanceCacheIfChanged(): void
+    {
+        if ($this->processedCount === 0) {
+            return;
+        }
+
+        Cache::tags(['attendance'])->flush();
     }
 
     /**
