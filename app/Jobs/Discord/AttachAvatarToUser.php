@@ -32,7 +32,7 @@ class AttachAvatarToUser implements ShouldQueueAfterCommit
     public function middleware(): array
     {
         return [
-            (new WithoutOverlapping("user-avatar:{$this->userId}"))->releaseAfter(60)->expireAfter(120),
+            (new WithoutOverlapping("user-avatar:{$this->userId}:{$this->avatar->value}"))->releaseAfter(60)->expireAfter(120),
         ];
     }
 

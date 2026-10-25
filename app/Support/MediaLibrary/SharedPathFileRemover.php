@@ -14,15 +14,18 @@ use Spatie\MediaLibrary\Support\PathGenerator\PathGeneratorFactory;
 
 /**
  * Removes a media item's files. Media stored in a shared Blizzard directory lose only
- * their own exact files, skipping any path another media row still resolves to; all
- * other media are removed by Media Library's default remover.
+ * their own exact files, skipping the questionmark icon and any path another media row
+ * still resolves to; all other media are removed by Media Library's default remover.
  */
 final class SharedPathFileRemover implements FileRemover
 {
     private DefaultFileRemover $default;
 
-    public function __construct(protected Filesystem $mediaFileSystem, protected Factory $filesystem)
-    {
+    public function __construct(
+        protected Filesystem $mediaFileSystem,
+        protected Factory $filesystem,
+        private readonly UnknownBlizzardIcon $unknownIcon,
+    ) {
         $this->default = new DefaultFileRemover($mediaFileSystem, $filesystem);
     }
 
@@ -65,7 +68,7 @@ final class SharedPathFileRemover implements FileRemover
     }
 
     /**
-     * Delete each of the given files that no other media row resolves to.
+     * Delete each of the given files that is not the questionmark icon and that no other media row resolves to.
      *
      * @param  Collection<int, array{disk: string, path: string}>  $files
      */
@@ -76,6 +79,7 @@ final class SharedPathFileRemover implements FileRemover
             ->all();
 
         $files
+            ->reject(fn (array $file): bool => $file['path'] === $this->unknownIcon->path())
             ->reject(fn (array $file): bool => in_array($this->fileKey($file), $filesInUse, true))
             ->groupBy('disk')
             ->each(function (Collection $filesOnDisk, string $disk): void {

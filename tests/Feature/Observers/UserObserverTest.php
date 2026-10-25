@@ -37,6 +37,17 @@ class UserObserverTest extends TestCase
     }
 
     #[Test]
+    public function it_does_not_dispatch_again_when_a_new_user_is_saved_without_hash_changes(): void
+    {
+        $user = User::factory()->create(['avatar' => 'user-hash', 'guild_avatar' => 'guild-hash']);
+
+        $user->setRememberToken('new-token');
+        $user->save();
+
+        Queue::assertPushed(AttachAvatarToUser::class, 2);
+    }
+
+    #[Test]
     public function it_dispatches_only_for_the_hash_that_changed(): void
     {
         $user = $this->userWithoutEvents(['avatar' => 'user-hash', 'guild_avatar' => 'guild-hash']);

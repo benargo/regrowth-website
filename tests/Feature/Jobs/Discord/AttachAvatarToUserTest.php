@@ -161,7 +161,7 @@ class AttachAvatarToUserTest extends TestCase
 
         $middleware = $job->middleware()[0];
         $this->assertInstanceOf(WithoutOverlapping::class, $middleware);
-        $this->assertSame('user-avatar:'.self::USER_ID, $middleware->key);
+        $this->assertSame('user-avatar:'.self::USER_ID.':'.DiscordAvatar::User->value, $middleware->key);
         $this->assertSame(120, $middleware->expiresAfter);
     }
 

@@ -7,6 +7,7 @@ use App\Contracts\HasCharacterMedia;
 use App\Models\Character;
 use App\Models\Item;
 use App\Models\Raid;
+use App\Support\MediaLibrary\UnknownBlizzardIcon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -69,6 +70,18 @@ class SharedPathFileRemoverTest extends TestCase
 
         Storage::disk('s3')->assertMissing($path);
         Storage::disk('s3')->assertExists('blizzard-cdn/icons/56/inv_other.jpg');
+    }
+
+    #[Test]
+    public function it_keeps_the_questionmark_icon_when_its_only_owner_is_deleted(): void
+    {
+        $item = $this->itemWithIcon(HasBlizzardIcons::BLIZZARD_UNKNOWN_ICON.'.'.HasBlizzardIcons::DEFAULT_MEDIA_FILE_EXTENSION);
+        $path = $item->getFirstMedia(HasBlizzardIcons::MEDIA_COLLECTION)->getPathRelativeToRoot();
+
+        $item->delete();
+
+        $this->assertSame(app(UnknownBlizzardIcon::class)->path(), $path);
+        Storage::disk('s3')->assertExists($path);
     }
 
     #[Test]

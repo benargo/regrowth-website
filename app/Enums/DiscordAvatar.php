@@ -31,7 +31,7 @@ enum DiscordAvatar: string
     public function cdnRequest(string $userId, string $hash): Request
     {
         return match ($this) {
-            self::Guild => new FetchGuildMemberAvatarRequest(config('services.discord.server_id'), $userId, $hash),
+            self::Guild => new FetchGuildMemberAvatarRequest((string) config('services.discord.server_id'), $userId, $hash),
             self::User => new FetchUserAvatarRequest($userId, $hash),
         };
     }

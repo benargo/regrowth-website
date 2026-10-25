@@ -9,23 +9,37 @@ use App\Models\User;
 class UserObserver
 {
     /**
-     * Handle the User "saved" event.
+     * Handle the User "created" event.
      *
-     * Dispatches an avatar attach job for each Discord avatar hash that is set on creation or
-     * changed to a new value, and clears the collection of each hash changed to null.
+     * Dispatches an avatar attach job for each Discord avatar hash that is set.
      */
-    public function saved(User $user): void
+    public function created(User $user): void
+    {
+        foreach (DiscordAvatar::cases() as $avatar) {
+            if ($user->getAttribute($avatar->hashAttribute()) !== null) {
+                AttachAvatarToUser::dispatch($user->getKey(), $avatar);
+            }
+        }
+    }
+
+    /**
+     * Handle the User "updated" event.
+     *
+     * Dispatches an avatar attach job for each Discord avatar hash changed to a new value,
+     * and clears the collection of each hash changed to null.
+     */
+    public function updated(User $user): void
     {
         foreach (DiscordAvatar::cases() as $avatar) {
             $attribute = $avatar->hashAttribute();
 
-            if (! $user->wasRecentlyCreated && ! $user->wasChanged($attribute)) {
+            if (! $user->wasChanged($attribute)) {
                 continue;
             }
 
             if ($user->getAttribute($attribute) !== null) {
                 AttachAvatarToUser::dispatch($user->getKey(), $avatar);
-            } elseif (! $user->wasRecentlyCreated) {
+            } else {
                 $user->clearMediaCollection($avatar->value);
             }
         }
