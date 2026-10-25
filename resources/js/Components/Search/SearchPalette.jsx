@@ -6,6 +6,7 @@ import GameVersionResultRow from "@/Components/Search/GameVersionResultRow";
 import ItemResultRow from "@/Components/Search/ItemResultRow";
 import useDebouncedValue from "@/Hooks/useDebouncedValue";
 import useGameVersionSwitch from "@/Hooks/useGameVersionSwitch";
+import { sectionShows } from "@/Helpers/siteSections";
 
 const MIN_QUERY_LENGTH = 2;
 
@@ -27,9 +28,9 @@ function ResultSkeleton() {
 
 export default function SearchPalette({ open, onClose }) {
     const page = usePage();
-    // Scoping key: the loot raid page renders this component.
+    // Scoping key: a raid page in a section with raid-scoped search renders this component.
     const raidScope =
-        page.component === "Raids/Show" && page.props.section === "loot" && page.props.raid?.data?.id
+        page.component === "Raids/Show" && sectionShows(page.props.section, "raidScopedSearch") && page.props.raid?.data?.id
             ? { id: page.props.raid.data.id, name: page.props.raid.data.name }
             : null;
 

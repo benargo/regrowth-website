@@ -7,7 +7,7 @@ import EmptyState from "@/Components/EmptyState";
 import Breadcrumbs from "@/Components/Navigation/Breadcrumbs";
 import SectionNav from "@/Components/Navigation/SectionNav";
 import cn from "@/Helpers/cn";
-import { SITE_SECTIONS, sectionCrumbs } from "@/Helpers/siteSections";
+import { SITE_SECTIONS, sectionCrumbs, sectionShows } from "@/Helpers/siteSections";
 
 const ROW_CLASSES =
     "group flex min-h-14 items-center gap-4 rounded border border-amber-600/40 bg-brown-900/40 px-4 py-3 transition-colors hover:border-amber-500 hover:bg-amber-600/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400";
@@ -47,8 +47,8 @@ function BossRow({ boss, position, section }) {
                 {position}
             </span>
             <span className="min-w-0 flex-1 font-semibold break-words text-white">{boss.name}</span>
-            <CommentCount count={boss.comments_count ?? 0} hidden={!(section === "loot" && boss.comments_count > 0)} />
-            <StrategyBadge hidden={!(section === "raiding" && boss.meta?.has_strategy)} />
+            <CommentCount count={boss.comments_count ?? 0} hidden={!(sectionShows(section, "itemComments") && boss.comments_count > 0)} />
+            <StrategyBadge hidden={!(sectionShows(section, "strategy") && boss.meta?.has_strategy)} />
             <Icon
                 icon="chevron-right"
                 style="solid"
@@ -100,7 +100,7 @@ export default function Show({ section, raid, bosses }) {
                     <span className="flex-1 font-semibold text-white">Trash items</span>
                     <CommentCount
                         count={raidData.trash_comments_count ?? 0}
-                        hidden={!(section === "loot" && raidData.trash_comments_count > 0)}
+                        hidden={!(sectionShows(section, "itemComments") && raidData.trash_comments_count > 0)}
                     />
                     <Icon icon="chevron-right" style="solid" aria-hidden="true" className="text-amber-500" />
                 </Link>

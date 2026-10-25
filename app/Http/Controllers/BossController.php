@@ -39,7 +39,7 @@ class BossController extends Controller implements SharesPriorityWeightThreshold
     {
         $section = SiteSection::fromRoute($request);
 
-        $tab = $section === SiteSection::Raiding && $request->query('tab') !== 'items' ? 'strategy' : 'items';
+        $tab = $section->showsStrategy() && $request->query('tab') !== 'items' ? 'strategy' : 'items';
 
         return Inertia::render('Bosses/Show', [
             'section' => $section,

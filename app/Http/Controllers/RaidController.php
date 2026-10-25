@@ -76,7 +76,7 @@ class RaidController extends Controller implements SharesPriorityWeightThreshold
         $raid->load('media')->loadExists('trashItems');
         $bosses = $raid->bosses()->withCount('media')->get();
 
-        if ($section === SiteSection::Loot) {
+        if ($section->showsItemComments()) {
             $bosses->loadCount('comments');
             $raid->trash_comments_count = Comment::where('commentable_type', Item::class)
                 ->whereIn('commentable_id', $raid->trashItems()->select('items.id'))
