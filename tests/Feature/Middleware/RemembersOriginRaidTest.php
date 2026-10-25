@@ -113,7 +113,7 @@ class RemembersOriginRaidTest extends TestCase
      */
     private function makeRaid(int $id, array $attributes = []): Raid
     {
-        return Raid::factory()->make($attributes)->forceFill(['id' => $id]);
+        return Raid::factory()->withoutParents()->make($attributes)->forceFill(['id' => $id]);
     }
 
     /**

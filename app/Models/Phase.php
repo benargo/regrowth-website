@@ -79,57 +79,17 @@ class Phase extends Model implements DatasetModel, EditLockable, HasUsage, Sorta
         return static::query()->unscheduledIn($this->game_version_id);
     }
 
-    /**
-     * Scope a query to the phases of the given game version (or of no game
-     * version, when null) that have no start date.
-     */
-    #[Scope]
-    protected function unscheduledIn(Builder $query, ?int $gameVersionId): void
-    {
-        $query->where('game_version_id', $gameVersionId)->whereNull('start_date');
-    }
-
-    /**
-     * Order phases as they arrive: phases with a start date by that date,
-     * then unscheduled phases in their sort order.
-     */
-    #[Scope]
-    protected function inReleaseOrder(Builder $query): void
-    {
-        $query->orderByRaw('start_date IS NULL')
-            ->orderBy('start_date')
-            ->orderBy('sort_order')
-            ->orderBy('id');
-    }
-
     // ============ Custom attributes ============
 
     /**
      * Determine if the phase has started.
+     *
+     * @return Attribute<bool, never>
      */
-    public function hasStarted(): bool
-    {
-        return $this->start_date?->isPast() ?? false;
-    }
-
-    /**
-     * Scope a query to phases with a start date at or before now.
-     */
-    #[Scope]
-    protected function started(Builder $query): void
-    {
-        $query->whereNotNull('start_date')->where('start_date', '<=', now());
-    }
-
-    /**
-     * Get the phase number attribute.
-     */
-    protected function number(): Attribute
+    protected function hasStarted(): Attribute
     {
         return Attribute::make(
-            get: function ($value) {
-                return fmod($value, 1) === 0.0 ? (int) $value : $value;
-            },
+            get: fn (): bool => $this->start_date?->isPast() ?? false,
         );
     }
 
@@ -145,7 +105,19 @@ class Phase extends Model implements DatasetModel, EditLockable, HasUsage, Sorta
         );
     }
 
-    // ============ Relations ============
+    /**
+     * Get the phase number attribute.
+     */
+    protected function number(): Attribute
+    {
+        return Attribute::make(
+            get: function ($value) {
+                return fmod($value, 1) === 0.0 ? (int) $value : $value;
+            },
+        );
+    }
+
+    // ============ Relationships ============
 
     /**
      * Get the game version that this phase belongs to.
@@ -171,5 +143,39 @@ class Phase extends Model implements DatasetModel, EditLockable, HasUsage, Sorta
     public function reports(): HasMany
     {
         return $this->hasMany(Report::class);
+    }
+
+    // ============ Scopes ============
+
+    /**
+     * Order phases as they arrive: phases with a start date by that date,
+     * then unscheduled phases in their sort order.
+     */
+    #[Scope]
+    protected function inReleaseOrder(Builder $query): void
+    {
+        $query->orderByRaw('start_date IS NULL')
+            ->orderBy('start_date')
+            ->orderBy('sort_order')
+            ->orderBy('id');
+    }
+
+    /**
+     * Scope a query to phases with a start date at or before now.
+     */
+    #[Scope]
+    protected function started(Builder $query): void
+    {
+        $query->whereNotNull('start_date')->where('start_date', '<=', now());
+    }
+
+    /**
+     * Scope a query to the phases of the given game version (or of no game
+     * version, when null) that have no start date.
+     */
+    #[Scope]
+    protected function unscheduledIn(Builder $query, ?int $gameVersionId): void
+    {
+        $query->where('game_version_id', $gameVersionId)->whereNull('start_date');
     }
 }

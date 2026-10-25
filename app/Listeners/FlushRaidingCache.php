@@ -3,28 +3,32 @@
 namespace App\Listeners;
 
 use App\Contracts\Events\FlushesRaidingCache;
-use App\Models\Raid;
+use App\Contracts\Http\Middleware\SharesDeferredCacheFlushes;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Spatie\MediaLibrary\Conversions\Events\ConversionHasBeenCompletedEvent;
 
-class FlushRaidingCache
+/**
+ * Flushes the raiding and events cache tags, or records one pending flush while the request defers cache flushes.
+ */
+class FlushRaidingCache implements SharesDeferredCacheFlushes
 {
+    public function __construct(private Request $request) {}
+
     /**
      * Handle the event.
      */
     public function handle(FlushesRaidingCache $event): void
     {
-        $this->flush();
-    }
+        if ($this->request->attributes->get(self::DEFERRING_KEY)) {
+            $this->request->attributes->set(self::PENDING_KEY, [
+                ...$this->request->attributes->get(self::PENDING_KEY, []),
+                self::class => fn () => $this->flush(),
+            ]);
 
-    /**
-     * Flush the cache when a conversion of a raid's media has been generated.
-     */
-    public function handleConversionCompleted(ConversionHasBeenCompletedEvent $event): void
-    {
-        if ($event->media->model_type === (new Raid)->getMorphClass()) {
-            $this->flush();
+            return;
         }
+
+        $this->flush();
     }
 
     private function flush(): void

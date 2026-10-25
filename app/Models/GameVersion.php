@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Casts\AsBinaryColor;
 use App\Casts\AsSlug;
 use App\Contracts\Models\DatasetModel;
+use App\Contracts\Models\DispatchesChangesForMedia;
 use App\Contracts\Models\EditLockable;
 use App\Contracts\Models\HasUsage;
 use App\Enums\Faction;
@@ -49,7 +50,7 @@ use Spatie\MediaLibrary\HasMedia;
     'warcraft_logs_guild_id',
 ])]
 #[UsePolicy(DatasetPolicy::class)]
-class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia, HasUsage
+class GameVersion extends Model implements DatasetModel, DispatchesChangesForMedia, EditLockable, HasMedia, HasUsage
 {
     use HasEditLock;
 
@@ -104,6 +105,16 @@ class GameVersion extends Model implements DatasetModel, EditLockable, HasMedia,
     public function usageRelations(): array
     {
         return ['phases', 'items', 'characters', 'guildRanks'];
+    }
+
+    /**
+     * The event dispatched with this model when its media changes.
+     *
+     * @return class-string<GameVersionChanged>
+     */
+    public function mediaChangedEvent(): string
+    {
+        return GameVersionChanged::class;
     }
 
     // ============ Custom attributes and casts ===========

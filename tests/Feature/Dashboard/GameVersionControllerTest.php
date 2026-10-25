@@ -4,6 +4,7 @@ namespace Tests\Feature\Dashboard;
 
 use App\Actions\GameVersion\BuildGameVersionRelationships;
 use App\Actions\GameVersion\UpdateGameVersion;
+use App\Contracts\Actions\GameVersion\CachesSelectableGameVersions;
 use App\Enums\Faction;
 use App\Enums\GameVersionSetupStep;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
@@ -19,8 +20,11 @@ use App\Models\Raid;
 use App\Models\User;
 use App\Models\WarcraftLogs\Guild;
 use Carbon\Carbon;
+use Illuminate\Cache\Events\CacheFlushed;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -1633,6 +1637,36 @@ class GameVersionControllerTest extends DashboardTestCase
             ]);
 
         $response->assertInvalid([GameVersion::MEDIA_BANNER => 'The banner must be 2 MB or smaller.']);
+    }
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function it_flushes_each_cache_once_for_an_update_with_images_and_phases(): void
+    {
+        Queue::fake();
+        Storage::fake('public');
+        $gameVersion = GameVersion::factory()->create();
+        $phases = Phase::factory()->count(2)->for($gameVersion)->create();
+        Cache::tags([CachesSelectableGameVersions::CACHE_TAG])->put('canary', true, 60);
+        Cache::tags(['raiding', 'events'])->put('canary', true, 60);
+        $flushes = 0;
+        Event::listen(CacheFlushed::class, function () use (&$flushes): void {
+            $flushes++;
+        });
+
+        $this->actingAs($this->officer)
+            ->from(route('management.game-versions.edit', $gameVersion))
+            ->patch(route('management.game-versions.update', $gameVersion), [
+                'title' => 'Renamed',
+                'phase_ids' => $phases->modelKeys(),
+                GameVersion::MEDIA_BANNER => UploadedFile::fake()->image('banner.png'),
+                GameVersion::MEDIA_LOGO => UploadedFile::fake()->image('logo.png'),
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(2, $flushes);
+        $this->assertFalse(Cache::tags([CachesSelectableGameVersions::CACHE_TAG])->has('canary'));
+        $this->assertFalse(Cache::tags(['raiding', 'events'])->has('canary'));
     }
 
     // ==================== destroy ====================

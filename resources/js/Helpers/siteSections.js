@@ -1,14 +1,17 @@
 /**
- * The Raiding and Loot sections: their hub route, header background and the
- * items of their sub-navigation. Each item names the route it links to, the
- * route patterns that mark it current, the permission it needs (if any), and
- * whether it appears as a card on the hub.
+ * The Raiding and Loot sections: their hub route, header background, the
+ * client-only features they enable, and the items of their sub-navigation.
+ * `features.raidScopedSearch` scopes the search palette to the raid page's raid.
+ * Each item names the route it links to, the route patterns that mark it
+ * current, the permission it needs (if any), and whether it appears as a card
+ * on the hub.
  */
 export const SITE_SECTIONS = {
     raiding: {
         label: "Raiding",
         hubRouteName: "raiding.index",
         headerBackgroundClass: "bg-illidan",
+        features: { raidScopedSearch: false },
         items: [
             {
                 key: "raids",
@@ -61,6 +64,7 @@ export const SITE_SECTIONS = {
         label: "Loot",
         hubRouteName: "loot.index",
         headerBackgroundClass: "bg-vashj-and-kaelthas",
+        features: { raidScopedSearch: true },
         items: [
             {
                 key: "raids",
@@ -93,6 +97,13 @@ export const SITE_SECTIONS = {
         ],
     },
 };
+
+/**
+ * Whether the given section (which may be undefined) shows the named feature.
+ */
+export function sectionShows(section, feature) {
+    return SITE_SECTIONS[section]?.features?.[feature] === true;
+}
 
 /**
  * The key of the section item whose route patterns match the current route, or null.

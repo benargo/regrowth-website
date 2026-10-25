@@ -4,6 +4,7 @@ namespace Tests\Feature\Raiding;
 
 use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
 use App\Contracts\Http\Middleware\SharesOriginRaidSession;
+use App\Enums\SiteSection;
 use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\GameVersion;
@@ -45,6 +46,7 @@ class RaidPageTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raids/Show')
             ->where('section', $section)
+            ->where('features', SiteSection::from($section)->features())
             ->where('raid.data.id', $raid->id)
             ->where('bosses.data.0.id', $first->id)
             ->where('bosses.data.1.id', $second->id)

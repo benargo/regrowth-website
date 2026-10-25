@@ -57,7 +57,7 @@ class PhaseResource extends JsonResource implements ScopedResource
             'name' => $this->name,
             'description' => $this->description,
             'start_date' => $this->start_date?->toIso8601String(),
-            'has_started' => $this->hasStarted(),
+            'has_started' => $this->has_started,
             'is_current' => $this->when($this->isCurrent !== null, fn (): ?bool => $this->isCurrent),
             'game_version' => $this->whenLoaded('gameVersion', fn () => $this->gameVersion?->toResource()->resolve($request)),
             'raids' => $this->whenLoaded('raids', fn () => $this->raids->toResourceCollection(RaidResource::class)->resolve($request)),

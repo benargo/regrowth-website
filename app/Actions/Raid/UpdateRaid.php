@@ -3,7 +3,7 @@
 namespace App\Actions\Raid;
 
 use App\Contracts\Models\SharesRaidBannerCollection;
-use App\Events\RaidChanged;
+use App\Events\RaidingDataChanged;
 use App\Models\Boss;
 use App\Models\Raid;
 use Illuminate\Http\UploadedFile;
@@ -16,12 +16,12 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * Applies a partial update to a raid. Only the keys present in the validated
  * data are touched, and a key given as null clears its column.
  *
- * `boss_ids` stores the raid's boss order, the first id first, in one
- * transaction with any columns. `banner` replaces the banner (null removes it)
- * and `banner_position` sets the banner's `position` custom property. A new
- * banner keeps the previous position unless a position comes with it. Media
- * is written once the database changes have committed. Any change to the boss
- * order or banner then dispatches `RaidChanged`.
+ * Columns, the boss order (`boss_ids`, the first id first) and the banner's
+ * `position` custom property (`banner_position` without `banner`) are written
+ * in one transaction. `banner` then replaces the banner (null removes it),
+ * keeping the previous position unless a position comes with it. When the
+ * boss order or banner position changes without a column change,
+ * `RaidingDataChanged` is dispatched.
  */
 class UpdateRaid implements SharesRaidBannerCollection
 {
@@ -39,59 +39,33 @@ class UpdateRaid implements SharesRaidBannerCollection
      */
     public function handle(Raid $raid, array $data): void
     {
-        $this->updateColumns($raid, Arr::except($data, self::NON_COLUMN_KEYS), Arr::get($data, 'boss_ids'));
-        $this->updateBanner($raid, $data);
+        $raid->fill(Arr::except($data, self::NON_COLUMN_KEYS));
+        $hasColumnChanges = $raid->isDirty();
+        $reordersBosses = Arr::exists($data, 'boss_ids');
+        $positionsBanner = Arr::exists($data, 'banner_position') && ! Arr::exists($data, 'banner');
 
-        if (Arr::hasAny($data, self::NON_COLUMN_KEYS)) {
-            RaidChanged::dispatch($raid);
-        }
-    }
+        if ($hasColumnChanges || $reordersBosses || $positionsBanner) {
+            DB::transaction(function () use ($raid, $data, $reordersBosses, $positionsBanner): void {
+                $raid->save();
 
-    /**
-     * Write the given columns, together with the boss order in one transaction
-     * when boss ids are given.
-     *
-     * @param  array<string, mixed>  $columns
-     * @param  ?list<int>  $bossIds
-     */
-    private function updateColumns(Raid $raid, array $columns, ?array $bossIds): void
-    {
-        if ($bossIds !== null) {
-            DB::transaction(function () use ($raid, $columns, $bossIds): void {
-                $raid->update($columns);
-                Boss::setNewOrder($bossIds);
+                if ($reordersBosses) {
+                    Boss::setNewOrder($data['boss_ids']);
+                }
+
+                if ($positionsBanner) {
+                    $this->positionBanner($raid->getFirstMedia(self::MEDIA_BANNER), $data['banner_position']);
+                }
             });
-
-            return;
         }
 
-        if ($columns === []) {
-            return;
-        }
-
-        $raid->update($columns);
-    }
-
-    /**
-     * Replace the banner when `banner` is present, otherwise reposition it when
-     * `banner_position` is present.
-     *
-     * @param  array<string, mixed>  $data
-     */
-    private function updateBanner(Raid $raid, array $data): void
-    {
         if (Arr::exists($data, 'banner')) {
             $position = Arr::exists($data, 'banner_position') ? $data['banner_position'] : $raid->banner_position;
             $this->replaceBanner($raid, $data['banner'], $position);
-
-            return;
         }
 
-        if (! Arr::exists($data, 'banner_position')) {
-            return;
+        if (! $hasColumnChanges && ($reordersBosses || $positionsBanner)) {
+            RaidingDataChanged::dispatch($raid);
         }
-
-        $this->positionBanner($raid->getFirstMedia(self::MEDIA_BANNER), $data['banner_position']);
     }
 
     /**

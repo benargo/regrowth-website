@@ -16,9 +16,12 @@ use App\Models\Item;
 use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
+use Illuminate\Cache\Events\CacheFlushed;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event as EventFacade;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -401,6 +404,34 @@ class BossControllerTest extends DashboardTestCase
 
         $response->assertRedirect($this->editUrl($boss));
         $response->assertSessionHas('success', 'Saved changes to Moroes.');
+    }
+
+    #[Test]
+    public function it_flushes_the_raiding_cache_once_for_an_update_with_several_images(): void
+    {
+        Storage::fake('public');
+        $boss = Boss::factory()->create(['name' => 'Moroes']);
+        Cache::tags(['raiding', 'events'])->put('canary', true, 60);
+        $flushes = 0;
+        EventFacade::listen(CacheFlushed::class, function () use (&$flushes): void {
+            $flushes++;
+        });
+
+        $this->actingAs($this->officer)
+            ->from($this->editUrl($boss))
+            ->patch(route('management.bosses.update', $boss), [
+                'name' => 'Moroes the Butler',
+                'images' => [
+                    UploadedFile::fake()->image('one.png'),
+                    UploadedFile::fake()->image('two.png'),
+                    UploadedFile::fake()->image('three.png'),
+                ],
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(1, $flushes);
+        $this->assertFalse(Cache::tags(['raiding', 'events'])->has('canary'));
+        $this->assertCount(3, $boss->getMedia());
     }
 
     #[Test]

@@ -1,6 +1,8 @@
 import { Link } from "@inertiajs/react";
 import DetailsForm from "@/Components/Datasets/DetailsForm";
-import { FormRow, FormSection, linkClassName } from "@/Components/FormControls";
+import Icon from "@/Components/FontAwesome/Icon";
+import { controlClassName, FormRow, FormSection } from "@/Components/FormControls";
+import cn from "@/Helpers/cn";
 
 /**
  * Build the initial useForm state: the name for an existing boss, or the
@@ -33,11 +35,18 @@ export default function BossForm({ form, options = null, raid = null, ...details
                     {raid ? (
                         <div className="flex flex-col gap-1.5">
                             <p className="text-sm font-medium text-gray-300">Raid</p>
-                            <p className="text-white">
-                                <Link href={raid.href} className={linkClassName}>
-                                    {raid.name}
-                                </Link>
-                            </p>
+                            <Link
+                                href={raid.href}
+                                className={cn(
+                                    controlClassName,
+                                    "bg-brown-800/50 flex items-center justify-between gap-2 border-amber-600/40 text-gray-300",
+                                    "hover:border-amber-600 hover:text-white",
+                                    "focus-visible:border-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400",
+                                )}
+                            >
+                                {raid.name}
+                                <Icon icon="arrow-right" style="solid" className="text-xs" aria-hidden="true" />
+                            </Link>
                             <p className="text-sm text-gray-300">
                                 A boss can't move to another raid. To move it, delete it and add it to the other raid.
                             </p>

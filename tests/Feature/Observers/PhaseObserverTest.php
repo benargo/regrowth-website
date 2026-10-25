@@ -3,7 +3,7 @@
 namespace Tests\Feature\Observers;
 
 use App\Actions\Events\RefreshEventGameVersion;
-use App\Events\PhaseChanged;
+use App\Events\RaidingDataChanged;
 use App\Jobs\BuildAddonExportFile;
 use App\Models\Event;
 use App\Models\GameVersion;
@@ -11,6 +11,7 @@ use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\Report;
 use App\Models\WarcraftLogs\Guild;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Event as EventFacade;
@@ -148,33 +149,33 @@ class PhaseObserverTest extends TestCase
     #[Test]
     public function creating_a_phase_flushes_the_raiding_cache(): void
     {
-        EventFacade::fake([PhaseChanged::class]);
+        EventFacade::fake([RaidingDataChanged::class]);
 
         Phase::factory()->create();
 
-        EventFacade::assertDispatchedTimes(PhaseChanged::class, 1);
+        $this->assertSame(1, $this->dispatchedFor(Phase::sole()));
     }
 
     #[Test]
     public function updating_a_phase_flushes_the_raiding_cache(): void
     {
         $phase = Phase::factory()->create();
-        EventFacade::fake([PhaseChanged::class]);
+        EventFacade::fake([RaidingDataChanged::class]);
 
         $phase->update(['description' => 'Renamed phase']);
 
-        EventFacade::assertDispatched(PhaseChanged::class, fn (PhaseChanged $event) => $event->phase->is($phase));
+        $this->assertSame(1, $this->dispatchedFor($phase));
     }
 
     #[Test]
     public function deleting_a_phase_flushes_the_raiding_cache(): void
     {
         $phase = Phase::factory()->create();
-        EventFacade::fake([PhaseChanged::class]);
+        EventFacade::fake([RaidingDataChanged::class]);
 
         $phase->delete();
 
-        EventFacade::assertDispatched(PhaseChanged::class, fn (PhaseChanged $event) => $event->phase->is($phase));
+        $this->assertSame(1, $this->dispatchedFor($phase));
     }
 
     // ==================== sort order ====================
@@ -231,5 +232,10 @@ class PhaseObserverTest extends TestCase
         $report = Report::factory()->forGuild($guild)->create(['start_time' => $startTime]);
 
         return [$gameVersion, $report];
+    }
+
+    private function dispatchedFor(Model $model): int
+    {
+        return EventFacade::dispatched(RaidingDataChanged::class, fn (RaidingDataChanged $event): bool => $event->model->is($model))->count();
     }
 }

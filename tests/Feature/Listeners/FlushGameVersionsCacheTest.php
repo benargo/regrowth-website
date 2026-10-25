@@ -4,22 +4,18 @@ namespace Tests\Feature\Listeners;
 
 use App\Contracts\Actions\GameVersion\CachesSelectableGameVersions;
 use App\Contracts\Events\FlushesGameVersionsCache;
+use App\Contracts\Http\Middleware\SharesDeferredCacheFlushes;
 use App\Events\GameVersionChanged;
 use App\Events\WarcraftLogsGuildDeleted;
 use App\Listeners\FlushGameVersionsCache;
 use App\Models\GameVersion;
-use App\Models\Raid;
 use App\Models\WarcraftLogs\Guild;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
-use Spatie\MediaLibrary\MediaCollections\Events\CollectionHasBeenClearedEvent;
-use Spatie\MediaLibrary\MediaCollections\Events\MediaHasBeenAddedEvent;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Tests\TestCase;
 
 #[Group('platform')]
@@ -41,24 +37,6 @@ class FlushGameVersionsCacheTest extends TestCase
         Event::fake();
 
         Event::assertListening(FlushesGameVersionsCache::class, FlushGameVersionsCache::class);
-    }
-
-    #[Group('contract')]
-    #[Test]
-    public function it_listens_for_media_added_events(): void
-    {
-        Event::fake();
-
-        Event::assertListening(MediaHasBeenAddedEvent::class, FlushGameVersionsCache::class.'@handleMediaAdded');
-    }
-
-    #[Group('contract')]
-    #[Test]
-    public function it_listens_for_collection_cleared_events(): void
-    {
-        Event::fake();
-
-        Event::assertListening(CollectionHasBeenClearedEvent::class, FlushGameVersionsCache::class.'@handleCollectionCleared');
     }
 
     // ==================== handle ====================
@@ -104,65 +82,28 @@ class FlushGameVersionsCacheTest extends TestCase
         $this->assertTrue(Cache::tags(['raiding'])->has('probe'));
     }
 
-    // ==================== handleMediaAdded ====================
-
-    #[Group('laravel-media-library')]
     #[Test]
-    public function it_flushes_the_cache_when_media_is_added_to_a_game_version(): void
+    public function it_records_one_pending_flush_while_the_request_is_deferring(): void
     {
         $this->primeCache();
+        request()->attributes->set(CachesSelectableGameVersions::REQUEST_KEY, new Collection);
+        request()->attributes->set(SharesDeferredCacheFlushes::DEFERRING_KEY, true);
 
-        $this->app->make(FlushGameVersionsCache::class)->handleMediaAdded(new MediaHasBeenAddedEvent($this->mediaFor(new GameVersion)));
+        $this->app->make(FlushGameVersionsCache::class)->handle(new GameVersionChanged(new GameVersion));
+        $this->app->make(FlushGameVersionsCache::class)->handle(new GameVersionChanged(new GameVersion));
 
-        $this->assertFalse($this->cacheIsPrimed());
-    }
-
-    #[Group('laravel-media-library')]
-    #[Test]
-    public function it_flushes_the_cache_again_when_the_application_terminates_after_media_is_added(): void
-    {
-        $this->app->make(FlushGameVersionsCache::class)->handleMediaAdded(new MediaHasBeenAddedEvent($this->mediaFor(new GameVersion)));
-        $this->primeCache();
-
-        $this->app->terminate();
-
-        $this->assertFalse($this->cacheIsPrimed());
-    }
-
-    #[Group('laravel-media-library')]
-    #[Test]
-    public function it_ignores_media_added_to_other_models(): void
-    {
-        $this->primeCache();
-
-        $this->app->make(FlushGameVersionsCache::class)->handleMediaAdded(new MediaHasBeenAddedEvent($this->mediaFor(new Raid)));
-
+        $pendingFlushes = request()->attributes->get(SharesDeferredCacheFlushes::PENDING_KEY);
         $this->assertTrue($this->cacheIsPrimed());
-    }
+        $this->assertTrue(request()->attributes->has(CachesSelectableGameVersions::REQUEST_KEY));
+        $this->assertCount(1, $pendingFlushes);
 
-    // ==================== handleCollectionCleared ====================
-
-    #[Group('laravel-media-library')]
-    #[Test]
-    public function it_flushes_the_cache_when_a_game_version_collection_is_cleared(): void
-    {
-        $this->primeCache();
-
-        $this->app->make(FlushGameVersionsCache::class)->handleCollectionCleared(new CollectionHasBeenClearedEvent(new GameVersion, GameVersion::MEDIA_ICON));
+        reset($pendingFlushes)();
 
         $this->assertFalse($this->cacheIsPrimed());
+        $this->assertFalse(request()->attributes->has(CachesSelectableGameVersions::REQUEST_KEY));
     }
 
-    #[Group('laravel-media-library')]
-    #[Test]
-    public function it_ignores_collections_cleared_on_other_models(): void
-    {
-        $this->primeCache();
-
-        $this->app->make(FlushGameVersionsCache::class)->handleCollectionCleared(new CollectionHasBeenClearedEvent(new Raid, Raid::MEDIA_BANNER));
-
-        $this->assertTrue($this->cacheIsPrimed());
-    }
+    // ==================== helpers ====================
 
     private function primeCache(): void
     {
@@ -172,10 +113,5 @@ class FlushGameVersionsCacheTest extends TestCase
     private function cacheIsPrimed(): bool
     {
         return Cache::tags([CachesSelectableGameVersions::CACHE_TAG])->has('probe');
-    }
-
-    private function mediaFor(Model $model): Media
-    {
-        return (new Media)->forceFill(['model_type' => $model->getMorphClass()]);
     }
 }

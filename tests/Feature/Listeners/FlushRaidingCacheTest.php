@@ -3,28 +3,28 @@
 namespace Tests\Feature\Listeners;
 
 use App\Contracts\Events\FlushesRaidingCache;
+use App\Contracts\Http\Middleware\SharesDeferredCacheFlushes;
 use App\Listeners\FlushRaidingCache;
-use App\Models\GameVersion;
-use App\Models\Raid;
+use App\Models\Boss;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
-use Spatie\MediaLibrary\Conversions\Conversion;
-use Spatie\MediaLibrary\Conversions\Events\ConversionHasBeenCompletedEvent;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Tests\TestCase;
 
 #[Group('raiding')]
 class FlushRaidingCacheTest extends TestCase
 {
+    use RefreshDatabase;
+
     #[Group('contract')]
     #[Test]
     public function it_runs_synchronously(): void
     {
-        $this->assertNotInstanceOf(ShouldQueue::class, new FlushRaidingCache);
+        $this->assertNotInstanceOf(ShouldQueue::class, $this->listener());
     }
 
     #[Group('contract')]
@@ -36,22 +36,13 @@ class FlushRaidingCacheTest extends TestCase
         Event::assertListening(FlushesRaidingCache::class, FlushRaidingCache::class);
     }
 
-    #[Group('contract')]
-    #[Test]
-    public function it_listens_for_conversion_completed_events(): void
-    {
-        Event::fake();
-
-        Event::assertListening(ConversionHasBeenCompletedEvent::class, FlushRaidingCache::class.'@handleConversionCompleted');
-    }
-
     #[Group('happy-path')]
     #[Test]
     public function it_flushes_the_raiding_and_events_tags(): void
     {
         $this->primeCache();
 
-        (new FlushRaidingCache)->handle(new class implements FlushesRaidingCache {});
+        $this->listener()->handle(new class implements FlushesRaidingCache {});
 
         $this->assertFalse($this->cacheIsPrimed());
     }
@@ -61,39 +52,49 @@ class FlushRaidingCacheTest extends TestCase
     {
         Cache::tags(['reports'])->put('probe', true, 60);
 
-        (new FlushRaidingCache)->handle(new class implements FlushesRaidingCache {});
+        $this->listener()->handle(new class implements FlushesRaidingCache {});
 
         $this->assertTrue(Cache::tags(['reports'])->has('probe'));
     }
 
-    #[Group('laravel-media-library')]
     #[Test]
-    public function it_flushes_the_cache_when_a_raid_media_conversion_completes(): void
+    public function it_flushes_only_after_the_transaction_commits(): void
     {
+        $boss = Boss::factory()->create();
         $this->primeCache();
 
-        (new FlushRaidingCache)->handleConversionCompleted($this->conversionCompletedFor(new Raid));
+        DB::transaction(function () use ($boss): void {
+            $boss->update(['name' => 'Renamed']);
+
+            $this->assertTrue($this->cacheIsPrimed());
+        });
 
         $this->assertFalse($this->cacheIsPrimed());
     }
 
-    #[Group('laravel-media-library')]
     #[Test]
-    public function it_ignores_conversions_completed_on_other_models(): void
+    public function it_records_one_pending_flush_while_the_request_is_deferring(): void
     {
         $this->primeCache();
+        request()->attributes->set(SharesDeferredCacheFlushes::DEFERRING_KEY, true);
 
-        (new FlushRaidingCache)->handleConversionCompleted($this->conversionCompletedFor(new GameVersion));
+        $this->listener()->handle(new class implements FlushesRaidingCache {});
+        $this->listener()->handle(new class implements FlushesRaidingCache {});
 
+        $pendingFlushes = request()->attributes->get(SharesDeferredCacheFlushes::PENDING_KEY);
         $this->assertTrue($this->cacheIsPrimed());
+        $this->assertCount(1, $pendingFlushes);
+
+        reset($pendingFlushes)();
+
+        $this->assertFalse($this->cacheIsPrimed());
     }
 
-    private function conversionCompletedFor(Model $model): ConversionHasBeenCompletedEvent
+    // ==================== helpers ====================
+
+    private function listener(): FlushRaidingCache
     {
-        return new ConversionHasBeenCompletedEvent(
-            (new Media)->forceFill(['model_type' => $model->getMorphClass()]),
-            new Conversion('header'),
-        );
+        return $this->app->make(FlushRaidingCache::class);
     }
 
     private function primeCache(): void

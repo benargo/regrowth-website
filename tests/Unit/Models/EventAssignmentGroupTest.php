@@ -2,13 +2,12 @@
 
 namespace Tests\Unit\Models;
 
-use App\Contracts\Events\FlushesRaidingCache;
-use App\Events\EventAssignmentGroupChanged;
+use App\Events\RaidingDataChanged;
 use App\Models\Boss;
 use App\Models\Event;
 use App\Models\EventAssignment;
 use App\Models\EventAssignmentGroup;
-use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Event as EventFacade;
@@ -288,44 +287,41 @@ class EventAssignmentGroupTest extends ModelTestCase
     // ==================== model events ====================
 
     #[Test]
-    public function it_dispatches_event_assignment_group_changed_when_created(): void
+    public function it_dispatches_raiding_data_changed_when_created(): void
     {
-        EventFacade::fake([EventAssignmentGroupChanged::class]);
+        EventFacade::fake([RaidingDataChanged::class]);
 
         $eventAssignmentGroup = EventAssignmentGroup::factory()->create();
 
-        EventFacade::assertDispatched(EventAssignmentGroupChanged::class, fn (EventAssignmentGroupChanged $event) => $event->eventAssignmentGroup->is($eventAssignmentGroup));
+        $this->assertSame(1, $this->dispatchedFor($eventAssignmentGroup));
     }
 
     #[Test]
-    public function it_dispatches_event_assignment_group_changed_when_updated(): void
+    public function it_dispatches_raiding_data_changed_when_updated(): void
     {
         $eventAssignmentGroup = EventAssignmentGroup::factory()->create();
-        EventFacade::fake([EventAssignmentGroupChanged::class]);
+        EventFacade::fake([RaidingDataChanged::class]);
 
         $eventAssignmentGroup->update(['name' => 'Renamed']);
 
-        EventFacade::assertDispatched(EventAssignmentGroupChanged::class, fn (EventAssignmentGroupChanged $event) => $event->eventAssignmentGroup->is($eventAssignmentGroup));
+        $this->assertSame(1, $this->dispatchedFor($eventAssignmentGroup));
     }
 
     #[Test]
-    public function it_dispatches_event_assignment_group_changed_when_deleted(): void
+    public function it_dispatches_raiding_data_changed_when_deleted(): void
     {
         $eventAssignmentGroup = EventAssignmentGroup::factory()->create();
-        EventFacade::fake([EventAssignmentGroupChanged::class]);
+        EventFacade::fake([RaidingDataChanged::class]);
 
         $eventAssignmentGroup->delete();
 
-        EventFacade::assertDispatched(EventAssignmentGroupChanged::class, fn (EventAssignmentGroupChanged $event) => $event->eventAssignmentGroup->is($eventAssignmentGroup));
+        $this->assertSame(1, $this->dispatchedFor($eventAssignmentGroup));
     }
 
-    #[Group('contract')]
-    #[Test]
-    public function event_assignment_group_changed_flushes_the_raiding_cache_after_commit(): void
-    {
-        $event = new EventAssignmentGroupChanged(new EventAssignmentGroup);
+    // ==================== helpers ====================
 
-        $this->assertInstanceOf(FlushesRaidingCache::class, $event);
-        $this->assertInstanceOf(ShouldDispatchAfterCommit::class, $event);
+    private function dispatchedFor(Model $model): int
+    {
+        return EventFacade::dispatched(RaidingDataChanged::class, fn (RaidingDataChanged $event): bool => $event->model->is($model))->count();
     }
 }

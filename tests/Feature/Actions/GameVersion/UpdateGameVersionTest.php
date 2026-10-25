@@ -3,6 +3,7 @@
 namespace Tests\Feature\Actions\GameVersion;
 
 use App\Actions\GameVersion\UpdateGameVersion;
+use App\Contracts\Actions\GameVersion\CachesSelectableGameVersions;
 use App\Enums\Faction;
 use App\Models\Boss;
 use App\Models\GameVersion;
@@ -14,6 +15,7 @@ use App\Models\Raid;
 use App\Models\WarcraftLogs\Guild;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
@@ -328,7 +330,35 @@ class UpdateGameVersionTest extends TestCase
         $this->assertTrue($fresh->hasMedia(GameVersion::MEDIA_LOGO));
     }
 
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function it_flushes_the_game_versions_cache_now_and_when_the_application_terminates_after_an_upload(): void
+    {
+        Storage::fake('public');
+        $gameVersion = GameVersion::factory()->create();
+        $this->primeGameVersionsCache();
+
+        $this->updateGameVersion($gameVersion, [GameVersion::MEDIA_LOGO => UploadedFile::fake()->image('logo.png')]);
+
+        $this->assertFalse($this->gameVersionsCacheIsPrimed());
+
+        $this->primeGameVersionsCache();
+        $this->app->terminate();
+
+        $this->assertFalse($this->gameVersionsCacheIsPrimed());
+    }
+
     // ==================== helpers ====================
+
+    private function primeGameVersionsCache(): void
+    {
+        Cache::tags([CachesSelectableGameVersions::CACHE_TAG])->put('probe', true, 60);
+    }
+
+    private function gameVersionsCacheIsPrimed(): bool
+    {
+        return Cache::tags([CachesSelectableGameVersions::CACHE_TAG])->has('probe');
+    }
 
     private function attachImage(GameVersion $gameVersion, string $collection): void
     {

@@ -52,7 +52,7 @@ class BuildPhaseIndexGroups
      */
     private function group(?GameVersion $gameVersion, Collection $phases, BuildPhaseRoutes $routes): array
     {
-        $currentPhase = $phases->filter(fn (Phase $phase): bool => $phase->hasStarted())->last();
+        $currentPhase = $phases->filter(fn (Phase $phase): bool => $phase->has_started)->last();
         $resources = PhaseResource::collection($phases->values());
 
         $resources->collection->each(

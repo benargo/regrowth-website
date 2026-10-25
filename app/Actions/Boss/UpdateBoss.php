@@ -2,7 +2,7 @@
 
 namespace App\Actions\Boss;
 
-use App\Events\BossChanged;
+use App\Events\RaidingDataChanged;
 use App\Models\Boss;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
@@ -13,8 +13,8 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 /**
  * Applies a partial update to a boss. Columns, image removals and image
  * order are written in one transaction, and uploaded images are added after
- * it commits. Any image change then dispatches `BossChanged`, and any change
- * broadcasts `updated` once.
+ * it commits. Image removals or order without a column change then dispatch
+ * `RaidingDataChanged`, and any change broadcasts `updated` once.
  */
 class UpdateBoss
 {
@@ -49,8 +49,8 @@ class UpdateBoss
             $boss->addMedia($image)->toMediaCollection();
         }
 
-        if ($hasMediaChanges) {
-            BossChanged::dispatch($boss);
+        if (! $hasColumnChanges && Arr::hasAny($data, ['removed_image_ids', 'image_ids'])) {
+            RaidingDataChanged::dispatch($boss);
         }
 
         $boss->broadcastUpdated();
