@@ -47,7 +47,7 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         parent::setUp();
         $this->gameVersion = GameVersion::factory()->create(['realm' => 'Thunderstrike', 'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY]);
-        Storage::fake('public');
+        Storage::fake('s3');
     }
 
     // ==================== job contract ====================
@@ -153,6 +153,24 @@ class AttachPortraitToCharacterTest extends TestCase
 
     #[Group('happy-path')]
     #[Test]
+    public function it_stores_the_portrait_at_a_single_file_name_path(): void
+    {
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => null]);
+
+        $this->mockGetCharacterProfile();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        (new AttachPortraitToCharacter($character->id, self::PORTRAIT_URL))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
+
+        $directory = 'blizzard-cdn/characters/thunderstrike/'.HasCharacterMedia::DEFAULT_MEDIA_SIZE.'/';
+
+        Storage::disk('s3')->assertExists($directory.'51042439-avatar.jpg');
+        Storage::disk('s3')->assertMissing($directory.'51042439-avatar.jpg51042439-avatar.jpg');
+    }
+
+    #[Group('happy-path')]
+    #[Test]
     public function it_is_idempotent_and_skips_attachment_when_portrait_already_present(): void
     {
         $character = Character::factory()->for($this->gameVersion)->create(['gender' => null]);
@@ -177,7 +195,7 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->for($this->gameVersion)->create(['gender' => Gender::MALE]);
         $stalePortrait = $character->addMediaFromString('OLD')
-            ->usingFileName('old-avatar.jpg')
+            ->usingFileName('51042439-avatar.jpg')
             ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION);
         $this->travel(RefreshCharacterPortrait::STALE_AFTER_SECONDS)->seconds();
 
@@ -190,6 +208,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->assertCount(1, $portraits);
         $this->assertSame('51042439-avatar.jpg', $portraits->first()->file_name);
         $this->assertModelMissing($stalePortrait);
+        $this->assertSame('BINARY', Storage::disk('s3')->get($portraits->first()->getPathRelativeToRoot()));
     }
 
     #[Group('error-handling')]
