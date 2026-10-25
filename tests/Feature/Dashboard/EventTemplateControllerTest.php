@@ -11,7 +11,6 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -97,7 +96,7 @@ class EventTemplateControllerTest extends TestCase
     #[Test]
     public function it_lists_templates_without_lazy_loading_raids_or_media(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         foreach (range(1, 2) as $index) {
             Event::factory()->template()->create()->raids()->attach(Raid::factory()->withBanner()->create());
         }
@@ -181,7 +180,7 @@ class EventTemplateControllerTest extends TestCase
     #[Test]
     public function it_lists_create_raids_without_lazy_loading_media(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         Raid::factory()->withBanner()->count(2)->create();
         config(['media-library.force_lazy_loading' => false]);
 
@@ -308,16 +307,16 @@ class EventTemplateControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_passes_question_mark_icon_url_as_signed_url_in_initial_props(): void
+    public function it_passes_question_mark_icon_url_as_cdn_url_in_initial_props(): void
     {
+        Storage::fake('s3');
         $template = Event::factory()->template()->create();
 
         $response = $this->actingAs($this->officer)->get(route('management.event-templates.edit', $template));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Manage/EventTemplates/Edit')
-            ->where('questionMarkIconUrl', fn ($url) => str_contains((string) $url, '/icons/56/inv_misc_questionmark.jpg')
-                && URL::hasValidSignature(request()->create((string) $url)))
+            ->where('questionMarkIconUrl', Storage::disk('s3')->url('blizzard-cdn/icons/56/inv_misc_questionmark.jpg'))
         );
     }
 

@@ -28,6 +28,50 @@ services:
             - redis
             - mailpit
             - selenium
+            - rustfs
+    rustfs:
+        image: "rustfs/rustfs:1.0.4"
+        ports:
+            - "${FORWARD_RUSTFS_PORT:-9000}:9000"
+            - "${FORWARD_RUSTFS_CONSOLE_PORT:-9001}:9001"
+        environment:
+            RUSTFS_ACCESS_KEY: "${AWS_ACCESS_KEY_ID}"
+            RUSTFS_SECRET_KEY: "${AWS_SECRET_ACCESS_KEY}"
+            RUSTFS_ADDRESS: ":9000"
+            RUSTFS_CONSOLE_ADDRESS: ":9001"
+            RUSTFS_CONSOLE_ENABLE: "true"
+        volumes:
+            - "sail-rustfs:/data"
+        networks:
+            - sail
+        healthcheck:
+            test:
+                - CMD-SHELL
+                - "curl -f http://localhost:9000/health || exit 1"
+            retries: 3
+            timeout: 5s
+    rustfs-init:
+        image: "amazon/aws-cli:2.38.5"
+        depends_on:
+            rustfs:
+                condition: service_healthy
+        restart: "no"
+        environment:
+            AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID}"
+            AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY}"
+            AWS_DEFAULT_REGION: "${AWS_DEFAULT_REGION:-us-east-1}"
+            AWS_BUCKET: "${AWS_BUCKET:-regrowth}"
+        volumes:
+            - "./docker/rustfs/public-read-policy.json:/policy.json:ro"
+        networks:
+            - sail
+        entrypoint:
+            - /bin/sh
+            - -c
+            - |
+              aws --endpoint-url http://rustfs:9000 s3api create-bucket --bucket "$$AWS_BUCKET" || aws --endpoint-url http://rustfs:9000 s3api head-bucket --bucket "$$AWS_BUCKET" || exit 1
+              sed "s/__BUCKET__/$$AWS_BUCKET/g" /policy.json > /tmp/policy.json
+              aws --endpoint-url http://rustfs:9000 s3api put-bucket-policy --bucket "$$AWS_BUCKET" --policy file:///tmp/policy.json
     mysql:
         image: "mysql/mysql-server:8.0"
         profiles: [legacy]
@@ -146,4 +190,6 @@ volumes:
     sail-mariadb-logs:
         driver: local
     sail-meilisearch:
+        driver: local
+    sail-rustfs:
         driver: local

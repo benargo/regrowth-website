@@ -79,7 +79,7 @@ class PublishAssignmentsControllerTest extends TestCase
     #[Test]
     public function republishing_after_the_discord_message_was_deleted_posts_nothing(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $stale = DiscordNotification::factory()
             ->withRelatedModels([['model_type' => Event::class, 'model_id' => $this->event->getKey()]])
             ->create([

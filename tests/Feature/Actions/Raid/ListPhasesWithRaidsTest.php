@@ -64,7 +64,7 @@ class ListPhasesWithRaidsTest extends TestCase
     #[Test]
     public function it_serves_later_runs_from_the_cache(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create();
         $raid = Raid::factory()->for(Phase::factory()->forGameVersion($gameVersion))->create(['color' => 'ff8800']);
         $raid->addMedia(UploadedFile::fake()->image('banner.png'))
@@ -114,7 +114,7 @@ class ListPhasesWithRaidsTest extends TestCase
     #[Test]
     public function it_refreshes_the_cache_when_a_raid_banner_is_added(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create();
         $raid = Raid::factory()->for(Phase::factory()->forGameVersion($gameVersion))->create();
         ListPhasesWithRaids::run($gameVersion);
@@ -127,7 +127,7 @@ class ListPhasesWithRaidsTest extends TestCase
     #[Test]
     public function it_refreshes_the_cache_when_a_raid_banner_is_removed(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create();
         $raid = Raid::factory()->for(Phase::factory()->forGameVersion($gameVersion))->withBanner()->create();
         ListPhasesWithRaids::run($gameVersion);
@@ -140,7 +140,7 @@ class ListPhasesWithRaidsTest extends TestCase
     #[Test]
     public function it_refreshes_the_cache_when_a_raid_banner_is_repositioned(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create();
         $raid = Raid::factory()->for(Phase::factory()->forGameVersion($gameVersion))->withBanner('top')->create();
         ListPhasesWithRaids::run($gameVersion);

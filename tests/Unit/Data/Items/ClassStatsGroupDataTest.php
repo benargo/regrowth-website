@@ -46,14 +46,6 @@ class ClassStatsGroupDataTest extends TestCase
         $this->assertSame(8, $data->total);
     }
 
-    #[Test]
-    public function from_playable_class_sets_a_null_icon_when_the_class_has_no_media(): void
-    {
-        $data = ClassStatsGroupData::fromPlayableClass($this->playableClass(''), collect());
-
-        $this->assertNull($data->icon);
-    }
-
     // ==================== toArray ====================
 
     #[Test]
@@ -75,7 +67,7 @@ class ClassStatsGroupDataTest extends TestCase
                     'id' => 7,
                     'title' => 'Feral',
                     'type' => LootPriorityType::SPEC->value,
-                    'icon' => null,
+                    'icon' => 'https://example.com/feral.jpg',
                     'counts' => [1 => 2],
                     'total' => 2,
                 ],
@@ -101,7 +93,7 @@ class ClassStatsGroupDataTest extends TestCase
             id: 7,
             title: 'Feral',
             type: LootPriorityType::SPEC,
-            icon: null,
+            icon: 'https://example.com/feral.jpg',
             counts: $counts,
             total: array_sum($counts),
         );

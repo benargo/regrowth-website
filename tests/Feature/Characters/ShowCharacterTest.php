@@ -75,7 +75,7 @@ class ShowCharacterTest extends TestCase
     #[Test]
     public function show_is_accessible_without_authentication(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $character = Character::factory()->withPlayableClass()->withRank()->create();
         $character->addMediaFromString('BINARY')
@@ -157,7 +157,7 @@ class ShowCharacterTest extends TestCase
     public function show_includes_the_character_portrait_url(): void
     {
         Queue::fake();
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $character = Character::factory()->withPlayableClass()->withRank()->create();
         $character->addMediaFromString('BINARY')

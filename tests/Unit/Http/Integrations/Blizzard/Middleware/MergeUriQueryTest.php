@@ -30,7 +30,7 @@ class MergeUriQueryTest extends TestCase
     #[Test]
     public function it_merges_query_parameters_from_the_uri_into_the_pending_request(): void
     {
-        $disk = Storage::fake('public');
+        $disk = Storage::fake('s3');
 
         $mock = new MockClient([
             FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
@@ -52,7 +52,7 @@ class MergeUriQueryTest extends TestCase
     #[Test]
     public function it_does_not_add_any_query_parameters_when_the_uri_has_none(): void
     {
-        $disk = Storage::fake('public');
+        $disk = Storage::fake('s3');
 
         $mock = new MockClient([
             FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
@@ -73,7 +73,7 @@ class MergeUriQueryTest extends TestCase
     #[Test]
     public function it_merges_without_overwriting_pre_existing_query_parameters(): void
     {
-        $disk = Storage::fake('public');
+        $disk = Storage::fake('s3');
 
         $mock = new MockClient([
             FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),

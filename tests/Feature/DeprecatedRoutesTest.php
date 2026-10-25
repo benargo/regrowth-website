@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\Discord\AttachAvatarToUser;
 use App\Jobs\ProcessGrmUpload;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Phase;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -17,6 +19,16 @@ use Tests\Support\DashboardTestCase;
 #[Group('platform')]
 class DeprecatedRoutesTest extends DashboardTestCase
 {
+    // ==================== icons ====================
+
+    #[Test]
+    #[Group('deprecated')]
+    public function the_icon_proxy_route_is_gone(): void
+    {
+        $this->assertFalse(Route::has('icons.show'));
+        $this->get('/icons/56/inv_bracer_02.jpg')->assertGone();
+    }
+
     // ==================== councillors ====================
 
     #[Test]
@@ -59,7 +71,7 @@ class DeprecatedRoutesTest extends DashboardTestCase
     #[Group('deprecated')]
     public function grm_upload_post_endpoint_is_gone(): void
     {
-        Queue::fake([ProcessGrmUpload::class]);
+        Queue::fake([ProcessGrmUpload::class, AttachAvatarToUser::class]);
         Storage::fake('local');
 
         $response = $this->actingAs($this->officer)->post('/manage/grm-upload', [

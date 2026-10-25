@@ -45,19 +45,19 @@ class EagerlyMirrorAssetsTest extends BlizzardTestCase
     #[Test]
     public function it_warms_every_asset_on_a_get_item_media_response(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $this->fakeItemMediaRequest();
 
         $this->makeConnector()->send(new StubItemMediaRequest(19019));
 
-        Storage::disk('public')->assertExists('blizzard-cdn/icons/56/foo.jpg');
-        Storage::disk('public')->assertExists('blizzard-cdn/icons/256/foo.jpg');
+        Storage::disk('s3')->assertExists('blizzard-cdn/icons/56/foo.jpg');
+        Storage::disk('s3')->assertExists('blizzard-cdn/icons/256/foo.jpg');
     }
 
     #[Test]
     public function it_sets_the_mirrored_path_on_each_asset_data_after_warming(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $this->fakeItemMediaRequest();
 
         $response = $this->makeConnector()->send(new StubItemMediaRequest(19019));

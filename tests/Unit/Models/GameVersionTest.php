@@ -609,7 +609,7 @@ class GameVersionTest extends ModelTestCase
     #[Test]
     public function a_new_banner_replaces_the_old_one(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = $this->create();
 
         $gameVersion->addMedia(UploadedFile::fake()->image('old.png'))->toMediaCollection(GameVersion::MEDIA_BANNER);
@@ -624,7 +624,7 @@ class GameVersionTest extends ModelTestCase
     #[Test]
     public function it_rejects_a_file_that_is_not_an_image(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = $this->create();
 
         $this->expectException(FileUnacceptableForCollection::class);

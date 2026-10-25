@@ -62,6 +62,36 @@ class SyncUsersTest extends TestCase
     }
 
     #[Test]
+    public function it_updates_the_user_avatar_hash(): void
+    {
+        User::factory()->create(['id' => '100000000000000001', 'avatar' => 'old_avatar']);
+
+        $this->fakeMembers([
+            array_replace_recursive($this->member('100000000000000001'), ['user' => ['avatar' => 'new_avatar']]),
+        ]);
+
+        SyncUsers::dispatchSync();
+
+        $this->assertSame('new_avatar', User::find('100000000000000001')->avatar);
+    }
+
+    #[Test]
+    public function it_updates_the_avatar_of_a_user_alongside_a_member_without_a_user(): void
+    {
+        User::factory()->create(['id' => '100000000000000001', 'avatar' => 'old_avatar']);
+
+        $this->fakeMembers([
+            array_replace_recursive($this->member('100000000000000001'), ['user' => ['avatar' => 'new_avatar']]),
+            Arr::except($this->member('100000000000000002'), ['user']),
+        ]);
+
+        SyncUsers::dispatchSync();
+
+        $this->assertSame('new_avatar', User::find('100000000000000001')->avatar);
+        $this->assertDatabaseMissing('users', ['id' => '100000000000000002']);
+    }
+
+    #[Test]
     public function it_syncs_roles_and_ignores_unknown_role_ids(): void
     {
         $officer = DiscordRole::factory()->create(['id' => '111111111111111111']);

@@ -63,6 +63,6 @@ class CommentController extends Controller
      */
     protected function replyEagerLoads(): array
     {
-        return ['user', 'commentable', 'reactions.user'];
+        return ['user.media', 'commentable', 'reactions.user.media'];
     }
 }

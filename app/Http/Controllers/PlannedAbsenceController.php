@@ -44,7 +44,7 @@ class PlannedAbsenceController extends Controller
                 $absences = PlannedAbsence::query()
                     ->withTrashed()
                     ->notEnded()
-                    ->with(['character.media', 'character.playableClass', 'createdBy'])
+                    ->with(['character.media', 'character.playableClass', 'createdBy.media'])
                     ->orderBy('start_date')
                     ->get();
 
@@ -75,7 +75,7 @@ class PlannedAbsenceController extends Controller
                 PlannedAbsence::query()
                     ->withTrashed()
                     ->ended()
-                    ->with(['character.media', 'character.playableClass', 'createdBy'])
+                    ->with(['character.media', 'character.playableClass', 'createdBy.media'])
                     ->orderBy('start_date')
                     ->get()
             )->resolve($request)

@@ -34,7 +34,7 @@ class BuildAddonExportFileTest extends TestCase
         parent::setUp();
 
         Storage::fake('local');
-        Storage::fake('public');
+        Storage::fake('s3');
     }
 
     // ==================== job contract ====================

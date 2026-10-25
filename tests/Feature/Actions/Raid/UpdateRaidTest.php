@@ -105,7 +105,7 @@ class UpdateRaidTest extends TestCase
     #[Test]
     public function it_stores_an_uploaded_banner(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->create();
 
         UpdateRaid::run($raid, ['banner' => UploadedFile::fake()->image('karazhan.webp')]);
@@ -117,7 +117,7 @@ class UpdateRaidTest extends TestCase
     #[Test]
     public function it_replaces_the_banner(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->withBanner()->create();
 
         UpdateRaid::run($raid, ['banner' => UploadedFile::fake()->image('new.webp')]);
@@ -131,7 +131,7 @@ class UpdateRaidTest extends TestCase
     #[Test]
     public function it_removes_the_banner_given_as_null(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->withBanner()->create();
 
         UpdateRaid::run($raid, ['banner' => null]);
@@ -143,7 +143,7 @@ class UpdateRaidTest extends TestCase
     #[Test]
     public function it_writes_the_banner_position_to_the_banner(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->withBanner()->create();
 
         UpdateRaid::run($raid, ['banner_position' => 'center bottom']);
@@ -155,7 +155,7 @@ class UpdateRaidTest extends TestCase
     #[Test]
     public function it_clears_the_banner_position_given_as_null(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->withBanner('center top')->create();
 
         UpdateRaid::run($raid, ['banner_position' => null]);
@@ -168,7 +168,7 @@ class UpdateRaidTest extends TestCase
     #[Test]
     public function it_writes_the_position_onto_a_banner_uploaded_in_the_same_request(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->create();
 
         UpdateRaid::run($raid, [
@@ -183,7 +183,7 @@ class UpdateRaidTest extends TestCase
     #[Test]
     public function it_keeps_the_previous_position_for_a_new_banner(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->withBanner('center top')->create();
 
         UpdateRaid::run($raid, ['banner' => UploadedFile::fake()->image('new.webp')]);
@@ -195,7 +195,7 @@ class UpdateRaidTest extends TestCase
     #[Test]
     public function it_leaves_the_banner_alone_when_its_keys_are_not_given(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->withBanner('center top')->create();
 
         UpdateRaid::run($raid, ['name' => 'Karazhan']);
@@ -235,7 +235,7 @@ class UpdateRaidTest extends TestCase
     #[Test]
     public function it_dispatches_raiding_data_changed_once_when_columns_and_the_banner_position_change_together(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->withBanner()->create();
         Event::fake([RaidingDataChanged::class]);
 
@@ -249,7 +249,7 @@ class UpdateRaidTest extends TestCase
     #[Test]
     public function it_dispatches_raiding_data_changed_once_for_a_banner_upload(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->create();
         Event::fake([RaidingDataChanged::class]);
         Queue::fake();
@@ -263,7 +263,7 @@ class UpdateRaidTest extends TestCase
     #[Test]
     public function it_dispatches_raiding_data_changed_once_when_the_banner_is_removed(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->withBanner()->create();
         Event::fake([RaidingDataChanged::class]);
 
@@ -276,7 +276,7 @@ class UpdateRaidTest extends TestCase
     #[Test]
     public function it_dispatches_raiding_data_changed_when_only_the_banner_position_changes(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->withBanner()->create();
         Event::fake([RaidingDataChanged::class]);
 

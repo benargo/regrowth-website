@@ -21,7 +21,7 @@ class CharacterMediaPathGeneratorTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('public');
+        Storage::fake('s3');
     }
 
     #[Test]
@@ -31,7 +31,7 @@ class CharacterMediaPathGeneratorTest extends TestCase
 
         $path = $this->generator('thunderstrike')->getPath($media);
 
-        $this->assertSame('blizzard-cdn/characters/thunderstrike/135/51042439-avatar.jpg', $path);
+        $this->assertSame('blizzard-cdn/characters/thunderstrike/135/', $path);
     }
 
     #[Test]
@@ -41,7 +41,7 @@ class CharacterMediaPathGeneratorTest extends TestCase
 
         $path = $this->generator()->getPath($media);
 
-        $this->assertSame('blizzard-cdn/characters/thunderstrike/135/51042439-avatar.jpg', $path);
+        $this->assertSame('blizzard-cdn/characters/thunderstrike/135/', $path);
     }
 
     #[Test]
@@ -51,7 +51,7 @@ class CharacterMediaPathGeneratorTest extends TestCase
 
         $path = $this->generator()->getPath($media);
 
-        $this->assertSame('blizzard-cdn/characters/thunderstrike/56/51042439-avatar.jpg', $path);
+        $this->assertSame('blizzard-cdn/characters/thunderstrike/56/', $path);
     }
 
     #[Test]
@@ -61,7 +61,7 @@ class CharacterMediaPathGeneratorTest extends TestCase
 
         $path = $this->generator('silvermoon')->getPath($media);
 
-        $this->assertSame('blizzard-cdn/characters/silvermoon/135/51042439-avatar.jpg', $path);
+        $this->assertSame('blizzard-cdn/characters/silvermoon/135/', $path);
     }
 
     #[Test]

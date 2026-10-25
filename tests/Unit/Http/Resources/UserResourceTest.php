@@ -183,7 +183,7 @@ class UserResourceTest extends TestCase
         $resource = new UserResource($user);
         $array = $resource->toArray(new Request);
 
-        $this->assertSame('https://cdn.discordapp.com/embed/avatars/2.png', $array['avatar']);
+        $this->assertSame('https://cdn.test/discord-cdn/embed/avatars/2.png', $array['avatar']);
     }
 
     // ==================== roles ====================

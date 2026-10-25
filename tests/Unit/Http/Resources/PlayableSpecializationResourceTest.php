@@ -7,8 +7,10 @@ use App\Http\Resources\PlayableSpecializationResource;
 use App\Models\Character;
 use App\Models\PlayableClass;
 use App\Models\PlayableSpecialization;
+use App\Support\MediaLibrary\UnknownBlizzardIcon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -61,13 +63,14 @@ class PlayableSpecializationResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_null_icon_url_when_no_media_attached(): void
+    public function it_returns_the_questionmark_icon_url_when_no_media_attached(): void
     {
+        Storage::fake('s3');
         $spec = PlayableSpecialization::factory()->create();
 
         $array = (new PlayableSpecializationResource($spec))->resolve(new Request);
 
-        $this->assertNull($array['icon_url']);
+        $this->assertSame(app(UnknownBlizzardIcon::class)->url(), $array['icon_url']);
     }
 
     #[Test]

@@ -50,7 +50,7 @@ class FetchAssetResponseTest extends TestCase
     #[Test]
     public function mirrored_url_returns_storage_url_when_path_is_set(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $response = $this->makeResponse();
         $response->setMirroredPath('blizzard-cdn/icons/56/foo.jpg');

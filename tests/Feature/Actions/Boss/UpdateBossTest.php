@@ -28,7 +28,7 @@ class UpdateBossTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('public');
+        Storage::fake('s3');
     }
 
     // ==================== update ====================

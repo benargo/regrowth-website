@@ -5,10 +5,10 @@ namespace Tests\Unit\Http\Resources;
 use App\Http\Resources\PlayableClassResource;
 use App\Models\PlayableClass;
 use App\Models\PlayableSpecialization;
+use App\Support\MediaLibrary\UnknownBlizzardIcon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\URL;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -62,13 +62,14 @@ class PlayableClassResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_null_icon_url_when_no_media_attached(): void
+    public function it_returns_the_questionmark_icon_url_when_no_media_attached(): void
     {
+        Storage::fake('s3');
         $playableClass = PlayableClass::factory()->create();
 
         $array = (new PlayableClassResource($playableClass))->resolve(new Request);
 
-        $this->assertNull($array['icon_url']);
+        $this->assertSame(app(UnknownBlizzardIcon::class)->url(), $array['icon_url']);
     }
 
     #[Test]
@@ -82,9 +83,9 @@ class PlayableClassResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_signed_icon_url_when_media_attached(): void
+    public function it_returns_icon_url_when_media_attached(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $playableClass = PlayableClass::factory()->create();
         $playableClass->addMediaFromString('BINARY')
@@ -95,8 +96,7 @@ class PlayableClassResourceTest extends TestCase
         $array = (new PlayableClassResource($playableClass))->toArray(new Request);
 
         $this->assertNotNull($array['icon_url']);
-        $this->assertStringContainsString('/icons/56/classicon_7.jpg', $array['icon_url']);
-        $this->assertTrue(URL::hasValidSignature(request()->create($array['icon_url'])));
+        $this->assertSame(Storage::disk('s3')->url('blizzard-cdn/icons/56/classicon_7.jpg'), $array['icon_url']);
     }
 
     #[Test]

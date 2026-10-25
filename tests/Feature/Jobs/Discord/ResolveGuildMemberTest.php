@@ -4,6 +4,7 @@ namespace Tests\Feature\Jobs\Discord;
 
 use App\Events\Broadcasts\DiscordMemberResolved;
 use App\Http\Integrations\Discord\Requests\Guilds\GetGuildMemberRequest;
+use App\Jobs\Discord\AttachAvatarToUser;
 use App\Jobs\Discord\ResolveGuildMember;
 use App\Models\DiscordRole;
 use App\Models\User;
@@ -98,7 +99,7 @@ class ResolveGuildMemberTest extends TestCase
     #[Group('contract')]
     public function it_runs_on_the_high_queue(): void
     {
-        Queue::fake([ResolveGuildMember::class]);
+        Queue::fake([ResolveGuildMember::class, AttachAvatarToUser::class]);
 
         ResolveGuildMember::dispatch('999999999999999999', '100000000000000003');
 

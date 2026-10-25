@@ -6,6 +6,7 @@ use App\Casts\AsBinaryColor;
 use App\Contracts\Models\BelongsToGameVersion;
 use App\Contracts\Models\DatasetModel;
 use App\Events\RaidingDataChanged;
+use App\Jobs\Discord\AttachAvatarToUser;
 use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\Event;
@@ -693,7 +694,7 @@ class RaidTest extends ModelTestCase
     #[Test]
     public function a_new_banner_replaces_the_old_one(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = $this->create();
 
         $raid->addMedia(UploadedFile::fake()->image('old.png'))->toMediaCollection(Raid::MEDIA_BANNER);
@@ -711,7 +712,7 @@ class RaidTest extends ModelTestCase
     #[TestWith(['banner.webp'])]
     public function the_banner_accepts_raster_images(string $fileName): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = $this->create();
 
         $raid->addMedia(UploadedFile::fake()->image($fileName))->toMediaCollection(Raid::MEDIA_BANNER);
@@ -723,7 +724,7 @@ class RaidTest extends ModelTestCase
     #[Test]
     public function the_banner_rejects_other_files(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = $this->create();
 
         $this->expectException(FileUnacceptableForCollection::class);
@@ -745,8 +746,8 @@ class RaidTest extends ModelTestCase
     #[Test]
     public function banner_url_is_the_original_until_the_header_conversion_exists(): void
     {
-        Storage::fake('public');
-        Queue::fake([PerformConversionsJob::class]);
+        Storage::fake('s3');
+        Queue::fake([PerformConversionsJob::class, AttachAvatarToUser::class]);
 
         $raid = Raid::factory()->withBanner()->create();
 
@@ -759,7 +760,7 @@ class RaidTest extends ModelTestCase
     #[Test]
     public function banner_url_is_the_header_conversion_once_generated(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $raid = Raid::factory()->withBanner()->create();
 
@@ -773,7 +774,7 @@ class RaidTest extends ModelTestCase
     #[Test]
     public function banner_position_reads_the_position_custom_property(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $raid = Raid::factory()->withBanner('center bottom')->create();
 
@@ -783,7 +784,7 @@ class RaidTest extends ModelTestCase
     #[Test]
     public function banner_url_and_position_are_not_serialized(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $array = Raid::factory()->withBanner()->create()->fresh()->toArray();
 

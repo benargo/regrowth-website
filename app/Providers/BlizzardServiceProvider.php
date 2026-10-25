@@ -15,6 +15,7 @@ use App\Http\Integrations\Blizzard\Support\MirrorPaths;
 use App\Http\Integrations\ServedFromCache;
 use App\Support\MediaLibrary\BlizzardIconPathGenerator;
 use App\Support\MediaLibrary\CharacterMediaPathGenerator;
+use App\Support\MediaLibrary\UnknownBlizzardIcon;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\ServiceProvider;
@@ -58,6 +59,8 @@ class BlizzardServiceProvider extends ServiceProvider
                 region: Region::from(data_get($config, 'region', 'eu')),
             );
         });
+
+        $this->app->singleton(UnknownBlizzardIcon::class);
 
         $this->app->singleton(RenderConnector::class, function (Application $app) use ($config) {
             return new RenderConnector(
@@ -105,6 +108,7 @@ class BlizzardServiceProvider extends ServiceProvider
             CharacterMediaPathGenerator::class,
             MirrorPaths::class,
             RenderConnector::class,
+            UnknownBlizzardIcon::class,
         ];
     }
 }

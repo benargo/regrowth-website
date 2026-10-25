@@ -117,17 +117,18 @@ class RaidAssignmentsPublished extends DiscordMessage implements ShouldBroadcast
     protected function embedMedia(): ?EmbedMediaData
     {
         $path = 'images/assignments_blueprint.webp';
+        $disk = Storage::disk(config('media-library.disk_name'));
 
-        if (! Storage::disk('public')->exists($path)) {
+        if (! $disk->exists($path)) {
             if (! file_exists(resource_path($path))) {
                 return null;
             }
 
-            Storage::disk('public')->put($path, file_get_contents(resource_path($path)));
+            $disk->put($path, file_get_contents(resource_path($path)));
         }
 
         return EmbedMediaData::from([
-            'url' => Storage::disk('public')->url($path),
+            'url' => $disk->url($path),
             'content_type' => 'image/webp',
             'description' => 'A blueprint for raid assignments with various notes and markings on it.',
         ]);

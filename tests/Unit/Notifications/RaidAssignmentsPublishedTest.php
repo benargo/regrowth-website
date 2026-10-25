@@ -32,6 +32,8 @@ class RaidAssignmentsPublishedTest extends TestCase
 
         $channel = ChannelData::from(['id' => '123456789012345678', 'type' => 0]);
         $this->notifiable = $channel;
+
+        Storage::fake(config('media-library.disk_name'));
     }
 
     #[Test]
@@ -233,6 +235,21 @@ class RaidAssignmentsPublishedTest extends TestCase
 
         $this->assertNotNull($embed->image);
         $this->assertStringContainsString('assignments_blueprint', $embed->image->url);
+    }
+
+    #[Test]
+    public function it_stores_the_blueprint_image_on_the_media_disk(): void
+    {
+        Storage::fake('public');
+        Storage::fake('s3');
+
+        $event = Event::factory()->create();
+
+        $embed = (new RaidAssignmentsPublished($event))->toMessage()->embeds[0];
+
+        Storage::disk('s3')->assertExists('images/assignments_blueprint.webp');
+        Storage::disk('public')->assertMissing('images/assignments_blueprint.webp');
+        $this->assertSame(Storage::disk('s3')->url('images/assignments_blueprint.webp'), $embed->image->url);
     }
 
     #[Test]

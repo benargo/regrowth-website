@@ -27,7 +27,7 @@ class AttachBlizzardIconToModelTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Storage::fake('public');
+        Storage::fake('s3');
     }
 
     // ==================== job contract ====================
@@ -142,6 +142,24 @@ class AttachBlizzardIconToModelTest extends TestCase
         $media = $item->fresh()->getFirstMedia('blizzard_icons');
         $this->assertSame("item_{$item->id}.jpg", $media->file_name);
         $this->assertSame(56, $media->getCustomProperty('size'));
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_stores_the_icon_at_a_single_file_name_path(): void
+    {
+        $item = Item::factory()->create();
+
+        Saloon::fake([
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
+
+        $assetUrl = 'https://render.worldofwarcraft.com/eu/icons/56/inv_bracer_02.jpg';
+
+        (new AttachBlizzardIconToModel(Item::class, $item->id, $assetUrl))->handle(app(RenderConnector::class));
+
+        Storage::disk('s3')->assertExists('blizzard-cdn/icons/56/inv_bracer_02.jpg');
+        Storage::disk('s3')->assertMissing('blizzard-cdn/icons/56/inv_bracer_02.jpginv_bracer_02.jpg');
     }
 
     #[Group('happy-path')]

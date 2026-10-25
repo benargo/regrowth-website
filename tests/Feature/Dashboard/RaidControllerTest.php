@@ -98,7 +98,7 @@ class RaidControllerTest extends DashboardTestCase
     #[Test]
     public function it_lists_raids_without_lazy_loading(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $phase = Phase::factory()->for(GameVersion::factory())->create();
         Raid::factory()->count(2)->for($phase)->withBanner()->create();
 
@@ -779,7 +779,7 @@ class RaidControllerTest extends DashboardTestCase
     #[Test]
     public function it_stores_a_banner_uploaded_as_a_spoofed_patch(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->create(['name' => 'Karazhan']);
 
         $response = $this->actingAs($this->officer)
@@ -797,7 +797,7 @@ class RaidControllerTest extends DashboardTestCase
     #[Test]
     public function it_flushes_the_raiding_cache_once_after_the_old_banner_is_replaced(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = EventFacade::fakeFor(
             fn () => Raid::factory()->withBanner()->create(['name' => 'Karazhan']),
             [MediaHasBeenAddedEvent::class],
@@ -825,7 +825,7 @@ class RaidControllerTest extends DashboardTestCase
     #[Test]
     public function it_accepts_a_banner_position_with_a_banner_uploaded_in_the_same_request(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->create();
 
         $response = $this->actingAs($this->officer)
@@ -843,7 +843,7 @@ class RaidControllerTest extends DashboardTestCase
     #[Test]
     public function it_passes_a_banner_position_for_a_stored_banner(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->withBanner()->create();
         $this->expectUpdate($raid, ['banner_position' => 'center top']);
 
@@ -904,7 +904,7 @@ class RaidControllerTest extends DashboardTestCase
     #[Test]
     public function it_rejects_a_banner_position_sent_with_the_banner_removed(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->withBanner()->create();
         UpdateRaid::shouldNotRun();
 
@@ -933,7 +933,7 @@ class RaidControllerTest extends DashboardTestCase
     #[Test]
     public function it_rejects_an_unknown_banner_position(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->withBanner()->create();
         UpdateRaid::shouldNotRun();
 

@@ -43,7 +43,7 @@ class DashboardPagesTest extends TestCase
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'edit-datasets', 'guard_name' => 'web']));
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'update-characters', 'guard_name' => 'web']));
 
-        Storage::fake('public');
+        Storage::fake('s3');
 
         // Fake Blizzard API requests to prevent live HTTP calls
         Saloon::fake([

@@ -121,7 +121,7 @@ class BossPageTest extends TestCase
     #[Test]
     public function it_loads_the_strategy_and_items_without_lazy_loading(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $boss = Boss::factory()->for(Raid::factory()->withBanner())->create();
         $boss->addMedia(UploadedFile::fake()->image('strategy.png'))->toMediaCollection();
         $versionId = GameVersion::factory()->create()->id;

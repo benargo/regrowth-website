@@ -247,7 +247,6 @@ Route::get('/info/privacy', function () {
 /**
  * Include additional route files
  */
-require __DIR__.'/assets.php';
 require __DIR__.'/auth.php';
 require __DIR__.'/deprecated.php';
 require __DIR__.'/testing.php';

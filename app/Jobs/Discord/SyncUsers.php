@@ -74,6 +74,7 @@ class SyncUsers implements ShouldQueue
                 $user->update(Arr::reject([
                     'nickname' => $member->nick,
                     'guild_avatar' => $member->avatar,
+                    'avatar' => $member->user instanceof Optional ? $member->user : $member->user->avatar,
                 ], fn (mixed $value): bool => $value instanceof Optional));
 
                 SyncUserDiscordRoles::run($user, $member->roles);

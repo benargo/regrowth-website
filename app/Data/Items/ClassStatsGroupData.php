@@ -20,7 +20,7 @@ final class ClassStatsGroupData extends Data
         public readonly int $id,
         public readonly string $title,
         public readonly string $slug,
-        public readonly ?string $icon,
+        public readonly string $icon,
         public readonly array $counts,
         public readonly int $total,
         #[DataCollectionOf(PriorityStatsRowData::class)]
@@ -47,7 +47,7 @@ final class ClassStatsGroupData extends Data
             id: $playableClass->id,
             title: $playableClass->name,
             slug: $playableClass->slug,
-            icon: $playableClass->getFirstMediaUrl('blizzard_icons') ?: null,
+            icon: $playableClass->getFirstMediaUrl('blizzard_icons'),
             counts: $counts,
             total: array_sum($counts),
             children: $children,

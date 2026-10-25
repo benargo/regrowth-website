@@ -4,6 +4,7 @@ namespace Tests\Feature\Jobs\Discord;
 
 use App\Events\Broadcasts\DiscordMembersSearched;
 use App\Http\Integrations\Discord\Requests\Guilds\SearchGuildMembersRequest;
+use App\Jobs\Discord\AttachAvatarToUser;
 use App\Jobs\Discord\SearchGuildMembers;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
@@ -87,7 +88,7 @@ class SearchGuildMembersTest extends TestCase
     #[Group('contract')]
     public function it_runs_on_the_high_queue(): void
     {
-        Queue::fake([SearchGuildMembers::class]);
+        Queue::fake([SearchGuildMembers::class, AttachAvatarToUser::class]);
 
         SearchGuildMembers::dispatch('test', 5, '100000000000000003');
 

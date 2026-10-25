@@ -12,7 +12,7 @@ final class LatestDiscussionData extends Data
         public readonly int $id,
         public readonly string $itemName,
         public readonly string $itemQualityClass,
-        public readonly ?string $itemIcon,
+        public readonly string $itemIcon,
         public readonly string $url,
         public readonly ?string $bossName,
         public readonly string $postedAgo,
@@ -21,7 +21,7 @@ final class LatestDiscussionData extends Data
 
     /**
      * Describes a root comment on an item, with its replies_count loaded and the
-     * item's first `blizzard_icons` URL, or null when it has none.
+     * item's first `blizzard_icons` URL.
      */
     public static function fromComment(Comment $comment): self
     {
@@ -32,7 +32,7 @@ final class LatestDiscussionData extends Data
             id: $comment->id,
             itemName: $item->name,
             itemQualityClass: $item->quality->cssClass('text'),
-            itemIcon: $item->getFirstMediaUrl('blizzard_icons') ?: null,
+            itemIcon: $item->getFirstMediaUrl('blizzard_icons'),
             url: route('loot.items.show', ['item' => $item, 'slug' => $item->slug]),
             bossName: $item->boss?->name,
             postedAgo: $comment->created_at->diffForHumans(),

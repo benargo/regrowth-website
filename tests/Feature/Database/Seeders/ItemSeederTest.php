@@ -39,7 +39,7 @@ class ItemSeederTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $this->seed([PhaseSeeder::class, RaidSeeder::class, BossSeeder::class]);
 
@@ -162,7 +162,7 @@ class ItemSeederTest extends TestCase
         $media = $item->getFirstMedia('blizzard_icons');
         $this->assertSame('item_28453.jpg', $media->file_name);
         $this->assertSame(56, $media->getCustomProperty('size'));
-        Storage::disk('public')->assertExists('blizzard-cdn/icons/56/item_28453.jpg');
+        Storage::disk('s3')->assertExists('blizzard-cdn/icons/56/item_28453.jpg');
         $this->assertDatabaseHas('media', [
             'model_type' => Item::class,
             'collection_name' => 'blizzard_icons',

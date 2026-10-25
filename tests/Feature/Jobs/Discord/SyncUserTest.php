@@ -195,6 +195,36 @@ class SyncUserTest extends TestCase
         $this->assertNull($user->guild_avatar);
     }
 
+    #[Test]
+    public function it_updates_the_user_avatar_hash(): void
+    {
+        User::factory()->create(['id' => '100000000000000000', 'avatar' => 'old_avatar']);
+
+        $this->fakeGuildMember([
+            'user' => array_merge($this->makeDiscordGuildMemberResponse()['user'], ['avatar' => 'new_avatar']),
+        ]);
+
+        SyncUser::dispatchSync('100000000000000000');
+
+        $this->assertSame('new_avatar', User::find('100000000000000000')->avatar);
+    }
+
+    #[Test]
+    public function it_keeps_the_user_avatar_hash_when_the_member_payload_has_no_user(): void
+    {
+        User::factory()->create(['id' => '100000000000000000', 'avatar' => 'old_avatar']);
+
+        Saloon::fake([
+            GetGuildMemberRequest::class => MockResponse::make(
+                Arr::except($this->makeDiscordGuildMemberResponse(), ['user']),
+            ),
+        ]);
+
+        SyncUser::dispatchSync('100000000000000000');
+
+        $this->assertSame('old_avatar', User::find('100000000000000000')->avatar);
+    }
+
     // ==================== helpers ====================
 
     /**

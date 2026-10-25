@@ -141,7 +141,7 @@ class PlannedAbsenceResourceTest extends TestCase
     public function it_embeds_the_character_portrait_url_when_media_is_loaded(): void
     {
         $this->mockRequestUser();
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $character = Character::factory()->create();
         $character->addMediaFromString('BINARY')

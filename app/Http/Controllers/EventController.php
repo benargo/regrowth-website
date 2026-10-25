@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Actions\Events\AttachEventChannel;
 use App\Actions\Events\BuildEventsForViewer;
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
-use App\Contracts\HasBlizzardIcons;
 use App\Http\Middleware\RemembersRecordGameVersion;
 use App\Http\Resources\CharacterSummaryResource;
 use App\Http\Resources\EventResource;
@@ -18,6 +17,7 @@ use App\Models\EventAssignmentGroup;
 use App\Models\PlayableClass;
 use App\Models\Spell;
 use App\Models\TargetMarker;
+use App\Support\MediaLibrary\UnknownBlizzardIcon;
 use Illuminate\Contracts\Queue\QueueableCollection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -26,11 +26,10 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class EventController extends Controller implements HasBlizzardIcons
+class EventController extends Controller
 {
     private const int PAST_EVENTS_PER_PAGE = 20;
 
@@ -75,16 +74,13 @@ class EventController extends Controller implements HasBlizzardIcons
     /** Display the specified resource. */
     #[Authorize('view', 'event')]
     #[Middleware(RemembersRecordGameVersion::class.':event,events.index')]
-    public function show(Event $event, Request $request): Response
+    public function show(Event $event, Request $request, UnknownBlizzardIcon $unknownIcon): Response
     {
         $event->load('raids.bosses.media', 'raids.media', 'bosses.media', 'assignments.group', 'characters.rank');
 
         return Inertia::render('Raiding/Plans/Show', [
             'event' => AttachEventChannel::run(new EventResource($event))->resolve($request),
-            'questionMarkIconUrl' => URL::signedRoute('icons.show', [
-                'size' => self::DEFAULT_MEDIA_SIZE,
-                'name' => self::BLIZZARD_UNKNOWN_ICON.'.jpg',
-            ]),
+            'questionMarkIconUrl' => $unknownIcon->url(),
         ]);
     }
 
@@ -93,7 +89,7 @@ class EventController extends Controller implements HasBlizzardIcons
      */
     #[Middleware('auth')]
     #[Authorize('update', 'event')]
-    public function edit(Event $event, Request $request): Response
+    public function edit(Event $event, Request $request, UnknownBlizzardIcon $unknownIcon): Response
     {
         $event->load('raids.bosses.media', 'raids.media', 'bosses.media', 'assignments.group', 'characters.rank');
 
@@ -115,10 +111,7 @@ class EventController extends Controller implements HasBlizzardIcons
                 return SpellResource::collection(Spell::all())->resolve($request);
             }),
             'templates' => $this->loadTemplatesForEvent($event)->all(),
-            'questionMarkIconUrl' => URL::signedRoute('icons.show', [
-                'size' => self::DEFAULT_MEDIA_SIZE,
-                'name' => self::BLIZZARD_UNKNOWN_ICON.'.'.self::DEFAULT_MEDIA_FILE_EXTENSION,
-            ]),
+            'questionMarkIconUrl' => $unknownIcon->url(),
         ]);
     }
 

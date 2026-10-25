@@ -28,7 +28,7 @@ class PrioritySeederTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('public');
+        Storage::fake('s3');
 
         Saloon::fake([
             FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
@@ -78,7 +78,7 @@ class PrioritySeederTest extends TestCase
 
         $media = $tank->getFirstMedia('blizzard_icons');
         $this->assertSame(56, $media->getCustomProperty('size'));
-        Storage::disk('public')->assertExists('blizzard-cdn/icons/56/inv_shield_04.jpg');
+        Storage::disk('s3')->assertExists('blizzard-cdn/icons/56/inv_shield_04.jpg');
     }
 
     #[Test]

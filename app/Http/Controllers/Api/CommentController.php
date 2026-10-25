@@ -41,7 +41,7 @@ class CommentController extends Controller
             $comment->parent()->associate($root)->save();
         }
 
-        $comment->load(['user', 'commentable', 'reactions.user']);
+        $comment->load(['user.media', 'commentable', 'reactions.user.media']);
 
         $this->lootCouncilChannel()->notify(
             $root !== null ? CommentPostedToItem::refresh($root) : new CommentPostedToItem($comment),
@@ -76,7 +76,7 @@ class CommentController extends Controller
             ]);
         });
 
-        $comment->load(['user', 'commentable', 'reactions.user']);
+        $comment->load(['user.media', 'commentable', 'reactions.user.media']);
 
         broadcast(new CommentChanged($comment))->toOthers();
 

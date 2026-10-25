@@ -28,7 +28,7 @@ class CommentReactionController extends Controller
             'user_id' => $request->user()->id,
         ]);
 
-        $reaction->load('user');
+        $reaction->load('user.media');
 
         broadcast(new CommentReactionChanged($reaction, 'created'))->toOthers();
 

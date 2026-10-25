@@ -264,7 +264,7 @@ class BossResourceTest extends TestCase
     #[Test]
     public function the_management_scope_flags_a_strategy_from_notes_or_images(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $withNotes = Boss::factory()->create(['notes' => 'Interrupt the cast.']);
         $withImage = Boss::factory()->create(['notes' => null]);
         $withImage->addMedia(UploadedFile::fake()->image('room.png'))->toMediaCollection();
@@ -283,7 +283,7 @@ class BossResourceTest extends TestCase
     #[TestWith(['management'])]
     public function it_lists_images_by_id_and_url_in_their_order(?string $scope): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $boss = Boss::factory()->create();
         $first = $boss->addMedia(UploadedFile::fake()->image('first.png'))->toMediaCollection();
         $second = $boss->addMedia(UploadedFile::fake()->image('second.png'))->toMediaCollection();
@@ -320,7 +320,7 @@ class BossResourceTest extends TestCase
     #[TestWith(['', false, false])]
     public function the_navigation_scope_flags_a_strategy(?string $notes, bool $hasImage, bool $expected): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $boss = Boss::factory()->create(['notes' => $notes]);
 
         if ($hasImage) {

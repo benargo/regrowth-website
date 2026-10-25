@@ -96,7 +96,7 @@ class PhaseControllerTest extends DashboardTestCase
     #[Test]
     public function it_lists_raids_without_lazy_loading_media(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create();
         $phase = Phase::factory()->for($gameVersion)->create(['start_date' => now()->subMonth()]);
         Raid::factory()->count(2)->for($phase)->withBanner()->create();

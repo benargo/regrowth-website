@@ -9,6 +9,7 @@ use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\GameVersion;
 use App\Models\Item;
+use App\Support\MediaLibrary\UnknownBlizzardIcon;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -75,7 +76,7 @@ class ListLatestDiscussionsTest extends TestCase
     #[Test]
     public function it_includes_the_items_first_blizzard_icon(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $item = Item::factory()->withName()->create(['game_version_id' => $this->gameVersion->id]);
         $item->addMediaFromString('BINARY')
             ->usingFileName('inv_sword_04.jpg')
@@ -88,11 +89,12 @@ class ListLatestDiscussionsTest extends TestCase
     }
 
     #[Test]
-    public function it_sets_a_null_icon_when_the_item_has_no_blizzard_icon(): void
+    public function it_sets_the_questionmark_icon_when_the_item_has_no_blizzard_icon(): void
     {
+        Storage::fake('s3');
         $this->commentOn(Item::factory()->withName()->create(['game_version_id' => $this->gameVersion->id]), now()->subHour());
 
-        $this->assertNull(ListLatestDiscussions::run($this->gameVersion)->sole()->itemIcon);
+        $this->assertSame(app(UnknownBlizzardIcon::class)->url(), ListLatestDiscussions::run($this->gameVersion)->sole()->itemIcon);
     }
 
     #[Test]

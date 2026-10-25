@@ -56,7 +56,7 @@ class BuildEventsForViewerTest extends TestCase
     #[Test]
     public function it_lists_events_without_lazy_loading_raid_media(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $this->fakeDiscord([]);
         foreach (range(1, 2) as $index) {
             Event::factory()->live()->create()->raids()->attach(Raid::factory()->withBanner()->create(), ['sort_order' => 1]);

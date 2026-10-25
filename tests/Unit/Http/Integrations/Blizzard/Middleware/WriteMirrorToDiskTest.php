@@ -28,14 +28,14 @@ class WriteMirrorToDiskTest extends TestCase
     {
         $this->assertInstanceOf(ResponseMiddleware::class, new WriteMirrorToDisk(
             new MirrorPaths(Region::EU),
-            Storage::fake('public'),
+            Storage::fake('s3'),
         ));
     }
 
     #[Test]
     public function it_writes_a_successful_response_body_to_the_disk_at_the_resolved_path(): void
     {
-        $disk = Storage::fake('public');
+        $disk = Storage::fake('s3');
 
         $mock = new MockClient([
             FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
@@ -54,7 +54,7 @@ class WriteMirrorToDiskTest extends TestCase
     #[Test]
     public function it_throws_media_not_found_exception_on_404(): void
     {
-        $disk = Storage::fake('public');
+        $disk = Storage::fake('s3');
 
         $mock = new MockClient([
             FetchIconRequest::class => MockResponse::make(body: 'missing', status: 404),
@@ -71,7 +71,7 @@ class WriteMirrorToDiskTest extends TestCase
     #[Test]
     public function it_swallows_transient_5xx_errors_without_writing(): void
     {
-        $disk = Storage::fake('public');
+        $disk = Storage::fake('s3');
 
         $mock = new MockClient([
             FetchIconRequest::class => MockResponse::make(body: 'oops', status: 503),
@@ -88,7 +88,7 @@ class WriteMirrorToDiskTest extends TestCase
     #[Test]
     public function it_sets_the_mirrored_path_on_the_response(): void
     {
-        $disk = Storage::fake('public');
+        $disk = Storage::fake('s3');
 
         $mock = new MockClient([
             FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
@@ -107,7 +107,7 @@ class WriteMirrorToDiskTest extends TestCase
     #[Test]
     public function it_does_not_overwrite_when_the_file_already_exists(): void
     {
-        $disk = Storage::fake('public');
+        $disk = Storage::fake('s3');
         $disk->put('blizzard-cdn/icons/56/foo.jpg', 'ALREADY_THERE');
 
         $resolver = new MirrorPaths(Region::EU);

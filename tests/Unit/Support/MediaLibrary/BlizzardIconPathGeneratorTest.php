@@ -26,7 +26,7 @@ class BlizzardIconPathGeneratorTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('public');
+        Storage::fake('s3');
     }
 
     private function mediaFor(string $fileName, ?int $size): Media
@@ -46,7 +46,7 @@ class BlizzardIconPathGeneratorTest extends TestCase
 
         $path = (new BlizzardIconPathGenerator)->getPath($media);
 
-        $this->assertSame('blizzard-cdn/icons/56/inv_shield_04.jpg', $path);
+        $this->assertSame('blizzard-cdn/icons/56/', $path);
     }
 
     #[Test]
@@ -56,7 +56,7 @@ class BlizzardIconPathGeneratorTest extends TestCase
 
         $path = (new BlizzardIconPathGenerator)->getPath($media);
 
-        $this->assertSame('blizzard-cdn/icons/56/inv_shield_04.jpg', $path);
+        $this->assertSame('blizzard-cdn/icons/56/', $path);
     }
 
     #[Test]
@@ -66,7 +66,7 @@ class BlizzardIconPathGeneratorTest extends TestCase
 
         $path = (new BlizzardIconPathGenerator)->getPath($media);
 
-        $this->assertSame('blizzard-cdn/icons/36/inv_shield_04.jpg', $path);
+        $this->assertSame('blizzard-cdn/icons/36/', $path);
     }
 
     #[Test]

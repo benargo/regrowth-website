@@ -4,6 +4,7 @@ namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\CharacterSummaryResource;
 use App\Models\Character;
+use App\Support\MediaLibrary\UnknownBlizzardIcon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
@@ -47,7 +48,7 @@ class CharacterSummaryResourceTest extends TestCase
         $this->assertArrayHasKey('name', $array['playable_class']);
         $this->assertArrayHasKey('slug', $array['playable_class']);
         $this->assertArrayHasKey('icon_url', $array['playable_class']);
-        $this->assertNull($array['playable_class']['icon_url']);
+        $this->assertSame(app(UnknownBlizzardIcon::class)->url(), $array['playable_class']['icon_url']);
     }
 
     #[Test]
@@ -119,7 +120,7 @@ class CharacterSummaryResourceTest extends TestCase
     #[Group('media')]
     public function it_returns_the_portrait_url_when_media_is_loaded(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $character = Character::factory()->create();
         $character->addMediaFromString('BINARY')

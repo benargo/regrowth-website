@@ -85,7 +85,7 @@ class BossControllerTest extends DashboardTestCase
     #[Test]
     public function it_lists_bosses_without_lazy_loading_media(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->for(Phase::factory()->for(GameVersion::factory()))->create();
         Boss::factory()->count(2)->for($raid)->create(['notes' => null])
             ->each(fn (Boss $boss) => $boss->addMedia(UploadedFile::fake()->image('room.png'))->toMediaCollection());
@@ -312,7 +312,7 @@ class BossControllerTest extends DashboardTestCase
     #[Test]
     public function it_renders_the_edit_page_with_the_boss_its_raid_and_images(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $raid = Raid::factory()->create(['name' => 'Karazhan']);
         $boss = Boss::factory()->for($raid)->create(['name' => 'Moroes', 'notes' => 'Vanish.']);
         $media = $boss->addMedia(UploadedFile::fake()->image('room.png'))->toMediaCollection();
@@ -409,7 +409,7 @@ class BossControllerTest extends DashboardTestCase
     #[Test]
     public function it_flushes_the_raiding_cache_once_for_an_update_with_several_images(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $boss = Boss::factory()->create(['name' => 'Moroes']);
         Cache::tags(['raiding', 'events'])->put('canary', true, 60);
         $flushes = 0;
@@ -538,7 +538,7 @@ class BossControllerTest extends DashboardTestCase
     #[Test]
     public function it_accepts_an_order_of_the_images_left_after_removals(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $boss = Boss::factory()->create();
         [$first, $second, $third] = $this->addImages($boss, 3);
         $this->expectUpdate($boss, ['removed_image_ids' => [$first->id], 'image_ids' => [$third->id, $second->id]]);
@@ -557,7 +557,7 @@ class BossControllerTest extends DashboardTestCase
     #[Test]
     public function it_rejects_removing_another_bosss_image(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $boss = Boss::factory()->create();
         [$otherBossImage] = $this->addImages(Boss::factory()->create(), 1);
         UpdateBoss::shouldNotRun();
@@ -574,7 +574,7 @@ class BossControllerTest extends DashboardTestCase
     #[Test]
     public function it_rejects_an_image_order_that_is_not_exactly_the_bosss_images(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $boss = Boss::factory()->create();
         [$first] = $this->addImages($boss, 2);
         [$otherBossImage] = $this->addImages(Boss::factory()->create(), 1);

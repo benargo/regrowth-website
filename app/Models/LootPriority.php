@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Contracts\HasBlizzardIcons;
 use App\Enums\LootPriorityType;
+use App\Models\Concerns\InteractsWithBlizzardIcons;
 use App\Models\Concerns\InteractsWithChaperonedMedia;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -19,7 +20,7 @@ use Spatie\MediaLibrary\HasMedia;
 #[Hidden(['created_at', 'updated_at'])]
 class LootPriority extends Model implements HasBlizzardIcons, HasMedia
 {
-    use HasFactory, InteractsWithChaperonedMedia;
+    use HasFactory, InteractsWithBlizzardIcons, InteractsWithChaperonedMedia;
 
     /**
      * Get the attributes that should be cast.
@@ -48,7 +49,7 @@ class LootPriority extends Model implements HasBlizzardIcons, HasMedia
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection(self::MEDIA_COLLECTION)->singleFile();
+        $this->addBlizzardIconCollection();
     }
 
     // ============ Relationships ============

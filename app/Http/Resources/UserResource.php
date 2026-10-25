@@ -20,7 +20,7 @@ class UserResource extends JsonResource
             'discriminator' => $this->discriminator,
             'nickname' => $this->nickname,
             'display_name' => $this->display_name,
-            'avatar' => $this->avatar_url,
+            'avatar' => $this->avatar_thumb_url,
             'roles' => $this->discordRoles->pluck('id')->values()->toArray(),
             'highest_role' => $this->highestRole()?->name,
             'admin' => $this->is_admin,

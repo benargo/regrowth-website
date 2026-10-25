@@ -291,7 +291,7 @@ class HandleInertiaRequestsTest extends TestCase
     #[Test]
     public function it_shares_game_versions_without_lazy_loading_media(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         config(['media-library.force_lazy_loading' => false]);
         $gameVersion = GameVersion::factory()->create();
         GameVersion::factory()->create();
@@ -309,7 +309,7 @@ class HandleInertiaRequestsTest extends TestCase
     #[Test]
     public function it_shares_a_fresh_switcher_icon_after_the_icon_changes(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $gameVersion = GameVersion::factory()->create();
         $this->get('/')->assertOk();
 

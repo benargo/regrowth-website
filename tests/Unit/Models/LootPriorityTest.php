@@ -79,7 +79,7 @@ class LootPriorityTest extends ModelTestCase
     #[Test]
     public function it_keeps_only_the_latest_blizzard_icon(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $priority = $this->create();
 
         $priority->addMediaFromString('BINARY')
@@ -94,20 +94,18 @@ class LootPriorityTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_serves_its_blizzard_icon_through_the_signed_icons_route(): void
+    public function it_serves_its_blizzard_icon_from_the_media_disk(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
         $priority = $this->create();
         $priority->addMediaFromString('BINARY')
             ->usingFileName('spell_holy_heal.jpg')
             ->withCustomProperties(['size' => 56])
             ->toMediaCollection(LootPriority::MEDIA_COLLECTION);
 
-        $url = $priority->getFirstMediaUrl(LootPriority::MEDIA_COLLECTION);
-
-        $this->assertStringStartsWith(
-            route('icons.show', ['size' => 56, 'name' => 'spell_holy_heal.jpg']).'?signature=',
-            $url,
+        $this->assertSame(
+            Storage::disk('s3')->url('blizzard-cdn/icons/56/spell_holy_heal.jpg'),
+            $priority->getFirstMediaUrl(LootPriority::MEDIA_COLLECTION),
         );
     }
 
