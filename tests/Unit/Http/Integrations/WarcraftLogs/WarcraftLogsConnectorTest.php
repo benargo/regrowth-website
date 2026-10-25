@@ -10,6 +10,7 @@ use App\Http\Integrations\WarcraftLogs\Exceptions\GuildNotFoundException;
 use App\Http\Integrations\WarcraftLogs\Exceptions\WarcraftLogsRequestException;
 use App\Http\Integrations\WarcraftLogs\Requests\GetReportsRequest;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -268,6 +269,27 @@ class WarcraftLogsConnectorTest extends WarcraftLogsTestCase
 
     #[Test]
     #[Group('error-handling')]
+    public function the_cooldown_expiry_is_an_exact_offset_from_now_when_the_clocks_go_back(): void
+    {
+        $this->travelTo(Carbon::createFromTimestamp(4096572600));
+        $this->fakeTooManyAttempts();
+
+        $this->assertSame(now()->getTimestamp() + 3600, $this->cooldownExpiryAfterA429());
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function the_cached_reset_expiry_is_an_exact_offset_from_now_when_the_clocks_go_back(): void
+    {
+        $this->travelTo(Carbon::createFromTimestamp(4096572600));
+        $this->resetCache()->put(new RateLimitData(limitPerHour: 3600, pointsSpentThisHour: 3600.0, pointsResetIn: 1200));
+        $this->fakeTooManyAttempts();
+
+        $this->assertSame(now()->getTimestamp() + 1200, $this->cooldownExpiryAfterA429());
+    }
+
+    #[Test]
+    #[Group('error-handling')]
     public function it_serves_a_cached_query_during_the_cooldown(): void
     {
         Saloon::fake([
@@ -418,6 +440,17 @@ class WarcraftLogsConnectorTest extends WarcraftLogsTestCase
             $this->makeConnector()->send(new ProbeRequest(WarcraftLogsNamespace::Anniversary));
         } catch (RateLimitReachedException $exception) {
             return $exception->getLimit()->getRemainingSeconds();
+        }
+
+        $this->fail('Expected a RateLimitReachedException.');
+    }
+
+    private function cooldownExpiryAfterA429(): int
+    {
+        try {
+            $this->makeConnector()->send(new ProbeRequest(WarcraftLogsNamespace::Anniversary));
+        } catch (RateLimitReachedException $exception) {
+            return $exception->getLimit()->getExpiryTimestamp();
         }
 
         $this->fail('Expected a RateLimitReachedException.');

@@ -202,7 +202,7 @@ class WarcraftLogsConnector extends Connector implements HasPagination
             return;
         }
 
-        $limit->exceeded(releaseInSeconds: $this->rateLimitReset->secondsUntilReset() ?? 3600);
+        $this->exceedLimitFor($limit, $this->rateLimitReset->secondsUntilReset() ?? 3600);
     }
 
     /**

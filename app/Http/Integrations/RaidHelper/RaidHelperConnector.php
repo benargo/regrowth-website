@@ -107,8 +107,6 @@ class RaidHelperConnector extends Connector
             return;
         }
 
-        $limit->exceeded(
-            releaseInSeconds: (int) ($response->header('Retry-After') ?? 60),
-        );
+        $this->exceedLimitFor($limit, (int) ($response->header('Retry-After') ?? 60));
     }
 }

@@ -453,6 +453,24 @@ class FetchAttendanceDataTest extends TestCase
 
     #[Test]
     #[Group('error-handling')]
+    public function it_releases_for_exactly_an_hour_when_rate_limited_just_before_the_clocks_go_back(): void
+    {
+        $this->travelTo(Carbon::createFromTimestamp(4096572600));
+
+        Saloon::fake([
+            GetClientCredentialsTokenBasicAuthRequest::class => $this->tokenMock(),
+            GetGuildAttendanceRequest::class => MockResponse::make(['error' => 'Too Many Requests'], 429),
+        ]);
+
+        $job = (new FetchAttendanceData($this->guild))->withFakeQueueInteractions();
+        $job->handle($this->makeConnector());
+
+        $job->assertReleased(delay: 3600);
+        $job->assertNotFailed();
+    }
+
+    #[Test]
+    #[Group('error-handling')]
     public function it_releases_itself_and_writes_nothing_when_rate_limited_on_a_later_page(): void
     {
         $this->freezeTime();
