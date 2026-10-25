@@ -7,6 +7,8 @@ const AutosaveContext = createContext(null);
  * One queue of saves for the whole page. Jobs run one at a time, so an
  * Inertia visit made by one autosave can never cancel another's. A newer job
  * with the same key replaces one that is still waiting: last write wins.
+ * enqueue() returns a Promise that settles with the result of the job that
+ * finally runs under its key.
  *
  * Wrap a page in this provider, then use useAutosave() in each field or
  * section, and a prop-less <AutoSaveLabel /> to show the page's save status.
@@ -53,18 +55,23 @@ export function AutosaveProvider({ children }) {
         }
 
         const job = queue.current.shift();
+        let result = { ok: false };
         running.current = true;
         publish();
 
         Promise.resolve()
             .then(job.run)
             .then(
-                (result) => record(job.key, result),
-                () => record(job.key, { ok: false }),
+                (value) => {
+                    result = value ?? { ok: true };
+                    record(job.key, result);
+                },
+                () => record(job.key, result),
             )
             .finally(() => {
                 running.current = false;
                 publish(true);
+                job.resolvers.forEach((resolve) => resolve(result));
             });
     }, [publish, record]);
 
@@ -76,19 +83,26 @@ export function AutosaveProvider({ children }) {
         pump();
     }, [state, pump]);
 
+    /**
+     * Queue `run` as `key`, replacing a job with that key that is still waiting.
+     * Resolves with the result of the job that runs: { ok: false } when it
+     * throws or is cleared.
+     */
     const enqueue = useCallback(
-        (key, run) => {
-            const waiting = queue.current.find((job) => job.key === key);
+        (key, run) =>
+            new Promise((resolve) => {
+                const waiting = queue.current.find((job) => job.key === key);
 
-            if (waiting) {
-                waiting.run = run;
-            } else {
-                queue.current.push({ key, run });
-            }
+                if (waiting) {
+                    waiting.run = run;
+                    waiting.resolvers.push(resolve);
+                } else {
+                    queue.current.push({ key, run, resolvers: [resolve] });
+                }
 
-            publish();
-            pump();
-        },
+                publish();
+                pump();
+            }),
         [publish, pump],
     );
 
@@ -131,9 +145,12 @@ export function AutosaveProvider({ children }) {
         pump();
     }, [pump]);
 
-    /** Drop every job still waiting. The job already running finishes. */
+    /**
+     * Drop every job still waiting, settling each with { ok: false }. The job
+     * already running finishes.
+     */
     const clear = useCallback(() => {
-        queue.current = [];
+        queue.current.splice(0).forEach((job) => job.resolvers.forEach((resolve) => resolve({ ok: false })));
         sources.current.forEach((source) => source.cancel());
         publish(true);
     }, [publish]);
@@ -213,14 +230,11 @@ export function useAutosaveQueue() {
 }
 
 /**
- * Run `run` in its turn in the save queue, as `key`, or straight away without a queue.
+ * Run `run` in its turn in the save queue, as `key`, or straight away without
+ * a queue. Returns a Promise of the result of the run.
  */
 export function enqueueOrRun(queue, key, run) {
-    if (queue) {
-        queue.enqueue(key, run);
-    } else {
-        run();
-    }
+    return queue ? queue.enqueue(key, run) : Promise.resolve(run());
 }
 
 /**

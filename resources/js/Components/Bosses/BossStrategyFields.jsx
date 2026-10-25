@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useOptimistic, useRef } from "react";
 import { router, useForm, usePage } from "@inertiajs/react";
 import Relationships from "@/Components/Datasets/Relationships";
 import { firstError } from "@/Components/FormControls";
@@ -17,8 +17,9 @@ import { AUTOSAVE_DELAY } from "@/Hooks/useRelationshipForm";
 /**
  * The boss's strategy on its Edit page: markdown notes that save shortly
  * after typing stops, and images that save as soon as they are uploaded,
- * removed or reordered. Images are sent by media id. Without `canEdit`, the
- * images can't be uploaded, removed or reordered.
+ * removed or reordered. Images are sent by media id. Removals and reorders
+ * show straight away, and the list returns to `boss.images` once they save or
+ * fail. Without `canEdit`, the images can't be uploaded, removed or reordered.
  */
 export default function BossStrategyFields({ boss, url, canEdit = true }) {
     const savedNotes = useMemo(() => ({ notes: boss.notes ?? "" }), [boss.notes]);
@@ -34,32 +35,32 @@ export default function BossStrategyFields({ boss, url, canEdit = true }) {
     const queue = useAutosaveQueue();
     const status = useAutosaveStatus();
     const { errors } = usePage().props;
-    const [images, setImages] = useState(boss.images);
+    const [images, addImageChange] = useOptimistic(boss.images, applyImageChange);
+    const savedImages = useRef(boss.images);
 
-    useEffect(() => setImages(boss.images), [boss.images]);
+    useEffect(() => {
+        savedImages.current = boss.images;
+    }, [boss.images]);
 
     const imageError =
         firstError(errors, "images") ?? firstError(errors, "removed_image_ids") ?? firstError(errors, "image_ids");
 
-    function saveImages(key, data, options = {}) {
-        if (!canEdit) {
-            return;
-        }
-
-        enqueueOrRun(queue, key, () =>
-            autosaveVisit(router, "patch", url, { data, headers: AUTOSAVE_HEADERS, ...options }),
+    /**
+     * Queue an image save as `key`. `getData` builds the request data when the
+     * save runs. Returns a Promise of the save's result.
+     */
+    function saveImages(key, getData, options = {}) {
+        return enqueueOrRun(queue, key, () =>
+            autosaveVisit(router, "patch", url, { data: getData(), headers: AUTOSAVE_HEADERS, ...options }),
         );
     }
 
     function handleUpload(files) {
-        saveImages(`strategy-images-upload-${Date.now()}`, { images: files }, { forceFormData: true });
-    }
+        if (!canEdit) {
+            return;
+        }
 
-    /**
-     * Put the saved images back after a removal or reorder the server refused.
-     */
-    function rollBackImages() {
-        setImages(boss.images);
+        saveImages(`strategy-images-upload-${Date.now()}`, () => ({ images: files }), { forceFormData: true });
     }
 
     function handleDelete(id) {
@@ -67,12 +68,10 @@ export default function BossStrategyFields({ boss, url, canEdit = true }) {
             return;
         }
 
-        setImages((current) => current.filter((image) => image.id !== id));
-        saveImages(
-            `strategy-images-remove-${id}`,
-            { removed_image_ids: [id] },
-            { onError: rollBackImages, onNetworkError: rollBackImages },
-        );
+        startTransition(async () => {
+            addImageChange({ type: "remove", id });
+            await saveImages(`strategy-images-remove-${id}`, () => ({ removed_image_ids: [id] }));
+        });
     }
 
     function handleReorder(ids) {
@@ -80,14 +79,12 @@ export default function BossStrategyFields({ boss, url, canEdit = true }) {
             return;
         }
 
-        const imagesById = new Map(images.map((image) => [image.id, image]));
-
-        setImages(ids.map((id) => imagesById.get(id)));
-        saveImages(
-            "strategy-images-order",
-            { image_ids: ids },
-            { onError: rollBackImages, onNetworkError: rollBackImages },
-        );
+        startTransition(async () => {
+            addImageChange({ type: "reorder", ids });
+            await saveImages("strategy-images-order", () => ({
+                image_ids: applyImageChange(savedImages.current, { type: "reorder", ids }).map((image) => image.id),
+            }));
+        });
     }
 
     return (
@@ -127,4 +124,22 @@ export default function BossStrategyFields({ boss, url, canEdit = true }) {
             </div>
         </Relationships>
     );
+}
+
+/**
+ * Apply an image change to a list of images. `{ type: "remove", id }` drops
+ * that image. `{ type: "reorder", ids }` puts the images in `ids` order,
+ * skipping ids that aren't in the list, followed by any image not in `ids`
+ * in its existing order.
+ */
+function applyImageChange(images, change) {
+    if (change.type === "remove") {
+        return images.filter((image) => image.id !== change.id);
+    }
+
+    const imagesById = new Map(images.map((image) => [image.id, image]));
+    const ordered = change.ids.filter((id) => imagesById.has(id)).map((id) => imagesById.get(id));
+    const unordered = images.filter((image) => !change.ids.includes(image.id));
+
+    return [...ordered, ...unordered];
 }
