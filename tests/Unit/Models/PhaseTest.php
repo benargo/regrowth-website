@@ -235,7 +235,7 @@ class PhaseTest extends ModelTestCase
     {
         $phase = $this->factory()->started()->create();
 
-        $this->assertTrue($phase->hasStarted());
+        $this->assertTrue($phase->has_started);
     }
 
     #[Test]
@@ -243,7 +243,7 @@ class PhaseTest extends ModelTestCase
     {
         $phase = $this->factory()->upcoming()->create();
 
-        $this->assertFalse($phase->hasStarted());
+        $this->assertFalse($phase->has_started);
     }
 
     #[Test]
@@ -251,7 +251,7 @@ class PhaseTest extends ModelTestCase
     {
         $phase = $this->factory()->unscheduled()->create();
 
-        $this->assertFalse($phase->hasStarted());
+        $this->assertFalse($phase->has_started);
     }
 
     // ==================== started ====================

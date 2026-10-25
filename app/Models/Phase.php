@@ -106,10 +106,14 @@ class Phase extends Model implements DatasetModel, EditLockable, HasUsage, Sorta
 
     /**
      * Determine if the phase has started.
+     *
+     * @return Attribute<bool, never>
      */
-    public function hasStarted(): bool
+    protected function hasStarted(): Attribute
     {
-        return $this->start_date?->isPast() ?? false;
+        return Attribute::make(
+            get: fn (): bool => $this->start_date?->isPast() ?? false,
+        );
     }
 
     /**
