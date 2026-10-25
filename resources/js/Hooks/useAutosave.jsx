@@ -231,10 +231,18 @@ export function useAutosaveQueue() {
 
 /**
  * Run `run` in its turn in the save queue, as `key`, or straight away without
- * a queue. Returns a Promise of the result of the run.
+ * a queue. Returns a Promise of the result of the run: { ok: true } when it
+ * returns nothing, { ok: false } when it throws.
  */
 export function enqueueOrRun(queue, key, run) {
-    return queue ? queue.enqueue(key, run) : Promise.resolve(run());
+    if (queue) {
+        return queue.enqueue(key, run);
+    }
+
+    return new Promise((resolve) => resolve(run())).then(
+        (value) => value ?? { ok: true },
+        () => ({ ok: false }),
+    );
 }
 
 /**

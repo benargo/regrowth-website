@@ -15,7 +15,7 @@ export default function Show({ section, tab, boss, items, priorityWeightThreshol
     const bossData = boss.data;
     const raid = bossData.raid;
     const sectionConfig = SITE_SECTIONS[section];
-    const showsStrategy = sectionShows(section, "strategy");
+    const shouldShowStrategy = sectionShows(section, "strategy");
     const bossRoute = (query = {}) =>
         route(`${section}.bosses.show`, { boss: bossData.id, slug: bossData.slug, ...query });
     const crumbs = sectionCrumbs(section, [
@@ -27,7 +27,7 @@ export default function Show({ section, tab, boss, items, priorityWeightThreshol
         <section aria-labelledby="boss-items-heading">
             <h2
                 id="boss-items-heading"
-                className={showsStrategy ? "sr-only" : "mb-4 font-serif text-2xl text-amber-200"}
+                className={shouldShowStrategy ? "sr-only" : "mb-4 font-serif text-2xl text-amber-200"}
             >
                 Items
             </h2>
@@ -65,7 +65,7 @@ export default function Show({ section, tab, boss, items, priorityWeightThreshol
                         </Link>
                     </Can>
                 </div>
-                {showsStrategy ? (
+                {shouldShowStrategy ? (
                     <>
                         <TabNav
                             ariaLabel={`${bossData.name} views`}

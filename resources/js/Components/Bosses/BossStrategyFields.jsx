@@ -68,9 +68,11 @@ export default function BossStrategyFields({ boss, url, canEdit = true }) {
             return;
         }
 
+        const saved = saveImages(`strategy-images-remove-${id}`, () => ({ removed_image_ids: [id] }));
+
         startTransition(async () => {
             addImageChange({ type: "remove", id });
-            await saveImages(`strategy-images-remove-${id}`, () => ({ removed_image_ids: [id] }));
+            await saved;
         });
     }
 
@@ -79,11 +81,13 @@ export default function BossStrategyFields({ boss, url, canEdit = true }) {
             return;
         }
 
+        const saved = saveImages("strategy-images-order", () => ({
+            image_ids: applyImageChange(savedImages.current, { type: "reorder", ids }).map((image) => image.id),
+        }));
+
         startTransition(async () => {
             addImageChange({ type: "reorder", ids });
-            await saveImages("strategy-images-order", () => ({
-                image_ids: applyImageChange(savedImages.current, { type: "reorder", ids }).map((image) => image.id),
-            }));
+            await saved;
         });
     }
 

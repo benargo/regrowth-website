@@ -36,7 +36,7 @@ class DispatchMediaOwnerChanged
 
         if (! $this->request->attributes->has($key)) {
             $this->request->attributes->set($key, true);
-            $this->app->terminating(fn () => $this->dispatchFor($owner));
+            $this->app->terminating(static fn () => $owner->mediaChangedEvent()::dispatch($owner));
         }
     }
 
