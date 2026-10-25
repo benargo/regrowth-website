@@ -2,18 +2,13 @@
 
 namespace Tests\Feature\Http\Controllers;
 
-use App\Contracts\HasCharacterMedia;
-use App\Jobs\AttachRenderToCharacter;
-use App\Models\Character;
 use App\Models\Event;
 use App\Models\GameVersion;
-use App\Models\PlayableRace;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
@@ -64,10 +59,26 @@ class HomeControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_passes_all_eight_officers(): void
+    public function it_passes_the_configured_officers_verbatim(): void
+    {
+        $officers = [
+            ['name' => 'Testcouncil', 'nationality' => 'GBR', 'country_code' => 'gb', 'demonym' => 'British', 'tier' => 'council', 'role' => 'Guild Master', 'image' => '/images/testcouncil.webp'],
+            ['name' => 'Testofficer', 'nationality' => 'FRA', 'country_code' => 'fr', 'demonym' => 'French', 'tier' => 'officer', 'role' => null, 'image' => '/images/testofficer.webp', 'flag' => 'pride'],
+        ];
+        config(['guild.officers' => $officers]);
+
+        $this->get(route('home'))
+            ->assertInertia(fn (Assert $page) => $page->where('officers', $officers)->etc());
+    }
+
+    #[Test]
+    public function it_does_not_send_officer_renders(): void
     {
         $this->get(route('home'))
-            ->assertInertia(fn (Assert $page) => $page->has('officers', 8)->etc());
+            ->assertInertia(fn (Assert $page) => $page
+                ->missing('officerRenders')
+                ->loadDeferredProps(fn (Assert $reload) => $reload->missing('officerRenders')->etc())
+            );
     }
 
     #[Test]

@@ -37,29 +37,37 @@ return [
     | Displayed on the homepage. Static content rather than a database table:
     | it changes rarely and is not referenced anywhere else in the app.
     |
-    | TEMPORARY: this belongs here only until officer management gets an
-    | in-database solution (a GuildOfficer model / admin UI). Once that
-    | lands, this array — and the config-based reads of it — should be
-    | removed in favour of the database as the source of truth.
-    |
     | - nationality:  ISO 3166-1 alpha-3, as supplied by the guild.
     | - country_code: ISO 3166-1 alpha-2, used to render the flag.
-    | - demonym:      read out to screen readers in place of the bare code.
-    |
-    | Portrait art is optional. A profile with no image at
-    | public/images/officers/<slug>.webp renders a styled silhouette instead.
+    | - demonym:      read out to screen readers in place of the bare code;
+    |                 describes whichever flag is shown.
+    | - tier:         council or officer. Entries are listed in display order.
+    | - role:         council role line, hidden when empty; null for officers.
+    | - image:        root-relative web path to a transparent WebP under
+    |                 public/images/, cropped to the character's width. Every
+    |                 image shares one height and baseline, so characters keep
+    |                 their relative in-game size. Renders as a styled
+    |                 silhouette if the file fails to load.
+    | - width/height: the image's pixel dimensions.
+    | - flag:         optional custom flag key (e.g. pride), shown instead of
+    |                 the country_code flag.
     |
     */
 
     'officers' => [
-        ['name' => 'Caldru', 'nationality' => 'GBR', 'country_code' => 'gb', 'demonym' => 'British'],
-        ['name' => 'Fizzywigs', 'nationality' => 'GBR', 'country_code' => 'gb', 'demonym' => 'British'],
-        ['name' => 'Loktorious', 'nationality' => 'ZAF', 'country_code' => 'za', 'demonym' => 'South African'],
-        ['name' => 'Obscured', 'nationality' => 'NLD', 'country_code' => 'nl', 'demonym' => 'Dutch'],
-        ['name' => 'Phoenyxbaka', 'nationality' => 'BHR', 'country_code' => 'bh', 'demonym' => 'Bahraini'],
-        ['name' => 'Shiniko', 'nationality' => 'FRA', 'country_code' => 'fr', 'demonym' => 'French'],
-        ['name' => 'Souljuice', 'nationality' => 'GBR', 'country_code' => 'gb', 'demonym' => 'British'],
-        ['name' => 'Zargoat', 'nationality' => 'GBR', 'country_code' => 'gb', 'demonym' => 'British'],
+        ['name' => 'Animorphus', 'nationality' => 'GBR', 'country_code' => 'gb', 'demonym' => 'British', 'tier' => 'council', 'role' => 'Guild historian', 'image' => '/images/officer_ani.webp', 'width' => 543, 'height' => 795],
+        ['name' => 'Phoenyx', 'nationality' => 'BHR', 'country_code' => 'bh', 'demonym' => 'Bahraini', 'tier' => 'council', 'role' => 'Raid leader', 'image' => '/images/officer_pho.webp', 'width' => 190, 'height' => 795],
+        ['name' => 'Soul', 'nationality' => 'GBR', 'country_code' => 'gb', 'demonym' => 'British', 'tier' => 'council', 'role' => 'Raid leader', 'image' => '/images/officer_soul.webp', 'width' => 233, 'height' => 795],
+        ['name' => 'Zar', 'nationality' => 'GBR', 'country_code' => 'gb', 'demonym' => 'British', 'tier' => 'council', 'role' => 'Guild master', 'image' => '/images/officer_zar.webp', 'width' => 986, 'height' => 795],
+
+        ['name' => 'Cal', 'nationality' => 'GBR', 'country_code' => 'gb', 'demonym' => 'British', 'tier' => 'officer', 'role' => null, 'image' => '/images/officer_cal.webp', 'width' => 343, 'height' => 795],
+        ['name' => 'Cross', 'nationality' => 'GBR', 'country_code' => 'gb', 'demonym' => 'Out and proud', 'flag' => 'pride', 'tier' => 'officer', 'role' => null, 'image' => '/images/officer_cross.webp', 'width' => 423, 'height' => 795],
+        ['name' => 'Dudum', 'nationality' => 'DNK', 'country_code' => 'dk', 'demonym' => 'Danish', 'tier' => 'officer', 'role' => null, 'image' => '/images/officer_dudum.webp', 'width' => 348, 'height' => 795],
+        ['name' => 'Izepo', 'nationality' => 'GBR', 'country_code' => 'gb', 'demonym' => 'British', 'tier' => 'officer', 'role' => null, 'image' => '/images/officer_izepo.webp', 'width' => 561, 'height' => 795],
+        ['name' => 'Mad', 'nationality' => 'BHR', 'country_code' => 'bh', 'demonym' => 'Bahraini', 'tier' => 'officer', 'role' => null, 'image' => '/images/officer_mad.webp', 'width' => 200, 'height' => 795],
+        ['name' => 'Obscured', 'nationality' => 'NLD', 'country_code' => 'nl', 'demonym' => 'Dutch', 'tier' => 'officer', 'role' => null, 'image' => '/images/officer_obscured.webp', 'width' => 680, 'height' => 795],
+        ['name' => 'Shiniko', 'nationality' => 'FRA', 'country_code' => 'fr', 'demonym' => 'French', 'tier' => 'officer', 'role' => null, 'image' => '/images/officer_shiniko.webp', 'width' => 429, 'height' => 795],
+        ['name' => 'Waidelfi', 'nationality' => 'DEU', 'country_code' => 'de', 'demonym' => 'German', 'tier' => 'officer', 'role' => null, 'image' => '/images/officer_waid.webp', 'width' => 768, 'height' => 795],
     ],
 
 ];
