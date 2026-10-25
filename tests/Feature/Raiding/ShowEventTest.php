@@ -12,7 +12,7 @@ use App\Models\Permission;
 use App\Models\Raid;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -324,8 +324,9 @@ class ShowEventTest extends TestCase
     // ==================== initial props ====================
 
     #[Test]
-    public function it_passes_question_mark_icon_url_as_signed_url_in_initial_props(): void
+    public function it_passes_question_mark_icon_url_as_cdn_url_in_initial_props(): void
     {
+        Storage::fake('s3');
         $user = User::factory()->create();
         $user->discordRoles()->attach($this->memberRole->id);
 
@@ -334,8 +335,7 @@ class ShowEventTest extends TestCase
         $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('questionMarkIconUrl', fn ($url) => str_contains((string) $url, '/icons/56/inv_misc_questionmark.jpg')
-                && URL::hasValidSignature(request()->create((string) $url)))
+            ->where('questionMarkIconUrl', Storage::disk('s3')->url('blizzard-cdn/icons/56/inv_misc_questionmark.jpg'))
         );
     }
 

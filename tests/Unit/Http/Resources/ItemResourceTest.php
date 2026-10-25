@@ -9,10 +9,10 @@ use App\Models\Boss;
 use App\Models\Item;
 use App\Models\LootPriority;
 use App\Models\Raid;
+use App\Support\MediaLibrary\UnknownBlizzardIcon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\URL;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -335,7 +335,7 @@ class ItemResourceTest extends TestCase
     #[Test]
     public function it_returns_icon_url(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $item = Item::factory()->create();
         $item->addMediaFromString('BINARY')
@@ -347,19 +347,19 @@ class ItemResourceTest extends TestCase
         $array = $resource->toArray(new Request);
 
         $this->assertNotNull($array['icon']);
-        $this->assertStringContainsString('/icons/56/foo.jpg', $array['icon']);
-        $this->assertTrue(URL::hasValidSignature(request()->create($array['icon'])));
+        $this->assertSame(Storage::disk('s3')->url('blizzard-cdn/icons/56/foo.jpg'), $array['icon']);
     }
 
     #[Test]
-    public function it_returns_null_icon_when_no_media_attached(): void
+    public function it_returns_the_questionmark_icon_when_no_media_attached(): void
     {
+        Storage::fake('s3');
         $item = Item::factory()->create();
 
         $resource = new ItemResource($item);
         $array = $resource->toArray(new Request);
 
-        $this->assertNull($array['icon']);
+        $this->assertSame(app(UnknownBlizzardIcon::class)->url(), $array['icon']);
     }
 
     // ==================== priorities relation ====================

@@ -5,6 +5,7 @@ namespace Tests\Unit\Http\Resources;
 use App\Http\Resources\PriorityResource;
 use App\Models\Item;
 use App\Models\LootPriority;
+use App\Support\MediaLibrary\UnknownBlizzardIcon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -70,7 +71,7 @@ class PriorityResourceTest extends TestCase
     #[Test]
     public function it_returns_media_url_when_icon_is_attached(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $priority = LootPriority::factory()->create();
         $priority->addMediaFromString('BINARY')
@@ -84,13 +85,14 @@ class PriorityResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_null_media_when_no_icon_is_attached(): void
+    public function it_returns_the_questionmark_url_when_no_icon_is_attached(): void
     {
+        Storage::fake('s3');
         $priority = LootPriority::factory()->create();
 
         $array = (new PriorityResource($priority))->toArray(new Request);
 
-        $this->assertNull($array['media']);
+        $this->assertSame(app(UnknownBlizzardIcon::class)->url(), $array['media']);
     }
 
     #[Test]

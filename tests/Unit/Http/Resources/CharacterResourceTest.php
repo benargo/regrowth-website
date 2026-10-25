@@ -14,6 +14,7 @@ use App\Models\PlayableRace;
 use App\Models\PlayableSpecialization;
 use App\Models\Report;
 use App\Models\User;
+use App\Support\MediaLibrary\UnknownBlizzardIcon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -116,7 +117,7 @@ class CharacterResourceTest extends TestCase
         $this->assertSame($playableClass->id, $array['playable_class']['id']);
         $this->assertSame('Warrior', $array['playable_class']['name']);
         $this->assertSame('warrior', $array['playable_class']['slug']);
-        $this->assertNull($array['playable_class']['icon_url']);
+        $this->assertSame(app(UnknownBlizzardIcon::class)->url(), $array['playable_class']['icon_url']);
     }
 
     #[Test]
@@ -292,7 +293,7 @@ class CharacterResourceTest extends TestCase
     #[Test]
     public function it_returns_storage_portrait_url_when_media_attached(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $character = Character::factory()->create();
         $character->addMediaFromString('BINARY')
@@ -302,7 +303,7 @@ class CharacterResourceTest extends TestCase
 
         $array = (new CharacterResource($character->load('media')))->toArray(new Request);
 
-        $this->assertStringContainsString('/storage/', $array['portrait_url']);
+        $this->assertStringStartsWith(Storage::disk('s3')->url(''), $array['portrait_url']);
         $this->assertStringContainsString('character_15678.jpg', $array['portrait_url']);
         $this->assertStringNotContainsString('/icons/', $array['portrait_url']);
     }

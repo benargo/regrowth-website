@@ -25,7 +25,7 @@ class PlayableClassResource extends JsonResource implements ScopedResource
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
-            'icon_url' => $this->getFirstMediaUrl('blizzard_icons') ?: null,
+            'icon_url' => $this->getFirstMediaUrl('blizzard_icons'),
             'specializations' => $this->whenLoaded('specializations', fn () => PlayableSpecializationResource::collection($this->specializations)),
         ]);
     }

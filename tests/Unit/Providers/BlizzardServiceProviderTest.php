@@ -10,6 +10,7 @@ use App\Http\Integrations\Blizzard\Support\BattleNetSession;
 use App\Http\Integrations\Blizzard\Support\MirrorPaths;
 use App\Providers\BlizzardServiceProvider;
 use App\Support\MediaLibrary\CharacterMediaPathGenerator;
+use App\Support\MediaLibrary\UnknownBlizzardIcon;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -93,6 +94,7 @@ class BlizzardServiceProviderTest extends TestCase
             CharacterMediaPathGenerator::class,
             MirrorPaths::class,
             RenderConnector::class,
+            UnknownBlizzardIcon::class,
         ], (new BlizzardServiceProvider($this->app))->provides());
     }
 }

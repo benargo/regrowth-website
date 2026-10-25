@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Contracts\HasBlizzardIcons;
 use App\Enums\LootPriorityType;
 use App\Models\Concerns\InteractsWithChaperonedMedia;
+use App\Support\MediaLibrary\UnknownBlizzardIcon;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -48,7 +49,9 @@ class LootPriority extends Model implements HasBlizzardIcons, HasMedia
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection(self::MEDIA_COLLECTION)->singleFile();
+        $this->addMediaCollection(self::MEDIA_COLLECTION)
+            ->singleFile()
+            ->useFallbackUrl(app(UnknownBlizzardIcon::class)->url());
     }
 
     // ============ Relationships ============

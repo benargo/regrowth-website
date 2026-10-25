@@ -36,14 +36,6 @@ class PriorityStatsRowDataTest extends TestCase
         $this->assertSame(7, $data->total);
     }
 
-    #[Test]
-    public function from_priority_sets_a_null_icon_when_the_priority_has_no_media(): void
-    {
-        $data = PriorityStatsRowData::fromPriority($this->priority(''), [1 => 0]);
-
-        $this->assertNull($data->icon);
-    }
-
     // ==================== toArray ====================
 
     #[Test]

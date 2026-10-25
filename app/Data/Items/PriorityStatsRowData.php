@@ -18,7 +18,7 @@ final class PriorityStatsRowData extends Data
         public readonly int $id,
         public readonly string $title,
         public readonly LootPriorityType $type,
-        public readonly ?string $icon,
+        public readonly string $icon,
         public readonly array $counts,
         public readonly int $total,
         public readonly string $kind = 'priority',
@@ -35,7 +35,7 @@ final class PriorityStatsRowData extends Data
             id: $priority->id,
             title: $priority->title,
             type: $priority->type,
-            icon: $priority->getFirstMediaUrl('blizzard_icons') ?: null,
+            icon: $priority->getFirstMediaUrl('blizzard_icons'),
             counts: $counts,
             total: array_sum($counts),
         );

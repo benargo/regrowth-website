@@ -15,6 +15,7 @@ use App\Http\Integrations\Blizzard\Support\MirrorPaths;
 use App\Http\Integrations\ServedFromCache;
 use App\Support\MediaLibrary\BlizzardIconPathGenerator;
 use App\Support\MediaLibrary\CharacterMediaPathGenerator;
+use App\Support\MediaLibrary\UnknownBlizzardIcon;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\ServiceProvider;
@@ -56,6 +57,13 @@ class BlizzardServiceProvider extends ServiceProvider
         $this->app->singleton(MirrorPaths::class, function () use ($config) {
             return new MirrorPaths(
                 region: Region::from(data_get($config, 'region', 'eu')),
+            );
+        });
+
+        $this->app->singleton(UnknownBlizzardIcon::class, function (Application $app) {
+            return new UnknownBlizzardIcon(
+                $app->make(FilesystemManager::class),
+                config('media-library.disk_name'),
             );
         });
 
@@ -105,6 +113,7 @@ class BlizzardServiceProvider extends ServiceProvider
             CharacterMediaPathGenerator::class,
             MirrorPaths::class,
             RenderConnector::class,
+            UnknownBlizzardIcon::class,
         ];
     }
 }
