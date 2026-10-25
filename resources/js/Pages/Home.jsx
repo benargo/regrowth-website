@@ -8,8 +8,8 @@ import Section from "@/Components/Home/Section";
 import DisplayHeading from "@/Components/Home/DisplayHeading";
 import Icon from "@/Components/FontAwesome/Icon";
 
-export default function Home({ foreverLaunchAt, officers, canViewPlans, discordInviteUrl }) {
-    const { officerRenders, upcomingEvents } = usePage().props;
+export default function Home({ foreverLaunchAt, officers, canViewPlans }) {
+    const { navigation, officerRenders, upcomingEvents } = usePage().props;
     return (
         <Master title="Home" isHomepage>
             <div className="text-base">
@@ -72,7 +72,7 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
                     </p>
 
                     <a
-                        href={discordInviteUrl}
+                        href={navigation?.discord_invite_url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="border-discord/30 text-camel-200 bg-discord hover:bg-discord/80 focus-visible:outline-camel-400 inline-flex items-center gap-3 rounded border px-8 py-4 text-lg shadow-lg transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"

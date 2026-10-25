@@ -207,7 +207,7 @@ class RaidPageTest extends TestCase
     }
 
     #[Test]
-    public function switching_version_on_a_raid_page_sticks(): void
+    public function switching_version_on_a_raid_page_leaves_for_the_raids_index(): void
     {
         $raidVersion = GameVersion::factory()->create(['release_date' => Carbon::parse('2025-01-01')]);
         $otherVersion = GameVersion::factory()->create(['release_date' => Carbon::parse('2024-01-01')]);
@@ -216,8 +216,10 @@ class RaidPageTest extends TestCase
         $this->get($raidUrl);
 
         $this->from($raidUrl)->patch(route('session.game-version.update'), ['game_version' => $otherVersion->slug]);
+
         $response = $this->get($raidUrl);
 
+        $response->assertRedirect(route('raiding.raids.index'));
         $response->assertSessionHas(SharesCurrentGameVersionSession::SESSION_KEY, $otherVersion->slug);
     }
 }

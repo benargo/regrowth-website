@@ -17,7 +17,7 @@ const RESOLUTION_ERRORS = {
  */
 export default function useDiscordMemberResolution() {
     const http = useHttp({});
-    const userId = usePage().props.auth?.user?.id;
+    const userId = usePage().props.auth?.user?.data?.id;
     const pendingMemberIdRef = useRef(null);
     const [isResolving, setIsResolving] = useState(false);
     const [resolutionError, setResolutionError] = useState(null);

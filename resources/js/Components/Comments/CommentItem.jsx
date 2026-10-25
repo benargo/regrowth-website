@@ -44,7 +44,7 @@ export default function CommentItem({
     }
 
     function ownReaction() {
-        return comment.reactions.find((reaction) => reaction.user?.id === auth.user?.id) ?? null;
+        return comment.reactions.find((reaction) => reaction.user?.id === auth.user?.data?.id) ?? null;
     }
 
     function userHasReacted() {
@@ -52,7 +52,7 @@ export default function CommentItem({
     }
 
     function isOwnComment() {
-        return comment.user?.id === auth.user?.id;
+        return comment.user?.id === auth.user?.data?.id;
     }
 
     function handleDelete() {

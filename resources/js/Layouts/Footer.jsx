@@ -3,7 +3,8 @@ import Icon from "@/Components/FontAwesome/Icon";
 import WarcraftLogsLogo from "@/Components/WarcraftLogs/Logo";
 import GameVersionIcon from "@/Components/GameVersions/GameVersionIcon";
 import useGameVersionSwitch from "@/Hooks/useGameVersionSwitch";
-import { SITE_SECTIONS, visibleSectionItems } from "@/Helpers/siteSections";
+import { SITE_SECTIONS } from "@/Helpers/siteSections";
+import { usePermissionCheck } from "@/Hooks/usePermission";
 import cn from "@/Helpers/cn";
 
 const FOOTER_COLUMN_LINK = "flex min-h-8 flex-row items-center gap-2 py-1 transition-colors";
@@ -45,7 +46,8 @@ function FooterHeading({ classes, href, children }) {
  * The Raiding or Loot column shown from `lg` upwards: a heading linking to the
  * section hub above the section's pages the viewer may see.
  */
-function SectionColumn({ section, classes, permissions, linkClass }) {
+function SectionColumn({ section, classes, linkClass }) {
+    const hasPermission = usePermissionCheck();
     const { label, hubRouteName } = SITE_SECTIONS[section];
 
     return (
@@ -54,16 +56,18 @@ function SectionColumn({ section, classes, permissions, linkClass }) {
                 {label}
             </FooterHeading>
             <ul className="flex flex-col">
-                {visibleSectionItems(section, permissions).map((item) => (
-                    <li key={item.key}>
-                        <Link href={route(item.routeName)} className={linkClass}>
-                            <FooterLinkIcon>
-                                <Icon icon={item.icon} style="solid" className="h-5 w-5" />
-                            </FooterLinkIcon>
-                            <span className="text-nowrap">{item.label}</span>
-                        </Link>
-                    </li>
-                ))}
+                {SITE_SECTIONS[section].items
+                    .filter((item) => !item.permission || hasPermission(item.permission))
+                    .map((item) => (
+                        <li key={item.key}>
+                            <Link href={route(item.routeName)} className={linkClass}>
+                                <FooterLinkIcon>
+                                    <Icon icon={item.icon} style="solid" className="h-5 w-5" />
+                                </FooterLinkIcon>
+                                <span className="text-nowrap">{item.label}</span>
+                            </Link>
+                        </li>
+                    ))}
             </ul>
         </div>
     );
@@ -116,7 +120,7 @@ function DiscordLink({ linkClass, discordInviteUrl }) {
  * The site footer: brand, section columns (lg and up), guild links, game
  * version switcher, about links and the disclaimer.
  */
-export default function Footer({ classes, discordInviteUrl, warcraftLogsUrl, gameVersions = [], permissions = [] }) {
+export default function Footer({ classes, discordInviteUrl, warcraftLogsUrl, gameVersions = [] }) {
     const { current: currentGameVersion, switchTo, isSwitching } = useGameVersionSwitch();
     const hasGameVersionColumn = gameVersions.length > 1;
     const footerLinkClass = cn(FOOTER_COLUMN_LINK, classes.footerLink);
@@ -151,18 +155,8 @@ export default function Footer({ classes, discordInviteUrl, warcraftLogsUrl, gam
                         </div>
                     </div>
 
-                    <SectionColumn
-                        section="raiding"
-                        classes={classes}
-                        permissions={permissions}
-                        linkClass={footerLinkClass}
-                    />
-                    <SectionColumn
-                        section="loot"
-                        classes={classes}
-                        permissions={permissions}
-                        linkClass={footerLinkClass}
-                    />
+                    <SectionColumn section="raiding" classes={classes} linkClass={footerLinkClass} />
+                    <SectionColumn section="loot" classes={classes} linkClass={footerLinkClass} />
 
                     {/* Guild (below lg) */}
                     <nav aria-label="Guild" className="lg:hidden">

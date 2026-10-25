@@ -33,7 +33,7 @@ export default function CommentsSection({ comments, replies, itemId, registerBro
     const currentPage = comments.meta.current_page;
 
     const { auth } = usePage().props;
-    const { isExpanded, expand, toggle } = useExpandedThreads(auth.user?.id);
+    const { isExpanded, expand, toggle } = useExpandedThreads(auth.user?.data?.id);
 
     const http = useHttp({});
 

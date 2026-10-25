@@ -776,10 +776,10 @@ export default function Edit({ event, targetMarkers, templates }) {
     const { auth } = usePage().props;
 
     useEchoNotification(
-        `App.Models.User.${auth.user.id}`,
+        `App.Models.User.${auth.user.data.id}`,
         (notification) => setPublishSuccess(notification.message),
         "AssignmentsPublished",
-        [auth.user.id],
+        [auth.user.data.id],
     );
 
     const handlePublish = useCallback(() => {

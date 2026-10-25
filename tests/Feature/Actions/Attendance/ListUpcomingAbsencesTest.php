@@ -88,7 +88,7 @@ class ListUpcomingAbsencesTest extends TestCase
         $gameVersion = GameVersion::factory()->create();
         PlannedAbsence::factory()->create([
             'character_id' => Character::factory()->forGameVersion($gameVersion)->create()->id,
-            'start_date' => '2026-10-20 00:00:00',
+            'start_date' => today()->addDay(),
             'reason' => PlannedAbsenceReason::Holiday,
         ]);
 
@@ -96,7 +96,7 @@ class ListUpcomingAbsencesTest extends TestCase
         $absence = ListUpcomingAbsences::run($gameVersion)->first();
 
         $this->assertInstanceOf(PlannedAbsence::class, $absence);
-        $this->assertSame('2026-10-20', $absence->start_date->toDateString());
+        $this->assertSame(today()->addDay()->toDateString(), $absence->start_date->toDateString());
         $this->assertSame(PlannedAbsenceReason::Holiday, $absence->reason->key);
     }
 }

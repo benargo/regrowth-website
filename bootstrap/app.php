@@ -26,8 +26,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
 
         $middleware->web(append: [
-            HandleInertiaRequests::class,
             RemembersCurrentGameVersion::class,
+            HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 

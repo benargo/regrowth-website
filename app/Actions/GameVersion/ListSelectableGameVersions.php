@@ -3,9 +3,11 @@
 namespace App\Actions\GameVersion;
 
 use App\Contracts\Actions\GameVersion\CachesSelectableGameVersions;
+use App\Data\GameVersion\SelectableGameVersionsData;
 use App\Models\GameVersion;
 use App\Models\WarcraftLogs\Guild;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Lorisleiva\Actions\Concerns\AsAction;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -22,17 +24,21 @@ class ListSelectableGameVersions implements CachesSelectableGameVersions
 
     private const string CACHE_KEY = 'game-versions:selectable-with-guilds';
 
+    public function __construct(
+        protected Request $request,
+    ) {}
+
     /**
      * @return Collection<int, GameVersion>
      */
     public function handle(): Collection
     {
-        $attributes = request()->attributes;
+        $attributes = $this->request->attributes;
 
         if (! $attributes->has(self::REQUEST_KEY)) {
-            $attributes->set(self::REQUEST_KEY, $this->hydrate(
-                Cache::tags([self::CACHE_TAG])->remember(self::CACHE_KEY, now()->addWeek(), fn (): array => $this->query()),
-            ));
+            $cached = Cache::tags([self::CACHE_TAG])->remember(self::CACHE_KEY, now()->addWeek(), fn (): array => $this->query()->toArray());
+
+            $attributes->set(self::REQUEST_KEY, $this->hydrate(SelectableGameVersionsData::from($cached)));
         }
 
         return $attributes->get(self::REQUEST_KEY);
@@ -41,21 +47,15 @@ class ListSelectableGameVersions implements CachesSelectableGameVersions
     /**
      * Fetch the raw attributes of every game version, of its media and of
      * its Warcraft Logs guild.
-     *
-     * @return array{versions: list<array<string, mixed>>, media: list<array<string, mixed>>, guilds: list<array<string, mixed>>}
      */
-    private function query(): array
+    private function query(): SelectableGameVersionsData
     {
-        $gameVersions = GameVersion::with(['media', 'warcraftLogsGuild'])
-            ->orderByDesc('release_date')
-            ->orderBy('id')
-            ->get();
-
-        return [
-            'versions' => $gameVersions->map->getAttributes()->all(),
-            'media' => $gameVersions->flatMap->media->map->getAttributes()->values()->all(),
-            'guilds' => $gameVersions->pluck('warcraftLogsGuild')->filter()->unique('id')->map->getAttributes()->values()->all(),
-        ];
+        return SelectableGameVersionsData::fromGameVersions(
+            GameVersion::with(['media', 'warcraftLogsGuild'])
+                ->orderByDesc('release_date')
+                ->orderBy('id')
+                ->get(),
+        );
     }
 
     /**
@@ -63,15 +63,14 @@ class ListSelectableGameVersions implements CachesSelectableGameVersions
      * version's media set as its `media` relation and its guild, or null,
      * set as its `warcraftLogsGuild` relation.
      *
-     * @param  array{versions: list<array<string, mixed>>, media: list<array<string, mixed>>, guilds: list<array<string, mixed>>}  $rows
      * @return Collection<int, GameVersion>
      */
-    private function hydrate(array $rows): Collection
+    private function hydrate(SelectableGameVersionsData $rows): Collection
     {
-        $mediaByModel = Media::hydrate($rows['media'])->groupBy('model_id');
-        $guilds = Guild::hydrate($rows['guilds'])->keyBy('id');
+        $mediaByModel = Media::hydrate($rows->media)->groupBy('model_id');
+        $guilds = Guild::hydrate($rows->guilds)->keyBy('id');
 
-        return GameVersion::hydrate($rows['versions'])->each(function (GameVersion $gameVersion) use ($mediaByModel, $guilds): void {
+        return GameVersion::hydrate($rows->versions)->each(function (GameVersion $gameVersion) use ($mediaByModel, $guilds): void {
             $gameVersion->setRelation('media', $mediaByModel
                 ->get($gameVersion->getKey(), new Collection)
                 ->each->setRelation('model', $gameVersion));

@@ -31,13 +31,9 @@ use Inertia\Response;
 #[Authorize('view-officer-dashboard', except: ['show'])]
 class BossController extends Controller implements SharesPriorityWeightThreshold, SharesRaidPageOrigins
 {
-    /**
-     * Display a boss for the route's section, redirecting to the canonical slug.
-     * Raiding shows its Strategy tab, or its Items tab with `?tab=items`; Loot shows its items.
-     * Items are sent, deferred, only on the items tab.
-     */
+    /** Display a boss for the route's section, redirecting to the canonical slug. */
     #[Middleware(RemembersCurrentRaid::class.':boss')]
-    #[Middleware(RemembersRecordGameVersion::class.':boss')]
+    #[Middleware(RemembersRecordGameVersion::class.':boss,raids.index')]
     #[Middleware(EnsureRecordSlugIsValid::class.':boss')]
     public function show(Request $request, Boss $boss): Response
     {

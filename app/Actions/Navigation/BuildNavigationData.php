@@ -14,9 +14,10 @@ use Illuminate\Support\Facades\Cache;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 /**
- * Builds the data the Raiding and Loot flyouts show: the version's next raid,
- * the viewer's place in it, and the latest discussions, cached for five
- * minutes per viewer and flushed with the raiding and events caches.
+ * Builds the data the navigation shows: the version's next raid, the viewer's
+ * place in it, the latest discussions, and the Discord invite and Warcraft
+ * Logs links, cached for five minutes per viewer and flushed with the raiding
+ * and events caches.
  */
 class BuildNavigationData implements CachesNavigationData
 {
@@ -24,11 +25,8 @@ class BuildNavigationData implements CachesNavigationData
 
     public function handle(?User $user, ?GameVersion $gameVersion): NavigationData
     {
-        $versionKey = $gameVersion->id ?? 'none';
-        $viewerKey = $user->id ?? 'guest';
-
         return NavigationData::from(Cache::tags([self::CACHE_TAG, 'raiding', 'events'])->remember(
-            "navigation:{$versionKey}:{$viewerKey}",
+            sprintf(self::KEY_FORMAT, $gameVersion->id ?? 'none', $user->id ?? 'guest'),
             now()->addMinutes(self::TTL_MINUTES),
             fn (): array => $this->build($user, $gameVersion)->toArray(),
         ));
@@ -49,6 +47,8 @@ class BuildNavigationData implements CachesNavigationData
         return new NavigationData(
             nextRaid: $nextRaid,
             latestDiscussions: ListLatestDiscussions::run($gameVersion)->all(),
+            discordInviteUrl: config('guild.discord_invite_url'),
+            warcraftLogsUrl: $gameVersion?->warcraftLogsGuild?->logs_url,
         );
     }
 }

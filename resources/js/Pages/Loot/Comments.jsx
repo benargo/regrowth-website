@@ -15,7 +15,7 @@ export default function Comments({ comments, replies }) {
     useResetQueryOnGameVersionSwitch();
 
     const { auth } = usePage().props;
-    const { isExpanded, toggle } = useExpandedThreads(auth.user?.id);
+    const { isExpanded, toggle } = useExpandedThreads(auth.user?.data?.id);
     const [threadCache, setThreadCache] = useState({});
     const [loadingRoots, setLoadingRoots] = useState([]);
 

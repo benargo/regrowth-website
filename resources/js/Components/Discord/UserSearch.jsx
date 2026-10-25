@@ -19,7 +19,7 @@ export default function UserSearch({ id, value, onSelect, invalid = false }) {
     const { discord_members: lookup = null, auth } = usePage().props;
     const results = lookup?.members ?? [];
     const isPending = lookup?.status === "pending";
-    const userId = auth?.user?.id;
+    const userId = auth?.user?.data?.id;
 
     const [query, setQuery] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -123,7 +123,7 @@ export default function UserSearch({ id, value, onSelect, invalid = false }) {
                 <Icon
                     icon="search"
                     style="solid"
-                    className="text-gray-400 pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2"
+                    className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-gray-400"
                 />
                 <TextInput
                     id={id}
@@ -141,7 +141,7 @@ export default function UserSearch({ id, value, onSelect, invalid = false }) {
                     <div
                         role="status"
                         aria-label="Searching Discord"
-                        className="border-gray-500 absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-t-transparent"
+                        className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-gray-500 border-t-transparent"
                     />
                 )}
                 {!isSearching && (query || value) && (
@@ -155,7 +155,7 @@ export default function UserSearch({ id, value, onSelect, invalid = false }) {
             </div>
 
             {isOpen && results.length > 0 && (
-                <ul className="border-amber-600 bg-brown-800 absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded border shadow-lg">
+                <ul className="bg-brown-800 absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded border border-amber-600 shadow-lg">
                     {results.map((member) => (
                         <li key={member.id}>
                             <button
@@ -165,7 +165,7 @@ export default function UserSearch({ id, value, onSelect, invalid = false }) {
                             >
                                 {member.nickname ?? member.username}
                                 {member.nickname && (
-                                    <span className="text-gray-300 ml-2 text-xs">@{member.username}</span>
+                                    <span className="ml-2 text-xs text-gray-300">@{member.username}</span>
                                 )}
                             </button>
                         </li>
@@ -176,14 +176,14 @@ export default function UserSearch({ id, value, onSelect, invalid = false }) {
             {isOpen && hasSearchFailed && (
                 <div
                     role="alert"
-                    className="border-amber-600 bg-brown-800 text-gray-300 absolute z-50 mt-1 w-full rounded border px-4 py-2 text-sm shadow-lg"
+                    className="bg-brown-800 absolute z-50 mt-1 w-full rounded border border-amber-600 px-4 py-2 text-sm text-gray-300 shadow-lg"
                 >
                     Couldn't search Discord. Try again.
                 </div>
             )}
 
             {isOpen && !isSearching && !hasSearchFailed && results.length === 0 && query.trim() && (
-                <div className="border-amber-600 bg-brown-800 text-gray-300 absolute z-50 mt-1 w-full rounded border px-4 py-2 text-sm shadow-lg">
+                <div className="bg-brown-800 absolute z-50 mt-1 w-full rounded border border-amber-600 px-4 py-2 text-sm text-gray-300 shadow-lg">
                     No members found
                 </div>
             )}

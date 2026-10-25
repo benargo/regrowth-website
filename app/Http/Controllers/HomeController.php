@@ -24,7 +24,6 @@ class HomeController extends Controller
     {
         return Inertia::render('Home', [
             'foreverLaunchAt' => config('guild.forever_launch_at'),
-            'discordInviteUrl' => config('guild.discord_invite_url'),
             'officers' => config('guild.officers'),
             'canViewPlans' => $request->user() !== null,
             'officerRenders' => Inertia::defer(fn () => $this->resolveOfficerRenders()),

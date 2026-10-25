@@ -1,7 +1,8 @@
 import { CloseButton } from "@headlessui/react";
 import { Link } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
-import { SITE_SECTIONS, visibleSectionItems } from "@/Helpers/siteSections";
+import { SITE_SECTIONS } from "@/Helpers/siteSections";
+import { usePermissionCheck } from "@/Hooks/usePermission";
 import cn from "@/Helpers/cn";
 
 const FOCUS_RING = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400";
@@ -110,8 +111,9 @@ function ListItems({ items, classes }) {
  * description), a browse list (the first item described, the rest as links)
  * or a plain list of labels, each with its icon. `classes` overrides the icon colours.
  */
-export default function FlyoutItems({ section, permissions = [], variant = "list", classes = {} }) {
-    const items = visibleSectionItems(section, permissions);
+export default function FlyoutItems({ section, variant = "list", classes = {} }) {
+    const hasPermission = usePermissionCheck();
+    const items = SITE_SECTIONS[section].items.filter((item) => !item.permission || hasPermission(item.permission));
 
     return (
         <nav aria-label={`${SITE_SECTIONS[section].label} menu`}>

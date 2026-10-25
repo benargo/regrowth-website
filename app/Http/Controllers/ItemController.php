@@ -45,7 +45,7 @@ class ItemController extends Controller
     /** Display a specific loot item. */
     #[Middleware(EnsureItemSlugIsValid::class)]
     #[Middleware(RemembersOriginRaid::class)]
-    #[Middleware(RemembersRecordGameVersion::class.':item')]
+    #[Middleware(RemembersRecordGameVersion::class.':item,index')]
     public function show(
         Request $request,
         BlizzardConnector $blizzardConnector,

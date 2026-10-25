@@ -1,3 +1,15 @@
+---
+paths:
+  - 'app/Http/Integrations/**'
+  - 'app/Http/Controllers/**'
+  - 'app/Http/Resources/**'
+  - 'app/Jobs/**'
+  - 'app/Console/**'
+  - 'app/Notifications/**'
+  - 'app/Providers/**'
+  - 'database/seeders/**'
+---
+
 # Third-Party API Service Classes
 
 This project integrates with several external APIs (Blizzard, Discord, Warcraft Logs, Raid Helper). All service/connector classes for those APIs follow these rules.

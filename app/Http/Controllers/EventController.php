@@ -72,11 +72,9 @@ class EventController extends Controller implements HasBlizzardIcons
         ]);
     }
 
-    /**
-     * Display the specified resource.
-     */
+    /** Display the specified resource. */
     #[Authorize('view', 'event')]
-    #[Middleware(RemembersRecordGameVersion::class.':event')]
+    #[Middleware(RemembersRecordGameVersion::class.':event,events.index')]
     public function show(Event $event, Request $request): Response
     {
         $event->load('raids.bosses.media', 'raids.media', 'bosses.media', 'assignments.group', 'characters.rank');
