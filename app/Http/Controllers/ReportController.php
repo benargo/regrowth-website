@@ -21,6 +21,7 @@ use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -116,9 +117,11 @@ class ReportController extends Controller
                     ->get();
             }),
             'impactedReports' => Inertia::optional(function () use ($report) {
-                return LinkedReportResource::collection(
-                    $report->linkedReports()->wherePivotNotNull('created_by')->get()
-                );
+                $linkedReports = $report->linkedReports()->wherePivotNotNull('created_by')->get();
+
+                (new EloquentCollection($linkedReports->pluck('pivot')->all()))->load('creator.media');
+
+                return LinkedReportResource::collection($linkedReports);
             }),
             'nearbyReports' => Inertia::optional(
                 fn () => ReportClusterResource::collection($this->buildNearbyReportClusters($request))

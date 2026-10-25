@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Http\Integrations\Discord\DiscordCdnConnector;
 use App\Http\Integrations\Discord\DiscordConnector;
 use App\Http\Integrations\Discord\RateLimitCache;
 use App\Http\Integrations\ServedFromCache;
@@ -42,6 +43,8 @@ class DiscordServiceProvider extends ServiceProvider
                 $app->make(ServedFromCache::class),
             );
         });
+
+        $this->app->singleton(DiscordCdnConnector::class);
     }
 
     /**
@@ -64,6 +67,7 @@ class DiscordServiceProvider extends ServiceProvider
     {
         return [
             DiscordConnector::class,
+            DiscordCdnConnector::class,
         ];
     }
 }

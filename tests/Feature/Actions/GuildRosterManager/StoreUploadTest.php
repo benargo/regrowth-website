@@ -3,6 +3,7 @@
 namespace Tests\Feature\Actions\GuildRosterManager;
 
 use App\Actions\GuildRosterManager\StoreUpload;
+use App\Jobs\Discord\AttachAvatarToUser;
 use App\Jobs\ProcessGrmUpload;
 use App\Models\GameVersion;
 use App\Models\User;
@@ -37,7 +38,7 @@ class StoreUploadTest extends TestCase
     #[Test]
     public function it_saves_the_csv_as_the_game_versions_latest_upload(): void
     {
-        Queue::fake([ProcessGrmUpload::class]);
+        Queue::fake([ProcessGrmUpload::class, AttachAvatarToUser::class]);
         $gameVersion = GameVersion::factory()->create(['slug' => 'tbc']);
         $uploader = User::factory()->officer()->create();
 
@@ -49,7 +50,7 @@ class StoreUploadTest extends TestCase
     #[Test]
     public function it_replaces_the_game_versions_previous_upload(): void
     {
-        Queue::fake([ProcessGrmUpload::class]);
+        Queue::fake([ProcessGrmUpload::class, AttachAvatarToUser::class]);
         $gameVersion = GameVersion::factory()->create(['slug' => 'tbc']);
         $uploader = User::factory()->officer()->create();
         Storage::disk('local')->put('grm/uploads/tbc/latest.csv', 'old');
@@ -62,7 +63,7 @@ class StoreUploadTest extends TestCase
     #[Test]
     public function it_archives_a_timestamped_copy_under_the_game_versions_slug(): void
     {
-        Queue::fake([ProcessGrmUpload::class]);
+        Queue::fake([ProcessGrmUpload::class, AttachAvatarToUser::class]);
         $gameVersion = GameVersion::factory()->create(['slug' => 'tbc']);
         $uploader = User::factory()->officer()->create();
         $this->travelTo('2026-10-02 18:04:11');
@@ -75,7 +76,7 @@ class StoreUploadTest extends TestCase
     #[Test]
     public function it_queues_processing_for_the_uploader_and_game_version(): void
     {
-        Queue::fake([ProcessGrmUpload::class]);
+        Queue::fake([ProcessGrmUpload::class, AttachAvatarToUser::class]);
         $gameVersion = GameVersion::factory()->create(['slug' => 'tbc']);
         $uploader = User::factory()->officer()->create();
 

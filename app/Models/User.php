@@ -2,9 +2,14 @@
 
 namespace App\Models;
 
+use App\Contracts\HasDiscordAvatars;
+use App\Enums\DiscordAvatar;
+use App\Models\Concerns\InteractsWithChaperonedMedia;
+use App\Observers\UserObserver;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -13,18 +18,24 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Image\Enums\Fit;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 #[Fillable(['id', 'username', 'discriminator', 'nickname', 'avatar', 'guild_avatar'])]
+#[ObservedBy([UserObserver::class])]
 #[Hidden(['username', 'discriminator', 'remember_token', 'is_admin', 'created_at', 'updated_at'])]
 #[Table(keyType: 'string', incrementing: false)]
-class User extends Authenticatable
+class User extends Authenticatable implements HasDiscordAvatars, HasMedia
 {
     use HasApiTokens;
 
     /** @use HasFactory<UserFactory> */
     use HasFactory;
 
+    use InteractsWithChaperonedMedia;
     use Notifiable;
 
     /**
@@ -62,29 +73,96 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the user's Discord avatar URL: the server avatar, then the user avatar, then Discord's default avatar for the user ID.
+     * Get the index of the user's default Discord avatar.
      *
-     * @return Attribute<string>
+     * @return Attribute<int, never>
+     */
+    protected function defaultAvatarIndex(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): int => ((int) $this->id >> 22) % self::DEFAULT_AVATAR_COUNT,
+        );
+    }
+
+    /**
+     * Get the storage path of the user's default Discord avatar.
+     *
+     * @return Attribute<string, never>
+     */
+    protected function defaultAvatarPath(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): string => self::STORAGE_PATH_PREFIX.'/'.$this->defaultAvatarIndex.'.png',
+        );
+    }
+
+    /**
+     * Get the URL of the user's original avatar: stored server avatar, Discord server avatar, stored user avatar, Discord user avatar, then the stored default avatar.
+     *
+     * @return Attribute<string, never>
      */
     protected function avatarUrl(): Attribute
     {
         return Attribute::make(
-            get: function (): string {
-                if ($this->guild_avatar) {
-                    $serverId = config('services.discord.server_id');
-
-                    return "https://cdn.discordapp.com/guilds/{$serverId}/users/{$this->id}/avatars/{$this->guild_avatar}.webp";
-                }
-
-                if ($this->avatar) {
-                    return "https://cdn.discordapp.com/avatars/{$this->id}/{$this->avatar}.webp";
-                }
-
-                $defaultIndex = ((int) $this->id >> 22) % 6;
-
-                return "https://cdn.discordapp.com/embed/avatars/{$defaultIndex}.png";
-            },
+            get: fn (): string => $this->resolveAvatarUrl(),
         );
+    }
+
+    /**
+     * Get the URL of the user's avatar thumbnail, resolved in the same order as the original avatar.
+     *
+     * @return Attribute<string, never>
+     */
+    protected function avatarThumbUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): string => $this->resolveAvatarUrl(self::AVATAR_CONVERSION),
+        );
+    }
+
+    /**
+     * Resolve the avatar URL, for the given conversion or the original file.
+     */
+    private function resolveAvatarUrl(string $conversion = ''): string
+    {
+        foreach (DiscordAvatar::cases() as $avatar) {
+            $hash = $this->{$avatar->hashAttribute()};
+
+            if ($this->hasMedia($avatar->value)) {
+                return $this->getFirstMediaUrl($avatar->value, $conversion);
+            }
+
+            if ($hash) {
+                return match ($avatar) {
+                    DiscordAvatar::Guild => self::CDN_BASE_URL.'/guilds/'.config('services.discord.server_id')."/users/{$this->id}/avatars/{$hash}.webp",
+                    DiscordAvatar::User => self::CDN_BASE_URL."/avatars/{$this->id}/{$hash}.webp",
+                };
+            }
+        }
+
+        return Storage::disk(config('media-library.disk_name'))->url($this->defaultAvatarPath);
+    }
+
+    /**
+     * Register the single-file Discord avatar collections.
+     */
+    public function registerMediaCollections(): void
+    {
+        foreach (DiscordAvatar::cases() as $avatar) {
+            $this->addMediaCollection($avatar->value)->singleFile();
+        }
+    }
+
+    /**
+     * Register the square webp thumbnail of the Discord avatars.
+     */
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion(self::AVATAR_CONVERSION)
+            ->fit(Fit::Crop, self::DEFAULT_MEDIA_SIZE, self::DEFAULT_MEDIA_SIZE)
+            ->format('webp')
+            ->nonQueued()
+            ->performOnCollections(...array_column(DiscordAvatar::cases(), 'value'));
     }
 
     /**

@@ -127,7 +127,7 @@ class GuildControllerTest extends DashboardTestCase
 
         $response->assertForbidden();
         $this->assertDatabaseCount('warcraft_logs_guilds', 0);
-        Queue::assertNothingPushed();
+        Queue::assertNotPushed(FetchGuildTags::class);
     }
 
     #[Test]
@@ -143,7 +143,7 @@ class GuildControllerTest extends DashboardTestCase
             'namespace' => 'Choose which Warcraft Logs site the guild is on.',
         ]);
         $this->assertDatabaseCount('warcraft_logs_guilds', 0);
-        Queue::assertNothingPushed();
+        Queue::assertNotPushed(FetchGuildTags::class);
     }
 
     #[Test]
@@ -186,7 +186,7 @@ class GuildControllerTest extends DashboardTestCase
 
         $response->assertInvalid(['id' => 'This Warcraft Logs guild has already been added.']);
         $this->assertSame(WarcraftLogsNamespace::Anniversary, Guild::find(774848)->namespace);
-        Queue::assertNothingPushed();
+        Queue::assertNotPushed(FetchGuildTags::class);
     }
 
     #[Test]

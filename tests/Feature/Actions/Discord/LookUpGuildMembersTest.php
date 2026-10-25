@@ -3,6 +3,7 @@
 namespace Tests\Feature\Actions\Discord;
 
 use App\Actions\Discord\LookUpGuildMembers;
+use App\Jobs\Discord\AttachAvatarToUser;
 use App\Jobs\Discord\SearchGuildMembers;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -24,7 +25,7 @@ class LookUpGuildMembersTest extends TestCase
     #[Group('happy-path')]
     public function it_returns_cached_members_without_queueing_a_search(): void
     {
-        Queue::fake([SearchGuildMembers::class]);
+        Queue::fake([SearchGuildMembers::class, AttachAvatarToUser::class]);
         $members = [['id' => '111111111111111111', 'nickname' => 'TestNick', 'username' => 'testuser']];
         Cache::tags(['discord'])->put(SearchGuildMembers::cacheKey('829020506907869214', 5, 'test'), $members, now()->addMinutes(5));
 
@@ -37,7 +38,7 @@ class LookUpGuildMembersTest extends TestCase
     #[Test]
     public function it_queues_a_high_priority_search_and_reports_pending_on_a_cache_miss(): void
     {
-        Queue::fake([SearchGuildMembers::class]);
+        Queue::fake([SearchGuildMembers::class, AttachAvatarToUser::class]);
         $officer = User::factory()->create();
 
         $result = LookUpGuildMembers::run(['member_search' => 'test'], $officer);
@@ -55,7 +56,7 @@ class LookUpGuildMembersTest extends TestCase
     #[DataProvider('invalidInputs')]
     public function it_rejects_invalid_input_without_queueing_a_search(array $input, string $invalidKey): void
     {
-        Queue::fake([SearchGuildMembers::class]);
+        Queue::fake([SearchGuildMembers::class, AttachAvatarToUser::class]);
 
         try {
             LookUpGuildMembers::run($input, User::factory()->create());

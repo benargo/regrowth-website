@@ -170,7 +170,7 @@ class ItemController extends Controller
      */
     protected function replyEagerLoads(): array
     {
-        return ['user', 'reactions.user'];
+        return ['user.media', 'reactions.user.media'];
     }
 
     /**

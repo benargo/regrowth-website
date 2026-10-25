@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api\Discord;
 
+use App\Jobs\Discord\AttachAvatarToUser;
 use App\Jobs\Discord\ResolveGuildMember;
 use App\Models\DiscordRole;
 use App\Models\Permission;
@@ -31,7 +32,7 @@ class ResolveDiscordMemberControllerTest extends TestCase
         DiscordRole::factory()->officer()->create()
             ->givePermissionTo(Permission::firstOrCreate(['name' => 'create-planned-absences', 'guard_name' => 'web']));
 
-        Queue::fake([ResolveGuildMember::class]);
+        Queue::fake([ResolveGuildMember::class, AttachAvatarToUser::class]);
         $this->fakeDiscord([]);
     }
 

@@ -13,6 +13,7 @@ use App\Http\Integrations\Blizzard\Requests\Account\GetAccountProfileSummaryRequ
 use App\Http\Integrations\Blizzard\Support\BattleNetSession;
 use App\Http\Integrations\ServedFromCache;
 use App\Jobs\AttachCharactersToUser;
+use App\Jobs\Discord\AttachAvatarToUser;
 use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\GameVersion;
@@ -170,7 +171,7 @@ class PlannedAbsenceControllerTest extends TestCase
         Character::factory()->forGameVersion($gameVersion)->create(['id' => 79938434, 'name' => 'Noonian', 'is_main' => false]);
         $this->fakeAccount([52963250, 79938434]);
         $member = $this->member();
-        Queue::fake([AttachCharactersToUser::class]);
+        Queue::fake([AttachCharactersToUser::class, AttachAvatarToUser::class]);
 
         $this->actingAs($member)
             ->withSession($this->battleNetSession())
@@ -190,7 +191,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $member = $this->member();
         Character::factory()->main()->forGameVersion($gameVersion)->forUser($member)->create(['id' => 52963250, 'name' => 'Auburn']);
         $this->fakeAccount([52963250]);
-        Queue::fake([AttachCharactersToUser::class]);
+        Queue::fake([AttachCharactersToUser::class, AttachAvatarToUser::class]);
 
         $this->actingAs($member)
             ->withSession($this->battleNetSession())

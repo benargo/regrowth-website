@@ -178,7 +178,7 @@ class UserTest extends ModelTestCase
             'guild_avatar' => null,
         ]);
 
-        $this->assertSame('https://cdn.discordapp.com/embed/avatars/2.png', $user->avatar_url);
+        $this->assertSame('https://cdn.test/discord-cdn/embed/avatars/2.png', $user->avatar_url);
     }
 
     // ==================== persistence ====================

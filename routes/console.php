@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Discord\RefreshUserAvatars;
 use App\Jobs\Discord\SyncRoles as SyncDiscordRoles;
 use App\Jobs\Discord\SyncUsers as SyncDiscordUsers;
 use App\Jobs\FetchGuildRosters;
@@ -14,6 +15,11 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::call(fn () => Bus::chain([new SyncDiscordRoles, new SyncDiscordUsers])->dispatch())
     ->hourly()
     ->name('sync-discord');
+
+/**
+ * Store Discord's default avatars and re-download every user's avatars daily.
+ */
+Schedule::job(new RefreshUserAvatars)->daily()->name('refresh-user-avatars')->withoutOverlapping();
 
 /**
  * Reconcile events with the Raid Helper API every six hours as a backstop for missed webhooks.
