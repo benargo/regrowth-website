@@ -26,7 +26,7 @@ class RefreshUserAvatars implements HasDiscordAvatars, ShouldQueue
         $disk = $filesystem->disk($diskName);
 
         foreach (range(0, self::DEFAULT_AVATAR_COUNT - 1) as $index) {
-            $path = self::STORAGE_PATH_PREFIX."/{$index}.png";
+            $path = User::defaultAvatarStoragePath($index);
 
             if ($disk->exists($path)) {
                 continue;

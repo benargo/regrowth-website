@@ -60,12 +60,7 @@ class BlizzardServiceProvider extends ServiceProvider
             );
         });
 
-        $this->app->singleton(UnknownBlizzardIcon::class, function (Application $app) {
-            return new UnknownBlizzardIcon(
-                $app->make(FilesystemManager::class),
-                config('media-library.disk_name'),
-            );
-        });
+        $this->app->singleton(UnknownBlizzardIcon::class);
 
         $this->app->singleton(RenderConnector::class, function (Application $app) use ($config) {
             return new RenderConnector(

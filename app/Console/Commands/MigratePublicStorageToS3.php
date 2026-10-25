@@ -161,10 +161,14 @@ class MigratePublicStorageToS3 extends Command implements HasBlizzardIcons
      */
     private function copyLooseFiles(Filesystem $source, Filesystem $target): void
     {
+        $existing = collect(self::LOOSE_DIRECTORIES)
+            ->flatMap(fn (string $directory): array => $target->allFiles($directory))
+            ->flip();
+
         $paths = collect(self::LOOSE_DIRECTORIES)
             ->flatMap(fn (string $directory): array => $source->allFiles($directory))
             ->reject(fn (string $path): bool => $this->isDoubledFileName(basename($path)))
-            ->reject(fn (string $path): bool => $target->exists($path));
+            ->reject(fn (string $path): bool => $existing->has($path));
 
         foreach ($paths as $path) {
             if ($this->isDryRun()) {

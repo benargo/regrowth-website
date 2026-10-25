@@ -18,27 +18,16 @@ class UserObserver
     {
         foreach (DiscordAvatar::cases() as $avatar) {
             $attribute = $avatar->hashAttribute();
-            $hash = $user->getAttribute($attribute);
 
-            if ($user->wasRecentlyCreated) {
-                if ($hash !== null) {
-                    AttachAvatarToUser::dispatch($user->getKey(), $avatar);
-                }
-
+            if (! $user->wasRecentlyCreated && ! $user->wasChanged($attribute)) {
                 continue;
             }
 
-            if (! $user->wasChanged($attribute)) {
-                continue;
-            }
-
-            if ($hash === null) {
+            if ($user->getAttribute($attribute) !== null) {
+                AttachAvatarToUser::dispatch($user->getKey(), $avatar);
+            } elseif (! $user->wasRecentlyCreated) {
                 $user->clearMediaCollection($avatar->value);
-
-                continue;
             }
-
-            AttachAvatarToUser::dispatch($user->getKey(), $avatar);
         }
     }
 }

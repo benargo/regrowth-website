@@ -7,9 +7,9 @@ use App\Contracts\HasBlizzardIcons;
 use App\Contracts\Models\BelongsToGameVersion;
 use App\Enums\ItemQuality;
 use App\Http\Integrations\Blizzard\Data\Item\ItemData;
+use App\Models\Concerns\InteractsWithBlizzardIcons;
 use App\Models\Concerns\InteractsWithChaperonedMedia;
 use App\Observers\ItemObserver;
-use App\Support\MediaLibrary\UnknownBlizzardIcon;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -35,6 +35,7 @@ class Item extends Model implements BelongsToGameVersion, Commentable, HasBlizza
 {
     use HasFactory;
     use HasUuids;
+    use InteractsWithBlizzardIcons;
     use InteractsWithChaperonedMedia;
 
     /**
@@ -86,9 +87,7 @@ class Item extends Model implements BelongsToGameVersion, Commentable, HasBlizza
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection(self::MEDIA_COLLECTION)
-            ->singleFile()
-            ->useFallbackUrl(app(UnknownBlizzardIcon::class)->url());
+        $this->addBlizzardIconCollection();
     }
 
     // ============ Relationships ============

@@ -92,8 +92,16 @@ class User extends Authenticatable implements HasDiscordAvatars, HasMedia
     protected function defaultAvatarPath(): Attribute
     {
         return Attribute::make(
-            get: fn (): string => self::STORAGE_PATH_PREFIX.'/'.$this->defaultAvatarIndex.'.png',
+            get: fn (): string => self::defaultAvatarStoragePath($this->defaultAvatarIndex),
         );
+    }
+
+    /**
+     * Get the storage path of the default Discord avatar with the given index.
+     */
+    public static function defaultAvatarStoragePath(int $index): string
+    {
+        return self::STORAGE_PATH_PREFIX."/{$index}.png";
     }
 
     /**
@@ -133,10 +141,7 @@ class User extends Authenticatable implements HasDiscordAvatars, HasMedia
             }
 
             if ($hash) {
-                return match ($avatar) {
-                    DiscordAvatar::Guild => self::CDN_BASE_URL.'/guilds/'.config('services.discord.server_id')."/users/{$this->id}/avatars/{$hash}.webp",
-                    DiscordAvatar::User => self::CDN_BASE_URL."/avatars/{$this->id}/{$hash}.webp",
-                };
+                return self::CDN_BASE_URL.$avatar->cdnRequest($this->id, $hash)->resolveEndpoint();
             }
         }
 

@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Contracts\HasBlizzardIcons;
-use App\Support\MediaLibrary\UnknownBlizzardIcon;
+use App\Models\Concerns\InteractsWithBlizzardIcons;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\WithoutIncrementing;
 use Illuminate\Database\Eloquent\Attributes\WithoutTimestamps;
@@ -21,16 +21,14 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 #[WithoutTimestamps]
 class PlayableClass extends Model implements HasBlizzardIcons, HasMedia
 {
-    use HasFactory, InteractsWithMedia;
+    use HasFactory, InteractsWithBlizzardIcons, InteractsWithMedia;
 
     /**
      * Register the `blizzard_icons` collection, falling back to the questionmark icon.
      */
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection(self::MEDIA_COLLECTION)
-            ->singleFile()
-            ->useFallbackUrl(app(UnknownBlizzardIcon::class)->url());
+        $this->addBlizzardIconCollection();
     }
 
     // ============ Custom attributes ============

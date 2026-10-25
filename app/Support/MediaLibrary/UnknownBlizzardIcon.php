@@ -3,12 +3,14 @@
 namespace App\Support\MediaLibrary;
 
 use App\Contracts\HasBlizzardIcons;
+use Illuminate\Container\Attributes\Config;
 use Illuminate\Filesystem\FilesystemManager;
 
 final class UnknownBlizzardIcon implements HasBlizzardIcons
 {
     public function __construct(
         private readonly FilesystemManager $filesystem,
+        #[Config('media-library.disk_name')]
         private readonly string $diskName,
     ) {}
 

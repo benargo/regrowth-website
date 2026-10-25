@@ -5,10 +5,7 @@ namespace App\Jobs\Discord;
 use App\Enums\DiscordAvatar;
 use App\Http\Integrations\Discord\DiscordCdnConnector;
 use App\Http\Integrations\Discord\Exceptions\AvatarNotFoundException;
-use App\Http\Integrations\Discord\Requests\Cdn\FetchGuildMemberAvatarRequest;
-use App\Http\Integrations\Discord\Requests\Cdn\FetchUserAvatarRequest;
 use App\Models\User;
-use Illuminate\Container\Attributes\Config;
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Foundation\Queue\Queueable;
@@ -43,11 +40,8 @@ class AttachAvatarToUser implements ShouldQueueAfterCommit
      * Download the user's current avatar from the Discord CDN and store it in the avatar's media collection,
      * unless the stored avatar already has the current hash and its file exists.
      */
-    public function handle(
-        DiscordCdnConnector $cdn,
-        FilesystemManager $storage,
-        #[Config('services.discord.server_id')] string $serverId,
-    ): void {
+    public function handle(DiscordCdnConnector $cdn, FilesystemManager $storage): void
+    {
         $user = User::find($this->userId);
         $hash = $user?->{$this->avatar->hashAttribute()};
 
@@ -59,13 +53,8 @@ class AttachAvatarToUser implements ShouldQueueAfterCommit
             return;
         }
 
-        $request = match ($this->avatar) {
-            DiscordAvatar::Guild => new FetchGuildMemberAvatarRequest($serverId, $user->id, $hash),
-            DiscordAvatar::User => new FetchUserAvatarRequest($user->id, $hash),
-        };
-
         try {
-            $body = $cdn->send($request)->body();
+            $body = $cdn->send($this->avatar->cdnRequest($user->id, $hash))->body();
         } catch (AvatarNotFoundException) {
             return;
         }
