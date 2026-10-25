@@ -61,8 +61,7 @@ class ReportsIndexRequest extends FormRequest
             return null;
         }
 
-        return Carbon::parse($earliestRaw, 'UTC')
-            ->timezone(config('app.timezone'))
+        return Carbon::parse($earliestRaw, config('app.timezone'))
             ->subDay()
             ->toDateString();
     }

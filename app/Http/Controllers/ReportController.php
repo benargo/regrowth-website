@@ -75,10 +75,10 @@ class ReportController extends Controller
                             AllowedFilter::exact('guild_tag_ids', 'guild_tag_id'),
                             AllowedFilter::custom('days', new FiltersDaysOfWeek),
                             AllowedFilter::callback('since_date', function (Builder $query, string $value) use ($timezone) {
-                                $query->where('start_time', '>=', Carbon::parse($value, $timezone)->startOfDay()->utc());
+                                $query->where('start_time', '>=', Carbon::parse($value, $timezone)->startOfDay());
                             })->delimiter(''),
                             AllowedFilter::callback('before_date', function (Builder $query, string $value) use ($timezone) {
-                                $query->where('start_time', '<=', Carbon::parse($value, $timezone)->endOfDay()->utc());
+                                $query->where('start_time', '<=', Carbon::parse($value, $timezone)->endOfDay());
                             })->delimiter(''),
                         )
                         ->orderBy('start_time', 'desc')
@@ -177,8 +177,8 @@ class ReportController extends Controller
     {
         $report = Report::create([
             'title' => $request->title,
-            'start_time' => Carbon::parse($request->start_time, 'Europe/Paris')->utc(),
-            'end_time' => Carbon::parse($request->end_time, 'Europe/Paris')->utc(),
+            'start_time' => Carbon::parse($request->start_time, config('app.timezone')),
+            'end_time' => Carbon::parse($request->end_time, config('app.timezone')),
             'guild_tag_id' => $request->guild_tag_id,
             'warcraft_logs_guild_id' => GuildTag::whereKey($request->guild_tag_id)->value('warcraft_logs_guild_id'),
             'zone_id' => $request->zone_id,

@@ -156,7 +156,6 @@ class FetchReportsByGuildTag implements ShouldQueue
         $groups = $allReports->groupBy(
             fn (ReportModel $report) => $report->start_time
                 ->copy()
-                ->setTimezone(config('app.timezone'))
                 ->subHours(5)
                 ->toDateString()
         );

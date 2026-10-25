@@ -11,15 +11,14 @@ use Spatie\LaravelData\Support\DataProperty;
 final class MillisecondTimestampCast implements Cast
 {
     /**
-     * Cast a Warcraft Logs epoch-millisecond timestamp to Carbon. An existing
-     * Carbon instance is returned as a Carbon so the cast is idempotent.
+     * Cast a Warcraft Logs epoch-millisecond timestamp to Carbon in the app timezone.
      */
     public function cast(DataProperty $property, mixed $value, array $properties, CreationContext $context): Carbon
     {
         if ($value instanceof CarbonInterface) {
-            return Carbon::instance($value);
+            return Carbon::instance($value)->setTimezone(config('app.timezone'));
         }
 
-        return Carbon::createFromTimestampMs($value);
+        return Carbon::createFromTimestampMs($value)->setTimezone(config('app.timezone'));
     }
 }

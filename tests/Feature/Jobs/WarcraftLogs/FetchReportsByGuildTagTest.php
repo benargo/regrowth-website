@@ -53,6 +53,19 @@ class FetchReportsByGuildTagTest extends TestCase
     }
 
     #[Test]
+    public function it_stores_report_times_as_app_time_wall_clock(): void
+    {
+        $guildTag = $this->fetchableGuildTag();
+
+        $this->runJob(new FetchReportsByGuildTag($guildTag), [
+            $this->reportPayload('AAA111', 'Report 1', Carbon::parse('2025-07-15 17:00', 'UTC'), Carbon::parse('2025-07-15 22:30', 'UTC'), guildTagId: $guildTag->id),
+        ]);
+
+        $this->assertSame('2025-07-15 19:00:00', DB::table('reports')->where('code', 'AAA111')->value('start_time'));
+        $this->assertSame('2025-07-16 00:30:00', DB::table('reports')->where('code', 'AAA111')->value('end_time'));
+    }
+
+    #[Test]
     public function it_upserts_the_zone_when_persisting_a_report_with_a_zone(): void
     {
         $guildTag = $this->fetchableGuildTag();
