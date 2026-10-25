@@ -27,4 +27,17 @@ trait HasCacheAwareRateLimits
 
         $this->handleLiveExceededLimit($limit, $pendingRequest);
     }
+
+    /**
+     * Mark the limit exceeded for the given number of seconds, with the expiry set to
+     * the app clock's current timestamp plus those seconds when they are positive.
+     */
+    protected function exceedLimitFor(Limit $limit, int $seconds): void
+    {
+        $limit->exceeded(releaseInSeconds: $seconds);
+
+        if ($seconds > 0) {
+            $limit->setExpiryTimestamp(now()->getTimestamp() + $seconds);
+        }
+    }
 }

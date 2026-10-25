@@ -39,6 +39,27 @@ class MillisecondTimestampCastTest extends TestCase
         $this->assertSame(1700000000123, $this->cast($existing)->getTimestampMs());
     }
 
+    #[Test]
+    public function it_returns_the_instant_in_the_app_timezone(): void
+    {
+        config(['app.timezone' => 'Europe/Paris']);
+
+        $result = $this->cast(1752598800000);
+
+        $this->assertSame('Europe/Paris', $result->getTimezone()->getName());
+        $this->assertSame('2025-07-15 19:00:00', $result->format('Y-m-d H:i:s'));
+    }
+
+    #[Test]
+    public function it_converts_an_existing_carbon_to_the_app_timezone(): void
+    {
+        config(['app.timezone' => 'Europe/Paris']);
+
+        $result = $this->cast(Carbon::createFromTimestampMs(1736964000000, 'UTC'));
+
+        $this->assertSame('2025-01-15 19:00:00', $result->format('Y-m-d H:i:s'));
+    }
+
     private function cast(mixed $value): Carbon
     {
         return (new MillisecondTimestampCast)->cast(

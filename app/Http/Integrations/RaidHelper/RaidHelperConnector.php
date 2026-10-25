@@ -11,6 +11,7 @@ use Saloon\Http\Auth\TokenAuthenticator;
 use Saloon\Http\Connector;
 use Saloon\Http\Response;
 use Saloon\RateLimitPlugin\Contracts\RateLimitStore;
+use Saloon\RateLimitPlugin\Helpers\RetryAfterHelper;
 use Saloon\RateLimitPlugin\Limit;
 use Saloon\RateLimitPlugin\Stores\LaravelCacheStore;
 use Saloon\Traits\Plugins\AcceptsJson;
@@ -107,8 +108,6 @@ class RaidHelperConnector extends Connector
             return;
         }
 
-        $limit->exceeded(
-            releaseInSeconds: (int) ($response->header('Retry-After') ?? 60),
-        );
+        $this->exceedLimitFor($limit, RetryAfterHelper::parse($response->header('Retry-After')) ?? 60);
     }
 }

@@ -95,13 +95,10 @@ class ReportsIndexRequestTest extends TestCase
     #[Test]
     public function rules_adds_after_or_equal_min_date_to_both_date_fields_when_reports_exist(): void
     {
-        $rawStartTime = '2025-06-15 12:00:00';
+        $rawStartTime = '2025-06-15 23:30:00';
         $this->mockMinDate($rawStartTime);
 
-        $expectedMinDate = Carbon::parse($rawStartTime, 'UTC')
-            ->timezone(config('app.timezone'))
-            ->subDay()
-            ->toDateString();
+        $expectedMinDate = '2025-06-14';
 
         $rules = $this->makeRequest()->rules();
 

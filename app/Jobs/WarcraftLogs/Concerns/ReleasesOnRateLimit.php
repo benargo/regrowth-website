@@ -23,7 +23,7 @@ trait ReleasesOnRateLimit
     private function releaseUntilPointsReset(RateLimitReachedException $exception, string $context): void
     {
         $limit = $exception->getLimit();
-        $seconds = $limit->getRemainingSeconds();
+        $seconds = max(1, $limit->getExpiryTimestamp() - now()->getTimestamp());
 
         Log::warning("Warcraft Logs rate limit reached while fetching {$context}; releasing for {$seconds} seconds.", [
             'limit' => $limit->getName(),

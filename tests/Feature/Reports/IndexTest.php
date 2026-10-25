@@ -281,6 +281,23 @@ class IndexTest extends TestCase
     }
 
     #[Test]
+    public function since_date_excludes_a_report_late_on_the_previous_paris_day(): void
+    {
+        $tag = GuildTag::factory()->countsAttendance()->create();
+        Report::factory()->forGuild($this->guild)->withGuildTag($tag)->create(['title' => 'Late Raid', 'start_time' => '2025-01-31 23:30:00']);
+
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['since_date' => '2025-02-01']]));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('reports.data', 0)
+            )
+        );
+    }
+
+    #[Test]
     public function before_date_filter_excludes_newer_reports(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->create();
