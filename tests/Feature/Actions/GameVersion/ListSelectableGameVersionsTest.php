@@ -9,6 +9,7 @@ use App\Models\GameVersion;
 use App\Models\WarcraftLogs\Guild;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
@@ -128,6 +129,33 @@ class ListSelectableGameVersionsTest extends TestCase
         $this->assertSame(WarcraftLogsNamespace::Forever, $listed[$withGuild->id]->warcraftLogsGuild->namespace);
         $this->assertTrue($listed[$withoutGuild->id]->relationLoaded('warcraftLogsGuild'));
         $this->assertNull($listed[$withoutGuild->id]->warcraftLogsGuild);
+    }
+
+    #[Test]
+    public function it_serves_the_list_from_a_cache_store_that_disallows_object_unserialization(): void
+    {
+        config([
+            'cache.stores.array.serialize' => true,
+            'cache.serializable_classes' => false,
+        ]);
+        Cache::purge('array');
+
+        Storage::fake('public');
+        $guild = Guild::factory()->create();
+        $gameVersion = GameVersion::factory()->forGuild($guild)->create();
+        $gameVersion->addMedia(UploadedFile::fake()->image('icon.png'))->toMediaCollection(GameVersion::MEDIA_ICON);
+        $iconUrl = $gameVersion->getFirstMediaUrl(GameVersion::MEDIA_ICON);
+        ListSelectableGameVersions::run();
+        $this->forgetRequestMemo();
+
+        DB::enableQueryLog();
+        $listed = ListSelectableGameVersions::run()->sole();
+
+        $this->assertSame([], DB::getQueryLog());
+        $this->assertTrue($listed->is($gameVersion));
+        $this->assertTrue($listed->exists);
+        $this->assertSame($iconUrl, $listed->getFirstMediaUrl(GameVersion::MEDIA_ICON));
+        $this->assertTrue($listed->warcraftLogsGuild->is($guild));
     }
 
     // ==================== game version events ====================
