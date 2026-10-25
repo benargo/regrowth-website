@@ -337,7 +337,7 @@ function MatrixContent({ matrix, ranks: { data: ranks }, zones: { data: zones },
                     </div>
 
                     {/* Row 2: Server-side filters */}
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto]">
                         <FilterDropdown
                             label={{ singular: "Zone", plural: "Zones" }}
                             options={zones}

@@ -4,7 +4,7 @@ import { TextInput } from "@/Components/FormControls";
 
 export default function SearchInput({ value, onChange, placeholder = "Search by name…", dusk, inputRef }) {
     return (
-        <div className="relative">
+        <div className="relative h-full">
             <Icon icon="search" style="solid" className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
             <TextInput
                 ref={inputRef}
@@ -12,7 +12,7 @@ export default function SearchInput({ value, onChange, placeholder = "Search by 
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
                 dusk={dusk}
-                className="pr-10 pl-10"
+                className="h-full pr-10 pl-10"
             />
             {value && (
                 <IconButton

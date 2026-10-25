@@ -32,10 +32,10 @@ export default function FilterDropdown({ label, options, selected, onChange, sho
     else buttonText = `${count} ${label.plural}`;
 
     return (
-        <div className="relative" ref={dropdownRef}>
+        <div className="relative h-full" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex w-full items-center justify-between rounded border border-amber-600 bg-brown-800 px-4 py-2 text-left text-white transition-colors hover:bg-brown-700"
+                className="flex h-full min-h-10 w-full items-center justify-between rounded border border-amber-600 bg-brown-800 px-4 py-2 text-left text-white transition-colors hover:bg-brown-700"
             >
                 <span className="truncate text-sm">{buttonText}</span>
                 <Icon
