@@ -2,7 +2,7 @@
 
 namespace App\Observers;
 
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
 use App\Models\Item;
 use App\Models\ItemPriority;
 use Illuminate\Support\Facades\Cache;
@@ -15,7 +15,12 @@ class ItemObserver
     public function saved(Item|ItemPriority $model): void
     {
         $this->flushLootCouncilCache();
-        BuildAddonExportFile::schedule();
+
+        $gameVersionIds = $model instanceof ItemPriority
+            ? [Item::whereKey($model->item_id)->value('game_version_id')]
+            : [$model->game_version_id, $model->getOriginal('game_version_id')];
+
+        BuildExportFile::scheduleForGameVersionIds($gameVersionIds);
     }
 
     /**

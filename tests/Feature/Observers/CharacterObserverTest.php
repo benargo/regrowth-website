@@ -2,8 +2,9 @@
 
 namespace Tests\Feature\Observers;
 
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Observers\CharacterObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -11,12 +12,14 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Concerns\ReleasesAddonExportLocks;
 use Tests\TestCase;
 
 #[Group('characters')]
 class CharacterObserverTest extends TestCase
 {
     use RefreshDatabase;
+    use ReleasesAddonExportLocks;
 
     #[Test]
     public function created_flushes_characters_cache_tag(): void
@@ -63,25 +66,46 @@ class CharacterObserverTest extends TestCase
     }
 
     #[Test]
-    public function updated_schedules_addon_export_build(): void
+    public function updated_schedules_addon_export_build_for_the_characters_game_version(): void
     {
-        Bus::fake();
+        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
+        $character = Character::factory()->forGameVersion($gameVersion)->create();
+        $this->releaseAddonExportLocks();
+        Bus::fake([BuildExportFile::class]);
 
-        $observer = new CharacterObserver;
-        $observer->updated(Character::factory()->make());
+        $character->update(['name' => 'Renamed']);
 
-        Bus::assertDispatched(BuildAddonExportFile::class);
+        Bus::assertDispatchedTimes(BuildExportFile::class, 1);
+        Bus::assertDispatched(BuildExportFile::class, fn (BuildExportFile $job) => $job->gameVersionId === $gameVersion->id && $job->delay !== null);
     }
 
     #[Test]
-    public function deleted_schedules_addon_export_build(): void
+    public function deleted_schedules_addon_export_build_for_the_characters_game_version(): void
     {
-        Bus::fake();
+        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
+        $character = Character::factory()->forGameVersion($gameVersion)->create();
+        $this->releaseAddonExportLocks();
+        Bus::fake([BuildExportFile::class]);
 
-        $observer = new CharacterObserver;
-        $observer->deleted(Character::factory()->make());
+        $character->delete();
 
-        Bus::assertDispatched(BuildAddonExportFile::class);
+        Bus::assertDispatched(BuildExportFile::class, fn (BuildExportFile $job) => $job->gameVersionId === $gameVersion->id);
+    }
+
+    #[Test]
+    public function moving_a_character_to_another_game_version_rebuilds_both(): void
+    {
+        $from = GameVersion::factory()->fetchableRoster()->create();
+        $to = GameVersion::factory()->fetchableRoster()->create();
+        $character = Character::factory()->forGameVersion($from)->create();
+        $this->releaseAddonExportLocks();
+        Bus::fake([BuildExportFile::class]);
+
+        $character->update(['game_version_id' => $to->id]);
+
+        Bus::assertDispatchedTimes(BuildExportFile::class, 2);
+        Bus::assertDispatched(BuildExportFile::class, fn (BuildExportFile $job) => $job->gameVersionId === $from->id);
+        Bus::assertDispatched(BuildExportFile::class, fn (BuildExportFile $job) => $job->gameVersionId === $to->id);
     }
 
     #[Test]
@@ -92,7 +116,7 @@ class CharacterObserverTest extends TestCase
         $observer = new CharacterObserver;
         $observer->created(Character::factory()->make());
 
-        Bus::assertNotDispatched(BuildAddonExportFile::class);
+        Bus::assertNotDispatched(BuildExportFile::class);
     }
 
     #[Test]

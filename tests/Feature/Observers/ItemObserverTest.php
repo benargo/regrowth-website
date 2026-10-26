@@ -2,7 +2,8 @@
 
 namespace Tests\Feature\Observers;
 
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
+use App\Models\GameVersion;
 use App\Models\Item;
 use App\Models\ItemPriority;
 use App\Observers\ItemObserver;
@@ -12,34 +13,40 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Concerns\ReleasesAddonExportLocks;
 use Tests\TestCase;
 
 #[Group('loot')]
 class ItemObserverTest extends TestCase
 {
     use RefreshDatabase;
+    use ReleasesAddonExportLocks;
 
     // ==================== item ====================
 
     #[Test]
     public function saving_an_item_schedules_addon_export_build(): void
     {
-        Bus::fake([BuildAddonExportFile::class]);
+        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
+        $this->releaseAddonExportLocks();
+        Bus::fake([BuildExportFile::class]);
 
-        Item::factory()->create();
+        Item::factory()->create(['game_version_id' => $gameVersion->id]);
 
-        Bus::assertDispatched(BuildAddonExportFile::class, fn (BuildAddonExportFile $job) => $job->delay !== null);
+        Bus::assertDispatched(BuildExportFile::class, fn (BuildExportFile $job) => $job->gameVersionId === $gameVersion->id && $job->delay !== null);
     }
 
     #[Test]
     public function deleting_an_item_schedules_addon_export_build(): void
     {
-        $item = Item::factory()->create();
-        Bus::fake([BuildAddonExportFile::class]);
+        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
+        $item = Item::factory()->create(['game_version_id' => $gameVersion->id]);
+        $this->releaseAddonExportLocks();
+        Bus::fake([BuildExportFile::class]);
 
         $item->delete();
 
-        Bus::assertDispatched(BuildAddonExportFile::class, fn (BuildAddonExportFile $job) => $job->delay !== null);
+        Bus::assertDispatched(BuildExportFile::class, fn (BuildExportFile $job) => $job->gameVersionId === $gameVersion->id && $job->delay !== null);
     }
 
     #[Test]
@@ -63,28 +70,65 @@ class ItemObserverTest extends TestCase
         $this->assertNull(Cache::tags(['lootcouncil'])->get('test-key'));
     }
 
+    #[Test]
+    public function moving_an_item_to_another_game_version_rebuilds_both(): void
+    {
+        $from = GameVersion::factory()->fetchableRoster()->create();
+        $to = GameVersion::factory()->fetchableRoster()->create();
+        $item = Item::factory()->create(['game_version_id' => $from->id]);
+        $this->releaseAddonExportLocks();
+        Bus::fake([BuildExportFile::class]);
+
+        $item->update(['game_version_id' => $to->id]);
+
+        Bus::assertDispatchedTimes(BuildExportFile::class, 2);
+        Bus::assertDispatched(BuildExportFile::class, fn (BuildExportFile $job) => $job->gameVersionId === $from->id);
+        Bus::assertDispatched(BuildExportFile::class, fn (BuildExportFile $job) => $job->gameVersionId === $to->id);
+    }
+
     // ==================== item priority ====================
 
     #[Test]
     public function saving_an_item_priority_schedules_addon_export_build(): void
     {
-        $item = Item::factory()->create();
-        Bus::fake([BuildAddonExportFile::class]);
+        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
+        $item = Item::factory()->create(['game_version_id' => $gameVersion->id]);
+        $this->releaseAddonExportLocks();
+        Bus::fake([BuildExportFile::class]);
 
         ItemPriority::factory()->for($item)->create();
 
-        Bus::assertDispatched(BuildAddonExportFile::class, fn (BuildAddonExportFile $job) => $job->delay !== null);
+        Bus::assertDispatched(BuildExportFile::class, fn (BuildExportFile $job) => $job->gameVersionId === $gameVersion->id && $job->delay !== null);
+    }
+
+    #[Test]
+    public function saving_an_item_priority_rebuilds_its_items_game_version(): void
+    {
+        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
+        $other = GameVersion::factory()->fetchableRoster()->create();
+        $item = Item::factory()->create(['game_version_id' => $gameVersion->id]);
+        Item::factory()->create(['game_version_id' => $other->id]);
+        $this->releaseAddonExportLocks();
+        Bus::fake([BuildExportFile::class]);
+
+        ItemPriority::factory()->for($item)->create();
+
+        Bus::assertDispatchedTimes(BuildExportFile::class, 1);
+        Bus::assertDispatched(BuildExportFile::class, fn (BuildExportFile $job) => $job->gameVersionId === $gameVersion->id);
     }
 
     #[Test]
     public function deleting_an_item_priority_schedules_addon_export_build(): void
     {
-        $itemPriority = ItemPriority::factory()->create();
-        Bus::fake([BuildAddonExportFile::class]);
+        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
+        $item = Item::factory()->create(['game_version_id' => $gameVersion->id]);
+        $itemPriority = ItemPriority::factory()->for($item)->create();
+        $this->releaseAddonExportLocks();
+        Bus::fake([BuildExportFile::class]);
 
         $itemPriority->delete();
 
-        Bus::assertDispatched(BuildAddonExportFile::class, fn (BuildAddonExportFile $job) => $job->delay !== null);
+        Bus::assertDispatched(BuildExportFile::class, fn (BuildExportFile $job) => $job->gameVersionId === $gameVersion->id && $job->delay !== null);
     }
 
     #[Test]

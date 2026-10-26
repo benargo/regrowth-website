@@ -4,7 +4,7 @@ namespace App\Observers;
 
 use App\Actions\Events\RefreshEventGameVersion;
 use App\Events\RaidingDataChanged;
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
 use App\Jobs\WarcraftLogs\RefreshGuildReports;
 use App\Models\Event;
 use App\Models\GameVersion;
@@ -18,7 +18,7 @@ class PhaseObserver
      */
     public function created(Phase $phase): void
     {
-        BuildAddonExportFile::schedule();
+        BuildExportFile::scheduleForGameVersionIds([$phase->game_version_id]);
         RaidingDataChanged::dispatch($phase);
 
         $this->refreshReportsOfGameVersions([$phase->game_version_id]);
@@ -43,7 +43,7 @@ class PhaseObserver
      */
     public function updated(Phase $phase): void
     {
-        BuildAddonExportFile::schedule();
+        BuildExportFile::scheduleForGameVersionIds([$phase->game_version_id, $phase->getOriginal('game_version_id')]);
         RaidingDataChanged::dispatch($phase);
 
         if (! $phase->wasChanged(['start_date', 'game_version_id'])) {
@@ -71,7 +71,7 @@ class PhaseObserver
      */
     public function deleted(Phase $phase): void
     {
-        BuildAddonExportFile::schedule();
+        BuildExportFile::scheduleForGameVersionIds([$phase->game_version_id]);
         RaidingDataChanged::dispatch($phase);
 
         $this->refreshReportsOfGameVersions([$phase->game_version_id]);
