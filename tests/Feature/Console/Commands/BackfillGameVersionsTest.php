@@ -7,6 +7,7 @@ use App\Models\Character;
 use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
+use App\Models\Item;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
@@ -89,6 +90,23 @@ class BackfillGameVersionsTest extends TestCase
             ->assertSuccessful();
 
         $this->assertSame($gameVersion->id, $character->fresh()->game_version_id);
+    }
+
+    #[Test]
+    #[Group('happy-path')]
+    public function it_assigns_the_given_game_version_to_items_missing_one(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $otherVersion = GameVersion::factory()->create();
+        $item = Item::factory()->create(['game_version_id' => null]);
+        $versionedItem = Item::factory()->create(['game_version_id' => $otherVersion->id]);
+
+        $this->artisan('app:backfill-game-versions', ['--game-version' => $gameVersion->id])
+            ->expectsOutputToContain(Item::class.': 1 rows backfilled.')
+            ->assertSuccessful();
+
+        $this->assertSame($gameVersion->id, $item->fresh()->game_version_id);
+        $this->assertSame($otherVersion->id, $versionedItem->fresh()->game_version_id);
     }
 
     #[Test]

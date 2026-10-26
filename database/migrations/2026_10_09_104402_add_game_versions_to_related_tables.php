@@ -41,6 +41,23 @@ return new class extends Migration
      */
     private const INBOUND_ITEM_FK_TABLES = ['pivot_items_priorities', 'pivot_items_raids'];
 
+    /**
+     * The morph type stored for items in polymorphic relations.
+     */
+    private const ITEM_MORPH_TYPE = 'App\\Models\\Item';
+
+    /**
+     * Polymorphic tables that can reference items, keyed by table name, with
+     * their morph type and morph id columns.
+     *
+     * @var array<string, array{type: string, id: string}>
+     */
+    private const ITEM_MORPH_TABLES = [
+        'comments' => ['type' => 'commentable_type', 'id' => 'commentable_id'],
+        'discord_notification_related_models' => ['type' => 'model_type', 'id' => 'model_id'],
+        'media' => ['type' => 'model_type', 'id' => 'model_id'],
+    ];
+
     public function up(): void
     {
         $this->addGameVersionIdToDatasetTables();
@@ -49,6 +66,7 @@ return new class extends Migration
         $this->convertItemsToUuidPrimaryKey();
         $this->repointItemForeignKeysToUuid();
         $this->widenMediaModelIdForUuidKeys();
+        $this->remapItemMorphReferencesToUuid();
         $this->addGameVersionIdToCharactersTable();
         $this->addRaidNameUniqueIndexToBossesTable();
         $this->addGameVersionIdToDerivedTables();
@@ -305,6 +323,20 @@ return new class extends Migration
         Schema::table('media', function (Blueprint $table): void {
             $table->string('model_id')->change();
         });
+    }
+
+    /**
+     * Rewrite each polymorphic item reference from the item's blizzard_id to its
+     * uuid. References with no matching item are left unchanged.
+     */
+    private function remapItemMorphReferencesToUuid(): void
+    {
+        foreach (self::ITEM_MORPH_TABLES as $table => $columns) {
+            DB::table($table)
+                ->join(self::ITEMS_TABLE, "{$table}.{$columns['id']}", '=', DB::raw('CAST('.self::ITEMS_TABLE.'.blizzard_id AS CHAR)'))
+                ->where("{$table}.{$columns['type']}", self::ITEM_MORPH_TYPE)
+                ->update(["{$table}.{$columns['id']}" => DB::raw(self::ITEMS_TABLE.'.id')]);
+        }
     }
 
     private function restoreMediaModelIdWidth(): void
