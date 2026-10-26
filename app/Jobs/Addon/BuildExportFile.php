@@ -11,7 +11,6 @@ use App\Models\Item;
 use App\Models\ItemPriority;
 use App\Models\LootPriority;
 use App\Models\Phase;
-use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldBeUniqueUntilProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,6 +18,8 @@ use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
+use Throwable;
 
 class BuildExportFile implements ShouldBeUniqueUntilProcessing, ShouldQueue
 {
@@ -103,7 +104,7 @@ class BuildExportFile implements ShouldBeUniqueUntilProcessing, ShouldQueue
 
         $data = [
             'system' => [
-                'date_generated' => Carbon::now()->unix(),
+                'date_generated' => now()->unix(),
                 'game_version' => [
                     'slug' => $gameVersion->slug,
                     'name' => $gameVersion->title,
@@ -119,7 +120,7 @@ class BuildExportFile implements ShouldBeUniqueUntilProcessing, ShouldQueue
         $written = $storage->disk('addon')->put("{$gameVersion->id}/export.json", json_encode($data));
 
         if ($written === false) {
-            throw new \RuntimeException("Unable to write the addon export for game version {$gameVersion->id} to disk [addon].");
+            throw new RuntimeException("Unable to write the addon export for game version {$gameVersion->id} to disk [addon].");
         }
 
         Log::info('Addon export data file built successfully.', [
@@ -132,13 +133,11 @@ class BuildExportFile implements ShouldBeUniqueUntilProcessing, ShouldQueue
      */
     protected function buildPhases(GameVersion $gameVersion): Collection
     {
-        return $gameVersion->phases()->inReleaseOrder()->get()->map(function (Phase $phase) {
-            return [
-                'id' => $phase->id,
-                'number' => $phase->number,
-                'start_date' => $phase->start_date?->unix(),
-            ];
-        });
+        return $gameVersion->phases()->inReleaseOrder()->get()->map(fn (Phase $phase): array => [
+            'id' => $phase->id,
+            'number' => $phase->number,
+            'start_date' => $phase->start_date?->unix(),
+        ]);
     }
 
     /**
@@ -146,15 +145,19 @@ class BuildExportFile implements ShouldBeUniqueUntilProcessing, ShouldQueue
      */
     protected function buildPriorities(GameVersion $gameVersion): Collection
     {
-        return LootPriority::whereHas('items', fn (Builder $query) => $query->whereBelongsTo($gameVersion))->where('type', '!=', LootPriorityType::MEME->value)->with('media')->get()->map(function (LootPriority $priority) {
-            $fileName = $priority->getFirstMedia('blizzard_icons')?->file_name;
+        return LootPriority::whereHas('items', fn (Builder $query) => $query->whereBelongsTo($gameVersion))
+            ->where('type', '!=', LootPriorityType::MEME->value)
+            ->with('media')
+            ->get()
+            ->map(function (LootPriority $priority): array {
+                $fileName = $priority->getFirstMedia('blizzard_icons')?->file_name;
 
-            return [
-                'id' => $priority->id,
-                'name' => $priority->title,
-                'icon' => $fileName ? pathinfo($fileName, PATHINFO_FILENAME) : null,
-            ];
-        });
+                return [
+                    'id' => $priority->id,
+                    'name' => $priority->title,
+                    'icon' => $fileName ? pathinfo($fileName, PATHINFO_FILENAME) : null,
+                ];
+            });
     }
 
     /**
@@ -162,16 +165,14 @@ class BuildExportFile implements ShouldBeUniqueUntilProcessing, ShouldQueue
      */
     protected function buildItems(GameVersion $gameVersion): Collection
     {
-        return $gameVersion->items()->has('priorities')->select('id', 'blizzard_id', 'notes')->get()->map(function (Item $item) {
-            return [
-                'item_id' => $item->blizzard_id,
-                'priorities' => ItemPriority::select('priority_id', 'weight')
-                    ->where('item_id', $item->id)
-                    ->whereRelation('priority', 'type', '!=', LootPriorityType::MEME->value)
-                    ->get(),
-                'notes' => $this->cleanNotes($item->notes),
-            ];
-        });
+        return $gameVersion->items()->has('priorities')->select('id', 'blizzard_id', 'notes')->get()->map(fn (Item $item): array => [
+            'item_id' => $item->blizzard_id,
+            'priorities' => ItemPriority::select('priority_id', 'weight')
+                ->where('item_id', $item->id)
+                ->whereRelation('priority', 'type', '!=', LootPriorityType::MEME->value)
+                ->get(),
+            'notes' => $this->cleanNotes($item->notes),
+        ]);
     }
 
     /**
@@ -214,13 +215,11 @@ class BuildExportFile implements ShouldBeUniqueUntilProcessing, ShouldQueue
             ->with('rank')
             ->orderBy('name')
             ->get()
-            ->map(function (Character $character) {
-                return [
-                    'id' => $character->id,
-                    'name' => $character->name,
-                    'rank' => $character->rank?->name,
-                ];
-            });
+            ->map(fn (Character $character): array => [
+                'id' => $character->id,
+                'name' => $character->name,
+                'rank' => $character->rank?->name,
+            ]);
     }
 
     /**
@@ -261,7 +260,7 @@ class BuildExportFile implements ShouldBeUniqueUntilProcessing, ShouldQueue
     /**
      * Handle a job failure.
      */
-    public function failed(\Throwable $exception): void
+    public function failed(Throwable $exception): void
     {
         Log::error('BuildExportFile job failed.', [
             'game_version_id' => $this->gameVersionId,
