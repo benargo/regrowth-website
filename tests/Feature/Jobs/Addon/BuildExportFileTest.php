@@ -79,6 +79,19 @@ class BuildExportFileTest extends TestCase
     }
 
     #[Test]
+    public function it_schedules_a_build_for_a_current_roster_id_given_as_a_string(): void
+    {
+        $current = GameVersion::factory()->fetchableRoster()->create();
+
+        BuildExportFile::scheduleForGameVersionIds([(string) $current->id]);
+
+        Queue::assertPushed(
+            BuildExportFile::class,
+            fn (BuildExportFile $job): bool => $job->gameVersionId === $current->id,
+        );
+    }
+
+    #[Test]
     public function it_coalesces_repeated_schedules_into_one_pending_build(): void
     {
         $current = GameVersion::factory()->fetchableRoster()->create();

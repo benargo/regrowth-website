@@ -29,6 +29,10 @@ class ReadAddonExport
 
         $data = json_decode($json, true);
 
+        if (! is_array($data)) {
+            return null;
+        }
+
         $data['system']['user'] = [
             'id' => $user->id,
             'name' => $user->displayName,

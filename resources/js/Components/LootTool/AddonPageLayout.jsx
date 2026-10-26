@@ -5,9 +5,9 @@ import Master from "@/Layouts/Master";
 
 /**
  * The frame of an addon page: the masthead (themed with `gameVersion`'s colour and banner
- * when given), the loot tool's officer tool bar, and the addon tabs with `active` current.
+ * when given) and the loot tool's officer tool bar.
  */
-export default function AddonPageLayout({ title, active, gameVersion = null, children }) {
+export default function AddonPageLayout({ title, gameVersion = null, children }) {
     return (
         <Master title={title}>
             <SharedHeader

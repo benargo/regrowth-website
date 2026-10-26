@@ -45,6 +45,16 @@ class ReadAddonExportTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_null_when_the_export_is_not_valid_json(): void
+    {
+        Storage::fake('addon');
+        $gameVersion = GameVersion::factory()->create();
+        Storage::disk('addon')->put($this->exportPath($gameVersion), '{"system":');
+
+        $this->assertNull(ReadAddonExport::run($gameVersion, User::factory()->create()));
+    }
+
+    #[Test]
     public function it_does_not_read_another_game_versions_export(): void
     {
         Storage::fake('addon');

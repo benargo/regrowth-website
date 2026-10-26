@@ -36,7 +36,7 @@ export default function AddonSettings({ gameVersion: gameVersionResource, counci
     const gameVersion = gameVersionResource?.data ?? null;
 
     return (
-        <AddonPageLayout title="Addon Settings" active="settings" gameVersion={gameVersion}>
+        <AddonPageLayout title="Addon Settings" gameVersion={gameVersion}>
             {gameVersion === null ? (
                 <div className="rounded-md border border-dashed border-amber-700/70">
                     <EmptyState icon="box-open" message="No game version is set up yet." />

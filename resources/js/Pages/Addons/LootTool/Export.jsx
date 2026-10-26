@@ -37,7 +37,7 @@ export default function AddonExport({ gameVersion: gameVersionResource, hasExpor
     }
 
     return (
-        <AddonPageLayout title="Export Addon Data" active="export" gameVersion={gameVersion}>
+        <AddonPageLayout title="Export Addon Data" gameVersion={gameVersion}>
             <GameVersionExport
                 gameVersion={gameVersion}
                 hasExport={hasExport}

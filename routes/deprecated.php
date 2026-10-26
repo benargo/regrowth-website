@@ -16,6 +16,7 @@ Route::delete('/manage/addon/settings/councillors/{character}', fn () => abort(4
 
 // Old loot-tool addon pages, now under /addons/loot-tool.
 Route::get('/manage/addon/export', fn () => redirect()->route('addons.loot-tool.export', [], 301));
+Route::get('/manage/addon/export/json', fn () => redirect()->route('addons.loot-tool.export', [], 301));
 Route::get('/manage/addon/export/schema', fn () => redirect()->route('addons.loot-tool.schema', [], 301));
 Route::get('/manage/addon/settings', fn () => redirect()->route('addons.loot-tool.settings', [], 301));
 

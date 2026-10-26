@@ -56,13 +56,13 @@ class BuildExportFile implements ShouldBeUniqueUntilProcessing, ShouldQueue
     /**
      * Schedule a build for each of the given game versions that own a current roster, ignoring nulls and duplicates.
      *
-     * @param  iterable<int, int|null>  $gameVersionIds
+     * @param  iterable<int, int|string|null>  $gameVersionIds
      */
     public static function scheduleForGameVersionIds(iterable $gameVersionIds): void
     {
         $currentRosterIds = GameVersion::currentRosters()->modelKeys();
 
-        foreach (collect($gameVersionIds)->filter()->unique() as $gameVersionId) {
+        foreach (collect($gameVersionIds)->filter()->map(intval(...))->unique() as $gameVersionId) {
             if (in_array($gameVersionId, $currentRosterIds, true)) {
                 static::schedule($gameVersionId);
             }

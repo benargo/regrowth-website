@@ -35,7 +35,7 @@ export default function AddonExportSchema({ schema }) {
     const schemaJson = JSON.stringify(schema, null, 2);
 
     return (
-        <AddonPageLayout title="Export Addon Data" active="schema">
+        <AddonPageLayout title="Export Addon Data">
             <ExportPanel
                 title="Schema"
                 description="This is the JSON schema for the addon export data format."

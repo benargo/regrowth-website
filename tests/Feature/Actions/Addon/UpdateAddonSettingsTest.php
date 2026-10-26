@@ -36,7 +36,7 @@ class UpdateAddonSettingsTest extends TestCase
     }
 
     #[Test]
-    public function it_keeps_alt_councillors_that_are_not_listed(): void
+    public function it_unflags_alt_councillors_that_are_not_listed(): void
     {
         $gameVersion = GameVersion::factory()->fetchableRoster()->create();
         $altCouncillor = Character::factory()->forGameVersion($gameVersion)->lootCouncillor()->withUniqueName()->create();
@@ -44,8 +44,50 @@ class UpdateAddonSettingsTest extends TestCase
 
         UpdateAddonSettings::run($gameVersion, ['councillor_ids' => [$chosen->id]]);
 
-        $this->assertTrue($altCouncillor->fresh()->is_loot_councillor);
+        $this->assertFalse($altCouncillor->fresh()->is_loot_councillor);
         $this->assertTrue($chosen->fresh()->is_loot_councillor);
+    }
+
+    #[Test]
+    public function it_unflags_the_alts_of_an_unflagged_main_even_when_they_are_listed(): void
+    {
+        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
+        $main = Character::factory()->forGameVersion($gameVersion)->main()->lootCouncillor()->withUniqueName()->create();
+        $alt = Character::factory()->forGameVersion($gameVersion)->lootCouncillor()->withUniqueName()->create();
+        $main->linkedCharacters()->attach($alt->id);
+
+        UpdateAddonSettings::run($gameVersion, ['councillor_ids' => [$alt->id]]);
+
+        $this->assertFalse($main->fresh()->is_loot_councillor);
+        $this->assertFalse($alt->fresh()->is_loot_councillor);
+    }
+
+    #[Test]
+    public function it_flags_the_alts_of_a_flagged_main_even_when_they_are_not_listed(): void
+    {
+        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
+        $main = Character::factory()->forGameVersion($gameVersion)->main()->withUniqueName()->create();
+        $alt = Character::factory()->forGameVersion($gameVersion)->withUniqueName()->create();
+        $main->linkedCharacters()->attach($alt->id);
+
+        UpdateAddonSettings::run($gameVersion, ['councillor_ids' => [$main->id]]);
+
+        $this->assertTrue($main->fresh()->is_loot_councillor);
+        $this->assertTrue($alt->fresh()->is_loot_councillor);
+    }
+
+    #[Test]
+    public function it_keeps_the_alts_of_a_main_that_stays_flagged(): void
+    {
+        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
+        $main = Character::factory()->forGameVersion($gameVersion)->main()->lootCouncillor()->withUniqueName()->create();
+        $alt = Character::factory()->forGameVersion($gameVersion)->lootCouncillor()->withUniqueName()->create();
+        $main->linkedCharacters()->attach($alt->id);
+
+        UpdateAddonSettings::run($gameVersion, ['councillor_ids' => [$main->id, $alt->id]]);
+
+        $this->assertTrue($main->fresh()->is_loot_councillor);
+        $this->assertTrue($alt->fresh()->is_loot_councillor);
     }
 
     #[Test]

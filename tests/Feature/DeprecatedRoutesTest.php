@@ -69,6 +69,16 @@ class DeprecatedRoutesTest extends DashboardTestCase
 
     #[Test]
     #[Group('deprecated')]
+    public function addon_export_json_redirects_to_the_loot_tool_export(): void
+    {
+        $response = $this->actingAs($this->officer)->get('/manage/addon/export/json');
+
+        $response->assertMovedPermanently();
+        $response->assertRedirect(route('addons.loot-tool.export'));
+    }
+
+    #[Test]
+    #[Group('deprecated')]
     public function addon_export_schema_redirects_to_the_loot_tool_schema(): void
     {
         $response = $this->actingAs($this->officer)->get('/manage/addon/export/schema');
