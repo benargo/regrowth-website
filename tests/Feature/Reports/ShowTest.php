@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Reports;
 
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\PlayableClass;
@@ -29,7 +29,7 @@ class ShowTest extends TestCase
     {
         parent::setUp();
 
-        Bus::fake([BuildAddonExportFile::class]);
+        Bus::fake([BuildExportFile::class]);
     }
 
     // ==================== show ====================

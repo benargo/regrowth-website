@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Reports;
 
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
 use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\Permission;
@@ -26,7 +26,7 @@ class UpdateTest extends TestCase
     {
         parent::setUp();
 
-        Bus::fake([BuildAddonExportFile::class]);
+        Bus::fake([BuildExportFile::class]);
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 
