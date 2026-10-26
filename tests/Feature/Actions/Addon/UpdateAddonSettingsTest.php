@@ -3,7 +3,7 @@
 namespace Tests\Feature\Actions\Addon;
 
 use App\Actions\Addon\UpdateAddonSettings;
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
@@ -119,8 +119,8 @@ class UpdateAddonSettingsTest extends TestCase
             'counted_rank_ids' => [],
         ]);
 
-        Queue::assertPushed(BuildAddonExportFile::class, 1);
-        Queue::assertPushed(BuildAddonExportFile::class, fn (BuildAddonExportFile $job) => $job->gameVersionId === $gameVersion->id);
+        Queue::assertPushed(BuildExportFile::class, 1);
+        Queue::assertPushed(BuildExportFile::class, fn (BuildExportFile $job) => $job->gameVersionId === $gameVersion->id);
         $this->assertFalse($rank->fresh()->count_attendance);
     }
 
@@ -136,9 +136,9 @@ class UpdateAddonSettingsTest extends TestCase
 
         UpdateAddonSettings::run($gameVersion, ['counted_tag_ids' => [$tag->id]]);
 
-        Queue::assertPushed(BuildAddonExportFile::class, 2);
-        Queue::assertPushed(BuildAddonExportFile::class, fn (BuildAddonExportFile $job) => $job->gameVersionId === $gameVersion->id);
-        Queue::assertPushed(BuildAddonExportFile::class, fn (BuildAddonExportFile $job) => $job->gameVersionId === $sibling->id);
+        Queue::assertPushed(BuildExportFile::class, 2);
+        Queue::assertPushed(BuildExportFile::class, fn (BuildExportFile $job) => $job->gameVersionId === $gameVersion->id);
+        Queue::assertPushed(BuildExportFile::class, fn (BuildExportFile $job) => $job->gameVersionId === $sibling->id);
     }
 
     #[Test]
@@ -157,6 +157,6 @@ class UpdateAddonSettingsTest extends TestCase
             'counted_tag_ids' => [$tag->id],
         ]);
 
-        Queue::assertNotPushed(BuildAddonExportFile::class);
+        Queue::assertNotPushed(BuildExportFile::class);
     }
 }

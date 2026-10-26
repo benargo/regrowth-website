@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\Discord\AttachAvatarToUser;
-use App\Jobs\ProcessGrmUpload;
+use App\Jobs\GuildRosterManager\ProcessUpload;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Phase;
@@ -71,7 +71,7 @@ class DeprecatedRoutesTest extends DashboardTestCase
     #[Group('deprecated')]
     public function grm_upload_post_endpoint_is_gone(): void
     {
-        Queue::fake([ProcessGrmUpload::class, AttachAvatarToUser::class]);
+        Queue::fake([ProcessUpload::class, AttachAvatarToUser::class]);
         Storage::fake('local');
 
         $response = $this->actingAs($this->officer)->post('/manage/grm-upload', [

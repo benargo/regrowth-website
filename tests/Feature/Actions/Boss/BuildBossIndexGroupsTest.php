@@ -4,7 +4,7 @@ namespace Tests\Feature\Actions\Boss;
 
 use App\Actions\Boss\BuildBossIndexGroups;
 use App\Http\Resources\BossResource;
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
 use App\Models\Boss;
 use App\Models\Event;
 use App\Models\EventAssignment;
@@ -77,7 +77,7 @@ class BuildBossIndexGroupsTest extends TestCase
     public function it_attaches_links_usage_counts_past_link_counts_and_the_strategy_flag(): void
     {
         $this->freezeTime();
-        Bus::fake([BuildAddonExportFile::class]);
+        Bus::fake([BuildExportFile::class]);
         $boss = Boss::factory()->for($this->raidIn(GameVersion::factory()->create(), 'Karazhan'))->create(['notes' => null]);
         Item::factory()->fromBoss($boss)->create();
         $upcoming = Event::factory()->live()->create(['start_time' => now()->addDay(), 'end_time' => now()->addDay()->addHours(3)]);

@@ -5,7 +5,7 @@ namespace Tests\Feature\GuildRosterManager;
 use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRequest;
 use App\Jobs\Discord\AttachAvatarToUser;
-use App\Jobs\ProcessGrmUpload;
+use App\Jobs\GuildRosterManager\ProcessUpload;
 use App\Models\GameVersion;
 use App\Models\User;
 use Illuminate\Support\Facades\Queue;
@@ -63,7 +63,7 @@ class ImportControllerTest extends DashboardTestCase
     #[Test]
     public function store_requires_authentication(): void
     {
-        Queue::fake([ProcessGrmUpload::class, AttachAvatarToUser::class]);
+        Queue::fake([ProcessUpload::class, AttachAvatarToUser::class]);
         $version = GameVersion::factory()->fetchableRoster()->create();
 
         $response = $this->post($this->storeUrl($version), ['grm_data' => self::CSV]);
@@ -76,42 +76,42 @@ class ImportControllerTest extends DashboardTestCase
     #[Test]
     public function store_forbids_guest_users(): void
     {
-        Queue::fake([ProcessGrmUpload::class, AttachAvatarToUser::class]);
+        Queue::fake([ProcessUpload::class, AttachAvatarToUser::class]);
         $version = GameVersion::factory()->fetchableRoster()->create();
 
         $response = $this->actingAs(User::factory()->guest()->create())
             ->post($this->storeUrl($version), ['grm_data' => self::CSV]);
 
         $response->assertForbidden();
-        Queue::assertNotPushed(ProcessGrmUpload::class);
+        Queue::assertNotPushed(ProcessUpload::class);
     }
 
     #[Group('authorization')]
     #[Test]
     public function store_forbids_member_users(): void
     {
-        Queue::fake([ProcessGrmUpload::class, AttachAvatarToUser::class]);
+        Queue::fake([ProcessUpload::class, AttachAvatarToUser::class]);
         $version = GameVersion::factory()->fetchableRoster()->create();
 
         $response = $this->actingAs(User::factory()->member()->create())
             ->post($this->storeUrl($version), ['grm_data' => self::CSV]);
 
         $response->assertForbidden();
-        Queue::assertNotPushed(ProcessGrmUpload::class);
+        Queue::assertNotPushed(ProcessUpload::class);
     }
 
     #[Group('authorization')]
     #[Test]
     public function store_forbids_raider_users(): void
     {
-        Queue::fake([ProcessGrmUpload::class, AttachAvatarToUser::class]);
+        Queue::fake([ProcessUpload::class, AttachAvatarToUser::class]);
         $version = GameVersion::factory()->fetchableRoster()->create();
 
         $response = $this->actingAs(User::factory()->raider()->create())
             ->post($this->storeUrl($version), ['grm_data' => self::CSV]);
 
         $response->assertForbidden();
-        Queue::assertNotPushed(ProcessGrmUpload::class);
+        Queue::assertNotPushed(ProcessUpload::class);
     }
 
     // ==================== create — game version selection ====================
@@ -173,7 +173,7 @@ class ImportControllerTest extends DashboardTestCase
     #[Test]
     public function an_upload_leaves_the_session_alone_and_redirects_to_its_version(): void
     {
-        Queue::fake([ProcessGrmUpload::class, AttachAvatarToUser::class]);
+        Queue::fake([ProcessUpload::class, AttachAvatarToUser::class]);
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'other', 'release_date' => now()->subWeek()]);
         $version = GameVersion::factory()->fetchableRoster()->create(['slug' => 'target', 'release_date' => now()->subYear()]);
 
@@ -350,7 +350,7 @@ class ImportControllerTest extends DashboardTestCase
     #[Test]
     public function store_validates_grm_data_required(): void
     {
-        Queue::fake([ProcessGrmUpload::class, AttachAvatarToUser::class]);
+        Queue::fake([ProcessUpload::class, AttachAvatarToUser::class]);
         $version = GameVersion::factory()->fetchableRoster()->create();
 
         $response = $this->actingAs($this->officer)->post($this->storeUrl($version), []);
@@ -363,7 +363,7 @@ class ImportControllerTest extends DashboardTestCase
     #[Test]
     public function store_validates_csv_has_header_and_data_rows(): void
     {
-        Queue::fake([ProcessGrmUpload::class, AttachAvatarToUser::class]);
+        Queue::fake([ProcessUpload::class, AttachAvatarToUser::class]);
         $version = GameVersion::factory()->fetchableRoster()->create();
 
         $response = $this->actingAs($this->officer)->post($this->storeUrl($version), [
@@ -378,7 +378,7 @@ class ImportControllerTest extends DashboardTestCase
     #[Test]
     public function store_validates_required_headers_present(): void
     {
-        Queue::fake([ProcessGrmUpload::class, AttachAvatarToUser::class]);
+        Queue::fake([ProcessUpload::class, AttachAvatarToUser::class]);
         $version = GameVersion::factory()->fetchableRoster()->create();
 
         $response = $this->actingAs($this->officer)->post($this->storeUrl($version), [
@@ -393,7 +393,7 @@ class ImportControllerTest extends DashboardTestCase
     #[Test]
     public function store_rejects_csv_without_valid_delimiter(): void
     {
-        Queue::fake([ProcessGrmUpload::class, AttachAvatarToUser::class]);
+        Queue::fake([ProcessUpload::class, AttachAvatarToUser::class]);
         $version = GameVersion::factory()->fetchableRoster()->create();
 
         $response = $this->actingAs($this->officer)->post($this->storeUrl($version), [
@@ -408,7 +408,7 @@ class ImportControllerTest extends DashboardTestCase
     #[Test]
     public function store_validates_game_version_required(): void
     {
-        Queue::fake([ProcessGrmUpload::class, AttachAvatarToUser::class]);
+        Queue::fake([ProcessUpload::class, AttachAvatarToUser::class]);
 
         $response = $this->actingAs($this->officer)->post(route('management.grm.store'), ['grm_data' => self::CSV]);
 
@@ -420,7 +420,7 @@ class ImportControllerTest extends DashboardTestCase
     #[Test]
     public function store_rejects_a_game_version_without_a_current_roster(): void
     {
-        Queue::fake([ProcessGrmUpload::class, AttachAvatarToUser::class]);
+        Queue::fake([ProcessUpload::class, AttachAvatarToUser::class]);
         GameVersion::factory()->fetchableRoster()->create(['slug' => 'newer', 'guild_name' => 'Regrowth', 'release_date' => now()->subWeek()]);
         $deprecated = GameVersion::factory()->fetchableRoster()->create(['slug' => 'older', 'guild_name' => 'Regrowth', 'release_date' => now()->subYear()]);
 
@@ -437,7 +437,7 @@ class ImportControllerTest extends DashboardTestCase
     #[Test]
     public function store_saves_the_upload_queues_it_and_redirects_to_the_game_versions_form(): void
     {
-        Queue::fake([ProcessGrmUpload::class, AttachAvatarToUser::class]);
+        Queue::fake([ProcessUpload::class, AttachAvatarToUser::class]);
         $version = GameVersion::factory()->fetchableRoster()->create(['slug' => 'tbc']);
 
         $response = $this->actingAs($this->officer)->post($this->storeUrl($version), ['grm_data' => self::CSV]);
@@ -446,7 +446,7 @@ class ImportControllerTest extends DashboardTestCase
         $response->assertSessionHas('success');
         Storage::disk('local')->assertExists('grm/uploads/tbc/latest.csv');
         Storage::disk('local')->assertMissing('grm/uploads/latest.csv');
-        Queue::assertPushed(ProcessGrmUpload::class, fn (ProcessGrmUpload $job): bool => $job->userId === $this->officer->id
+        Queue::assertPushed(ProcessUpload::class, fn (ProcessUpload $job): bool => $job->userId === $this->officer->id
             && $job->gameVersionId === $version->id
             && $job->grmData['rows'][0]['Name'] === 'TestChar');
     }

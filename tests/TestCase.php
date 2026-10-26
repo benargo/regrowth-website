@@ -2,7 +2,7 @@
 
 namespace Tests;
 
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
 use App\Jobs\Discord\AttachAvatarToUser;
 use App\Listeners\FetchGuildRoster;
 use App\Listeners\FlushPermissionsCache;
@@ -25,8 +25,8 @@ abstract class TestCase extends BaseTestCase
         $this->mock(FetchGuildRoster::class)->shouldReceive('handle');
         $this->mock(FlushPermissionsCache::class)->shouldReceive('handle');
 
-        Queue::fake([BuildAddonExportFile::class, AttachAvatarToUser::class]);
-        Storage::fake('s3-private');
+        Queue::fake([BuildExportFile::class, AttachAvatarToUser::class]);
+        Storage::fake('addon');
 
         if (! self::$strayRequestsPrevented) {
             Config::preventStrayRequests();

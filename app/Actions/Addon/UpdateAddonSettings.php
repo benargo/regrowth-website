@@ -2,7 +2,7 @@
 
 namespace App\Actions\Addon;
 
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
 use App\Models\GameVersion;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -47,7 +47,7 @@ class UpdateAddonSettings
             ? $gameVersion->warcraftLogsGuild->gameVersions()->pluck('id')
             : [$gameVersion->id];
 
-        BuildAddonExportFile::scheduleForGameVersionIds($gameVersionIds);
+        BuildExportFile::scheduleForGameVersionIds($gameVersionIds);
     }
 
     /**

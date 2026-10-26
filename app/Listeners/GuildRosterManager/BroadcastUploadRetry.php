@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Listeners;
+namespace App\Listeners\GuildRosterManager;
 
 use App\Events\Broadcasts\GrmUploadRetrying;
-use App\Jobs\ProcessGrmUpload;
+use App\Jobs\GuildRosterManager\ProcessUpload;
 use Illuminate\Queue\Events\JobReleasedAfterException;
 
-class BroadcastGrmUploadRetry
+class BroadcastUploadRetry
 {
     /**
      * Broadcast a retry notice when a GRM upload job is released back onto the
@@ -14,13 +14,13 @@ class BroadcastGrmUploadRetry
      */
     public function handle(JobReleasedAfterException $event): void
     {
-        if ($event->job->resolveName() !== ProcessGrmUpload::class) {
+        if ($event->job->resolveName() !== ProcessUpload::class) {
             return;
         }
 
         $command = unserialize($event->job->payload()['data']['command']);
 
-        if (! $command instanceof ProcessGrmUpload) {
+        if (! $command instanceof ProcessUpload) {
             return;
         }
 

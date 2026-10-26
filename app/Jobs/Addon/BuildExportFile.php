@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs;
+namespace App\Jobs\Addon;
 
 use App\Actions\Attendance\BuildAttendanceMatrix;
 use App\Data\Attendance\CharacterAttendanceData;
@@ -12,14 +12,15 @@ use App\Models\ItemPriority;
 use App\Models\LootPriority;
 use App\Models\Phase;
 use Carbon\Carbon;
+use Illuminate\Contracts\Queue\ShouldBeUniqueUntilProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Queue\Middleware\RateLimitedWithRedis;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
-class BuildAddonExportFile implements ShouldQueue
+class BuildExportFile implements ShouldBeUniqueUntilProcessing, ShouldQueue
 {
     use Queueable;
 
@@ -34,23 +35,45 @@ class BuildAddonExportFile implements ShouldQueue
     public int $backoff = 60;
 
     /**
-     * Queue a rebuild two minutes from now.
+     * The number of seconds the unique lock is held.
      */
-    public static function schedule(): void
+    public int $uniqueFor = 600;
+
+    /**
+     * Create a new job instance.
+     */
+    public function __construct(public int $gameVersionId) {}
+
+    /**
+     * Queue a build for the given game version after a short delay.
+     */
+    public static function schedule(int $gameVersionId): void
     {
-        static::dispatch()->delay(now()->addSeconds(120));
+        static::dispatch($gameVersionId)->delay(now()->addSeconds(120));
     }
 
     /**
-     * Define the middleware for the job.
+     * Schedule a build for each of the given game versions that own a current roster, ignoring nulls and duplicates.
      *
-     * @return array<int, object>
+     * @param  iterable<int, int|null>  $gameVersionIds
      */
-    public function middleware(): array
+    public static function scheduleForGameVersionIds(iterable $gameVersionIds): void
     {
-        return [
-            (new RateLimitedWithRedis('build-addon-export'))->dontRelease(),
-        ];
+        $currentRosterIds = GameVersion::currentRosters()->modelKeys();
+
+        foreach (collect($gameVersionIds)->filter()->unique() as $gameVersionId) {
+            if (in_array($gameVersionId, $currentRosterIds, true)) {
+                static::schedule($gameVersionId);
+            }
+        }
+    }
+
+    /**
+     * Get the unique ID for the job.
+     */
+    public function uniqueId(): string
+    {
+        return (string) $this->gameVersionId;
     }
 
     /**
@@ -60,36 +83,56 @@ class BuildAddonExportFile implements ShouldQueue
      */
     public function tags(): array
     {
-        return ['regrowth-addon', 'regrowth-addon:build'];
+        return ['regrowth-addon', 'regrowth-addon:build', "game-version:{$this->gameVersionId}"];
     }
 
     /**
      * Execute the job.
      */
-    public function handle(): void
+    public function handle(FilesystemManager $storage): void
     {
+        $gameVersion = GameVersion::find($this->gameVersionId);
+
+        if ($gameVersion === null) {
+            Log::info('BuildExportFile: game version no longer exists, skipping export.', [
+                'game_version_id' => $this->gameVersionId,
+            ]);
+
+            return;
+        }
+
         $data = [
             'system' => [
                 'date_generated' => Carbon::now()->unix(),
+                'game_version' => [
+                    'slug' => $gameVersion->slug,
+                    'name' => $gameVersion->title,
+                ],
             ],
-            'phases' => $this->buildPhases(),
-            'priorities' => $this->buildPriorities(),
-            'items' => $this->buildItems(),
-            'players' => $this->buildPlayerAttendance(),
-            'councillors' => $this->buildCouncillors(),
+            'phases' => $this->buildPhases($gameVersion),
+            'priorities' => $this->buildPriorities($gameVersion),
+            'items' => $this->buildItems($gameVersion),
+            'players' => $this->buildPlayerAttendance($gameVersion),
+            'councillors' => $this->buildCouncillors($gameVersion),
         ];
 
-        Storage::disk('local')->put('addon/export.json', json_encode($data));
+        $written = $storage->disk('addon')->put("{$gameVersion->id}/export.json", json_encode($data));
 
-        Log::info('Addon export data file built successfully.');
+        if ($written === false) {
+            throw new \RuntimeException("Unable to write the addon export for game version {$gameVersion->id} to disk [addon].");
+        }
+
+        Log::info('Addon export data file built successfully.', [
+            'game_version_id' => $gameVersion->id,
+        ]);
     }
 
     /**
      * Build a list of raid phases with their start times.
      */
-    protected function buildPhases(): Collection
+    protected function buildPhases(GameVersion $gameVersion): Collection
     {
-        return Phase::inReleaseOrder()->get()->map(function (Phase $phase) {
+        return $gameVersion->phases()->inReleaseOrder()->get()->map(function (Phase $phase) {
             return [
                 'id' => $phase->id,
                 'number' => $phase->number,
@@ -101,9 +144,9 @@ class BuildAddonExportFile implements ShouldQueue
     /**
      * Build a list of loot priorities with their icons.
      */
-    protected function buildPriorities(): Collection
+    protected function buildPriorities(GameVersion $gameVersion): Collection
     {
-        return LootPriority::has('items')->where('type', '!=', LootPriorityType::MEME->value)->with('media')->get()->map(function (LootPriority $priority) {
+        return LootPriority::whereHas('items', fn (Builder $query) => $query->whereBelongsTo($gameVersion))->where('type', '!=', LootPriorityType::MEME->value)->with('media')->get()->map(function (LootPriority $priority) {
             $fileName = $priority->getFirstMedia('blizzard_icons')?->file_name;
 
             return [
@@ -117,11 +160,11 @@ class BuildAddonExportFile implements ShouldQueue
     /**
      * Build a list of items with their priorities and cleaned notes.
      */
-    protected function buildItems(): Collection
+    protected function buildItems(GameVersion $gameVersion): Collection
     {
-        return Item::has('priorities')->select('id', 'notes')->get()->map(function (Item $item) {
+        return $gameVersion->items()->has('priorities')->select('id', 'blizzard_id', 'notes')->get()->map(function (Item $item) {
             return [
-                'item_id' => $item->id,
+                'item_id' => $item->blizzard_id,
                 'priorities' => ItemPriority::select('priority_id', 'weight')
                     ->where('item_id', $item->id)
                     ->whereRelation('priority', 'type', '!=', LootPriorityType::MEME->value)
@@ -132,20 +175,18 @@ class BuildAddonExportFile implements ShouldQueue
     }
 
     /**
-     * Build player attendance statistics for the newest game version with counted attendance.
+     * Build player attendance statistics for the given game version, which must have counted attendance.
      *
      * @return Collection<int, array{id: int, name: string, attendance: array{first_attendance: int, attended: int, total: int, percentage: float}}>
      */
-    protected function buildPlayerAttendance(): Collection
+    protected function buildPlayerAttendance(GameVersion $gameVersion): Collection
     {
-        $gameVersion = GameVersion::withCountedAttendance()->first();
-
-        if ($gameVersion === null) {
+        if (! $gameVersion->hasCountedAttendance()) {
             return collect();
         }
 
         if (! $gameVersion->guildRanks()->countsAttendance()->exists()) {
-            Log::warning('BuildAddonExportFile: no counting ranks configured, skipping attendance data.', [
+            Log::warning('BuildExportFile: no counting ranks configured, skipping attendance data.', [
                 'game_version_id' => $gameVersion->id,
             ]);
 
@@ -167,9 +208,9 @@ class BuildAddonExportFile implements ShouldQueue
     /**
      * Build a list of loot councillors with their IDs, names, and ranks.
      */
-    protected function buildCouncillors(): Collection
+    protected function buildCouncillors(GameVersion $gameVersion): Collection
     {
-        return Character::where('is_loot_councillor', true)
+        return $gameVersion->characters()->where('is_loot_councillor', true)
             ->with('rank')
             ->orderBy('name')
             ->get()
@@ -222,7 +263,8 @@ class BuildAddonExportFile implements ShouldQueue
      */
     public function failed(\Throwable $exception): void
     {
-        Log::error('BuildAddonExportFile job failed.', [
+        Log::error('BuildExportFile job failed.', [
+            'game_version_id' => $this->gameVersionId,
             'error' => $exception->getMessage(),
         ]);
     }

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs;
+namespace App\Jobs\GuildRosterManager;
 
 use App\Contracts\Http\Integrations\Blizzard\RequiresMinimumCharacterLevel;
 use App\Events\Broadcasts\GrmUploadCompleted as GrmUploadCompletedBroadcast;
@@ -14,11 +14,12 @@ use App\Http\Integrations\Blizzard\Exceptions\CharacterNotFoundException;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterStatusRequest;
 use App\Http\Integrations\Discord\Data\Channels\ChannelStub;
+use App\Jobs\FetchGuildRoster;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\User;
-use App\Notifications\GrmUploadCompleted;
-use App\Notifications\GrmUploadFailed;
+use App\Notifications\GuildRosterManagerUploadCompleted;
+use App\Notifications\GuildRosterManagerUploadFailed;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\Backoff;
@@ -31,7 +32,7 @@ use Illuminate\Support\Facades\Log;
 #[Tries(3)]
 #[Backoff(60)]
 #[Timeout(900)]
-class ProcessGrmUpload implements RequiresMinimumCharacterLevel, ShouldQueue
+class ProcessUpload implements RequiresMinimumCharacterLevel, ShouldQueue
 {
     use Queueable;
 
@@ -98,7 +99,7 @@ class ProcessGrmUpload implements RequiresMinimumCharacterLevel, ShouldQueue
 
         $this->logSummary();
 
-        $this->notifyOfficers();
+        $this->notifyOfficers($gameVersion);
         $this->broadcastCompletion();
         $this->flushAttendanceCacheIfChanged();
         $this->refreshRosterIfChanged($gameVersion);
@@ -157,17 +158,17 @@ class ProcessGrmUpload implements RequiresMinimumCharacterLevel, ShouldQueue
     /**
      * Queue the upload summary for the officer Discord channel.
      */
-    private function notifyOfficers(): void
+    private function notifyOfficers(GameVersion $gameVersion): void
     {
         $channel = new ChannelStub(config('services.discord.channels.officer'));
 
         if ($this->errorCount > 0) {
-            $channel->notify(new GrmUploadFailed($this->processedCount, $this->errorCount, $this->errors));
+            $channel->notify(new GuildRosterManagerUploadFailed($this->processedCount, $this->errorCount, $this->errors));
 
             return;
         }
 
-        $channel->notify(new GrmUploadCompleted($this->processedCount, $this->skippedCount, $this->warningCount));
+        $channel->notify(new GuildRosterManagerUploadCompleted($gameVersion->slug, $this->processedCount, $this->skippedCount, $this->warningCount));
     }
 
     /**
@@ -418,7 +419,7 @@ class ProcessGrmUpload implements RequiresMinimumCharacterLevel, ShouldQueue
 
         try {
             (new ChannelStub(config('services.discord.channels.officer')))->notify(
-                new GrmUploadFailed(0, 1, [], $exception->getMessage())
+                new GuildRosterManagerUploadFailed(0, 1, [], $exception->getMessage())
             );
         } catch (\Throwable $e) {
             Log::error('GRM Upload: Failed to send failure notification', [

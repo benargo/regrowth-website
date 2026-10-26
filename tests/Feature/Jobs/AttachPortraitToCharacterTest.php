@@ -12,8 +12,8 @@ use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchCharacterMediaRequest;
+use App\Jobs\Addon\BuildExportFile;
 use App\Jobs\AttachPortraitToCharacter;
-use App\Jobs\BuildAddonExportFile;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\PlayableRace;
@@ -465,7 +465,7 @@ class AttachPortraitToCharacterTest extends TestCase
     #[Test]
     public function it_does_not_schedule_addon_export_build_when_saving_gender(): void
     {
-        Bus::fake([BuildAddonExportFile::class]);
+        Bus::fake([BuildExportFile::class]);
 
         $character = Character::factory()->for($this->gameVersion)->create(['gender' => null]);
 
@@ -478,7 +478,7 @@ class AttachPortraitToCharacterTest extends TestCase
         (new AttachPortraitToCharacter($character->id, $assetUrl))
             ->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
-        Bus::assertNotDispatched(BuildAddonExportFile::class);
+        Bus::assertNotDispatched(BuildExportFile::class);
     }
 
     // ==================== fallback URL ====================

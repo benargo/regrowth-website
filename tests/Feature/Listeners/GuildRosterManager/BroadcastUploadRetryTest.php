@@ -1,10 +1,10 @@
 <?php
 
-namespace Tests\Feature\Listeners;
+namespace Tests\Feature\Listeners\GuildRosterManager;
 
 use App\Events\Broadcasts\GrmUploadRetrying;
-use App\Jobs\ProcessGrmUpload;
-use App\Listeners\BroadcastGrmUploadRetry;
+use App\Jobs\GuildRosterManager\ProcessUpload;
+use App\Listeners\GuildRosterManager\BroadcastUploadRetry;
 use Illuminate\Contracts\Queue\Job;
 use Illuminate\Queue\Events\JobReleasedAfterException;
 use Illuminate\Support\Facades\Event;
@@ -15,17 +15,17 @@ use Tests\TestCase;
 
 #[Group('characters')]
 #[Group('broadcasting')]
-class BroadcastGrmUploadRetryTest extends TestCase
+class BroadcastUploadRetryTest extends TestCase
 {
     #[Test]
     public function it_broadcasts_a_retry_event_for_a_released_grm_upload_job(): void
     {
         Event::fake([GrmUploadRetrying::class]);
 
-        $command = new ProcessGrmUpload($this->grmData(), 'user-123', 1);
+        $command = new ProcessUpload($this->grmData(), 'user-123', 1);
 
         $job = $this->mock(Job::class, function (MockInterface $mock) use ($command) {
-            $mock->shouldReceive('resolveName')->andReturn(ProcessGrmUpload::class);
+            $mock->shouldReceive('resolveName')->andReturn(ProcessUpload::class);
             $mock->shouldReceive('attempts')->andReturn(1);
             $mock->shouldReceive('maxTries')->andReturn(3);
             $mock->shouldReceive('payload')->andReturn([
@@ -35,7 +35,7 @@ class BroadcastGrmUploadRetryTest extends TestCase
 
         $event = new JobReleasedAfterException('redis', $job, backoff: 60);
 
-        (new BroadcastGrmUploadRetry)->handle($event);
+        (new BroadcastUploadRetry)->handle($event);
 
         Event::assertDispatched(GrmUploadRetrying::class, function (GrmUploadRetrying $event) {
             return $event->userId === 'user-123'
@@ -56,7 +56,7 @@ class BroadcastGrmUploadRetryTest extends TestCase
 
         $event = new JobReleasedAfterException('redis', $job, backoff: 60);
 
-        (new BroadcastGrmUploadRetry)->handle($event);
+        (new BroadcastUploadRetry)->handle($event);
 
         Event::assertNotDispatched(GrmUploadRetrying::class);
     }

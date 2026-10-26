@@ -5,7 +5,7 @@ namespace Tests\Unit\Notifications;
 use App\Http\Integrations\Discord\Data\Channels\ChannelData;
 use App\Http\Integrations\Discord\Data\Messages\EmbedData;
 use App\Notifications\Discord\DiscordChannel;
-use App\Notifications\GrmUploadFailed;
+use App\Notifications\GuildRosterManagerUploadFailed;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\LaravelData\Optional;
@@ -13,7 +13,7 @@ use Tests\TestCase;
 
 #[Group('raiding')]
 #[Group('discord-integration')]
-class GrmUploadFailedTest extends TestCase
+class GuildRosterManagerUploadFailedTest extends TestCase
 {
     private function makeNotifiable(): ChannelData
     {
@@ -25,7 +25,7 @@ class GrmUploadFailedTest extends TestCase
     #[Test]
     public function it_uses_discord_driver(): void
     {
-        $notification = new GrmUploadFailed(processedCount: 3, errorCount: 2);
+        $notification = new GuildRosterManagerUploadFailed(processedCount: 3, errorCount: 2);
 
         $this->assertContains(DiscordChannel::class, $notification->via($this->makeNotifiable()));
     }
@@ -33,7 +33,7 @@ class GrmUploadFailedTest extends TestCase
     #[Test]
     public function it_builds_embed_for_exception_path(): void
     {
-        $notification = new GrmUploadFailed(
+        $notification = new GuildRosterManagerUploadFailed(
             processedCount: 0,
             errorCount: 1,
             exceptionMessage: 'Connection timed out',
@@ -51,7 +51,7 @@ class GrmUploadFailedTest extends TestCase
     #[Test]
     public function it_builds_embed_for_errors_only_path(): void
     {
-        $notification = new GrmUploadFailed(
+        $notification = new GuildRosterManagerUploadFailed(
             processedCount: 8,
             errorCount: 2,
             errors: ['CharA: API error', 'CharB: not found'],
@@ -70,7 +70,7 @@ class GrmUploadFailedTest extends TestCase
     #[Test]
     public function it_includes_error_list_in_description(): void
     {
-        $notification = new GrmUploadFailed(
+        $notification = new GuildRosterManagerUploadFailed(
             processedCount: 5,
             errorCount: 2,
             errors: ['CharA: API error', 'CharB: not found'],
@@ -86,7 +86,7 @@ class GrmUploadFailedTest extends TestCase
     {
         $errors = array_map(fn ($i) => "Error {$i}", range(1, 15));
 
-        $notification = new GrmUploadFailed(
+        $notification = new GuildRosterManagerUploadFailed(
             processedCount: 5,
             errorCount: 15,
             errors: $errors,
@@ -103,7 +103,7 @@ class GrmUploadFailedTest extends TestCase
     {
         $errors = array_map(fn ($i) => "Error {$i}", range(1, 10));
 
-        $notification = new GrmUploadFailed(
+        $notification = new GuildRosterManagerUploadFailed(
             processedCount: 5,
             errorCount: 10,
             errors: $errors,
@@ -117,12 +117,12 @@ class GrmUploadFailedTest extends TestCase
     #[Test]
     public function it_returns_null_for_sender(): void
     {
-        $this->assertNull((new GrmUploadFailed(processedCount: 0, errorCount: 1))->sender());
+        $this->assertNull((new GuildRosterManagerUploadFailed(processedCount: 0, errorCount: 1))->sender());
     }
 
     #[Test]
     public function it_returns_empty_array_for_related_models(): void
     {
-        $this->assertEmpty((new GrmUploadFailed(processedCount: 0, errorCount: 1))->mapRelatedModels());
+        $this->assertEmpty((new GuildRosterManagerUploadFailed(processedCount: 0, errorCount: 1))->mapRelatedModels());
     }
 }

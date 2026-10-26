@@ -8,7 +8,7 @@ use App\Http\Integrations\Discord\Data\Messages\EmbedMediaData;
 use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
 use App\Notifications\Discord\DiscordMessage;
 
-class GrmUploadFailed extends DiscordMessage
+class GuildRosterManagerUploadFailed extends DiscordMessage
 {
     /**
      * @param  array<int, string>  $errors

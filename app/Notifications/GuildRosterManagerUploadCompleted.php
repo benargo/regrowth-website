@@ -8,9 +8,10 @@ use App\Http\Integrations\Discord\Data\Messages\EmbedMediaData;
 use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
 use App\Notifications\Discord\DiscordMessage;
 
-class GrmUploadCompleted extends DiscordMessage
+class GuildRosterManagerUploadCompleted extends DiscordMessage
 {
     public function __construct(
+        public string $gameVersionSlug,
         public int $processedCount,
         public int $skippedCount = 0,
         public int $warningCount = 0,
@@ -35,7 +36,7 @@ class GrmUploadCompleted extends DiscordMessage
             'embeds' => [EmbedData::from([
                 'title' => 'GRM Upload Processing Completed',
                 'description' => 'Officers should make sure they update the RegrowthLootTool with new data.',
-                'url' => route('management.addon.export'),
+                'url' => route('management.addon.export', ['game_version' => $this->gameVersionSlug]),
                 'color' => 5763719,
                 'image' => EmbedMediaData::from(['url' => config('app.url').'/images/jaina_thumbsup.webp']),
                 'fields' => $fields,

@@ -2,7 +2,7 @@
 
 namespace App\Actions\GuildRosterManager;
 
-use App\Jobs\ProcessGrmUpload;
+use App\Jobs\GuildRosterManager\ProcessUpload;
 use App\Models\GameVersion;
 use App\Models\User;
 use App\Traits\GuildRosterManager\ResolvesUploadPath;
@@ -34,6 +34,6 @@ class StoreUpload
         $disk->put($this->grmUploadPath($gameVersion), $csv);
 
         // Progress is broadcast live on the uploading user's private channel.
-        ProcessGrmUpload::dispatch($parsedCsv, $uploader->id, $gameVersion->id)->withoutDelay();
+        ProcessUpload::dispatch($parsedCsv, $uploader->id, $gameVersion->id)->withoutDelay();
     }
 }

@@ -5,14 +5,14 @@ namespace Tests\Unit\Notifications;
 use App\Http\Integrations\Discord\Data\Channels\ChannelData;
 use App\Http\Integrations\Discord\Data\Messages\EmbedData;
 use App\Notifications\Discord\DiscordChannel;
-use App\Notifications\GrmUploadCompleted;
+use App\Notifications\GuildRosterManagerUploadCompleted;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 #[Group('raiding')]
 #[Group('discord-integration')]
-class GrmUploadCompletedTest extends TestCase
+class GuildRosterManagerUploadCompletedTest extends TestCase
 {
     private function makeNotifiable(): ChannelData
     {
@@ -21,18 +21,22 @@ class GrmUploadCompletedTest extends TestCase
         return $channel;
     }
 
+    // ==================== delivery ====================
+
     #[Test]
     public function it_uses_discord_driver(): void
     {
-        $notification = new GrmUploadCompleted(processedCount: 5);
+        $notification = new GuildRosterManagerUploadCompleted(gameVersionSlug: 'tbc', processedCount: 5);
 
         $this->assertContains(DiscordChannel::class, $notification->via($this->makeNotifiable()));
     }
 
+    // ==================== embed content ====================
+
     #[Test]
     public function it_builds_embed_with_processed_count(): void
     {
-        $notification = new GrmUploadCompleted(processedCount: 10);
+        $notification = new GuildRosterManagerUploadCompleted(gameVersionSlug: 'tbc', processedCount: 10);
         $payload = $notification->toMessage();
 
         $embed = $payload->embeds[0];
@@ -47,7 +51,7 @@ class GrmUploadCompletedTest extends TestCase
     #[Test]
     public function it_includes_skipped_field_when_skipped_count_greater_than_zero(): void
     {
-        $notification = new GrmUploadCompleted(processedCount: 10, skippedCount: 3);
+        $notification = new GuildRosterManagerUploadCompleted(gameVersionSlug: 'tbc', processedCount: 10, skippedCount: 3);
         $embed = $notification->toMessage()->embeds[0];
 
         $this->assertCount(2, $embed->fields);
@@ -58,7 +62,7 @@ class GrmUploadCompletedTest extends TestCase
     #[Test]
     public function it_excludes_skipped_field_when_skipped_count_is_zero(): void
     {
-        $notification = new GrmUploadCompleted(processedCount: 10, skippedCount: 0);
+        $notification = new GuildRosterManagerUploadCompleted(gameVersionSlug: 'tbc', processedCount: 10, skippedCount: 0);
         $embed = $notification->toMessage()->embeds[0];
 
         $this->assertCount(1, $embed->fields);
@@ -67,7 +71,7 @@ class GrmUploadCompletedTest extends TestCase
     #[Test]
     public function it_includes_warning_field_when_warning_count_greater_than_zero(): void
     {
-        $notification = new GrmUploadCompleted(processedCount: 10, warningCount: 2);
+        $notification = new GuildRosterManagerUploadCompleted(gameVersionSlug: 'tbc', processedCount: 10, warningCount: 2);
         $embed = $notification->toMessage()->embeds[0];
 
         $this->assertCount(2, $embed->fields);
@@ -78,7 +82,7 @@ class GrmUploadCompletedTest extends TestCase
     #[Test]
     public function it_excludes_warning_field_when_warning_count_is_zero(): void
     {
-        $notification = new GrmUploadCompleted(processedCount: 10, warningCount: 0);
+        $notification = new GuildRosterManagerUploadCompleted(gameVersionSlug: 'tbc', processedCount: 10, warningCount: 0);
         $embed = $notification->toMessage()->embeds[0];
 
         $this->assertCount(1, $embed->fields);
@@ -87,7 +91,7 @@ class GrmUploadCompletedTest extends TestCase
     #[Test]
     public function it_includes_both_skipped_and_warning_fields(): void
     {
-        $notification = new GrmUploadCompleted(processedCount: 10, skippedCount: 2, warningCount: 1);
+        $notification = new GuildRosterManagerUploadCompleted(gameVersionSlug: 'tbc', processedCount: 10, skippedCount: 2, warningCount: 1);
         $embed = $notification->toMessage()->embeds[0];
 
         $this->assertCount(3, $embed->fields);
@@ -96,22 +100,35 @@ class GrmUploadCompletedTest extends TestCase
     #[Test]
     public function it_includes_image_and_timestamp(): void
     {
-        $notification = new GrmUploadCompleted(processedCount: 5);
+        $notification = new GuildRosterManagerUploadCompleted(gameVersionSlug: 'tbc', processedCount: 5);
         $embed = $notification->toMessage()->embeds[0];
 
         $this->assertNotNull($embed->image);
         $this->assertNotNull($embed->timestamp);
     }
 
+    // ==================== notification metadata ====================
+
     #[Test]
     public function it_returns_null_for_sender(): void
     {
-        $this->assertNull((new GrmUploadCompleted(processedCount: 5))->sender());
+        $this->assertNull((new GuildRosterManagerUploadCompleted(gameVersionSlug: 'tbc', processedCount: 5))->sender());
     }
 
     #[Test]
     public function it_returns_empty_array_for_related_models(): void
     {
-        $this->assertEmpty((new GrmUploadCompleted(processedCount: 5))->mapRelatedModels());
+        $this->assertEmpty((new GuildRosterManagerUploadCompleted(gameVersionSlug: 'tbc', processedCount: 5))->mapRelatedModels());
+    }
+
+    // ==================== embed link ====================
+
+    #[Test]
+    public function it_links_to_the_export_page_for_the_uploads_game_version(): void
+    {
+        $embed = (new GuildRosterManagerUploadCompleted(gameVersionSlug: 'tbc-anniversary', processedCount: 5))->toMessage()->embeds[0];
+
+        $this->assertSame(route('management.addon.export', ['game_version' => 'tbc-anniversary']), $embed->url);
+        $this->assertStringContainsString('game_version=tbc-anniversary', $embed->url);
     }
 }

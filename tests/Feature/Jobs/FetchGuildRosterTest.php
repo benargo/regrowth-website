@@ -7,7 +7,7 @@ use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
 use App\Jobs\FetchGuildRoster;
 use App\Models\Character;
 use App\Models\GameVersion;
@@ -390,7 +390,7 @@ class FetchGuildRosterTest extends TestCase
     public function it_does_not_schedule_addon_export_build_when_syncing(): void
     {
         $gameVersion = $this->createGameVersion();
-        Bus::fake([BuildAddonExportFile::class]);
+        Bus::fake([BuildExportFile::class]);
 
         GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
 
@@ -402,7 +402,7 @@ class FetchGuildRosterTest extends TestCase
 
         (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
 
-        Bus::assertNotDispatched(BuildAddonExportFile::class);
+        Bus::assertNotDispatched(BuildExportFile::class);
     }
 
     #[Group('happy-path')]

@@ -2,7 +2,7 @@
 
 namespace Tests\Concerns;
 
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
 use App\Models\GameVersion;
 use Illuminate\Bus\UniqueLock;
 use Illuminate\Support\Facades\Cache;
@@ -15,7 +15,7 @@ trait ReleasesAddonExportLocks
     protected function releaseAddonExportLocks(): void
     {
         foreach (GameVersion::pluck('id') as $gameVersionId) {
-            Cache::lock(UniqueLock::getKey(new BuildAddonExportFile($gameVersionId)))->forceRelease();
+            Cache::lock(UniqueLock::getKey(new BuildExportFile($gameVersionId)))->forceRelease();
         }
     }
 }

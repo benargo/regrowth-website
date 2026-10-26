@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Console\Commands;
 
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\GameVersion;
@@ -29,7 +29,7 @@ class BackfillGameVersionsTest extends TestCase
     {
         parent::setUp();
 
-        Bus::fake([BuildAddonExportFile::class]);
+        Bus::fake([BuildExportFile::class]);
     }
 
     #[Test]

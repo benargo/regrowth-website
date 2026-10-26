@@ -1,10 +1,11 @@
 <?php
 
-namespace Tests\Feature\Jobs;
+namespace Tests\Feature\Jobs\Addon;
 
 use App\Enums\Presence;
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\Item;
 use App\Models\ItemPriority;
@@ -13,10 +14,13 @@ use App\Models\Phase;
 use App\Models\PlannedAbsence;
 use App\Models\Report;
 use Carbon\Carbon;
+use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Contracts\Queue\ShouldBeUniqueUntilProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Queue\Middleware\RateLimitedWithRedis;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -24,7 +28,7 @@ use Tests\Concerns\BuildsAttendanceFixtures;
 use Tests\TestCase;
 
 #[Group('platform')]
-class BuildAddonExportFileTest extends TestCase
+class BuildExportFileTest extends TestCase
 {
     use BuildsAttendanceFixtures;
     use RefreshDatabase;
@@ -33,8 +37,56 @@ class BuildAddonExportFileTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('local');
         Storage::fake('s3');
+        Storage::fake('addon');
+    }
+
+    #[Test]
+    public function it_throws_when_the_export_cannot_be_written(): void
+    {
+        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
+        $disk = \Mockery::mock(Filesystem::class);
+        $disk->shouldReceive('put')->once()->andReturn(false);
+        $manager = \Mockery::mock(FilesystemManager::class);
+        $manager->shouldReceive('disk')->andReturn($disk);
+        Log::spy();
+
+        try {
+            (new BuildExportFile($gameVersion->id))->handle($manager);
+            $this->fail('Expected a RuntimeException.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString((string) $gameVersion->id, $e->getMessage());
+        }
+
+        Log::shouldNotHaveReceived('info', ['Addon export data file built successfully.', \Mockery::any()]);
+    }
+
+    // ==================== scheduling ====================
+
+    #[Test]
+    public function it_schedules_one_delayed_build_per_current_roster_id(): void
+    {
+        $current = GameVersion::factory()->fetchableRoster()->create();
+        $notCurrent = GameVersion::factory()->create(['blizzard_namespace' => null]);
+
+        BuildExportFile::scheduleForGameVersionIds([$current->id, $current->id, null, $notCurrent->id]);
+
+        Queue::assertPushed(BuildExportFile::class, 1);
+        Queue::assertPushed(
+            BuildExportFile::class,
+            fn (BuildExportFile $job): bool => $job->gameVersionId === $current->id && $job->delay !== null,
+        );
+    }
+
+    #[Test]
+    public function it_coalesces_repeated_schedules_into_one_pending_build(): void
+    {
+        $current = GameVersion::factory()->fetchableRoster()->create();
+
+        BuildExportFile::schedule($current->id);
+        BuildExportFile::schedule($current->id);
+
+        Queue::assertPushed(BuildExportFile::class, 1);
     }
 
     // ==================== job contract ====================
@@ -42,41 +94,56 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_implements_should_queue(): void
     {
-        $this->assertInstanceOf(ShouldQueue::class, new BuildAddonExportFile);
+        $this->assertInstanceOf(ShouldQueue::class, new BuildExportFile(1));
+    }
+
+    #[Test]
+    public function it_is_unique_per_game_version_until_processing(): void
+    {
+        $job = new BuildExportFile(42);
+
+        $this->assertInstanceOf(ShouldBeUniqueUntilProcessing::class, $job);
+        $this->assertSame('42', $job->uniqueId());
+        $this->assertSame(600, $job->uniqueFor);
     }
 
     #[Test]
     public function it_has_correct_job_tags(): void
     {
-        $this->assertEquals(['regrowth-addon', 'regrowth-addon:build'], (new BuildAddonExportFile)->tags());
-    }
-
-    #[Test]
-    public function it_applies_rate_limited_with_redis_middleware(): void
-    {
-        $middleware = (new BuildAddonExportFile)->middleware();
-
-        $this->assertCount(1, $middleware);
-        $this->assertInstanceOf(RateLimitedWithRedis::class, $middleware[0]);
+        $this->assertSame(['regrowth-addon', 'regrowth-addon:build', 'game-version:42'], (new BuildExportFile(42))->tags());
     }
 
     // ==================== storage ====================
 
     #[Test]
-    public function it_writes_export_data_to_storage(): void
+    public function it_writes_the_export_to_the_private_disk_under_the_game_version_id(): void
     {
-        app(BuildAddonExportFile::class)->handle();
+        Storage::fake('local');
+        $version = $this->exportableVersion();
 
-        Storage::disk('local')->assertExists('addon/export.json');
+        $this->buildExport($version);
+
+        Storage::disk('addon')->assertExists("{$version->id}/export.json");
+        Storage::disk('local')->assertMissing('addon/export.json');
     }
 
     #[Test]
     public function it_writes_valid_json_to_storage(): void
     {
-        app(BuildAddonExportFile::class)->handle();
+        $version = $this->exportableVersion();
 
-        $content = Storage::disk('local')->get('addon/export.json');
+        app()->call([new BuildExportFile($version->id), 'handle']);
+
+        $content = Storage::disk('addon')->get("{$version->id}/export.json");
         $this->assertNotNull(json_decode($content, true));
+    }
+
+    #[Test]
+    public function it_does_nothing_when_the_game_version_no_longer_exists(): void
+    {
+        app()->call([new BuildExportFile(999999), 'handle']);
+
+        $this->assertSame([], Storage::disk('addon')->allFiles());
     }
 
     // ==================== data structure ====================
@@ -84,9 +151,9 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_includes_all_sections_in_output(): void
     {
-        app(BuildAddonExportFile::class)->handle();
+        $version = $this->exportableVersion();
 
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($version);
         $this->assertArrayHasKey('system', $data);
         $this->assertArrayHasKey('phases', $data);
         $this->assertArrayHasKey('priorities', $data);
@@ -96,13 +163,23 @@ class BuildAddonExportFileTest extends TestCase
     }
 
     #[Test]
+    public function it_includes_the_game_version_in_system(): void
+    {
+        $version = $this->exportableVersion();
+
+        $data = $this->buildExport($version);
+
+        $this->assertSame(['slug' => $version->slug, 'name' => $version->title], $data['system']['game_version']);
+    }
+
+    #[Test]
     public function it_includes_system_date_generated_as_unix_timestamp(): void
     {
         Carbon::setTestNow('2025-06-01 12:00:00');
 
-        app(BuildAddonExportFile::class)->handle();
+        $version = $this->exportableVersion();
 
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($version);
         $this->assertArrayHasKey('date_generated', $data['system']);
         $this->assertIsInt($data['system']['date_generated']);
         $this->assertEquals(Carbon::now()->unix(), $data['system']['date_generated']);
@@ -111,9 +188,9 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_defaults_to_empty_sections_when_no_data_exists(): void
     {
-        app(BuildAddonExportFile::class)->handle();
+        $version = $this->exportableVersion();
 
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($version);
         $this->assertEmpty($data['phases']);
         $this->assertEmpty($data['priorities']);
         $this->assertEmpty($data['items']);
@@ -126,11 +203,10 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_includes_phase_id_number_and_start_date(): void
     {
-        $phase = Phase::factory()->create(['number' => 2, 'start_date' => Carbon::parse('2025-01-15 20:00:00')]);
+        $version = $this->exportableVersion();
+        $phase = Phase::factory()->for($version)->create(['number' => 2, 'start_date' => Carbon::parse('2025-01-15 20:00:00')]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($version);
         $phaseData = collect($data['phases'])->firstWhere('id', $phase->id);
         $this->assertNotNull($phaseData);
         $this->assertEquals(2, $phaseData['number']);
@@ -141,11 +217,10 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_returns_null_for_phase_without_start_date(): void
     {
-        $phase = Phase::factory()->unscheduled()->create();
+        $version = $this->exportableVersion();
+        $phase = Phase::factory()->for($version)->unscheduled()->create();
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($version);
         $phaseData = collect($data['phases'])->firstWhere('id', $phase->id);
         $this->assertNull($phaseData['start_date']);
     }
@@ -153,13 +228,12 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_lists_phases_in_release_order(): void
     {
-        Phase::factory()->unscheduled()->create(['number' => 4]);
-        Phase::factory()->create(['number' => 1, 'start_date' => '2026-05-15 00:00:00']);
-        Phase::factory()->create(['number' => 3, 'start_date' => '2026-01-01 00:00:00']);
+        $version = $this->exportableVersion();
+        Phase::factory()->for($version)->unscheduled()->create(['number' => 4]);
+        Phase::factory()->for($version)->create(['number' => 1, 'start_date' => '2026-05-15 00:00:00']);
+        Phase::factory()->for($version)->create(['number' => 3, 'start_date' => '2026-01-01 00:00:00']);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($version);
         $this->assertEquals([3, 1, 4], collect($data['phases'])->pluck('number')->toArray());
     }
 
@@ -168,14 +242,13 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_only_includes_priorities_with_items(): void
     {
+        $version = $this->exportableVersion();
         $priorityWithItems = LootPriority::factory()->create(['title' => 'Tank']);
         $priorityWithoutItems = LootPriority::factory()->create(['title' => 'Healer']);
-        $item = Item::factory()->create();
+        $item = Item::factory()->for($version)->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priorityWithItems->id]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($version);
         $ids = collect($data['priorities'])->pluck('id')->toArray();
         $this->assertContains($priorityWithItems->id, $ids);
         $this->assertNotContains($priorityWithoutItems->id, $ids);
@@ -184,16 +257,15 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_includes_priority_icon_from_media(): void
     {
+        $version = $this->exportableVersion();
         $priority = LootPriority::factory()->create(['title' => 'Tank']);
         $priority->addMediaFromString('BINARY')
             ->usingFileName('spell_nature_strength.jpg')
             ->toMediaCollection('blizzard_icons');
-        $item = Item::factory()->create();
+        $item = Item::factory()->for($version)->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($version);
         $priorityData = collect($data['priorities'])->firstWhere('id', $priority->id);
         $this->assertEquals('spell_nature_strength', $priorityData['icon']);
     }
@@ -201,13 +273,12 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_returns_null_icon_when_no_media_attached(): void
     {
+        $version = $this->exportableVersion();
         $priority = LootPriority::factory()->create(['title' => 'Tank']);
-        $item = Item::factory()->create();
+        $item = Item::factory()->for($version)->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($version);
         $priorityData = collect($data['priorities'])->firstWhere('id', $priority->id);
         $this->assertNull($priorityData['icon']);
     }
@@ -215,13 +286,12 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_includes_priority_id_and_name(): void
     {
+        $version = $this->exportableVersion();
         $priority = LootPriority::factory()->create(['title' => 'Warlock']);
-        $item = Item::factory()->create();
+        $item = Item::factory()->for($version)->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($version);
         $priorityData = collect($data['priorities'])->firstWhere('id', $priority->id);
         $this->assertEquals($priority->id, $priorityData['id']);
         $this->assertEquals('Warlock', $priorityData['name']);
@@ -230,15 +300,14 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_excludes_meme_type_priorities(): void
     {
+        $version = $this->exportableVersion();
         $standardPriority = LootPriority::factory()->create(['type' => 'Role', 'title' => 'Tank']);
         $memePriority = LootPriority::factory()->create(['type' => 'Meme', 'title' => 'Disenchant']);
-        $item = Item::factory()->create();
+        $item = Item::factory()->for($version)->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $standardPriority->id]);
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $memePriority->id]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($version);
         $ids = collect($data['priorities'])->pluck('id')->toArray();
         $this->assertContains($standardPriority->id, $ids);
         $this->assertNotContains($memePriority->id, $ids);
@@ -249,23 +318,23 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_only_includes_items_with_priorities(): void
     {
-        $itemWithPriorities = Item::factory()->create();
-        $itemWithoutPriorities = Item::factory()->create();
+        $version = $this->exportableVersion();
+        $itemWithPriorities = Item::factory()->for($version)->create();
+        $itemWithoutPriorities = Item::factory()->for($version)->create();
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $itemWithPriorities->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($version);
         $itemIds = collect($data['items'])->pluck('item_id')->toArray();
-        $this->assertContains($itemWithPriorities->id, $itemIds);
-        $this->assertNotContains($itemWithoutPriorities->id, $itemIds);
+        $this->assertContains($itemWithPriorities->blizzard_id, $itemIds);
+        $this->assertNotContains($itemWithoutPriorities->blizzard_id, $itemIds);
     }
 
     #[Test]
     public function it_includes_item_priorities_with_weight(): void
     {
-        $item = Item::factory()->create();
+        $version = $this->exportableVersion();
+        $item = Item::factory()->for($version)->create();
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create([
             'item_id' => $item->id,
@@ -273,10 +342,8 @@ class BuildAddonExportFileTest extends TestCase
             'weight' => 75,
         ]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $data = $this->buildExport($version);
+        $itemData = collect($data['items'])->firstWhere('item_id', $item->blizzard_id);
         $itemPriorityData = collect($itemData['priorities'])->firstWhere('priority_id', $priority->id);
         $this->assertEquals(75, $itemPriorityData['weight']);
     }
@@ -284,19 +351,79 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_excludes_meme_priorities_from_item_priorities(): void
     {
-        $item = Item::factory()->create();
+        $version = $this->exportableVersion();
+        $item = Item::factory()->for($version)->create();
         $standardPriority = LootPriority::factory()->create(['type' => 'Spec', 'title' => 'Fire Mage']);
         $memePriority = LootPriority::factory()->create(['type' => 'Meme', 'title' => 'Bakas']);
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $standardPriority->id]);
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $memePriority->id]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $data = $this->buildExport($version);
+        $itemData = collect($data['items'])->firstWhere('item_id', $item->blizzard_id);
         $priorityIds = collect($itemData['priorities'])->pluck('priority_id')->toArray();
         $this->assertContains($standardPriority->id, $priorityIds);
         $this->assertNotContains($memePriority->id, $priorityIds);
+    }
+
+    #[Test]
+    public function it_only_exports_phases_of_the_game_version(): void
+    {
+        $version = $this->exportableVersion();
+        $other = $this->exportableVersion();
+        $phase = Phase::factory()->for($version)->create();
+        Phase::factory()->for($other)->create();
+
+        $this->assertSame([$phase->id], collect($this->buildExport($version)['phases'])->pluck('id')->all());
+    }
+
+    #[Test]
+    public function it_only_exports_items_of_the_game_version(): void
+    {
+        $version = $this->exportableVersion();
+        $other = $this->exportableVersion();
+        $priority = LootPriority::factory()->create();
+        $item = Item::factory()->for($version)->create();
+        $otherItem = Item::factory()->for($other)->create();
+        ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
+        ItemPriority::factory()->create(['item_id' => $otherItem->id, 'priority_id' => $priority->id]);
+
+        $this->assertSame([$item->blizzard_id], collect($this->buildExport($version)['items'])->pluck('item_id')->all());
+    }
+
+    #[Test]
+    public function it_sends_the_blizzard_item_id_as_item_id(): void
+    {
+        $version = $this->exportableVersion();
+        $item = Item::factory()->for($version)->create(['blizzard_id' => 30311]);
+        ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => LootPriority::factory()->create()->id]);
+
+        $data = $this->buildExport($version);
+
+        $this->assertSame(30311, $data['items'][0]['item_id']);
+    }
+
+    #[Test]
+    public function it_only_exports_priorities_that_have_items_in_the_game_version(): void
+    {
+        $version = $this->exportableVersion();
+        $other = $this->exportableVersion();
+        $mine = LootPriority::factory()->create();
+        $theirs = LootPriority::factory()->create();
+        ItemPriority::factory()->create(['item_id' => Item::factory()->for($version)->create()->id, 'priority_id' => $mine->id]);
+        ItemPriority::factory()->create(['item_id' => Item::factory()->for($other)->create()->id, 'priority_id' => $theirs->id]);
+
+        $this->assertSame([$mine->id], collect($this->buildExport($version)['priorities'])->pluck('id')->all());
+    }
+
+    #[Test]
+    public function it_only_exports_councillors_of_the_game_version(): void
+    {
+        $version = $this->exportableVersion();
+        $other = $this->exportableVersion();
+        Character::factory()->for($version)->lootCouncillor()->create(['name' => 'Mine']);
+        Character::factory()->for($other)->lootCouncillor()->create(['name' => 'Theirs']);
+
+        $this->assertSame(['Mine'], collect($this->buildExport($version)['councillors'])->pluck('name')->all());
     }
 
     // ==================== clean notes ====================
@@ -304,140 +431,130 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_cleans_notes_by_removing_wowhead_links(): void
     {
-        $item = Item::factory()->create(['notes' => 'Get !wh[Thunderfury](item=19019) from the boss']);
+        $version = $this->exportableVersion();
+        $item = Item::factory()->for($version)->create(['notes' => 'Get !wh[Thunderfury](item=19019) from the boss']);
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $data = $this->buildExport($version);
+        $itemData = collect($data['items'])->firstWhere('item_id', $item->blizzard_id);
         $this->assertEquals('Get Thunderfury from the boss', $itemData['notes']);
     }
 
     #[Test]
     public function it_cleans_notes_by_removing_markdown_links(): void
     {
-        $item = Item::factory()->create(['notes' => 'Check [this guide](https://example.com) for details']);
+        $version = $this->exportableVersion();
+        $item = Item::factory()->for($version)->create(['notes' => 'Check [this guide](https://example.com) for details']);
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $data = $this->buildExport($version);
+        $itemData = collect($data['items'])->firstWhere('item_id', $item->blizzard_id);
         $this->assertEquals('Check this guide for details', $itemData['notes']);
     }
 
     #[Test]
     public function it_cleans_notes_by_removing_bold_formatting(): void
     {
-        $item = Item::factory()->create(['notes' => 'This is **very important** information']);
+        $version = $this->exportableVersion();
+        $item = Item::factory()->for($version)->create(['notes' => 'This is **very important** information']);
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $data = $this->buildExport($version);
+        $itemData = collect($data['items'])->firstWhere('item_id', $item->blizzard_id);
         $this->assertEquals('This is very important information', $itemData['notes']);
     }
 
     #[Test]
     public function it_cleans_notes_by_removing_italic_formatting(): void
     {
-        $item = Item::factory()->create(['notes' => 'This is *emphasized* text']);
+        $version = $this->exportableVersion();
+        $item = Item::factory()->for($version)->create(['notes' => 'This is *emphasized* text']);
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $data = $this->buildExport($version);
+        $itemData = collect($data['items'])->firstWhere('item_id', $item->blizzard_id);
         $this->assertEquals('This is emphasized text', $itemData['notes']);
     }
 
     #[Test]
     public function it_cleans_notes_by_removing_underline_formatting(): void
     {
-        $item = Item::factory()->create(['notes' => 'This is __underlined__ text']);
+        $version = $this->exportableVersion();
+        $item = Item::factory()->for($version)->create(['notes' => 'This is __underlined__ text']);
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $data = $this->buildExport($version);
+        $itemData = collect($data['items'])->firstWhere('item_id', $item->blizzard_id);
         $this->assertEquals('This is underlined text', $itemData['notes']);
     }
 
     #[Test]
     public function it_cleans_notes_by_removing_inline_code(): void
     {
-        $item = Item::factory()->create(['notes' => 'Use the `command` here']);
+        $version = $this->exportableVersion();
+        $item = Item::factory()->for($version)->create(['notes' => 'Use the `command` here']);
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $data = $this->buildExport($version);
+        $itemData = collect($data['items'])->firstWhere('item_id', $item->blizzard_id);
         $this->assertEquals('Use the command here', $itemData['notes']);
     }
 
     #[Test]
     public function it_cleans_notes_by_removing_headers(): void
     {
-        $item = Item::factory()->create(['notes' => '## Section Title']);
+        $version = $this->exportableVersion();
+        $item = Item::factory()->for($version)->create(['notes' => '## Section Title']);
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $data = $this->buildExport($version);
+        $itemData = collect($data['items'])->firstWhere('item_id', $item->blizzard_id);
         $this->assertEquals('Section Title', $itemData['notes']);
     }
 
     #[Test]
     public function it_cleans_notes_by_removing_strikethrough(): void
     {
-        $item = Item::factory()->create(['notes' => 'This is ~~deleted~~ text']);
+        $version = $this->exportableVersion();
+        $item = Item::factory()->for($version)->create(['notes' => 'This is ~~deleted~~ text']);
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $data = $this->buildExport($version);
+        $itemData = collect($data['items'])->firstWhere('item_id', $item->blizzard_id);
         $this->assertEquals('This is deleted text', $itemData['notes']);
     }
 
     #[Test]
     public function it_returns_null_for_null_notes(): void
     {
-        $item = Item::factory()->create(['notes' => null]);
+        $version = $this->exportableVersion();
+        $item = Item::factory()->for($version)->create(['notes' => null]);
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $data = $this->buildExport($version);
+        $itemData = collect($data['items'])->firstWhere('item_id', $item->blizzard_id);
         $this->assertNull($itemData['notes']);
     }
 
     #[Test]
     public function it_normalizes_whitespace_in_notes(): void
     {
-        $item = Item::factory()->create(['notes' => "Multiple   spaces\nand\nnewlines"]);
+        $version = $this->exportableVersion();
+        $item = Item::factory()->for($version)->create(['notes' => "Multiple   spaces\nand\nnewlines"]);
         $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $data = $this->buildExport($version);
+        $itemData = collect($data['items'])->firstWhere('item_id', $item->blizzard_id);
         $this->assertEquals('Multiple spaces and newlines', $itemData['notes']);
     }
 
@@ -449,18 +566,16 @@ class BuildAddonExportFileTest extends TestCase
         $gameVersion = $this->createAttendanceVersion();
         $this->createRank($gameVersion, false);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($gameVersion);
         $this->assertEmpty($data['players']);
     }
 
     #[Test]
     public function it_writes_no_players_when_no_ranks_exist(): void
     {
-        app(BuildAddonExportFile::class)->handle();
+        $version = $this->exportableVersion();
 
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($version);
         $this->assertEmpty($data['players']);
     }
 
@@ -474,13 +589,11 @@ class BuildAddonExportFileTest extends TestCase
         Log::shouldReceive('warning')
             ->once()
             ->withArgs(function ($message, $context) {
-                return $message === 'BuildAddonExportFile: no counting ranks configured, skipping attendance data.';
+                return $message === 'BuildExportFile: no counting ranks configured, skipping attendance data.';
             });
         Log::shouldReceive('info')->once();
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($gameVersion);
         $this->assertEmpty($data['players']);
     }
 
@@ -492,9 +605,7 @@ class BuildAddonExportFileTest extends TestCase
         $this->createCharacter($gameVersion, $rank);
         $this->createReport($gameVersion, '2025-01-15 20:00:00', $this->createTag($gameVersion, false));
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($gameVersion);
         $this->assertEmpty($data['players']);
     }
 
@@ -506,9 +617,7 @@ class BuildAddonExportFileTest extends TestCase
         $report = $this->createReport($gameVersion, Carbon::parse('2025-01-15 20:00:00'));
         $this->attend($report, $character);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($gameVersion);
         $this->assertCount(1, $data['players']);
         $playerData = collect($data['players'])->firstWhere('name', 'TestPlayer');
         $this->assertNotNull($playerData);
@@ -532,9 +641,7 @@ class BuildAddonExportFileTest extends TestCase
 
         $this->assertNull($unversioned->game_version_id);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($gameVersion);
         $playerData = collect($data['players'])->firstWhere('name', 'TestPlayer');
         $this->assertEquals(1, $playerData['attendance']['attended']);
         $this->assertEquals(1, $playerData['attendance']['total']);
@@ -547,9 +654,7 @@ class BuildAddonExportFileTest extends TestCase
         $character = $this->createCharacter($gameVersion, $this->createRank($gameVersion), ['name' => 'TestPlayer']);
         $this->attend($this->createReport($gameVersion, Carbon::parse('2025-01-15 20:00:00')), $character);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($gameVersion);
         $playerData = collect($data['players'])->firstWhere('name', 'TestPlayer');
         $this->assertEquals($character->id, $playerData['id']);
     }
@@ -562,9 +667,7 @@ class BuildAddonExportFileTest extends TestCase
         $report = $this->createReport($gameVersion, Carbon::parse('2025-01-15 20:00:00'));
         $this->attend($report, $character);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($gameVersion);
         $playerData = collect($data['players'])->firstWhere('name', 'TestPlayer');
         $this->assertIsInt($playerData['attendance']['first_attendance']);
         $this->assertEquals($report->start_time->unix(), $playerData['attendance']['first_attendance']);
@@ -580,9 +683,7 @@ class BuildAddonExportFileTest extends TestCase
         $this->attend($report, $countingChar);
         $this->attend($report, $nonCountingChar);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($gameVersion);
         $names = collect($data['players'])->pluck('name')->toArray();
         $this->assertContains('CountingPlayer', $names);
         $this->assertNotContains('NonCountingPlayer', $names);
@@ -598,9 +699,7 @@ class BuildAddonExportFileTest extends TestCase
         $this->attend($countingReport, $character);
         $this->attend($nonCountingReport, $character);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($gameVersion);
         $playerData = collect($data['players'])->firstWhere('name', 'TestPlayer');
         $this->assertEquals(1, $playerData['attendance']['total']);
     }
@@ -621,25 +720,31 @@ class BuildAddonExportFileTest extends TestCase
         $this->attend($second, $jaina);
         PlannedAbsence::factory()->create(['character_id' => $jaina->id, 'start_date' => '2025-01-15', 'end_date' => '2025-01-15']);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $players = collect(json_decode(Storage::disk('local')->get('addon/export.json'), true)['players'])->keyBy('name');
+        $players = collect($this->buildExport($gameVersion)['players'])->keyBy('name');
         $this->assertSame(['first_attendance' => $first->start_time->unix(), 'attended' => 2, 'total' => 3, 'percentage' => 66.67], $players['Thrall']['attendance']);
         $this->assertSame(['first_attendance' => $second->start_time->unix(), 'attended' => 1, 'total' => 1, 'percentage' => 100], $players['Jaina']['attendance']);
         $this->assertSame(['Jaina', 'Thrall'], $players->keys()->all());
     }
 
     #[Test]
-    public function it_reads_players_from_the_newest_attendance_version(): void
+    public function it_builds_players_from_the_exported_game_version(): void
     {
         $older = $this->createAttendanceVersion(['release_date' => '2024-01-01']);
         $newer = $this->createAttendanceVersion(['release_date' => '2024-06-01']);
         $this->attend($this->createReport($older, '2025-01-01 20:00'), $this->createCharacter($older, $this->createRank($older), ['name' => 'Old']));
         $this->attend($this->createReport($newer, '2025-01-01 20:00'), $this->createCharacter($newer, $this->createRank($newer), ['name' => 'New']));
 
-        app(BuildAddonExportFile::class)->handle();
+        $this->assertSame(['Old'], collect($this->buildExport($older)['players'])->pluck('name')->all());
+    }
 
-        $this->assertSame(['New'], collect(json_decode(Storage::disk('local')->get('addon/export.json'), true)['players'])->pluck('name')->all());
+    #[Test]
+    public function it_exports_no_players_when_the_game_version_has_no_counted_attendance(): void
+    {
+        $counted = $this->createAttendanceVersion();
+        $this->attend($this->createReport($counted, '2025-01-01 20:00'), $this->createCharacter($counted, $this->createRank($counted), ['name' => 'Counted']));
+        $version = $this->exportableVersion();
+
+        $this->assertSame([], $this->buildExport($version)['players']);
     }
 
     // ==================== councillor data ====================
@@ -647,34 +752,32 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_caches_empty_collection_when_no_councillors_exist(): void
     {
-        app(BuildAddonExportFile::class)->handle();
+        $version = $this->exportableVersion();
 
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($version);
         $this->assertEmpty($data['councillors']);
     }
 
     #[Test]
     public function it_includes_councillors_when_they_exist(): void
     {
+        $version = $this->exportableVersion();
         $rank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Officer']);
-        Character::factory()->lootCouncillor()->create(['name' => 'Councillor1', 'rank_id' => $rank->id]);
-        Character::factory()->lootCouncillor()->create(['name' => 'Councillor2', 'rank_id' => $rank->id]);
+        Character::factory()->for($version)->lootCouncillor()->create(['name' => 'Councillor1', 'rank_id' => $rank->id]);
+        Character::factory()->for($version)->lootCouncillor()->create(['name' => 'Councillor2', 'rank_id' => $rank->id]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($version);
         $this->assertCount(2, $data['councillors']);
     }
 
     #[Test]
     public function it_includes_councillor_id_name_and_rank(): void
     {
+        $version = $this->exportableVersion();
         $rank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Officer']);
-        $character = Character::factory()->lootCouncillor()->create(['name' => 'TestCouncillor', 'rank_id' => $rank->id]);
+        $character = Character::factory()->for($version)->lootCouncillor()->create(['name' => 'TestCouncillor', 'rank_id' => $rank->id]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($version);
         $councillor = collect($data['councillors'])->firstWhere('id', $character->id);
         $this->assertNotNull($councillor);
         $this->assertEquals('TestCouncillor', $councillor['name']);
@@ -684,11 +787,10 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_includes_null_rank_for_councillor_without_rank(): void
     {
-        Character::factory()->lootCouncillor()->create(['name' => 'UnrankedCouncillor', 'rank_id' => null]);
+        $version = $this->exportableVersion();
+        Character::factory()->for($version)->lootCouncillor()->create(['name' => 'UnrankedCouncillor', 'rank_id' => null]);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($version);
         $councillor = collect($data['councillors'])->firstWhere('name', 'UnrankedCouncillor');
         $this->assertNull($councillor['rank']);
     }
@@ -696,13 +798,12 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_orders_councillors_by_name(): void
     {
-        Character::factory()->lootCouncillor()->create(['name' => 'Zara']);
-        Character::factory()->lootCouncillor()->create(['name' => 'Alice']);
-        Character::factory()->lootCouncillor()->create(['name' => 'Milo']);
+        $version = $this->exportableVersion();
+        Character::factory()->for($version)->lootCouncillor()->create(['name' => 'Zara']);
+        Character::factory()->for($version)->lootCouncillor()->create(['name' => 'Alice']);
+        Character::factory()->for($version)->lootCouncillor()->create(['name' => 'Milo']);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($version);
         $names = collect($data['councillors'])->pluck('name')->toArray();
         $this->assertEquals(['Alice', 'Milo', 'Zara'], $names);
     }
@@ -710,12 +811,11 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_excludes_non_councillor_characters(): void
     {
-        Character::factory()->lootCouncillor()->create(['name' => 'IsCouncillor']);
-        Character::factory()->create(['name' => 'NotCouncillor']);
+        $version = $this->exportableVersion();
+        Character::factory()->for($version)->lootCouncillor()->create(['name' => 'IsCouncillor']);
+        Character::factory()->for($version)->create(['name' => 'NotCouncillor']);
 
-        app(BuildAddonExportFile::class)->handle();
-
-        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $data = $this->buildExport($version);
         $names = collect($data['councillors'])->pluck('name')->toArray();
         $this->assertContains('IsCouncillor', $names);
         $this->assertNotContains('NotCouncillor', $names);
@@ -729,11 +829,36 @@ class BuildAddonExportFileTest extends TestCase
         Log::shouldReceive('error')
             ->once()
             ->withArgs(function ($message, $context) {
-                return $message === 'BuildAddonExportFile job failed.'
-                    && isset($context['error']);
+                return $message === 'BuildExportFile job failed.'
+                    && isset($context['error'])
+                    && $context['game_version_id'] === 7;
             });
 
-        $job = new BuildAddonExportFile;
+        $job = new BuildExportFile(7);
         $job->failed(new \RuntimeException('Test failure'));
+    }
+
+    // ==================== helpers ====================
+
+    /**
+     * Run the job for the given game version and return the decoded export.
+     *
+     * @return array<string, mixed>
+     */
+    protected function buildExport(GameVersion $gameVersion): array
+    {
+        app()->call([new BuildExportFile($gameVersion->id), 'handle']);
+
+        return json_decode(Storage::disk('addon')->get("{$gameVersion->id}/export.json"), true);
+    }
+
+    /**
+     * Create a game version that is eligible for export.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    protected function exportableVersion(array $attributes = []): GameVersion
+    {
+        return GameVersion::factory()->fetchableRoster()->create($attributes);
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Jobs;
+namespace Tests\Feature\Jobs\GuildRosterManager;
 
 use App\Events\Broadcasts\GrmUploadCompleted as GrmUploadCompletedBroadcast;
 use App\Events\Broadcasts\GrmUploadFailed as GrmUploadFailedBroadcast;
@@ -12,13 +12,13 @@ use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterStatusRequest;
 use App\Http\Integrations\Discord\Data\Channels\ChannelStub;
 use App\Http\Integrations\Discord\Requests\Messages\CreateMessageRequest;
 use App\Jobs\FetchGuildRoster;
-use App\Jobs\ProcessGrmUpload;
+use App\Jobs\GuildRosterManager\ProcessUpload;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\User;
-use App\Notifications\GrmUploadCompleted;
-use App\Notifications\GrmUploadFailed;
+use App\Notifications\GuildRosterManagerUploadCompleted;
+use App\Notifications\GuildRosterManagerUploadFailed;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
@@ -37,7 +37,7 @@ use Tests\TestCase;
 
 #[Group('characters')]
 #[Group('discord-integration')]
-class ProcessGrmUploadTest extends TestCase
+class ProcessUploadTest extends TestCase
 {
     use MocksDiscordService;
     use RefreshDatabase;
@@ -71,7 +71,7 @@ class ProcessGrmUploadTest extends TestCase
     {
         $this->fakeCharacters(['TestChar' => 12345]);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -94,7 +94,7 @@ class ProcessGrmUploadTest extends TestCase
         $this->fakeCharacters(['TestChar' => 12345]);
         $rank = GuildRank::factory()->for($this->gameVersion)->create(['name' => 'Officer']);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -114,7 +114,7 @@ class ProcessGrmUploadTest extends TestCase
         $this->fakeCharacters(['TestChar' => 12345]);
         GuildRank::factory()->for(GameVersion::factory())->create(['name' => 'Officer']);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -131,7 +131,7 @@ class ProcessGrmUploadTest extends TestCase
     public function it_sets_is_main_false_for_alt_characters(): void
     {
         $this->fakeCharacters(['AltChar' => 67890]);
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -157,7 +157,7 @@ class ProcessGrmUploadTest extends TestCase
             'AltOne' => 22222,
             'AltTwo' => 33333,
         ]);
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -185,7 +185,7 @@ class ProcessGrmUploadTest extends TestCase
             'MainChar' => 11111,
             'AltChar' => 22222,
         ]);
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -208,7 +208,7 @@ class ProcessGrmUploadTest extends TestCase
             'MainChar' => 11111,
             'AltChar' => 22222,
         ]);
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -234,7 +234,7 @@ class ProcessGrmUploadTest extends TestCase
         ]);
 
         // CSV uses semicolon, so alts should be comma-separated
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ';',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -254,7 +254,7 @@ class ProcessGrmUploadTest extends TestCase
     {
         $this->fakeCharacters(['SuccessChar' => 99999], notFound: ['FailChar']);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -276,7 +276,7 @@ class ProcessGrmUploadTest extends TestCase
 
         Notification::fake();
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -288,9 +288,33 @@ class ProcessGrmUploadTest extends TestCase
 
         Notification::assertSentTo(
             new ChannelStub('1407688195386114119'),
-            GrmUploadCompleted::class,
-            fn (GrmUploadCompleted $notification) => $notification->processedCount === 0
+            GuildRosterManagerUploadCompleted::class,
+            fn (GuildRosterManagerUploadCompleted $notification) => $notification->processedCount === 0
                 && $notification->warningCount === 1,
+        );
+    }
+
+    #[Test]
+    public function it_sends_the_completed_notification_carrying_the_uploads_game_version_slug(): void
+    {
+        $this->fakeCharacters([], notFound: ['FailChar']);
+
+        Notification::fake();
+
+        $job = new ProcessUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'FailChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+            ],
+        ], $this->user->id, $this->gameVersion->id);
+
+        $job->handle(app(BlizzardConnector::class));
+
+        Notification::assertSentTo(
+            new ChannelStub('1407688195386114119'),
+            GuildRosterManagerUploadCompleted::class,
+            fn (GuildRosterManagerUploadCompleted $notification) => $notification->gameVersionSlug === $this->gameVersion->slug,
         );
     }
 
@@ -301,7 +325,7 @@ class ProcessGrmUploadTest extends TestCase
 
         Notification::fake();
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -313,12 +337,12 @@ class ProcessGrmUploadTest extends TestCase
 
         Notification::assertSentTo(
             new ChannelStub('1407688195386114119'),
-            GrmUploadFailed::class,
-            fn (GrmUploadFailed $notification) => $notification->processedCount === 0
+            GuildRosterManagerUploadFailed::class,
+            fn (GuildRosterManagerUploadFailed $notification) => $notification->processedCount === 0
                 && $notification->errorCount === 1
                 && str_starts_with($notification->errors[0], 'TestChar: '),
         );
-        Notification::assertNotSentTo(new ChannelStub('1407688195386114119'), GrmUploadCompleted::class);
+        Notification::assertNotSentTo(new ChannelStub('1407688195386114119'), GuildRosterManagerUploadCompleted::class);
     }
 
     #[Test]
@@ -328,7 +352,7 @@ class ProcessGrmUploadTest extends TestCase
 
         Notification::fake();
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -340,8 +364,8 @@ class ProcessGrmUploadTest extends TestCase
 
         Notification::assertSentTo(
             new ChannelStub('1407688195386114119'),
-            GrmUploadCompleted::class,
-            fn (GrmUploadCompleted $notification) => $notification->processedCount === 0
+            GuildRosterManagerUploadCompleted::class,
+            fn (GuildRosterManagerUploadCompleted $notification) => $notification->processedCount === 0
                 && $notification->skippedCount === 1,
         );
         Bus::assertNotDispatched(FetchGuildRoster::class);
@@ -354,7 +378,7 @@ class ProcessGrmUploadTest extends TestCase
 
         Notification::fake();
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -366,8 +390,8 @@ class ProcessGrmUploadTest extends TestCase
 
         Notification::assertSentTo(
             new ChannelStub('1407688195386114119'),
-            GrmUploadCompleted::class,
-            fn (GrmUploadCompleted $notification) => $notification->processedCount === 1,
+            GuildRosterManagerUploadCompleted::class,
+            fn (GuildRosterManagerUploadCompleted $notification) => $notification->processedCount === 1,
         );
     }
 
@@ -386,7 +410,7 @@ class ProcessGrmUploadTest extends TestCase
         $alt = Character::factory()->create(['id' => 22222, 'name' => 'AltChar']);
         $alt->linkedCharacters()->attach($main->id);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -408,7 +432,7 @@ class ProcessGrmUploadTest extends TestCase
         // Create existing character as alt
         Character::factory()->create(['id' => 12345, 'name' => 'TestChar', 'is_main' => false]);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -435,7 +459,7 @@ class ProcessGrmUploadTest extends TestCase
             'CharTwo' => 22222,
         ]);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -454,7 +478,7 @@ class ProcessGrmUploadTest extends TestCase
     {
         $this->fakeCharacters(['GoodChar' => 11111]);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -475,7 +499,7 @@ class ProcessGrmUploadTest extends TestCase
     {
         $this->fakeCharacters([], notFound: ['FailChar']);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -496,7 +520,7 @@ class ProcessGrmUploadTest extends TestCase
         $this->fakeCharacters(['GoodChar' => 11111]);
         Cache::tags(['attendance'])->put('attendance:matrix:test', 'cached-matrix', 60);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -515,7 +539,7 @@ class ProcessGrmUploadTest extends TestCase
         $this->fakeCharacters([], notFound: ['FailChar']);
         Cache::tags(['attendance'])->put('attendance:matrix:test', 'cached-matrix', 60);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -532,7 +556,7 @@ class ProcessGrmUploadTest extends TestCase
     public function it_skips_empty_character_names(): void
     {
         $this->fakeCharacters([]);
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -555,7 +579,7 @@ class ProcessGrmUploadTest extends TestCase
 
         $this->fakeCharacters(['CharOne' => 11111, 'CharTwo' => 22222]);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -578,7 +602,7 @@ class ProcessGrmUploadTest extends TestCase
 
         $this->fakeCharacters(['CharOne' => 11111, 'CharTwo' => 22222]);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -603,7 +627,7 @@ class ProcessGrmUploadTest extends TestCase
 
         $this->fakeCharacters(['CharOne' => 11111]);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -627,7 +651,7 @@ class ProcessGrmUploadTest extends TestCase
 
         $this->fakeCharacters(['GoodChar' => 11111], notFound: ['FailChar']);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -647,7 +671,7 @@ class ProcessGrmUploadTest extends TestCase
     {
         Event::fake([GrmUploadFailedBroadcast::class]);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -667,7 +691,7 @@ class ProcessGrmUploadTest extends TestCase
     {
         Notification::fake();
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -679,8 +703,8 @@ class ProcessGrmUploadTest extends TestCase
 
         Notification::assertSentTo(
             new ChannelStub('1407688195386114119'),
-            GrmUploadFailed::class,
-            fn (GrmUploadFailed $notification) => $notification->exceptionMessage === 'boom',
+            GuildRosterManagerUploadFailed::class,
+            fn (GuildRosterManagerUploadFailed $notification) => $notification->exceptionMessage === 'boom',
         );
     }
 
@@ -713,7 +737,7 @@ class ProcessGrmUploadTest extends TestCase
 
         $this->travel(1)->minutes();
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -739,7 +763,7 @@ class ProcessGrmUploadTest extends TestCase
     {
         $this->fakeCharacters(['TestChar' => 12345]);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -760,7 +784,7 @@ class ProcessGrmUploadTest extends TestCase
     {
         $this->fakeCharacters(['MainChar' => 11111, 'AltOne' => 22222]);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -782,7 +806,7 @@ class ProcessGrmUploadTest extends TestCase
         $version = GameVersion::factory()->create(['realm' => 'stormrage']);
         $this->fakeCharactersOnRealm('stormrage', ['TestChar' => 12345]);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -802,7 +826,7 @@ class ProcessGrmUploadTest extends TestCase
     {
         $version = GameVersion::factory()->create(['realm' => null]);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -827,7 +851,7 @@ class ProcessGrmUploadTest extends TestCase
         // row fails for lack of a realm.
         $version = GameVersion::factory()->create(['realm' => null]);
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -862,7 +886,7 @@ class ProcessGrmUploadTest extends TestCase
             },
         ]);
 
-        $firstRun = new ProcessGrmUpload([
+        $firstRun = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -871,7 +895,7 @@ class ProcessGrmUploadTest extends TestCase
         ], $this->user->id, $versionA->id);
         $firstRun->handle(app(BlizzardConnector::class));
 
-        $secondRun = new ProcessGrmUpload([
+        $secondRun = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -901,7 +925,7 @@ class ProcessGrmUploadTest extends TestCase
         ]);
         Notification::fake();
 
-        $job = new ProcessGrmUpload([
+        $job = new ProcessUpload([
             'delimiter' => ',',
             'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
             'rows' => [
@@ -919,8 +943,8 @@ class ProcessGrmUploadTest extends TestCase
         $this->assertDatabaseHas('character_links', ['character_id' => 11111, 'linked_character_id' => 22222]);
         $this->assertDatabaseHas('character_links', ['character_id' => 33333, 'linked_character_id' => 44444]);
         $this->assertDatabaseHas('character_links', ['character_id' => 33333, 'linked_character_id' => 55555]);
-        Notification::assertSentTo(new ChannelStub('1407688195386114119'), GrmUploadCompleted::class);
-        Notification::assertNotSentTo(new ChannelStub('1407688195386114119'), GrmUploadFailed::class);
+        Notification::assertSentTo(new ChannelStub('1407688195386114119'), GuildRosterManagerUploadCompleted::class);
+        Notification::assertNotSentTo(new ChannelStub('1407688195386114119'), GuildRosterManagerUploadFailed::class);
     }
 
     // ==================== helpers ====================

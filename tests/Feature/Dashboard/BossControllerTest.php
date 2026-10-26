@@ -6,7 +6,7 @@ use App\Actions\Boss\BuildBossRoutes;
 use App\Actions\Boss\UpdateBoss;
 use App\Http\Middleware\SetResourceScope;
 use App\Http\Resources\BossResource;
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
 use App\Models\Boss;
 use App\Models\Event;
 use App\Models\EventAssignment;
@@ -669,7 +669,7 @@ class BossControllerTest extends DashboardTestCase
     #[Test]
     public function it_refuses_to_delete_a_boss_with_items(): void
     {
-        Bus::fake([BuildAddonExportFile::class]);
+        Bus::fake([BuildExportFile::class]);
         $boss = Boss::factory()->create(['name' => 'Moroes']);
         Item::factory()->fromBoss($boss)->create();
 
