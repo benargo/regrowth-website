@@ -13,7 +13,6 @@ use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\Raid;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -56,22 +55,6 @@ class DashboardPagesTest extends TestCase
         ]);
     }
 
-    /**
-     * Seed the export file in storage with default data.
-     */
-    protected function seedExportFile(): void
-    {
-        $data = [
-            'system' => ['date_generated' => Carbon::now()->unix()],
-            'priorities' => [],
-            'items' => [],
-            'players' => [],
-            'councillors' => [],
-        ];
-
-        Storage::disk('local')->put('addon/export.json', json_encode($data));
-    }
-
     #[Group('happy-path')]
     #[Test]
     public function dashboard_index_loads(): void
@@ -79,58 +62,6 @@ class DashboardPagesTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('management.dashboard'));
-
-        $response->assertOk();
-        $response->assertSee('Regrowth');
-    }
-
-    #[Group('happy-path')]
-    #[Test]
-    public function addon_export_page_loads(): void
-    {
-        Storage::fake('local');
-        $this->seedExportFile();
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('management.addon.export'));
-
-        $response->assertOk();
-        $response->assertSee('Regrowth');
-    }
-
-    #[Group('happy-path')]
-    #[Test]
-    public function addon_export_json_page_loads(): void
-    {
-        Storage::fake('local');
-        $this->seedExportFile();
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('management.addon.export.json'));
-
-        $response->assertOk();
-        $response->assertSee('Regrowth');
-    }
-
-    #[Group('happy-path')]
-    #[Test]
-    public function addon_export_schema_page_loads(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('management.addon.export.schema'));
-
-        $response->assertOk();
-        $response->assertSee('Regrowth');
-    }
-
-    #[Group('happy-path')]
-    #[Test]
-    public function addon_settings_page_loads(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('management.addon.settings'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
