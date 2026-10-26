@@ -64,10 +64,6 @@ class AppServiceProvider extends ServiceProvider
         /**
          * Rate limiting
          */
-        RateLimiter::for('build-addon-export', function (object $job) {
-            return Limit::perMinutes(10, 1)->by(get_class($job)); // Allow 1 job per 10 minutes for each type of export job
-        });
-
         RateLimiter::for('fetch-guild-roster-job', function (FetchGuildRoster $job) {
             return Limit::perHour(1)->by((string) $job->gameVersionId);
         });

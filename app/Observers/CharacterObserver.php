@@ -2,7 +2,7 @@
 
 namespace App\Observers;
 
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
 use App\Models\Character;
 use Illuminate\Support\Facades\Cache;
 
@@ -23,7 +23,7 @@ class CharacterObserver
     {
         Cache::tags(['characters'])->flush();
 
-        BuildAddonExportFile::schedule();
+        BuildExportFile::scheduleForGameVersionIds([$character->game_version_id, $character->getOriginal('game_version_id')]);
     }
 
     /**
@@ -33,6 +33,6 @@ class CharacterObserver
     {
         Cache::tags(['characters'])->flush();
 
-        BuildAddonExportFile::schedule();
+        BuildExportFile::scheduleForGameVersionIds([$character->game_version_id]);
     }
 }

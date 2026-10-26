@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\Discord\AttachAvatarToUser;
-use App\Jobs\ProcessGrmUpload;
+use App\Jobs\GuildRosterManager\ProcessUpload;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Phase;
@@ -55,6 +55,59 @@ class DeprecatedRoutesTest extends DashboardTestCase
         $response->assertGone();
     }
 
+    // ==================== addon ====================
+
+    #[Test]
+    #[Group('deprecated')]
+    public function addon_export_redirects_to_the_loot_tool_export(): void
+    {
+        $response = $this->actingAs($this->officer)->get('/manage/addon/export');
+
+        $response->assertMovedPermanently();
+        $response->assertRedirect(route('addons.loot-tool.export'));
+    }
+
+    #[Test]
+    #[Group('deprecated')]
+    public function addon_export_json_redirects_to_the_loot_tool_export(): void
+    {
+        $response = $this->actingAs($this->officer)->get('/manage/addon/export/json');
+
+        $response->assertMovedPermanently();
+        $response->assertRedirect(route('addons.loot-tool.export'));
+    }
+
+    #[Test]
+    #[Group('deprecated')]
+    public function addon_export_schema_redirects_to_the_loot_tool_schema(): void
+    {
+        $response = $this->actingAs($this->officer)->get('/manage/addon/export/schema');
+
+        $response->assertMovedPermanently();
+        $response->assertRedirect(route('addons.loot-tool.schema'));
+    }
+
+    #[Test]
+    #[Group('deprecated')]
+    public function addon_settings_redirects_to_the_loot_tool_settings(): void
+    {
+        $response = $this->actingAs($this->officer)->get('/manage/addon/settings');
+
+        $response->assertMovedPermanently();
+        $response->assertRedirect(route('addons.loot-tool.settings'));
+    }
+
+    #[Test]
+    #[Group('deprecated')]
+    public function addon_settings_update_endpoint_is_gone(): void
+    {
+        $response = $this->actingAs($this->officer)->put('/manage/addon/settings', [
+            'councillor_ids' => [],
+        ]);
+
+        $response->assertGone();
+    }
+
     // ==================== grm upload ====================
 
     #[Test]
@@ -71,7 +124,7 @@ class DeprecatedRoutesTest extends DashboardTestCase
     #[Group('deprecated')]
     public function grm_upload_post_endpoint_is_gone(): void
     {
-        Queue::fake([ProcessGrmUpload::class, AttachAvatarToUser::class]);
+        Queue::fake([ProcessUpload::class, AttachAvatarToUser::class]);
         Storage::fake('local');
 
         $response = $this->actingAs($this->officer)->post('/manage/grm-upload', [

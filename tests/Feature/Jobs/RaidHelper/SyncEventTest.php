@@ -8,6 +8,7 @@ use App\Enums\SignupStatus;
 use App\Events\Broadcasts\CompositionChanged;
 use App\Http\Integrations\Discord\Requests\Guilds\GetGuildMemberRequest;
 use App\Http\Integrations\RaidHelper\Data\Events\EventData;
+use App\Jobs\Addon\BuildExportFile;
 use App\Jobs\AttachCharactersToUser;
 use App\Jobs\Discord\AttachAvatarToUser;
 use App\Jobs\RaidHelper\FetchComposition;
@@ -52,7 +53,7 @@ class SyncEventTest extends TestCase
 
         config()->set('services.raidhelper.channel_ids', ['100000000000000001']);
 
-        Queue::fake([FetchComposition::class, AttachCharactersToUser::class, AttachAvatarToUser::class]);
+        Queue::fake([FetchComposition::class, AttachCharactersToUser::class, AttachAvatarToUser::class, BuildExportFile::class]);
 
         $this->gameVersion = GameVersion::factory()->create();
 

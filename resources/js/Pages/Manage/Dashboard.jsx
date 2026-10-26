@@ -79,11 +79,11 @@ export default function Dashboard({ discordRoles }) {
                     </BandHeading>
                     <p className="mb-4 text-amber-400">Manage loot distribution priorities and addon settings.</p>
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                        <DashboardCard href={route("management.addon.export")} icon="file-export">
+                        <DashboardCard href={route("addons.loot-tool.export")} icon="file-export">
                             <h3 className="text-md">Export addon data</h3>
                             <p className="mb-1 text-sm">Generate data files for in-game addons.</p>
                         </DashboardCard>
-                        <DashboardCard href={route("management.addon.settings")} icon="cog">
+                        <DashboardCard href={route("addons.loot-tool.settings")} icon="cog">
                             <h3 className="text-md">Addon settings</h3>
                             <p className="mb-1 text-sm">Fine tune the addon to the guild’s needs.</p>
                         </DashboardCard>

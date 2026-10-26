@@ -3,7 +3,7 @@
 namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\ReportResource;
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
@@ -30,7 +30,7 @@ class ReportResourceTest extends TestCase
     {
         parent::setUp();
 
-        Bus::fake([BuildAddonExportFile::class]);
+        Bus::fake([BuildExportFile::class]);
     }
 
     #[Test]

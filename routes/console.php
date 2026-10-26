@@ -1,6 +1,6 @@
 <?php
 
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFiles;
 use App\Jobs\Discord\RefreshUserAvatars;
 use App\Jobs\Discord\SyncRoles as SyncDiscordRoles;
 use App\Jobs\Discord\SyncUsers as SyncDiscordUsers;
@@ -35,6 +35,11 @@ Schedule::job(new FetchRaidHelperEvents)->everySixHours()->name('fetch-raid-help
 Schedule::job(new FetchGuildRosters)->everySixHours()->name('fetch-guild-rosters')->withoutOverlapping();
 
 /**
+ * Build the addon export file for each current game version roster daily at 03:15.
+ */
+Schedule::job(new BuildExportFiles)->dailyAt('03:15')->name('build-addon-export-files');
+
+/**
  * Refresh Warcraft Logs reports every evening to keep the data up to date.
  *
  * The twiceDailyAt arguments indicate this job will run at 16:30 and 23:30 every day.
@@ -42,13 +47,6 @@ Schedule::job(new FetchGuildRosters)->everySixHours()->name('fetch-guild-rosters
 Schedule::command('fetch:warcraft-logs --latest')
     ->twiceDailyAt(16, 23, 30)
     ->name('fetch-warcraft-logs-latest');
-
-/**
- * Export the Regrowth Addon data daily at 3:15 AM server time.
- *
- * This is a resource-intensive job, so we run it after the 3am job to avoid overloading the server.
- */
-Schedule::job(new BuildAddonExportFile)->dailyAt('03:15')->name('build-addon-export-file');
 
 /**
  * This should be the last job to run each day.

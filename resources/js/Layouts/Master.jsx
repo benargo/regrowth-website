@@ -80,6 +80,7 @@ export default function Master({ title, isHomepage = false, children }) {
     const isRosterActive = route().current("roster.*") || route().current("characters.show");
     const isRaidingActive = route().current("raiding.*");
     const isLootActive = route().current("loot.*");
+    const isAddonsActive = route().current("addons.*");
     const user = auth?.user?.data;
     const discordInviteUrl = navigation?.discord_invite_url;
     const impersonating = auth?.impersonating;
@@ -244,6 +245,7 @@ export default function Master({ title, isHomepage = false, children }) {
                                 </NavLink>
                                 <SectionFlyout section="raiding" active={isRaidingActive} classes={classes} />
                                 <SectionFlyout section="loot" active={isLootActive} classes={classes} />
+                                <SectionFlyout section="addons" active={isAddonsActive} classes={classes} />
                                 <NavLink
                                     className={classes.navLink}
                                     href={discordInviteUrl}
@@ -357,6 +359,7 @@ export default function Master({ title, isHomepage = false, children }) {
                     <div className="space-y-1 px-2 pt-2 pb-3">
                         <SectionDisclosure section="raiding" active={isRaidingActive} classes={classes} />
                         <SectionDisclosure section="loot" active={isLootActive} classes={classes} />
+                        <SectionDisclosure section="addons" active={isAddonsActive} classes={classes} />
                         <ResponsiveNavLink
                             className={classes.responsiveNavLink}
                             href={route("roster.index")}

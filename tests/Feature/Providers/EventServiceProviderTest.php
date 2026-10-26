@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Providers;
 
-use App\Listeners\BroadcastGrmUploadRetry;
+use App\Listeners\GuildRosterManager\BroadcastUploadRetry;
 use Illuminate\Queue\Events\JobReleasedAfterException;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Group;
@@ -17,6 +17,6 @@ class EventServiceProviderTest extends TestCase
     {
         $listeners = Event::getRawListeners()[JobReleasedAfterException::class] ?? [];
 
-        $this->assertContains(BroadcastGrmUploadRetry::class, $listeners);
+        $this->assertContains(BroadcastUploadRetry::class, $listeners);
     }
 }

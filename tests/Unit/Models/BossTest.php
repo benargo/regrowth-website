@@ -7,7 +7,7 @@ use App\Contracts\Models\DatasetModel;
 use App\Contracts\Models\EditLockable;
 use App\Contracts\Models\HasUsage;
 use App\Events\RaidingDataChanged;
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
 use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\Event;
@@ -412,7 +412,7 @@ class BossTest extends ModelTestCase
     #[Test]
     public function it_is_in_use_while_items_drop_from_it(): void
     {
-        Bus::fake([BuildAddonExportFile::class]);
+        Bus::fake([BuildExportFile::class]);
         $boss = $this->create();
         $this->assertFalse($boss->isInUse());
 
@@ -468,7 +468,7 @@ class BossTest extends ModelTestCase
     public function with_usage_counts_counts_items_and_upcoming_links(): void
     {
         $this->freezeTime();
-        Bus::fake([BuildAddonExportFile::class]);
+        Bus::fake([BuildExportFile::class]);
         $boss = $this->create();
         Item::factory()->count(2)->fromBoss($boss)->create();
         $this->eventInHours(24, 27)->bosses()->attach($boss->id, ['sort_order' => 1]);

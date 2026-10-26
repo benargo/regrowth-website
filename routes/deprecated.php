@@ -14,6 +14,15 @@ Route::get('/comps', [RaidingController::class, 'comps'])->name('raiding.plans.n
 Route::post('/manage/addon/settings/councillors', fn () => abort(410));
 Route::delete('/manage/addon/settings/councillors/{character}', fn () => abort(410));
 
+// Old loot-tool addon pages, now under /addons/loot-tool.
+Route::get('/manage/addon/export', fn () => redirect()->route('addons.loot-tool.export', [], 301));
+Route::get('/manage/addon/export/json', fn () => redirect()->route('addons.loot-tool.export', [], 301));
+Route::get('/manage/addon/export/schema', fn () => redirect()->route('addons.loot-tool.schema', [], 301));
+Route::get('/manage/addon/settings', fn () => redirect()->route('addons.loot-tool.settings', [], 301));
+
+// Old addon settings submission, now PUT /addons/loot-tool/settings. Returns 410 Gone.
+Route::put('/manage/addon/settings', fn () => abort(410));
+
 // Old GRM upload form, now lives at /manage/grm
 Route::get('/manage/grm-upload', fn () => redirect()->route('management.grm.create', [], 301));
 

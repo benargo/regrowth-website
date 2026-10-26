@@ -3,15 +3,16 @@
 use App\Enums\SiteSection;
 use App\Http\Controllers\Account\AccountController;
 use App\Http\Controllers\Account\PlannedAbsenceController as AccountPlannedAbsenceController;
+use App\Http\Controllers\Addons\LootToolController;
+use App\Http\Controllers\Addons\LootToolOverviewController;
+use App\Http\Controllers\Addons\LootToolSchemaController;
+use App\Http\Controllers\Addons\LootToolSettingsController;
 use App\Http\Controllers\AttendanceDashboardController;
 use App\Http\Controllers\AttendanceGraphsController;
 use App\Http\Controllers\AttendanceMatrixController;
 use App\Http\Controllers\BossController;
 use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\CommentController;
-use App\Http\Controllers\Dashboard\AddonController;
-use App\Http\Controllers\Dashboard\AddonSchemaController;
-use App\Http\Controllers\Dashboard\AddonSettingsController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\PermissionController;
 use App\Http\Controllers\EventController;
@@ -135,19 +136,24 @@ Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () use ($raid
 });
 
 /*
+ * Addons
+ */
+Route::get('/addons', fn () => Inertia::render('Addons/Index'))->name('addons.index');
+Route::get('/addons/loot-tool', LootToolOverviewController::class)->name('addons.loot-tool.index');
+
+Route::group(['middleware' => ['auth']], function () {
+    Route::get('/addons/loot-tool/export', LootToolController::class)->name('addons.loot-tool.export');
+    Route::get('/addons/loot-tool/schema', LootToolSchemaController::class)->name('addons.loot-tool.schema');
+    Route::get('/addons/loot-tool/settings', [LootToolSettingsController::class, 'show'])->name('addons.loot-tool.settings');
+    Route::put('/addons/loot-tool/settings', [LootToolSettingsController::class, 'update'])->middleware(DefersCacheFlushes::class)->name('addons.loot-tool.settings.update');
+});
+
+/*
  * Officers' Dashboard
  */
 Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['auth'], 'excluded_middleware' => [RemembersCurrentGameVersion::class]], function () {
     Route::get('/', fn () => redirect()->route('management.dashboard'))->name('index');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
-
-    /**
-     * Addon management
-     */
-    Route::get('/addon/export', [AddonController::class, 'exportBase64'])->name('addon.export');
-    Route::get('/addon/export/json', [AddonController::class, 'exportJson'])->name('addon.export.json');
-    Route::get('/addon/export/schema', AddonSchemaController::class)->name('addon.export.schema');
-    Route::get('/addon/settings', AddonSettingsController::class)->name('addon.settings');
 
     /**
      * Bosses management

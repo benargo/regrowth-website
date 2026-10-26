@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import cn from "@/Helpers/cn";
 
 /**
  * Pixels from the viewport top below which a section counts as "being read":
@@ -73,7 +74,8 @@ function useHeightProperty(ref) {
 /**
  * In-page section links. A sticky vertical rail on large viewports (give it a
  * width via `className`), and a sticky, wrapping row above the content on
- * smaller ones. `children` render beneath the links, e.g. a save status.
+ * smaller ones. `className` is merged over the base classes. `children`
+ * render beneath the links, e.g. a save status.
  *
  * @param {{ sections: Array<{ value: string, label: string }>, className?: string, children?: React.ReactNode }} props
  */
@@ -86,7 +88,10 @@ export default function OnThisPage({ sections, className = "", children }) {
         <aside
             ref={asideRef}
             data-on-this-page
-            className={`bg-brown-900 border-amber-700/60 sticky top-24 z-10 -my-2 flex flex-wrap items-center justify-between gap-x-6 rounded-lg border p-2 shadow-lg shadow-black/30 lg:top-28 lg:my-0 lg:flex-col lg:flex-nowrap lg:items-stretch lg:justify-start lg:gap-4 lg:gap-y-2 lg:rounded-none lg:border-0 lg:bg-transparent lg:px-0 lg:py-0 lg:shadow-none ${className}`}
+            className={cn(
+                "bg-brown-900 border-amber-700/60 sticky top-24 z-10 -my-2 flex flex-wrap items-center justify-between gap-x-6 rounded-lg border p-2 shadow-lg shadow-black/30 lg:top-28 lg:my-0 lg:flex-col lg:flex-nowrap lg:items-stretch lg:justify-start lg:gap-4 lg:gap-y-2 lg:rounded-none lg:border-0 lg:bg-transparent lg:px-0 lg:py-0 lg:shadow-none",
+                className,
+            )}
         >
             <nav aria-label="On this page" className="min-w-0">
                 <ul className="lg:border-amber-700 flex flex-wrap gap-2 text-sm lg:flex-col lg:flex-nowrap lg:gap-0 lg:border-l">

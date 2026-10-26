@@ -5,7 +5,7 @@ namespace Tests\Feature\Actions\WarcraftLogs;
 use App\Actions\GameVersion\ListSelectableGameVersions;
 use App\Actions\WarcraftLogs\DeleteGuild;
 use App\Contracts\Actions\GameVersion\CachesSelectableGameVersions;
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\Phase;
@@ -28,7 +28,7 @@ class DeleteGuildTest extends TestCase
     {
         parent::setUp();
 
-        Bus::fake([BuildAddonExportFile::class]);
+        Bus::fake([BuildExportFile::class]);
     }
 
     #[Test]

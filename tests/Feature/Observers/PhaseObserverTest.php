@@ -4,7 +4,7 @@ namespace Tests\Feature\Observers;
 
 use App\Actions\Events\RefreshEventGameVersion;
 use App\Events\RaidingDataChanged;
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
 use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\Phase;
@@ -17,12 +17,14 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Event as EventFacade;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Concerns\ReleasesAddonExportLocks;
 use Tests\TestCase;
 
 #[Group('raiding')]
 class PhaseObserverTest extends TestCase
 {
     use RefreshDatabase;
+    use ReleasesAddonExportLocks;
 
     #[Test]
     public function creating_a_phase_rederives_its_versions_reports(): void
@@ -117,33 +119,55 @@ class PhaseObserverTest extends TestCase
     #[Test]
     public function updating_a_phase_schedules_addon_export_build(): void
     {
-        $phase = Phase::factory()->create();
-        Bus::fake([BuildAddonExportFile::class]);
+        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
+        $phase = Phase::factory()->forGameVersion($gameVersion)->create();
+        $this->releaseAddonExportLocks();
+        Bus::fake([BuildExportFile::class]);
 
         $phase->update(['description' => 'Renamed phase']);
 
-        Bus::assertDispatched(BuildAddonExportFile::class, fn (BuildAddonExportFile $job) => $job->delay !== null);
+        Bus::assertDispatched(BuildExportFile::class, fn (BuildExportFile $job) => $job->gameVersionId === $gameVersion->id && $job->delay !== null);
     }
 
     #[Test]
     public function creating_a_phase_schedules_addon_export_build(): void
     {
-        Bus::fake([BuildAddonExportFile::class]);
+        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
+        $this->releaseAddonExportLocks();
+        Bus::fake([BuildExportFile::class]);
 
-        Phase::factory()->create();
+        Phase::factory()->forGameVersion($gameVersion)->create();
 
-        Bus::assertDispatched(BuildAddonExportFile::class, fn (BuildAddonExportFile $job) => $job->delay !== null);
+        Bus::assertDispatched(BuildExportFile::class, fn (BuildExportFile $job) => $job->gameVersionId === $gameVersion->id && $job->delay !== null);
     }
 
     #[Test]
     public function deleting_a_phase_schedules_addon_export_build(): void
     {
-        $phase = Phase::factory()->create();
-        Bus::fake([BuildAddonExportFile::class]);
+        $gameVersion = GameVersion::factory()->fetchableRoster()->create();
+        $phase = Phase::factory()->forGameVersion($gameVersion)->create();
+        $this->releaseAddonExportLocks();
+        Bus::fake([BuildExportFile::class]);
 
         $phase->delete();
 
-        Bus::assertDispatched(BuildAddonExportFile::class, fn (BuildAddonExportFile $job) => $job->delay !== null);
+        Bus::assertDispatched(BuildExportFile::class, fn (BuildExportFile $job) => $job->gameVersionId === $gameVersion->id && $job->delay !== null);
+    }
+
+    #[Test]
+    public function moving_a_phase_to_another_game_version_rebuilds_both(): void
+    {
+        $from = GameVersion::factory()->fetchableRoster()->create();
+        $to = GameVersion::factory()->fetchableRoster()->create();
+        $phase = Phase::factory()->forGameVersion($from)->create();
+        $this->releaseAddonExportLocks();
+        Bus::fake([BuildExportFile::class]);
+
+        $phase->update(['game_version_id' => $to->id]);
+
+        Bus::assertDispatchedTimes(BuildExportFile::class, 2);
+        Bus::assertDispatched(BuildExportFile::class, fn (BuildExportFile $job) => $job->gameVersionId === $from->id);
+        Bus::assertDispatched(BuildExportFile::class, fn (BuildExportFile $job) => $job->gameVersionId === $to->id);
     }
 
     #[Test]

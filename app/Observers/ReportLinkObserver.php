@@ -2,7 +2,8 @@
 
 namespace App\Observers;
 
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
+use App\Models\Report;
 use App\Models\ReportLink;
 
 class ReportLinkObserver
@@ -12,7 +13,7 @@ class ReportLinkObserver
      */
     public function saved(ReportLink $reportLink): void
     {
-        $this->linksChanged();
+        $this->linksChanged($reportLink);
     }
 
     /**
@@ -20,16 +21,18 @@ class ReportLinkObserver
      */
     public function deleted(ReportLink $reportLink): void
     {
-        $this->linksChanged();
+        $this->linksChanged($reportLink);
     }
 
     /**
      * Flush the caches derived from report links and schedule an addon export rebuild.
      */
-    private function linksChanged(): void
+    private function linksChanged(ReportLink $reportLink): void
     {
         ReportObserver::flushCaches();
 
-        BuildAddonExportFile::schedule();
+        BuildExportFile::scheduleForGameVersionIds(
+            Report::whereKey([$reportLink->report_1, $reportLink->report_2])->pluck('game_version_id'),
+        );
     }
 }

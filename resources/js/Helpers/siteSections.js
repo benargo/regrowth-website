@@ -1,5 +1,5 @@
 /**
- * The Raiding and Loot sections: their hub route, header background, the
+ * The Raiding, Loot and Addons sections: their hub route, header background, the
  * client-only features they enable, and the items of their sub-navigation.
  * `features.raidScopedSearch` scopes the search palette to the raid page's raid.
  * Each item names the route it links to, the route patterns that mark it
@@ -92,6 +92,31 @@ export const SITE_SECTIONS = {
                 description: "Every discussion on this version's items.",
                 routeName: "loot.comments",
                 currentPatterns: ["loot.comments"],
+                isHubCard: true,
+            },
+            {
+                key: "addon",
+                label: "In-game addon",
+                icon: "puzzle-piece",
+                description: "The Regrowth Loot Tool addon for loot council info in game.",
+                routeName: "addons.loot-tool.index",
+                currentPatterns: ["addons.loot-tool.index"],
+            },
+        ],
+    },
+    addons: {
+        label: "Addons",
+        hubRouteName: "addons.index",
+        headerBackgroundClass: "bg-karazhan-chess",
+        features: { raidScopedSearch: false },
+        items: [
+            {
+                key: "loot-tool",
+                label: "Loot Tool",
+                icon: "toolbox",
+                description: "Loot council info in your in-game tooltips.",
+                routeName: "addons.loot-tool.index",
+                currentPatterns: ["addons.loot-tool.*"],
                 isHubCard: true,
             },
         ],

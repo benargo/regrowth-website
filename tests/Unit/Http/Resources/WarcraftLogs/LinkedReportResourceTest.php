@@ -4,7 +4,7 @@ namespace Tests\Unit\Http\Resources\WarcraftLogs;
 
 use App\Http\Resources\UserResource;
 use App\Http\Resources\WarcraftLogs\LinkedReportResource;
-use App\Jobs\BuildAddonExportFile;
+use App\Jobs\Addon\BuildExportFile;
 use App\Models\Report;
 use App\Models\User;
 use App\Models\WarcraftLogs\Zone;
@@ -26,7 +26,7 @@ class LinkedReportResourceTest extends TestCase
     {
         parent::setUp();
 
-        Bus::fake([BuildAddonExportFile::class]);
+        Bus::fake([BuildExportFile::class]);
     }
 
     #[Test]
