@@ -17,6 +17,7 @@ use Illuminate\Filesystem\FilesystemManager;
 use RuntimeException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\MediaLibrary\Support\PathGenerator\PathGeneratorFactory;
+use Symfony\Component\Console\Helper\ProgressBar;
 use Throwable;
 
 #[Signature('app:migrate-public-storage-to-s3 {--dry-run : Report what would move without writing}')]
@@ -79,7 +80,10 @@ class MigratePublicStorageToS3 extends Command implements HasBlizzardIcons
      */
     private function migrateMediaRows(Filesystem $source, Filesystem $target): void
     {
-        foreach (Media::where('disk', self::SOURCE_DISK)->lazyById() as $media) {
+        $rows = Media::where('disk', self::SOURCE_DISK);
+        $bar = $this->createLabelledProgressBar('Media rows', $rows->count());
+
+        foreach ($rows->lazyById() as $media) {
             try {
                 $pairs = $this->filePairs($media, $source);
 
@@ -104,9 +108,13 @@ class MigratePublicStorageToS3 extends Command implements HasBlizzardIcons
                 $this->rowsMoved++;
             } catch (Throwable $exception) {
                 $this->rowsFailed++;
-                $this->error("Media {$media->id} failed: {$exception->getMessage()}");
+                $this->errorAbove($bar, "Media {$media->id} failed: {$exception->getMessage()}");
+            } finally {
+                $bar->advance();
             }
         }
+
+        $this->finishProgressBar($bar);
     }
 
     /**
@@ -170,7 +178,11 @@ class MigratePublicStorageToS3 extends Command implements HasBlizzardIcons
             ->reject(fn (string $path): bool => $this->isDoubledFileName(basename($path)))
             ->reject(fn (string $path): bool => $existing->has($path));
 
+        $bar = $this->createLabelledProgressBar('Loose files', $paths->count());
+
         foreach ($paths as $path) {
+            $bar->advance();
+
             if ($this->isDryRun()) {
                 $this->filesCopied++;
 
@@ -181,9 +193,11 @@ class MigratePublicStorageToS3 extends Command implements HasBlizzardIcons
                 $this->filesCopied++;
             } else {
                 $this->filesFailed++;
-                $this->error("Copying {$path} failed.");
+                $this->errorAbove($bar, "Copying {$path} failed.");
             }
         }
+
+        $this->finishProgressBar($bar);
     }
 
     /**
@@ -270,6 +284,38 @@ class MigratePublicStorageToS3 extends Command implements HasBlizzardIcons
                 fclose($stream);
             }
         }
+    }
+
+    /**
+     * Start a progress bar that shows the label, the step count and the percentage.
+     */
+    private function createLabelledProgressBar(string $label, int $steps): ProgressBar
+    {
+        $bar = $this->output->createProgressBar($steps);
+        $bar->setFormat(' %message%: %current%/%max% [%bar%] %percent:3s%%');
+        $bar->setMessage($label);
+        $bar->start();
+
+        return $bar;
+    }
+
+    /**
+     * Complete the progress bar and move the cursor below it.
+     */
+    private function finishProgressBar(ProgressBar $bar): void
+    {
+        $bar->finish();
+        $this->newLine();
+    }
+
+    /**
+     * Print an error above the progress bar, then redraw the bar.
+     */
+    private function errorAbove(ProgressBar $bar, string $message): void
+    {
+        $bar->clear();
+        $this->error($message);
+        $bar->display();
     }
 
     /**

@@ -57,6 +57,18 @@ class MigratePublicStorageToS3Test extends TestCase
     }
 
     #[Test]
+    public function it_shows_progress_for_the_media_rows_and_loose_files(): void
+    {
+        $this->raidBanner();
+        Storage::disk('public')->put('images/logo.png', 'LOGO');
+
+        $this->artisan('app:migrate-public-storage-to-s3')
+            ->expectsOutputToContain('Media rows: 1/1')
+            ->expectsOutputToContain('Loose files: 1/1')
+            ->assertExitCode(0);
+    }
+
+    #[Test]
     public function it_respects_custom_path_generators(): void
     {
         $media = $this->classIcon('class_mage.jpg');
