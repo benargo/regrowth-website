@@ -22,18 +22,18 @@ class GameVersionSeeder extends Seeder
     protected function definitions(): array
     {
         return [
-            [
-                'title' => 'Mists of Pandaria Classic',
-                'slug' => 'mop',
-                'realm' => 'Mirage Raceway',
-                'guild_name' => config('services.blizzard.guild.name'),
-                'uses_surnames' => false,
-                'faction' => Faction::ALLIANCE->value,
-                'release_date' => Carbon::create(2021, 9, 4, 0, 0, 0, CarbonTimeZone::create('Europe/Paris')),
-                'color' => 0x00FF98, // 0, 255, 152
-                'blizzard_namespace' => BlizzardNamespace::CLASSIC->value,
-                'warcraft_logs_guild' => ['id' => 598032, 'namespace' => WarcraftLogsNamespace::Classic, 'logs_url' => 'https://classic.warcraftlogs.com/guilds/598032-regrowth'],
-            ],
+            // [
+            //     'title' => 'Mists of Pandaria Classic',
+            //     'slug' => 'mop',
+            //     'realm' => 'Mirage Raceway',
+            //     'guild_name' => config('services.blizzard.guild.name'),
+            //     'uses_surnames' => false,
+            //     'faction' => Faction::ALLIANCE->value,
+            //     'release_date' => Carbon::create(2021, 9, 4, 0, 0, 0, CarbonTimeZone::create('Europe/Paris')),
+            //     'color' => 0x00FF98, // 0, 255, 152
+            //     'blizzard_namespace' => BlizzardNamespace::CLASSIC->value,
+            //     'warcraft_logs_guild' => ['id' => 598032, 'namespace' => WarcraftLogsNamespace::Classic, 'logs_url' => 'https://classic.warcraftlogs.com/guilds/598032-regrowth'],
+            // ],
             [
                 'title' => 'Burning Crusade Classic (Anniversary)',
                 'slug' => 'anniversary',
@@ -51,7 +51,7 @@ class GameVersionSeeder extends Seeder
                 'slug' => 'forever',
                 'realm' => null,
                 'guild_name' => config('services.blizzard.guild.name'),
-                'uses_surnames' => false,
+                'uses_surnames' => true,
                 'faction' => Faction::HORDE->value,
                 'release_date' => Carbon::create(2026, 11, 5, 0, 0, 0, CarbonTimeZone::create('Europe/Paris')),
                 'color' => 0xC69B3A, // 198, 155, 58
