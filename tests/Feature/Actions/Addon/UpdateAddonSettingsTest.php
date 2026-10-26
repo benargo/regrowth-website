@@ -22,6 +22,8 @@ class UpdateAddonSettingsTest extends TestCase
     use RefreshDatabase;
     use ReleasesAddonExportLocks;
 
+    // ==================== loot councillors ====================
+
     #[Test]
     public function it_sets_the_loot_councillors_of_the_game_version(): void
     {
@@ -101,6 +103,8 @@ class UpdateAddonSettingsTest extends TestCase
         $this->assertTrue($otherCouncillor->fresh()->is_loot_councillor);
     }
 
+    // ==================== attendance ====================
+
     #[Test]
     public function it_sets_which_ranks_count_attendance(): void
     {
@@ -132,6 +136,8 @@ class UpdateAddonSettingsTest extends TestCase
         $this->assertTrue($otherGuildTag->fresh()->count_attendance);
     }
 
+    // ==================== partial updates ====================
+
     #[Test]
     public function it_leaves_sections_that_are_not_given_untouched(): void
     {
@@ -147,6 +153,8 @@ class UpdateAddonSettingsTest extends TestCase
         $this->assertTrue($rank->fresh()->count_attendance);
         $this->assertTrue($tag->fresh()->count_attendance);
     }
+
+    // ==================== export rebuilds ====================
 
     #[Test]
     public function it_schedules_one_rebuild_for_the_game_version(): void
