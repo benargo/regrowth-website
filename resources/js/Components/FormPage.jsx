@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import OnThisPage from "@/Components/OnThisPage";
+import cn from "@/Helpers/cn";
 
 /**
  * A form page body: an "On this page" sidebar linking to `sections`, beside
  * the main column. `sidebar` renders beneath the sidebar's links. `note` is
  * a hint shown beneath the links on large screens and above the main column
- * on small ones.
+ * on small ones. `sidebarClassName` is merged over the sidebar's classes.
  */
-export default function FormPageLayout({ sections, sidebar = null, note = null, children }) {
+export default function FormPageLayout({ sections, sidebar = null, note = null, sidebarClassName = "", children }) {
     return (
         <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-12">
-            <OnThisPage sections={sections} className="lg:w-1/4 lg:shrink-0">
+            <OnThisPage sections={sections} className={cn("lg:w-1/4 lg:shrink-0", sidebarClassName)}>
                 {(sidebar || note) && (
                     <div className="flex flex-col gap-1 lg:pl-4">
                         {sidebar}

@@ -31,6 +31,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Regrowth Loot Tool
+    |--------------------------------------------------------------------------
+    |
+    | Download and source code links for the addon, shown on the loot tool
+    | overview page.
+    |
+    */
+
+    'loot-tool' => [
+        'curseforge_url' => 'https://www.curseforge.com/wow/addons/regrowthloottool',
+        'github_url' => 'https://github.com/regrowth-guild/loot-tool',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Officer team
     |--------------------------------------------------------------------------
     |

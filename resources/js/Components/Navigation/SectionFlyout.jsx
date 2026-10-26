@@ -10,6 +10,7 @@ import cn from "@/Helpers/cn";
 export const SECTION_HEADER_ICONS = {
     raiding: { icon: "dragon", className: "h-9" },
     loot: { icon: "treasure-chest", className: "h-6" },
+    addons: { icon: "puzzle-piece", className: "h-6" },
 };
 
 /**
@@ -51,7 +52,7 @@ export default function SectionFlyout({ section, active = false, classes = {} })
                         <NextRaidCard navigation={navigation} classes={classes} />
                         <FlyoutItems section="raiding" variant="tiles" classes={classes} />
                     </div>
-                ) : (
+                ) : section === "loot" ? (
                     <div className="grid grid-cols-[2fr_1fr] gap-10">
                         <LatestDiscussions navigation={navigation} classes={classes} />
                         <div>
@@ -61,6 +62,8 @@ export default function SectionFlyout({ section, active = false, classes = {} })
                             <FlyoutItems section="loot" variant="browse" classes={classes} />
                         </div>
                     </div>
+                ) : (
+                    <FlyoutItems section={section} variant="browse" classes={classes} />
                 )}
             </PopoverPanel>
         </Popover>

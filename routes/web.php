@@ -4,6 +4,7 @@ use App\Enums\SiteSection;
 use App\Http\Controllers\Account\AccountController;
 use App\Http\Controllers\Account\PlannedAbsenceController as AccountPlannedAbsenceController;
 use App\Http\Controllers\Addons\LootToolController;
+use App\Http\Controllers\Addons\LootToolOverviewController;
 use App\Http\Controllers\Addons\LootToolSchemaController;
 use App\Http\Controllers\Addons\LootToolSettingsController;
 use App\Http\Controllers\AttendanceDashboardController;
@@ -135,13 +136,16 @@ Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () use ($raid
 });
 
 /*
- * Regrowth Loot Tool addon
+ * Addons
  */
-Route::group(['prefix' => 'addons/loot-tool', 'as' => 'addons.loot-tool.', 'middleware' => ['auth']], function () {
-    Route::get('/export', LootToolController::class)->name('export');
-    Route::get('/schema', LootToolSchemaController::class)->name('schema');
-    Route::get('/settings', [LootToolSettingsController::class, 'show'])->name('settings');
-    Route::put('/settings', [LootToolSettingsController::class, 'update'])->middleware(DefersCacheFlushes::class)->name('settings.update');
+Route::get('/addons', fn () => Inertia::render('Addons/Index'))->name('addons.index');
+Route::get('/addons/loot-tool', LootToolOverviewController::class)->name('addons.loot-tool.index');
+
+Route::group(['middleware' => ['auth']], function () {
+    Route::get('/addons/loot-tool/export', LootToolController::class)->name('addons.loot-tool.export');
+    Route::get('/addons/loot-tool/schema', LootToolSchemaController::class)->name('addons.loot-tool.schema');
+    Route::get('/addons/loot-tool/settings', [LootToolSettingsController::class, 'show'])->name('addons.loot-tool.settings');
+    Route::put('/addons/loot-tool/settings', [LootToolSettingsController::class, 'update'])->middleware(DefersCacheFlushes::class)->name('addons.loot-tool.settings.update');
 });
 
 /*
