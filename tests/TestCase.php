@@ -8,6 +8,7 @@ use App\Listeners\FetchGuildRoster;
 use App\Listeners\FlushPermissionsCache;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Saloon\Config;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -25,6 +26,7 @@ abstract class TestCase extends BaseTestCase
         $this->mock(FlushPermissionsCache::class)->shouldReceive('handle');
 
         Queue::fake([BuildAddonExportFile::class, AttachAvatarToUser::class]);
+        Storage::fake('s3-private');
 
         if (! self::$strayRequestsPrevented) {
             Config::preventStrayRequests();
