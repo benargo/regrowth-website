@@ -284,6 +284,12 @@ svg.recharts-surface {
     background-size: cover;
 }
 
+.bg-loot-tool {
+    background-image: url("../images/bg_loot_tool.webp");
+    background-position: center;
+    background-size: cover;
+}
+
 .bg-officer-meeting {
     background-image: url("../images/bg_officermeeting.webp");
     background-position: center;

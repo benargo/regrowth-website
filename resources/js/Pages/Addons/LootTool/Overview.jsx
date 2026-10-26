@@ -54,7 +54,7 @@ export default function Overview({ curseforgeUrl, githubUrl, itemIconUrl }) {
             <SharedHeader
                 title="Regrowth Loot Tool"
                 subtitle="Loot council info in your in-game tooltips"
-                backgroundClass={SITE_SECTIONS.addons.headerBackgroundClass}
+                backgroundClass="bg-loot-tool"
             />
             <LootToolNav />
             <PageContainer>
