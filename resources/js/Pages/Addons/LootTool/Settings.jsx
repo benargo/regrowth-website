@@ -78,12 +78,12 @@ function SettingsForm({ gameVersion, councillors, ranks, tags, characters }) {
     });
 
     const selectedCouncillorIds = form.data.councillors.map((councillor) => councillor.id);
-    const councillorIds = new Set(selectedCouncillorIds);
+    const selectedCouncillorIdSet = new Set(selectedCouncillorIds);
     const isDirty =
         !hasSameIds(selectedCouncillorIds, savedCouncillorIds) ||
         !hasSameIds(form.data.counted_rank_ids, savedRankIds) ||
         !hasSameIds(form.data.counted_tag_ids, savedTagIds);
-    const availableCharacters = (characters ?? []).filter((character) => !councillorIds.has(character.id));
+    const availableCharacters = (characters ?? []).filter((character) => !selectedCouncillorIdSet.has(character.id));
 
     function addCouncillor(value) {
         const characterId = parseAutocompleteSelection(value);
@@ -133,7 +133,7 @@ function SettingsForm({ gameVersion, councillors, ranks, tags, characters }) {
     }
 
     /**
-     * Stops Enter in a text field from submitting the form, so only the Save button saves.
+     * Stops Enter in a text field from submitting the form.
      */
     function preventImplicitSubmit(event) {
         if (event.key === "Enter" && event.target instanceof HTMLInputElement) {
@@ -142,7 +142,7 @@ function SettingsForm({ gameVersion, councillors, ranks, tags, characters }) {
     }
 
     /**
-     * Stops Enter on a checkbox from reaching its handler, which would otherwise submit the form.
+     * Stops an Enter keyup on a checkbox from reaching the form.
      */
     function preventCheckboxSubmit(event) {
         if (event.key === "Enter" && event.target.getAttribute("role") === "checkbox") {

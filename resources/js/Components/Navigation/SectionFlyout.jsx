@@ -47,25 +47,37 @@ export default function SectionFlyout({ section, active = false, classes = {} })
                     classes.flyoutPanel,
                 )}
             >
-                {section === "raiding" ? (
-                    <div className="grid grid-cols-[1fr_2fr] gap-8">
-                        <NextRaidCard navigation={navigation} classes={classes} />
-                        <FlyoutItems section="raiding" variant="tiles" classes={classes} />
-                    </div>
-                ) : section === "loot" ? (
-                    <div className="grid grid-cols-[2fr_1fr] gap-10">
-                        <LatestDiscussions navigation={navigation} classes={classes} />
-                        <div>
-                            <h2 className={cn("mb-2 font-serif text-xl text-amber-300", classes.flyoutHeading)}>
-                                Browse
-                            </h2>
-                            <FlyoutItems section="loot" variant="browse" classes={classes} />
-                        </div>
-                    </div>
-                ) : (
-                    <FlyoutItems section={section} variant="browse" classes={classes} />
-                )}
+                <FlyoutPanelContent section={section} navigation={navigation} classes={classes} />
             </PopoverPanel>
         </Popover>
     );
+}
+
+/**
+ * The body of a section's flyout panel: the next raid beside the Raiding tiles, the latest
+ * discussions beside the Loot pages, or a plain list of any other section's pages.
+ */
+function FlyoutPanelContent({ section, navigation, classes }) {
+    if (section === "raiding") {
+        return (
+            <div className="grid grid-cols-[1fr_2fr] gap-8">
+                <NextRaidCard navigation={navigation} classes={classes} />
+                <FlyoutItems section="raiding" variant="tiles" classes={classes} />
+            </div>
+        );
+    }
+
+    if (section === "loot") {
+        return (
+            <div className="grid grid-cols-[2fr_1fr] gap-10">
+                <LatestDiscussions navigation={navigation} classes={classes} />
+                <div>
+                    <h2 className={cn("mb-2 font-serif text-xl text-amber-300", classes.flyoutHeading)}>Browse</h2>
+                    <FlyoutItems section="loot" variant="browse" classes={classes} />
+                </div>
+            </div>
+        );
+    }
+
+    return <FlyoutItems section={section} variant="browse" classes={classes} />;
 }

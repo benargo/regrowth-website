@@ -1,4 +1,3 @@
-import AddonTabNav from "@/Components/LootTool/AddonTabNav";
 import LootToolNav from "@/Components/LootTool/LootToolNav";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
@@ -18,12 +17,7 @@ export default function AddonPageLayout({ title, active, gameVersion = null, chi
                 image={gameVersion?.banner_url}
             />
             <LootToolNav />
-            <PageContainer>
-                <div className="mx-auto max-w-5xl">
-                    <AddonTabNav active={active} />
-                    {children}
-                </div>
-            </PageContainer>
+            <PageContainer>{children}</PageContainer>
         </Master>
     );
 }

@@ -6,6 +6,17 @@ import Icon from "@/Components/FontAwesome/Icon";
 import FreshnessAlerts from "@/Components/GuildRosterManager/FreshnessAlerts";
 
 /**
+ * A dashed-bordered empty state showing `message`.
+ */
+function ExportEmptyState({ message }) {
+    return (
+        <div className="rounded-md border border-dashed border-amber-700/70">
+            <EmptyState icon="box-open" message={message} />
+        </div>
+    );
+}
+
+/**
  * The selected game version's addon export: its GRM freshness alerts, a line naming the
  * version, a dropdown of `formats`, and the `selectedFormat`'s data in an ExportPanel. Shows an
  * empty state when there is no game version or the version has no export. `exports` maps each
@@ -24,21 +35,14 @@ export default function GameVersionExport({
     onSelectFormat,
 }) {
     if (gameVersion === null) {
-        return (
-            <div className="rounded-md border border-dashed border-amber-700/70">
-                <EmptyState icon="box-open" message="No game version is set up yet." />
-            </div>
-        );
+        return <ExportEmptyState message="No game version is set up yet." />;
     }
 
     if (!hasExport) {
         return (
-            <div className="rounded-md border border-dashed border-amber-700/70">
-                <EmptyState
-                    icon="box-open"
-                    message={`${gameVersion.title} has no current guild roster, so it has no addon export.`}
-                />
-            </div>
+            <ExportEmptyState
+                message={`${gameVersion.title} has no current guild roster, so it has no addon export.`}
+            />
         );
     }
 
@@ -84,15 +88,17 @@ export default function GameVersionExport({
             </div>
 
             <Deferred key={selectedFormat} data={selectedFormat} fallback={<ExportPanelSkeleton />}>
-                <ExportPanel
-                    title={format.label}
-                    description={format.description}
-                    copyValue={exportedData}
-                    display={format.display?.(exportedData)}
-                    copyLabel={format.copyLabel}
-                    copySuccessMessage={format.copySuccessMessage}
-                    wrap={format.wrap}
-                />
+                {() => (
+                    <ExportPanel
+                        title={format.label}
+                        description={format.description}
+                        copyValue={exportedData}
+                        display={format.display?.(exportedData)}
+                        copyLabel={format.copyLabel}
+                        copySuccessMessage={format.copySuccessMessage}
+                        wrap={format.wrap}
+                    />
+                )}
             </Deferred>
         </>
     );
