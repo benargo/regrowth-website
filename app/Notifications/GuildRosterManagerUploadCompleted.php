@@ -36,7 +36,7 @@ class GuildRosterManagerUploadCompleted extends DiscordMessage
             'embeds' => [EmbedData::from([
                 'title' => 'GRM Upload Processing Completed',
                 'description' => 'Officers should make sure they update the RegrowthLootTool with new data.',
-                'url' => route('management.addon.export', ['game_version' => $this->gameVersionSlug]),
+                'url' => route('addons.loot-tool.export', ['game_version' => $this->gameVersionSlug]),
                 'color' => 5763719,
                 'image' => EmbedMediaData::from(['url' => config('app.url').'/images/jaina_thumbsup.webp']),
                 'fields' => $fields,

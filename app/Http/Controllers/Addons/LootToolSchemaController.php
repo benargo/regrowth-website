@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Dashboard;
+namespace App\Http\Controllers\Addons;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
@@ -8,14 +8,14 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 #[Authorize('view-officer-dashboard')]
-class AddonSchemaController extends Controller
+class LootToolSchemaController extends Controller
 {
     public function __invoke(): Response
     {
-        return Inertia::render('Manage/Addon/ExportSchema', [
+        return Inertia::render('Addons/LootTool/Schema', [
             'schema' => [
                 '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-                '$id' => config('app.url').'/regrowth-loot-tool-schema.json?v=2.0.0',
+                '$id' => config('app.url').'/regrowth-loot-tool-schema.json?v=3.0.0',
                 'title' => 'Regrowth Loot Tool Export Schema',
                 'description' => 'Schema for the Regrowth Loot Tool addon data export format.',
                 'type' => 'object',
@@ -24,6 +24,13 @@ class AddonSchemaController extends Controller
                         'type' => 'object',
                         'properties' => [
                             'date_generated' => ['type' => 'integer'],
+                            'game_version' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'slug' => ['type' => 'string'],
+                                    'name' => ['type' => 'string'],
+                                ],
+                            ],
                             'user' => [
                                 'type' => 'object',
                                 'properties' => [
@@ -60,7 +67,10 @@ class AddonSchemaController extends Controller
                         'items' => [
                             'type' => 'object',
                             'properties' => [
-                                'item_id' => ['type' => 'integer'],
+                                'item_id' => [
+                                    'type' => 'integer',
+                                    'description' => 'In-game (Blizzard) item ID.',
+                                ],
                                 'priorities' => [
                                     'type' => 'array',
                                     'items' => [

@@ -3,6 +3,9 @@ import { Link } from "@inertiajs/react";
 import { Fragment } from "react";
 import cn from "@/Helpers/cn";
 
+const ITEM_CLASS_NAME =
+    "bg-brown-800 data-focus:bg-brown-700 flex w-full flex-row items-center rounded-md px-4 py-2 text-start text-sm leading-5 text-white transition duration-150 ease-in-out focus:outline-hidden";
+
 /**
  * Menu with keyboard navigation, outside-click and Escape dismissal, built on
  * Headless UI's `Menu`.
@@ -59,15 +62,22 @@ const Content = ({ align = "right", width = "48", contentClasses = "py-1 bg-brow
 const DropdownLink = ({ className = "", children, ...props }) => {
     return (
         <MenuItem>
-            <Link
-                {...props}
-                className={cn(
-                    "bg-brown-800 data-focus:bg-brown-700 flex w-full flex-row items-center rounded-md px-4 py-2 text-start text-sm leading-5 text-white transition duration-150 ease-in-out focus:outline-hidden",
-                    className,
-                )}
-            >
+            <Link {...props} className={cn(ITEM_CLASS_NAME, className)}>
                 {children}
             </Link>
+        </MenuItem>
+    );
+};
+
+/**
+ * A menu item rendered as a button; closes the menu when activated.
+ */
+const DropdownButton = ({ className = "", children, ...props }) => {
+    return (
+        <MenuItem>
+            <button type="button" {...props} className={cn(ITEM_CLASS_NAME, className)}>
+                {children}
+            </button>
         </MenuItem>
     );
 };
@@ -75,5 +85,6 @@ const DropdownLink = ({ className = "", children, ...props }) => {
 Dropdown.Trigger = Trigger;
 Dropdown.Content = Content;
 Dropdown.Link = DropdownLink;
+Dropdown.Button = DropdownButton;
 
 export default Dropdown;

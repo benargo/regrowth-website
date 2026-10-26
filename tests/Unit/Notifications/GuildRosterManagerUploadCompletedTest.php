@@ -128,7 +128,7 @@ class GuildRosterManagerUploadCompletedTest extends TestCase
     {
         $embed = (new GuildRosterManagerUploadCompleted(gameVersionSlug: 'tbc-anniversary', processedCount: 5))->toMessage()->embeds[0];
 
-        $this->assertSame(route('management.addon.export', ['game_version' => 'tbc-anniversary']), $embed->url);
+        $this->assertSame(route('addons.loot-tool.export', ['game_version' => 'tbc-anniversary']), $embed->url);
         $this->assertStringContainsString('game_version=tbc-anniversary', $embed->url);
     }
 }

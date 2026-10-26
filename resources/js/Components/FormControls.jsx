@@ -72,7 +72,7 @@ export function FormRow({ htmlFor, label, required = false, hint, hintAsTooltip 
 
     return (
         <Field className={cn("flex flex-col gap-1.5", className)}>
-            <Label htmlFor={htmlFor} className="text-gray-300 text-sm font-medium">
+            <Label htmlFor={htmlFor} className="text-sm font-medium text-gray-300">
                 {hint && hintAsTooltip ? (
                     <Tooltip as="span" body={hint}>
                         {labelContent}
@@ -83,9 +83,7 @@ export function FormRow({ htmlFor, label, required = false, hint, hintAsTooltip 
                 )}
             </Label>
             {children}
-            {hint && (
-                <Description className={hintAsTooltip ? "sr-only" : "text-gray-300 text-sm"}>{hint}</Description>
-            )}
+            {hint && <Description className={hintAsTooltip ? "sr-only" : "text-sm text-gray-300"}>{hint}</Description>}
             {error && <Description className="text-sm text-red-300">{error}</Description>}
         </Field>
     );
@@ -94,7 +92,7 @@ export function FormRow({ htmlFor, label, required = false, hint, hintAsTooltip 
 /** Explains the asterisk FormRow puts on required fields. */
 export function RequiredFieldsNote() {
     return (
-        <p className="text-gray-300 text-sm">
+        <p className="text-sm text-gray-300">
             Fields marked with{" "}
             <span aria-hidden="true" className="text-red-300">
                 *
@@ -235,7 +233,7 @@ export function CheckboxInput({ name, id = name, checked, onChange, invalid }) {
             onChange={onChange}
             aria-invalid={invalid ? true : undefined}
             className={
-                "group border-amber-600 bg-brown-800 data-checked:bg-amber-600 data-focus:outline-amber-400 " +
+                "group bg-brown-800 border-amber-600 data-checked:bg-amber-600 data-focus:outline-amber-400 " +
                 "block size-10.5 rounded border p-2 aria-invalid:border-red-400 data-focus:outline-2 data-focus:outline-offset-2"
             }
         >
@@ -270,15 +268,15 @@ export function RadioCardGroup({ id, name, value, onChange, options, invalid, cl
                 <Field
                     key={option.value}
                     className={
-                        "border-amber-600 bg-brown-800 has-data-checked:border-amber-300 has-data-checked:bg-amber-600/30 " +
-                        "has-data-focus:outline-amber-400 has-data-hover:border-amber-400 grid grid-cols-[1.125rem_1fr] " +
+                        "bg-brown-800 border-amber-600 has-data-checked:border-amber-300 has-data-checked:bg-amber-600/30 " +
+                        "grid grid-cols-[1.125rem_1fr] has-data-focus:outline-amber-400 has-data-hover:border-amber-400 " +
                         "content-start items-center gap-x-3 gap-y-1 rounded border p-3 has-data-focus:outline-2 has-data-focus:outline-offset-2"
                     }
                 >
                     <Radio
                         value={option.value}
                         className={
-                            "group border-amber-500 bg-brown-900 flex size-4.5 cursor-pointer data-checked:border-sky-400 " +
+                            "group bg-brown-900 flex size-4.5 cursor-pointer border-amber-500 data-checked:border-sky-400 " +
                             "items-center justify-center rounded-full border focus:outline-none"
                         }
                     >
@@ -296,9 +294,7 @@ export function RadioCardGroup({ id, name, value, onChange, options, invalid, cl
                         {option.label}
                     </Label>
                     {option.description && (
-                        <Description className="text-gray-300 col-start-2 text-sm">
-                            {option.description}
-                        </Description>
+                        <Description className="col-start-2 text-sm text-gray-300">{option.description}</Description>
                     )}
                 </Field>
             ))}
@@ -374,7 +370,7 @@ export function FormSection({ id, legend, children }) {
     return (
         <Fieldset
             id={id}
-            className="border-amber-600/40 flex scroll-mt-4 flex-col gap-6 border-t pt-6 first:border-t-0 first:pt-0"
+            className="flex scroll-mt-4 flex-col gap-6 border-t border-amber-600/40 pt-6 first:border-t-0 first:pt-0"
         >
             <Legend className="font-serif text-xl text-white">{legend}</Legend>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">{children}</div>
@@ -430,10 +426,10 @@ export function firstError(errors, field) {
     return itemKey ? errors[itemKey] : undefined;
 }
 
-export function SaveButton({ processing, label, processingLabel = "Saving…" }) {
+export function SaveButton({ processing, label, processingLabel = "Saving…", disabled = false }) {
     return (
         <div>
-            <PrimaryButton type="submit" processing={processing}>
+            <PrimaryButton type="submit" processing={processing} disabled={disabled}>
                 {processing ? processingLabel : label}
             </PrimaryButton>
         </div>

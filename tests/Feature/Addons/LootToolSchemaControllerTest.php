@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Dashboard;
+namespace Tests\Feature\Addons;
 
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -9,12 +9,12 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
 #[Group('platform')]
-class AddonSchemaControllerTest extends DashboardTestCase
+class LootToolSchemaControllerTest extends DashboardTestCase
 {
     #[Test]
     public function export_schema_requires_authentication(): void
     {
-        $response = $this->get(route('management.addon.export.schema'));
+        $response = $this->get(route('addons.loot-tool.schema'));
 
         $response->assertRedirect('/login');
     }
@@ -25,7 +25,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     {
         $user = User::factory()->guest()->create();
 
-        $response = $this->actingAs($user)->get(route('management.addon.export.schema'));
+        $response = $this->actingAs($user)->get(route('addons.loot-tool.schema'));
 
         $response->assertForbidden();
     }
@@ -36,7 +36,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('management.addon.export.schema'));
+        $response = $this->actingAs($user)->get(route('addons.loot-tool.schema'));
 
         $response->assertForbidden();
     }
@@ -47,7 +47,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     {
         $user = User::factory()->raider()->create();
 
-        $response = $this->actingAs($user)->get(route('management.addon.export.schema'));
+        $response = $this->actingAs($user)->get(route('addons.loot-tool.schema'));
 
         $response->assertForbidden();
     }
@@ -55,7 +55,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_allows_officer_users(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('addons.loot-tool.schema'));
 
         $response->assertOk();
     }
@@ -65,10 +65,10 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_renders_inertia_page_with_schema(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('addons.loot-tool.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Manage/Addon/ExportSchema')
+            ->component('Addons/LootTool/Schema')
             ->has('schema')
         );
     }
@@ -76,7 +76,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_includes_json_schema_metadata(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('addons.loot-tool.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema', fn (Assert $schema) => $schema
@@ -93,7 +93,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_defines_system_properties(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('addons.loot-tool.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema.properties.system')
@@ -105,7 +105,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_defines_phases_properties(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('addons.loot-tool.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema.properties.phases')
@@ -119,7 +119,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_defines_priorities_properties(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('addons.loot-tool.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema.properties.priorities')
@@ -130,7 +130,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_defines_items_properties(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('addons.loot-tool.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema.properties.items')
@@ -141,7 +141,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_defines_players_properties(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('addons.loot-tool.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema.properties.players')
@@ -152,7 +152,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_defines_player_attendance_properties(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('addons.loot-tool.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema.properties.players.items.properties.name')
@@ -167,7 +167,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_defines_player_first_attendance_as_integer(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('addons.loot-tool.schema'));
 
         $schema = $response->original->getData()['page']['props']['schema'];
         $firstAttendance = $schema['properties']['players']['items']['properties']['attendance']['properties']['first_attendance'];
@@ -178,7 +178,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_defines_councillors_properties(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('addons.loot-tool.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema.properties.councillors')
@@ -190,12 +190,44 @@ class AddonSchemaControllerTest extends DashboardTestCase
     }
 
     #[Test]
-    public function export_schema_id_contains_version_2_0_0(): void
+    public function schema_is_version_3_0_0(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('addons.loot-tool.schema'));
 
         $schema = $response->original->getData()['page']['props']['schema'];
 
-        $this->assertStringContainsString('v=2.0.0', $schema['$id']);
+        $this->assertStringEndsWith('/regrowth-loot-tool-schema.json?v=3.0.0', $schema['$id']);
+    }
+
+    #[Test]
+    public function schema_declares_the_system_game_version(): void
+    {
+        $response = $this->actingAs($this->officer)->get(route('addons.loot-tool.schema'));
+
+        $schema = $response->original->getData()['page']['props']['schema'];
+
+        $this->assertSame(
+            [
+                'type' => 'object',
+                'properties' => [
+                    'slug' => ['type' => 'string'],
+                    'name' => ['type' => 'string'],
+                ],
+            ],
+            $schema['properties']['system']['properties']['game_version'],
+        );
+    }
+
+    #[Test]
+    public function schema_describes_item_id_as_the_in_game_item_id(): void
+    {
+        $response = $this->actingAs($this->officer)->get(route('addons.loot-tool.schema'));
+
+        $schema = $response->original->getData()['page']['props']['schema'];
+
+        $this->assertSame(
+            ['type' => 'integer', 'description' => 'In-game (Blizzard) item ID.'],
+            $schema['properties']['items']['items']['properties']['item_id'],
+        );
     }
 }

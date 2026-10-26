@@ -433,7 +433,7 @@ class EditCharactersTest extends TestCase
     {
         $character = Character::factory()->withPlayableClass()->create();
 
-        $referer = route('management.addon.settings');
+        $referer = route('addons.loot-tool.settings');
 
         $response = $this->actingAs($this->officer())
             ->from($referer)
