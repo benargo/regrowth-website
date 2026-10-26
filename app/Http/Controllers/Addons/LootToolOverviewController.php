@@ -30,9 +30,12 @@ class LootToolOverviewController extends Controller implements HasBlizzardIcons
         $disk = Storage::disk(config('services.blizzard.filesystem', 'public'));
         $iconPath = self::STORAGE_PATH_PREFIX.'/icons/'.self::DEFAULT_MEDIA_SIZE.'/'.self::ITEM_ICON.'.'.self::DEFAULT_MEDIA_FILE_EXTENSION;
 
-        if (! $disk->exists($iconPath)) {
+        $hasIcon = $disk->exists($iconPath);
+
+        if (! $hasIcon) {
             try {
                 $renderConnector->send(new FetchIconRequest(self::ITEM_ICON));
+                $hasIcon = $disk->exists($iconPath);
             } catch (Throwable $exception) {
                 report($exception);
             }
@@ -41,7 +44,7 @@ class LootToolOverviewController extends Controller implements HasBlizzardIcons
         return Inertia::render('Addons/LootTool/Overview', [
             'curseforgeUrl' => config('guild.loot-tool.curseforge_url'),
             'githubUrl' => config('guild.loot-tool.github_url'),
-            'itemIconUrl' => $disk->exists($iconPath) ? $disk->url($iconPath) : $unknownIcon->url(),
+            'itemIconUrl' => $hasIcon ? $disk->url($iconPath) : $unknownIcon->url(),
         ]);
     }
 }

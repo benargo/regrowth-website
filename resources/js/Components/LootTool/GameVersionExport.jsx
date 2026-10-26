@@ -10,8 +10,8 @@ import FreshnessAlerts from "@/Components/GuildRosterManager/FreshnessAlerts";
  * version, a dropdown of `formats`, and the `selectedFormat`'s data in an ExportPanel. Shows an
  * empty state when there is no game version or the version has no export. `exports` maps each
  * format's key to its data, which shows a skeleton while undefined; `grmFreshness` is deferred.
- * Each format holds the dropdown `label`, the panel's title, description, copy labels and
- * `wrap`, plus an optional `display` that turns the raw export into the text shown.
+ * Each format holds the `label` used by the dropdown and the panel's title, the description,
+ * copy labels and `wrap`, plus an optional `display` that turns the raw export into the text shown.
  * onSelectFormat receives the chosen format's key.
  */
 export default function GameVersionExport({
@@ -85,10 +85,10 @@ export default function GameVersionExport({
 
             <Deferred key={selectedFormat} data={selectedFormat} fallback={<ExportPanelSkeleton />}>
                 <ExportPanel
-                    title={format.title}
+                    title={format.label}
                     description={format.description}
                     copyValue={exportedData}
-                    display={format.display ? format.display(exportedData ?? "") : exportedData}
+                    display={format.display?.(exportedData)}
                     copyLabel={format.copyLabel}
                     copySuccessMessage={format.copySuccessMessage}
                     wrap={format.wrap}

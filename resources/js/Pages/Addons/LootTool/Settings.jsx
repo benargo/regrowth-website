@@ -45,9 +45,9 @@ export default function AddonSettings({ gameVersion: gameVersionResource, counci
                 <SettingsForm
                     key={gameVersion.id}
                     gameVersion={gameVersion}
-                    councillors={councillors?.data ?? []}
-                    ranks={ranks?.data ?? []}
-                    tags={tags?.data ?? []}
+                    councillors={councillors.data}
+                    ranks={ranks.data}
+                    tags={tags.data}
                     characters={characters?.data}
                 />
             )}
@@ -77,9 +77,10 @@ function SettingsForm({ gameVersion, councillors, ranks, tags, characters }) {
         counted_tag_ids: savedTagIds,
     });
 
-    const councillorIds = new Set(form.data.councillors.map((councillor) => councillor.id));
+    const selectedCouncillorIds = form.data.councillors.map((councillor) => councillor.id);
+    const councillorIds = new Set(selectedCouncillorIds);
     const isDirty =
-        !hasSameIds([...councillorIds], savedCouncillorIds) ||
+        !hasSameIds(selectedCouncillorIds, savedCouncillorIds) ||
         !hasSameIds(form.data.counted_rank_ids, savedRankIds) ||
         !hasSameIds(form.data.counted_tag_ids, savedTagIds);
     const availableCharacters = (characters ?? []).filter((character) => !councillorIds.has(character.id));

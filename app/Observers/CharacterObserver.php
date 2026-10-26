@@ -33,6 +33,6 @@ class CharacterObserver
     {
         Cache::tags(['characters'])->flush();
 
-        BuildExportFile::scheduleForGameVersionIds([$character->game_version_id, $character->getOriginal('game_version_id')]);
+        BuildExportFile::scheduleForGameVersionIds([$character->game_version_id]);
     }
 }

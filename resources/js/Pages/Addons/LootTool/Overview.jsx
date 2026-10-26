@@ -7,12 +7,10 @@ import Card from "@/Components/Card";
 import CopyableCode from "@/Components/CopyableCode";
 import FormPageLayout, { FormPageSection } from "@/Components/FormPage";
 import Icon from "@/Components/FontAwesome/Icon";
-import { linkButtonClassName } from "@/Components/FormControls";
-import SectionNav from "@/Components/Navigation/SectionNav";
+import { linkButtonClassName, secondaryLinkButtonClassName } from "@/Components/FormControls";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/Components/Table";
-import { SITE_SECTIONS } from "@/Helpers/siteSections";
 import Master from "@/Layouts/Master";
 
 const SECTIONS = [
@@ -34,11 +32,6 @@ const COMMANDS = [
     { command: "/rg history", description: "Opens RG History, if it’s installed. /rg h does the same." },
     { command: "/rg bias", description: "Opens RG Bias, if it’s installed. /rg b does the same." },
 ];
-
-const secondaryLinkButtonClassName =
-    "bg-brown-800 text-gray-200 inset-ring inset-ring-amber-600 hover:bg-brown-700 hover:text-white " +
-    "focus-visible:outline-amber-400 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold " +
-    "focus-visible:outline-2 focus-visible:outline-offset-2";
 
 function ExternalLink({ href, className, children }) {
     return (

@@ -26,17 +26,19 @@ class LootToolSettingsController extends Controller
     {
         $gameVersion = ResolveCurrentGameVersion::run();
 
-        $councillors = $gameVersion?->characters()->where('is_loot_councillor', true)->with(['rank', 'media'])->orderBy('name')->get();
-        $ranks = $gameVersion?->guildRanks()->ordered()->get();
-        $tags = $gameVersion?->warcraftLogsGuild?->guildTags()->orderBy('name')->get();
+        if ($gameVersion === null) {
+            return Inertia::render('Addons/LootTool/Settings', ['gameVersion' => null]);
+        }
 
         return Inertia::render('Addons/LootTool/Settings', [
-            'gameVersion' => $gameVersion === null ? null : new GameVersionResource($gameVersion),
-            'councillors' => new LootCouncillorCollection($councillors ?? collect()),
-            'ranks' => GuildRankResource::collection($ranks ?? collect()),
-            'tags' => GuildTagResource::collection($tags ?? collect()),
+            'gameVersion' => new GameVersionResource($gameVersion),
+            'councillors' => new LootCouncillorCollection(
+                $gameVersion->characters()->where('is_loot_councillor', true)->with(['rank', 'media'])->orderBy('name')->get()
+            ),
+            'ranks' => GuildRankResource::collection($gameVersion->guildRanks()->ordered()->get()),
+            'tags' => GuildTagResource::collection($gameVersion->warcraftLogsGuild?->guildTags()->orderBy('name')->get() ?? collect()),
             'characters' => Inertia::defer(fn () => CharacterSummaryResource::collection(
-                $gameVersion?->characters()->where('is_main', true)->with('rank')->orderBy('name')->get() ?? collect()
+                $gameVersion->characters()->where('is_main', true)->with('rank')->orderBy('name')->get()
             )),
         ]);
     }

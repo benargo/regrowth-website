@@ -8,17 +8,14 @@ const UNICODE_ESCAPE = /\\u([0-9a-fA-F]{4})/g;
 const FORMATS = {
     json: {
         label: "JSON",
-        title: "JSON",
         description: "The addon data as formatted JSON. Click the data to select all of it.",
         copyLabel: "Copy JSON Data",
         copySuccessMessage: "JSON data copied to clipboard!",
-        wrap: false,
         display: (exportedData) =>
             exportedData.replace(UNICODE_ESCAPE, (_, hex) => String.fromCharCode(parseInt(hex, 16))),
     },
     base64: {
         label: "Base64",
-        title: "Base64",
         description:
             "This is the version you should import into the addon. Click the button to copy it to your clipboard.",
         copyLabel: "Copy Addon Data",

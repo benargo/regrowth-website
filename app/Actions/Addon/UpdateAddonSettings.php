@@ -63,7 +63,10 @@ class UpdateAddonSettings
         $ids = array_map(intval(...), $ids);
         $changed = false;
 
-        $candidates = $rows->where(fn (Builder $query) => $query->where(fn (Builder $flagged) => $flagged->where($attribute, true)->where($unflaggable))->orWhereIn($rows->getRelated()->getQualifiedKeyName(), $ids))->get();
+        $keyName = $rows->getRelated()->getQualifiedKeyName();
+        $isFlagged = fn (Builder $query) => $query->where($attribute, true)->where($unflaggable);
+
+        $candidates = $rows->where(fn (Builder $query) => $query->where($isFlagged)->orWhereIn($keyName, $ids))->get();
 
         foreach ($candidates as $row) {
             $row->{$attribute} = in_array($row->getKey(), $ids, true);

@@ -41,6 +41,11 @@ export const linkButtonClassName =
     `bg-amber-800 hover:bg-amber-900 focus-visible:outline-amber-400 text-white focus-visible:outline-2 ` +
     `focus-visible:outline-offset-2 ${buttonLayoutClassName}`;
 
+/** A Link styled like SecondaryButton, beside a primary link button. */
+export const secondaryLinkButtonClassName =
+    `bg-brown-800 text-gray-200 inset-ring inset-ring-amber-600 hover:bg-brown-700 hover:text-white ` +
+    `focus-visible:outline-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 ${buttonLayoutClassName}`;
+
 /** A quiet text link beside a form's buttons, such as Cancel, Back or Skip. */
 export const linkClassName =
     "text-gray-300 focus-visible:outline-amber-400 rounded px-2 py-2 text-sm underline hover:text-white " +
