@@ -18,31 +18,21 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans }) {
                         <div className="hidden h-[60vh] overflow-hidden md:block md:h-[800px] lg:h-full" />
 
                         <div className="relative flex flex-1 flex-col items-center justify-center py-20 md:absolute md:inset-0 md:py-0">
-                            <div className="my-10 flex flex-row items-center">
-                                <div className="md:mr-10">
-                                    <img
-                                        src="/images/guild_emblem.webp"
-                                        alt="Regrowth emblem"
-                                        width={230}
-                                        height={230}
-                                        fetchPriority="high"
-                                        className="mx-auto h-32 w-auto drop-shadow-[0_0_25px_rgba(0,0,0,0.6)] md:mx-0 md:h-48"
-                                    />
-                                </div>
-                                <div className="text-center md:text-left">
-                                    <h1
-                                        translate="no"
-                                        className="from-camel-100 to-camel-300 mb-3 bg-linear-to-b bg-clip-text pb-1 font-serif text-6xl font-normal text-transparent drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)] text-shadow-sm md:text-8xl"
-                                    >
-                                        Regrowth
-                                    </h1>
-                                    <p
-                                        translate="no"
-                                        className="from-camel-300 to-camel-500 text-camel-400 bg-linear-to-b bg-clip-text text-2xl tracking-[0.2em] uppercase md:text-3xl"
-                                    >
-                                        Thunderstrike
-                                    </p>
-                                </div>
+                            <div className="my-10 flex flex-col items-center gap-4 md:flex-row md:gap-10">
+                                <img
+                                    src="/images/guild_emblem.webp"
+                                    alt="Regrowth emblem"
+                                    width={230}
+                                    height={230}
+                                    fetchPriority="high"
+                                    className="h-36 w-auto drop-shadow-[0_0_25px_rgba(0,0,0,0.6)] md:h-48"
+                                />
+                                <h1
+                                    translate="no"
+                                    className="from-camel-100 to-camel-300 bg-linear-to-b bg-clip-text pb-1 text-center font-serif text-6xl font-normal text-transparent drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)] text-shadow-sm md:text-left md:text-8xl"
+                                >
+                                    Regrowth
+                                </h1>
                             </div>
                         </div>
 
