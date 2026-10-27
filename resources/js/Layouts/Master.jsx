@@ -180,7 +180,7 @@ export default function Master({ title, isHomepage = false, children }) {
                     <nav
                         aria-label="Main"
                         className={cn(
-                            "relative grid grid-cols-[auto_1fr_auto] items-center overflow-visible rounded-lg border py-3 pr-3 pl-4 shadow-lg backdrop-blur-xl lg:flex lg:flex-wrap lg:gap-10 lg:px-4",
+                            "relative grid grid-cols-[auto_1fr_auto] items-center overflow-visible rounded-lg border py-3 pr-3 pl-4 shadow-lg backdrop-blur-xl lg:flex lg:gap-6 lg:px-4 2xl:gap-10",
                             classes.nav,
                         )}
                     >
@@ -247,7 +247,7 @@ export default function Master({ title, isHomepage = false, children }) {
                                 <SectionFlyout section="loot" active={isLootActive} classes={classes} />
                                 <SectionFlyout section="addons" active={isAddonsActive} classes={classes} />
                                 <NavLink
-                                    className={classes.navLink}
+                                    className={cn("hidden 2xl:flex", classes.navLink)}
                                     href={discordInviteUrl}
                                     external
                                     rel="noopener noreferrer"
@@ -257,7 +257,7 @@ export default function Master({ title, isHomepage = false, children }) {
                                 </NavLink>
                             </PopoverGroup>
 
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 2xl:gap-3">
                                 <button
                                     type="button"
                                     onClick={() => setSearchOpen(true)}
@@ -271,7 +271,10 @@ export default function Master({ title, isHomepage = false, children }) {
                                     <span>Search</span>
                                     <span
                                         aria-hidden="true"
-                                        className={cn("rounded px-1.5 py-0.5 text-xs", classes.searchShortcut)}
+                                        className={cn(
+                                            "hidden rounded px-1.5 py-0.5 text-xs 2xl:inline",
+                                            classes.searchShortcut,
+                                        )}
                                     >
                                         <Kbd>{isMac ? "⌘K" : "Ctrl K"}</Kbd>
                                     </span>
@@ -282,13 +285,16 @@ export default function Master({ title, isHomepage = false, children }) {
                                         <Dropdown.Trigger>
                                             <button className="flex items-center space-x-2 rounded-md text-sm font-medium text-white transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">
                                                 <img src={user.avatar} alt="" className="h-8 w-8 rounded-full" />
-                                                <span>{user.display_name}</span>
+                                                <span className="sr-only 2xl:hidden">{user.display_name}</span>
+                                                <span className="hidden 2xl:inline">{user.display_name}</span>
                                                 {user.highest_role && (
-                                                    <Pill
-                                                        bgColor={`bg-discord-${user.highest_role ? user.highest_role.toLowerCase() : "grey-800"}`}
-                                                    >
-                                                        {user.highest_role}
-                                                    </Pill>
+                                                    <span className="hidden 2xl:inline-flex">
+                                                        <Pill
+                                                            bgColor={`bg-discord-${user.highest_role ? user.highest_role.toLowerCase() : "grey-800"}`}
+                                                        >
+                                                            {user.highest_role}
+                                                        </Pill>
+                                                    </span>
                                                 )}
                                                 <Icon icon="chevron-down" style="regular" className="h-6" />
                                             </button>
@@ -339,7 +345,8 @@ export default function Master({ title, isHomepage = false, children }) {
                                         className="flex items-center space-x-2 rounded-md bg-[#5865F2] px-4 py-2 text-white transition-colors hover:bg-[#4752C4]"
                                     >
                                         <Icon icon="discord" style="brands" className="mr-2 h-6" />
-                                        <span>Login with Discord</span>
+                                        <span className="2xl:hidden">Login</span>
+                                        <span className="hidden 2xl:inline">Login with Discord</span>
                                     </a>
                                 )}
                             </div>
