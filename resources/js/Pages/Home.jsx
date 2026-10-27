@@ -29,7 +29,7 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans }) {
                                 />
                                 <h1
                                     translate="no"
-                                    className="from-camel-100 to-camel-300 bg-linear-to-b bg-clip-text pb-1 text-center font-serif text-6xl font-normal text-transparent drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)] text-shadow-sm md:text-left md:text-8xl"
+                                    className="from-camel-100 to-camel-300 bg-linear-to-b bg-clip-text -my-[0.2em] py-[0.2em] text-center font-serif text-6xl font-normal text-transparent drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)] text-shadow-sm md:text-left md:text-8xl"
                                 >
                                     Regrowth
                                 </h1>
