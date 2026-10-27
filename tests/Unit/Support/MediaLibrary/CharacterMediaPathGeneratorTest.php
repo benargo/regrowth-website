@@ -25,7 +25,7 @@ class CharacterMediaPathGeneratorTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_character_portrait_path_with_realm_slug_and_size(): void
+    public function it_returns_character_portrait_directory_with_realm_slug_and_size(): void
     {
         $media = $this->mediaFor('51042439-avatar.jpg', 135);
 
@@ -72,6 +72,17 @@ class CharacterMediaPathGeneratorTest extends TestCase
 
         $this->assertSame('blizzard-cdn/characters/thunderstrike/135/conversions/', $generator->getPathForConversions($media));
         $this->assertSame('blizzard-cdn/characters/thunderstrike/135/responsive-images/', $generator->getPathForResponsiveImages($media));
+    }
+
+    #[Test]
+    public function it_stores_and_serves_the_portrait_without_duplicating_the_file_name(): void
+    {
+        config(['services.blizzard.realm.slug' => 'thunderstrike']);
+
+        $media = $this->mediaFor('51042439-avatar.jpg', 135);
+
+        Storage::disk('public')->assertExists('blizzard-cdn/characters/thunderstrike/135/51042439-avatar.jpg');
+        $this->assertStringEndsWith('/blizzard-cdn/characters/thunderstrike/135/51042439-avatar.jpg', $media->getUrl());
     }
 
     #[Test]

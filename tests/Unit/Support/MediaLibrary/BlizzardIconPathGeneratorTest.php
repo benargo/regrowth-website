@@ -40,7 +40,7 @@ class BlizzardIconPathGeneratorTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_shared_icon_path_using_size_custom_property(): void
+    public function it_returns_shared_icon_directory_using_size_custom_property(): void
     {
         $media = $this->mediaFor('inv_shield_04.jpg', 56);
 
@@ -77,6 +77,15 @@ class BlizzardIconPathGeneratorTest extends TestCase
 
         $this->assertSame('blizzard-cdn/icons/56/conversions/', $generator->getPathForConversions($media));
         $this->assertSame('blizzard-cdn/icons/56/responsive-images/', $generator->getPathForResponsiveImages($media));
+    }
+
+    #[Test]
+    public function it_stores_the_icon_at_the_shared_path_without_duplicating_the_file_name(): void
+    {
+        $media = $this->mediaFor('inv_shield_04.jpg', 56);
+
+        Storage::disk('public')->assertExists('blizzard-cdn/icons/56/inv_shield_04.jpg');
+        $this->assertSame('blizzard-cdn/icons/56/inv_shield_04.jpg', $media->getPathRelativeToRoot());
     }
 
     #[Test]
