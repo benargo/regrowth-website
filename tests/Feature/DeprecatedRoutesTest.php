@@ -212,7 +212,7 @@ class DeprecatedRoutesTest extends DashboardTestCase
         $this->actingAs($this->officer)->post('/manage/daily-quests', ['cooking_quest_id' => 1])->assertGone();
 
         Saloon::assertNothingSent();
-        $this->assertDatabaseCount('discord_notifications', 0);
+        $this->assertDatabaseCount('discord_messages', 0);
     }
 
     #[Test]

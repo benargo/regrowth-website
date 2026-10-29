@@ -213,7 +213,6 @@ class HomeControllerTest extends TestCase
     #[Test]
     public function signed_in_users_see_upcoming_events_in_the_members_shape(): void
     {
-        $this->fakeDiscordChannel(name: 'raid-chat', position: 3);
         Event::factory()->live()->create([
             'start_time' => now()->addDay(),
             'end_time' => now()->addDay()->addHours(3),
@@ -225,7 +224,7 @@ class HomeControllerTest extends TestCase
                 ->loadDeferredProps(fn (Assert $reload) => $reload->has('upcomingEvents.0', fn (Assert $event) => $event
                     ->has('duration')
                     ->has('raids')
-                    ->where('channel.name', 'raid-chat')
+                    ->missing('channel')
                     ->etc()
                 )->etc())
             );

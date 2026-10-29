@@ -25,31 +25,10 @@ use Illuminate\Support\Collection;
  *   - raids:        'raids'; bosses need 'raids.bosses.media', 'bosses.media'
  *                   and 'assignments.group'
  *   - users:        'users'
- *   - channel:      attached with withChannel()
  */
 class EventResource extends JsonResource implements ScopedResource
 {
     use HasScopes;
-
-    /**
-     * @var array{id: string, name: string, position: int}|null
-     */
-    protected ?array $discordChannel = null;
-
-    protected bool $hasDiscordChannel = false;
-
-    /**
-     * Attach the event's Discord channel, or null when it has none.
-     *
-     * @param  array{id: string, name: string, position: int}|null  $channel
-     */
-    public function withChannel(?array $channel): static
-    {
-        $this->discordChannel = $channel;
-        $this->hasDiscordChannel = true;
-
-        return $this;
-    }
 
     /**
      * Transform the resource into an array.
@@ -74,7 +53,6 @@ class EventResource extends JsonResource implements ScopedResource
             'composition' => $this->whenLoaded('characters', fn (): array => $this->buildComposition($request)),
             'raids' => $this->whenLoaded('raids', fn (): array => $this->buildRaids($request)),
             'users' => $this->whenLoaded('users', fn () => $this->users->toResourceCollection()),
-            $this->mergeWhen($this->hasDiscordChannel, fn (): array => ['channel' => $this->discordChannel]),
         ]);
     }
 
@@ -85,7 +63,7 @@ class EventResource extends JsonResource implements ScopedResource
     {
         return [
             'members' => [
-                'id', 'title', 'start_time', 'end_time', 'duration', 'raids', 'channel',
+                'id', 'title', 'start_time', 'end_time', 'duration', 'raids',
                 'game_version.color', 'game_version.icon_url', 'game_version.id', 'game_version.title',
             ],
             'template' => ['id', 'title', 'updated_at', 'raids'],

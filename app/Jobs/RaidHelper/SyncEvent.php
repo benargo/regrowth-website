@@ -3,6 +3,7 @@
 namespace App\Jobs\RaidHelper;
 
 use App\Actions\Discord\FetchGuildMember;
+use App\Actions\Discord\ResolveDiscordChannel;
 use App\Actions\Discord\UpsertUserFromGuildMember;
 use App\Actions\EventBossResolver;
 use App\Actions\Events\RefreshEventGameVersion;
@@ -17,14 +18,18 @@ use App\Http\Integrations\RaidHelper\Data\Zones\ZoneData;
 use App\Http\Resources\EventCompositionResource;
 use App\Jobs\AttachCharactersToUser;
 use App\Jobs\Concerns\ResolvesCharacterNames;
+use App\Jobs\Middleware\ReleaseWhenDiscordRateLimited;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\Raid;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Attributes\Backoff;
+use Illuminate\Queue\Attributes\MaxExceptions;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -32,6 +37,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Saloon\Exceptions\Request\FatalRequestException;
 
+#[MaxExceptions(3)]
+#[Backoff(60)]
 class SyncEvent implements ShouldQueue
 {
     use Queueable, ResolvesCharacterNames;
@@ -64,25 +71,36 @@ class SyncEvent implements ShouldQueue
     }
 
     /**
+     * Rate-limit releases keep the job alive until this deadline; three real errors still fail it.
+     */
+    public function retryUntil(): CarbonInterface
+    {
+        return now()->addHour();
+    }
+
+    /**
      * Get the middleware the job should pass through.
      *
      * @return array<int, object>
      */
     public function middleware(): array
     {
-        return [new class
-        {
-            public function handle(object $job, \Closure $next): void
+        return [
+            new class
             {
-                $allowedChannelIds = config('services.raidhelper.channel_ids', []);
+                public function handle(object $job, \Closure $next): void
+                {
+                    $allowedChannelIds = config('services.raidhelper.channel_ids', []);
 
-                if (! in_array($job->data->channelId, $allowedChannelIds, strict: true)) {
-                    return;
+                    if (! in_array($job->data->channelId, $allowedChannelIds, strict: true)) {
+                        return;
+                    }
+
+                    $next($job);
                 }
-
-                $next($job);
-            }
-        }];
+            },
+            new ReleaseWhenDiscordRateLimited,
+        ];
     }
 
     /**
@@ -164,7 +182,7 @@ class SyncEvent implements ShouldQueue
                 'start_time' => $this->data->startTime->setTimezone($this->timezone),
                 'end_time' => $this->data->endTime->setTimezone($this->timezone),
                 'color' => $this->data->color,
-                'channel_id' => $this->data->channelId,
+                'channel_id' => ResolveDiscordChannel::run($this->data->channelId)->id,
             ]
         );
     }

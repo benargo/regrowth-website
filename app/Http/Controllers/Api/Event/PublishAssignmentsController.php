@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\Event;
 
 use App\Http\Controllers\Controller;
-use App\Http\Integrations\Discord\Data\Channels\ChannelStub;
 use App\Models\Event;
 use App\Notifications\RaidAssignmentsPublished;
 use Illuminate\Http\Request;
@@ -18,7 +17,7 @@ class PublishAssignmentsController extends Controller
      */
     public function __invoke(Request $request, Event $event): Response
     {
-        (new ChannelStub($event->channel_id))->notify(
+        $event->channel->notify(
             (new RaidAssignmentsPublished($event))->withSender($request->user()),
         );
 

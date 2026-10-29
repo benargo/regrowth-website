@@ -9,11 +9,12 @@ use App\Events\Broadcasts\GrmUploadStarted;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterStatusRequest;
-use App\Http\Integrations\Discord\Data\Channels\ChannelStub;
+use App\Http\Integrations\Discord\Requests\Channels\GetChannelRequest;
 use App\Http\Integrations\Discord\Requests\Messages\CreateMessageRequest;
 use App\Jobs\FetchGuildRoster;
 use App\Jobs\GuildRosterManager\ProcessUpload;
 use App\Models\Character;
+use App\Models\DiscordChannel;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\User;
@@ -46,6 +47,8 @@ class ProcessUploadTest extends TestCase
 
     private GameVersion $gameVersion;
 
+    private DiscordChannel $officerChannel;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -58,6 +61,7 @@ class ProcessUploadTest extends TestCase
 
         $this->user = User::factory()->create();
         $this->gameVersion = GameVersion::factory()->create();
+        $this->officerChannel = DiscordChannel::factory()->create(['id' => '1407688195386114119']);
 
         // The test queue is sync, so the queued officer notification is delivered
         // inline; fake Discord's create message endpoint.
@@ -287,7 +291,7 @@ class ProcessUploadTest extends TestCase
         $job->handle(app(BlizzardConnector::class));
 
         Notification::assertSentTo(
-            new ChannelStub('1407688195386114119'),
+            $this->officerChannel,
             GuildRosterManagerUploadCompleted::class,
             fn (GuildRosterManagerUploadCompleted $notification) => $notification->processedCount === 0
                 && $notification->warningCount === 1,
@@ -312,7 +316,7 @@ class ProcessUploadTest extends TestCase
         $job->handle(app(BlizzardConnector::class));
 
         Notification::assertSentTo(
-            new ChannelStub('1407688195386114119'),
+            $this->officerChannel,
             GuildRosterManagerUploadCompleted::class,
             fn (GuildRosterManagerUploadCompleted $notification) => $notification->gameVersionSlug === $this->gameVersion->slug,
         );
@@ -336,13 +340,13 @@ class ProcessUploadTest extends TestCase
         $job->handle(app(BlizzardConnector::class));
 
         Notification::assertSentTo(
-            new ChannelStub('1407688195386114119'),
+            $this->officerChannel,
             GuildRosterManagerUploadFailed::class,
             fn (GuildRosterManagerUploadFailed $notification) => $notification->processedCount === 0
                 && $notification->errorCount === 1
                 && str_starts_with($notification->errors[0], 'TestChar: '),
         );
-        Notification::assertNotSentTo(new ChannelStub('1407688195386114119'), GuildRosterManagerUploadCompleted::class);
+        Notification::assertNotSentTo($this->officerChannel, GuildRosterManagerUploadCompleted::class);
     }
 
     #[Test]
@@ -363,7 +367,7 @@ class ProcessUploadTest extends TestCase
         $job->handle(app(BlizzardConnector::class));
 
         Notification::assertSentTo(
-            new ChannelStub('1407688195386114119'),
+            $this->officerChannel,
             GuildRosterManagerUploadCompleted::class,
             fn (GuildRosterManagerUploadCompleted $notification) => $notification->processedCount === 0
                 && $notification->skippedCount === 1,
@@ -389,10 +393,34 @@ class ProcessUploadTest extends TestCase
         $job->handle(app(BlizzardConnector::class));
 
         Notification::assertSentTo(
-            new ChannelStub('1407688195386114119'),
+            $this->officerChannel,
             GuildRosterManagerUploadCompleted::class,
             fn (GuildRosterManagerUploadCompleted $notification) => $notification->processedCount === 1,
         );
+    }
+
+    #[Test]
+    public function it_fetches_an_unsynced_officer_channel_before_notifying(): void
+    {
+        $this->officerChannel->forceDelete();
+        $this->fakeCharacters(['TestChar' => 12345]);
+        $this->fakeDiscordChannel('1407688195386114119', 'officers');
+
+        Notification::fake();
+
+        $job = new ProcessUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'TestChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+            ],
+        ], $this->user->id, $this->gameVersion->id);
+
+        $job->handle(app(BlizzardConnector::class));
+
+        $channel = DiscordChannel::findOrFail('1407688195386114119');
+        $this->assertSame('officers', $channel->name);
+        Notification::assertSentTo($channel, GuildRosterManagerUploadCompleted::class);
     }
 
     // ==================== data integrity ====================
@@ -621,6 +649,28 @@ class ProcessUploadTest extends TestCase
     }
 
     #[Test]
+    #[Group('error-handling')]
+    public function it_completes_the_upload_when_the_officer_channel_lookup_fails(): void
+    {
+        Event::fake([GrmUploadStarted::class, GrmUploadProgressed::class, GrmUploadCompletedBroadcast::class]);
+        $this->officerChannel->forceDelete();
+        $this->fakeCharacters(['CharOne' => 11111]);
+        $this->fakeDiscord([GetChannelRequest::class => $this->makeDiscordErrorResponse(403, 50001, 'Missing Access')]);
+
+        $job = new ProcessUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'CharOne', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+            ],
+        ], $this->user->id, $this->gameVersion->id);
+
+        $job->handle(app(BlizzardConnector::class));
+
+        Event::assertDispatched(GrmUploadCompletedBroadcast::class);
+    }
+
+    #[Test]
     public function it_broadcasts_completed_with_final_counts(): void
     {
         Event::fake([GrmUploadStarted::class, GrmUploadProgressed::class, GrmUploadCompletedBroadcast::class]);
@@ -702,7 +752,7 @@ class ProcessUploadTest extends TestCase
         $job->failed(new \RuntimeException('boom'));
 
         Notification::assertSentTo(
-            new ChannelStub('1407688195386114119'),
+            $this->officerChannel,
             GuildRosterManagerUploadFailed::class,
             fn (GuildRosterManagerUploadFailed $notification) => $notification->exceptionMessage === 'boom',
         );
@@ -943,8 +993,8 @@ class ProcessUploadTest extends TestCase
         $this->assertDatabaseHas('character_links', ['character_id' => 11111, 'linked_character_id' => 22222]);
         $this->assertDatabaseHas('character_links', ['character_id' => 33333, 'linked_character_id' => 44444]);
         $this->assertDatabaseHas('character_links', ['character_id' => 33333, 'linked_character_id' => 55555]);
-        Notification::assertSentTo(new ChannelStub('1407688195386114119'), GuildRosterManagerUploadCompleted::class);
-        Notification::assertNotSentTo(new ChannelStub('1407688195386114119'), GuildRosterManagerUploadFailed::class);
+        Notification::assertSentTo($this->officerChannel, GuildRosterManagerUploadCompleted::class);
+        Notification::assertNotSentTo($this->officerChannel, GuildRosterManagerUploadFailed::class);
     }
 
     // ==================== helpers ====================

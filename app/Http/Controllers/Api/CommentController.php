@@ -7,10 +7,10 @@ use App\Events\Broadcasts\CommentChanged;
 use App\Events\Broadcasts\CommentPosted;
 use App\Events\Broadcasts\CommentRemoved;
 use App\Http\Controllers\Controller;
-use App\Http\Integrations\Discord\Data\Channels\ChannelStub;
 use App\Http\Requests\Comments\StoreCommentRequest;
 use App\Http\Requests\Comments\UpdateCommentRequest;
 use App\Http\Resources\CommentResource;
+use App\Jobs\Discord\NotifyDiscordChannel;
 use App\Models\Comment;
 use App\Notifications\CommentPostedToItem;
 use Illuminate\Http\JsonResponse;
@@ -43,7 +43,8 @@ class CommentController extends Controller
 
         $comment->load(['user.media', 'commentable', 'reactions.user.media']);
 
-        $this->lootCouncilChannel()->notify(
+        NotifyDiscordChannel::dispatch(
+            config('services.discord.channels.lootcouncil'),
             $root !== null ? CommentPostedToItem::refresh($root) : new CommentPostedToItem($comment),
         );
 
@@ -101,17 +102,9 @@ class CommentController extends Controller
         broadcast(new CommentRemoved($comment))->toOthers();
 
         if ($root !== null) {
-            $this->lootCouncilChannel()->notify(CommentPostedToItem::refresh($root));
+            NotifyDiscordChannel::dispatch(config('services.discord.channels.lootcouncil'), CommentPostedToItem::refresh($root));
         }
 
         return response()->noContent();
-    }
-
-    /**
-     * Get the loot council Discord channel.
-     */
-    private function lootCouncilChannel(): ChannelStub
-    {
-        return new ChannelStub(config('services.discord.channels.lootcouncil'));
     }
 }

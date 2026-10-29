@@ -9,15 +9,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 #[WithoutTimestamps]
-#[Fillable(['discord_notification_id', 'model_type', 'model_id'])]
-class DiscordNotificationRelatedModel extends Model
+#[Fillable(['discord_message_id', 'model_type', 'model_id'])]
+class DiscordMessageRelatedModel extends Model
 {
     /**
-     * Get the DiscordNotification that this related model belongs to.
+     * Get the DiscordMessage that this related model belongs to.
+     *
+     * @return BelongsTo<DiscordMessage, $this>
      */
-    public function notification(): BelongsTo
+    public function message(): BelongsTo
     {
-        return $this->belongsTo(DiscordNotification::class, 'discord_notification_id');
+        return $this->belongsTo(DiscordMessage::class, 'discord_message_id');
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Comments;
 
+use App\Jobs\Discord\NotifyDiscordChannel;
 use App\Models\Comment;
 use App\Models\DiscordRole;
 use App\Models\Item;
@@ -9,8 +10,7 @@ use App\Models\Permission;
 use App\Models\User;
 use App\Notifications\CommentPostedToItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Notifications\SendQueuedNotifications;
-use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Testing\Fluent\AssertableJson;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -30,6 +30,8 @@ class ThreadedCommentsTest extends TestCase
         parent::setUp();
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        Bus::fake([NotifyDiscordChannel::class]);
 
         $this->mockGetItem();
         $this->applyBlizzardMocks();
@@ -177,8 +179,6 @@ class ThreadedCommentsTest extends TestCase
     #[Test]
     public function deleting_a_reply_under_a_trashed_root_refreshes_the_discord_message(): void
     {
-        Queue::fake();
-
         $author = User::factory()->raider()->create();
         $root = Comment::factory()->create();
         $reply = Comment::factory()->replyTo($root)->create(['user_id' => $author->id]);
@@ -189,9 +189,9 @@ class ThreadedCommentsTest extends TestCase
         );
 
         $response->assertNoContent();
-        Queue::assertPushed(
-            SendQueuedNotifications::class,
-            fn (SendQueuedNotifications $job): bool => $job->notification instanceof CommentPostedToItem,
+        Bus::assertDispatched(
+            NotifyDiscordChannel::class,
+            fn (NotifyDiscordChannel $job): bool => $job->notification instanceof CommentPostedToItem,
         );
     }
 

@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Notifications\Concerns;
 
-use App\Http\Integrations\Discord\Data\Channels\ChannelStub;
-use App\Models\DiscordNotification;
+use App\Models\DiscordChannel;
+use App\Models\DiscordMessage;
 use App\Notifications\CommentPostedToItem;
 use App\Notifications\Concerns\UpdatesExisting;
 use App\Notifications\Contracts\ShouldUpdateExisting;
@@ -44,7 +44,7 @@ class UpdatesExistingTest extends TestCase
         $this->travelTo('2026-10-14 12:05:00');
         $latest = $this->storedNotification('222222222222222222');
 
-        $found = (new UpdatesExistingFixture)->existingNotification(new ChannelStub(self::CHANNEL_ID));
+        $found = (new UpdatesExistingFixture)->existingMessage($this->channel());
 
         $this->assertTrue($found->is($latest));
     }
@@ -54,7 +54,7 @@ class UpdatesExistingTest extends TestCase
     {
         $this->storedNotification('111111111111111111', type: CommentPostedToItem::class);
 
-        $found = (new UpdatesExistingFixture)->existingNotification(new ChannelStub(self::CHANNEL_ID));
+        $found = (new UpdatesExistingFixture)->existingMessage($this->channel());
 
         $this->assertNull($found);
     }
@@ -64,7 +64,7 @@ class UpdatesExistingTest extends TestCase
     {
         $this->storedNotification('111111111111111111', channelId: '555555555555555555');
 
-        $found = (new UpdatesExistingFixture)->existingNotification(new ChannelStub(self::CHANNEL_ID));
+        $found = (new UpdatesExistingFixture)->existingMessage($this->channel());
 
         $this->assertNull($found);
     }
@@ -74,7 +74,7 @@ class UpdatesExistingTest extends TestCase
     {
         $this->storedNotification('111111111111111111')->delete();
 
-        $found = (new UpdatesExistingFixture)->existingNotification(new ChannelStub(self::CHANNEL_ID));
+        $found = (new UpdatesExistingFixture)->existingMessage($this->channel());
 
         $this->assertNull($found);
     }
@@ -87,7 +87,7 @@ class UpdatesExistingTest extends TestCase
         $this->travelTo('2026-10-14 12:05:00');
         $this->storedNotification('222222222222222222');
 
-        $found = (new UpdatesExistingFixture('111111111111111111'))->existingNotification(new ChannelStub(self::CHANNEL_ID));
+        $found = (new UpdatesExistingFixture('111111111111111111'))->existingMessage($this->channel());
 
         $this->assertTrue($found->is($wanted));
     }
@@ -96,24 +96,29 @@ class UpdatesExistingTest extends TestCase
     public function it_looks_up_the_notification_only_once_even_when_none_exists(): void
     {
         $notification = new UpdatesExistingFixture;
-        $channel = new ChannelStub(self::CHANNEL_ID);
+        $channel = $this->channel();
 
         $this->expectsDatabaseQueryCount(1);
 
-        $notification->existingNotification($channel);
-        $notification->existingNotification($channel);
+        $notification->existingMessage($channel);
+        $notification->existingMessage($channel);
     }
 
     // ==================== helpers ====================
+
+    private function channel(): DiscordChannel
+    {
+        return DiscordChannel::factory()->make(['id' => self::CHANNEL_ID]);
+    }
 
     private function storedNotification(
         string $messageId,
         string $type = UpdatesExistingFixture::class,
         string $channelId = self::CHANNEL_ID,
-    ): DiscordNotification {
-        return DiscordNotification::factory()->create([
+    ): DiscordMessage {
+        return DiscordMessage::factory()->create([
             'type' => $type,
-            'channel_id' => $channelId,
+            'channel_id' => (DiscordChannel::find($channelId) ?? DiscordChannel::factory()->create(['id' => $channelId]))->id,
             'message_id' => $messageId,
         ]);
     }

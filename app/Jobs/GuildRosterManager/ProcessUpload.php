@@ -2,6 +2,7 @@
 
 namespace App\Jobs\GuildRosterManager;
 
+use App\Actions\Discord\ResolveDiscordChannel;
 use App\Contracts\Http\Integrations\Blizzard\RequiresMinimumCharacterLevel;
 use App\Events\Broadcasts\GrmUploadCompleted as GrmUploadCompletedBroadcast;
 use App\Events\Broadcasts\GrmUploadFailed as GrmUploadFailedBroadcast;
@@ -13,7 +14,7 @@ use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
 use App\Http\Integrations\Blizzard\Exceptions\CharacterNotFoundException;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterStatusRequest;
-use App\Http\Integrations\Discord\Data\Channels\ChannelStub;
+use App\Jobs\Discord\NotifyDiscordChannel;
 use App\Jobs\FetchGuildRoster;
 use App\Models\Character;
 use App\Models\GameVersion;
@@ -160,15 +161,15 @@ class ProcessUpload implements RequiresMinimumCharacterLevel, ShouldQueue
      */
     private function notifyOfficers(GameVersion $gameVersion): void
     {
-        $channel = new ChannelStub(config('services.discord.channels.officer'));
+        $channelId = config('services.discord.channels.officer');
 
         if ($this->errorCount > 0) {
-            $channel->notify(new GuildRosterManagerUploadFailed($this->processedCount, $this->errorCount, $this->errors));
+            NotifyDiscordChannel::dispatch($channelId, new GuildRosterManagerUploadFailed($this->processedCount, $this->errorCount, $this->errors));
 
             return;
         }
 
-        $channel->notify(new GuildRosterManagerUploadCompleted($gameVersion->slug, $this->processedCount, $this->skippedCount, $this->warningCount));
+        NotifyDiscordChannel::dispatch($channelId, new GuildRosterManagerUploadCompleted($gameVersion->slug, $this->processedCount, $this->skippedCount, $this->warningCount));
     }
 
     /**
@@ -418,7 +419,7 @@ class ProcessUpload implements RequiresMinimumCharacterLevel, ShouldQueue
         GrmUploadFailedBroadcast::dispatch($this->userId, $exception->getMessage());
 
         try {
-            (new ChannelStub(config('services.discord.channels.officer')))->notify(
+            ResolveDiscordChannel::run(config('services.discord.channels.officer'))->notify(
                 new GuildRosterManagerUploadFailed(0, 1, [], $exception->getMessage())
             );
         } catch (\Throwable $e) {

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Raiding;
 
+use App\Http\Integrations\Discord\Requests\Channels\GetChannelRequest;
 use App\Models\DiscordRole;
 use App\Models\Event;
 use App\Models\Permission;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Laravel\Facades\Saloon;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
@@ -61,7 +63,9 @@ class EditEventTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/Plans/Edit')
+            ->missing('event.channel')
         );
+        Saloon::assertNotSent(GetChannelRequest::class);
     }
 
     #[Test]

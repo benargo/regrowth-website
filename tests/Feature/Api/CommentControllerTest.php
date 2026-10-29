@@ -5,7 +5,7 @@ namespace Tests\Feature\Api;
 use App\Events\Broadcasts\CommentChanged;
 use App\Events\Broadcasts\CommentPosted;
 use App\Events\Broadcasts\CommentRemoved;
-use App\Http\Integrations\Discord\Data\Channels\ChannelStub;
+use App\Jobs\Discord\NotifyDiscordChannel;
 use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\CommentReaction;
@@ -17,10 +17,11 @@ use App\Models\Raid;
 use App\Models\User;
 use App\Notifications\CommentPostedToItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
@@ -36,8 +37,9 @@ class CommentControllerTest extends TestCase
     {
         parent::setUp();
 
-        config(['services.discord.channels.lootcouncil' => '123456789']);
-        $this->fakeDiscordMessageCreated();
+        config()->set('services.discord.channels.lootcouncil', '123456789');
+        Bus::fake([NotifyDiscordChannel::class]);
+        Saloon::fake([]);
 
         $commentOnLootItems = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
         $deleteAnyComment = Permission::firstOrCreate(['name' => 'delete-any-comment', 'guard_name' => 'web']);
@@ -282,8 +284,6 @@ class CommentControllerTest extends TestCase
     #[Test]
     public function store_dispatches_the_loot_council_notification(): void
     {
-        Notification::fake();
-
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
 
@@ -291,10 +291,9 @@ class CommentControllerTest extends TestCase
             ->postJson(route('api.comments.store'), $this->storePayload($item, 'Notify the council'))
             ->assertCreated();
 
-        Notification::assertSentTo(
-            new ChannelStub('123456789'),
-            CommentPostedToItem::class
-        );
+        Bus::assertDispatched(NotifyDiscordChannel::class, fn (NotifyDiscordChannel $job): bool => $job->channelId === '123456789'
+            && $job->notification instanceof CommentPostedToItem);
+        Saloon::assertNothingSent();
     }
 
     #[Group('authorization')]

@@ -3,7 +3,7 @@
 namespace Tests\Unit\Models;
 
 use App\Models\Character;
-use App\Models\DiscordNotification;
+use App\Models\DiscordMessage;
 use App\Models\DiscordRole;
 use App\Models\Event;
 use App\Models\Permission;
@@ -396,10 +396,10 @@ class UserTest extends ModelTestCase
     {
         $user = User::factory()->create();
         $otherUser = User::factory()->create();
-        $own = DiscordNotification::factory()->createdByUser($user)->create();
-        DiscordNotification::factory()->createdByUser($otherUser)->create();
+        $own = DiscordMessage::factory()->createdByUser($user)->create();
+        DiscordMessage::factory()->createdByUser($otherUser)->create();
 
-        $notificationIds = $user->notificationsCreated->pluck('id')->all();
+        $notificationIds = $user->discordMessagesCreated->pluck('id')->all();
 
         $this->assertSame([$own->id], $notificationIds);
     }

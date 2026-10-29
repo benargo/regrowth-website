@@ -2,8 +2,8 @@
 
 namespace App\Notifications\Concerns;
 
-use App\Http\Integrations\Discord\Contracts\Channel;
-use App\Models\DiscordNotification;
+use App\Models\DiscordChannel;
+use App\Models\DiscordMessage;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -12,38 +12,38 @@ use Illuminate\Database\Eloquent\Builder;
 trait UpdatesExisting
 {
     /**
-     * The stored notification found by the lookup.
+     * The stored message found by the lookup.
      */
-    private ?DiscordNotification $existingNotification = null;
+    private ?DiscordMessage $existingMessage = null;
 
     /**
      * Whether the lookup has run.
      */
-    private bool $hasResolvedExistingNotification = false;
+    private bool $hasResolvedExistingMessage = false;
 
     /**
-     * Get the latest stored notification of this type in the given channel that matches
+     * Get the latest stored message of this type in the given channel that matches
      * constrainExisting(), if any. The lookup runs on first call and the result is reused.
      */
-    public function existingNotification(Channel $notifiable): ?DiscordNotification
+    public function existingMessage(DiscordChannel $notifiable): ?DiscordMessage
     {
-        if (! $this->hasResolvedExistingNotification) {
-            $this->existingNotification = $this->constrainExisting(
-                DiscordNotification::where('type', static::class)
+        if (! $this->hasResolvedExistingMessage) {
+            $this->existingMessage = $this->constrainExisting(
+                DiscordMessage::where('type', static::class)
                     ->where('channel_id', $notifiable->id),
             )->latest()->first();
 
-            $this->hasResolvedExistingNotification = true;
+            $this->hasResolvedExistingMessage = true;
         }
 
-        return $this->existingNotification;
+        return $this->existingMessage;
     }
 
     /**
-     * Narrow the query for the stored notification this notification edits.
+     * Narrow the query for the stored message this notification edits.
      *
-     * @param  Builder<DiscordNotification>  $query
-     * @return Builder<DiscordNotification>
+     * @param  Builder<DiscordMessage>  $query
+     * @return Builder<DiscordMessage>
      */
     abstract protected function constrainExisting(Builder $query): Builder;
 }

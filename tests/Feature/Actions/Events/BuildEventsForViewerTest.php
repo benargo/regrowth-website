@@ -78,7 +78,7 @@ class BuildEventsForViewerTest extends TestCase
     public function it_does_not_call_discord_for_guests(): void
     {
         $this->fakeDiscord([]);
-        Event::factory()->live()->create(['channel_id' => '999888777']);
+        Event::factory()->live()->create();
 
         BuildEventsForViewer::run(Event::live(), new Request)->resolve(new Request);
 
@@ -87,33 +87,16 @@ class BuildEventsForViewerTest extends TestCase
 
     #[Test]
     #[Group('happy-path')]
-    public function it_builds_the_members_shape_with_channels_for_signed_in_viewers(): void
+    public function it_builds_the_members_shape_without_calling_discord_for_signed_in_viewers(): void
     {
         $this->fakeDiscordChannel(name: 'raid-chat', position: 3);
-        Event::factory()->live()->create();
-        $request = $this->requestFor(User::factory()->create());
-
-        $array = BuildEventsForViewer::run(Event::live(), $request)->resolve($request);
-
-        $this->assertSame(['id', 'title', 'start_time', 'end_time', 'duration', 'raids', 'channel'], array_keys($array[0]));
-        $this->assertSame('raid-chat', $array[0]['channel']['name']);
-    }
-
-    #[Test]
-    #[Group('error-handling')]
-    public function it_keeps_building_when_one_channel_lookup_fails(): void
-    {
-        $this->fakeDiscord([GetChannelRequest::class => $this->makeDiscordErrorResponse(403, 50001, 'Missing Access')]);
         Event::factory()->live()->count(2)->create();
         $request = $this->requestFor(User::factory()->create());
 
         $array = BuildEventsForViewer::run(Event::live(), $request)->resolve($request);
 
-        $this->assertCount(2, $array);
-
-        foreach ($array as $event) {
-            $this->assertArrayNotHasKey('channel', $event);
-        }
+        $this->assertSame(['id', 'title', 'start_time', 'end_time', 'duration', 'raids'], array_keys($array[0]));
+        Saloon::assertNotSent(GetChannelRequest::class);
     }
 
     private function requestFor(User $user): Request

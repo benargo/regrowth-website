@@ -3,6 +3,7 @@
 namespace Tests\Feature\Raiding;
 
 use App\Enums\SignupStatus;
+use App\Http\Integrations\Discord\Requests\Channels\GetChannelRequest;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\DiscordRole;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Laravel\Facades\Saloon;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
@@ -63,9 +65,8 @@ class ShowEventTest extends TestCase
     }
 
     #[Test]
-    public function it_includes_the_events_discord_channel(): void
+    public function it_does_not_call_discord_or_expose_a_channel(): void
     {
-        $this->fakeDiscordChannel(name: 'raid-chat', position: 3);
         $user = User::factory()->create();
         $user->discordRoles()->attach($this->memberRole->id);
 
@@ -74,8 +75,9 @@ class ShowEventTest extends TestCase
         $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('event.channel.name', 'raid-chat')
+            ->missing('event.channel')
         );
+        Saloon::assertNotSent(GetChannelRequest::class);
     }
 
     #[Test]
