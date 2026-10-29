@@ -23,8 +23,20 @@ class MaintenancePageTest extends TestCase
 
         $this->get('/')
             ->assertServiceUnavailable()
-            ->assertSee('The Guild Hall Is Closed')
+            ->assertSee('Jaina&rsquo;s running the updates', false)
+            ->assertSee('images/sticker_jaina_maintenance_503.webp')
             ->assertSee('Back online soon');
+    }
+
+    #[Test]
+    public function it_does_not_show_the_realm_tagline(): void
+    {
+        config(['services.blizzard.realm.name' => 'Thunderstrike']);
+        $this->app->maintenanceMode()->activate([]);
+
+        $this->get('/')
+            ->assertServiceUnavailable()
+            ->assertDontSee('Thunderstrike');
     }
 
     #[Test]
