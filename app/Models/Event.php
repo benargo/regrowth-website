@@ -120,6 +120,12 @@ class Event extends PrunableModel implements BelongsToGameVersion
             ->orderByPivot('sort_order');
     }
 
+    /** @return BelongsTo<DiscordChannel, $this> */
+    public function channel(): BelongsTo
+    {
+        return $this->belongsTo(DiscordChannel::class, 'channel_id')->withTrashed();
+    }
+
     /** @return BelongsToMany<Character, $this> */
     public function characters(): BelongsToMany
     {
