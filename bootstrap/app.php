@@ -34,8 +34,12 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->render(function (GoneHttpException $e, Request $request) {
-            if ($request->expectsJson()) {
+        $shouldRenderJson = fn (Request $request): bool => $request->is('api/*') || $request->expectsJson();
+
+        $exceptions->shouldRenderJsonWhen($shouldRenderJson);
+
+        $exceptions->render(function (GoneHttpException $e, Request $request) use ($shouldRenderJson) {
+            if ($shouldRenderJson($request)) {
                 return response()->json(['message' => $e->getMessage()], 410);
             }
 

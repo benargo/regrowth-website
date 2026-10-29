@@ -102,4 +102,18 @@ class PrunedEventTest extends TestCase
             ->assertStatus(410)
             ->assertJson(['message' => 'The requested resource has been pruned and is no longer available.']);
     }
+
+    #[Test]
+    public function it_returns_json_410_for_a_pruned_event_on_api_routes_without_an_accept_header(): void
+    {
+        $user = User::factory()->create();
+
+        $eventId = fake()->uuid();
+
+        PrunedModel::create(['id' => $eventId, 'type' => Event::class]);
+
+        $this->actingAs($user)->patch("/api/events/{$eventId}/groups/reorder")
+            ->assertStatus(410)
+            ->assertJson(['message' => 'The requested resource has been pruned and is no longer available.']);
+    }
 }

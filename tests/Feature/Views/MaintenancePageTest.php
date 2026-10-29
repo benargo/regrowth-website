@@ -49,4 +49,26 @@ class MaintenancePageTest extends TestCase
             ->assertHeader('Retry-After', 600)
             ->assertSee('Expected back in about 10 minutes');
     }
+
+    #[Test]
+    public function it_returns_json_to_api_clients_during_maintenance(): void
+    {
+        $this->app->maintenanceMode()->activate([]);
+
+        $this->getJson('/')
+            ->assertServiceUnavailable()
+            ->assertJsonStructure(['message'])
+            ->assertDontSee('<html', false);
+    }
+
+    #[Test]
+    public function it_returns_json_for_api_routes_during_maintenance(): void
+    {
+        $this->app->maintenanceMode()->activate([]);
+
+        $this->get('/api/search')
+            ->assertServiceUnavailable()
+            ->assertJsonStructure(['message'])
+            ->assertDontSee('<html', false);
+    }
 }
