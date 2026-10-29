@@ -6,9 +6,9 @@ use App\Http\Integrations\Discord\Data\Messages\EmbedData;
 use App\Http\Integrations\Discord\Data\Messages\EmbedFieldData;
 use App\Http\Integrations\Discord\Data\Messages\EmbedMediaData;
 use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
-use App\Notifications\Discord\DiscordMessage;
+use App\Notifications\Discord\DiscordNotification;
 
-class GuildRosterManagerUploadFailed extends DiscordMessage
+class GuildRosterManagerUploadFailed extends DiscordNotification
 {
     /**
      * @param  array<int, string>  $errors

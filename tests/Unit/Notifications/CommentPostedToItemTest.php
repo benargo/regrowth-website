@@ -2,14 +2,14 @@
 
 namespace Tests\Unit\Notifications;
 
-use App\Http\Integrations\Discord\Data\Channels\ChannelData;
 use App\Jobs\Middleware\ReleaseWhenDiscordRateLimited;
 use App\Models\Comment;
-use App\Models\DiscordNotification;
+use App\Models\DiscordChannel;
+use App\Models\DiscordMessage;
 use App\Models\Item;
 use App\Models\Raid;
 use App\Notifications\CommentPostedToItem;
-use App\Notifications\Discord\DiscordChannel;
+use App\Notifications\Discord\DiscordNotificationChannel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Attributes\Group;
@@ -30,7 +30,7 @@ class CommentPostedToItemTest extends TestCase
         $comment = Comment::factory()->create();
         $notification = new CommentPostedToItem($comment);
 
-        $this->assertContains(DiscordChannel::class, $notification->via($this->makeNotifiable()));
+        $this->assertContains(DiscordNotificationChannel::class, $notification->via($this->makeNotifiable()));
     }
 
     #[Test]
@@ -208,7 +208,7 @@ class CommentPostedToItemTest extends TestCase
     {
         $root = Comment::factory()->create();
 
-        $shouldSend = CommentPostedToItem::refresh($root)->shouldSend($this->makeNotifiable(), DiscordChannel::class);
+        $shouldSend = CommentPostedToItem::refresh($root)->shouldSend($this->makeNotifiable(), DiscordNotificationChannel::class);
 
         $this->assertFalse($shouldSend);
     }
@@ -219,7 +219,7 @@ class CommentPostedToItemTest extends TestCase
         $root = Comment::factory()->create();
         $this->postedMessageFor($root);
 
-        $shouldSend = CommentPostedToItem::refresh($root)->shouldSend($this->makeNotifiable(), DiscordChannel::class);
+        $shouldSend = CommentPostedToItem::refresh($root)->shouldSend($this->makeNotifiable(), DiscordNotificationChannel::class);
 
         $this->assertTrue($shouldSend);
     }
@@ -238,7 +238,7 @@ class CommentPostedToItemTest extends TestCase
         (new CommentPostedToItem($comment))->toMessage();
     }
 
-    // ==================== existingNotification ====================
+    // ==================== existingMessage ====================
 
     #[Test]
     public function it_finds_the_message_posted_for_the_same_comment(): void
@@ -246,7 +246,7 @@ class CommentPostedToItemTest extends TestCase
         $comment = Comment::factory()->create();
         $posted = $this->postedMessageFor($comment);
 
-        $found = (new CommentPostedToItem($comment))->existingNotification($this->makeNotifiable());
+        $found = (new CommentPostedToItem($comment))->existingMessage($this->makeNotifiable());
 
         $this->assertTrue($found->is($posted));
     }
@@ -256,7 +256,7 @@ class CommentPostedToItemTest extends TestCase
     {
         $this->postedMessageFor(Comment::factory()->create());
 
-        $found = (new CommentPostedToItem(Comment::factory()->create()))->existingNotification($this->makeNotifiable());
+        $found = (new CommentPostedToItem(Comment::factory()->create()))->existingMessage($this->makeNotifiable());
 
         $this->assertNull($found);
     }
@@ -270,7 +270,7 @@ class CommentPostedToItemTest extends TestCase
         $first = Comment::factory()->create();
         $second = Comment::factory()->create();
         $keyFor = fn (Comment $root): string => CommentPostedToItem::refresh($root)
-            ->middleware($this->makeNotifiable(), DiscordChannel::class)[0]->key;
+            ->middleware($this->makeNotifiable(), DiscordNotificationChannel::class)[0]->key;
 
         $this->assertNotSame($keyFor($first), $keyFor($second));
         $this->assertStringContainsString((string) $first->getKey(), $keyFor($first));
@@ -281,7 +281,7 @@ class CommentPostedToItemTest extends TestCase
     public function it_releases_itself_while_discord_is_rate_limited(): void
     {
         $middleware = CommentPostedToItem::refresh(Comment::factory()->create())
-            ->middleware($this->makeNotifiable(), DiscordChannel::class);
+            ->middleware($this->makeNotifiable(), DiscordNotificationChannel::class);
 
         $this->assertInstanceOf(ReleaseWhenDiscordRateLimited::class, $middleware[1]);
     }
@@ -291,7 +291,7 @@ class CommentPostedToItemTest extends TestCase
     public function a_new_comment_post_does_not_take_the_thread_overlap_lock(): void
     {
         $middleware = (new CommentPostedToItem(Comment::factory()->create()))
-            ->middleware($this->makeNotifiable(), DiscordChannel::class);
+            ->middleware($this->makeNotifiable(), DiscordNotificationChannel::class);
 
         $this->assertContainsOnlyInstancesOf(ReleaseWhenDiscordRateLimited::class, $middleware);
     }
@@ -310,18 +310,18 @@ class CommentPostedToItemTest extends TestCase
 
     // ==================== helpers ====================
 
-    private function makeNotifiable(): ChannelData
+    private function makeNotifiable(): DiscordChannel
     {
-        return ChannelData::from(['id' => '123456789']);
+        return DiscordChannel::factory()->make(['id' => '123456789']);
     }
 
-    private function postedMessageFor(Comment $comment): DiscordNotification
+    private function postedMessageFor(Comment $comment): DiscordMessage
     {
-        return DiscordNotification::factory()
+        return DiscordMessage::factory()
             ->withRelatedModels([['model_type' => Comment::class, 'model_id' => $comment->getKey()]])
             ->create([
                 'type' => CommentPostedToItem::class,
-                'channel_id' => '123456789',
+                'channel_id' => (DiscordChannel::find('123456789') ?? DiscordChannel::factory()->create(['id' => '123456789']))->id,
             ]);
     }
 }

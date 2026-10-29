@@ -8,14 +8,14 @@ use App\Models\Comment;
 use App\Models\Item;
 use App\Notifications\Concerns\UpdatesExisting;
 use App\Notifications\Contracts\ShouldUpdateExisting;
-use App\Notifications\Discord\DiscordMessage;
+use App\Notifications\Discord\DiscordNotification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Log;
 use LogicException;
 use Throwable;
 
-class CommentPostedToItem extends DiscordMessage implements ShouldUpdateExisting
+class CommentPostedToItem extends DiscordNotification implements ShouldUpdateExisting
 {
     use UpdatesExisting;
 
@@ -125,7 +125,7 @@ class CommentPostedToItem extends DiscordMessage implements ShouldUpdateExisting
             return false;
         }
 
-        return ! $this->onlyUpdatesExisting || $this->existingNotification($notifiable) !== null;
+        return ! $this->onlyUpdatesExisting || $this->existingMessage($notifiable) !== null;
     }
 
     /**

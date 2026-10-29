@@ -2,12 +2,12 @@
 
 namespace Tests\Feature\Notifications\Discord;
 
-use App\Http\Integrations\Discord\Data\Channels\ChannelData;
 use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
 use App\Jobs\Middleware\ReleaseWhenDiscordRateLimited;
+use App\Models\DiscordChannel;
 use App\Models\User;
-use App\Notifications\Discord\DiscordChannel;
-use App\Notifications\Discord\DiscordMessage;
+use App\Notifications\Discord\DiscordNotification;
+use App\Notifications\Discord\DiscordNotificationChannel;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Model;
@@ -33,7 +33,7 @@ class StubModelB extends Model
     public $incrementing = false;
 }
 
-class ConcreteNotification extends DiscordMessage
+class ConcreteNotification extends DiscordNotification
 {
     public function toMessage(): MessagePayloadData
     {
@@ -72,17 +72,17 @@ class ConcreteNotification extends DiscordMessage
 }
 
 #[Group('discord-integration')]
-class DiscordMessageTest extends TestCase
+class DiscordNotificationTest extends TestCase
 {
     use RefreshDatabase;
 
-    private ChannelData $notifiable;
+    private DiscordChannel $notifiable;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $channel = ChannelData::from(['id' => '123456789012345678', 'type' => 0]);
+        $channel = DiscordChannel::factory()->create(['id' => '123456789012345678']);
         $this->notifiable = $channel;
     }
 
@@ -91,7 +91,7 @@ class DiscordMessageTest extends TestCase
     {
         $notification = new ConcreteNotification;
 
-        $this->assertContains(DiscordChannel::class, $notification->via($this->notifiable));
+        $this->assertContains(DiscordNotificationChannel::class, $notification->via($this->notifiable));
     }
 
     // ==================== withRelatedModels ====================
@@ -381,7 +381,7 @@ class DiscordMessageTest extends TestCase
     {
         Queue::fake();
 
-        ChannelData::from(['id' => '111222333444555666'])->notify(new ConcreteNotification);
+        DiscordChannel::factory()->create()->notify(new ConcreteNotification);
 
         $job = Queue::pushed(SendQueuedNotifications::class)->first();
 

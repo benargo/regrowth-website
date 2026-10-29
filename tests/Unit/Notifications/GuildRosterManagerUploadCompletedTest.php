@@ -2,9 +2,9 @@
 
 namespace Tests\Unit\Notifications;
 
-use App\Http\Integrations\Discord\Data\Channels\ChannelData;
 use App\Http\Integrations\Discord\Data\Messages\EmbedData;
-use App\Notifications\Discord\DiscordChannel;
+use App\Models\DiscordChannel;
+use App\Notifications\Discord\DiscordNotificationChannel;
 use App\Notifications\GuildRosterManagerUploadCompleted;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -14,9 +14,9 @@ use Tests\TestCase;
 #[Group('discord-integration')]
 class GuildRosterManagerUploadCompletedTest extends TestCase
 {
-    private function makeNotifiable(): ChannelData
+    private function makeNotifiable(): DiscordChannel
     {
-        $channel = ChannelData::from(['id' => '1407688195386114119', 'type' => 0]);
+        $channel = DiscordChannel::factory()->make(['id' => '1407688195386114119']);
 
         return $channel;
     }
@@ -28,7 +28,7 @@ class GuildRosterManagerUploadCompletedTest extends TestCase
     {
         $notification = new GuildRosterManagerUploadCompleted(gameVersionSlug: 'tbc', processedCount: 5);
 
-        $this->assertContains(DiscordChannel::class, $notification->via($this->makeNotifiable()));
+        $this->assertContains(DiscordNotificationChannel::class, $notification->via($this->makeNotifiable()));
     }
 
     // ==================== embed content ====================
