@@ -2,7 +2,6 @@
 
 namespace App\Jobs\GuildRosterManager;
 
-use App\Actions\Discord\ResolveDiscordChannel;
 use App\Contracts\Http\Integrations\Blizzard\RequiresMinimumCharacterLevel;
 use App\Events\Broadcasts\GrmUploadCompleted as GrmUploadCompletedBroadcast;
 use App\Events\Broadcasts\GrmUploadFailed as GrmUploadFailedBroadcast;
@@ -418,15 +417,10 @@ class ProcessUpload implements RequiresMinimumCharacterLevel, ShouldQueue
 
         GrmUploadFailedBroadcast::dispatch($this->userId, $exception->getMessage());
 
-        try {
-            ResolveDiscordChannel::run(config('services.discord.channels.officer'))->notify(
-                new GuildRosterManagerUploadFailed(0, 1, [], $exception->getMessage())
-            );
-        } catch (\Throwable $e) {
-            Log::error('GRM Upload: Failed to send failure notification', [
-                'error' => $e->getMessage(),
-            ]);
-        }
+        NotifyDiscordChannel::dispatch(
+            config('services.discord.channels.officer'),
+            new GuildRosterManagerUploadFailed(0, 1, [], $exception->getMessage()),
+        );
     }
 
     /**

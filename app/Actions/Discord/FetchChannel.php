@@ -9,7 +9,7 @@ use App\Http\Integrations\Discord\Requests\Channels\GetChannelRequest;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 /**
- * Fetches a Discord channel by its ID.
+ * Fetches a Discord channel by its ID, bypassing the response cache when fresh.
  */
 class FetchChannel
 {
@@ -22,8 +22,14 @@ class FetchChannel
     /**
      * @throws ApiException
      */
-    public function handle(string $channelId): ChannelData
+    public function handle(string $channelId, bool $fresh = false): ChannelData
     {
-        return $this->discord->send(new GetChannelRequest($channelId))->dto();
+        $request = new GetChannelRequest($channelId);
+
+        if ($fresh) {
+            $request->invalidateCache();
+        }
+
+        return $this->discord->send($request)->dto();
     }
 }

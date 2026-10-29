@@ -59,7 +59,7 @@ class NotifyDiscordChannel implements ShouldQueue
         }
 
         try {
-            ResolveDiscordChannel::run($this->channelId)->notify($this->notification);
+            ResolveDiscordChannel::run($this->channelId)->notifyNow($this->notification);
         } catch (DiscordRequestException $exception) {
             Log::warning('Skipped a Discord notification for a channel Discord could not return.', [
                 'channel_id' => $this->channelId,

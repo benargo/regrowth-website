@@ -35,6 +35,19 @@ class FetchChannelTest extends TestCase
     }
 
     #[Test]
+    #[Group('happy-path')]
+    public function it_bypasses_the_cache_when_fresh(): void
+    {
+        $this->fakeDiscordChannel(id: '111111111111111111', name: 'old-name');
+        FetchChannel::run('111111111111111111');
+
+        $this->fakeDiscordChannel(id: '111111111111111111', name: 'new-name');
+
+        $this->assertSame('old-name', FetchChannel::run('111111111111111111')->name);
+        $this->assertSame('new-name', FetchChannel::run('111111111111111111', fresh: true)->name);
+    }
+
+    #[Test]
     #[Group('error-handling')]
     public function it_throws_on_a_discord_api_error(): void
     {

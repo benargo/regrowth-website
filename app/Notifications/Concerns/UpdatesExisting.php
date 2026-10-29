@@ -29,8 +29,7 @@ trait UpdatesExisting
     {
         if (! $this->hasResolvedExistingMessage) {
             $this->existingMessage = $this->constrainExisting(
-                DiscordMessage::where('type', static::class)
-                    ->where('channel_id', $notifiable->id),
+                $notifiable->messages()->where('type', static::class)->getQuery(),
             )->latest()->first();
 
             $this->hasResolvedExistingMessage = true;

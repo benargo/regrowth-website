@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Jobs\Discord;
 
-use App\Http\Integrations\Discord\DiscordConnector;
+use App\Actions\Discord\FetchChannel;
 use App\Http\Integrations\Discord\Enums\ChannelType;
 use App\Http\Integrations\Discord\Requests\Channels\GetChannelRequest;
 use App\Http\Integrations\Discord\Requests\Guilds\GetGuildChannelsRequest;
@@ -135,7 +135,7 @@ class SyncChannelsTest extends TestCase
     {
         DiscordChannel::factory()->thread()->create(['id' => '300', 'name' => 'old-name']);
         $this->fakeDiscord(['discord.com/api/v10/channels/300' => MockResponse::make($this->makeChannel('300', 'old-name', ChannelType::PublicThread))]);
-        app(DiscordConnector::class)->send(new GetChannelRequest('300'));
+        FetchChannel::run('300');
 
         $this->fakeGuildChannels([], [
             '300' => MockResponse::make($this->makeChannel('300', 'new-name', ChannelType::PublicThread)),
@@ -176,7 +176,7 @@ class SyncChannelsTest extends TestCase
     public function it_leaves_a_thread_that_returns_forbidden(): void
     {
         Log::spy();
-        $thread = DiscordChannel::factory()->thread()->create(['id' => '300', 'name' => 'secret']);
+        DiscordChannel::factory()->thread()->create(['id' => '300', 'name' => 'secret']);
         $this->fakeGuildChannels([], [
             '300' => $this->makeDiscordErrorResponse(403, 50001, 'Missing Access'),
         ]);

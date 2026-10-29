@@ -71,19 +71,6 @@ class DiscordChannelTest extends ModelTestCase
     }
 
     #[Test]
-    public function without_threads_scope_includes_stubs_and_excludes_threads(): void
-    {
-        $text = DiscordChannel::factory()->create();
-        DiscordChannel::factory()->thread()->create();
-        $stub = DiscordChannel::factory()->stub()->create();
-
-        $this->assertEqualsCanonicalizing(
-            [$text->id, $stub->id],
-            DiscordChannel::withoutThreads()->pluck('id')->all(),
-        );
-    }
-
-    #[Test]
     public function stubs_scope_returns_only_null_type_rows(): void
     {
         DiscordChannel::factory()->create();

@@ -2,12 +2,13 @@
 
 namespace App\Jobs\Discord;
 
+use App\Actions\Discord\FetchChannel;
 use App\Actions\Discord\UpsertDiscordChannel;
 use App\Http\Integrations\Discord\Data\Channels\ChannelData;
 use App\Http\Integrations\Discord\DiscordConnector;
+use App\Http\Integrations\Discord\Enums\ChannelType;
 use App\Http\Integrations\Discord\Exceptions\ApiException;
 use App\Http\Integrations\Discord\Exceptions\ChannelNotFoundException;
-use App\Http\Integrations\Discord\Requests\Channels\GetChannelRequest;
 use App\Http\Integrations\Discord\Requests\Guilds\GetGuildChannelsRequest;
 use App\Jobs\Middleware\ReleaseWhenDiscordRateLimited;
 use App\Models\DiscordChannel;
@@ -68,7 +69,7 @@ class SyncChannels implements ShouldQueue
 
         foreach ($fetchIds as $channelId) {
             try {
-                $fetchedChannels->push($discord->send((new GetChannelRequest($channelId))->invalidateCache())->dto());
+                $fetchedChannels->push(FetchChannel::run($channelId, fresh: true));
             } catch (ChannelNotFoundException) {
                 $notFoundIds[] = $channelId;
             } catch (ApiException $exception) {
@@ -80,10 +81,9 @@ class SyncChannels implements ShouldQueue
             }
         }
 
-        DB::transaction(function () use ($guildChannels, $guildIds, $fetchIds, $fetchedChannels, $notFoundIds): void {
-            $deleted = DiscordChannel::withoutThreads()
+        DB::transaction(function () use ($guildChannels, $guildIds, $fetchedChannels, $notFoundIds): void {
+            $deleted = DiscordChannel::whereNotIn('type', ChannelType::threadTypes())
                 ->whereNotIn('id', $guildIds)
-                ->whereNotIn('id', $fetchIds->all())
                 ->delete();
 
             $deleted += DiscordChannel::whereIn('id', $notFoundIds)->delete();

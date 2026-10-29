@@ -58,17 +58,6 @@ class DiscordChannel extends Model
     }
 
     /**
-     * Scope the query to channels that are not threads, including stubs.
-     */
-    #[Scope]
-    protected function withoutThreads(Builder $query): void
-    {
-        $query->where(function (Builder $query): void {
-            $query->whereNull('type')->orWhereNotIn('type', ChannelType::threadTypes());
-        });
-    }
-
-    /**
      * @return HasMany<DiscordChannel, $this>
      */
     public function children(): HasMany

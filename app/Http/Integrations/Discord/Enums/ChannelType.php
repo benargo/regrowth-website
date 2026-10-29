@@ -52,12 +52,4 @@ enum ChannelType: int
     {
         return [self::AnnouncementThread, self::PublicThread, self::PrivateThread];
     }
-
-    /**
-     * Whether this channel type is a thread.
-     */
-    public function isThread(): bool
-    {
-        return in_array($this, self::threadTypes(), true);
-    }
 }
