@@ -5,6 +5,7 @@ namespace Tests\Unit\Http\Integrations\Discord;
 use App\Http\Integrations\Discord\Concerns\CachesDiscordResponses;
 use App\Http\Integrations\Discord\DiscordConnector;
 use App\Http\Integrations\Discord\Exceptions\ApiException;
+use App\Http\Integrations\Discord\Exceptions\ChannelNotFoundException;
 use App\Http\Integrations\Discord\Exceptions\MessageNotFoundException;
 use App\Http\Integrations\Discord\Exceptions\NotFoundException;
 use App\Http\Integrations\Discord\Exceptions\RateLimitedException;
@@ -252,6 +253,17 @@ class DiscordConnectorTest extends DiscordTestCase
 
     #[Test]
     #[Group('error-handling')]
+    public function it_maps_a_404_unknown_channel_to_channel_not_found(): void
+    {
+        $exception = $this->sendProbeExpectingException(MockResponse::make(['message' => 'Unknown Channel', 'code' => 10003], 404));
+
+        $this->assertInstanceOf(ChannelNotFoundException::class, $exception);
+        $this->assertInstanceOf(NotFoundException::class, $exception);
+        $this->assertSame(10003, $exception->getDiscordCode());
+    }
+
+    #[Test]
+    #[Group('error-handling')]
     public function it_translates_unknown_message_to_message_not_found(): void
     {
         $exception = $this->sendProbeExpectingException(MockResponse::make(['message' => 'Unknown Message', 'code' => 10008], 404));
@@ -273,7 +285,6 @@ class DiscordConnectorTest extends DiscordTestCase
 
     #[Test]
     #[Group('error-handling')]
-    #[TestWith([10003, 'Unknown Channel'])]
     #[TestWith([10004, 'Unknown Guild'])]
     #[TestWith([10013, 'Unknown User'])]
     public function it_translates_other_not_found_codes_to_api_exception(int $code, string $message): void

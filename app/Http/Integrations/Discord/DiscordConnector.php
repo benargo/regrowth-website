@@ -3,6 +3,7 @@
 namespace App\Http\Integrations\Discord;
 
 use App\Http\Integrations\Discord\Exceptions\ApiException;
+use App\Http\Integrations\Discord\Exceptions\ChannelNotFoundException;
 use App\Http\Integrations\Discord\Exceptions\MessageNotFoundException;
 use App\Http\Integrations\Discord\Exceptions\RateLimitedException;
 use App\Http\Integrations\Discord\Exceptions\UserNotInGuildException;
@@ -30,6 +31,11 @@ class DiscordConnector extends Connector
     use AcceptsJson;
     use AlwaysThrowOnErrors;
     use HasTimeout;
+
+    /**
+     * Discord JSON error code: Unknown Channel.
+     */
+    private const int UNKNOWN_CHANNEL = 10003;
 
     /**
      * Discord JSON error code: Unknown Member.
@@ -107,6 +113,7 @@ class DiscordConnector extends Connector
         }
 
         return match (true) {
+            $status === 404 && $code === self::UNKNOWN_CHANNEL => new ChannelNotFoundException($response, $method, $endpoint, $code, $body, $senderException),
             $status === 404 && $code === self::UNKNOWN_MESSAGE => new MessageNotFoundException($response, $method, $endpoint, $code, $body, $senderException),
             $status === 404 && $code === self::UNKNOWN_MEMBER => new UserNotInGuildException($response, $method, $endpoint, $code, $body, $senderException),
             default => new ApiException($response, $method, $endpoint, $code, $body, $senderException),

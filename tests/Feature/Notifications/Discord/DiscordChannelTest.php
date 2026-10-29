@@ -8,6 +8,7 @@ use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
 use App\Http\Integrations\Discord\DiscordConnector;
 use App\Http\Integrations\Discord\Enums\ChannelType;
 use App\Http\Integrations\Discord\Exceptions\ApiException;
+use App\Http\Integrations\Discord\Exceptions\ChannelNotFoundException;
 use App\Http\Integrations\Discord\Requests\Messages\CreateMessageRequest;
 use App\Http\Integrations\Discord\Requests\Messages\EditMessageRequest;
 use App\Models\DiscordNotification;
@@ -394,8 +395,8 @@ class DiscordChannelTest extends TestCase
 
         try {
             $this->driver->send($this->notifiable, $notification);
-            $this->fail('Expected an ApiException for an unknown channel.');
-        } catch (ApiException $exception) {
+            $this->fail('Expected a ChannelNotFoundException for an unknown channel.');
+        } catch (ChannelNotFoundException $exception) {
             $this->assertSame(10003, $exception->getDiscordCode());
         }
 
