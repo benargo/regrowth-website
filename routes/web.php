@@ -246,6 +246,10 @@ Route::get('/info/privacy', function () {
     return Inertia::render('Info/PrivacyPolicy');
 })->name('privacypolicy');
 
+Route::get('/info/terms', function () {
+    return Inertia::render('Info/TermsOfUse');
+})->name('termsofuse');
+
 /**
  * Include additional route files
  */

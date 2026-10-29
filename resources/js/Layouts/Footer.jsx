@@ -251,6 +251,14 @@ export default function Footer({ classes, discordInviteUrl, warcraftLogsUrl, gam
                                 </Link>
                             </li>
                             <li>
+                                <Link href={route("termsofuse")} className={footerLinkClass}>
+                                    <FooterLinkIcon>
+                                        <Icon icon="file-contract" style="solid" className="h-5 w-5" />
+                                    </FooterLinkIcon>
+                                    <span className="text-nowrap">Terms of use</span>
+                                </Link>
+                            </li>
+                            <li>
                                 <a
                                     href="https://benargo.com"
                                     target="_blank"
@@ -269,10 +277,9 @@ export default function Footer({ classes, discordInviteUrl, warcraftLogsUrl, gam
                 </div>
                 <div className="mt-4 md:mt-2">
                     <p className="text-center text-xs text-gray-400 md:text-left">
-                        Disclaimer: Classic is a trademark, and World of Warcraft and Warcraft are trademarks or
-                        registered trademarks of Blizzard Entertainment, Inc., in the U.S. and/or other countries. All
-                        related materials, logos, and images are copyright &copy; Blizzard Entertainment, Inc. Regrowth
-                        is in no way associated with or endorsed by Blizzard Entertainment.
+                        Disclaimer: World of Warcraft is a registered trademark of Blizzard Entertainment, Inc., in the
+                        U.S. and/or other countries. All related materials, logos, and images are copyright &copy;
+                        Blizzard Entertainment, Inc. Regrowth is in no way associated with or endorsed by Blizzard.
                     </p>
                 </div>
             </div>
