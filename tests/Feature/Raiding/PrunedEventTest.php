@@ -76,7 +76,7 @@ class PrunedEventTest extends TestCase
     }
 
     #[Test]
-    public function it_renders_the_gone_inertia_page_for_a_pruned_event(): void
+    public function it_renders_the_branded_gone_page_for_a_pruned_event(): void
     {
         $this->mockDiscordChannel(id: '123', name: 'test-channel');
 
@@ -86,7 +86,7 @@ class PrunedEventTest extends TestCase
 
         $this->get(route('raiding.plans.show', $eventId))
             ->assertStatus(410)
-            ->assertInertia(fn ($page) => $page->component('Errors/Gone'));
+            ->assertSee('images/sticker_jaina_410.webp');
     }
 
     #[Test]
