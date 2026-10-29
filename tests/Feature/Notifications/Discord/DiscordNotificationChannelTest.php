@@ -350,6 +350,42 @@ class DiscordNotificationChannelTest extends TestCase
         ]);
     }
 
+    // ==================== send — soft-deleted channel ====================
+
+    #[Test]
+    public function it_does_not_post_a_new_message_to_a_soft_deleted_channel(): void
+    {
+        $this->channel->delete();
+
+        $notification = Mockery::mock(DiscordNotification::class);
+        $notification->expects('toMessage')->never();
+
+        $this->fakeCreatedMessage('141414141414141414');
+
+        $this->driver->send($this->notifiable, $notification);
+
+        Saloon::assertNothingSent();
+        $this->assertDatabaseMissing('discord_messages', ['message_id' => '141414141414141414']);
+    }
+
+    #[Test]
+    public function it_does_not_edit_an_existing_message_in_a_soft_deleted_channel(): void
+    {
+        $existingMessage = $this->storedNotification('151515151515151515');
+        $this->channel->delete();
+
+        $notification = Mockery::mock(DiscordNotification::class.', '.ShouldUpdateExisting::class);
+        $notification->expects('existingMessage')->never();
+        $notification->expects('toMessage')->never();
+
+        $this->fakeExistingMessage('151515151515151515');
+
+        $this->driver->send($this->notifiable, $notification);
+
+        Saloon::assertNothingSent();
+        $this->assertNotSoftDeleted('discord_messages', ['id' => $existingMessage->id]);
+    }
+
     // ==================== send — errors ====================
 
     #[Test]

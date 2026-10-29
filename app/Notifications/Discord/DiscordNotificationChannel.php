@@ -9,6 +9,7 @@ use App\Http\Integrations\Discord\Requests\Messages\EditMessageRequest;
 use App\Models\DiscordChannel;
 use App\Models\DiscordMessage;
 use App\Notifications\Contracts\ShouldUpdateExisting;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Laravel notification channel that posts or edits a DiscordNotification in a Discord channel and records it as a DiscordMessage.
@@ -30,6 +31,15 @@ class DiscordNotificationChannel
      */
     public function send(DiscordChannel $notifiable, DiscordNotification $notification): void
     {
+        if ($notifiable->trashed()) {
+            Log::warning('Skipped a Discord notification for a soft-deleted channel.', [
+                'channel_id' => $notifiable->id,
+                'notification' => $notification::class,
+            ]);
+
+            return;
+        }
+
         $existing = $notification instanceof ShouldUpdateExisting
             ? $notification->existingMessage($notifiable)
             : null;

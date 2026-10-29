@@ -107,11 +107,19 @@ class PublishAssignmentsControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_publishes_to_a_soft_deleted_channel(): void
+    public function it_does_not_publish_to_a_soft_deleted_channel(): void
     {
+        Storage::fake('s3');
         $channel = DiscordChannel::factory()->trashed()->create();
+        $event = Event::factory()->for($channel, 'channel')->create();
+        $this->fakeDiscordMessageCreated('787878787878787878', $channel->id);
 
-        $this->assertPublishesTo($channel);
+        $this->actingAs($this->editor)
+            ->postJson(route('api.events.publish-assignments', $event))
+            ->assertNoContent();
+
+        Saloon::assertNothingSent();
+        $this->assertDatabaseMissing('discord_messages', ['channel_id' => $channel->id]);
     }
 
     #[Test]
