@@ -84,7 +84,7 @@ class BlizzardIconPathGeneratorTest extends TestCase
     {
         $media = $this->mediaFor('inv_shield_04.jpg', 56);
 
-        Storage::disk('public')->assertExists('blizzard-cdn/icons/56/inv_shield_04.jpg');
+        Storage::disk('s3')->assertExists('blizzard-cdn/icons/56/inv_shield_04.jpg');
         $this->assertSame('blizzard-cdn/icons/56/inv_shield_04.jpg', $media->getPathRelativeToRoot());
     }
 

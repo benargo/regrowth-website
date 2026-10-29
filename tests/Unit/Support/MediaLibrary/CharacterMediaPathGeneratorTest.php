@@ -81,7 +81,7 @@ class CharacterMediaPathGeneratorTest extends TestCase
 
         $media = $this->mediaFor('51042439-avatar.jpg', 135);
 
-        Storage::disk('public')->assertExists('blizzard-cdn/characters/thunderstrike/135/51042439-avatar.jpg');
+        Storage::disk('s3')->assertExists('blizzard-cdn/characters/thunderstrike/135/51042439-avatar.jpg');
         $this->assertStringEndsWith('/blizzard-cdn/characters/thunderstrike/135/51042439-avatar.jpg', $media->getUrl());
     }
 
