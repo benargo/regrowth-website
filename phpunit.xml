@@ -28,7 +28,8 @@
         <env name="AWS_ENDPOINT_PRIVATE" value="http://127.0.0.1:9" />
         <env name="AWS_ACCESS_KEY_ID" value="testing" />
         <env name="AWS_SECRET_ACCESS_KEY" value="testing" />
-        <env name="APP_MAINTENANCE_DRIVER" value="file" />
+        <env name="APP_MAINTENANCE_DRIVER" value="cache" />
+        <env name="APP_MAINTENANCE_STORE" value="array" />
         <env name="BCRYPT_ROUNDS" value="4" />
         <env name="CACHE_STORE" value="array" />
         <env name="LOG_CHANNEL" value="testing" />
