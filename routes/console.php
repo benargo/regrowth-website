@@ -2,6 +2,7 @@
 
 use App\Jobs\Addon\BuildExportFiles;
 use App\Jobs\Discord\RefreshUserAvatars;
+use App\Jobs\Discord\SyncChannels as SyncDiscordChannels;
 use App\Jobs\Discord\SyncRoles as SyncDiscordRoles;
 use App\Jobs\Discord\SyncUsers as SyncDiscordUsers;
 use App\Jobs\FetchGuildRosters;
@@ -10,9 +11,9 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Schedule;
 
 /**
- * Synchronise Discord roles, then every user's profile and roles, every hour.
+ * Synchronise Discord channels and roles, then every user's profile and roles, every hour.
  */
-Schedule::call(fn () => Bus::chain([new SyncDiscordRoles, new SyncDiscordUsers])->dispatch())
+Schedule::call(fn () => Bus::chain([new SyncDiscordChannels, new SyncDiscordRoles, new SyncDiscordUsers])->dispatch())
     ->hourly()
     ->name('sync-discord');
 

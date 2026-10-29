@@ -6,6 +6,7 @@ use App\Actions\Characters\MatchCharacterName;
 use App\Actions\EventBossResolver;
 use App\Enums\SignupStatus;
 use App\Events\Broadcasts\CompositionChanged;
+use App\Http\Integrations\Discord\Requests\Channels\GetChannelRequest;
 use App\Http\Integrations\Discord\Requests\Guilds\GetGuildMemberRequest;
 use App\Http\Integrations\RaidHelper\Data\Events\EventData;
 use App\Jobs\Addon\BuildExportFile;
@@ -15,6 +16,7 @@ use App\Jobs\RaidHelper\FetchComposition;
 use App\Jobs\RaidHelper\SyncEvent;
 use App\Models\Boss;
 use App\Models\Character;
+use App\Models\DiscordChannel;
 use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\Phase;
@@ -22,6 +24,7 @@ use App\Models\Raid;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Queue\Attributes\MaxExceptions;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event as EventFacade;
 use Illuminate\Support\Facades\Log;
@@ -29,6 +32,7 @@ use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
+use ReflectionClass;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\PendingRequest;
 use Saloon\Http\Request;
@@ -45,6 +49,8 @@ class SyncEventTest extends TestCase
 
     private const string SIGN_UP_USER_ID = '300000000000000001';
 
+    private DiscordChannel $channel;
+
     private GameVersion $gameVersion;
 
     protected function setUp(): void
@@ -55,6 +61,7 @@ class SyncEventTest extends TestCase
 
         Queue::fake([FetchComposition::class, AttachCharactersToUser::class, AttachAvatarToUser::class, BuildExportFile::class]);
 
+        $this->channel = DiscordChannel::factory()->create(['id' => '100000000000000001']);
         $this->gameVersion = GameVersion::factory()->create();
 
         User::factory()->create(['id' => self::SIGN_UP_USER_ID]);
@@ -1132,6 +1139,84 @@ class SyncEventTest extends TestCase
         $this->assertDatabaseHas('events', [
             'raid_helper_event_id' => '111222333444555001',
         ]);
+    }
+
+    // ==================== discord channel ====================
+
+    #[Test]
+    public function it_stores_the_resolved_channel_on_the_event(): void
+    {
+        Saloon::fake([]);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload()));
+
+        $this->assertTrue(Event::sole()->channel->is($this->channel));
+        Saloon::assertNotSent(GetChannelRequest::class);
+    }
+
+    #[Test]
+    public function it_uses_a_soft_deleted_stored_channel_without_calling_discord(): void
+    {
+        Saloon::fake([]);
+        $this->channel->delete();
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload()));
+
+        $this->assertTrue(Event::sole()->channel->is($this->channel));
+        Saloon::assertNotSent(GetChannelRequest::class);
+    }
+
+    #[Test]
+    public function it_fetches_and_stores_an_unknown_channel(): void
+    {
+        $this->channel->forceDelete();
+        $this->fakeDiscordChannel('100000000000000001', 'raids');
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload()));
+
+        $this->assertDatabaseHas('discord_channels', ['id' => '100000000000000001', 'name' => 'raids']);
+        $this->assertSame('100000000000000001', Event::sole()->channel_id);
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_stores_a_stub_channel_and_the_event_when_the_channel_lookup_fails(): void
+    {
+        $this->channel->forceDelete();
+        $this->fakeDiscord([GetChannelRequest::class => $this->makeDiscordErrorResponse(500, 0, 'Internal Server Error')]);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload()));
+
+        $this->assertSame('100000000000000001', Event::sole()->channel_id);
+        $this->assertDatabaseHas('discord_channels', ['id' => '100000000000000001', 'name' => null, 'type' => null]);
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_releases_itself_when_rate_limited_on_the_channel_lookup(): void
+    {
+        $this->channel->forceDelete();
+        $this->fakeDiscord([GetChannelRequest::class => $this->makeDiscordRateLimitResponse(30.0)]);
+
+        $job = new SyncEvent(EventData::from($this->minimalEventPayload()));
+        $job->withFakeQueueInteractions();
+        $this->runJobThroughMiddleware($job);
+
+        $job->assertReleased(30);
+        $this->assertDatabaseCount('events', 0);
+    }
+
+    #[Test]
+    #[Group('contract')]
+    public function it_retries_rate_limit_releases_for_an_hour_but_fails_on_the_first_exception(): void
+    {
+        $this->freezeTime();
+
+        $job = new SyncEvent(EventData::from($this->minimalEventPayload()));
+        $class = new ReflectionClass(SyncEvent::class);
+
+        $this->assertTrue($job->retryUntil()->equalTo(now()->addHour()));
+        $this->assertSame(1, $class->getAttributes(MaxExceptions::class)[0]->newInstance()->maxExceptions);
     }
 
     // ==================== timezone handling ====================

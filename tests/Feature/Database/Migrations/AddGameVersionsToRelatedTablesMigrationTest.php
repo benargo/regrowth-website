@@ -3,12 +3,13 @@
 namespace Tests\Feature\Database\Migrations;
 
 use App\Models\Comment;
-use App\Models\DiscordNotification;
 use App\Models\Item;
 use App\Models\Raid;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionMethod;
@@ -44,22 +45,6 @@ class AddGameVersionsToRelatedTablesMigrationTest extends TestCase
     }
 
     #[Test]
-    public function up_repoints_item_discord_notification_links_from_the_blizzard_id_to_the_item_uuid(): void
-    {
-        $item = Item::factory()->create();
-        $notification = DiscordNotification::factory()->create();
-        $linkId = DB::table('discord_notification_related_models')->insertGetId([
-            'discord_notification_id' => $notification->id,
-            'model_type' => Item::class,
-            'model_id' => (string) $item->blizzard_id,
-        ]);
-
-        $this->remapItemMorphReferences();
-
-        $this->assertDatabaseHas('discord_notification_related_models', ['id' => $linkId, 'model_type' => Item::class, 'model_id' => $item->id]);
-    }
-
-    #[Test]
     public function up_leaves_references_to_other_models_with_a_matching_id_untouched(): void
     {
         $item = Item::factory()->create();
@@ -78,10 +63,16 @@ class AddGameVersionsToRelatedTablesMigrationTest extends TestCase
     }
 
     /**
-     * Run the migration's item morph remap step against the current data.
+     * Run the migration's item morph remap step against the current data, with an empty temporary stand-in for the renamed related-models table.
      */
     private function remapItemMorphReferences(): void
     {
+        Schema::create('discord_notification_related_models', function (Blueprint $table): void {
+            $table->temporary();
+            $table->string('model_type');
+            $table->string('model_id');
+        });
+
         $migration = $this->migration();
 
         (new ReflectionMethod($migration, 'remapItemMorphReferencesToUuid'))->invoke($migration);

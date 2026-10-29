@@ -42,4 +42,14 @@ enum ChannelType: int
 
     /** A channel that can only contain threads, similar to GUILD_FORUM channels. */
     case GuildMedia = 16;
+
+    /**
+     * The thread channel types.
+     *
+     * @return list<self>
+     */
+    public static function threadTypes(): array
+    {
+        return [self::AnnouncementThread, self::PublicThread, self::PrivateThread];
+    }
 }

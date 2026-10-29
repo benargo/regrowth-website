@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Console\Commands;
 
+use App\Jobs\Discord\SyncChannels;
 use App\Jobs\Discord\SyncRoles;
 use App\Jobs\Discord\SyncUser;
 use App\Jobs\Discord\SyncUsers;
@@ -14,13 +15,13 @@ use Tests\TestCase;
 class SyncDiscordTest extends TestCase
 {
     #[Test]
-    public function it_dispatches_the_role_sync_followed_by_the_user_sync(): void
+    public function it_dispatches_the_channel_and_role_syncs_followed_by_the_user_sync(): void
     {
         Bus::fake();
 
         $this->artisan('sync:discord')->assertSuccessful();
 
-        Bus::assertChained([SyncRoles::class, SyncUsers::class]);
+        Bus::assertChained([SyncChannels::class, SyncRoles::class, SyncUsers::class]);
     }
 
     #[Test]

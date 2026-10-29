@@ -3,14 +3,15 @@
 namespace Database\Factories;
 
 use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
-use App\Models\DiscordNotification;
+use App\Models\DiscordChannel;
+use App\Models\DiscordMessage;
 use App\Models\User;
 use App\Notifications\RaidAssignmentsPublished;
 use Illuminate\Database\Eloquent\Factories\Attributes\UseModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-#[UseModel(DiscordNotification::class)]
-class DiscordNotificationFactory extends Factory
+#[UseModel(DiscordMessage::class)]
+class DiscordMessageFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -21,7 +22,7 @@ class DiscordNotificationFactory extends Factory
     {
         return [
             'type' => RaidAssignmentsPublished::class,
-            'channel_id' => fake()->numerify('##################'),
+            'channel_id' => DiscordChannel::factory(),
             'message_id' => fake()->unique()->numerify('##################'),
             'payload' => MessagePayloadData::from([
                 'content' => fake()->sentence(),
@@ -42,8 +43,8 @@ class DiscordNotificationFactory extends Factory
      */
     public function withRelatedModels(array $entries): static
     {
-        return $this->afterCreating(function (DiscordNotification $notification) use ($entries) {
-            $notification->relatedModels()->createMany($entries);
+        return $this->afterCreating(function (DiscordMessage $message) use ($entries) {
+            $message->relatedModels()->createMany($entries);
         });
     }
 }

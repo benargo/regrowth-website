@@ -2,17 +2,19 @@
 
 namespace Tests\Feature\Comments;
 
-use App\Http\Integrations\Discord\Data\Channels\ChannelStub;
 use App\Http\Integrations\Discord\Requests\Messages\CreateMessageRequest;
 use App\Http\Integrations\Discord\Requests\Messages\EditMessageRequest;
+use App\Jobs\Discord\NotifyDiscordChannel;
 use App\Models\Comment;
-use App\Models\DiscordNotification;
+use App\Models\DiscordChannel;
+use App\Models\DiscordMessage;
 use App\Models\DiscordRole;
 use App\Models\Item;
 use App\Models\Permission;
 use App\Models\User;
 use App\Notifications\CommentPostedToItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -30,13 +32,16 @@ class CommentReplyDiscordTest extends TestCase
     use MocksDiscordService;
     use RefreshDatabase;
 
+    private DiscordChannel $channel;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        config(['services.discord.channels.lootcouncil' => '123456789']);
+        config()->set('services.discord.channels.lootcouncil', '123456789');
+        $this->channel = DiscordChannel::factory()->create(['id' => '123456789']);
         $this->fakeDiscordMessageCreated();
 
         $commentOnLootItems = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
@@ -58,10 +63,22 @@ class CommentReplyDiscordTest extends TestCase
             ])
             ->assertCreated();
 
-        Notification::assertSentTo(
-            new ChannelStub('123456789'),
-            CommentPostedToItem::class
-        );
+        Notification::assertSentTo($this->channel, CommentPostedToItem::class);
+    }
+
+    #[Test]
+    public function a_comment_dispatches_the_loot_council_notification_without_calling_discord(): void
+    {
+        Bus::fake([NotifyDiscordChannel::class]);
+        $root = $this->rootOnItem();
+
+        $this->actingAs(User::factory()->raider()->create())
+            ->postJson(route('api.comments.store'), $this->replyPayload($root))
+            ->assertCreated();
+
+        Bus::assertDispatched(NotifyDiscordChannel::class, fn (NotifyDiscordChannel $job): bool => $job->channelId === config('services.discord.channels.lootcouncil')
+            && $job->notification instanceof CommentPostedToItem);
+        Saloon::assertNothingSent();
     }
 
     #[Test]
@@ -77,7 +94,7 @@ class CommentReplyDiscordTest extends TestCase
             ->assertCreated();
 
         Notification::assertSentTo(
-            new ChannelStub('123456789'),
+            $this->channel,
             fn (CommentPostedToItem $notification): bool => $notification->toMessage()->embeds[0]->fields[0]->value === '1',
         );
     }
@@ -156,9 +173,26 @@ class CommentReplyDiscordTest extends TestCase
             ->assertNoContent();
 
         Notification::assertSentTo(
-            new ChannelStub('123456789'),
+            $this->channel,
             fn (CommentPostedToItem $notification): bool => $notification->toMessage()->embeds[0]->fields instanceof Optional,
         );
+    }
+
+    #[Test]
+    public function deleting_a_reply_dispatches_the_loot_council_notification_without_calling_discord(): void
+    {
+        Bus::fake([NotifyDiscordChannel::class]);
+        $root = $this->rootOnItem();
+        $author = User::factory()->raider()->create();
+        $reply = Comment::factory()->replyTo($root)->create(['user_id' => $author->id]);
+
+        $this->actingAs($author)
+            ->deleteJson(route('api.comments.destroy', ['comment' => $reply->id]))
+            ->assertNoContent();
+
+        Bus::assertDispatched(NotifyDiscordChannel::class, fn (NotifyDiscordChannel $job): bool => $job->channelId === config('services.discord.channels.lootcouncil')
+            && $job->notification instanceof CommentPostedToItem);
+        Saloon::assertNothingSent();
     }
 
     #[Test]
@@ -176,7 +210,7 @@ class CommentReplyDiscordTest extends TestCase
             ->deleteJson(route('api.comments.destroy', ['comment' => $reply->id]))
             ->assertNoContent();
 
-        Notification::assertSentTo(new ChannelStub('123456789'), CommentPostedToItem::class);
+        Notification::assertSentTo($this->channel, CommentPostedToItem::class);
     }
 
     #[Test]
@@ -186,13 +220,13 @@ class CommentReplyDiscordTest extends TestCase
         $root = $this->rootOnItem(['user_id' => $author->id]);
         $this->postedMessageFor($root);
 
-        Notification::fake();
+        Bus::fake([NotifyDiscordChannel::class]);
 
         $this->actingAs($author)
             ->deleteJson(route('api.comments.destroy', ['comment' => $root->id]))
             ->assertNoContent();
 
-        Notification::assertNothingSent();
+        Bus::assertNotDispatched(NotifyDiscordChannel::class);
     }
 
     // ==================== helpers ====================
@@ -211,13 +245,13 @@ class CommentReplyDiscordTest extends TestCase
         ]);
     }
 
-    private function postedMessageFor(Comment $root): DiscordNotification
+    private function postedMessageFor(Comment $root): DiscordMessage
     {
-        return DiscordNotification::factory()
+        return DiscordMessage::factory()
             ->withRelatedModels([['model_type' => Comment::class, 'model_id' => $root->getKey()]])
             ->create([
                 'type' => CommentPostedToItem::class,
-                'channel_id' => '123456789',
+                'channel_id' => $this->channel->id,
             ]);
     }
 

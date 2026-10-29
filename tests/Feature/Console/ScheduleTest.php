@@ -4,6 +4,7 @@ namespace Tests\Feature\Console;
 
 use App\Jobs\Discord\AttachAvatarToUser;
 use App\Jobs\Discord\RefreshUserAvatars;
+use App\Jobs\Discord\SyncChannels;
 use App\Jobs\Discord\SyncRoles;
 use App\Jobs\Discord\SyncUsers;
 use Illuminate\Console\Scheduling\Event;
@@ -18,7 +19,7 @@ use Tests\TestCase;
 class ScheduleTest extends TestCase
 {
     #[Test]
-    public function it_chains_the_discord_role_and_user_sync_hourly(): void
+    public function it_chains_the_discord_channel_role_and_user_sync_hourly(): void
     {
         Bus::fake();
 
@@ -30,7 +31,7 @@ class ScheduleTest extends TestCase
 
         $event->run($this->app);
 
-        Bus::assertChained([SyncRoles::class, SyncUsers::class]);
+        Bus::assertChained([SyncChannels::class, SyncRoles::class, SyncUsers::class]);
     }
 
     #[Test]

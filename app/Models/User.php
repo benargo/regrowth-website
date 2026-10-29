@@ -181,6 +181,16 @@ class User extends Authenticatable implements HasDiscordAvatars, HasMedia
     }
 
     /**
+     * Get the Discord messages the user created.
+     *
+     * @return HasMany<DiscordMessage, $this>
+     */
+    public function discordMessagesCreated(): HasMany
+    {
+        return $this->hasMany(DiscordMessage::class, 'created_by_user_id');
+    }
+
+    /**
      * Get the Discord roles the user holds.
      *
      * @return BelongsToMany<DiscordRole, $this>
@@ -199,16 +209,6 @@ class User extends Authenticatable implements HasDiscordAvatars, HasMedia
     {
         return $this->belongsToMany(Event::class, 'pivot_events_users', 'user_id', 'event_id')
             ->withTimestamps();
-    }
-
-    /**
-     * Get the notifications associated with the user.
-     *
-     * @return HasMany<DiscordNotification, $this>
-     */
-    public function notificationsCreated(): HasMany
-    {
-        return $this->hasMany(DiscordNotification::class, 'created_by_user_id');
     }
 
     /**

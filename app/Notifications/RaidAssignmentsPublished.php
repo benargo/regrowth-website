@@ -10,15 +10,15 @@ use App\Http\Integrations\Discord\Enums\EmbedType;
 use App\Models\Event;
 use App\Notifications\Concerns\UpdatesExisting;
 use App\Notifications\Contracts\ShouldUpdateExisting;
-use App\Notifications\Discord\DiscordChannel;
-use App\Notifications\Discord\DiscordMessage;
+use App\Notifications\Discord\DiscordNotification;
+use App\Notifications\Discord\DiscordNotificationChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Support\Facades\Storage;
 
-class RaidAssignmentsPublished extends DiscordMessage implements ShouldBroadcast, ShouldUpdateExisting
+class RaidAssignmentsPublished extends DiscordNotification implements ShouldBroadcast, ShouldUpdateExisting
 {
     use UpdatesExisting;
 
@@ -35,7 +35,7 @@ class RaidAssignmentsPublished extends DiscordMessage implements ShouldBroadcast
      */
     public function via(object $notifiable): array
     {
-        $channels = [DiscordChannel::class];
+        $channels = [DiscordNotificationChannel::class];
 
         if ($this->sender() !== null) {
             $channels[] = 'broadcast';

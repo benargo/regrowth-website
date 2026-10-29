@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\Events\AttachEventChannel;
 use App\Actions\Events\BuildEventsForViewer;
 use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Http\Middleware\RemembersRecordGameVersion;
@@ -79,7 +78,7 @@ class EventController extends Controller
         $event->load('raids.bosses.media', 'raids.media', 'bosses.media', 'assignments.group', 'characters.rank');
 
         return Inertia::render('Raiding/Plans/Show', [
-            'event' => AttachEventChannel::run(new EventResource($event))->resolve($request),
+            'event' => (new EventResource($event))->resolve($request),
             'questionMarkIconUrl' => $unknownIcon->url(),
         ]);
     }
@@ -94,7 +93,7 @@ class EventController extends Controller
         $event->load('raids.bosses.media', 'raids.media', 'bosses.media', 'assignments.group', 'characters.rank');
 
         return Inertia::render('Raiding/Plans/Edit', [
-            'event' => AttachEventChannel::run(new EventResource($event))->resolve($request),
+            'event' => (new EventResource($event))->resolve($request),
             'targetMarkers' => TargetMarker::all()->map(fn (TargetMarker $m) => ['slug' => $m->slug, 'name' => $m->name])->values(),
             'characters' => Inertia::optional(function () use ($request) {
                 return Character::with('rank', 'playableClass')

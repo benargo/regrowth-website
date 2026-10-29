@@ -2,12 +2,12 @@
 
 namespace Tests\Unit\Notifications;
 
-use App\Http\Integrations\Discord\Data\Channels\ChannelData;
 use App\Models\Character;
-use App\Models\DiscordNotification;
+use App\Models\DiscordChannel;
+use App\Models\DiscordMessage;
 use App\Models\Event;
 use App\Models\User;
-use App\Notifications\Discord\DiscordChannel;
+use App\Notifications\Discord\DiscordNotificationChannel;
 use App\Notifications\RaidAssignmentsPublished;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -24,13 +24,13 @@ class RaidAssignmentsPublishedTest extends TestCase
 {
     use RefreshDatabase;
 
-    private ChannelData $notifiable;
+    private DiscordChannel $notifiable;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $channel = ChannelData::from(['id' => '123456789012345678', 'type' => 0]);
+        $channel = DiscordChannel::factory()->create(['id' => '123456789012345678']);
         $this->notifiable = $channel;
 
         Storage::fake(config('media-library.disk_name'));
@@ -43,7 +43,7 @@ class RaidAssignmentsPublishedTest extends TestCase
 
         $notification = new RaidAssignmentsPublished($event);
 
-        $this->assertContains(DiscordChannel::class, $notification->via($this->notifiable));
+        $this->assertContains(DiscordNotificationChannel::class, $notification->via($this->notifiable));
     }
 
     // ==================== broadcasting ====================
@@ -351,7 +351,7 @@ class RaidAssignmentsPublishedTest extends TestCase
         );
     }
 
-    // ==================== existingNotification ====================
+    // ==================== existingMessage ====================
 
     #[Test]
     public function it_finds_the_message_posted_for_the_same_event(): void
@@ -359,7 +359,7 @@ class RaidAssignmentsPublishedTest extends TestCase
         $event = Event::factory()->create();
         $posted = $this->postedMessageFor($event);
 
-        $found = (new RaidAssignmentsPublished($event))->existingNotification($this->notifiable);
+        $found = (new RaidAssignmentsPublished($event))->existingMessage($this->notifiable);
 
         $this->assertTrue($found->is($posted));
     }
@@ -369,16 +369,16 @@ class RaidAssignmentsPublishedTest extends TestCase
     {
         $this->postedMessageFor(Event::factory()->create());
 
-        $found = (new RaidAssignmentsPublished(Event::factory()->create()))->existingNotification($this->notifiable);
+        $found = (new RaidAssignmentsPublished(Event::factory()->create()))->existingMessage($this->notifiable);
 
         $this->assertNull($found);
     }
 
     // ==================== helpers ====================
 
-    private function postedMessageFor(Event $event): DiscordNotification
+    private function postedMessageFor(Event $event): DiscordMessage
     {
-        return DiscordNotification::factory()
+        return DiscordMessage::factory()
             ->withRelatedModels([['model_type' => Event::class, 'model_id' => $event->getKey()]])
             ->create([
                 'type' => RaidAssignmentsPublished::class,

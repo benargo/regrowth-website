@@ -4,9 +4,9 @@ namespace {{ namespace }};
 
 use App\Http\Integrations\Discord\Data\Messages\EmbedData;
 use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
-use App\Notifications\Discord\DiscordMessage;
+use App\Notifications\Discord\DiscordNotification;
 
-class {{ class }} extends DiscordMessage
+class {{ class }} extends DiscordNotification
 {
     public function __construct(
         //

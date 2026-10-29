@@ -11,7 +11,7 @@ use Lorisleiva\Actions\Concerns\AsAction;
 
 /**
  * Builds the events matching the query, with their raids, scoped to
- * `visitors` for guests or `members` (with Discord channels) for signed-in users. A page size paginates them.
+ * `visitors` for guests or `members` for signed-in users. A page size paginates them.
  */
 class BuildEventsForViewer
 {
@@ -31,10 +31,6 @@ class BuildEventsForViewer
 
         if ($request->user() === null) {
             return $resources->scope('visitors');
-        }
-
-        foreach ($resources->collection as $resource) {
-            AttachEventChannel::run($resource);
         }
 
         return $resources->scope('members');

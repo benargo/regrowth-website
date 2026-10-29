@@ -2,9 +2,9 @@
 
 namespace App\Notifications\Discord;
 
-use App\Http\Integrations\Discord\Contracts\Channel;
 use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
 use App\Jobs\Middleware\ReleaseWhenDiscordRateLimited;
+use App\Models\DiscordChannel;
 use DateTimeInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -16,11 +16,11 @@ use Illuminate\Queue\Attributes\Backoff;
 use Illuminate\Queue\Attributes\MaxExceptions;
 
 /**
- * Base class for queued notifications that post a message to Discord through the DiscordChannel.
+ * Base class for queued notifications that post a message to Discord through the DiscordNotificationChannel.
  */
 #[MaxExceptions(3)]
 #[Backoff(30)]
-abstract class DiscordMessage extends BaseNotification implements ShouldQueue
+abstract class DiscordNotification extends BaseNotification implements ShouldQueue
 {
     use Queueable;
 
@@ -61,7 +61,7 @@ abstract class DiscordMessage extends BaseNotification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return [DiscordChannel::class];
+        return [DiscordNotificationChannel::class];
     }
 
     /**
@@ -74,7 +74,7 @@ abstract class DiscordMessage extends BaseNotification implements ShouldQueue
      *
      * @return array{type: class-string<static>, channel_id: string, payload: array<string, mixed>, created_by_user_id: int|string|null}
      */
-    public function toDatabase(Channel $notifiable, ?MessagePayloadData $payload = null): array
+    public function toDatabase(DiscordChannel $notifiable, ?MessagePayloadData $payload = null): array
     {
         return [
             'type' => static::class,

@@ -6,6 +6,7 @@ use App\Casts\AsBinaryColor;
 use App\Enums\SignupStatus;
 use App\Models\Boss;
 use App\Models\Character;
+use App\Models\DiscordChannel;
 use App\Models\Event;
 use App\Models\EventAssignment;
 use App\Models\EventAssignmentGroup;
@@ -420,6 +421,35 @@ class EventTest extends ModelTestCase
         $this->assertDatabaseMissing('pivot_events_bosses', [
             'event_id' => $event->id,
         ]);
+    }
+
+    // channel
+
+    #[Test]
+    public function channel_returns_the_stored_channel(): void
+    {
+        $channel = DiscordChannel::factory()->create();
+        $event = Event::factory()->for($channel, 'channel')->create();
+
+        $this->assertTrue($event->channel->is($channel));
+    }
+
+    #[Test]
+    public function channel_returns_a_soft_deleted_channel(): void
+    {
+        $channel = DiscordChannel::factory()->trashed()->create();
+        $event = Event::factory()->for($channel, 'channel')->create();
+
+        $this->assertTrue($event->channel->is($channel));
+    }
+
+    #[Test]
+    public function a_template_has_no_channel(): void
+    {
+        $event = Event::factory()->template()->create();
+
+        $this->assertNull($event->channel_id);
+        $this->assertNull($event->channel);
     }
 
     // characters

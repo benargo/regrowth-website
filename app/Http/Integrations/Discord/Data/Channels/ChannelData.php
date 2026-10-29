@@ -2,9 +2,7 @@
 
 namespace App\Http\Integrations\Discord\Data\Channels;
 
-use App\Http\Integrations\Discord\Contracts\Channel as ChannelContract;
 use App\Http\Integrations\Discord\Enums\ChannelType;
-use Illuminate\Notifications\Notifiable;
 use Spatie\LaravelData\Attributes\MapName;
 use Spatie\LaravelData\Attributes\Validation\ArrayType;
 use Spatie\LaravelData\Attributes\Validation\BooleanType;
@@ -20,10 +18,8 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 use Spatie\LaravelData\Optional;
 
 #[MapName(SnakeCaseMapper::class)]
-final class ChannelData extends Data implements ChannelContract
+final class ChannelData extends Data
 {
-    use Notifiable;
-
     public function __construct(
         /** @var string Snowflake channel identifier */
         #[StringType]
@@ -163,14 +159,6 @@ final class ChannelData extends Data implements ChannelContract
         #[ArrayType]
         public readonly array|Optional $member,
     ) {}
-
-    /**
-     * Get the channel id as the notifiable's unique identifier.
-     */
-    public function getKey(): string
-    {
-        return $this->id;
-    }
 
     /**
      * @return array<string, array<int, string>>

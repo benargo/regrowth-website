@@ -4,7 +4,8 @@ namespace Tests\Feature\Api\Event;
 
 use App\Http\Integrations\Discord\Requests\Messages\CreateMessageRequest;
 use App\Http\Integrations\Discord\Requests\Messages\EditMessageRequest;
-use App\Models\DiscordNotification;
+use App\Models\DiscordChannel;
+use App\Models\DiscordMessage;
 use App\Models\DiscordRole;
 use App\Models\Event;
 use App\Models\Permission;
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
+use Saloon\Http\Request;
 use Saloon\Laravel\Facades\Saloon;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\Discord\MocksDiscordService;
@@ -32,6 +34,8 @@ class PublishAssignmentsControllerTest extends TestCase
     protected User $editor;
 
     protected User $viewer;
+
+    protected DiscordChannel $channel;
 
     protected Event $event;
 
@@ -54,7 +58,8 @@ class PublishAssignmentsControllerTest extends TestCase
 
         $this->viewer = User::factory()->create();
 
-        $this->event = Event::factory()->create(['channel_id' => '123456789012345678']);
+        $this->channel = DiscordChannel::factory()->create(['id' => '123456789012345678']);
+        $this->event = Event::factory()->for($this->channel, 'channel')->create();
     }
 
     #[Test]
@@ -80,7 +85,7 @@ class PublishAssignmentsControllerTest extends TestCase
     public function republishing_after_the_discord_message_was_deleted_posts_nothing(): void
     {
         Storage::fake('s3');
-        $stale = DiscordNotification::factory()
+        $stale = DiscordMessage::factory()
             ->withRelatedModels([['model_type' => Event::class, 'model_id' => $this->event->getKey()]])
             ->create([
                 'type' => RaidAssignmentsPublished::class,
@@ -101,6 +106,22 @@ class PublishAssignmentsControllerTest extends TestCase
         Saloon::assertNotSent(CreateMessageRequest::class);
     }
 
+    #[Test]
+    public function it_publishes_to_a_soft_deleted_channel(): void
+    {
+        $channel = DiscordChannel::factory()->trashed()->create();
+
+        $this->assertPublishesTo($channel);
+    }
+
+    #[Test]
+    public function it_publishes_to_an_unsynced_stub_channel(): void
+    {
+        $channel = DiscordChannel::factory()->stub()->create();
+
+        $this->assertPublishesTo($channel);
+    }
+
     #[Group('authorization')]
     #[Test]
     public function it_returns_403_when_user_cannot_update_event(): void
@@ -117,5 +138,25 @@ class PublishAssignmentsControllerTest extends TestCase
     {
         $this->postJson(route('api.events.publish-assignments', $this->event))
             ->assertUnauthorized();
+    }
+
+    // ==================== helpers ====================
+
+    private function assertPublishesTo(DiscordChannel $channel): void
+    {
+        Storage::fake('s3');
+        $event = Event::factory()->for($channel, 'channel')->create();
+        $this->fakeDiscordMessageCreated('787878787878787878', $channel->id);
+
+        $this->actingAs($this->editor)
+            ->postJson(route('api.events.publish-assignments', $event))
+            ->assertNoContent();
+
+        Saloon::assertSent(fn (Request $request): bool => $request instanceof CreateMessageRequest
+            && $request->resolveEndpoint() === "/channels/{$channel->id}/messages");
+        $this->assertDatabaseHas('discord_messages', [
+            'channel_id' => $channel->id,
+            'message_id' => '787878787878787878',
+        ]);
     }
 }

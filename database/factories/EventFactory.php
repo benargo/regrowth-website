@@ -6,6 +6,7 @@ use App\Actions\Events\RefreshEventGameVersion;
 use App\Enums\SignupStatus;
 use App\Models\Boss;
 use App\Models\Character;
+use App\Models\DiscordChannel;
 use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\Phase;
@@ -42,7 +43,7 @@ class EventFactory extends Factory
             'title' => fake()->words(3, true),
             'start_time' => $startTime,
             'end_time' => $endTime,
-            'channel_id' => fake()->numerify('##################'),
+            'channel_id' => DiscordChannel::factory(),
         ];
     }
 
@@ -59,7 +60,7 @@ class EventFactory extends Factory
      */
     public function template(): static
     {
-        return $this->state(['is_template' => true]);
+        return $this->state(['is_template' => true, 'channel_id' => null]);
     }
 
     /**

@@ -5,6 +5,7 @@ namespace Tests\Feature\Broadcasting;
 use App\Events\Broadcasts\CommentChanged;
 use App\Events\Broadcasts\CommentPosted;
 use App\Events\Broadcasts\CommentRemoved;
+use App\Jobs\Discord\NotifyDiscordChannel;
 use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\DiscordRole;
@@ -15,6 +16,7 @@ use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -77,6 +79,7 @@ class CommentBroadcastTest extends TestCase
     public function a_reply_broadcasts_its_resolved_root_as_the_parent(): void
     {
         Event::fake([CommentPosted::class]);
+        Bus::fake([NotifyDiscordChannel::class]);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         $commentOnLootItems = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);

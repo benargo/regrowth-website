@@ -98,11 +98,10 @@ class IndexTest extends TestCase
     #[Test]
     public function guests_never_receive_the_members_shape_cached_for_signed_in_users(): void
     {
-        $this->fakeDiscordChannel(name: 'raid-events', position: 1);
         Event::factory()->forGameVersion($this->gameVersion)->create(['end_time' => now()->addDays(3)]);
 
         $this->actingAs(User::factory()->create())->get(route('raiding.index'))
-            ->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload->has('upcomingEvents.0.channel')->etc()));
+            ->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload->has('upcomingEvents.0.duration')->etc()));
 
         auth()->logout();
 

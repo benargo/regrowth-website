@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Models;
 
-use App\Models\DiscordNotification;
-use App\Models\DiscordNotificationRelatedModel;
+use App\Models\DiscordMessage;
+use App\Models\DiscordMessageRelatedModel;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Attributes\WithoutTimestamps;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,20 +13,20 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
 #[Group('discord-integration')]
-class DiscordNotificationRelatedModelTest extends ModelTestCase
+class DiscordMessageRelatedModelTest extends ModelTestCase
 {
     protected function modelClass(): string
     {
-        return DiscordNotificationRelatedModel::class;
+        return DiscordMessageRelatedModel::class;
     }
 
     #[Test]
     public function it_has_expected_fillable_attributes(): void
     {
-        $model = new DiscordNotificationRelatedModel;
+        $model = new DiscordMessageRelatedModel;
 
         $this->assertFillable($model, [
-            'discord_notification_id',
+            'discord_message_id',
             'model_type',
             'model_id',
         ]);
@@ -35,10 +35,10 @@ class DiscordNotificationRelatedModelTest extends ModelTestCase
     #[Test]
     public function it_declares_fillable_via_attribute(): void
     {
-        $model = new DiscordNotificationRelatedModel;
+        $model = new DiscordMessageRelatedModel;
 
         $this->assertFillableAttribute($model, [
-            'discord_notification_id',
+            'discord_message_id',
             'model_type',
             'model_id',
         ]);
@@ -49,7 +49,7 @@ class DiscordNotificationRelatedModelTest extends ModelTestCase
     #[Test]
     public function it_has_no_timestamps(): void
     {
-        $attributes = (new \ReflectionClass(DiscordNotificationRelatedModel::class))->getAttributes(WithoutTimestamps::class);
+        $attributes = (new \ReflectionClass(DiscordMessageRelatedModel::class))->getAttributes(WithoutTimestamps::class);
 
         $this->assertNotEmpty($attributes);
     }
@@ -59,46 +59,46 @@ class DiscordNotificationRelatedModelTest extends ModelTestCase
     #[Test]
     public function it_can_be_persisted_to_the_database(): void
     {
-        $notification = DiscordNotification::factory()->create();
+        $notification = DiscordMessage::factory()->create();
         $user = User::factory()->create();
 
-        $related = DiscordNotificationRelatedModel::create([
-            'discord_notification_id' => $notification->id,
+        $related = DiscordMessageRelatedModel::create([
+            'discord_message_id' => $notification->id,
             'model_type' => User::class,
             'model_id' => $user->id,
         ]);
 
         $this->assertModelExists($related);
         $this->assertTableHas([
-            'discord_notification_id' => $notification->id,
+            'discord_message_id' => $notification->id,
             'model_type' => User::class,
             'model_id' => $user->id,
         ]);
     }
 
-    // ==================== notification ====================
+    // ==================== message ====================
 
     #[Test]
-    public function notification_returns_belongs_to_relationship(): void
+    public function message_returns_belongs_to_relationship(): void
     {
-        $model = new DiscordNotificationRelatedModel;
+        $model = new DiscordMessageRelatedModel;
 
-        $this->assertInstanceOf(BelongsTo::class, $model->notification());
+        $this->assertInstanceOf(BelongsTo::class, $model->message());
     }
 
     #[Test]
-    public function notification_returns_the_associated_discord_notification(): void
+    public function message_returns_the_associated_discord_message(): void
     {
-        $notification = DiscordNotification::factory()->create();
+        $notification = DiscordMessage::factory()->create();
         $user = User::factory()->create();
 
-        $related = DiscordNotificationRelatedModel::create([
-            'discord_notification_id' => $notification->id,
+        $related = DiscordMessageRelatedModel::create([
+            'discord_message_id' => $notification->id,
             'model_type' => User::class,
             'model_id' => $user->id,
         ]);
 
-        $this->assertTrue($related->fresh()->notification->is($notification));
+        $this->assertTrue($related->fresh()->message->is($notification));
     }
 
     // ==================== relatedModel ====================
@@ -106,7 +106,7 @@ class DiscordNotificationRelatedModelTest extends ModelTestCase
     #[Test]
     public function related_model_returns_morph_to_relationship(): void
     {
-        $model = new DiscordNotificationRelatedModel;
+        $model = new DiscordMessageRelatedModel;
 
         $this->assertInstanceOf(MorphTo::class, $model->relatedModel());
     }
@@ -114,11 +114,11 @@ class DiscordNotificationRelatedModelTest extends ModelTestCase
     #[Test]
     public function related_model_returns_the_associated_polymorphic_model(): void
     {
-        $notification = DiscordNotification::factory()->create();
+        $notification = DiscordMessage::factory()->create();
         $user = User::factory()->create();
 
-        $related = DiscordNotificationRelatedModel::create([
-            'discord_notification_id' => $notification->id,
+        $related = DiscordMessageRelatedModel::create([
+            'discord_message_id' => $notification->id,
             'model_type' => User::class,
             'model_id' => $user->id,
         ]);

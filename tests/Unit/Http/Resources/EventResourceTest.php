@@ -34,10 +34,10 @@ class EventResourceTest extends TestCase
     {
         $event = Event::factory()->create()->load('raids.bosses.media', 'bosses.media', 'assignments.group', 'characters.rank');
 
-        $array = (new EventResource($event))->withChannel(['id' => '1', 'name' => 'raid-chat', 'position' => 3])->resolve(new Request);
+        $array = (new EventResource($event))->resolve(new Request);
 
         $this->assertSame(
-            ['id', 'title', 'start_time', 'end_time', 'duration', 'updated_at', 'color', 'banner_url', 'banner_position', 'assignments', 'composition', 'raids', 'channel'],
+            ['id', 'title', 'start_time', 'end_time', 'duration', 'updated_at', 'color', 'banner_url', 'banner_position', 'assignments', 'composition', 'raids'],
             array_keys($array),
         );
     }
@@ -578,7 +578,7 @@ class EventResourceTest extends TestCase
     // ==================== channel ====================
 
     #[Test]
-    public function it_omits_channel_when_no_channel_was_attached(): void
+    public function it_has_no_channel_key(): void
     {
         $this->fakeDiscord([]);
         $event = Event::factory()->create();
@@ -608,7 +608,7 @@ class EventResourceTest extends TestCase
 
         $array = $this->makeMemberResource($event);
 
-        $this->assertSame(['id', 'title', 'start_time', 'end_time', 'duration', 'channel'], array_keys($array));
+        $this->assertSame(['id', 'title', 'start_time', 'end_time', 'duration'], array_keys($array));
     }
 
     #[Test]
@@ -762,11 +762,10 @@ class EventResourceTest extends TestCase
     public function the_member_scope_includes_the_game_version_icon_fields_when_loaded(): void
     {
         $array = (new EventResource($this->unsavedEventInGameVersion()))
-            ->withChannel(['id' => '1', 'name' => 'raid-chat', 'position' => 3])
             ->scope('members')
             ->resolve(new Request);
 
-        $this->assertSame(['id', 'title', 'start_time', 'end_time', 'duration', 'game_version', 'channel'], array_keys($array));
+        $this->assertSame(['id', 'title', 'start_time', 'end_time', 'duration', 'game_version'], array_keys($array));
         $this->assertSame(['id' => 7, 'title' => 'World of Warcraft: Forever', 'color' => '226e73', 'icon_url' => null], $array['game_version']);
     }
 
@@ -878,7 +877,6 @@ class EventResourceTest extends TestCase
     private function makeMemberResource(Event $event): array
     {
         return (new EventResource($event))
-            ->withChannel(['id' => '1', 'name' => 'raid-chat', 'position' => 3])
             ->scope('members')
             ->resolve(new Request);
     }
