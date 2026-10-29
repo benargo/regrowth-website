@@ -2,21 +2,23 @@
 
 namespace App\Notifications;
 
+use App\Http\Integrations\Discord\Data\Messages\EmbedData;
+use App\Http\Integrations\Discord\Data\Messages\EmbedFooterData;
+use App\Http\Integrations\Discord\Data\Messages\EmbedMediaData;
+use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
+use App\Http\Integrations\Discord\Enums\EmbedType;
 use App\Models\Event;
 use App\Notifications\Concerns\UpdatesExisting;
-use App\Services\Discord\Enums\EmbedType;
-use App\Services\Discord\Notifications\Driver;
-use App\Services\Discord\Notifications\Notification;
-use App\Services\Discord\Payloads\MessagePayload;
-use App\Services\Discord\Resources\Embed;
-use App\Services\Discord\Resources\EmbedFooter;
-use App\Services\Discord\Resources\EmbedMedia;
+use App\Notifications\Contracts\ShouldUpdateExisting;
+use App\Notifications\Discord\DiscordChannel;
+use App\Notifications\Discord\DiscordMessage;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Support\Facades\Storage;
 
-class RaidAssignmentsPublished extends Notification implements ShouldBroadcast
+class RaidAssignmentsPublished extends DiscordMessage implements ShouldBroadcast, ShouldUpdateExisting
 {
     use UpdatesExisting;
 
@@ -33,7 +35,7 @@ class RaidAssignmentsPublished extends Notification implements ShouldBroadcast
      */
     public function via(object $notifiable): array
     {
-        $channels = [Driver::class];
+        $channels = [DiscordChannel::class];
 
         if ($this->sender() !== null) {
             $channels[] = 'broadcast';
@@ -63,13 +65,17 @@ class RaidAssignmentsPublished extends Notification implements ShouldBroadcast
     /**
      * Get the payload to send to Discord for this notification.
      */
-    public function toMessage(): MessagePayload
+    public function toMessage(): MessagePayloadData
     {
         /** @var Event $event */
         $event = $this->hydrateOrFail($this->relatedModel(Event::class));
 
-        return MessagePayload::from([
-            'embeds' => [Embed::from([
+        /** @var string */
+        $content = $event->slottedUsers()->pluck('users.id')->map(fn (string $id): string => "<@{$id}>")->implode(' ');
+
+        return MessagePayloadData::from([
+            'content' => $content,
+            'embeds' => [EmbedData::from([
                 'title' => 'Assignments posted for tonight!',
                 'type' => EmbedType::Rich,
                 'description' => 'Assignments for tonight have been posted. Please familiarise yourself with your duties this evening.',
@@ -83,25 +89,20 @@ class RaidAssignmentsPublished extends Notification implements ShouldBroadcast
     }
 
     /**
-     * Get the array of data to store in the database for this notification.
+     * Narrow the stored-notification lookup to this notification's event.
      */
-    public function toDatabase(object $notifiable): array
+    protected function constrainExisting(Builder $query): Builder
     {
-        return [
-            'type' => self::class,
-            'channel_id' => $notifiable->channel()->id,
-            'payload' => $this->toMessage()->toArray(),
-            'created_by_user_id' => $this->sender()?->id,
-        ];
+        return $query->relatedTo(Event::class, $this->relatedModel(Event::class)['model_id']);
     }
 
     /**
      * Get the embed footer for the notification, including the sender's nickname and avatar if available.
      */
-    protected function embedFooter(): ?EmbedFooter
+    protected function embedFooter(): ?EmbedFooterData
     {
         if ($this->sender()) {
-            return EmbedFooter::from([
+            return EmbedFooterData::from([
                 'text' => "Posted by {$this->sender()->nickname}",
                 'icon_url' => $this->sender()->avatarUrl,
             ]);
@@ -113,20 +114,21 @@ class RaidAssignmentsPublished extends Notification implements ShouldBroadcast
     /**
      * Get the embed media for the notification, which is a blueprint image related to raid assignments.
      */
-    protected function embedMedia(): ?EmbedMedia
+    protected function embedMedia(): ?EmbedMediaData
     {
         $path = 'images/assignments_blueprint.webp';
+        $disk = Storage::disk(config('media-library.disk_name'));
 
-        if (! Storage::disk('public')->exists($path)) {
+        if (! $disk->exists($path)) {
             if (! file_exists(resource_path($path))) {
                 return null;
             }
 
-            Storage::disk('public')->put($path, file_get_contents(resource_path($path)));
+            $disk->put($path, file_get_contents(resource_path($path)));
         }
 
-        return EmbedMedia::from([
-            'url' => Storage::disk('public')->url($path),
+        return EmbedMediaData::from([
+            'url' => $disk->url($path),
             'content_type' => 'image/webp',
             'description' => 'A blueprint for raid assignments with various notes and markings on it.',
         ]);

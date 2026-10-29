@@ -2,10 +2,11 @@
 
 namespace {{ namespace }};
 
-use App\Services\Discord\Notifications\Notification;
-use App\Services\Discord\Payloads\MessagePayload;
+use App\Http\Integrations\Discord\Data\Messages\EmbedData;
+use App\Http\Integrations\Discord\Data\Messages\MessagePayloadData;
+use App\Notifications\Discord\DiscordMessage;
 
-class {{ class }} extends Notification
+class {{ class }} extends DiscordMessage
 {
     public function __construct(
         //
@@ -14,25 +15,14 @@ class {{ class }} extends Notification
     /**
      * Get the payload to send to Discord for this notification.
      */
-    public function toMessage(): MessagePayload
+    public function toMessage(): MessagePayloadData
     {
-        // Fill this in with the appropriate payload for the notification
-
-        return MessagePayload::from([
-            // 
+        return MessagePayloadData::from([
+            'embeds' => [EmbedData::from([
+                'title' => '',
+                'description' => '',
+                'timestamp' => now()->toIso8601String(),
+            ])],
         ]);
-    }
-
-    /**
-     * Get the array of data to store in the database for this notification.
-     */
-    public function toDatabase(object $notifiable): array
-    {
-        return [
-            'type' => self::class,
-            'channel_id' => $notifiable->channel()->id,
-            'payload' => $this->toMessage()->toArray(),
-            'created_by_user_id' => $this->sender()?->id,
-        ];
     }
 }

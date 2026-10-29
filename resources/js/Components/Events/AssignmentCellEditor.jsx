@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { DialogTitle } from "@headlessui/react";
 import { router, usePage } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
+import IconButton from "@/Components/IconButton";
 import Modal from "@/Components/Modal";
 import TargetMarker from "@/Components/TargetMarker";
 import Tooltip from "@/Components/Tooltip";
@@ -123,6 +125,9 @@ function buildOptions({ characters, playableClasses, targetMarkers, spells, grou
 function DefineSpellModal({ initialName = "", onClose, onCreated }) {
     const [formData, setFormData] = useState({ name: initialName, type: "Magic" });
     const nameInputRef = useRef(null);
+    const nameId = useId();
+    const typeId = useId();
+    const nameErrorId = useId();
     const [submitting, setSubmitting] = useState(false);
     const [errors, setErrors] = useState({});
 
@@ -151,36 +156,55 @@ function DefineSpellModal({ initialName = "", onClose, onCreated }) {
         <Modal show onClose={onClose} maxWidth="2xl">
             <div className="p-6">
                 <div className="mb-4 flex items-center justify-between">
-                    <h3 className="font-semibold text-ink-400">Define New Spell</h3>
-                    <button type="button" onClick={onClose} className="text-ink-400 hover:text-white">
-                        <Icon icon="times" style="solid" />
-                    </button>
+                    <DialogTitle as="h3" className="font-semibold text-amber-400">
+                        Define New Spell
+                    </DialogTitle>
+                    <IconButton
+                        icon="times"
+                        label="Close dialog"
+                        onClick={onClose}
+                        className="text-amber-400 hover:text-white"
+                    />
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-ink-400">
+                        <label
+                            htmlFor={nameId}
+                            className="mb-1 block text-xs font-medium tracking-wide text-amber-400 uppercase"
+                        >
                             Name
                         </label>
                         <input
                             ref={nameInputRef}
+                            id={nameId}
+                            aria-describedby={errors.name ? nameErrorId : undefined}
+                            aria-invalid={errors.name ? true : undefined}
                             type="text"
                             value={formData.name}
                             onChange={(e) => setFormData((d) => ({ ...d, name: e.target.value }))}
-                            className="w-full rounded border border-ink-500 bg-ground-800 px-3 py-2 text-sm text-white focus:border-ink-500 focus:outline-hidden"
+                            className="bg-brown-800 w-full rounded border border-amber-500 px-3 py-2 text-sm text-white focus:border-amber-500 focus:outline-hidden"
                             required
                         />
-                        {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name}</p>}
+                        {errors.name && (
+                            <p id={nameErrorId} className="mt-1 text-xs text-red-400">
+                                {errors.name}
+                            </p>
+                        )}
                     </div>
 
                     <div>
-                        <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-ink-400">
+                        <label
+                            htmlFor={typeId}
+                            className="mb-1 block text-xs font-medium tracking-wide text-amber-400 uppercase"
+                        >
                             Type
                         </label>
                         <select
+                            id={typeId}
                             value={formData.type}
                             onChange={(e) => setFormData((d) => ({ ...d, type: e.target.value }))}
-                            className={`w-full rounded border border-${formData.type ? "affect-" + formData.type.toLowerCase() : "focus-ring"} bg-${formData.type ? "affect-" + formData.type.toLowerCase() + "/20" : "surface"} px-3 py-2 text-sm text-white focus:border-ink-500 focus:outline-hidden`}
+                            className={`w-full rounded border border-${formData.type ? "affect-" + formData.type.toLowerCase() : "focus-ring"} bg-${formData.type ? "affect-" + formData.type.toLowerCase() + "/20" : "surface"} px-3 py-2 text-sm text-white focus:border-amber-500 focus:outline-hidden`}
                         >
                             {AFFECT_TYPES.map((t) => (
                                 <option key={t} value={t}>
@@ -191,13 +215,13 @@ function DefineSpellModal({ initialName = "", onClose, onCreated }) {
                     </div>
 
                     <div className="flex justify-end gap-3 pt-2">
-                        <button type="button" onClick={onClose} className="text-sm text-ink-400 hover:text-white">
+                        <button type="button" onClick={onClose} className="text-sm text-amber-400 hover:text-white">
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={submitting || !formData.name.trim()}
-                            className="rounded bg-ink-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-ink-700 disabled:opacity-40"
+                            className="rounded bg-amber-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-800 disabled:opacity-40"
                         >
                             {submitting ? "Creating…" : "Create Spell"}
                         </button>
@@ -211,6 +235,7 @@ function DefineSpellModal({ initialName = "", onClose, onCreated }) {
 // ─── Autocomplete cell ────────────────────────────────────────────────────────
 
 export default function AssignmentCellEditor({
+    label = "Assignment",
     initialLabel,
     initialIconUrl,
     initialSlug,
@@ -272,7 +297,15 @@ export default function AssignmentCellEditor({
         if (canCreateSpells && query.length > 0) items.push({ type: "__define_spell__" });
         if (query.length > 0) items.push({ type: "__use_raw__" });
         return items;
-    }, [targetMarkerOptions, characterOptions, compGroupOptions, playableClassOptions, spellOptions, canCreateSpells, query]);
+    }, [
+        targetMarkerOptions,
+        characterOptions,
+        compGroupOptions,
+        playableClassOptions,
+        spellOptions,
+        canCreateSpells,
+        query,
+    ]);
 
     useEffect(() => {
         const handler = (e) => {
@@ -385,7 +418,7 @@ export default function AssignmentCellEditor({
     };
 
     return (
-        <td className={`relative w-1/2 border-r border-ink-600/50 p-0 last:border-r-0 ${colorClass}`}>
+        <td className={`relative w-1/2 border-r border-amber-600/50 p-0 last:border-r-0 ${colorClass}`}>
             <div className="relative flex items-center">
                 {(displayIconUrl || displaySlug) && (
                     <span className="pointer-events-none absolute left-2 mr-2 flex h-6 w-6 items-center justify-center">
@@ -399,6 +432,7 @@ export default function AssignmentCellEditor({
                 <input
                     ref={inputRef}
                     type="text"
+                    aria-label={label}
                     value={query}
                     onChange={(e) => {
                         setQuery(e.target.value);
@@ -409,7 +443,7 @@ export default function AssignmentCellEditor({
                     onFocus={openDropdown}
                     onKeyDown={handleKeyDown}
                     placeholder="Type to search…"
-                    className={`w-full bg-transparent py-2.5 pr-7 text-sm placeholder-ink-600 transition-colors focus:bg-ground-800/60 focus:outline-hidden ${textClass} ${
+                    className={`focus:bg-brown-800/60 w-full bg-transparent py-2.5 pr-7 text-sm placeholder-amber-600 transition-colors focus:outline-hidden ${textClass} ${
                         displayIconUrl || displaySlug ? "pl-10" : "pl-3"
                     }`}
                 />
@@ -417,6 +451,7 @@ export default function AssignmentCellEditor({
                     ref={caretRef}
                     type="button"
                     tabIndex={-1}
+                    aria-label={open ? "Clear" : "Show options"}
                     onMouseDown={(e) => {
                         e.preventDefault();
                         if (open) {
@@ -426,7 +461,7 @@ export default function AssignmentCellEditor({
                         }
                         inputRef.current?.focus();
                     }}
-                    className="absolute right-2 flex h-full items-center text-ink-300 hover:text-primary"
+                    className="hover:text-primary absolute right-2 flex h-full items-center text-amber-300"
                 >
                     <span className={open ? "hidden" : ""}>
                         <Icon icon="caret-down" style="solid" className="text-sm" />
@@ -439,108 +474,119 @@ export default function AssignmentCellEditor({
                 </button>
             </div>
 
-            {open && (() => {
-                let flatIdx = 0;
-                itemRefsRef.current = [];
-                return (
-                    <div
-                        ref={dropdownRef}
-                        className="absolute left-0 top-full z-40 max-h-60 w-72 overflow-auto rounded-b border border-t-0 border-ink-500 bg-ground-900 shadow-xl"
-                    >
-                        {[
-                            { label: "Target Markers", options: targetMarkerOptions },
-                            { label: "Characters", options: characterOptions },
-                            { label: "Groups", options: compGroupOptions },
-                            { label: "Playable Classes", options: playableClassOptions },
-                            { label: "Spells", options: spellOptions },
-                        ].map(({ label, options: groupOpts }) =>
-                            groupOpts.length > 0 ? (
-                                <div key={label}>
-                                    <div className="select-none px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-ink-500">
-                                        {label}
+            {open &&
+                (() => {
+                    let flatIdx = 0;
+                    itemRefsRef.current = [];
+                    return (
+                        <div
+                            ref={dropdownRef}
+                            className="bg-brown-900 absolute top-full left-0 z-40 max-h-60 w-72 overflow-auto rounded-b border border-t-0 border-amber-500 shadow-xl"
+                        >
+                            {[
+                                { label: "Target Markers", options: targetMarkerOptions },
+                                { label: "Characters", options: characterOptions },
+                                { label: "Groups", options: compGroupOptions },
+                                { label: "Playable Classes", options: playableClassOptions },
+                                { label: "Spells", options: spellOptions },
+                            ].map(({ label, options: groupOpts }) =>
+                                groupOpts.length > 0 ? (
+                                    <div key={label}>
+                                        <div className="px-3 py-1 text-[10px] font-semibold tracking-widest text-amber-500 uppercase select-none">
+                                            {label}
+                                        </div>
+                                        {groupOpts.map((opt, i) => {
+                                            const myIdx = flatIdx++;
+                                            return (
+                                                <button
+                                                    key={i}
+                                                    type="button"
+                                                    ref={(el) => {
+                                                        itemRefsRef.current[myIdx] = el;
+                                                    }}
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault();
+                                                        handleSelect(opt);
+                                                    }}
+                                                    onMouseEnter={() => setHighlightedIndex(myIdx)}
+                                                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-amber-400 ${myIdx === highlightedIndex ? "bg-brown-700" : "hover:bg-brown-700"}`}
+                                                >
+                                                    {renderOptionIcon(opt)}
+                                                    <span className="flex-1 truncate">{opt.label}</span>
+                                                    {opt.sublabel && (
+                                                        <span className="text-xs text-amber-400">{opt.sublabel}</span>
+                                                    )}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
-                                    {groupOpts.map((opt, i) => {
+                                ) : null,
+                            )}
+
+                            <Can permission="edit-datasets">
+                                {query.length > 0 &&
+                                    (() => {
                                         const myIdx = flatIdx++;
                                         return (
                                             <button
-                                                key={i}
                                                 type="button"
-                                                ref={(el) => { itemRefsRef.current[myIdx] = el; }}
+                                                ref={(el) => {
+                                                    itemRefsRef.current[myIdx] = el;
+                                                }}
                                                 onMouseDown={(e) => {
                                                     e.preventDefault();
-                                                    handleSelect(opt);
+                                                    setOpen(false);
+                                                    setShowDefineSpell(true);
                                                 }}
                                                 onMouseEnter={() => setHighlightedIndex(myIdx)}
-                                                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-heading ${myIdx === highlightedIndex ? "bg-ground-700" : "hover:bg-ground-700"}`}
+                                                className={`flex w-full items-center gap-2 border-t border-amber-600 px-3 py-2 text-left text-sm text-amber-400 ${myIdx === highlightedIndex ? "bg-brown-700" : "hover:bg-brown-700"}`}
                                             >
-                                                {renderOptionIcon(opt)}
-                                                <span className="flex-1 truncate">{opt.label}</span>
-                                                {opt.sublabel && <span className="text-xs text-ink-500">{opt.sublabel}</span>}
+                                                <Icon icon="plus" style="solid" className="text-xs" />
+                                                Define a new spell
                                             </button>
                                         );
-                                    })}
-                                </div>
-                            ) : null,
-                        )}
+                                    })()}
+                            </Can>
 
-                        <Can permission="edit-datasets">
-                            {query.length > 0 && (() => {
-                                const myIdx = flatIdx++;
-                                return (
-                                    <button
-                                        type="button"
-                                        ref={(el) => { itemRefsRef.current[myIdx] = el; }}
-                                        onMouseDown={(e) => {
-                                            e.preventDefault();
-                                            setOpen(false);
-                                            setShowDefineSpell(true);
-                                        }}
-                                        onMouseEnter={() => setHighlightedIndex(myIdx)}
-                                        className={`flex w-full items-center gap-2 border-t border-ink-600 px-3 py-2 text-left text-sm text-ink-400 ${myIdx === highlightedIndex ? "bg-ground-700" : "hover:bg-ground-700"}`}
-                                    >
-                                        <Icon icon="plus" style="solid" className="text-xs" />
-                                        Define a new spell
-                                    </button>
-                                );
-                            })()}
-                        </Can>
+                            {query.length > 0 &&
+                                (() => {
+                                    const myIdx = flatIdx++;
+                                    return (
+                                        <button
+                                            type="button"
+                                            ref={(el) => {
+                                                itemRefsRef.current[myIdx] = el;
+                                            }}
+                                            onMouseDown={(e) => {
+                                                e.preventDefault();
+                                                handleUseRaw();
+                                            }}
+                                            onMouseEnter={() => setHighlightedIndex(myIdx)}
+                                            className={`flex w-full items-center gap-2 border-t border-amber-600 px-3 py-2 text-left text-sm text-amber-400 ${myIdx === highlightedIndex ? "bg-brown-700" : "hover:bg-brown-700"}`}
+                                        >
+                                            <Icon icon="pen" style="solid" className="text-xs" />
+                                            Use &ldquo;{query}&rdquo;
+                                        </button>
+                                    );
+                                })()}
 
-                        {query.length > 0 && (() => {
-                            const myIdx = flatIdx++;
-                            return (
-                                <button
-                                    type="button"
-                                    ref={(el) => { itemRefsRef.current[myIdx] = el; }}
-                                    onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        handleUseRaw();
-                                    }}
-                                    onMouseEnter={() => setHighlightedIndex(myIdx)}
-                                    className={`flex w-full items-center gap-2 border-t border-ink-600 px-3 py-2 text-left text-sm text-ink-400 ${myIdx === highlightedIndex ? "bg-ground-700" : "hover:bg-ground-700"}`}
-                                >
-                                    <Icon icon="pen" style="solid" className="text-xs" />
-                                    Use &ldquo;{query}&rdquo;
-                                </button>
-                            );
-                        })()}
-
-                        {dataLoading && (
-                            <p className="flex items-center gap-2 px-3 py-2 text-sm text-ink-500">
-                                <Icon icon="spinner" style="solid" className="fa-spin text-xs" />
-                                Loading…
-                            </p>
-                        )}
-
-                        {!dataLoading &&
-                            characterOptions.length === 0 &&
-                            targetMarkerOptions.length === 0 &&
-                            spellOptions.length === 0 &&
-                            query.length === 0 && (
-                                <p className="px-3 py-2 text-sm text-ink-500">Start typing to search…</p>
+                            {dataLoading && (
+                                <p className="flex items-center gap-2 px-3 py-2 text-sm text-amber-500">
+                                    <Icon icon="spinner" style="solid" className="fa-spin text-xs" />
+                                    Loading…
+                                </p>
                             )}
-                    </div>
-                );
-            })()}
+
+                            {!dataLoading &&
+                                characterOptions.length === 0 &&
+                                targetMarkerOptions.length === 0 &&
+                                spellOptions.length === 0 &&
+                                query.length === 0 && (
+                                    <p className="px-3 py-2 text-sm text-amber-500">Start typing to search…</p>
+                                )}
+                        </div>
+                    );
+                })()}
 
             {showDefineSpell && (
                 <DefineSpellModal

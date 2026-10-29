@@ -9,9 +9,12 @@ use App\Http\Integrations\Blizzard\Exceptions\InvalidRaceException;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\Exceptions\XmlException;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
+use App\Http\Integrations\Concerns\HasCacheAwareRateLimits;
+use App\Http\Integrations\ServedFromCache;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use InvalidArgumentException;
+use Saloon\Enums\PipeOrder;
 use Saloon\Helpers\OAuth2\OAuthConfig;
 use Saloon\Http\Auth\AccessTokenAuthenticator;
 use Saloon\Http\Connector;
@@ -21,7 +24,6 @@ use Saloon\Http\Response;
 use Saloon\RateLimitPlugin\Contracts\RateLimitStore;
 use Saloon\RateLimitPlugin\Limit;
 use Saloon\RateLimitPlugin\Stores\LaravelCacheStore;
-use Saloon\RateLimitPlugin\Traits\HasRateLimits;
 use Saloon\Traits\OAuth2\ClientCredentialsBasicAuthGrant;
 use Saloon\Traits\Plugins\AcceptsJson;
 use Saloon\Traits\Plugins\AlwaysThrowOnErrors;
@@ -30,40 +32,23 @@ use Throwable;
 
 /**
  * Saloon connector for the Blizzard Battle.net API.
- *
- * Handles base URL resolution per region, OAuth2 client-credentials authentication
- * (with cached token), automatic locale query parameter injection, rate limiting,
- * and translation of upstream errors into typed exception hierarchy that callers catch.
  */
 class BlizzardConnector extends Connector
 {
     use AcceptsJson;
     use AlwaysThrowOnErrors;
     use ClientCredentialsBasicAuthGrant;
-    use HasRateLimits;
-
-    /** @var array<string, string> */
-    private array $namespaces;
+    use HasCacheAwareRateLimits;
 
     public function __construct(
         protected string $clientId,
         protected string $clientSecret,
-        protected GameVersion $gameVersion,
         protected Region $region,
         protected string $locale,
-        protected string $defaultRealmSlug,
-        protected string $defaultGuildSlug,
+        protected string $redirectUri,
         EagerlyMirrorAssets $eagerlyMirrorAssets,
+        private readonly ServedFromCache $servedFromCache,
     ) {
-        $component = $gameVersion->namespaceComponent();
-        $regionValue = $region->value;
-
-        $this->namespaces = [
-            'profile' => "profile{$component}-{$regionValue}",
-            'static' => "static{$component}-{$regionValue}",
-            'dynamic' => "dynamic{$component}-{$regionValue}",
-        ];
-
         if (! $this->region->supportsLocale($this->locale)) {
             throw new InvalidArgumentException(sprintf(
                 'Locale "%s" is not supported for region "%s". Supported locales: %s',
@@ -72,6 +57,8 @@ class BlizzardConnector extends Connector
                 implode(', ', $this->region->locales()),
             ));
         }
+
+        $this->middleware()->onRequest($servedFromCache, 'servedFromCache', PipeOrder::FIRST);
 
         $this->middleware()->onResponse(
             $eagerlyMirrorAssets,
@@ -104,32 +91,6 @@ class BlizzardConnector extends Connector
     }
 
     /**
-     * Get the configured default realm slug.
-     */
-    public function defaultRealmSlug(): string
-    {
-        return $this->defaultRealmSlug;
-    }
-
-    /**
-     * Get the configured default guild slug.
-     */
-    public function defaultGuildSlug(): string
-    {
-        return $this->defaultGuildSlug;
-    }
-
-    /**
-     * Get the namespace for a given kind (profile/static/dynamic).
-     *
-     * @throws InvalidArgumentException if the namespace kind is invalid.
-     */
-    public function namespace(string $kind): string
-    {
-        return $this->namespaces[$kind] ?? throw new InvalidArgumentException("Unknown Blizzard namespace kind: {$kind}");
-    }
-
-    /**
      * Default query parameters applied to every request.
      *
      * @return array<string, string>
@@ -149,11 +110,14 @@ class BlizzardConnector extends Connector
             ->setClientId($this->clientId)
             ->setClientSecret($this->clientSecret)
             ->setAllowBaseUrlOverride(true)
-            ->setTokenEndpoint($this->region->tokenUrl());
+            ->setTokenEndpoint($this->region->tokenUrl())
+            ->setRedirectUri($this->redirectUri);
     }
 
     /**
-     * Authenticate every outgoing request with a cached OAuth2 access token.
+     * Authenticate every outgoing request with a cached OAuth2 access token,
+     * unless the request carries its own authenticator (e.g. a user's
+     * Authorization Code Flow token for `/profile/user/*` endpoints).
      *
      * Token is cached against `blizzard:access_token:{region}` with tags
      * `['blizzard', 'api-auth']` so the rest of the app can flush it on demand.
@@ -162,6 +126,10 @@ class BlizzardConnector extends Connector
     {
         // Skip token request entirely if this *is* the token request, otherwise infinite loop.
         if ($pendingRequest->getRequest() instanceof GetClientCredentialsTokenBasicAuthRequest) {
+            return;
+        }
+
+        if ($pendingRequest->getRequest()->getAuthenticator() !== null) {
             return;
         }
 
@@ -198,6 +166,20 @@ class BlizzardConnector extends Connector
         ], $ttl);
 
         return $authenticator;
+    }
+
+    /**
+     * Build the Battle.net authorize URL for the Authorization Code Flow.
+     */
+    public function getAuthorizationUrl(string $state): string
+    {
+        return $this->region->authorizeUrl().'?'.http_build_query([
+            'response_type' => 'code',
+            'client_id' => $this->clientId,
+            'redirect_uri' => $this->redirectUri,
+            'scope' => 'openid wow.profile',
+            'state' => $state,
+        ], encoding_type: PHP_QUERY_RFC3986);
     }
 
     /**
@@ -268,6 +250,11 @@ class BlizzardConnector extends Connector
             Limit::allow(100)->everySeconds(1)->sleep(),
             Limit::allow(36000)->everyHour(),
         ];
+    }
+
+    protected function servedFromCache(): ServedFromCache
+    {
+        return $this->servedFromCache;
     }
 
     /**

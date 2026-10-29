@@ -2,12 +2,15 @@
 
 namespace Database\Factories;
 
-use App\Enums\RaidBackground;
+use App\Actions\Events\RefreshEventGameVersion;
 use App\Enums\SignupStatus;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
+use App\Models\GameVersion;
+use App\Models\Phase;
 use App\Models\Raid;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
@@ -60,16 +63,6 @@ class EventFactory extends Factory
     }
 
     /**
-     * Indicate that the event has a background CSS class set.
-     */
-    public function withBackground(?RaidBackground $background = null): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'background_css_class' => $background ?? fake()->randomElement(RaidBackground::cases()),
-        ]);
-    }
-
-    /**
      * Attach a character as a leader on the event pivot.
      */
     public function withLeader(?Character $character = null): static
@@ -97,6 +90,33 @@ class EventFactory extends Factory
             foreach ($raids as $index => $raid) {
                 $event->raids()->attach($raid->id, ['sort_order' => $index + 1]);
             }
+        });
+    }
+
+    /**
+     * Attach users to the event.
+     *
+     * @param  array<int, User>|null  $users
+     */
+    public function withUsers(?array $users = null, int $count = 1): static
+    {
+        return $this->afterCreating(function (Event $event) use ($users, $count) {
+            $users ??= User::factory()->count($count)->create()->all();
+
+            $event->users()->attach(collect($users)->pluck('id'));
+        });
+    }
+
+    /**
+     * Attach a raid in the given game version, and store that game version.
+     */
+    public function forGameVersion(GameVersion $gameVersion): static
+    {
+        return $this->afterCreating(function (Event $event) use ($gameVersion): void {
+            $raid = Raid::factory()->for(Phase::factory()->forGameVersion($gameVersion))->create();
+
+            $event->raids()->attach($raid->id, ['sort_order' => 1]);
+            RefreshEventGameVersion::run($event);
         });
     }
 

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\WithoutIncrementing;
 use Illuminate\Database\Eloquent\Attributes\WithoutTimestamps;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[WithoutIncrementing]
@@ -35,5 +36,14 @@ class PlayableRace extends Model
     public function characters(): HasMany
     {
         return $this->hasMany(Character::class);
+    }
+
+    /**
+     * @return BelongsToMany<GameVersion, $this>
+     */
+    public function gameVersions(): BelongsToMany
+    {
+        return $this->belongsToMany(GameVersion::class, 'pivot_game_versions_playable_races')
+            ->withTimestamps();
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Auth\AccountController;
+use App\Http\Controllers\Auth\BattleNetController;
 use App\Http\Controllers\Auth\DiscordController;
 use App\Http\Controllers\Auth\LocalLoginController;
 use App\Http\Controllers\Auth\ViewAsRoleController;
@@ -27,6 +27,17 @@ Route::middleware('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
+| Battle.net OAuth routes
+|--------------------------------------------------------------------------
+*/
+Route::get('auth/battlenet', [BattleNetController::class, 'redirect'])
+    ->name('battlenet.redirect');
+
+Route::get('auth/battlenet/callback', [BattleNetController::class, 'callback'])
+    ->name('battlenet.callback');
+
+/*
+|--------------------------------------------------------------------------
 | Manual Login Routes (local / testing only)
 |--------------------------------------------------------------------------
 |
@@ -44,15 +55,6 @@ if (app()->environment(['local', 'testing'])) {
             ->name('login.local.store');
     });
 }
-
-/*
-|--------------------------------------------------------------------------
-| User account settings routes
-|--------------------------------------------------------------------------
-*/
-Route::group(['prefix' => 'account', 'as' => 'account.', 'middleware' => ['auth']], function () {
-    Route::get('/', [AccountController::class, 'index'])->name('index');
-});
 
 /*
 |--------------------------------------------------------------------------

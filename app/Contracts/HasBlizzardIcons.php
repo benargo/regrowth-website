@@ -4,7 +4,7 @@ namespace App\Contracts;
 
 /**
  * Marker interface opting a class's `blizzard_icons` Media Library collection into
- * the shared-storage + signed-URL pipeline.
+ * the shared-storage pipeline.
  */
 interface HasBlizzardIcons
 {

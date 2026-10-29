@@ -13,9 +13,9 @@
  * @prop {Array}  permissions   - List of all available permissions for the current group { id, name, group }
  *
  * Auth (via usePage):
- * @prop {Object} auth.user              - The authenticated user
- * @prop {bool}   auth.user.admin        - Whether the user is a full admin
- * @prop {string} auth.user.highest_role - The user's highest Discord role name;
+ * @prop {Object} auth.user.data              - The authenticated user
+ * @prop {bool}   auth.user.data.admin        - Whether the user is a full admin
+ * @prop {string} auth.user.data.highest_role - The user's highest Discord role name;
  *                                         non-admins cannot toggle permissions for their own role
  *
  * Behaviour:
@@ -41,7 +41,7 @@ function PermissionToggle({ enabled, processing, onToggle, disabled }) {
             className={`rounded px-3 py-1 text-sm font-medium transition-colors ${
                 enabled
                     ? "bg-green-600" + (disabled ? "" : " hover:bg-green-700")
-                    : "bg-secondary-600" + (disabled ? "" : " hover:bg-secondary-700")
+                    : "bg-gray-600" + (disabled ? "" : " hover:bg-gray-700")
             } ${processing ? "cursor-wait opacity-50" : ""} ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
         >
             {processing ? "..." : enabled ? "Enabled" : "Disabled"}
@@ -61,7 +61,7 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
     const [processing, setProcessing] = useState({});
 
     const isRoleDisabled = (role) => {
-        return !auth.user.admin && role.name === auth.user.highest_role;
+        return !auth.user.data.admin && role.name === auth.user.data.highest_role;
     };
 
     const hasPermission = (role, permission) => {
@@ -98,14 +98,14 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
         <Master title="Manage Permissions">
             <SharedHeader title="Manage Permissions" backgroundClass="bg-arcatraz" />
             <PageContainer>
-                <p className="mb-6 text-secondary-400">
+                <p className="mb-6 text-gray-400">
                     Control which Discord roles have access to specific site features. Changes take effect immediately.
                 </p>
                 {/* Group navigation */}
                 <nav className="mb-6">
                     <Dropdown>
                         <Dropdown.Trigger>
-                            <button className="flex items-center justify-between rounded border border-ink-600 px-4 py-2 text-ink-600 transition-colors hover:bg-ink-600/20">
+                            <button className="flex items-center justify-between rounded border border-amber-600 px-4 py-2 text-amber-500 transition-colors hover:bg-amber-600/20">
                                 {groups.find((g) => g.active)?.name ?? "Select Group"}
                                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path
@@ -118,12 +118,12 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
                             </button>
                         </Dropdown.Trigger>
                         <Dropdown.Content align="left" width="48">
-                            <div className="rounded-md border border-ink-600 bg-ground-800 shadow-lg">
+                            <div className="bg-brown-800 rounded-md border border-amber-600 shadow-lg">
                                 {groups.map((group) => (
                                     <Dropdown.Link
                                         key={group.slug}
                                         href={route("management.permissions.group.show", { group: group.slug })}
-                                        className={group.active ? "bg-ground-800" : ""}
+                                        className={group.active ? "bg-brown-800" : ""}
                                     >
                                         {group.name}
                                     </Dropdown.Link>
@@ -137,7 +137,7 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                         <thead>
-                            <tr className="border-b-2 border-ink-600">
+                            <tr className="border-b-2 border-amber-600">
                                 <th className="px-4 py-3 text-left">Discord Role</th>
                                 {permissions.map((permission) => (
                                     <th key={permission.id} className="px-4 py-3 text-center">
@@ -153,7 +153,7 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
                                 const disabled = isRoleDisabled(role);
 
                                 return (
-                                    <tr key={role.id} className="border-b border-ink-600/30 hover:bg-ink-600/10">
+                                    <tr key={role.id} className="border-b border-amber-600/30 hover:bg-amber-600/10">
                                         <td className="px-4 py-3 font-medium">{role.name}</td>
                                         {permissions.map((permission) => {
                                             const enabled = hasPermission(role, permission);

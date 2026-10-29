@@ -2,127 +2,101 @@
 
 namespace App\Http\Resources;
 
+use App\Contracts\Http\Resources\ScopedResource;
+use App\Enums\SignupStatus;
+use App\Http\Resources\Concerns\HasScopes;
 use App\Models\Boss;
 use App\Models\Character;
-use App\Models\Event;
+use App\Models\EventAssignment;
 use App\Models\Raid;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
 
 /**
- * A scoped view of an event. The scope is chosen by audience, not by detail
- * level — which is why forMembers() may attach Discord channel data and
- * forVisitors() may not.
+ * Transform an event, optionally limited to the `members`, `visitors` or `template` scope;
+ * `members` and `visitors` keep only the game version's icon fields.
  *
- * Eager-loading requirements differ per scope:
- *   - default:      $event->load('raids.bosses.media', 'bosses.media', 'assignments.group', 'characters.rank')
- *   - forMembers:   nothing
- *   - forVisitors:  $event->load('raids')
- *
- * The bosses relation (the event's own pivot selection) drives the is_visible flag
- * on each boss nested under raids.bosses rather than a top-level key.
+ * Fields whose relation is not loaded are omitted:
+ *   - assignments:  'assignments.group'
+ *   - banner:       'raids.media'
+ *   - game_version: 'gameVersion.media'
+ *   - composition:  'characters.rank' (and 'raids' for the party size)
+ *   - raids:        'raids'; bosses need 'raids.bosses.media', 'bosses.media'
+ *                   and 'assignments.group'
+ *   - users:        'users'
+ *   - channel:      attached with withChannel()
  */
-class EventResource extends JsonResource
+class EventResource extends JsonResource implements ScopedResource
 {
-    protected const SCOPE_FULL = 'full';
-
-    protected const SCOPE_MEMBERS = 'members';
-
-    protected const SCOPE_VISITORS = 'visitors';
-
-    protected string $scope = self::SCOPE_FULL;
+    use HasScopes;
 
     /**
-     * The dashboard list shape for authenticated members. Includes Discord
-     * channel data, which anonymous visitors must never receive.
+     * @var array{id: string, name: string, position: int}|null
      */
-    public static function forMembers(mixed $resource): static
-    {
-        return static::withScope($resource, self::SCOPE_MEMBERS);
-    }
+    protected ?array $discordChannel = null;
+
+    protected bool $hasDiscordChannel = false;
 
     /**
-     * The minimal public-safe shape for anonymous visitors. Makes no Discord
-     * API call. Requires the raids relation: $event->load('raids').
+     * Attach the event's Discord channel, or null when it has none.
+     *
+     * @param  array{id: string, name: string, position: int}|null  $channel
      */
-    public static function forVisitors(mixed $resource): static
+    public function withChannel(?array $channel): static
     {
-        return static::withScope($resource, self::SCOPE_VISITORS);
-    }
+        $this->discordChannel = $channel;
+        $this->hasDiscordChannel = true;
 
-    /**
-     * @param  iterable<int, Event>  $resources
-     * @return Collection<int, static>
-     */
-    public static function collectionForMembers(iterable $resources): Collection
-    {
-        return collect($resources)->map(fn ($event) => static::forMembers($event));
-    }
-
-    /**
-     * @param  iterable<int, Event>  $resources
-     * @return Collection<int, static>
-     */
-    public static function collectionForVisitors(iterable $resources): Collection
-    {
-        return collect($resources)->map(fn ($event) => static::forVisitors($event));
-    }
-
-    protected static function withScope(mixed $resource, string $scope): static
-    {
-        $instance = new static($resource);
-        $instance->scope = $scope;
-
-        return $instance;
+        return $this;
     }
 
     /**
      * Transform the resource into an array.
      *
-     * @return array<string, mixed>
+     * @return array<array-key, mixed>
      */
     public function toArray(Request $request): array
     {
-        $data = [
+        return $this->scoped([
             'id' => $this->id,
             'title' => $this->title,
             'start_time' => $this->start_time?->toIso8601String(),
             'end_time' => $this->end_time?->toIso8601String(),
-        ];
-
-        if ($this->scope === self::SCOPE_VISITORS) {
-            $data['raids'] = $this->raids->pluck('name')->values()->all();
-
-            return $data;
-        }
-
-        $data['duration'] = $this->start_time && $this->end_time ? $this->duration : null;
-
-        if ($this->scope === self::SCOPE_FULL) {
-            $allAssignments = $this->assignments;
-            $eventAssignments = $allAssignments->whereNull('boss_id')->values();
-            $bossByIdAssignments = $allAssignments->whereNotNull('boss_id')->groupBy('boss_id');
-
-            $data['color'] = $this->color;
-            $data['background'] = $this->background_css_class?->value;
-            $data['assignments'] = (new EventAssignmentsCollection($eventAssignments))->resolve($request);
-            $data['composition'] = $this->buildComposition($request);
-            $data['raids'] = $this->buildRaids($bossByIdAssignments, $request);
-        }
-
-        try {
-            $data['channel'] = $this->channel?->only('id', 'name', 'position')->toArray();
-        } catch (\Exception $e) {
-            // Discord API unavailable — omit channel
-        }
-
-        return $data;
+            'duration' => $this->start_time && $this->end_time ? $this->duration : null,
+            'updated_at' => $this->updated_at?->toIso8601String(),
+            'color' => $this->color,
+            'game_version' => $this->whenLoaded('gameVersion', fn (): ?array => $this->gameVersion?->toResource()->resolve($request)),
+            $this->mergeWhen($this->hasRaidMediaLoaded(), fn (): array => $this->banner()),
+            'assignments' => $this->whenLoaded('assignments', fn (): array => (new EventAssignmentsCollection(
+                $this->assignments->whereNull('boss_id')->values()
+            ))->resolve($request)),
+            'composition' => $this->whenLoaded('characters', fn (): array => $this->buildComposition($request)),
+            'raids' => $this->whenLoaded('raids', fn (): array => $this->buildRaids($request)),
+            'users' => $this->whenLoaded('users', fn () => $this->users->toResourceCollection()),
+            $this->mergeWhen($this->hasDiscordChannel, fn (): array => ['channel' => $this->discordChannel]),
+        ]);
     }
 
     /**
-     * @return array{groups: array<int, mixed>, bench: array<int, mixed>}
+     * @return array<string, list<string>>
      */
+    protected function scopeDefinitions(): array
+    {
+        return [
+            'members' => [
+                'id', 'title', 'start_time', 'end_time', 'duration', 'raids', 'channel',
+                'game_version.color', 'game_version.icon_url', 'game_version.id', 'game_version.title',
+            ],
+            'template' => ['id', 'title', 'updated_at', 'raids'],
+            'visitors' => [
+                'id', 'title', 'start_time', 'end_time', 'raids',
+                'game_version.color', 'game_version.icon_url', 'game_version.id', 'game_version.title',
+            ],
+        ];
+    }
+
+    /** @return array{groups: array<int, array<string, mixed>>, bench: array<int, array<string, mixed>>} */
     protected function buildComposition(Request $request): array
     {
         return [
@@ -132,7 +106,21 @@ class EventResource extends JsonResource
     }
 
     /**
-     * @return array<int, mixed>
+     * @return array<int, array{
+     *     group_number: int,
+     *     is_team: bool,
+     *     characters: array<int, array{
+     *         id: int,
+     *         name: string,
+     *         playable_class: array<string, mixed>|null,
+     *         rank: array{name: ?string, sort_order: ?int},
+     *         slot_number: int,
+     *         signup_status: SignupStatus,
+     *         is_leader: bool,
+     *         is_loot_councillor: bool,
+     *         is_loot_master: bool
+     *     }>
+     * }>
      */
     protected function buildGroups(Request $request): array
     {
@@ -172,7 +160,12 @@ class EventResource extends JsonResource
     }
 
     /**
-     * @return array<int, mixed>
+     * @return array<int, array{
+     *     id: int,
+     *     name: string,
+     *     playable_class: array<string, mixed>|null,
+     *     rank: array{name: ?string, sort_order: ?int}
+     * }>
      */
     protected function buildBench(Request $request): array
     {
@@ -192,30 +185,78 @@ class EventResource extends JsonResource
     }
 
     /**
-     * @param  Collection<int|string, mixed>  $bossByIdAssignments
-     * @return array<int, mixed>
+     * Whether the event's raids and each raid's media are loaded.
      */
-    protected function buildRaids(Collection $bossByIdAssignments, Request $request): array
+    private function hasRaidMediaLoaded(): bool
     {
-        $visibleBossIds = $this->bosses->pluck('id')->flip();
+        return $this->relationLoaded('raids')
+            && $this->raids->every(fn (Raid $raid): bool => $raid->relationLoaded('media'));
+    }
 
+    /**
+     * The banner URL and position of the first of the event's raids, in pivot
+     * order, that has a banner.
+     *
+     * @return array{banner_url: ?string, banner_position: ?string}
+     */
+    private function banner(): array
+    {
+        $raid = $this->raids->first(fn (Raid $raid): bool => $raid->banner_url !== null);
+
+        return ['banner_url' => $raid?->banner_url, 'banner_position' => $raid?->banner_position];
+    }
+
+    /**
+     * The event's raids. Each raid's bosses are included when loaded.
+     *
+     * @return array<int, array{
+     *     id: int,
+     *     name: string,
+     *     slug: string,
+     *     max_players: int,
+     *     sort_order: int,
+     *     bosses?: array<int, array<string, mixed>>
+     * }>
+     */
+    protected function buildRaids(Request $request): array
+    {
         return $this->raids->map(fn (Raid $raid) => [
             'id' => $raid->id,
             'name' => $raid->name,
             'slug' => $raid->slug,
             'max_players' => $raid->max_players,
             'sort_order' => $raid->pivot->sort_order,
-            'bosses' => $raid->bosses
-                ->map(fn (Boss $boss) => $this->buildBoss($boss, $bossByIdAssignments, $visibleBossIds, $request))
-                ->values()
-                ->all(),
+            'bosses' => $this->when($raid->relationLoaded('bosses'), fn (): array => $this->buildBosses($raid, $request)),
         ])->values()->all();
     }
 
     /**
-     * @param  Collection<int|string, mixed>  $bossByIdAssignments
-     * @param  Collection<int|string, int>  $visibleBossIds  Boss ids attached to the event via the pivot.
-     * @return array<string, mixed>
+     * @return array<int, array<string, mixed>>
+     */
+    protected function buildBosses(Raid $raid, Request $request): array
+    {
+        $visibleBossIds = $this->bosses->pluck('id')->flip();
+        $bossByIdAssignments = $this->assignments->whereNotNull('boss_id')->groupBy('boss_id');
+
+        return $raid->bosses
+            ->map(fn (Boss $boss) => $this->buildBoss($boss, $bossByIdAssignments, $visibleBossIds, $request))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  Collection<int, Collection<int, EventAssignment>>  $bossByIdAssignments
+     * @param  Collection<int, int>  $visibleBossIds  Boss ids attached to the event via the pivot.
+     * @return array{
+     *     id: int,
+     *     name: string,
+     *     slug: string,
+     *     sort_order: int,
+     *     images: array<int, string>,
+     *     notes: ?string,
+     *     is_visible: bool,
+     *     assignments: array<int, mixed>
+     * }
      */
     protected function buildBoss(Boss $boss, Collection $bossByIdAssignments, Collection $visibleBossIds, Request $request): array
     {

@@ -3,10 +3,10 @@
 .env
 .env.backup
 .env.production
-.github
 .graphifyignore
 .phpactor.json
 .phpunit.result.cache
+/.archives
 /.claude/worktrees
 /.engram
 /.fleet
@@ -16,6 +16,7 @@
 /.playwright
 /.playwright-cli
 /.playwright-mcp
+/.superpowers
 /.vscode
 /.zed
 /auth.json

@@ -5,6 +5,7 @@ namespace Tests\Feature\Api;
 use App\Events\Broadcasts\CommentChanged;
 use App\Events\Broadcasts\CommentPosted;
 use App\Events\Broadcasts\CommentRemoved;
+use App\Http\Integrations\Discord\Data\Channels\ChannelStub;
 use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\CommentReaction;
@@ -14,9 +15,7 @@ use App\Models\Permission;
 use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
-use App\Notifications\NewLootCouncilComment;
-use App\Services\Discord\Notifications\NotifiableChannel;
-use App\Services\Discord\Resources\Channel as DiscordChannel;
+use App\Notifications\CommentPostedToItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
@@ -37,7 +36,8 @@ class CommentControllerTest extends TestCase
     {
         parent::setUp();
 
-        $this->mockDiscordChannel()->shouldReceive('createMessage')->andReturn($this->makeDiscordMessage());
+        config(['services.discord.channels.lootcouncil' => '123456789']);
+        $this->fakeDiscordMessageCreated();
 
         $commentOnLootItems = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
         $deleteAnyComment = Permission::firstOrCreate(['name' => 'delete-any-comment', 'guard_name' => 'web']);
@@ -292,8 +292,8 @@ class CommentControllerTest extends TestCase
             ->assertCreated();
 
         Notification::assertSentTo(
-            new NotifiableChannel(DiscordChannel::from(['id' => '123456789'])),
-            NewLootCouncilComment::class
+            new ChannelStub('123456789'),
+            CommentPostedToItem::class
         );
     }
 

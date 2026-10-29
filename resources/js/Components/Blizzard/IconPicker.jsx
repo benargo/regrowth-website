@@ -5,7 +5,7 @@ import Tooltip from "@/Components/Tooltip";
 
 function BlizzardIconPickerSkeleton() {
     return (
-        <div className="flex items-center justify-center py-12 text-ink-400">
+        <div className="flex items-center justify-center py-12 text-amber-400">
             <Icon icon="spinner" style="solid" className="fa-spin" />
         </div>
     );
@@ -95,14 +95,15 @@ export default function IconPicker({ onSelect, maxSelections = 1 }) {
                     <Icon
                         icon="search"
                         style="solid"
-                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink-500"
+                        className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-xs text-amber-500"
                     />
                     <input
                         type="text"
                         value={query}
                         onChange={handleQueryChange}
+                        aria-label="Search icons"
                         placeholder="Search icons…"
-                        className="w-full rounded border border-ink-500 bg-ground-800 py-2 pl-8 pr-3 text-sm text-white placeholder-ink-500 focus:border-ink-500 focus:outline-hidden"
+                        className="bg-brown-800 w-full rounded border border-amber-500 py-2 pr-3 pl-8 text-sm text-white placeholder-amber-500 focus:border-amber-500 focus:outline-hidden"
                         autoFocus
                     />
                 </div>
@@ -123,12 +124,12 @@ export default function IconPicker({ onSelect, maxSelections = 1 }) {
                                     type="button"
                                     onClick={() => toggleIcon(icon)}
                                     disabled={isDisabled}
-                                    className={`relative inline-flex items-center rounded p-0.5 transition-all ${
+                                    className={`relative inline-flex items-center rounded p-0.5 transition-colors ${
                                         isSelected
-                                            ? "ring-2 ring-green-500 ring-offset-1 ring-offset-surface-raised"
+                                            ? "ring-offset-surface-raised ring-2 ring-green-500 ring-offset-1"
                                             : isDisabled
                                               ? "cursor-not-allowed opacity-40"
-                                              : "hover:bg-ground-700"
+                                              : "hover:bg-brown-700"
                                     }`}
                                     title={icon.name}
                                 >
@@ -137,7 +138,7 @@ export default function IconPicker({ onSelect, maxSelections = 1 }) {
                                         <img src={icon.url} alt={icon.name} className="h-8 w-8 rounded-xs" />
                                     </Tooltip>
                                     {isSelected && (
-                                        <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-green-500 shadow">
+                                        <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-green-500 shadow">
                                             <Icon icon="check" style="solid" className="text-[7px] text-white" />
                                         </span>
                                     )}
@@ -145,7 +146,7 @@ export default function IconPicker({ onSelect, maxSelections = 1 }) {
                             );
                         })}
                         {icons.length === 0 && (
-                            <p className="col-span-10 py-8 text-center text-sm text-ink-400">No icons found.</p>
+                            <p className="col-span-10 py-8 text-center text-sm text-amber-400">No icons found.</p>
                         )}
                     </div>
                 )}
@@ -156,12 +157,12 @@ export default function IconPicker({ onSelect, maxSelections = 1 }) {
                 links={paginatorLinks}
                 meta={paginatorMeta}
                 onPageChange={handlePage}
-                className="border-t border-ink-600 pt-3"
+                className="border-t border-amber-600 pt-3"
             />
 
             {/* Footer: selection count + confirm */}
-            <div className="mt-3 flex items-center justify-between border-t border-ink-600 pt-3">
-                <span className="text-sm text-ink-400">
+            <div className="mt-3 flex items-center justify-between border-t border-amber-600 pt-3">
+                <span className="text-sm text-amber-400">
                     {selectionCount === 0 ? (
                         maxSelections === 1 ? (
                             "No icon selected"
@@ -171,7 +172,7 @@ export default function IconPicker({ onSelect, maxSelections = 1 }) {
                     ) : maxSelections === 1 ? (
                         <span className="text-green-400">1 icon selected</span>
                     ) : (
-                        <span className={atLimit ? "text-green-400" : "text-ink-300"}>
+                        <span className={atLimit ? "text-green-400" : "text-amber-300"}>
                             {selectionCount} / {maxSelections} selected
                         </span>
                     )}
@@ -181,7 +182,7 @@ export default function IconPicker({ onSelect, maxSelections = 1 }) {
                     type="button"
                     disabled={selectionCount === 0}
                     onClick={handleConfirm}
-                    className="rounded bg-ink-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-ink-700 disabled:opacity-40"
+                    className="rounded bg-amber-700 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-amber-800 disabled:opacity-40"
                 >
                     {maxSelections === 1
                         ? "Select"

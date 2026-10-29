@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Modal from "@/Components/Modal";
-import TextInput from "@/Components/TextInput";
+import { PrimaryButton, SecondaryButton, TextInput } from "@/Components/FormControls";
 import Icon from "@/Components/FontAwesome/Icon";
 
 export default function LevelRangeFilter({ minLevel, maxLevel, onMinChange, onMaxChange, dataMin, dataMax }) {
@@ -43,10 +43,10 @@ export default function LevelRangeFilter({ minLevel, maxLevel, onMinChange, onMa
         <>
             <button
                 onClick={openModal}
-                className="flex w-full items-center justify-between rounded border border-ink-600 bg-ground-800 px-4 py-2 text-left text-white transition-colors hover:bg-ground-700"
+                className="flex w-full items-center justify-between rounded border border-amber-600 bg-brown-800 px-4 py-2 text-left text-white transition-colors hover:bg-brown-700"
             >
                 <span className="truncate text-sm">{buttonLabel}</span>
-                <Icon icon="sliders" className="ml-2 shrink-0 text-ink-500" />
+                <Icon icon="sliders" className="ml-2 shrink-0 text-amber-500" />
             </button>
 
             <Modal show={isOpen} onClose={() => setIsOpen(false)} maxWidth="sm">
@@ -55,40 +55,30 @@ export default function LevelRangeFilter({ minLevel, maxLevel, onMinChange, onMa
                     <div className="flex items-center gap-3">
                         <TextInput
                             type="number"
+                            aria-label="Minimum level"
                             value={draftMin}
                             onChange={(e) => setDraftMin(e.target.value)}
                             placeholder={String(dataMin)}
                             min={dataMin}
                             max={dataMax}
-                            className="w-full"
                         />
-                        <span className="shrink-0 text-secondary-400">–</span>
+                        <span className="shrink-0 text-gray-400">–</span>
                         <TextInput
                             type="number"
+                            aria-label="Maximum level"
                             value={draftMax}
                             onChange={(e) => setDraftMax(e.target.value)}
                             placeholder={String(dataMax)}
                             min={dataMin}
                             max={dataMax}
-                            className="w-full"
                         />
                     </div>
-                    <p className="mt-2 text-xs text-secondary-400">
+                    <p className="mt-2 text-xs text-gray-400">
                         Roster levels range from {dataMin} to {dataMax}
                     </p>
                     <div className="mt-6 flex justify-end gap-3">
-                        <button
-                            onClick={handleClear}
-                            className="rounded border border-ink-600 px-4 py-2 text-sm text-secondary-300 transition-colors hover:bg-ground-700 hover:text-white"
-                        >
-                            Clear
-                        </button>
-                        <button
-                            onClick={handleApply}
-                            className="rounded bg-ink-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-ink-500"
-                        >
-                            Apply
-                        </button>
+                        <SecondaryButton onClick={handleClear}>Clear</SecondaryButton>
+                        <PrimaryButton onClick={handleApply}>Apply</PrimaryButton>
                     </div>
                 </div>
             </Modal>

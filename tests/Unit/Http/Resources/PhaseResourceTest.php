@@ -4,6 +4,7 @@ namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\PhaseResource;
 use App\Models\Boss;
+use App\Models\GameVersion;
 use App\Models\Phase;
 use App\Models\Raid;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -107,14 +108,16 @@ class PhaseResourceTest extends TestCase
     public function it_includes_raids_when_loaded(): void
     {
         $phase = Phase::factory()->create();
-        Raid::factory()->count(2)->create(['phase_id' => $phase->id]);
-        $phase->load('raids');
+        $raids = Raid::factory()->count(2)->create(['phase_id' => $phase->id]);
+        $phase->load('raids.media');
 
         $resource = new PhaseResource($phase);
         $array = $resource->toArray(new Request);
 
         $this->assertArrayHasKey('raids', $array);
-        $this->assertCount(2, $array['raids']);
+        $this->assertSame($raids->pluck('id')->all(), array_column($array['raids'], 'id'));
+        $this->assertArrayHasKey('banner_url', $array['raids'][0]);
+        $this->assertArrayHasKey('banner_position', $array['raids'][0]);
     }
 
     #[Test]
@@ -129,34 +132,54 @@ class PhaseResourceTest extends TestCase
         $this->assertArrayNotHasKey('raids', $array);
     }
 
-    // ==================== bosses relation ====================
+    // ==================== game version relation ====================
 
     #[Test]
-    public function it_includes_bosses_when_loaded(): void
+    public function it_includes_the_owning_game_version_when_loaded(): void
     {
-        $phase = Phase::factory()->create();
-        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
-        Boss::factory()->count(3)->create(['raid_id' => $raid->id]);
-        $phase->load('bosses');
+        $gameVersion = GameVersion::factory()->create(['title' => 'Era']);
+        $phase = Phase::factory()->for($gameVersion)->create()->load('gameVersion');
 
-        $resource = new PhaseResource($phase);
-        $array = $resource->toArray(new Request);
+        $array = (new PhaseResource($phase))->resolve(new Request);
 
-        $this->assertArrayHasKey('bosses', $array);
-        $this->assertCount(3, $array['bosses']);
+        $this->assertSame($gameVersion->id, $array['game_version']['id']);
+        $this->assertSame('Era', $array['game_version']['title']);
     }
 
     #[Test]
-    public function it_excludes_bosses_when_not_loaded(): void
+    public function it_returns_null_for_game_version_when_loaded_but_unowned(): void
+    {
+        $phase = Phase::factory()->create()->load('gameVersion');
+
+        $array = (new PhaseResource($phase))->resolve(new Request);
+
+        $this->assertArrayHasKey('game_version', $array);
+        $this->assertNull($array['game_version']);
+    }
+
+    #[Test]
+    public function it_excludes_game_version_when_not_loaded(): void
+    {
+        $phase = Phase::factory()->for(GameVersion::factory())->create();
+
+        $array = (new PhaseResource($phase))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('game_version', $array);
+    }
+
+    // ==================== bosses relation ====================
+
+    #[Test]
+    public function it_nests_bosses_under_their_raids(): void
     {
         $phase = Phase::factory()->create();
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
         Boss::factory()->count(3)->create(['raid_id' => $raid->id]);
+        $phase->load('raids.bosses');
 
-        $resource = new PhaseResource($phase);
-        $array = $resource->resolve(new Request);
+        $array = (new PhaseResource($phase))->resolve(new Request);
 
-        $this->assertArrayNotHasKey('bosses', $array);
+        $this->assertCount(3, $array['raids'][0]['bosses']);
     }
 
     // ==================== full resource shape ====================
@@ -173,5 +196,40 @@ class PhaseResourceTest extends TestCase
         $this->assertArrayHasKey('description', $array);
         $this->assertArrayHasKey('start_date', $array);
         $this->assertArrayHasKey('has_started', $array);
+    }
+
+    // ==================== management ====================
+
+    #[Test]
+    public function the_default_shape_is_unchanged(): void
+    {
+        $phase = Phase::factory()->create();
+
+        $this->assertSame(
+            ['id', 'number', 'name', 'description', 'start_date', 'has_started'],
+            array_keys((new PhaseResource($phase))->resolve(new Request)),
+        );
+    }
+
+    #[Test]
+    public function the_management_scope_adds_links_the_current_flag_and_usage_counts(): void
+    {
+        $phase = Phase::factory()->create();
+        Raid::factory()->for($phase)->create();
+        $counted = Phase::withUsageCounts()->with('gameVersion')->find($phase->id);
+
+        $array = (new PhaseResource($counted))
+            ->withLinks(['edit' => '/edit', 'destroy' => '/destroy'])
+            ->markCurrent(true)
+            ->scope('management')
+            ->resolve(new Request);
+
+        $this->assertSame(
+            ['id', 'number', 'name', 'description', 'start_date', 'has_started', 'is_current', 'game_version', 'raids_count', 'reports_count', 'links'],
+            array_keys($array),
+        );
+        $this->assertTrue($array['is_current']);
+        $this->assertSame(1, $array['raids_count']);
+        $this->assertSame(['edit' => '/edit', 'destroy' => '/destroy'], $array['links']);
     }
 }

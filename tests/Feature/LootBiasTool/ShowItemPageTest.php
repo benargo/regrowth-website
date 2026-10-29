@@ -3,10 +3,13 @@
 namespace Tests\Feature\LootBiasTool;
 
 use App\Contracts\Http\Middleware\SharesOriginRaidSession;
+use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Models\Comment;
 use App\Models\CommentReaction;
 use App\Models\DiscordRole;
+use App\Models\GameVersion;
 use App\Models\Item;
 use App\Models\Permission;
 use App\Models\Raid;
@@ -15,6 +18,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
@@ -154,6 +158,36 @@ class ShowItemPageTest extends TestCase
     }
 
     #[Test]
+    public function show_item_requests_the_item_from_blizzard_using_the_blizzard_id_not_the_uuid(): void
+    {
+        $user = User::factory()->member()->create();
+        $item = $this->createTestItem();
+
+        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
+
+        Saloon::assertSent(function (GetItemRequest $request) use ($item): bool {
+            return $request->resolveEndpoint() === "/data/wow/item/{$item->blizzard_id}";
+        });
+    }
+
+    #[Test]
+    public function show_item_scopes_the_blizzard_request_to_the_items_game_version_namespace(): void
+    {
+        $user = User::factory()->member()->create();
+        $gameVersion = GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::RETAIL]);
+        $item = Item::factory()->fromBoss()->withName('Test Item')->create(['game_version_id' => $gameVersion->id]);
+
+        $expectedNamespace = BlizzardNamespace::RETAIL->forStaticRequests(app(BlizzardConnector::class)->getRegion());
+
+        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
+
+        Saloon::assertSent(function ($request, $response) use ($expectedNamespace): bool {
+            return $request instanceof GetItemRequest
+                && $response->getPendingRequest()->headers()->get('Battlenet-Namespace') === $expectedNamespace;
+        });
+    }
+
+    #[Test]
     public function show_item_redirects_to_fallback_slug_when_item_has_no_name(): void
     {
         $user = User::factory()->member()->create();
@@ -161,7 +195,7 @@ class ShowItemPageTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id]));
 
-        $response->assertRedirect(route('loot.items.show', ['item' => $item->id, 'slug' => "item-{$item->id}"]));
+        $response->assertRedirect(route('loot.items.show', ['item' => $item->id, 'slug' => "item-{$item->blizzard_id}"]));
     }
 
     #[Test]
@@ -170,7 +204,7 @@ class ShowItemPageTest extends TestCase
         $user = User::factory()->member()->create();
         $item = $this->createTestItemWithoutName();
 
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => "item-{$item->id}"]));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => "item-{$item->blizzard_id}"]));
 
         $response->assertOk();
     }

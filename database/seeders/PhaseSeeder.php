@@ -8,10 +8,16 @@ use Illuminate\Database\Seeder;
 class PhaseSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Seed the Burning Crusade phases into an empty phases table.
      */
     public function run(): void
     {
+        if (Phase::exists()) {
+            $this->command?->info('Phases already exist — skipping.');
+
+            return;
+        }
+
         $phases = [
             [
                 'id' => 1,
@@ -23,19 +29,19 @@ class PhaseSeeder extends Seeder
                 'id' => 2,
                 'number' => 2,
                 'description' => 'Phase 2: The Eye and Serpentshrine Cavern',
-                'start_date' => null,
+                'start_date' => '2026-05-15 00:00:00',
             ],
             [
                 'id' => 3,
                 'number' => 3,
                 'description' => 'Phase 3: Mount Hyjal and Black Temple',
-                'start_date' => null,
+                'start_date' => '2026-08-28 00:00:00',
             ],
             [
                 'id' => 4,
                 'number' => 3.5,
                 'description' => "Phase 3.5: Zul'Aman",
-                'start_date' => null,
+                'start_date' => '2026-10-23 00:00:00',
             ],
             [
                 'id' => 5,
@@ -46,10 +52,7 @@ class PhaseSeeder extends Seeder
         ];
 
         foreach ($phases as $phase) {
-            Phase::query()->updateOrCreate(
-                ['id' => $phase['id']],
-                $phase
-            );
+            Phase::forceCreate($phase);
         }
     }
 }

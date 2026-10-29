@@ -3,6 +3,7 @@
 namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\GuildRankResource;
+use App\Models\Character;
 use App\Models\GuildRank;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -53,5 +54,43 @@ class GuildRankResourceTest extends TestCase
         $array = (new GuildRankResource($rank))->toArray(new Request);
 
         $this->assertFalse($array['count_attendance']);
+    }
+
+    #[Test]
+    public function it_omits_characters_count_when_not_counted(): void
+    {
+        $rank = GuildRank::factory()->create();
+
+        $array = (new GuildRankResource($rank))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('characters_count', $array);
+    }
+
+    #[Test]
+    public function it_returns_characters_count_when_counted(): void
+    {
+        $rank = GuildRank::factory()->create();
+        Character::factory()->count(2)->create(['rank_id' => $rank->id]);
+
+        $rank = GuildRank::withCount('characters')->findOrFail($rank->id);
+
+        $array = (new GuildRankResource($rank))->resolve(new Request);
+
+        $this->assertSame(2, $array['characters_count']);
+    }
+
+    // ==================== attendance scope ====================
+
+    #[Test]
+    public function the_attendance_scope_emits_only_the_name_and_slug_even_with_characters_counted(): void
+    {
+        $rank = GuildRank::factory()->create(['name' => 'Raider']);
+        Character::factory()->create(['rank_id' => $rank->id]);
+
+        $rank = GuildRank::withCount('characters')->findOrFail($rank->id);
+
+        $array = (new GuildRankResource($rank))->scope('attendance')->resolve(new Request);
+
+        $this->assertSame(['name' => 'Raider', 'slug' => 'raider'], $array);
     }
 }

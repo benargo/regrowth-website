@@ -11,6 +11,7 @@ use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Middleware\EnsureItemSlugIsValid;
 use App\Http\Middleware\RemembersOriginRaid;
+use App\Http\Middleware\RemembersRecordGameVersion;
 use App\Http\Requests\Items\UpdateItemRequest;
 use App\Http\Resources\CommentResource;
 use App\Http\Resources\ItemResource;
@@ -44,6 +45,7 @@ class ItemController extends Controller
     /** Display a specific loot item. */
     #[Middleware(EnsureItemSlugIsValid::class)]
     #[Middleware(RemembersOriginRaid::class)]
+    #[Middleware(RemembersRecordGameVersion::class.':item,index')]
     public function show(
         Request $request,
         BlizzardConnector $blizzardConnector,
@@ -121,8 +123,12 @@ class ItemController extends Controller
 
     private function loadItemData(BlizzardConnector $blizzardConnector, Item $item, ?int $originRaidId): void
     {
+        $item->loadMissing('gameVersion');
+
         try {
-            $blizzardItem = $blizzardConnector->send(new GetItemRequest($item->id))->dto();
+            $blizzardItem = $blizzardConnector->send(
+                new GetItemRequest($item->blizzard_id, $item->gameVersion?->blizzard_namespace)
+            )->dto();
             $item->fillBlizzardData($blizzardItem);
         } catch (ItemNotFoundException) {
             // We can continue without the filled in data.
@@ -148,6 +154,7 @@ class ItemController extends Controller
                     fn (Builder $q) => $q->where('raids.id', $originRaidId),
                     fn (Builder $q) => $q->orderBy('raids.id')->limit(1),
                 ),
+            'raids.media',
             'boss',
             'priorities' => fn (BelongsToMany $query) => $query->orderByPivot('weight', 'desc'),
         ]);
@@ -163,7 +170,7 @@ class ItemController extends Controller
      */
     protected function replyEagerLoads(): array
     {
-        return ['user', 'reactions.user'];
+        return ['user.media', 'reactions.user.media'];
     }
 
     /**

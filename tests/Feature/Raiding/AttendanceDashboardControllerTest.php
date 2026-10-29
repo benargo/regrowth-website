@@ -2,33 +2,42 @@
 
 namespace Tests\Feature\Raiding;
 
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
+use App\Enums\PlannedAbsenceReason;
+use App\Enums\Presence;
 use App\Models\Character;
 use App\Models\DiscordRole;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
-use App\Models\GuildTag;
 use App\Models\Permission;
-use App\Models\Phase;
 use App\Models\PlannedAbsence;
 use App\Models\PlayableClass;
-use App\Models\Report;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\Concerns\BuildsAttendanceFixtures;
 use Tests\TestCase;
 
 #[Group('raiding')]
 class AttendanceDashboardControllerTest extends TestCase
 {
+    use BuildsAttendanceFixtures;
     use RefreshDatabase;
+
+    private GameVersion $gameVersion;
+
+    private GuildRank $rank;
 
     protected function setUp(): void
     {
         parent::setUp();
 
+        $this->freezeTime();
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
         Cache::tags(['attendance', 'reports'])->flush();
 
@@ -38,9 +47,12 @@ class AttendanceDashboardControllerTest extends TestCase
             ['name' => 'Officer', 'position' => 5, 'is_visible' => true]
         );
         $officerRole->givePermissionTo($permission);
+
+        $this->gameVersion = $this->createAttendanceVersion();
+        $this->rank = $this->createRank($this->gameVersion);
     }
 
-    // ==================== index: Access Control ====================
+    // ==================== invoke: access ====================
 
     #[Test]
     public function invoke_requires_authentication(): void
@@ -104,45 +116,34 @@ class AttendanceDashboardControllerTest extends TestCase
         $response->assertOk();
     }
 
-    // ==================== index: Props ====================
+    // ==================== invoke: props ====================
 
     #[Test]
     public function invoke_returns_latest_report_date(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        Report::factory()->withGuildTag($tag)->create(['start_time' => '2025-03-07 12:00:00']);
-        Report::factory()->withGuildTag($tag)->create(['start_time' => '2025-03-15 12:00:00']);
-        Report::factory()->withGuildTag($tag)->create(['start_time' => '2025-03-10 12:00:00']);
+        $this->createReport($this->gameVersion, '2025-03-07 12:00:00');
+        $this->createReport($this->gameVersion, '2025-03-15 12:00:00');
+        $this->createReport($this->gameVersion, '2025-03-10 12:00:00');
 
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('latestReportDate', '15 Mar 2025')
-        );
-    }
-
-    #[Test]
-    public function invoke_returns_null_latest_report_date_when_no_reports(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->where('latestReportDate', null)
+            ->where('latestReportDate', '2025-03-15')
         );
     }
 
     #[Test]
     public function invoke_stats_prop_is_deferred_and_not_in_initial_response(): void
     {
+        $this->createReport($this->gameVersion, now()->subDay());
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
+            ->where('hasAttendance', true)
             ->missing('stats')
         );
     }
@@ -150,6 +151,7 @@ class AttendanceDashboardControllerTest extends TestCase
     #[Test]
     public function invoke_deferred_stats_contains_expected_keys(): void
     {
+        $this->createReport($this->gameVersion, now()->subDay());
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
@@ -171,360 +173,195 @@ class AttendanceDashboardControllerTest extends TestCase
     }
 
     #[Test]
-    public function invoke_upcoming_absences_returns_future_absences_in_order(): void
+    public function invoke_serializes_the_stats_character_lists_with_only_their_playable_class(): void
     {
-        $rank = GuildRank::factory()->create();
-        $characterA = Character::factory()->main()->create(['name' => 'Arthas', 'rank_id' => $rank->id]);
-        $characterB = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $character = $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true, 'name' => 'Vashj']);
+        $this->attend($this->createReport($this->gameVersion, now()->subDay()), $character);
 
-        PlannedAbsence::factory()->create([
-            'character_id' => $characterB->id,
-            'start_date' => now()->addDays(10),
-            'end_date' => now()->addDays(12),
-        ]);
-        PlannedAbsence::factory()->create([
-            'character_id' => $characterA->id,
-            'start_date' => now()->addDays(2),
-            'end_date' => now()->addDays(4),
-        ]);
-
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('stats.upcomingAbsences', 2)
-                ->where('stats.upcomingAbsences.0.character.name', 'Arthas')
-                ->where('stats.upcomingAbsences.1.character.name', 'Jaina')
-            )
-        );
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('stats.percentageGroups.>=80', 1)
+                    ->where('stats.percentageGroups.>=80.0.name', 'Vashj')
+                    ->where('stats.percentageGroups.>=80.0.playable_class', null)
+                    ->missing('stats.percentageGroups.>=80.0.rank')
+                    ->missing('stats.percentageGroups.50-80')
+                    ->has('stats.droppingOff', 0)
+                    ->has('stats.pickingUp', 0)));
     }
 
     #[Test]
-    public function invoke_upcoming_absences_excludes_past_absences(): void
+    public function invoke_serializes_the_stats_upcoming_absences_with_their_reason_and_character(): void
     {
-        $rank = GuildRank::factory()->create();
-        $character = Character::factory()->main()->create(['name' => 'Sylvanas', 'rank_id' => $rank->id]);
-
-        PlannedAbsence::factory()->create([
-            'character_id' => $character->id,
-            'start_date' => now()->subDays(5),
-            'end_date' => now()->subDays(3),
-        ]);
-
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('stats.upcomingAbsences', [])
-            )
-        );
-    }
-
-    #[Test]
-    public function invoke_upcoming_absences_limited_to_four(): void
-    {
-        $rank = GuildRank::factory()->create();
-
-        for ($i = 0; $i < 6; $i++) {
-            $character = Character::factory()->main()->create(['rank_id' => $rank->id]);
-            PlannedAbsence::factory()->create([
-                'character_id' => $character->id,
-                'start_date' => now()->addDays($i + 1),
-                'end_date' => now()->addDays($i + 2),
-            ]);
-        }
-
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('stats.upcomingAbsences', 4)
-            )
-        );
-    }
-
-    #[Test]
-    public function invoke_classifies_above_80_correctly(): void
-    {
-        $rank = GuildRank::factory()->create();
-        $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-
-        for ($i = 0; $i < 5; $i++) {
-            $report = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(10 + $i)]);
-            $report->characters()->attach($character->id, ['presence' => 1]);
-        }
-
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('stats.percentageGroups.>=80', 1)
-                ->where('stats.percentageGroups.>=80.0.name', 'Thrall')
-                ->missing('stats.percentageGroups.50-80')
-                ->where('stats.totalPlayers', 1)
-            )
-        );
-    }
-
-    #[Test]
-    public function invoke_classifies_dropping_off_correctly(): void
-    {
-        $rank = GuildRank::factory()->create();
-        $character = Character::factory()->main()->create(['name' => 'Vashj', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-
-        // 4 older raids attended
-        for ($i = 0; $i < 4; $i++) {
-            $report = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(20 + $i)]);
-            $report->characters()->attach($character->id, ['presence' => 1]);
-        }
-
-        // 4 recent raids not attended
-        for ($i = 0; $i < 4; $i++) {
-            Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(1 + $i)]);
-        }
-
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('stats.droppingOff', 1)
-                ->where('stats.droppingOff.0.name', 'Vashj')
-            )
-        );
-    }
-
-    #[Test]
-    public function invoke_benched_last_week_groups_characters_by_tag(): void
-    {
-        $rank = GuildRank::factory()->create();
-        $kael = Character::factory()->main()->create(['name' => 'Kael', 'rank_id' => $rank->id]);
-        $illidan = Character::factory()->main()->create(['name' => 'Illidan', 'rank_id' => $rank->id]);
-
-        $monday = GuildTag::factory()->countsAttendance()->withoutPhase()->create(['name' => 'Monday']);
-        $tuesday = GuildTag::factory()->countsAttendance()->withoutPhase()->create(['name' => 'Tuesday']);
-
-        $mondayReport = Report::factory()->withGuildTag($monday)->create(['start_time' => now()->subDays(2)]);
-        $mondayReport->characters()->attach($kael->id, ['presence' => 2]);
-
-        $tuesdayReport = Report::factory()->withGuildTag($tuesday)->create(['start_time' => now()->subDays(1)]);
-        $tuesdayReport->characters()->attach($illidan->id, ['presence' => 2]);
-
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('stats.benchedLastWeek.Monday', 1)
-                ->where('stats.benchedLastWeek.Monday.0.name', 'Kael')
-                ->has('stats.benchedLastWeek.Tuesday', 1)
-                ->where('stats.benchedLastWeek.Tuesday.0.name', 'Illidan')
-            )
-        );
-    }
-
-    #[Test]
-    public function invoke_benched_last_week_excludes_character_from_older_report(): void
-    {
-        $rank = GuildRank::factory()->create();
-        $character = Character::factory()->main()->create(['name' => 'Illidan', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(10)]);
-        $report->characters()->attach($character->id, ['presence' => 2]);
-
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('stats.benchedLastWeek', [])
-            )
-        );
-    }
-
-    #[Test]
-    public function stats_upcoming_absences_include_character_playable_class(): void
-    {
-        $user = User::factory()->officer()->create();
-
+        $this->createReport($this->gameVersion, now()->subDay());
         $playableClass = PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
-        $character = Character::factory()->withPlayableClass($playableClass)->create(['name' => 'Thrall']);
+        $character = Character::factory()->forGameVersion($this->gameVersion)->withPlayableClass($playableClass)->create(['name' => 'Thrall']);
         PlannedAbsence::factory()->create([
             'character_id' => $character->id,
             'start_date' => now()->addDay(),
+            'reason' => PlannedAbsenceReason::Holiday,
         ]);
 
-        $this->actingAs($user)
+        $this->actingAs(User::factory()->officer()->create())
             ->get(route('raiding.attendance.dashboard'))
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->has('stats.upcomingAbsences.0.character')
-                    ->where('stats.upcomingAbsences.0.character.playable_class.id', 1)
+                    ->has('stats.upcomingAbsences', 1)
+                    ->where('stats.upcomingAbsences.0.character.name', 'Thrall')
                     ->where('stats.upcomingAbsences.0.character.playable_class.name', 'Warrior')
-                )
-            );
+                    ->where('stats.upcomingAbsences.0.reason.key', 'On holiday')
+                    ->where('stats.upcomingAbsences.0.reason.icon', 'umbrella-beach')));
     }
 
     #[Test]
-    public function stats_upcoming_absences_include_null_playable_class_when_character_has_none(): void
+    public function invoke_serializes_the_stats_benched_characters_by_tag(): void
     {
-        $user = User::factory()->officer()->create();
+        $kael = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Kael', 'is_main' => true]);
+        $monday = $this->createTag($this->gameVersion, attributes: ['name' => 'Monday']);
+        $this->attend($this->createReport($this->gameVersion, now()->subDays(2), $monday), $kael, Presence::Benched);
 
-        $character = Character::factory()->create(['name' => 'Thrall']);
-        PlannedAbsence::factory()->create([
-            'character_id' => $character->id,
-            'start_date' => now()->addDay(),
-        ]);
-
-        $this->actingAs($user)
+        $this->actingAs(User::factory()->officer()->create())
             ->get(route('raiding.attendance.dashboard'))
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->has('stats.upcomingAbsences.0.character')
-                    ->where('stats.upcomingAbsences.0.character.playable_class', null)
-                )
-            );
+                    ->has('stats.benchedLastWeek.Monday', 1)
+                    ->where('stats.benchedLastWeek.Monday.0.character.name', 'Kael')));
     }
 
     #[Test]
-    public function invoke_classifies_picking_up_correctly(): void
+    public function invoke_shows_the_empty_state_for_a_version_without_counted_attendance(): void
     {
-        $rank = GuildRank::factory()->create();
-        $character = Character::factory()->main()->create(['name' => 'Maiev', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.dashboard'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('hasAttendance', false)
+                ->where('hasUncountedReports', false)
+                ->where('gameVersion.data.slug', $this->gameVersion->slug)
+                ->missing('latestReportDate')
+                ->missing('stats'));
+    }
 
-        $debutReport = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(30)]);
-        $debutReport->characters()->attach($character->id, ['presence' => 1]);
+    #[Test]
+    public function invoke_flags_reports_whose_guild_tags_do_not_count_attendance(): void
+    {
+        $this->createReport($this->gameVersion, now()->subDay(), $this->createTag($this->gameVersion, countsAttendance: false));
 
-        for ($i = 0; $i < 3; $i++) {
-            Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(15 + $i)]);
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('hasAttendance', false)
+                ->where('hasUncountedReports', true));
+    }
+
+    #[Group('authorization')]
+    #[Test]
+    public function invoke_links_to_the_guild_tags_for_users_who_can_update_them(): void
+    {
+        $this->createReport($this->gameVersion, now()->subDay(), $this->createTag($this->gameVersion, countsAttendance: false));
+        $this->grantOfficerPermissions('view-warcraft-logs-guilds', 'update-warcraft-logs-tags');
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('guildTagsUrl', route('management.warcraftlogs.guilds.show', $this->gameVersion->warcraftLogsGuild)));
+    }
+
+    #[Group('authorization')]
+    #[Test]
+    public function invoke_omits_the_guild_tags_link_for_users_who_cannot_update_them(): void
+    {
+        $this->createReport($this->gameVersion, now()->subDay(), $this->createTag($this->gameVersion, countsAttendance: false));
+        $this->grantOfficerPermissions('view-warcraft-logs-guilds');
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('hasUncountedReports', true)
+                ->where('guildTagsUrl', null));
+    }
+
+    #[Group('authorization')]
+    #[Test]
+    public function invoke_omits_the_guild_tags_link_for_users_who_cannot_view_the_guild(): void
+    {
+        $this->createReport($this->gameVersion, now()->subDay(), $this->createTag($this->gameVersion, countsAttendance: false));
+        $this->grantOfficerPermissions('update-warcraft-logs-tags');
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('hasUncountedReports', true)
+                ->where('guildTagsUrl', null));
+    }
+
+    #[Test]
+    public function invoke_shows_the_empty_state_without_a_game_version(): void
+    {
+        $this->gameVersion->delete();
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.dashboard'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('hasAttendance', false)
+                ->where('gameVersion', null)
+                ->missing('stats'));
+    }
+
+    #[Test]
+    public function invoke_follows_the_session_version(): void
+    {
+        $newer = $this->createAttendanceVersion(['release_date' => '2024-06-01']);
+        $this->createReport($newer, now()->subDay());
+        $this->createReport($this->gameVersion, now()->subDay());
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $this->gameVersion->slug])
+            ->get(route('raiding.attendance.dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('hasAttendance', true)
+                ->where('gameVersion.data.slug', $this->gameVersion->slug));
+    }
+
+    #[Test]
+    public function invoke_payload_query_count_does_not_grow_with_rows(): void
+    {
+        $report = $this->createReport($this->gameVersion, now()->subDay());
+        $this->attend($report, $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
+        $user = User::factory()->officer()->create();
+        $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
+        Cache::tags(['attendance'])->flush();
+        $oneRow = $this->countDeferredQueries($user, 'raiding.attendance.dashboard', 'stats');
+
+        foreach (range(1, 3) as $ignored) {
+            $this->attend($report, $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
         }
+        Cache::tags(['attendance'])->flush();
 
-        for ($i = 0; $i < 4; $i++) {
-            $report = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(1 + $i)]);
-            $report->characters()->attach($character->id, ['presence' => 1]);
+        $this->assertSame($oneRow, $this->countDeferredQueries($user, 'raiding.attendance.dashboard', 'stats'));
+    }
+
+    // ==================== helpers ====================
+
+    private function grantOfficerPermissions(string ...$permissions): void
+    {
+        $officerRole = DiscordRole::findOrFail('829021769448816691');
+
+        foreach ($permissions as $permission) {
+            $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']));
         }
-
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('stats.pickingUp', 1)
-                ->where('stats.pickingUp.0.name', 'Maiev')
-            )
-        );
     }
 
-    #[Test]
-    public function invoke_phase_attendance_null_when_no_phase_started(): void
+    private function countDeferredQueries(User $user, string $routeName, string $prop): int
     {
-        $user = User::factory()->officer()->create();
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $this->actingAs($user)->get(route($routeName))
+            ->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload->has($prop)));
+        DB::disableQueryLog();
 
-        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('stats.phaseAttendance', null)
-                ->where('stats.previousPhaseAttendance', null)
-            )
-        );
-    }
-
-    #[Test]
-    public function invoke_phase_attendance_only_counts_reports_since_current_phase_start(): void
-    {
-        $rank = GuildRank::factory()->create();
-        $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-
-        Phase::factory()->create(['start_date' => now()->subDays(14)]);
-
-        $preReport = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(20)]);
-        $preReport->characters()->attach($character->id, ['presence' => 1]);
-
-        $postReport1 = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(10)]);
-        $postReport1->characters()->attach($character->id, ['presence' => 1]);
-
-        Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(5)]);
-
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('stats.phaseAttendance', 50)
-            )
-        );
-    }
-
-    #[Test]
-    public function invoke_total_players_breakdown_counts_mains_and_linked_separately(): void
-    {
-        $rank = GuildRank::factory()->create();
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-
-        $main1 = Character::factory()->main()->withUniqueName()->create(['rank_id' => $rank->id]);
-        $main2 = Character::factory()->main()->withUniqueName()->create(['rank_id' => $rank->id]);
-        $linked = Character::factory()->withUniqueName()->create(['is_main' => false, 'rank_id' => $rank->id]);
-
-        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(1)]);
-        $report->characters()->attach($main1->id, ['presence' => 1]);
-        $report->characters()->attach($main2->id, ['presence' => 1]);
-        $report->characters()->attach($linked->id, ['presence' => 1]);
-
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('stats.totalPlayers', 3)
-                ->where('stats.totalMains', 2)
-                ->where('stats.totalLinkedCharacters', 1)
-            )
-        );
-    }
-
-    #[Test]
-    public function invoke_previous_phase_attendance_bounded_between_phase_starts(): void
-    {
-        $rank = GuildRank::factory()->create();
-        $character = Character::factory()->main()->create(['name' => 'Vol\'jin', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-
-        Phase::factory()->create(['number' => 1, 'start_date' => now()->subDays(30)]);
-        Phase::factory()->create(['number' => 2, 'start_date' => now()->subDays(7)]);
-
-        $phase1Report = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(20)]);
-        $phase1Report->characters()->attach($character->id, ['presence' => 1]);
-
-        $phase2Report = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(3)]);
-
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('stats.previousPhaseAttendance', 100)
-                ->where('stats.phaseAttendance', null)
-            )
-        );
+        return count(DB::getQueryLog());
     }
 }

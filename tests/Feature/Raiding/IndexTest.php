@@ -2,9 +2,12 @@
 
 namespace Tests\Feature\Raiding;
 
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
 use App\Models\Event;
+use App\Models\GameVersion;
 use App\Models\Report;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -13,11 +16,14 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 #[Group('raiding')]
 class IndexTest extends TestCase
 {
     use MocksDiscordService;
     use RefreshDatabase;
+
+    private GameVersion $gameVersion;
 
     protected function setUp(): void
     {
@@ -25,7 +31,10 @@ class IndexTest extends TestCase
 
         Cache::tags(['raiding', 'events'])->flush();
         Cache::tags(['raiding', 'reports'])->flush();
+        $this->gameVersion = GameVersion::factory()->forGuild()->create(['release_date' => Carbon::parse('2024-01-01')]);
     }
+
+    // ==================== access ====================
 
     #[Test]
     public function guests_can_view_the_raiding_index(): void
@@ -61,16 +70,18 @@ class IndexTest extends TestCase
         );
     }
 
+    // ==================== events ====================
+
     #[Test]
     public function upcoming_events_within_the_next_week_are_returned(): void
     {
-        $this->mockDiscordChannel(name: 'raid-events', position: 1);
+        $this->fakeDiscordChannel(name: 'raid-events', position: 1);
 
         $user = User::factory()->create();
 
-        $upcomingEvent = Event::factory()->create(['end_time' => now()->addDays(3)]);
-        $pastEvent = Event::factory()->create(['end_time' => now()->subDay()->subHours(3)]);
-        $tooFarFutureEvent = Event::factory()->create(['end_time' => now()->addWeek()->addDays(2)]);
+        $upcomingEvent = Event::factory()->forGameVersion($this->gameVersion)->create(['end_time' => now()->addDays(3)]);
+        $pastEvent = Event::factory()->forGameVersion($this->gameVersion)->create(['end_time' => now()->subDay()->subHours(3)]);
+        $tooFarFutureEvent = Event::factory()->forGameVersion($this->gameVersion)->create(['end_time' => now()->addWeek()->addDays(2)]);
 
         $response = $this->actingAs($user)->get(route('raiding.index'));
 
@@ -85,14 +96,32 @@ class IndexTest extends TestCase
     }
 
     #[Test]
+    public function guests_never_receive_the_members_shape_cached_for_signed_in_users(): void
+    {
+        $this->fakeDiscordChannel(name: 'raid-events', position: 1);
+        Event::factory()->forGameVersion($this->gameVersion)->create(['end_time' => now()->addDays(3)]);
+
+        $this->actingAs(User::factory()->create())->get(route('raiding.index'))
+            ->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload->has('upcomingEvents.0.channel')->etc()));
+
+        auth()->logout();
+
+        $this->get(route('raiding.index'))
+            ->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('upcomingEvents.0', fn (Assert $event) => $event->missing('channel')->missing('duration')->etc())
+                ->etc()
+            ));
+    }
+
+    #[Test]
     public function template_events_are_excluded_from_upcoming_events(): void
     {
-        $this->mockDiscordChannel(name: 'raid-events', position: 1);
+        $this->fakeDiscordChannel(name: 'raid-events', position: 1);
 
         $user = User::factory()->create();
 
-        $liveEvent = Event::factory()->create(['end_time' => now()->addDays(3)]);
-        $templateEvent = Event::factory()->template()->create(['end_time' => now()->addDays(3)]);
+        $liveEvent = Event::factory()->forGameVersion($this->gameVersion)->create(['end_time' => now()->addDays(3)]);
+        $templateEvent = Event::factory()->forGameVersion($this->gameVersion)->template()->create(['end_time' => now()->addDays(3)]);
 
         $response = $this->actingAs($user)->get(route('raiding.index'));
 
@@ -108,12 +137,12 @@ class IndexTest extends TestCase
     #[Test]
     public function upcoming_events_are_ordered_by_start_time_ascending(): void
     {
-        $this->mockDiscordChannel(name: 'raid-events', position: 1);
+        $this->fakeDiscordChannel(name: 'raid-events', position: 1);
 
         $user = User::factory()->create();
 
-        $laterEvent = Event::factory()->create(['start_time' => now()->addDays(5), 'end_time' => now()->addDays(5)->addHours(4)]);
-        $earlierEvent = Event::factory()->create(['start_time' => now()->addDays(2), 'end_time' => now()->addDays(2)->addHours(4)]);
+        $laterEvent = Event::factory()->forGameVersion($this->gameVersion)->create(['start_time' => now()->addDays(5), 'end_time' => now()->addDays(5)->addHours(4)]);
+        $earlierEvent = Event::factory()->forGameVersion($this->gameVersion)->create(['start_time' => now()->addDays(2), 'end_time' => now()->addDays(2)->addHours(4)]);
 
         $response = $this->actingAs($user)->get(route('raiding.index'));
 
@@ -129,12 +158,14 @@ class IndexTest extends TestCase
         );
     }
 
+    // ==================== reports ====================
+
     #[Test]
-    public function reports_are_limited_to_ten_most_recent(): void
+    public function reports_are_limited_to_five_most_recent(): void
     {
         $user = User::factory()->create();
 
-        Report::factory()->withZone()->count(12)->create([
+        Report::factory()->forGameVersion($this->gameVersion)->withZone()->count(12)->create([
             'start_time' => fn () => fake()->dateTimeBetween('-30 days', 'now'),
         ]);
 
@@ -143,7 +174,7 @@ class IndexTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/Index')
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('reports', fn ($reports) => count($reports) === 10)
+                ->where('reports', fn ($reports) => count($reports) === 5)
             )
         );
     }
@@ -153,8 +184,8 @@ class IndexTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $olderReport = Report::factory()->withZone()->create(['start_time' => now()->subDays(10)]);
-        $newerReport = Report::factory()->withZone()->create(['start_time' => now()->subDays(2)]);
+        $olderReport = Report::factory()->forGameVersion($this->gameVersion)->withZone()->create(['start_time' => now()->subDays(10)]);
+        $newerReport = Report::factory()->forGameVersion($this->gameVersion)->withZone()->create(['start_time' => now()->subDays(2)]);
 
         $response = $this->actingAs($user)->get(route('raiding.index'));
 
@@ -168,5 +199,58 @@ class IndexTest extends TestCase
                 })
             )
         );
+    }
+
+    // ==================== game version ====================
+
+    #[Test]
+    public function it_lists_only_the_current_versions_events_and_reports(): void
+    {
+        $otherVersion = GameVersion::factory()->forGuild()->create(['release_date' => Carbon::parse('2023-01-01')]);
+        $event = Event::factory()->live()->forGameVersion($this->gameVersion)->create(['start_time' => now()->addDay(), 'end_time' => now()->addDay()->addHours(3)]);
+        Event::factory()->live()->forGameVersion($otherVersion)->create(['start_time' => now()->addDay(), 'end_time' => now()->addDay()->addHours(3)]);
+        Event::factory()->live()->create(['start_time' => now()->addDay(), 'end_time' => now()->addDay()->addHours(3)]);
+        $report = Report::factory()->forGameVersion($this->gameVersion)->create(['start_time' => now()->subDay()]);
+        Report::factory()->forGameVersion($otherVersion)->create(['start_time' => now()->subDay()]);
+
+        $response = $this->get(route('raiding.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload
+            ->has('upcomingEvents', 1)
+            ->where('upcomingEvents.0.id', $event->id)
+            ->has('reports', 1)
+            ->where('reports.0.id', $report->id)
+        ));
+    }
+
+    #[Test]
+    public function it_caches_each_versions_lists_separately(): void
+    {
+        $otherVersion = GameVersion::factory()->forGuild()->create(['release_date' => Carbon::parse('2023-01-01')]);
+        Event::factory()->live()->forGameVersion($this->gameVersion)->create(['start_time' => now()->addDay(), 'end_time' => now()->addDay()->addHours(3)]);
+        $otherEvent = Event::factory()->live()->forGameVersion($otherVersion)->create(['start_time' => now()->addDay(), 'end_time' => now()->addDay()->addHours(3)]);
+        $this->get(route('raiding.index'))->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload->has('upcomingEvents', 1)));
+
+        $response = $this->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $otherVersion->slug])->get(route('raiding.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload
+            ->has('upcomingEvents', 1)
+            ->where('upcomingEvents.0.id', $otherEvent->id)
+        ));
+    }
+
+    #[Test]
+    public function it_shows_empty_lists_without_any_game_version(): void
+    {
+        $this->gameVersion->delete();
+        Event::factory()->live()->create(['start_time' => now()->addDay(), 'end_time' => now()->addDay()->addHours(3)]);
+        Report::factory()->create();
+
+        $response = $this->get(route('raiding.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload
+            ->has('upcomingEvents', 0)
+            ->has('reports', 0)
+        ));
     }
 }

@@ -23,3 +23,6 @@ Simple admin-managed lookup/dataset models implement App\Contracts\Models\Datase
 
 ## Primary key mechanism follows ID origin
 Use the HasUuids trait for models whose ID is internally generated. For a model keyed by an externally-sourced ID (Discord snowflake, slug, etc.), use #[Table(keyType: 'string', incrementing: false)] alone instead — do not generate a UUID for an ID that already comes from outside the app.
+
+## Order relationship definitions alphabetically
+List relationship methods in alphabetical order by method name. Exception: a scoped relationship that narrows the one defined just before it (e.g. characters() followed by mainCharacters()) goes directly after its base relationship rather than in its alphabetical slot.

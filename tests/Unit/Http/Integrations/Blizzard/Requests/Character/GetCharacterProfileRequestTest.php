@@ -2,7 +2,9 @@
 
 namespace Tests\Unit\Http\Integrations\Blizzard\Requests\Character;
 
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Data\Characters\CharacterProfileData;
+use App\Http\Integrations\Blizzard\Exceptions\RealmRequiredException;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -79,6 +81,14 @@ class GetCharacterProfileRequestTest extends BlizzardTestCase
     }
 
     #[Test]
+    public function it_keeps_diacritics_in_the_character_name(): void
+    {
+        $request = new GetCharacterProfileRequest('Thunderstrike', 'Ízepo');
+
+        $this->assertSame('/profile/wow/character/thunderstrike/ízepo', $request->resolveEndpoint());
+    }
+
+    #[Test]
     public function it_accepts_already_slugged_inputs_unchanged(): void
     {
         $request = new GetCharacterProfileRequest('thunderstrike', 'thunderlord');
@@ -104,12 +114,54 @@ class GetCharacterProfileRequestTest extends BlizzardTestCase
         ]);
 
         $connector = $this->makeConnector();
-        $expected = $connector->namespace('profile');
+        $expected = BlizzardNamespace::default()->forProfileRequests($connector->getRegion());
 
         $connector->send(new GetCharacterProfileRequest('thunderstrike', 'foo'));
 
         Saloon::assertSent(function ($request, $response) use ($expected) {
             return $response->getPendingRequest()->headers()->get('Battlenet-Namespace') === $expected;
         });
+    }
+
+    #[Test]
+    #[Group('happy-path')]
+    public function an_explicit_namespace_overrides_the_default(): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => $this->tokenMock(),
+            GetCharacterProfileRequest::class => MockResponse::make(body: [
+                'id' => 1, 'name' => 'Foo',
+                'gender' => ['type' => 'MALE', 'name' => 'Male'],
+                'faction' => ['type' => 'ALLIANCE', 'name' => 'Alliance'],
+                'race' => ['key' => ['href' => 'r'], 'name' => 'Human', 'id' => 1],
+                'character_class' => ['key' => ['href' => 'c'], 'name' => 'Warrior', 'id' => 1],
+                'realm' => ['key' => ['href' => 'rm'], 'name' => 'Thunderstrike', 'id' => 1234],
+                'level' => 1, 'last_login_timestamp' => 0,
+                'average_item_level' => 1, 'equipped_item_level' => 1,
+            ], status: 200),
+        ]);
+
+        $this->makeConnector()->send(
+            new GetCharacterProfileRequest('thunderstrike', 'foo', BlizzardNamespace::ERA),
+        );
+
+        Saloon::assertSent(function ($request, $response) {
+            return $response->getPendingRequest()->headers()->get('Battlenet-Namespace') === 'profile-classic1x-eu';
+        });
+    }
+
+    #[Test]
+    #[Group('validation')]
+    public function it_throws_when_realm_is_null_for_a_namespace_that_requires_one(): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => $this->tokenMock(),
+        ]);
+
+        $this->expectException(RealmRequiredException::class);
+
+        $this->makeConnector()->send(
+            new GetCharacterProfileRequest(null, 'foo', BlizzardNamespace::RETAIL),
+        );
     }
 }

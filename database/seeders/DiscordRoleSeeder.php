@@ -18,7 +18,6 @@ class DiscordRoleSeeder extends Seeder
             ['id' => '1265247017215594496', 'name' => 'Raider', 'position' => 4, 'is_visible' => true],
             ['id' => '829022020301094922', 'name' => 'Member', 'position' => 3, 'is_visible' => true],
             ['id' => '829022292590985226', 'name' => 'Guest', 'position' => 2, 'is_visible' => true],
-            ['id' => '1473267525927174316', 'name' => 'Daily Quest Subscriber', 'position' => 1, 'is_visible' => false],
         ];
 
         // Shift existing positions out of the target range to avoid unique constraint

@@ -1,10 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import FormatButton from "@/Components/FormatButton";
 import Icon from "@/Components/FontAwesome/Icon";
-import InputError from "@/Components/InputError";
+import { FieldError, FormRow, PrimaryButton, SecondaryButton, TextInput } from "@/Components/FormControls";
 import Modal from "@/Components/Modal";
-import PrimaryButton from "@/Components/PrimaryButton";
-import SecondaryButton from "@/Components/SecondaryButton";
 
 /**
  * All available format button configurations
@@ -188,6 +186,7 @@ function generatePlaceholder(formatKeys) {
  * @param {function} [props.onValidationChange] - Callback when validation state changes (receives error or null)
  * @param {string} [props.className] - Additional className for the container
  * @param {boolean} [props.autoFocus] - Focus the textarea on mount
+ * @param {string} [props.id] - The textarea's id, so a label can point to it
  */
 export default function MarkdownEditor({
     value,
@@ -200,6 +199,7 @@ export default function MarkdownEditor({
     onValidationChange,
     className = "",
     autoFocus = false,
+    id,
 }) {
     const textareaRef = useRef(null);
     const [validationError, setValidationError] = useState(null);
@@ -395,27 +395,27 @@ export default function MarkdownEditor({
         }
     }
 
-    const BUTTON_GROUPS = [
+    const buttonGroups = [
         ["heading2", "heading3"],
         ["bold", "italic", "underline"],
         ["bulletList", "numberedList"],
         ["quote", "link", "wowheadLink"],
     ];
 
-    const groupedButtons = BUTTON_GROUPS.map((keys) =>
+    const groupedButtons = buttonGroups.map((keys) =>
         keys.map((key) => formatButtons.find((f) => f.key === key)).filter(Boolean),
     ).filter((group) => group.length > 0);
 
-    const ungroupedButtons = formatButtons.filter((f) => !BUTTON_GROUPS.flat().includes(f.key));
+    const ungroupedButtons = formatButtons.filter((f) => !buttonGroups.flat().includes(f.key));
 
     return (
         <div className={className}>
-            <div className="overflow-hidden rounded-md border border-ink-500 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary hover:border-ink-600">
+            <div className="overflow-hidden rounded-md border border-amber-500 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary hover:border-amber-600">
                 {formatButtons.length > 0 && (
-                    <div className="flex items-center gap-0.5 border-b border-ink-500 bg-ground-700 px-2 py-1.5">
+                    <div className="flex items-center gap-0.5 border-b border-amber-500 bg-brown-700 px-2 py-1.5">
                         {groupedButtons.map((group, groupIndex) => (
                             <div key={groupIndex} className="flex items-center gap-0.5">
-                                {groupIndex > 0 && <span className="mx-1.5 h-4 w-px bg-ink-500" />}
+                                {groupIndex > 0 && <span className="mx-1.5 h-4 w-px bg-amber-500" />}
                                 {group.map((format) => (
                                     <FormatButton
                                         key={format.key}
@@ -428,7 +428,7 @@ export default function MarkdownEditor({
                         ))}
                         {ungroupedButtons.length > 0 && (
                             <div className="flex items-center gap-0.5">
-                                {groupedButtons.length > 0 && <span className="mx-1.5 h-4 w-px bg-ink-500" />}
+                                {groupedButtons.length > 0 && <span className="mx-1.5 h-4 w-px bg-amber-500" />}
                                 {ungroupedButtons.map((format) => (
                                     <FormatButton
                                         key={format.key}
@@ -443,48 +443,49 @@ export default function MarkdownEditor({
                 )}
                 <textarea
                     ref={textareaRef}
+                    id={id}
                     value={value}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     placeholder={computedPlaceholder}
                     rows={rows}
                     autoFocus={autoFocus}
-                    className="w-full resize-none border-none bg-ground-800 p-2 text-white placeholder-gray-500 focus:outline-hidden focus:ring-0"
+                    className="block w-full resize-none border-none bg-brown-800 p-2 text-white placeholder-gray-300 focus:outline-hidden focus:ring-0"
                 />
             </div>
             <div>
-                <InputError message={validationError || error} className="mt-2" />
+                <FieldError message={validationError || error} className="mt-2" />
             </div>
 
             <Modal show={showWowheadModal} onClose={handleWowheadCancel} maxWidth="md">
                 <div className="p-6">
                     <h2 className="text-lg font-medium text-white">Insert Wowhead Link</h2>
-                    <p className="mt-1 text-sm text-secondary-400">Paste a Wowhead URL for an item or spell.</p>
+                    <p className="mt-1 text-sm text-gray-400">Paste a Wowhead URL for an item or spell.</p>
 
                     <div className="mt-4">
-                        <input
-                            type="text"
-                            value={wowheadUrl}
-                            onChange={(e) => {
-                                setWowheadUrl(e.target.value);
-                                setWowheadError(null);
-                            }}
-                            placeholder="https://www.wowhead.com/tbc/item=28438/dragonmaw"
-                            className="w-full rounded-md border-ink-500 bg-ground-800 text-white placeholder-gray-400 focus:border-primary focus:ring-primary"
-                            autoFocus
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    handleWowheadConfirm();
-                                }
-                            }}
-                        />
-                        <InputError message={wowheadError} className="mt-2" />
+                        <FormRow label="Wowhead URL" error={wowheadError}>
+                            <TextInput
+                                value={wowheadUrl}
+                                onChange={(e) => {
+                                    setWowheadUrl(e.target.value);
+                                    setWowheadError(null);
+                                }}
+                                placeholder="https://www.wowhead.com/tbc/item=28438/dragonmaw"
+                                invalid={!!wowheadError}
+                                autoFocus
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        handleWowheadConfirm();
+                                    }
+                                }}
+                            />
+                        </FormRow>
                     </div>
 
                     <div className="mt-6 flex justify-end gap-3">
                         <SecondaryButton onClick={handleWowheadCancel}>Cancel</SecondaryButton>
-                        <PrimaryButton onClick={handleWowheadConfirm}>Insert Link</PrimaryButton>
+                        <PrimaryButton onClick={handleWowheadConfirm}>Insert link</PrimaryButton>
                     </div>
                 </div>
             </Modal>
@@ -492,38 +493,32 @@ export default function MarkdownEditor({
             <Modal show={showLinkModal} onClose={handleLinkCancel} maxWidth="md">
                 <div className="p-6">
                     <h2 className="text-lg font-medium text-white">Insert Link</h2>
-                    <p className="mt-1 text-sm text-secondary-400">Enter a URL and optional display text.</p>
+                    <p className="mt-1 text-sm text-gray-400">Enter a URL and optional display text.</p>
 
                     <div className="mt-4 space-y-4">
-                        <div>
-                            <label htmlFor="link-url" className="block text-sm font-medium text-secondary-300">
-                                URL
-                            </label>
-                            <input
-                                id="link-url"
-                                type="text"
+                        <FormRow label="URL" error={linkError}>
+                            <TextInput
                                 value={linkUrl}
                                 onChange={(e) => {
                                     setLinkUrl(e.target.value);
                                     setLinkError(null);
                                 }}
                                 placeholder="https://example.com"
-                                className="mt-1 w-full rounded-md border-ink-500 bg-ground-800 text-white placeholder-gray-400 focus:border-primary focus:ring-primary"
+                                invalid={!!linkError}
                                 autoFocus
                             />
-                            <InputError message={linkError} className="mt-2" />
-                        </div>
-                        <div>
-                            <label htmlFor="link-text" className="block text-sm font-medium text-secondary-300">
-                                Display Text <span className="text-secondary-500">(optional)</span>
-                            </label>
-                            <input
-                                id="link-text"
-                                type="text"
+                        </FormRow>
+                        <FormRow
+                            label={
+                                <>
+                                    Display text <span className="text-gray-400">(optional)</span>
+                                </>
+                            }
+                        >
+                            <TextInput
                                 value={linkText}
                                 onChange={(e) => setLinkText(e.target.value)}
                                 placeholder="Click here"
-                                className="mt-1 w-full rounded-md border-ink-500 bg-ground-800 text-white placeholder-gray-400 focus:border-primary focus:ring-primary"
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter") {
                                         e.preventDefault();
@@ -531,12 +526,12 @@ export default function MarkdownEditor({
                                     }
                                 }}
                             />
-                        </div>
+                        </FormRow>
                     </div>
 
                     <div className="mt-6 flex justify-end gap-3">
                         <SecondaryButton onClick={handleLinkCancel}>Cancel</SecondaryButton>
-                        <PrimaryButton onClick={handleLinkConfirm}>Insert Link</PrimaryButton>
+                        <PrimaryButton onClick={handleLinkConfirm}>Insert link</PrimaryButton>
                     </div>
                 </div>
             </Modal>

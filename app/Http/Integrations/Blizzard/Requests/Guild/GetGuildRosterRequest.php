@@ -3,9 +3,11 @@
 namespace App\Http\Integrations\Blizzard\Requests\Guild;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
-use App\Http\Integrations\Blizzard\Concerns\HasCaching;
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Http\Integrations\Blizzard\Concerns\CachesBlizzardResponses;
+use App\Http\Integrations\Blizzard\Concerns\RequiresRealm;
 use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterData;
-use Illuminate\Support\Str;
+use App\Http\Integrations\Blizzard\Support\NameSlug;
 use Saloon\CachePlugin\Contracts\Cacheable;
 use Saloon\Enums\Method;
 use Saloon\Http\PendingRequest;
@@ -14,16 +16,17 @@ use Saloon\Http\Response;
 
 class GetGuildRosterRequest extends Request implements Cacheable
 {
-    use HasCaching;
+    use CachesBlizzardResponses, RequiresRealm;
 
     protected Method $method = Method::GET;
 
     public function __construct(
-        protected string $realm,
+        protected ?string $realm,
         protected string $guild,
+        protected ?BlizzardNamespace $namespace = null,
     ) {
-        $this->realm = Str::slug($realm);
-        $this->guild = Str::slug($guild);
+        $this->realm = self::normalizeRealm($realm);
+        $this->guild = NameSlug::from($guild);
     }
 
     public function resolveEndpoint(): string
@@ -38,7 +41,8 @@ class GetGuildRosterRequest extends Request implements Cacheable
 
         $pendingRequest->headers()->add(
             'Battlenet-Namespace',
-            $connector->namespace('profile'),
+            ($this->namespace ?? BlizzardNamespace::default())
+                ->forProfileRequests($connector->getRegion()),
         );
     }
 

@@ -1,21 +1,27 @@
 import { Link } from "@inertiajs/react";
+import cn from "@/Helpers/cn";
 
-export default function ResponsiveNavLink({ href, children, ...props }) {
-    const classes =
-        "flex flex-row items-center rounded-md px-3 py-2 text-sm font-medium text-secondary-300 hover:bg-ink-700 hover:text-white";
-    const { external, ...rest } = props;
-
-    if (external) {
-        return (
-            <a href={href} className={classes} {...rest}>
-                {children}
-            </a>
-        );
-    }
+export default function ResponsiveNavLink({
+    href,
+    className = "",
+    children,
+    active = false,
+    external = false,
+    ...props
+}) {
+    const Component = external ? "a" : Link;
 
     return (
-        <Link href={href} className={classes} {...rest}>
+        <Component
+            href={href}
+            className={cn(
+                "flex flex-row items-center rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white active:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400",
+                className,
+            )}
+            aria-current={active ? "page" : undefined}
+            {...props}
+        >
             {children}
-        </Link>
+        </Component>
     );
 }

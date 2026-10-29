@@ -1,0 +1,59 @@
+name: Refactor
+description: Restructure existing code without changing what users see.
+title: "Refactor: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Write the title as the end state, e.g. `Refactor: share one inGameVersion scope across game-version-owned models`.
+        A refactor must not change behaviour. List anything that must keep working under **Behaviour to preserve**.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: The problem with the current structure and the end state this issue proposes.
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Current state
+      description: How the code is organised today, with every place the pattern appears.
+    validations:
+      required: true
+  - type: textarea
+    id: options
+    attributes:
+      label: Options considered
+      description: Lettered options (A, B, C), each with its trade-offs. Include "leave it as it is" when that is a real option.
+      value: |
+        ### A. Leave it as it is
+
+        ### B. 
+    validations:
+      required: true
+  - type: textarea
+    id: recommendation
+    attributes:
+      label: Recommended solution
+      description: The chosen option and the concrete changes it involves.
+    validations:
+      required: true
+  - type: textarea
+    id: preserve
+    attributes:
+      label: Behaviour to preserve / risks
+      description: Behaviour, events, cache keys or API shapes that must not change, and what could break.
+    validations:
+      required: true
+  - type: textarea
+    id: testing
+    attributes:
+      label: Testing
+      description: Existing tests that should keep passing unchanged, and any new tests needed.
+  - type: textarea
+    id: related
+    attributes:
+      label: Related
+      description: Linked issues and PRs, and where the refactor was suggested.

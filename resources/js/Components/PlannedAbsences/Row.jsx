@@ -1,37 +1,18 @@
 import { useState } from "react";
-import { usePage, Link, router } from "@inertiajs/react";
+import { Link, router } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import formatDate from "@/Helpers/FormatDate";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
+import ReasonLabel from "@/Components/PlannedAbsences/ReasonLabel";
+import { usePermission } from "@/Hooks/usePermission";
 
-function RestoreButton({ userCanRestore = false, absence }) {
-    const restoreAbsence = () => {
-        userCanRestore &&
-            router.post(route("raiding.absences.restore", absence.id), {
-                preserveScroll: true,
-            });
-    };
-
-    if (!userCanRestore) {
-        return <div className="flex items-center text-sm text-red-700">Deleted</div>;
-    }
-
-    return (
-        <button onClick={restoreAbsence} className="flex items-center text-sm text-green-400 hover:text-green-300">
-            <Icon icon="trash-restore" style="regular" className="mr-1.5 h-4" />
-            Restore
-        </button>
-    );
-}
-
-export default function PlannedAbsenceRow({ absence, showCharacter = false, showCreatedBy = false }) {
-    const { auth } = usePage().props;
-    const userCanRestore = auth.user?.admin ?? false; // Only admins can restore absences
+export default function PlannedAbsenceRow({ absence, showCreatedBy = false, canEdit = false, canDelete = false }) {
+    const canEditAny = usePermission("update-planned-absences");
     const [confirmingDelete, setConfirmingDelete] = useState(false);
 
     const deleteAbsence = () => {
-        router.delete(route("raiding.absences.destroy", absence.id), {
+        router.delete(route("account.absences.destroy", absence.id), {
             preserveScroll: true,
             onSuccess: () => setConfirmingDelete(false),
         });
@@ -39,47 +20,40 @@ export default function PlannedAbsenceRow({ absence, showCharacter = false, show
 
     return (
         <>
-            <div className="flex flex-col gap-2 rounded border border-ink-800/50 bg-ground-800/50 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
-                {showCharacter && (
-                    <div className="shrink-0 font-medium text-ink-300">
-                        {absence.character?.name ?? "Unknown Character"}
-                    </div>
-                )}
-
-                <div className="shrink-0 text-sm text-ink-300/70">
+            <div className="border-amber-800/50 bg-brown-800/50 flex flex-col gap-2 rounded border px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
+                <div className="text-amber-300/70 shrink-0 text-sm">
                     <Icon icon="calendar" style="regular" className="mr-1.5 h-4" />
                     {formatDate(absence.start_date).medium}
                     {absence.end_date && (
                         <>
-                            <span className="mx-1 text-secondary-500">—</span>
+                            <span className="text-gray-400 mx-1">—</span>
                             {formatDate(absence.end_date).medium}
                         </>
                     )}
                 </div>
 
-                {absence.reason && (
-                    <div className="flex-1 text-sm text-secondary-300">
-                        <FormattedMarkdown>{absence.reason}</FormattedMarkdown>
-                    </div>
-                )}
+                <div className="text-gray-300 flex flex-1 flex-col gap-1 text-sm">
+                    <ReasonLabel reason={absence.reason} className="text-amber-300 font-medium" />
+                    {absence.notes && <FormattedMarkdown>{absence.notes}</FormattedMarkdown>}
+                </div>
 
                 {showCreatedBy && absence.created_by && absence.created_at && (
-                    <div className="shrink-0 text-xs text-secondary-500">
+                    <div className="text-gray-400 shrink-0 text-xs">
                         Added by {absence.created_by.display_name} on {formatDate(absence.created_at).medium}
                     </div>
                 )}
 
                 <div className="flex shrink-0 gap-4">
-                    <Link
-                        href={route("raiding.absences.edit", absence.id)}
-                        className="flex items-center text-sm text-ink-400 hover:text-ink-300"
-                    >
-                        <Icon icon="pen" style="regular" className="mr-1.5 h-4" />
-                        Edit
-                    </Link>
-                    {absence.deleted_at ? (
-                        <RestoreButton userCanRestore={userCanRestore} absence={absence} />
-                    ) : (
+                    {(canEditAny || canEdit) && (
+                        <Link
+                            href={route(canEditAny ? "raiding.absences.edit" : "account.absences.edit", absence.id)}
+                            className="text-amber-400 hover:text-amber-300 flex items-center text-sm"
+                        >
+                            <Icon icon="pen" style="regular" className="mr-1.5 h-4" />
+                            Edit
+                        </Link>
+                    )}
+                    {canDelete && (
                         <button
                             onClick={() => setConfirmingDelete(true)}
                             className="flex items-center text-sm text-red-400 hover:text-red-300"

@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Casts\AsClassName;
+use App\Events\RaidingDataChanged;
 use App\Http\Resources\EventAssignmentResource;
-use App\Models\Concerns\FlushesRaidingCacheOnSave;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\BroadcastableModelEventOccurred;
@@ -19,7 +19,18 @@ use Spatie\EloquentSortable\SortableTrait;
 #[Fillable(['event_id', 'boss_id', 'group_id', 'sort_order', 'left_type', 'left_value', 'right_type', 'right_value'])]
 class EventAssignment extends Model implements Sortable
 {
-    use BroadcastsEvents, FlushesRaidingCacheOnSave, HasFactory, SortableTrait;
+    use BroadcastsEvents, HasFactory, SortableTrait;
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'created' => RaidingDataChanged::class,
+        'updated' => RaidingDataChanged::class,
+        'deleted' => RaidingDataChanged::class,
+    ];
 
     // ============ Casting ============
 

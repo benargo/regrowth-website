@@ -3,6 +3,7 @@
 namespace Tests\Unit\Models;
 
 use App\Casts\AsClassName;
+use App\Events\RaidingDataChanged;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
@@ -10,8 +11,10 @@ use App\Models\EventAssignment;
 use App\Models\EventAssignmentGroup;
 use App\Models\Spell;
 use App\Models\TargetMarker;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Event as EventFacade;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
@@ -432,5 +435,46 @@ class EventAssignmentTest extends ModelTestCase
         $relation = $boss->assignments();
         $this->assertInstanceOf(HasMany::class, $relation);
         $this->assertCount(2, $boss->assignments);
+    }
+
+    // ==================== model events ====================
+
+    #[Test]
+    public function it_dispatches_raiding_data_changed_when_created(): void
+    {
+        EventFacade::fake([RaidingDataChanged::class]);
+
+        $eventAssignment = EventAssignment::factory()->create();
+
+        $this->assertSame(1, $this->dispatchedFor($eventAssignment));
+    }
+
+    #[Test]
+    public function it_dispatches_raiding_data_changed_when_updated(): void
+    {
+        $eventAssignment = EventAssignment::factory()->create();
+        EventFacade::fake([RaidingDataChanged::class]);
+
+        $eventAssignment->update(['sort_order' => 99]);
+
+        $this->assertSame(1, $this->dispatchedFor($eventAssignment));
+    }
+
+    #[Test]
+    public function it_dispatches_raiding_data_changed_when_deleted(): void
+    {
+        $eventAssignment = EventAssignment::factory()->create();
+        EventFacade::fake([RaidingDataChanged::class]);
+
+        $eventAssignment->delete();
+
+        $this->assertSame(1, $this->dispatchedFor($eventAssignment));
+    }
+
+    // ==================== helpers ====================
+
+    private function dispatchedFor(Model $model): int
+    {
+        return EventFacade::dispatched(RaidingDataChanged::class, fn (RaidingDataChanged $event): bool => $event->model->is($model))->count();
     }
 }

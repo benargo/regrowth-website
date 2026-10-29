@@ -69,7 +69,7 @@ class FetchIconRequestTest extends TestCase
             FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
-        $connector = new RenderConnector(Region::EU, Storage::fake('public'));
+        $connector = new RenderConnector(Region::EU, Storage::fake('s3'));
         $connector->withMockClient($mock);
 
         $connector->send(new FetchIconRequest(
@@ -120,7 +120,7 @@ class FetchIconRequestTest extends TestCase
             FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
-        $connector = new RenderConnector(Region::EU, Storage::fake('public'));
+        $connector = new RenderConnector(Region::EU, Storage::fake('s3'));
         $connector->withMockClient($mock);
 
         $response = $connector->send(new FetchIconRequest('https://render.worldofwarcraft.com/icons/56/foo.jpg'));
@@ -139,7 +139,7 @@ class FetchIconRequestTest extends TestCase
             FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
-        $connector = new RenderConnector(Region::EU, Storage::fake('public'));
+        $connector = new RenderConnector(Region::EU, Storage::fake('s3'));
         $connector->withMockClient($mock);
 
         $connector->send(new FetchIconRequest('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg'));
@@ -159,7 +159,7 @@ class FetchIconRequestTest extends TestCase
             FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
-        $connector = new RenderConnector(Region::EU, Storage::fake('public'));
+        $connector = new RenderConnector(Region::EU, Storage::fake('s3'));
         $connector->withMockClient($mock);
 
         $connector->send(new FetchIconRequest('inv_misc_questionmark'));
@@ -177,7 +177,7 @@ class FetchIconRequestTest extends TestCase
             FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
-        $connector = new RenderConnector(Region::US, Storage::fake('public'));
+        $connector = new RenderConnector(Region::US, Storage::fake('s3'));
         $connector->withMockClient($mock);
 
         $connector->send(new FetchIconRequest('inv_misc_questionmark'));
@@ -195,7 +195,7 @@ class FetchIconRequestTest extends TestCase
             FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
-        $connector = new RenderConnector(Region::EU, Storage::fake('public'));
+        $connector = new RenderConnector(Region::EU, Storage::fake('s3'));
         $connector->withMockClient($mock);
 
         $connector->send(new FetchIconRequest('inv_misc_questionmark', size: 36));
@@ -213,7 +213,7 @@ class FetchIconRequestTest extends TestCase
             FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
-        $connector = new RenderConnector(Region::EU, Storage::fake('public'));
+        $connector = new RenderConnector(Region::EU, Storage::fake('s3'));
         $connector->withMockClient($mock);
 
         $connector->send(new FetchIconRequest('inv_misc_questionmark.jpg'));

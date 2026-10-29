@@ -1,6 +1,7 @@
 import { Link } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
+import SectionNav from "@/Components/Navigation/SectionNav";
 import Icon from "@/Components/FontAwesome/Icon";
 import Tooltip from "@/Components/Tooltip";
 import PageContainer from "@/Components/PageContainer";
@@ -13,6 +14,7 @@ import { Can } from "@/Components/Authorizable";
 import { MetaItem } from "@/Components/MetaCard";
 import EmptyState from "@/Components/EmptyState";
 import WarcraftLogsLogo from "@/Components/WarcraftLogs/Logo";
+import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from "@/Components/Table";
 
 function ViewOnWarcraftLogsLink({ code, children }) {
     return (
@@ -21,7 +23,7 @@ function ViewOnWarcraftLogsLink({ code, children }) {
                 href={`https://fresh.warcraftlogs.com/reports/${code}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded border border-ink-600 px-4 py-2 text-sm text-secondary-200 transition-colors hover:bg-ink-600/20"
+                className="inline-flex items-center gap-2 rounded border border-amber-600 px-4 py-2 text-sm text-gray-200 transition-colors hover:bg-amber-600/20"
             >
                 <WarcraftLogsLogo className="h-4 w-4" />
                 {children}
@@ -30,63 +32,64 @@ function ViewOnWarcraftLogsLink({ code, children }) {
     );
 }
 
-function CharactersTable({ characters }) {
+function CharactersTable({ characters, gameVersion }) {
     if (!characters || characters.length === 0) {
         return <EmptyState icon="users" message="No characters recorded for this report." />;
     }
 
     return (
-        <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-                <thead className="border-b border-ink-600">
-                    <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-ink-500">Character</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-ink-500">Rank</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-ink-500">Class</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-ink-500">Race</th>
+        <Table>
+            <TableHead>
+                <tr>
+                    <TableHeader className="text-left">Character</TableHeader>
+                    <TableHeader className="text-left">Rank</TableHeader>
+                    <TableHeader className="text-left">Class</TableHeader>
+                    <TableHeader className="text-left">Race</TableHeader>
+                    <Can permission="view-attendance">
+                        <TableHeader className="text-left">Attendance</TableHeader>
+                    </Can>
+                </tr>
+            </TableHead>
+            <TableBody>
+                {characters.map((character) => (
+                    <TableRow key={character.id}>
+                        <TableCell>
+                            <span className="text-sm font-medium text-white">{character.name}</span>
+                            {character.is_main && (
+                                <span className="ml-2 rounded bg-amber-600/20 px-1.5 py-0.5 text-xs text-amber-400">
+                                    Main
+                                </span>
+                            )}
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-300">
+                            {character.rank ? <RankLabel rank={character.rank} /> : "—"}
+                        </TableCell>
+                        <TableCell className="flex flex-row items-center gap-2 text-sm text-gray-300">
+                            <img
+                                src={character.playable_class?.icon_url}
+                                alt={character.playable_class?.name}
+                                className="h-4 w-4"
+                            />
+                            {character.playable_class?.name ?? "—"}
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-300">{character.playable_race?.name ?? "—"}</TableCell>
                         <Can permission="view-attendance">
-                            <th className="px-4 py-3 text-left text-sm font-semibold text-ink-500">Attendance</th>
+                            <TableCell>
+                                <Link
+                                    href={route("raiding.attendance.matrix", {
+                                        character: character.id,
+                                        game_version: gameVersion,
+                                    })}
+                                    className="text-sm text-amber-400 hover:text-amber-300 hover:underline"
+                                >
+                                    View attendance
+                                </Link>
+                            </TableCell>
                         </Can>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-ink-600">
-                    {characters.map((character) => (
-                        <tr key={character.id} className="transition-colors hover:bg-ground-800/50">
-                            <td className="px-4 py-3">
-                                <span className="text-sm font-medium text-white">{character.name}</span>
-                                {character.is_main && (
-                                    <span className="ml-2 rounded bg-ink-600/20 px-1.5 py-0.5 text-xs text-ink-400">
-                                        Main
-                                    </span>
-                                )}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-secondary-300">
-                                {character.rank ? <RankLabel rank={character.rank} /> : "—"}
-                            </td>
-                            <td className="flex flex-row items-center gap-2 px-4 py-3 text-sm text-secondary-300">
-                                <img
-                                    src={character.playable_class?.icon_url}
-                                    alt={character.playable_class?.name}
-                                    className="h-4 w-4"
-                                />
-                                {character.playable_class?.name ?? "—"}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-secondary-300">{character.playable_race?.name ?? "—"}</td>
-                            <Can permission="view-attendance">
-                                <td className="px-4 py-3">
-                                    <Link
-                                        href={route("raiding.attendance.matrix", { character: character.id })}
-                                        className="text-sm text-ink-400 hover:text-ink-300 hover:underline"
-                                    >
-                                        View attendance
-                                    </Link>
-                                </td>
-                            </Can>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
+                    </TableRow>
+                ))}
+            </TableBody>
+        </Table>
     );
 }
 
@@ -101,13 +104,14 @@ export default function Show({ report, nearbyReports, impactedReports }) {
     return (
         <Master title={data.title}>
             <SharedHeader title={data.title} backgroundClass="bg-illidan" />
+            <SectionNav section="raiding" />
 
             <PageContainer>
                 {/* Back link */}
                 <div className="mb-6">
                     <Link
                         href={route("raiding.reports.index")}
-                        className="inline-flex items-center gap-2 text-sm text-ink-400 hover:text-ink-300 hover:underline"
+                        className="inline-flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 hover:underline"
                     >
                         <Icon icon="arrow-left" style="solid" />
                         Back to Reports
@@ -115,7 +119,7 @@ export default function Show({ report, nearbyReports, impactedReports }) {
                 </div>
 
                 {/* Report metadata card */}
-                <div className="mb-8 rounded border border-ink-600/30 bg-ground-800/50 p-4">
+                <div className="mb-8 rounded border border-amber-600/30 bg-brown-800/50 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-4">
                         <div className="flex flex-1 flex-wrap gap-x-8 gap-y-3">
                             <MetaItem icon="calendar">
@@ -141,11 +145,11 @@ export default function Show({ report, nearbyReports, impactedReports }) {
                 <h2 className="mb-4 text-xl font-semibold text-white">
                     Attendance
                     {data.characters?.length > 0 && (
-                        <span className="ml-2 text-base font-normal text-secondary-400">({data.characters.length})</span>
+                        <span className="ml-2 text-base font-normal text-gray-400">({data.characters.length})</span>
                     )}
                 </h2>
-                <div className="rounded border border-ink-600/30">
-                    <CharactersTable characters={presentCharacters} />
+                <div className="rounded border border-amber-600/30">
+                    <CharactersTable characters={presentCharacters} gameVersion={data.game_version} />
                 </div>
 
                 {/* Loot councillors */}

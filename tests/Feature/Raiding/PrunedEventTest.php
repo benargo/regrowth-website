@@ -13,6 +13,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 #[Group('raiding')]
 class PrunedEventTest extends TestCase
 {
@@ -56,7 +57,7 @@ class PrunedEventTest extends TestCase
     #[Test]
     public function it_returns_410_for_a_pruned_event(): void
     {
-        $this->mockDiscordChannel(id: '123', name: 'test-channel');
+        $this->fakeDiscordChannel(id: '123', name: 'test-channel');
 
         $eventId = fake()->uuid();
 
@@ -78,7 +79,7 @@ class PrunedEventTest extends TestCase
     #[Test]
     public function it_renders_the_branded_gone_page_for_a_pruned_event(): void
     {
-        $this->mockDiscordChannel(id: '123', name: 'test-channel');
+        $this->fakeDiscordChannel(id: '123', name: 'test-channel');
 
         $eventId = fake()->uuid();
 

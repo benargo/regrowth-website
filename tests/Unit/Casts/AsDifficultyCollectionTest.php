@@ -3,7 +3,7 @@
 namespace Tests\Unit\Casts;
 
 use App\Casts\AsDifficultyCollection;
-use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
+use App\Http\Integrations\WarcraftLogs\Data\World\DifficultyData;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
@@ -130,5 +130,21 @@ class AsDifficultyCollectionTest extends TestCase
         $result = $cast->set($model, 'difficulties', collect(), []);
 
         $this->assertSame('[]', $result);
+    }
+
+    #[Test]
+    public function it_round_trips_stored_json_without_changing_its_shape(): void
+    {
+        $cast = new AsDifficultyCollection;
+        $model = $this->createStub(Model::class);
+        $stored = json_encode([
+            ['id' => 3, 'name' => 'Normal', 'sizes' => [10, 25]],
+            ['id' => 4, 'name' => 'Heroic', 'sizes' => []],
+        ]);
+
+        $hydrated = $cast->get($model, 'difficulties', $stored, []);
+
+        $this->assertContainsOnlyInstancesOf(DifficultyData::class, $hydrated);
+        $this->assertSame($stored, $cast->set($model, 'difficulties', $hydrated, []));
     }
 }

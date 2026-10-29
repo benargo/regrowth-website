@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import MarkdownEditor from "@/Components/MarkdownEditor";
 import Icon from "@/Components/FontAwesome/Icon";
+import { PrimaryButton, SecondaryButton } from "@/Components/FormControls";
 
 const ALLOWED_FORMATS = ["bold", "italic", "bulletList", "numberedList", "quote", "wowheadLink"];
 const VALIDATION_RULES = ["noUnderline", "noRegularLinks"];
@@ -103,25 +104,11 @@ export default function CommentForm({
                 autoFocus={autoFocus}
             />
             <div className="flex gap-2">
-                <button
-                    type="submit"
-                    disabled={processing || validationError}
-                    className={`inline-flex items-center rounded-md border border-transparent bg-ink-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-ink-700 focus:bg-ink-700 focus:ring-2 focus:ring-ink-500 focus:ring-offset-2 focus:outline-hidden active:bg-ink-800 ${
-                        (processing || validationError) && "opacity-25"
-                    }`}
-                >
-                    <Icon icon="paper-plane" style="solid" className="mr-1" />
+                <PrimaryButton type="submit" processing={processing} disabled={!!validationError}>
+                    <Icon icon="paper-plane" style="solid" />
                     <SubmitLabel isEdit={isEdit} isReply={isReply} processing={processing} />
-                </button>
-                {onCancel && (
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        className="inline-flex items-center rounded-md border border-secondary-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-secondary-700"
-                    >
-                        Cancel
-                    </button>
-                )}
+                </PrimaryButton>
+                {onCancel && <SecondaryButton onClick={onCancel}>Cancel</SecondaryButton>}
             </div>
         </form>
     );

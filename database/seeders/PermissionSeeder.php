@@ -33,7 +33,6 @@ class PermissionSeeder extends Seeder
         ['name' => 'view-attendance', 'group' => 'raid-management', 'guard_name' => 'web'],
         ['name' => 'view-old-raid-plans', 'group' => 'raid-management', 'guard_name' => 'web'],
         ['name' => 'manage-raid-plans', 'group' => 'raid-management', 'guard_name' => 'web'],
-        ['name' => 'manage-boss-strategies', 'group' => 'raid-management', 'guard_name' => 'web'],
 
         /**
          * Planned absences permissions
@@ -42,14 +41,7 @@ class PermissionSeeder extends Seeder
         ['name' => 'view-planned-absences', 'group' => 'planned-absences', 'guard_name' => 'web'],
         ['name' => 'update-planned-absences', 'group' => 'planned-absences', 'guard_name' => 'web'],
         ['name' => 'delete-planned-absences', 'group' => 'planned-absences', 'guard_name' => 'web'],
-        ['name' => 'manage-planned-absences', 'group' => 'planned-absences', 'guard_name' => 'web'],
-
-        /**
-         * Daily quests permissions
-         */
-        ['name' => 'view-daily-quests', 'group' => 'daily-quests', 'guard_name' => 'web'],
-        ['name' => 'set-daily-quests', 'group' => 'daily-quests', 'guard_name' => 'web'],
-        ['name' => 'audit-daily-quests', 'group' => 'daily-quests', 'guard_name' => 'web'],
+        ['name' => 'backdate-planned-absences', 'group' => 'planned-absences', 'guard_name' => 'web'],
 
         /**
          * Character management permissions
@@ -57,6 +49,15 @@ class PermissionSeeder extends Seeder
         ['name' => 'create-characters', 'group' => 'character-management', 'guard_name' => 'web'],
         ['name' => 'update-characters', 'group' => 'character-management', 'guard_name' => 'web'],
         ['name' => 'delete-characters', 'group' => 'character-management', 'guard_name' => 'web'],
+
+        /**
+         * Warcraft Logs permissions
+         */
+        ['name' => 'view-warcraft-logs-guilds', 'group' => 'warcraftlogs', 'guard_name' => 'web'],
+        ['name' => 'create-warcraft-logs-guilds', 'group' => 'warcraftlogs', 'guard_name' => 'web'],
+        ['name' => 'update-warcraft-logs-guilds', 'group' => 'warcraftlogs', 'guard_name' => 'web'],
+        ['name' => 'delete-warcraft-logs-guilds', 'group' => 'warcraftlogs', 'guard_name' => 'web'],
+        ['name' => 'update-warcraft-logs-tags', 'group' => 'warcraftlogs', 'guard_name' => 'web'],
 
         /**
          * Hidden permissions (not shown in the dashboard, but still used for access control)

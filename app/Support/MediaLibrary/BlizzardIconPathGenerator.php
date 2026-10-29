@@ -8,13 +8,13 @@ use Spatie\MediaLibrary\Support\PathGenerator\DefaultPathGenerator;
 use Spatie\MediaLibrary\Support\PathGenerator\PathGenerator;
 
 /**
- * Writes `blizzard_icons` media onto System A's shared disk path so that a single
- * physical file backs both Media Library and ServeIconController:
+ * Stores `blizzard_icons` media under a size-namespaced directory:
  *
- *   blizzard-cdn/icons/{size}/{name}
+ *   blizzard-cdn/icons/{size}/{file_name}
  *
- * The size comes from the media's `size` custom property (default 56); the name is
- * the media's file_name.
+ * getPath() returns the directory only; Media Library appends the file name. The size
+ * comes from the media's `size` custom property (default 56). Conversions and
+ * responsive images nest under the same directory.
  */
 class BlizzardIconPathGenerator implements HasBlizzardIcons, PathGenerator
 {

@@ -2,12 +2,10 @@ import { useMemo, useState } from "react";
 import { Link, router, usePage } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
+import SectionNav from "@/Components/Navigation/SectionNav";
 import FormContainer from "@/Components/FormContainer";
-import FormField from "@/Components/FormField";
-import TextInput from "@/Components/TextInput";
-import PrimaryButton from "@/Components/PrimaryButton";
+import { FieldError, FormRow, OptionSelect, PrimaryButton, TextInput } from "@/Components/FormControls";
 import Icon from "@/Components/FontAwesome/Icon";
-import InputError from "@/Components/InputError";
 import DateFilterButton from "@/Components/DateFilterButton";
 import Autocomplete from "@/Components/Autocomplete";
 import LinkedReports from "@/Components/Raiding/Reports/LinkedReports";
@@ -75,7 +73,7 @@ export default function Create() {
                     Enter times in <strong>{parisTimezoneName}</strong> (server time).
                 </p>
                 {isMateriallyDifferent && (
-                    <p className="mt-1 text-ink-400">
+                    <p className="mt-1 text-amber-400">
                         Your timezone is {formatOffsetDiff(diffMin)} {diffMin > 0 ? "ahead of" : "behind"} server time.
                         Remember to enter times in server time.
                     </p>
@@ -97,8 +95,8 @@ export default function Create() {
         }
     };
 
-    const handleExpansionChange = (e) => {
-        setSelectedExpansionId(Number(e.target.value));
+    const handleExpansionChange = (value) => {
+        setSelectedExpansionId(Number(value));
         setZoneText("");
         setSelectedZone(null);
     };
@@ -155,12 +153,13 @@ export default function Create() {
     return (
         <Master title="Create Report">
             <SharedHeader title="Create Report" backgroundClass="bg-illidan" />
+            <SectionNav section="raiding" />
 
             <FormContainer maxWidth="2xl">
                     <div className="mb-6">
                         <Link
                             href={route("raiding.reports.index")}
-                            className="inline-flex items-center gap-2 text-sm text-ink-400 hover:text-ink-300 hover:underline"
+                            className="inline-flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 hover:underline"
                         >
                             <Icon icon="arrow-left" style="solid" />
                             Back to Reports
@@ -169,23 +168,29 @@ export default function Create() {
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Title */}
-                        <FormField label="Title" error={errors.title} required>
+                        <FormRow label="Title" required error={errors.title}>
                             <TextInput
-                                type="text"
                                 value={title}
                                 onChange={(e) => {
                                     setTitle(e.target.value);
                                     setErrors((prev) => ({ ...prev, title: null }));
                                 }}
                                 placeholder="e.g. Sunday Karazhan"
-                                className="w-full"
+                                invalid={!!errors.title}
                             />
-                        </FormField>
+                        </FormRow>
 
                         {/* Start time + End time */}
-                        <div className="flex flex-col lg:flex-row lg:gap-6">
-                            <FormField label="Start time" error={errors.start_time} required className="flex-1">
+                        <div className="flex flex-col gap-6 lg:flex-row">
+                            <FormRow
+                                htmlFor="start_time"
+                                label="Start time"
+                                required
+                                error={errors.start_time}
+                                className="flex-1"
+                            >
                                 <DateFilterButton
+                                    id="start_time"
                                     label="Start time"
                                     value={startTime}
                                     onChange={(val) => {
@@ -196,9 +201,16 @@ export default function Create() {
                                     helpText={timezoneHelp}
                                     max="2099-12-31T23:59"
                                 />
-                            </FormField>
-                            <FormField label="End time" error={errors.end_time} required className="flex-1">
+                            </FormRow>
+                            <FormRow
+                                htmlFor="end_time"
+                                label="End time"
+                                required
+                                error={errors.end_time}
+                                className="flex-1"
+                            >
                                 <DateFilterButton
+                                    id="end_time"
                                     label="End time"
                                     value={endTime}
                                     onChange={(val) => {
@@ -210,44 +222,42 @@ export default function Create() {
                                     min={startTime || undefined}
                                     max="2099-12-31T23:59"
                                 />
-                            </FormField>
+                            </FormRow>
                         </div>
 
                         {/* Guild tag */}
-                        <FormField label="Warcraft Logs tag" error={errors.guild_tag_id} required>
-                            <select
+                        <FormRow htmlFor="guild_tag_id" label="Warcraft Logs tag" required error={errors.guild_tag_id}>
+                            <OptionSelect
+                                name="guild_tag_id"
                                 value={guildTagId}
-                                onChange={(e) => {
-                                    setGuildTagId(e.target.value);
+                                onChange={(value) => {
+                                    setGuildTagId(value);
                                     setErrors((prev) => ({ ...prev, guild_tag_id: null }));
                                 }}
-                                className="w-full rounded border border-ink-600 bg-ground-800 px-4 py-2 text-white focus:border-ink-500 focus:outline-hidden focus:ring-2 focus:ring-ink-500"
-                            >
-                                <option value="">Select a tag…</option>
-                                {guildTags.map((tag) => (
-                                    <option key={tag.id} value={tag.id}>
-                                        {tag.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </FormField>
+                                options={guildTags.map((tag) => ({ value: tag.id, label: tag.name }))}
+                                placeholder="Select a tag…"
+                                invalid={!!errors.guild_tag_id}
+                            />
+                        </FormRow>
 
                         {/* Zone + Expansion */}
-                        <FormField label="Zone" error={errors.zone_id} required>
+                        <FormRow htmlFor="zone" label="Zone" required error={errors.zone_id}>
                             <div className="flex gap-3">
-                                <select
+                                <OptionSelect
+                                    name="expansion_id"
+                                    aria-label="Expansion"
                                     value={selectedExpansionId}
                                     onChange={handleExpansionChange}
-                                    className="w-48 shrink-0 rounded border border-ink-600 bg-ground-800 px-3 py-2 text-sm text-white focus:border-ink-500 focus:outline-hidden focus:ring-2 focus:ring-ink-500"
-                                >
-                                    {expansions.map((exp) => (
-                                        <option key={exp.id} value={exp.id}>
-                                            {exp.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                    options={expansions.map((expansion) => ({
+                                        value: expansion.id,
+                                        label: expansion.name,
+                                    }))}
+                                    invalid={!!errors.expansion_id}
+                                    className="w-48 shrink-0"
+                                />
                                 <div className="flex-1">
                                     <Autocomplete
+                                        id="zone"
                                         value={zoneText}
                                         onChange={handleZoneChange}
                                         options={zonesForExpansion}
@@ -258,12 +268,13 @@ export default function Create() {
                                     />
                                 </div>
                             </div>
-                            <InputError message={errors.expansion_id} className="mt-1" />
-                        </FormField>
+                            <FieldError message={errors.expansion_id} />
+                        </FormRow>
 
                         {/* Characters */}
-                        <FormField label="Characters" error={errors.character_ids}>
+                        <FormRow htmlFor="characters" label="Characters" error={errors.character_ids}>
                             <Autocomplete
+                                id="characters"
                                 value={characterSearch}
                                 onChange={handleCharacterAutocompleteChange}
                                 options={availableCharacters}
@@ -281,7 +292,7 @@ export default function Create() {
                                         )}
                                         {c.name}
                                         {c.is_main && (
-                                            <span className="rounded bg-ink-600/20 px-1.5 py-0.5 text-xs text-ink-400">
+                                            <span className="rounded bg-amber-600/20 px-1.5 py-0.5 text-xs text-amber-400">
                                                 Main
                                             </span>
                                         )}
@@ -289,7 +300,7 @@ export default function Create() {
                                 )}
                             />
                             {addedCharacters.length > 0 && (
-                                <ul className="mt-3 divide-y divide-ink-600 rounded border border-ink-600/30">
+                                <ul className="mt-3 divide-y divide-amber-600 rounded border border-amber-600/30">
                                     {addedCharacters.map((character) => (
                                         <li key={character.id} className="flex items-center justify-between px-4 py-2">
                                             <span className="flex items-center gap-2 text-sm text-white">
@@ -302,7 +313,7 @@ export default function Create() {
                                                 )}
                                                 {character.name}
                                                 {character.is_main && (
-                                                    <span className="rounded bg-ink-600/20 px-1.5 py-0.5 text-xs text-ink-400">
+                                                    <span className="rounded bg-amber-600/20 px-1.5 py-0.5 text-xs text-amber-400">
                                                         Main
                                                     </span>
                                                 )}
@@ -310,7 +321,7 @@ export default function Create() {
                                             <button
                                                 type="button"
                                                 onClick={() => handleCharacterRemove(character.id)}
-                                                className="rounded p-1 text-secondary-500 transition-colors hover:bg-red-700/20 hover:text-red-400"
+                                                className="rounded p-1 text-gray-400 transition-colors hover:bg-red-700/20 hover:text-red-400"
                                             >
                                                 <Icon icon="times" style="solid" className="text-xs" />
                                             </button>
@@ -318,7 +329,7 @@ export default function Create() {
                                     ))}
                                 </ul>
                             )}
-                        </FormField>
+                        </FormRow>
 
                         {/* Loot councillors */}
                         <LootCouncillors
@@ -338,14 +349,14 @@ export default function Create() {
                         />
 
                         {/* Actions */}
-                        <div className="flex items-center gap-4 border-t border-ink-600/30 pt-4">
+                        <div className="flex items-center gap-4 border-t border-amber-600/30 pt-4">
                             <PrimaryButton type="submit" processing={processing}>
                                 <Icon icon="plus" style="solid" />
-                                {processing ? "Creating…" : "Create Report"}
+                                {processing ? "Creating…" : "Create report"}
                             </PrimaryButton>
                             <Link
                                 href={route("raiding.reports.index")}
-                                className="text-sm text-secondary-400 hover:text-white"
+                                className="text-sm text-gray-400 hover:text-white"
                             >
                                 Cancel
                             </Link>

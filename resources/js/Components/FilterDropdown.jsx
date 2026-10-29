@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/Components/FontAwesome/Icon";
+import { Checkbox } from "@/Components/FormControls";
 
-export default function FilterDropdown({ label, options, selected, onChange, showIcon = false }) {
+export default function FilterDropdown({ label, options, selected, onChange }) {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
 
@@ -31,30 +32,30 @@ export default function FilterDropdown({ label, options, selected, onChange, sho
     else buttonText = `${count} ${label.plural}`;
 
     return (
-        <div className="relative" ref={dropdownRef}>
+        <div className="relative h-full" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex w-full items-center justify-between rounded border border-ink-600 bg-ground-800 px-4 py-2 text-left text-white transition-colors hover:bg-ground-700"
+                className="flex h-full min-h-10 w-full items-center justify-between rounded border border-amber-600 bg-brown-800 px-4 py-2 text-left text-white transition-colors hover:bg-brown-700"
             >
                 <span className="truncate text-sm">{buttonText}</span>
                 <Icon
                     icon="chevron-down"
-                    className={`ml-2 shrink-0 text-ink-500 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                    className={`ml-2 shrink-0 text-amber-500 transition-transform ${isOpen ? "rotate-180" : ""}`}
                 />
             </button>
 
             {isOpen && (
-                <div className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded border border-ink-600 bg-ground-800 shadow-lg">
-                    <div className="flex border-b border-ink-600">
+                <div className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded border border-amber-600 bg-brown-800 shadow-lg">
+                    <div className="flex border-b border-amber-600">
                         <button
                             onClick={selectAll}
-                            className="flex-1 px-3 py-2 text-sm text-ink-500 transition-colors hover:bg-ground-700"
+                            className="flex-1 px-3 py-2 text-sm text-amber-500 transition-colors hover:bg-brown-700 hover:text-amber-400"
                         >
                             All
                         </button>
                         <button
                             onClick={selectNone}
-                            className="flex-1 border-l border-ink-600 px-3 py-2 text-sm text-ink-500 transition-colors hover:bg-ground-700"
+                            className="flex-1 border-l border-amber-600 px-3 py-2 text-sm text-amber-500 transition-colors hover:bg-brown-700 hover:text-amber-400"
                         >
                             None
                         </button>
@@ -63,17 +64,9 @@ export default function FilterDropdown({ label, options, selected, onChange, sho
                         {options.map((option) => (
                             <label
                                 key={option.id}
-                                className="flex cursor-pointer items-center gap-3 px-3 py-2 transition-colors hover:bg-ground-700"
+                                className="flex cursor-pointer items-center gap-3 px-3 py-2 transition-colors hover:bg-brown-700"
                             >
-                                <input
-                                    type="checkbox"
-                                    checked={selected.includes(option.id)}
-                                    onChange={() => toggleOption(option.id)}
-                                    className="h-4 w-4 rounded border-ink-600 bg-ground-900 text-ink-600 focus:ring-ink-500 focus:ring-offset-line"
-                                />
-                                {showIcon && option.media?.assets?.[0]?.value && (
-                                    <img src={option.media.assets[0].value} alt="" className="h-5 w-5 rounded" />
-                                )}
+                                <Checkbox checked={selected.includes(option.id)} onChange={() => toggleOption(option.id)} />
                                 <span className="text-sm text-white">{option.name}</span>
                             </label>
                         ))}

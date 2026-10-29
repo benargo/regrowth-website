@@ -10,19 +10,24 @@ use App\Http\Integrations\Blizzard\Exceptions\InvalidClassException;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidRaceException;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\Exceptions\XmlException;
-use App\Http\Integrations\Blizzard\GameVersion;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceRequest;
+use App\Http\Integrations\ServedFromCache;
 use Illuminate\Support\Facades\Cache;
 use Mockery;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Contracts\Authenticator;
+use Saloon\Enums\Method;
 use Saloon\Exceptions\Request\ClientException;
+use Saloon\Http\Auth\TokenAuthenticator;
 use Saloon\Http\Faking\MockResponse;
+use Saloon\Http\OAuth2\GetClientCredentialsTokenBasicAuthRequest;
+use Saloon\Http\Request;
 use Saloon\Laravel\Facades\Saloon;
 use Saloon\RateLimitPlugin\Exceptions\RateLimitReachedException;
 use Saloon\RateLimitPlugin\Limit;
@@ -41,40 +46,6 @@ class BlizzardConnectorTest extends TestCase
         $this->assertSame('https://tw.api.blizzard.com', $this->makeConnector(Region::TW)->resolveBaseUrl());
     }
 
-    // ==================== namespace lookup ====================
-
-    #[Test]
-    #[Group('happy-path')]
-    public function namespace_returns_derived_value_for_anniversary(): void
-    {
-        $connector = $this->makeConnector(Region::EU, GameVersion::Anniversary);
-
-        $this->assertSame('profile-classicann-eu', $connector->namespace('profile'));
-        $this->assertSame('static-classicann-eu', $connector->namespace('static'));
-        $this->assertSame('dynamic-classicann-eu', $connector->namespace('dynamic'));
-    }
-
-    #[Test]
-    #[Group('happy-path')]
-    public function namespace_returns_derived_value_for_retail(): void
-    {
-        $connector = $this->makeConnector(Region::EU, GameVersion::Retail);
-
-        $this->assertSame('profile-eu', $connector->namespace('profile'));
-        $this->assertSame('static-eu', $connector->namespace('static'));
-        $this->assertSame('dynamic-eu', $connector->namespace('dynamic'));
-    }
-
-    #[Test]
-    #[Group('happy-path')]
-    public function namespace_throws_for_unknown_kind(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unknown Blizzard namespace kind: bogus');
-
-        $this->makeConnector()->namespace('bogus');
-    }
-
     // ==================== locale validation ====================
 
     #[Test]
@@ -87,33 +58,12 @@ class BlizzardConnectorTest extends TestCase
         new BlizzardConnector(
             clientId: 'test_id',
             clientSecret: 'test_secret',
-            gameVersion: GameVersion::Anniversary,
             region: Region::EU,
             locale: 'ko_KR',
-            defaultRealmSlug: 'thunderstrike',
-            defaultGuildSlug: 'regrowth',
+            redirectUri: 'https://regrowth.test/auth/battlenet/callback',
             eagerlyMirrorAssets: $this->createStub(EagerlyMirrorAssets::class),
+            servedFromCache: app(ServedFromCache::class),
         );
-    }
-
-    // ==================== default slugs ====================
-
-    #[Test]
-    #[Group('happy-path')]
-    public function it_exposes_the_configured_default_realm_slug(): void
-    {
-        $connector = $this->makeConnector(defaultRealmSlug: 'thunderstrike', defaultGuildSlug: 'regrowth');
-
-        $this->assertSame('thunderstrike', $connector->defaultRealmSlug());
-    }
-
-    #[Test]
-    #[Group('happy-path')]
-    public function it_exposes_the_configured_default_guild_slug(): void
-    {
-        $connector = $this->makeConnector(defaultRealmSlug: 'thunderstrike', defaultGuildSlug: 'regrowth');
-
-        $this->assertSame('regrowth', $connector->defaultGuildSlug());
     }
 
     // ==================== oauth + token caching ====================
@@ -127,7 +77,7 @@ class BlizzardConnectorTest extends TestCase
             'eu.api.blizzard.com/data/wow/item/19019' => MockResponse::make(['id' => 19019, 'name' => 'Thunderfury']),
         ]);
 
-        $request = Mockery::mock(GetItemRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/19019')->getMock();
+        $request = Mockery::mock(new GetItemRequest(19019))->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/19019')->getMock();
 
         $connector = $this->makeConnector();
         $response = $connector->send($request);
@@ -149,8 +99,8 @@ class BlizzardConnectorTest extends TestCase
         ]);
 
         $connector = $this->makeConnector();
-        $connector->send(Mockery::mock(GetItemRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/1')->getMock());
-        $connector->send(Mockery::mock(GetItemRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/2')->getMock());
+        $connector->send(Mockery::mock(new GetItemRequest(1))->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/1')->getMock());
+        $connector->send(Mockery::mock(new GetItemRequest(2))->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/2')->getMock());
 
         // The token endpoint should only be hit once.
         Saloon::assertSentCount(3); // token + 2 api requests
@@ -159,6 +109,55 @@ class BlizzardConnectorTest extends TestCase
         $cached = Cache::tags(['blizzard', 'api-auth'])->get('blizzard:access_token:v2:eu');
         $this->assertIsArray($cached);
         $this->assertSame('test_token', $cached['token']);
+    }
+
+    #[Test]
+    #[Group('happy-path')]
+    public function it_keeps_an_authenticator_supplied_by_the_request(): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => $this->tokenMock(),
+            'eu.api.blizzard.com/*' => MockResponse::make(['ok' => true]),
+        ]);
+
+        $this->makeConnector()->send($this->requestWithOwnToken('user-token'));
+
+        Saloon::assertNotSent(GetClientCredentialsTokenBasicAuthRequest::class);
+        Saloon::assertSent(fn ($request, $response) => $response->getPendingRequest()->headers()->get('Authorization') === 'Bearer user-token');
+    }
+
+    #[Test]
+    public function it_still_uses_the_client_credentials_token_for_requests_without_their_own(): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => $this->tokenMock(),
+            'eu.api.blizzard.com/*' => MockResponse::make(['ok' => true]),
+        ]);
+
+        $this->makeConnector()->send($this->requestWithOwnToken(null));
+
+        Saloon::assertSent(GetClientCredentialsTokenBasicAuthRequest::class);
+        Saloon::assertSent(fn ($request, $response) => $response->getPendingRequest()->headers()->get('Authorization') === 'Bearer test_token');
+    }
+
+    // ==================== user authorization code flow ====================
+
+    #[Test]
+    public function it_builds_the_authorization_url_with_the_wow_profile_scope(): void
+    {
+        $url = $this->makeConnector()->getAuthorizationUrl('the-state');
+
+        $this->assertStringStartsWith('https://eu.battle.net/oauth/authorize?', $url);
+
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+
+        $this->assertSame([
+            'response_type' => 'code',
+            'client_id' => 'test_id',
+            'redirect_uri' => 'https://regrowth.test/auth/battlenet/callback',
+            'scope' => 'openid wow.profile',
+            'state' => 'the-state',
+        ], $query);
     }
 
     // ==================== exception mapping ====================
@@ -177,7 +176,7 @@ class BlizzardConnectorTest extends TestCase
 
         $this->expectException(CharacterNotFoundException::class);
 
-        $request = Mockery::mock(GetCharacterProfileRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/profile/wow/character/thunderstrike/ghost')->getMock();
+        $request = Mockery::mock(new GetCharacterProfileRequest('thunderstrike', 'ghost'))->makePartial()->allows('resolveEndpoint')->andReturn('/profile/wow/character/thunderstrike/ghost')->getMock();
 
         $this->makeConnector()->send($request);
     }
@@ -196,7 +195,7 @@ class BlizzardConnectorTest extends TestCase
 
         $this->expectException(InvalidRaceException::class);
 
-        $request = Mockery::mock(GetPlayableRaceRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/playable-race/999')->getMock();
+        $request = Mockery::mock(new GetPlayableRaceRequest(999))->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/playable-race/999')->getMock();
 
         $this->makeConnector()->send($request);
     }
@@ -215,7 +214,7 @@ class BlizzardConnectorTest extends TestCase
 
         $this->expectException(InvalidClassException::class);
 
-        $request = Mockery::mock(GetPlayableClassRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/playable-class/999')->getMock();
+        $request = Mockery::mock(new GetPlayableClassRequest(999))->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/playable-class/999')->getMock();
 
         $this->makeConnector()->send($request);
     }
@@ -360,7 +359,49 @@ class BlizzardConnectorTest extends TestCase
         $this->assertFalse($hourly->getShouldSleep(), 'Expected the 36,000/hour limit to throw.');
     }
 
+    #[Test]
+    #[Group('error-handling')]
+    public function it_serves_a_cached_response_while_a_limit_is_exceeded(): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => $this->tokenMock(),
+            'eu.api.blizzard.com/data/wow/item/1*' => MockResponse::make(['id' => 1], 200),
+            'eu.api.blizzard.com/data/wow/item/2*' => MockResponse::make(['type' => 'BLZWEBAPI00000429'], 429, ['Retry-After' => '60']),
+        ]);
+        $connector = $this->makeConnector();
+
+        $connector->send(new GetItemRequest(1));
+
+        try {
+            $connector->send(new GetItemRequest(2));
+        } catch (RateLimitReachedException) {
+            // Expected: the 429 marks the limit exceeded.
+        }
+
+        $this->assertTrue($connector->send(new GetItemRequest(1))->isCached());
+    }
+
     // ==================== helpers ====================
+
+    private function requestWithOwnToken(?string $token): Request
+    {
+        return new class($token) extends Request
+        {
+            protected Method $method = Method::GET;
+
+            public function __construct(private ?string $token) {}
+
+            public function resolveEndpoint(): string
+            {
+                return '/profile/user/wow';
+            }
+
+            protected function defaultAuth(): ?Authenticator
+            {
+                return $this->token === null ? null : new TokenAuthenticator($this->token);
+            }
+        };
+    }
 
     /**
      * Invoke the connector's protected resolveLimits().
@@ -390,12 +431,8 @@ class BlizzardConnectorTest extends TestCase
         $this->fail("No limit found allowing {$allow} requests.");
     }
 
-    private function makeConnector(
-        ?Region $region = null,
-        GameVersion $gameVersion = GameVersion::Anniversary,
-        string $defaultRealmSlug = 'thunderstrike',
-        string $defaultGuildSlug = 'regrowth',
-    ): BlizzardConnector {
+    private function makeConnector(?Region $region = null): BlizzardConnector
+    {
         $region ??= Region::EU;
 
         return new BlizzardConnector(
@@ -403,10 +440,9 @@ class BlizzardConnectorTest extends TestCase
             clientSecret: 'test_secret',
             region: $region,
             locale: $region->defaultLocale(),
-            gameVersion: $gameVersion,
-            defaultRealmSlug: $defaultRealmSlug,
-            defaultGuildSlug: $defaultGuildSlug,
+            redirectUri: 'https://regrowth.test/auth/battlenet/callback',
             eagerlyMirrorAssets: $this->createStub(EagerlyMirrorAssets::class),
+            servedFromCache: app(ServedFromCache::class),
         );
     }
 

@@ -1,25 +1,26 @@
 import Icon from "@/Components/FontAwesome/Icon";
+import IconButton from "@/Components/IconButton";
+import { TextInput } from "@/Components/FormControls";
 
-export default function SearchInput({ value, onChange, placeholder = "Search by name...", dusk, inputRef }) {
+export default function SearchInput({ value, onChange, placeholder = "Search by name…", dusk, inputRef }) {
     return (
-        <div className="relative">
-            <Icon icon="search" style="solid" className="absolute top-1/2 left-3 -translate-y-1/2 text-secondary-500" />
-            <input
+        <div className="relative h-full">
+            <Icon icon="search" style="solid" className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+            <TextInput
                 ref={inputRef}
-                type="text"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
                 dusk={dusk}
-                className="border-ink-500 bg-ground-800 w-full rounded border py-2 pr-10 pl-10 text-white placeholder-gray-500 focus:ring-1 focus:ring-ink-500 focus:outline-hidden"
+                className="h-full pr-10 pl-10"
             />
             {value && (
-                <button
+                <IconButton
+                    icon="times"
+                    label="Clear search"
                     onClick={() => onChange("")}
-                    className="absolute top-1/2 right-3 -translate-y-1/2 text-secondary-500 hover:text-white"
-                >
-                    <Icon icon="times" style="solid" />
-                </button>
+                    className="absolute top-1/2 right-3 -translate-y-1/2 rounded text-gray-400 hover:text-white"
+                />
             )}
         </div>
     );

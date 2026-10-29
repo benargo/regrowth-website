@@ -1,0 +1,65 @@
+import { Link } from "@inertiajs/react";
+import { focusRing } from "@/Components/Datasets/RecordCard";
+import EmptyState from "@/Components/EmptyState";
+import Icon from "@/Components/FontAwesome/Icon";
+import PageContainer from "@/Components/PageContainer";
+import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
+
+/**
+ * A dataset's Index page body, below the page header: a link back to the
+ * officers' dashboard, the intro beside an Add button (left out when there's
+ * no `addHref`, e.g. for a user who can't create), then the record cards
+ * (`children`) in a grid, or an empty state when there are none.
+ * `layout="stack"` stacks the children (e.g. grouped sections) instead of
+ * the card grid.
+ */
+export default function IndexLayout({
+    intro,
+    addHref = null,
+    addLabel,
+    isEmpty,
+    emptyIcon,
+    emptyMessage,
+    layout = "grid",
+    children,
+}) {
+    return (
+        <>
+            <ToolNav>
+                <div className="flex-initial space-x-4">
+                    <ToolNavLink href={route("management.dashboard")} className={focusRing}>
+                        <Icon icon="arrow-left" style="solid" className="mr-1 text-xs" />
+                        Back to officers' dashboard
+                    </ToolNavLink>
+                </div>
+            </ToolNav>
+
+            <PageContainer>
+                <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-gray-300">{intro}</p>
+                    {addHref && (
+                        <Link
+                            href={addHref}
+                            className={`inline-flex shrink-0 items-center justify-center gap-2 rounded whitespace-nowrap bg-amber-800 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-900 ${focusRing}`}
+                        >
+                            <Icon icon="plus" style="light" />
+                            {addLabel}
+                        </Link>
+                    )}
+                </div>
+
+                {isEmpty ? (
+                    <EmptyState icon={emptyIcon} message={emptyMessage} />
+                ) : (
+                    <div
+                        className={
+                            layout === "stack" ? "flex flex-col gap-12" : "grid grid-cols-1 gap-6 lg:grid-cols-2"
+                        }
+                    >
+                        {children}
+                    </div>
+                )}
+            </PageContainer>
+        </>
+    );
+}

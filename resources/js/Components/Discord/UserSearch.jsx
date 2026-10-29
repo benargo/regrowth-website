@@ -1,16 +1,36 @@
 import { useState, useRef, useEffect } from "react";
-import axios from "axios";
-import InputError from "@/Components/InputError";
+import { router, usePage } from "@inertiajs/react";
+import { useEcho } from "@laravel/echo-react";
 import Icon from "@/Components/FontAwesome/Icon";
+import IconButton from "@/Components/IconButton";
+import { TextInput } from "@/Components/FormControls";
 
-export default function UserSearch({ value, onSelect, error }) {
+const MEMBER_LIMIT = 5;
+
+/**
+ * Searches the Discord server's members by partially reloading the page's optional `discord_members` prop.
+ * A page that offers it backs that prop with the LookUpGuildMembers action, passing it `member_search`
+ * and `member_limit` from the request. The prop is `{ status, members }`: `ready` carries the cached
+ * members, and `pending` means a search is queued. On `pending`, the component waits for the
+ * DiscordMembersSearched broadcast for the same query and limit, then reloads the prop again.
+ * Put it in a FormRow, which labels it and shows any error.
+ */
+export default function UserSearch({ id, value, onSelect, invalid = false }) {
+    const { discord_members: lookup = null, auth } = usePage().props;
+    const results = lookup?.members ?? [];
+    const isPending = lookup?.status === "pending";
+    const userId = auth?.user?.data?.id;
+
     const [query, setQuery] = useState("");
-    const [results, setResults] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+    const [hasSearchFailed, setHasSearchFailed] = useState(false);
     const containerRef = useRef(null);
-    const abortRef = useRef(null);
+    const cancelTokenRef = useRef(null);
     const debounceRef = useRef(null);
+    const pendingRef = useRef(null);
+
+    const isSearching = isLoading || (isPending && !hasSearchFailed && query.trim() !== "");
 
     useEffect(() => {
         const handler = (e) => {
@@ -22,38 +42,62 @@ export default function UserSearch({ value, onSelect, error }) {
         return () => document.removeEventListener("mousedown", handler);
     }, []);
 
+    useEcho(
+        `App.Models.User.${userId}`,
+        ".DiscordMembersSearched",
+        (payload) => {
+            const pendingQuery = pendingRef.current;
+
+            if (payload.query !== pendingQuery || payload.limit !== MEMBER_LIMIT) {
+                return;
+            }
+
+            if (payload.failed) {
+                setHasSearchFailed(true);
+                return;
+            }
+
+            reloadMembers(pendingQuery);
+        },
+        [userId],
+    );
+
+    function reloadMembers(search) {
+        cancelTokenRef.current?.cancel();
+        pendingRef.current = search;
+
+        router.reload({
+            only: ["discord_members"],
+            data: { member_search: search, member_limit: MEMBER_LIMIT },
+            preserveUrl: true,
+            onCancelToken: (cancelToken) => (cancelTokenRef.current = cancelToken),
+            onStart: () => setIsLoading(true),
+            onFinish: () => setIsLoading(false),
+        });
+    }
+
     function handleInputChange(e) {
         const val = e.target.value;
+        const search = val.trim();
         setQuery(val);
-        onSelect(null);
+        setHasSearchFailed(false);
+
+        if (value) {
+            onSelect(null);
+        }
 
         clearTimeout(debounceRef.current);
-        abortRef.current?.abort();
+        cancelTokenRef.current?.cancel();
+        pendingRef.current = null;
 
-        if (!val.trim()) {
-            setResults([]);
+        if (!search) {
             setIsOpen(false);
             return;
         }
 
         debounceRef.current = setTimeout(() => {
-            const controller = new AbortController();
-            abortRef.current = controller;
-            setIsLoading(true);
             setIsOpen(true);
-
-            axios
-                .get(route("api.discord.guild.members.search"), {
-                    params: { query: val, limit: 5 },
-                    signal: controller.signal,
-                })
-                .then((res) => setResults(res.data))
-                .catch((err) => {
-                    if (!axios.isCancel(err)) {
-                        setResults([]);
-                    }
-                })
-                .finally(() => setIsLoading(false));
+            reloadMembers(search);
         }, 300);
     }
 
@@ -65,50 +109,63 @@ export default function UserSearch({ value, onSelect, error }) {
 
     function handleClear() {
         setQuery("");
+        setHasSearchFailed(false);
         onSelect(null);
-        setResults([]);
         setIsOpen(false);
-        abortRef.current?.abort();
+        cancelTokenRef.current?.cancel();
         clearTimeout(debounceRef.current);
+        pendingRef.current = null;
     }
 
     return (
         <div ref={containerRef} className="relative">
             <div className="relative">
-                <Icon icon="search" style="solid" className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-500" />
-                <input
+                <Icon
+                    icon="search"
+                    style="solid"
+                    className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-gray-400"
+                />
+                <TextInput
+                    id={id}
                     type="text"
                     value={query}
                     onChange={handleInputChange}
-                    placeholder="Search by username or nickname..."
-                    className="w-full rounded border border-ink-600 bg-ground-800 py-2 pl-10 pr-10 text-white placeholder-gray-500 focus:outline-hidden focus:ring-1 focus:ring-ink-500"
+                    placeholder="Search by username or nickname"
+                    autoComplete="off"
+                    spellCheck={false}
+                    invalid={invalid}
+                    aria-busy={isSearching}
+                    className="pr-10 pl-11"
                 />
-                {isLoading && (
-                    <div className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-secondary-500 border-t-transparent" />
+                {isSearching && (
+                    <div
+                        role="status"
+                        aria-label="Searching Discord"
+                        className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-gray-500 border-t-transparent"
+                    />
                 )}
-                {!isLoading && (query || value) && (
-                    <button
-                        type="button"
+                {!isSearching && (query || value) && (
+                    <IconButton
+                        icon="times"
+                        label="Clear Discord user"
                         onClick={handleClear}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary-500 hover:text-white"
-                    >
-                        <Icon icon="times" style="solid" />
-                    </button>
+                        className="absolute inset-y-0 right-1 my-auto flex size-8 items-center justify-center rounded text-gray-400 hover:text-white"
+                    />
                 )}
             </div>
 
             {isOpen && results.length > 0 && (
-                <ul className="absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded border border-ink-600 bg-ground-800 shadow-lg">
+                <ul className="bg-brown-800 absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded border border-amber-600 shadow-lg">
                     {results.map((member) => (
                         <li key={member.id}>
                             <button
                                 type="button"
                                 onClick={() => handleSelect(member)}
-                                className="w-full px-4 py-2 text-left text-sm text-white transition-colors hover:bg-ground-700"
+                                className="hover:bg-brown-700 w-full px-4 py-2 text-left text-sm text-white transition-colors"
                             >
                                 {member.nickname ?? member.username}
                                 {member.nickname && (
-                                    <span className="ml-2 text-xs text-secondary-400">@{member.username}</span>
+                                    <span className="ml-2 text-xs text-gray-300">@{member.username}</span>
                                 )}
                             </button>
                         </li>
@@ -116,13 +173,20 @@ export default function UserSearch({ value, onSelect, error }) {
                 </ul>
             )}
 
-            {isOpen && !isLoading && results.length === 0 && query.trim() && (
-                <div className="absolute z-50 mt-1 w-full rounded border border-ink-600 bg-ground-800 px-4 py-2 text-sm text-secondary-400 shadow-lg">
-                    No members found
+            {isOpen && hasSearchFailed && (
+                <div
+                    role="alert"
+                    className="bg-brown-800 absolute z-50 mt-1 w-full rounded border border-amber-600 px-4 py-2 text-sm text-gray-300 shadow-lg"
+                >
+                    Couldn't search Discord. Try again.
                 </div>
             )}
 
-            <InputError message={error} className="mt-2" />
+            {isOpen && !isSearching && !hasSearchFailed && results.length === 0 && query.trim() && (
+                <div className="bg-brown-800 absolute z-50 mt-1 w-full rounded border border-amber-600 px-4 py-2 text-sm text-gray-300 shadow-lg">
+                    No members found
+                </div>
+            )}
         </div>
     );
 }

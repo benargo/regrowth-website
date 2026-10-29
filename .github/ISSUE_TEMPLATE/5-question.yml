@@ -1,0 +1,74 @@
+name: Question
+description: Explore whether something is possible before committing to build it.
+title: "Question: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Write the title as the question, e.g. `Question: can we read guild bank contents from the Blizzard API?`.
+        The goal is an answer and a recommendation, not code. If the answer is yes, open a Feature, Refactor or Performance issue for the work.
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: The question in one or two sentences, phrased so it can be answered yes, no or "yes, but".
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: What this would let the site do, and who it is for (members, officers, visitors).
+    validations:
+      required: true
+  - type: textarea
+    id: known
+    attributes:
+      label: What is already known
+      description: Relevant code, existing behaviour, documentation links, or earlier attempts.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - Backend (controllers, actions, models)
+        - Frontend (React / Inertia pages and components)
+        - Integrations (Blizzard, Discord, Warcraft Logs, Raid Helper)
+        - Database (migrations, seeders, data)
+        - Queues, jobs and scheduling
+        - Caching
+        - Tests and tooling
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: investigate
+    attributes:
+      label: What to investigate
+      description: Specific things to check, such as API endpoints, package features, rate limits, permissions or data availability.
+      value: |
+        - [ ] 
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: Limits any answer has to respect, such as no new dependencies, no extra API calls per request, or keeping existing data.
+  - type: textarea
+    id: answer
+    attributes:
+      label: What a good answer looks like
+      description: What the investigation should produce, e.g. a yes/no, a recommended approach, known limits, and a follow-up issue.
+      value: |
+        - Possible: yes / no / partly
+        - Recommended approach:
+        - Limits and risks:
+        - Follow-up issue:
+  - type: textarea
+    id: related
+    attributes:
+      label: Related
+      description: Linked issues and PRs.

@@ -3,8 +3,8 @@
 namespace Tests\Feature\Listeners;
 
 use App\Events\AddonSettingsProcessed;
-use App\Events\GrmUploadProcessed;
 use App\Jobs\FetchGuildRoster as FetchGuildRosterJob;
+use App\Jobs\FetchGuildRosters;
 use App\Listeners\FetchGuildRoster;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -36,26 +36,15 @@ class FetchGuildRosterTest extends TestCase
 
     #[Group('happy-path')]
     #[Test]
-    public function it_dispatches_fetch_guild_roster_on_addon_settings_processed(): void
+    public function it_dispatches_fetch_guild_rosters_for_addon_settings_events(): void
     {
         Bus::fake();
 
         $listener = new FetchGuildRoster;
         $listener->handle(new AddonSettingsProcessed);
 
-        Bus::assertDispatched(FetchGuildRosterJob::class);
-    }
-
-    #[Group('happy-path')]
-    #[Test]
-    public function it_dispatches_fetch_guild_roster_on_grm_upload_processed(): void
-    {
-        Bus::fake();
-
-        $listener = new FetchGuildRoster;
-        $listener->handle(new GrmUploadProcessed(5, 1, 0, 0, []));
-
-        Bus::assertDispatched(FetchGuildRosterJob::class);
+        Bus::assertDispatched(FetchGuildRosters::class);
+        Bus::assertNotDispatched(FetchGuildRosterJob::class);
     }
 
     #[Group('happy-path')]
@@ -67,6 +56,6 @@ class FetchGuildRosterTest extends TestCase
         $listener = new FetchGuildRoster;
         $listener->handle(new AddonSettingsProcessed);
 
-        Bus::assertDispatchedTimes(FetchGuildRosterJob::class, 1);
+        Bus::assertDispatchedTimes(FetchGuildRosters::class, 1);
     }
 }

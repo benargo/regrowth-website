@@ -53,7 +53,7 @@ class UpdateItemTest extends TestCase
 
     protected function editUrl(Item $item): string
     {
-        return route('loot.items.edit', ['item' => $item->id, 'slug' => $item->slug ?: "item-{$item->id}"]);
+        return route('loot.items.edit', ['item' => $item->id, 'slug' => $item->slug ?: "item-{$item->blizzard_id}"]);
     }
 
     // ==================== update ====================

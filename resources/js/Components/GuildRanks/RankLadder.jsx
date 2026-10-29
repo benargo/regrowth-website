@@ -1,0 +1,227 @@
+import { useRef, useState } from "react";
+import SortableList, { moveByKey } from "@/Components/Datasets/SortableList";
+import Icon from "@/Components/FontAwesome/Icon";
+import IconButton from "@/Components/IconButton";
+import { Checkbox, PrimaryButton, TextInput } from "@/Components/FormControls";
+
+/**
+ * The rank's in-game colour, from the --color-guild-rank-{slug} theme
+ * variables, falling back to the default rank colour for ranks without one.
+ */
+function rankColour(slug) {
+    return `var(--color-guild-rank-${slug}, var(--color-guild-rank, #1f8b4c))`;
+}
+
+function charactersLabel(count) {
+    if (count === 0) {
+        return "No characters";
+    }
+
+    return count === 1 ? "1 character" : `${count} characters`;
+}
+
+function RankRowContent({ row, index, dragHandle, children }) {
+    return (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 sm:flex-nowrap">
+            {dragHandle}
+            <span aria-hidden="true" className="w-7 text-right font-serif text-2xl text-gray-400 tabular-nums">
+                {index}
+            </span>
+            <span
+                aria-hidden="true"
+                className="h-8 w-1 shrink-0 rounded-full"
+                style={{ backgroundColor: rankColour(row.slug) }}
+            />
+            {children}
+        </div>
+    );
+}
+
+function RankRow({ row, index, dragHandle, error, onRename, onCommitName, onToggleAttendance, onDelete }) {
+    const nameBeforeEdit = useRef(row.name);
+    const nameId = `guild-rank-${row.key}-name`;
+    const attendanceId = `guild-rank-${row.key}-attendance`;
+
+    function handleBlur() {
+        if (row.name.trim() === "") {
+            onRename(row.key, nameBeforeEdit.current);
+            return;
+        }
+
+        onCommitName();
+    }
+
+    function handleKeyDown(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            event.currentTarget.blur();
+        } else if (event.key === "Escape") {
+            onRename(row.key, nameBeforeEdit.current);
+            event.currentTarget.blur();
+        }
+    }
+
+    return (
+        <>
+            <RankRowContent row={row} index={index} dragHandle={dragHandle}>
+                <input
+                    id={nameId}
+                    type="text"
+                    value={row.name}
+                    maxLength={255}
+                    aria-label={`Rank ${index} name`}
+                    aria-invalid={error ? true : undefined}
+                    onFocus={() => {
+                        nameBeforeEdit.current = row.name;
+                    }}
+                    onChange={(event) => onRename(row.key, event.target.value)}
+                    onBlur={handleBlur}
+                    onKeyDown={handleKeyDown}
+                    className="min-w-0 flex-1 basis-40 rounded border-b border-transparent bg-transparent px-1 py-1 text-base text-white hover:border-amber-600 focus-visible:outline-2 focus-visible:outline-amber-400"
+                />
+                <span className="w-28 text-sm text-gray-400">{charactersLabel(row.characters_count)}</span>
+                <span className="flex items-center gap-2">
+                    <Checkbox
+                        id={attendanceId}
+                        checked={row.count_attendance}
+                        onChange={() => onToggleAttendance(row.key)}
+                    />
+                    <label htmlFor={attendanceId} className="text-sm whitespace-nowrap text-gray-300">
+                        Attendance tracked
+                    </label>
+                </span>
+                <IconButton
+                    icon="trash-alt"
+                    label={`Delete ${row.name}`}
+                    onClick={() => onDelete(row.key)}
+                    className="ml-auto flex h-8 w-8 items-center justify-center rounded text-gray-400 hover:text-red-400 focus-visible:text-red-400"
+                />
+            </RankRowContent>
+            {error && (
+                <p className="px-3 pb-2 pl-24 text-sm text-red-400" role="alert">
+                    {error}
+                </p>
+            )}
+        </>
+    );
+}
+
+function AddRankRow({ onAdd }) {
+    const [name, setName] = useState("");
+
+    function add() {
+        const trimmedName = name.trim();
+
+        if (trimmedName === "") {
+            return;
+        }
+
+        onAdd(trimmedName);
+        setName("");
+    }
+
+    return (
+        <div className="bg-brown-800/50 flex flex-wrap items-center gap-3 px-3 py-3">
+            <label htmlFor="guild-rank-new-name" className="sr-only">
+                New rank name
+            </label>
+            <TextInput
+                id="guild-rank-new-name"
+                value={name}
+                maxLength={255}
+                placeholder="Rank name"
+                onChange={(event) => setName(event.target.value)}
+                onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                        event.preventDefault();
+                        add();
+                    }
+                }}
+                className="min-w-0 flex-1 basis-48"
+            />
+            <PrimaryButton onClick={add}>
+                <Icon icon="plus" />
+                Add rank
+            </PrimaryButton>
+        </div>
+    );
+}
+
+/**
+ * A guild's ranks in Blizzard rank order, each row numbered with its 0-based
+ * rank index and marked with its in-game colour. Rows can be dragged (or
+ * moved with the keyboard from their handle), renamed in place, toggled for
+ * attendance and deleted. The parent owns the rows: onChange updates them
+ * while typing, and onCommit updates them and saves. Both take an updater
+ * that receives the parent's latest rows, which may be newer than `rows` when
+ * a save lands between renders. `errors` maps a row's key to its message.
+ */
+export default function RankLadder({ rows, onChange, onCommit, errors = {}, maxRanks, newRow }) {
+    function rename(key, name) {
+        onChange((current) => current.map((row) => (row.key === key ? { ...row, name } : row)));
+    }
+
+    function toggleAttendance(key) {
+        onCommit((current) =>
+            current.map((row) => (row.key === key ? { ...row, count_attendance: !row.count_attendance } : row)),
+        );
+    }
+
+    function remove(key) {
+        onCommit((current) => current.filter((row) => row.key !== key));
+    }
+
+    return (
+        <div className="overflow-hidden rounded border border-amber-600/40">
+            {rows.length === 0 ? (
+                <p className="px-4 py-3 text-sm text-gray-300">No ranks yet. Add the guild master first.</p>
+            ) : (
+                <SortableList
+                    items={rows}
+                    getKey={(row) => row.key}
+                    getLabel={(row) => row.name}
+                    label="Guild ranks"
+                    className="divide-y divide-amber-600/40"
+                    itemClassName="bg-brown-900"
+                    onMove={(activeKey, overKey) =>
+                        onCommit((current) => moveByKey(current, (row) => row.key, activeKey, overKey))
+                    }
+                    renderItem={(row, { index, dragHandle }) => (
+                        <RankRow
+                            row={row}
+                            index={index}
+                            dragHandle={dragHandle}
+                            error={errors[row.key]}
+                            onRename={rename}
+                            onCommitName={() => onCommit((current) => current)}
+                            onToggleAttendance={toggleAttendance}
+                            onDelete={remove}
+                        />
+                    )}
+                    renderOverlay={(row, index) => (
+                        <div className="bg-brown-900">
+                            <RankRowContent
+                                row={row}
+                                index={index}
+                                dragHandle={
+                                    <span className="flex h-8 w-6 items-center justify-center text-gray-400">
+                                        <Icon icon="grip-vertical" style="regular" />
+                                    </span>
+                                }
+                            >
+                                <span className="flex-1 px-1 text-white">{row.name}</span>
+                            </RankRowContent>
+                        </div>
+                    )}
+                />
+            )}
+            <div className="border-t border-amber-600/40">
+                {rows.length < maxRanks ? (
+                    <AddRankRow onAdd={(name) => onCommit((current) => [...current, newRow(name)])} />
+                ) : (
+                    <p className="px-4 py-3 text-sm text-gray-300">Guilds can have up to {maxRanks} ranks.</p>
+                )}
+            </div>
+        </div>
+    );
+}

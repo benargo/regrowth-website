@@ -2,17 +2,20 @@
 
 namespace Tests;
 
+use App\Jobs\Addon\BuildExportFile;
+use App\Jobs\Discord\AttachAvatarToUser;
 use App\Listeners\FetchGuildRoster;
-use App\Listeners\FlushAttendanceCache;
-use App\Listeners\FlushLootCouncilCache;
 use App\Listeners\FlushPermissionsCache;
-use App\Listeners\FlushReportsCache;
-use App\Listeners\ScheduleAddonExportBuild;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
+use Saloon\Config;
 use Spatie\Permission\PermissionRegistrar;
 
 abstract class TestCase extends BaseTestCase
 {
+    private static bool $strayRequestsPrevented = false;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -20,10 +23,14 @@ abstract class TestCase extends BaseTestCase
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         $this->mock(FetchGuildRoster::class)->shouldReceive('handle');
-        $this->mock(FlushAttendanceCache::class)->shouldReceive('handle');
-        $this->mock(FlushLootCouncilCache::class)->shouldReceive('handle');
         $this->mock(FlushPermissionsCache::class)->shouldReceive('handle');
-        $this->mock(FlushReportsCache::class)->shouldReceive('handle');
-        $this->mock(ScheduleAddonExportBuild::class)->shouldReceive('handle');
+
+        Queue::fake([BuildExportFile::class, AttachAvatarToUser::class]);
+        Storage::fake('addon');
+
+        if (! self::$strayRequestsPrevented) {
+            Config::preventStrayRequests();
+            self::$strayRequestsPrevented = true;
+        }
     }
 }

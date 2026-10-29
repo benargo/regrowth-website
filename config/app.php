@@ -140,19 +140,15 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Theme
+    | Seed From APIs
     |--------------------------------------------------------------------------
     |
-    | The site-wide default visual theme, used for any route that does not
-    | declare its own via #[UsesTheme]. Must match a case of App\Enums\Theme
-    | and a [data-theme] block in resources/css/app.css. Swapping this flips
-    | every undecorated page, so the whole site can move to Forever at launch
-    | with an env change and a config:clear.
-    |
-    | Supported: "classic", "forever"
+    | When enabled, a full "db:seed" finishes by running the console commands
+    | that fetch data from external APIs (Discord, Blizzard, Warcraft Logs and
+    | Raid Helper). Leave disabled on production and staging.
     |
     */
 
-    'theme' => env('APP_THEME', 'classic'),
+    'seed_from_apis' => (bool) env('SEED_FROM_APIS', false),
 
 ];

@@ -2,51 +2,114 @@
 
 namespace Tests\Feature\Console\Commands;
 
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Jobs\FetchGuildRoster;
-use Carbon\CarbonInterval;
+use App\Jobs\FetchGuildRosters;
+use App\Models\GameVersion;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\RateLimiter;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
 
 #[Group('characters')]
 #[Group('blizzard-integration')]
 class FetchGuildRosterTest extends TestCase
 {
-    protected function tearDown(): void
+    use RefreshDatabase;
+
+    #[Test]
+    public function it_dispatches_fetch_guild_rosters_without_an_option(): void
     {
-        RateLimiter::clear('fetch-guild-roster-job');
-        parent::tearDown();
+        Bus::fake([FetchGuildRoster::class, FetchGuildRosters::class]);
+
+        $this->artisan('fetch:blizzard-roster')
+            ->expectsOutput('Guild roster refresh queued for each game version.')
+            ->assertSuccessful();
+
+        Bus::assertDispatchedSync(FetchGuildRosters::class, fn (FetchGuildRosters $job) => $job->bypassRateLimit);
     }
 
     #[Test]
-    public function it_dispatches_fetch_guild_roster_synchronously(): void
+    public function it_dispatches_the_roster_job_for_the_given_game_version(): void
     {
-        Bus::fake([FetchGuildRoster::class]);
+        Bus::fake([FetchGuildRoster::class, FetchGuildRosters::class]);
 
-        $this->artisan('fetch:blizzard-roster')
+        $gameVersion = GameVersion::factory()->create();
+
+        $this->artisan('fetch:blizzard-roster', ['--game-version' => $gameVersion->id])
             ->expectsOutput('Guild roster refreshed.')
             ->assertSuccessful();
 
-        Bus::assertDispatchedSync(FetchGuildRoster::class);
+        Bus::assertDispatchedSync(
+            FetchGuildRoster::class,
+            fn (FetchGuildRoster $job) => $job->gameVersionId === $gameVersion->id && $job->bypassRateLimit,
+        );
+        Bus::assertNotDispatchedSync(FetchGuildRosters::class);
     }
 
+    #[Group('validation')]
     #[Test]
-    public function it_warns_and_does_not_dispatch_when_rate_limited(): void
+    public function it_rejects_a_non_numeric_game_version(): void
     {
-        Bus::fake([FetchGuildRoster::class]);
-        RateLimiter::hit('fetch-guild-roster-job');
+        Bus::fake([FetchGuildRoster::class, FetchGuildRosters::class]);
 
-        $interval = $this->createStub(CarbonInterval::class);
-        $interval->method('cascade')->willReturnSelf();
-        $interval->method('forHumans')->willReturn('15 minutes');
-        CarbonInterval::macro('seconds', fn () => $interval);
+        $this->artisan('fetch:blizzard-roster', ['--game-version' => 'abc'])
+            ->expectsOutput('The --game-version option must be a numeric game version ID.')
+            ->assertFailed();
 
-        $this->artisan('fetch:blizzard-roster')
-            ->expectsOutput('The guild roster was refreshed recently. Please wait 15 minutes before refreshing again.')
-            ->assertSuccessful();
+        Bus::assertNothingDispatched();
+    }
 
-        Bus::assertNotDispatchedSync(FetchGuildRoster::class);
+    #[Group('validation')]
+    #[Test]
+    public function it_rejects_an_unknown_game_version(): void
+    {
+        Bus::fake([FetchGuildRoster::class, FetchGuildRosters::class]);
+
+        $this->artisan('fetch:blizzard-roster', ['--game-version' => 999])
+            ->expectsOutput('Game version 999 not found.')
+            ->assertFailed();
+
+        Bus::assertNothingDispatched();
+    }
+
+    #[Group('validation')]
+    #[Test]
+    #[TestWith(['Thunderstrike'])]
+    #[TestWith([null])]
+    public function it_rejects_a_game_version_without_a_blizzard_namespace(?string $realm): void
+    {
+        Bus::fake([FetchGuildRoster::class, FetchGuildRosters::class]);
+
+        $gameVersion = GameVersion::factory()->create([
+            'blizzard_namespace' => null,
+            'realm' => $realm,
+        ]);
+
+        $this->artisan('fetch:blizzard-roster', ['--game-version' => $gameVersion->id])
+            ->expectsOutput("Game version {$gameVersion->id} has no Blizzard namespace configured.")
+            ->assertFailed();
+
+        Bus::assertNothingDispatched();
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_rejects_a_game_version_without_a_realm_when_its_namespace_requires_one(): void
+    {
+        Bus::fake([FetchGuildRoster::class, FetchGuildRosters::class]);
+
+        $gameVersion = GameVersion::factory()->create([
+            'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
+            'realm' => null,
+        ]);
+
+        $this->artisan('fetch:blizzard-roster', ['--game-version' => $gameVersion->id])
+            ->expectsOutput("Game version {$gameVersion->id} has no realm configured.")
+            ->assertFailed();
+
+        Bus::assertNothingDispatched();
     }
 }

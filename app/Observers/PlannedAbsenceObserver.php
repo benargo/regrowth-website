@@ -2,10 +2,11 @@
 
 namespace App\Observers;
 
+use App\Contracts\Actions\Navigation\CachesNavigationData;
 use App\Models\PlannedAbsence;
 use Illuminate\Support\Facades\Cache;
 
-class PlannedAbsenceObserver
+class PlannedAbsenceObserver implements CachesNavigationData
 {
     /**
      * Handle the PlannedAbsence "created" event.
@@ -13,6 +14,7 @@ class PlannedAbsenceObserver
     public function created(PlannedAbsence $plannedAbsence): void
     {
         Cache::tags(['attendance'])->flush();
+        Cache::tags([self::CACHE_TAG])->flush();
     }
 
     /**
@@ -21,6 +23,7 @@ class PlannedAbsenceObserver
     public function updated(PlannedAbsence $plannedAbsence): void
     {
         Cache::tags(['attendance'])->flush();
+        Cache::tags([self::CACHE_TAG])->flush();
     }
 
     /**
@@ -29,6 +32,7 @@ class PlannedAbsenceObserver
     public function deleted(PlannedAbsence $plannedAbsence): void
     {
         Cache::tags(['attendance'])->flush();
+        Cache::tags([self::CACHE_TAG])->flush();
     }
 
     /**
@@ -37,5 +41,6 @@ class PlannedAbsenceObserver
     public function restored(PlannedAbsence $plannedAbsence): void
     {
         Cache::tags(['attendance'])->flush();
+        Cache::tags([self::CACHE_TAG])->flush();
     }
 }

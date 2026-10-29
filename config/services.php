@@ -17,7 +17,7 @@ return [
     'blizzard' => [
         'client_id' => env('BLIZZARD_CLIENT_ID'),
         'client_secret' => env('BLIZZARD_CLIENT_SECRET'),
-        'game_version' => env('BLIZZARD_GAME_VERSION', 'Anniversary'),
+        'namespace' => env('BLIZZARD_NAMESPACE', 'anniversary'),
         'guild' => [
             'name' => 'Regrowth',
             'slug' => 'regrowth',
@@ -28,16 +28,11 @@ return [
         ],
         'region' => env('BLIZZARD_REGION', 'eu'),
         'locale' => env('BLIZZARD_LOCALE', 'en_GB'),
-        /**
-         * TODO: Remove the hardcoded namespaces once the refactor is complete.
-         */
-        'namespaces' => [
-            'dynamic' => 'dynamic-classicann-eu',
-            'media' => 'static-eu',
-            'profile' => 'profile-classicann-eu',
-            'static' => 'static-classicann-eu',
-        ],
         'filesystem' => env('BLIZZARD_FILESYSTEM', 'public'),
+    ],
+
+    'guild_roster_manager' => [
+        'upload_path' => 'grm/uploads/{game_version}/latest.csv',
     ],
 
     'discord' => [
@@ -48,13 +43,9 @@ return [
         'server_id' => env('DISCORD_SERVER_ID'),
         'channels' => [
             'announcements' => env('DISCORD_CHANNEL_ANNOUNCEMENTS'),
-            'daily_quests' => env('DISCORD_CHANNEL_DAILY_QUESTS'),
             'lootcouncil' => env('DISCORD_CHANNEL_LOOTCOUNCIL'),
             'officer' => env('DISCORD_CHANNEL_OFFICER'),
             'tbc_chat' => env('DISCORD_CHANNEL_TBC_CHAT'),
-        ],
-        'roles' => [
-            'daily_quest_subscribers' => env('DISCORD_ROLE_DAILY_QUEST_SUBSCRIBERS'),
         ],
     ],
 
@@ -68,7 +59,6 @@ return [
     'warcraftlogs' => [
         'client_id' => env('WCL_CLIENT_ID'),
         'client_secret' => env('WCL_CLIENT_SECRET'),
-        'guild_id' => 774848,
         'expansion_id' => 1001,
     ],
 

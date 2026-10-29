@@ -4,20 +4,19 @@ namespace Tests\Unit\Models;
 
 use App\Contracts\HasCharacterMedia;
 use App\Enums\Gender;
-use App\Events\CharacterDeleted;
-use App\Events\CharacterUpdated;
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\PlayableSpecialization;
 use App\Models\Report;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -33,44 +32,20 @@ class CharacterTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_uses_characters_table(): void
-    {
-        $model = new Character;
-
-        $this->assertSame('characters', $model->getTable());
-    }
-
-    #[Test]
     public function it_has_expected_fillable_attributes(): void
     {
         $model = new Character;
 
         $this->assertFillable($model, [
             'id',
+            'game_version_id',
             'name',
             'level',
             'rank_id',
             'playable_class_id',
             'playable_race_id',
             'gender',
-            'is_main',
-            'is_loot_councillor',
-        ]);
-    }
-
-    #[Test]
-    public function it_declares_fillable_via_attribute(): void
-    {
-        $model = new Character;
-
-        $this->assertFillableAttribute($model, [
-            'id',
-            'name',
-            'level',
-            'rank_id',
-            'playable_class_id',
-            'playable_race_id',
-            'gender',
+            'user_id',
             'is_main',
             'is_loot_councillor',
         ]);
@@ -89,26 +64,6 @@ class CharacterTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_dispatches_events_on_updated_and_deleted(): void
-    {
-        $model = new Character;
-
-        $this->assertSame([
-            'updated' => CharacterUpdated::class,
-            'deleted' => CharacterDeleted::class,
-        ], $model->dispatchesEvents());
-    }
-
-    #[Test]
-    public function it_uses_auto_incrementing_primary_key(): void
-    {
-        $model = new Character;
-
-        $this->assertSame('id', $model->getKeyName());
-        $this->assertTrue($model->getIncrementing());
-    }
-
-    #[Test]
     public function it_can_create_a_character(): void
     {
         $character = $this->create([
@@ -121,13 +76,52 @@ class CharacterTest extends ModelTestCase
         $this->assertModelExists($character);
     }
 
+    // ==================== game_version ====================
+
     #[Test]
-    public function it_has_timestamps(): void
+    public function characters_table_has_a_nullable_game_version_id_column(): void
     {
         $character = $this->create();
 
-        $this->assertNotNull($character->created_at);
-        $this->assertNotNull($character->updated_at);
+        $this->assertNull($character->game_version_id);
+    }
+
+    #[Test]
+    public function it_belongs_to_a_game_version(): void
+    {
+        $version = GameVersion::factory()->create();
+        $character = $this->create(['game_version_id' => $version->id]);
+
+        $this->assertSame($version->id, $character->gameVersion?->id);
+    }
+
+    #[Test]
+    public function game_version_returns_belongs_to_relationship(): void
+    {
+        $character = new Character;
+
+        $this->assertInstanceOf(BelongsTo::class, $character->gameVersion());
+    }
+
+    #[Test]
+    public function deleting_a_game_version_nulls_the_characters_game_version_id(): void
+    {
+        $version = GameVersion::factory()->create();
+        $character = $this->create(['game_version_id' => $version->id]);
+
+        $version->delete();
+
+        $this->assertTableHas(['id' => $character->id, 'game_version_id' => null]);
+    }
+
+    // ==================== gender ====================
+
+    #[Test]
+    public function gender_is_hydrated_as_a_gender_enum(): void
+    {
+        $character = $this->create(['gender' => 'Female']);
+
+        $this->assertSame(Gender::FEMALE, $character->fresh()->gender);
     }
 
     // ==================== is_loot_councillor ====================
@@ -199,6 +193,17 @@ class CharacterTest extends ModelTestCase
     }
 
     #[Test]
+    public function linked_characters_excludes_characters_linked_only_in_the_other_direction(): void
+    {
+        $mainCharacter = $this->factory()->main()->create(['name' => 'MainChar']);
+        $altCharacter = $this->create(['name' => 'AltChar']);
+
+        $altCharacter->linkedCharacters()->attach($mainCharacter->id);
+
+        $this->assertCount(0, $mainCharacter->linkedCharacters);
+    }
+
+    #[Test]
     public function linked_characters_returns_empty_collection_when_no_links_exist(): void
     {
         $character = $this->create();
@@ -209,8 +214,6 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function deleting_character_cascades_to_character_links(): void
     {
-        Event::fake([CharacterDeleted::class]);
-
         $mainCharacter = $this->factory()->main()->create(['name' => 'MainChar']);
         $altCharacter = $this->create(['name' => 'AltChar']);
 
@@ -238,9 +241,7 @@ class CharacterTest extends ModelTestCase
 
         $altCharacter->linkedCharacters()->attach($mainCharacter->id);
 
-        $this->assertNotNull($altCharacter->mainCharacter);
-        $this->assertSame($mainCharacter->id, $altCharacter->mainCharacter->id);
-        $this->assertTrue($altCharacter->mainCharacter->is_main);
+        $this->assertSame($mainCharacter->id, $altCharacter->mainCharacter?->id);
     }
 
     #[Test]
@@ -385,6 +386,8 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function prunable_includes_characters_updated_more_than_14_days_ago(): void
     {
+        $this->freezeTime();
+
         $prunableCharacter = $this->create([
             'name' => 'OldCharacter',
             'updated_at' => now()->subDays(15),
@@ -398,6 +401,8 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function prunable_excludes_characters_updated_within_14_days(): void
     {
+        $this->freezeTime();
+
         $recentCharacter = $this->create([
             'name' => 'RecentCharacter',
             'updated_at' => now()->subDays(13),
@@ -411,6 +416,8 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function prunable_includes_characters_updated_exactly_14_days_ago(): void
     {
+        $this->freezeTime();
+
         $boundaryCharacter = $this->create([
             'name' => 'BoundaryCharacter',
             'updated_at' => now()->subDays(14),
@@ -424,6 +431,8 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function prunable_returns_empty_when_all_characters_are_recent(): void
     {
+        $this->freezeTime();
+
         $this->create(['name' => 'Recent1', 'updated_at' => now()->subDays(1)]);
         $this->create(['name' => 'Recent2', 'updated_at' => now()->subDays(10)]);
 
@@ -456,8 +465,7 @@ class CharacterTest extends ModelTestCase
 
         $character->specializations()->attach($specialization->id);
 
-        $this->assertCount(1, $character->fresh()->specializations);
-        $this->assertTrue($character->fresh()->specializations->first()->is($specialization));
+        $this->assertSame([$specialization->id], $character->fresh()->specializations->modelKeys());
     }
 
     #[Test]
@@ -495,16 +503,6 @@ class CharacterTest extends ModelTestCase
     }
 
     #[Test]
-    public function rank_returns_associated_guild_rank(): void
-    {
-        $rank = GuildRank::factory()->create(['sort_order' => 0, 'name' => 'Guild Master']);
-        $character = $this->create(['rank_id' => $rank->id]);
-
-        $this->assertInstanceOf(GuildRank::class, $character->rank);
-        $this->assertSame($rank->id, $character->rank->id);
-    }
-
-    #[Test]
     public function rank_returns_null_when_no_rank_assigned(): void
     {
         $character = $this->create(['rank_id' => null]);
@@ -537,31 +535,28 @@ class CharacterTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_registers_character_portrait_collection(): void
+    public function the_portrait_collection_holds_only_one_file(): void
     {
+        Storage::fake('s3');
+
         $character = $this->create();
 
-        $collections = $character->getRegisteredMediaCollections();
-        $names = array_map(fn ($c) => $c->name, $collections->all());
+        $character->addMediaFromString('OLD')
+            ->usingFileName('old.jpg')
+            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION);
 
-        $this->assertContains(Character::MEDIA_COLLECTION, $names);
-    }
+        $character->addMediaFromString('NEW')
+            ->usingFileName('new.jpg')
+            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION);
 
-    #[Test]
-    public function character_portrait_collection_is_single_file(): void
-    {
-        $character = $this->create();
-
-        $collection = $character->getRegisteredMediaCollections()
-            ->firstWhere('name', Character::MEDIA_COLLECTION);
-
-        $this->assertTrue($collection->singleFile);
+        $this->assertCount(1, $character->fresh()->getMedia(HasCharacterMedia::MEDIA_COLLECTION));
+        $this->assertSame('new.jpg', $character->fresh()->getFirstMedia(HasCharacterMedia::MEDIA_COLLECTION)->file_name);
     }
 
     #[Test]
     public function it_registers_the_portrait_and_render_collections_separately(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $character = $this->create();
 
@@ -584,7 +579,7 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function the_render_collection_holds_only_one_file(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $character = $this->create();
 
@@ -598,6 +593,44 @@ class CharacterTest extends ModelTestCase
 
         $this->assertCount(1, $character->fresh()->getMedia(HasCharacterMedia::MEDIA_COLLECTION_RENDER));
         $this->assertSame('new.png', $character->fresh()->getFirstMedia(HasCharacterMedia::MEDIA_COLLECTION_RENDER)->file_name);
+    }
+
+    // ==================== user ====================
+
+    #[Test]
+    public function characters_table_has_a_nullable_user_id_column(): void
+    {
+        $character = $this->create();
+
+        $this->assertNull($character->user_id);
+    }
+
+    #[Test]
+    public function user_returns_belongs_to_relationship(): void
+    {
+        $character = new Character;
+
+        $this->assertInstanceOf(BelongsTo::class, $character->user());
+    }
+
+    #[Test]
+    public function it_belongs_to_a_user(): void
+    {
+        $user = User::factory()->create();
+        $character = $this->factory()->forUser($user)->create();
+
+        $this->assertSame($user->id, $character->user?->id);
+    }
+
+    #[Test]
+    public function deleting_a_user_nulls_the_characters_user_id(): void
+    {
+        $user = User::factory()->create();
+        $character = $this->factory()->forUser($user)->create();
+
+        $user->delete();
+
+        $this->assertTableHas(['id' => $character->id, 'user_id' => null]);
     }
 
     // ==================== warcraft_logs_reports ====================

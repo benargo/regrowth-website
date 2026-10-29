@@ -4,10 +4,10 @@ namespace App\Models;
 
 use App\Contracts\HasCharacterMedia;
 use App\Enums\Gender;
-use App\Events\CharacterDeleted;
-use App\Events\CharacterUpdated;
+use App\Observers\CharacterObserver;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,7 +20,8 @@ use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-#[Fillable(['id', 'name', 'level', 'rank_id', 'playable_class_id', 'playable_race_id', 'gender', 'is_main', 'is_loot_councillor'])]
+#[ObservedBy([CharacterObserver::class])]
+#[Fillable(['id', 'game_version_id', 'name', 'level', 'rank_id', 'playable_class_id', 'playable_race_id', 'gender', 'user_id', 'is_main', 'is_loot_councillor'])]
 #[Hidden(['created_at', 'updated_at'])]
 class Character extends Model implements HasCharacterMedia, HasMedia
 {
@@ -33,16 +34,6 @@ class Character extends Model implements HasCharacterMedia, HasMedia
      */
     protected $attributes = [
         'is_loot_councillor' => false,
-    ];
-
-    /**
-     * The event map for the model.
-     *
-     * @var array<string, string>
-     */
-    protected $dispatchesEvents = [
-        'updated' => CharacterUpdated::class,
-        'deleted' => CharacterDeleted::class,
     ];
 
     /**
@@ -92,11 +83,29 @@ class Character extends Model implements HasCharacterMedia, HasMedia
     // ========== Relationships ============
 
     /**
-     * Get the guild rank associated with the character.
+     * Get the game version this character belongs to.
      */
-    public function rank(): BelongsTo
+    public function gameVersion(): BelongsTo
     {
-        return $this->belongsTo(GuildRank::class, 'rank_id');
+        return $this->belongsTo(GameVersion::class);
+    }
+
+    /**
+     * Get the characters linked to this character, via `character_links` rows whose
+     * `linked_character_id` is this character. Links are one-directional; a two-way
+     * link requires a row in each direction.
+     */
+    public function linkedCharacters(): BelongsToMany
+    {
+        return $this->belongsToMany(self::class, 'character_links', 'linked_character_id', 'character_id');
+    }
+
+    /**
+     * Get the planned absences for the character.
+     */
+    public function plannedAbsences(): HasMany
+    {
+        return $this->hasMany(PlannedAbsence::class);
     }
 
     /**
@@ -116,21 +125,11 @@ class Character extends Model implements HasCharacterMedia, HasMedia
     }
 
     /**
-     * Get the characters linked to this character.
-     *
-     * This relationship is defined in both directions to allow for easy retrieval of linked characters regardless of the direction of the link.
+     * Get the guild rank associated with the character.
      */
-    public function linkedCharacters(): BelongsToMany
+    public function rank(): BelongsTo
     {
-        return $this->belongsToMany(self::class, 'character_links', 'linked_character_id', 'character_id');
-    }
-
-    /**
-     * Get the planned absences for the character.
-     */
-    public function plannedAbsences(): HasMany
-    {
-        return $this->hasMany(PlannedAbsence::class);
+        return $this->belongsTo(GuildRank::class, 'rank_id');
     }
 
     /**
@@ -141,6 +140,16 @@ class Character extends Model implements HasCharacterMedia, HasMedia
         return $this->belongsToMany(PlayableSpecialization::class, 'pivot_character_specializations', 'character_id', 'playable_specialization_id')
             ->withPivot('is_raid_spec')
             ->withTimestamps();
+    }
+
+    /**
+     * Get the Discord user who owns the character.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     /**

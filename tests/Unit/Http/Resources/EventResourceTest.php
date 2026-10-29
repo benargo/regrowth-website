@@ -2,151 +2,68 @@
 
 namespace Tests\Unit\Http\Resources;
 
-use App\Enums\RaidBackground;
 use App\Enums\SignupStatus;
 use App\Http\Resources\EventResource;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\EventAssignment;
+use App\Models\GameVersion;
 use App\Models\Raid;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Resources\Channel;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
+use Saloon\Laravel\Facades\Saloon;
+use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 #[Group('raiding')]
 class EventResourceTest extends TestCase
 {
+    use MocksDiscordService;
     use RefreshDatabase;
 
     #[Test]
-    public function it_returns_all_expected_top_level_keys(): void
+    public function it_returns_exactly_the_expected_top_level_keys(): void
     {
-        $this->mockChannel();
-        $event = Event::factory()->create();
+        $event = Event::factory()->create()->load('raids.bosses.media', 'bosses.media', 'assignments.group', 'characters.rank');
 
-        $array = $this->makeResource($event);
+        $array = (new EventResource($event))->withChannel(['id' => '1', 'name' => 'raid-chat', 'position' => 3])->resolve(new Request);
 
-        $this->assertArrayHasKey('id', $array);
-        $this->assertArrayHasKey('title', $array);
-        $this->assertArrayHasKey('start_time', $array);
-        $this->assertArrayHasKey('end_time', $array);
-        $this->assertArrayHasKey('duration', $array);
-        $this->assertArrayHasKey('channel', $array);
-        $this->assertArrayHasKey('color', $array);
-        $this->assertArrayHasKey('background', $array);
-        $this->assertArrayHasKey('assignments', $array);
-        $this->assertArrayHasKey('composition', $array);
-        $this->assertArrayHasKey('raids', $array);
+        $this->assertSame(
+            ['id', 'title', 'start_time', 'end_time', 'duration', 'updated_at', 'color', 'banner_url', 'banner_position', 'assignments', 'composition', 'raids', 'channel'],
+            array_keys($array),
+        );
     }
 
-    #[Test]
-    public function it_returns_null_background_when_no_raids_attached(): void
-    {
-        $this->mockChannel();
-        $event = Event::factory()->create();
-
-        $array = $this->makeResource($event);
-
-        $this->assertNull($array['background']);
-    }
-
-    #[Test]
-    public function it_returns_null_color_when_event_has_no_color(): void
-    {
-        $this->mockChannel();
-        $event = Event::factory()->create(['color' => null]);
-
-        $array = $this->makeResource($event);
-
-        $this->assertNull($array['color']);
-    }
-
-    #[Test]
-    public function it_returns_color_as_hex_string(): void
-    {
-        $this->mockChannel();
-        $event = Event::factory()->create(['color' => '34,110,115']);
-
-        $array = $this->makeResource($event);
-
-        $this->assertSame($event->color, $array['color']);
-        $this->assertMatchesRegularExpression('/^[0-9a-f]{6}$/', $array['color']);
-    }
-
-    #[Test]
-    public function it_returns_background_string_based_on_event_background_css_class(): void
-    {
-        $this->mockChannel();
-
-        $event = Event::factory()->withBackground(RaidBackground::Karazhan)->create();
-
-        $array = $this->makeResource($event);
-
-        $this->assertSame(RaidBackground::Karazhan->value, $array['background']);
-    }
+    // ==================== id, title, start and end times ====================
 
     #[Test]
     public function it_returns_correct_scalar_fields(): void
     {
-        $this->mockChannel();
-        $event = Event::factory()->create();
+        $event = Event::factory()->create([
+            'title' => 'Karazhan',
+            'start_time' => '2026-09-18 19:00:00',
+            'end_time' => '2026-09-18 22:00:00',
+        ]);
 
         $array = $this->makeResource($event);
 
         $this->assertSame($event->id, $array['id']);
-        $this->assertSame($event->title, $array['title']);
-        $this->assertSame($event->start_time->toIso8601String(), $array['start_time']);
-        $this->assertSame($event->end_time->toIso8601String(), $array['end_time']);
-    }
-
-    #[Test]
-    public function it_returns_duration_as_seconds_between_start_and_end(): void
-    {
-        $this->mockChannel();
-        $event = Event::factory()->create();
-
-        $array = $this->makeResource($event);
-
-        $this->assertSame($event->start_time->diffInSeconds($event->end_time), $array['duration']);
-    }
-
-    #[Test]
-    public function it_returns_channel_as_an_array(): void
-    {
-        $this->mockChannel(id: '999888777', name: 'raid-chat', position: 3);
-        $event = Event::factory()->create();
-
-        $array = $this->makeResource($event);
-
-        $this->assertIsArray($array['channel']);
-        $this->assertSame('999888777', $array['channel']['id']);
-        $this->assertSame('raid-chat', $array['channel']['name']);
-        $this->assertSame(3, $array['channel']['position']);
-    }
-
-    #[Test]
-    public function it_omits_channel_when_discord_api_fails(): void
-    {
-        $discord = $this->createStub(Discord::class);
-        $discord->method('getChannel')->willThrowException(new \Exception('Discord unavailable'));
-        $this->app->instance(Discord::class, $discord);
-
-        $event = Event::factory()->create();
-
-        $array = $this->makeResource($event);
-
-        $this->assertArrayNotHasKey('channel', $array);
+        $this->assertSame('Karazhan', $array['title']);
+        $this->assertStringStartsWith('2026-09-18T19:00:00', $array['start_time']);
+        $this->assertStringStartsWith('2026-09-18T22:00:00', $array['end_time']);
     }
 
     #[Test]
     public function it_returns_null_start_time_when_event_has_no_start_time(): void
     {
-        $this->mockChannel();
         $event = Event::factory()->template()->create(['start_time' => null, 'end_time' => null]);
 
         $array = $this->makeResource($event);
@@ -157,7 +74,6 @@ class EventResourceTest extends TestCase
     #[Test]
     public function it_returns_null_end_time_when_event_has_no_end_time(): void
     {
-        $this->mockChannel();
         $event = Event::factory()->template()->create(['start_time' => null, 'end_time' => null]);
 
         $array = $this->makeResource($event);
@@ -165,10 +81,21 @@ class EventResourceTest extends TestCase
         $this->assertNull($array['end_time']);
     }
 
+    // ==================== duration ====================
+
+    #[Test]
+    public function it_returns_duration_as_seconds_between_start_and_end(): void
+    {
+        $event = Event::factory()->create(['start_time' => '2026-09-18 19:00:00', 'end_time' => '2026-09-18 22:00:00']);
+
+        $array = $this->makeResource($event);
+
+        $this->assertSame(10800.0, $array['duration']);
+    }
+
     #[Test]
     public function it_returns_null_duration_when_event_has_no_start_or_end_time(): void
     {
-        $this->mockChannel();
         $event = Event::factory()->template()->create(['start_time' => null, 'end_time' => null]);
 
         $array = $this->makeResource($event);
@@ -176,14 +103,110 @@ class EventResourceTest extends TestCase
         $this->assertNull($array['duration']);
     }
 
+    // ==================== color ====================
+
     #[Test]
-    public function it_returns_null_channel_when_channel_id_is_null(): void
+    public function it_returns_null_color_when_event_has_no_color(): void
     {
-        $event = Event::factory()->template()->create(['channel_id' => null, 'start_time' => null, 'end_time' => null]);
+        $event = Event::factory()->create(['color' => null]);
 
         $array = $this->makeResource($event);
 
-        $this->assertNull($array['channel']);
+        $this->assertNull($array['color']);
+    }
+
+    #[Test]
+    public function it_returns_color_as_hex_string(): void
+    {
+        $event = Event::factory()->create(['color' => '34,110,115']);
+
+        $array = $this->makeResource($event);
+
+        $this->assertSame('226e73', $array['color']);
+    }
+
+    // ==================== banner ====================
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function banner_comes_from_the_first_raid_in_pivot_order_that_has_one(): void
+    {
+        Storage::fake('s3');
+        $plain = Raid::factory()->create();
+        $second = Raid::factory()->withBanner()->create();
+        $first = Raid::factory()->withBanner('center bottom')->create();
+        $event = Event::factory()->create();
+        $event->raids()->attach($second->id, ['sort_order' => 3]);
+        $event->raids()->attach($plain->id, ['sort_order' => 1]);
+        $event->raids()->attach($first->id, ['sort_order' => 2]);
+
+        $array = (new EventResource($event->load('raids.media')))->resolve(new Request);
+
+        $this->assertSame($first->getFirstMediaUrl(Raid::MEDIA_BANNER, Raid::MEDIA_CONVERSION_HEADER), $array['banner_url']);
+        $this->assertSame('center bottom', $array['banner_position']);
+    }
+
+    #[Test]
+    public function banner_is_null_when_no_attached_raid_has_one(): void
+    {
+        $event = Event::factory()->create();
+        $event->raids()->attach(Raid::factory()->create()->id, ['sort_order' => 1]);
+
+        $array = (new EventResource($event->load('raids.media')))->resolve(new Request);
+
+        $this->assertArrayHasKey('banner_url', $array);
+        $this->assertArrayHasKey('banner_position', $array);
+        $this->assertNull($array['banner_url']);
+        $this->assertNull($array['banner_position']);
+    }
+
+    #[Test]
+    public function banner_is_null_when_the_event_has_no_raids(): void
+    {
+        $event = Event::factory()->create();
+
+        $array = (new EventResource($event->load('raids.media')))->resolve(new Request);
+
+        $this->assertArrayHasKey('banner_url', $array);
+        $this->assertArrayHasKey('banner_position', $array);
+        $this->assertNull($array['banner_url']);
+        $this->assertNull($array['banner_position']);
+    }
+
+    #[Test]
+    public function banner_is_missing_when_raids_are_not_loaded(): void
+    {
+        $array = (new EventResource(Event::factory()->create()->fresh()))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('banner_url', $array);
+        $this->assertArrayNotHasKey('banner_position', $array);
+    }
+
+    #[Test]
+    public function banner_is_missing_when_raid_media_is_not_loaded(): void
+    {
+        $event = Event::factory()->create();
+        $event->raids()->attach(Raid::factory()->create());
+
+        $array = (new EventResource($event->load('raids')))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('banner_url', $array);
+        $this->assertArrayNotHasKey('banner_position', $array);
+    }
+
+    #[Test]
+    #[TestWith(['members'])]
+    #[TestWith(['visitors'])]
+    public function banner_is_not_in_the_members_or_visitors_scope(string $scope): void
+    {
+        Storage::fake('s3');
+        $event = Event::factory()->create();
+        $event->raids()->attach(Raid::factory()->withBanner()->create()->id, ['sort_order' => 1]);
+
+        $array = (new EventResource($event->load('raids.media')))->scope($scope)->resolve(new Request);
+
+        $this->assertArrayNotHasKey('banner_url', $array);
+        $this->assertArrayNotHasKey('banner_position', $array);
     }
 
     // ==================== assignments ====================
@@ -191,7 +214,6 @@ class EventResourceTest extends TestCase
     #[Test]
     public function it_returns_event_level_assignments_excluding_boss_scoped_ones(): void
     {
-        $this->mockChannel();
 
         $raid = Raid::factory()->create();
         $boss = Boss::factory()->for($raid)->create();
@@ -211,7 +233,6 @@ class EventResourceTest extends TestCase
     #[Test]
     public function it_returns_boss_level_assignments_inside_the_boss(): void
     {
-        $this->mockChannel();
 
         $raid = Raid::factory()->create();
         $boss = Boss::factory()->for($raid)->create();
@@ -228,126 +249,11 @@ class EventResourceTest extends TestCase
         $this->assertCount(1, $bossAssignments['ungrouped']);
     }
 
-    // ==================== raids and bosses ====================
-
-    #[Test]
-    public function it_returns_raids_with_expected_shape(): void
-    {
-        $this->mockChannel();
-
-        $raid = Raid::factory()->create(['name' => 'Karazhan']);
-        $event = Event::factory()->create();
-        $event->raids()->attach($raid->id, ['sort_order' => 1]);
-
-        $array = $this->makeResource($event);
-
-        $this->assertCount(1, $array['raids']);
-        $this->assertSame('Karazhan', $array['raids'][0]['name']);
-        $this->assertSame($raid->slug, $array['raids'][0]['slug']);
-        $this->assertSame($raid->max_players, $array['raids'][0]['max_players']);
-        $this->assertSame(1, $array['raids'][0]['sort_order']);
-        $this->assertArrayHasKey('bosses', $array['raids'][0]);
-    }
-
-    #[Test]
-    public function it_orders_raids_by_pivot_sort_order(): void
-    {
-        $this->mockChannel();
-
-        // Created in reverse of the expected order so id order and pivot order differ.
-        $third = Raid::factory()->create(['name' => 'Karazhan']);
-        $second = Raid::factory()->create(['name' => 'Magtheridon']);
-        $first = Raid::factory()->create(['name' => 'Gruul']);
-
-        $event = Event::factory()->create();
-
-        // The pivot does not number itself on create, so each row's position
-        // comes from the sort_order passed to attach().
-        $event->raids()->attach($first->id, ['sort_order' => 1]);
-        $event->raids()->attach($second->id, ['sort_order' => 2]);
-        $event->raids()->attach($third->id, ['sort_order' => 3]);
-
-        $array = $this->makeResource($event);
-
-        $this->assertSame(
-            ['Gruul', 'Magtheridon', 'Karazhan'],
-            array_column($array['raids'], 'name'),
-        );
-    }
-
-    #[Test]
-    public function it_returns_bosses_with_expected_shape(): void
-    {
-        $this->mockChannel();
-
-        $raid = Raid::factory()->create();
-        $boss = Boss::factory()->for($raid)->create(['name' => 'Attumen', 'notes' => 'Kill adds first']);
-        $event = Event::factory()->create();
-        $event->raids()->attach($raid->id);
-
-        $array = $this->makeResource($event);
-
-        $bossData = $array['raids'][0]['bosses'][0];
-        $this->assertSame($boss->id, $bossData['id']);
-        $this->assertSame('Attumen', $bossData['name']);
-        $this->assertSame($boss->slug, $bossData['slug']);
-        $this->assertSame($boss->sort_order, $bossData['sort_order']);
-        $this->assertSame('Kill adds first', $bossData['notes']);
-        $this->assertIsArray($bossData['images']);
-        $this->assertArrayHasKey('is_visible', $bossData);
-        $this->assertIsBool($bossData['is_visible']);
-        $this->assertFalse($bossData['is_visible']);
-        $this->assertArrayHasKey('groups', $bossData['assignments']);
-        $this->assertArrayHasKey('ungrouped', $bossData['assignments']);
-    }
-
-    // ==================== raids.bosses — is_visible ====================
-
-    #[Test]
-    #[Group('contract')]
-    public function raids_bosses_expose_is_visible_from_the_event_pivot(): void
-    {
-        $this->mockChannel();
-        $raid = Raid::factory()->create();
-        $a = Boss::factory()->for($raid)->order(1)->create();
-        $b = Boss::factory()->for($raid)->order(2)->create();
-
-        $event = Event::factory()->create();
-        $event->raids()->attach($raid->id);
-
-        // Only one of the raid's bosses is selected for the event.
-        $event->bosses()->attach($b->id);
-
-        $array = $this->makeResource($event);
-
-        // Every one of the raid's bosses is still present, in the raid's own order.
-        $this->assertSame([$a->id, $b->id], array_column($array['raids'][0]['bosses'], 'id'));
-
-        // is_visible reflects pivot membership.
-        $this->assertSame([false, true], array_column($array['raids'][0]['bosses'], 'is_visible'));
-    }
-
-    #[Test]
-    public function raids_bosses_are_all_hidden_when_none_are_attached(): void
-    {
-        $this->mockChannel();
-        $raid = Raid::factory()->create();
-        Boss::factory()->for($raid)->order(1)->create();
-
-        $event = Event::factory()->create();
-        $event->raids()->attach($raid->id);
-
-        $array = $this->makeResource($event);
-
-        $this->assertSame([false], array_column($array['raids'][0]['bosses'], 'is_visible'));
-    }
-
     // ==================== composition — groups ====================
 
     #[Test]
     public function it_returns_composition_with_groups_and_bench_keys(): void
     {
-        $this->mockChannel();
         $event = Event::factory()->create();
 
         $array = $this->makeResource($event);
@@ -359,7 +265,6 @@ class EventResourceTest extends TestCase
     #[Test]
     public function it_returns_groups_with_correct_character_shape(): void
     {
-        $this->mockChannel();
 
         $raid = Raid::factory()->create(['max_players' => 10]);
         $event = Event::factory()->hasAttached($raid, [], 'raids')->create();
@@ -400,7 +305,6 @@ class EventResourceTest extends TestCase
     #[Test]
     public function it_returns_empty_groups_when_no_characters(): void
     {
-        $this->mockChannel();
         $event = Event::factory()->create();
 
         $array = $this->makeResource($event);
@@ -408,12 +312,70 @@ class EventResourceTest extends TestCase
         $this->assertSame([], $array['composition']['groups']);
     }
 
+    #[Test]
+    public function it_excludes_benched_characters_from_groups(): void
+    {
+
+        $event = Event::factory()->hasAttached(Raid::factory()->state(['max_players' => 10]), [], 'raids')->create();
+        $inComp = $this->attachToComposition($event, groupNumber: 1, slotNumber: 1);
+        $this->attachToComposition($event, groupNumber: null, slotNumber: null, isBenched: true);
+
+        $array = $this->makeResource($event);
+
+        $this->assertSame([$inComp->id], array_column($array['composition']['groups'][0]['characters'], 'id'));
+    }
+
+    #[Test]
+    public function it_orders_groups_by_group_number_and_characters_by_slot_number(): void
+    {
+
+        $event = Event::factory()->hasAttached(Raid::factory()->state(['max_players' => 10]), [], 'raids')->create();
+        $groupTwoSlotOne = $this->attachToComposition($event, groupNumber: 2, slotNumber: 1);
+        $groupOneSlotTwo = $this->attachToComposition($event, groupNumber: 1, slotNumber: 2);
+        $groupOneSlotOne = $this->attachToComposition($event, groupNumber: 1, slotNumber: 1);
+
+        $groups = $this->makeResource($event)['composition']['groups'];
+
+        $this->assertSame([1, 2], array_column($groups, 'group_number'));
+        $this->assertSame([$groupOneSlotOne->id, $groupOneSlotTwo->id], array_column($groups[0]['characters'], 'id'));
+        $this->assertSame([$groupTwoSlotOne->id], array_column($groups[1]['characters'], 'id'));
+    }
+
+    #[Test]
+    public function it_drops_party_groups_beyond_the_raid_size(): void
+    {
+
+        $event = Event::factory()->hasAttached(Raid::factory()->state(['max_players' => 10]), [], 'raids')->create();
+        $this->attachToComposition($event, groupNumber: 1, slotNumber: 5);
+        $this->attachToComposition($event, groupNumber: 2, slotNumber: 1);
+        $this->attachToComposition($event, groupNumber: 3, slotNumber: 1);
+
+        $groups = $this->makeResource($event)['composition']['groups'];
+
+        $this->assertSame([1, 2], array_column($groups, 'group_number'));
+        $this->assertSame([false, false], array_column($groups, 'is_team'));
+    }
+
+    #[Test]
+    public function it_marks_groups_as_teams_and_keeps_all_of_them_when_a_slot_exceeds_five(): void
+    {
+
+        $event = Event::factory()->hasAttached(Raid::factory()->state(['max_players' => 10]), [], 'raids')->create();
+        $this->attachToComposition($event, groupNumber: 1, slotNumber: 6);
+        $this->attachToComposition($event, groupNumber: 2, slotNumber: 1);
+        $this->attachToComposition($event, groupNumber: 3, slotNumber: 1);
+
+        $groups = $this->makeResource($event)['composition']['groups'];
+
+        $this->assertSame([1, 2, 3], array_column($groups, 'group_number'));
+        $this->assertSame([true, true, true], array_column($groups, 'is_team'));
+    }
+
     // ==================== composition — bench ====================
 
     #[Test]
     public function it_returns_empty_bench_when_no_characters_in_comp(): void
     {
-        $this->mockChannel();
         $event = Event::factory()->create();
 
         $array = $this->makeResource($event);
@@ -424,7 +386,6 @@ class EventResourceTest extends TestCase
     #[Test]
     public function it_returns_benched_characters_not_in_comp(): void
     {
-        $this->mockChannel();
 
         $inComp = Character::factory()->withRank()->create(['name' => 'Jaina']);
         $benchedChar = Character::factory()->withRank()->create(['name' => 'Thrall']);
@@ -452,7 +413,6 @@ class EventResourceTest extends TestCase
     #[Test]
     public function it_returns_bench_characters_with_expected_shape(): void
     {
-        $this->mockChannel();
 
         $benchedChar = Character::factory()->withRank()->create(['name' => 'Thrall']);
 
@@ -477,79 +437,210 @@ class EventResourceTest extends TestCase
         $this->assertArrayNotHasKey('is_confirmed', $bench);
     }
 
-    // ==================== forMembers ====================
+    // ==================== raids and bosses ====================
 
     #[Test]
-    public function the_member_scope_returns_all_expected_keys(): void
+    public function it_returns_raids_with_expected_shape(): void
     {
-        $this->mockChannel();
+
+        $raid = Raid::factory()->create(['name' => 'Karazhan']);
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid->id, ['sort_order' => 1]);
+
+        $array = $this->makeResource($event);
+
+        $this->assertCount(1, $array['raids']);
+        $this->assertSame('Karazhan', $array['raids'][0]['name']);
+        $this->assertSame($raid->slug, $array['raids'][0]['slug']);
+        $this->assertSame($raid->max_players, $array['raids'][0]['max_players']);
+        $this->assertSame(1, $array['raids'][0]['sort_order']);
+        $this->assertArrayHasKey('bosses', $array['raids'][0]);
+    }
+
+    #[Test]
+    public function it_orders_raids_by_pivot_sort_order(): void
+    {
+
+        $third = Raid::factory()->create(['name' => 'Karazhan']);
+        $second = Raid::factory()->create(['name' => 'Magtheridon']);
+        $first = Raid::factory()->create(['name' => 'Gruul']);
+
+        $event = Event::factory()->create();
+
+        $event->raids()->attach($first->id, ['sort_order' => 1]);
+        $event->raids()->attach($second->id, ['sort_order' => 2]);
+        $event->raids()->attach($third->id, ['sort_order' => 3]);
+
+        $array = $this->makeResource($event);
+
+        $this->assertSame(
+            ['Gruul', 'Magtheridon', 'Karazhan'],
+            array_column($array['raids'], 'name'),
+        );
+    }
+
+    #[Test]
+    public function it_returns_bosses_with_expected_shape(): void
+    {
+
+        $raid = Raid::factory()->create();
+        $boss = Boss::factory()->for($raid)->create(['name' => 'Attumen', 'notes' => 'Kill adds first']);
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid->id);
+
+        $array = $this->makeResource($event);
+
+        $bossData = $array['raids'][0]['bosses'][0];
+        $this->assertSame($boss->id, $bossData['id']);
+        $this->assertSame('Attumen', $bossData['name']);
+        $this->assertSame($boss->slug, $bossData['slug']);
+        $this->assertSame($boss->sort_order, $bossData['sort_order']);
+        $this->assertSame('Kill adds first', $bossData['notes']);
+        $this->assertIsArray($bossData['images']);
+        $this->assertFalse($bossData['is_visible']);
+        $this->assertArrayHasKey('groups', $bossData['assignments']);
+        $this->assertArrayHasKey('ungrouped', $bossData['assignments']);
+    }
+
+    // ==================== raids.bosses — is_visible ====================
+
+    #[Test]
+    #[Group('contract')]
+    public function raids_bosses_expose_is_visible_from_the_event_pivot(): void
+    {
+        $raid = Raid::factory()->create();
+        $a = Boss::factory()->for($raid)->order(1)->create();
+        $b = Boss::factory()->for($raid)->order(2)->create();
+
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid->id);
+
+        // Only one of the raid's bosses is selected for the event.
+        $event->bosses()->attach($b->id);
+
+        $array = $this->makeResource($event);
+
+        // Every one of the raid's bosses is still present, in the raid's own order.
+        $this->assertSame([$a->id, $b->id], array_column($array['raids'][0]['bosses'], 'id'));
+
+        // is_visible reflects pivot membership.
+        $this->assertSame([false, true], array_column($array['raids'][0]['bosses'], 'is_visible'));
+    }
+
+    #[Test]
+    public function raids_bosses_are_all_hidden_when_none_are_attached(): void
+    {
+        $raid = Raid::factory()->create();
+        Boss::factory()->for($raid)->order(1)->create();
+
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid->id);
+
+        $array = $this->makeResource($event);
+
+        $this->assertSame([false], array_column($array['raids'][0]['bosses'], 'is_visible'));
+    }
+
+    // ==================== users ====================
+
+    #[Test]
+    public function it_omits_users_when_not_loaded(): void
+    {
+        $event = Event::factory()->withUsers()->create();
+
+        $array = (new EventResource($event->fresh()))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('users', $array);
+    }
+
+    #[Test]
+    public function it_returns_users_when_loaded(): void
+    {
+        $users = User::factory()->count(2)->create();
+        $event = Event::factory()->withUsers($users->all())->create();
+
+        $request = new Request;
+        $array = (new EventResource($event->fresh()->load('users')))->resolve($request);
+
+        $this->assertArrayHasKey('users', $array);
+        $this->assertEqualsCanonicalizing($users->pluck('id')->all(), array_column($array['users']->resolve($request), 'id'));
+    }
+
+    #[Test]
+    public function the_member_and_visitor_scopes_omit_users_even_when_loaded(): void
+    {
+        $event = Event::factory()->withUsers()->create()->fresh()->load('users', 'raids');
+
+        $this->assertArrayNotHasKey('users', $this->makeMemberResource($event));
+        $this->assertArrayNotHasKey('users', $this->makeVisitorResource($event));
+    }
+
+    // ==================== channel ====================
+
+    #[Test]
+    public function it_omits_channel_when_no_channel_was_attached(): void
+    {
+        $this->fakeDiscord([]);
+        $event = Event::factory()->create();
+
+        $array = $this->makeResource($event);
+
+        $this->assertArrayNotHasKey('channel', $array);
+        Saloon::assertNothingSent();
+    }
+
+    #[Test]
+    public function it_omits_relation_fields_that_are_not_loaded(): void
+    {
+        $array = (new EventResource(Event::factory()->create()->fresh()))->resolve(new Request);
+
+        foreach (['assignments', 'composition', 'raids', 'users', 'game_version'] as $key) {
+            $this->assertArrayNotHasKey($key, $array);
+        }
+    }
+
+    // ==================== members scope ====================
+
+    #[Test]
+    public function the_member_scope_returns_exactly_the_expected_keys(): void
+    {
         $event = Event::factory()->create();
 
         $array = $this->makeMemberResource($event);
 
-        $this->assertArrayHasKey('id', $array);
-        $this->assertArrayHasKey('title', $array);
-        $this->assertArrayHasKey('start_time', $array);
-        $this->assertArrayHasKey('end_time', $array);
-        $this->assertArrayHasKey('duration', $array);
-        $this->assertArrayHasKey('channel', $array);
+        $this->assertSame(['id', 'title', 'start_time', 'end_time', 'duration', 'channel'], array_keys($array));
     }
 
     #[Test]
     public function the_member_scope_returns_correct_scalar_fields(): void
     {
-        $this->mockChannel();
-        $event = Event::factory()->create();
+        $event = Event::factory()->create([
+            'title' => 'Karazhan',
+            'start_time' => '2026-09-18 19:00:00',
+            'end_time' => '2026-09-18 22:00:00',
+        ]);
 
         $array = $this->makeMemberResource($event);
 
         $this->assertSame($event->id, $array['id']);
-        $this->assertSame($event->title, $array['title']);
-        $this->assertSame($event->start_time->toIso8601String(), $array['start_time']);
-        $this->assertSame($event->end_time->toIso8601String(), $array['end_time']);
+        $this->assertSame('Karazhan', $array['title']);
+        $this->assertStringStartsWith('2026-09-18T19:00:00', $array['start_time']);
+        $this->assertStringStartsWith('2026-09-18T22:00:00', $array['end_time']);
     }
 
     #[Test]
     public function the_member_scope_returns_duration_as_seconds_between_start_and_end(): void
     {
-        $this->mockChannel();
-        $event = Event::factory()->create();
+        $event = Event::factory()->create(['start_time' => '2026-09-18 19:00:00', 'end_time' => '2026-09-18 22:00:00']);
 
         $array = $this->makeMemberResource($event);
 
-        $this->assertSame($event->start_time->diffInSeconds($event->end_time), $array['duration']);
-    }
-
-    #[Test]
-    public function the_member_scope_returns_channel_as_an_array_with_id_name_and_position(): void
-    {
-        $this->mockChannel(id: '999888777', name: 'raid-chat', position: 3);
-        $event = Event::factory()->create();
-
-        $array = $this->makeMemberResource($event);
-
-        $this->assertIsArray($array['channel']);
-        $this->assertSame('999888777', $array['channel']['id']);
-        $this->assertSame('raid-chat', $array['channel']['name']);
-        $this->assertSame(3, $array['channel']['position']);
-    }
-
-    #[Test]
-    public function the_member_scope_omits_channel_when_discord_api_fails(): void
-    {
-        $discord = $this->createStub(Discord::class);
-        $discord->method('getChannel')->willThrowException(new \Exception('Discord unavailable'));
-        $this->app->instance(Discord::class, $discord);
-
-        $event = Event::factory()->create();
-
-        $this->assertArrayNotHasKey('channel', $this->makeMemberResource($event));
+        $this->assertSame(10800.0, $array['duration']);
     }
 
     #[Test]
     public function the_member_scope_does_not_include_composition_raids_or_assignments(): void
     {
-        $this->mockChannel();
         $event = Event::factory()->create();
 
         $array = $this->makeMemberResource($event);
@@ -559,7 +650,7 @@ class EventResourceTest extends TestCase
         $this->assertArrayNotHasKey('assignments', $array);
     }
 
-    // ==================== forVisitors ====================
+    // ==================== visitors scope ====================
 
     #[Test]
     public function the_visitor_scope_exposes_only_public_safe_fields(): void
@@ -579,12 +670,28 @@ class EventResourceTest extends TestCase
     }
 
     #[Test]
+    public function the_visitor_scope_lists_raids_without_bosses(): void
+    {
+        $event = Event::factory()->live()->create();
+        $event->raids()->attach(Raid::factory()->create(['name' => 'Black Temple']), ['sort_order' => 1]);
+
+        $raids = $this->makeVisitorResource($event)['raids'];
+
+        $this->assertSame(['Black Temple'], array_column($raids, 'name'));
+        $this->assertArrayNotHasKey('bosses', $raids[0]);
+    }
+
+    #[Test]
+    public function the_visitor_scope_handles_an_event_with_no_raids(): void
+    {
+        $this->assertSame([], $this->makeVisitorResource(Event::factory()->live()->create())['raids']);
+    }
+
+    #[Test]
     public function the_visitor_scope_never_exposes_internal_or_roster_data(): void
     {
         $data = $this->makeVisitorResource(Event::factory()->live()->create());
 
-        // A Discord channel call per event on anonymous traffic is both slow
-        // and a leak of internal channel names.
         $this->assertArrayNotHasKey('channel', $data);
         $this->assertArrayNotHasKey('channel_id', $data);
         $this->assertArrayNotHasKey('composition', $data);
@@ -596,36 +703,49 @@ class EventResourceTest extends TestCase
     #[Test]
     public function the_visitor_scope_never_calls_the_discord_api(): void
     {
-        // No Discord stub is bound: if the visitor scope reached the channel
-        // lookup the container would resolve the real client and this would fail.
-        $discord = $this->createMock(Discord::class);
-        $discord->expects($this->never())->method('getChannel');
-        $this->app->instance(Discord::class, $discord);
+        $this->fakeDiscord([]);
 
         $this->makeVisitorResource(Event::factory()->live()->create());
+
+        Saloon::assertNothingSent();
+    }
+
+    // ==================== template scope ====================
+
+    #[Test]
+    public function the_template_scope_returns_exactly_the_expected_keys(): void
+    {
+        $event = Event::factory()->template()->create();
+
+        $array = $this->makeTemplateResource($event);
+
+        $this->assertSame(['id', 'title', 'updated_at', 'raids'], array_keys($array));
     }
 
     #[Test]
-    public function the_visitor_scope_lists_raid_names_as_strings(): void
+    public function the_template_scope_returns_updated_at_as_iso8601(): void
     {
-        $event = Event::factory()->live()->create();
+        $event = Event::factory()->template()->create();
+
+        $array = $this->makeTemplateResource($event);
+
+        $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/', $array['updated_at']);
+    }
+
+    #[Test]
+    public function the_template_scope_lists_the_template_raids(): void
+    {
+        $event = Event::factory()->template()->create();
         $event->raids()->attach(Raid::factory()->create(['name' => 'Black Temple']), ['sort_order' => 1]);
 
-        $this->assertSame(['Black Temple'], $this->makeVisitorResource($event)['raids']);
-    }
+        $raids = $this->makeTemplateResource($event)['raids'];
 
-    #[Test]
-    public function the_visitor_scope_handles_an_event_with_no_raids(): void
-    {
-        $this->assertSame([], $this->makeVisitorResource(Event::factory()->live()->create())['raids']);
+        $this->assertSame(['Black Temple'], array_column($raids, 'name'));
     }
 
     #[Test]
     public function the_default_scope_still_returns_raids_as_full_objects(): void
     {
-        // `raids` is deliberately polymorphic: names under forVisitors, full
-        // objects by default. Guard against one scope's shape leaking into the other.
-        $this->mockChannel();
         $event = Event::factory()->create();
         $event->raids()->attach(Raid::factory()->create(['name' => 'Black Temple']), ['sort_order' => 1]);
 
@@ -636,33 +756,159 @@ class EventResourceTest extends TestCase
         $this->assertSame('Black Temple', $raids[0]['name']);
     }
 
+    // ==================== game version ====================
+
+    #[Test]
+    public function the_member_scope_includes_the_game_version_icon_fields_when_loaded(): void
+    {
+        $array = (new EventResource($this->unsavedEventInGameVersion()))
+            ->withChannel(['id' => '1', 'name' => 'raid-chat', 'position' => 3])
+            ->scope('members')
+            ->resolve(new Request);
+
+        $this->assertSame(['id', 'title', 'start_time', 'end_time', 'duration', 'game_version', 'channel'], array_keys($array));
+        $this->assertSame(['id' => 7, 'title' => 'World of Warcraft: Forever', 'color' => '226e73', 'icon_url' => null], $array['game_version']);
+    }
+
+    #[Test]
+    public function the_visitor_scope_includes_the_game_version_icon_fields_when_loaded(): void
+    {
+        $event = $this->unsavedEventInGameVersion()->setRelation('raids', new EloquentCollection);
+
+        $array = (new EventResource($event))->scope('visitors')->resolve(new Request);
+
+        $this->assertSame(['id', 'title', 'start_time', 'end_time', 'game_version', 'raids'], array_keys($array));
+        $this->assertSame(['id' => 7, 'title' => 'World of Warcraft: Forever', 'color' => '226e73', 'icon_url' => null], $array['game_version']);
+    }
+
+    #[Test]
+    public function game_version_is_null_when_the_loaded_event_has_none(): void
+    {
+        $event = $this->unsavedEventInGameVersion()
+            ->setRelation('gameVersion', null)
+            ->setRelation('raids', new EloquentCollection);
+
+        $array = (new EventResource($event))->scope('visitors')->resolve(new Request);
+
+        $this->assertArrayHasKey('game_version', $array);
+        $this->assertNull($array['game_version']);
+    }
+
+    #[Test]
+    public function the_template_scope_never_includes_the_game_version(): void
+    {
+        $event = $this->unsavedEventInGameVersion()->setRelation('raids', new EloquentCollection);
+
+        $array = (new EventResource($event))->scope('template')->resolve(new Request);
+
+        $this->assertSame(['id', 'title', 'updated_at', 'raids'], array_keys($array));
+    }
+
+    #[Test]
+    public function the_default_shape_places_the_full_game_version_after_color(): void
+    {
+        $array = (new EventResource($this->unsavedEventInGameVersion()))->resolve(new Request);
+
+        $this->assertSame(['id', 'title', 'start_time', 'end_time', 'duration', 'updated_at', 'color', 'game_version'], array_keys($array));
+        $this->assertSame('forever', $array['game_version']['slug']);
+    }
+
+    // ==================== collections ====================
+
+    #[Test]
+    public function the_members_scope_applies_to_every_item_in_a_collection(): void
+    {
+        $events = Event::factory()->count(2)->create();
+
+        $array = EventResource::collection($events)->scope('members')->resolve(new Request);
+
+        $this->assertCount(2, $array);
+
+        foreach ($array as $event) {
+            $this->assertArrayHasKey('duration', $event);
+            $this->assertArrayNotHasKey('composition', $event);
+        }
+    }
+
+    #[Test]
+    public function the_visitors_scope_applies_to_collections_built_from_models(): void
+    {
+        $events = Event::factory()->live()->count(2)->create()->load('raids');
+
+        $array = $events->toResourceCollection(EventResource::class)->scope('visitors')->resolve(new Request);
+
+        $this->assertCount(2, $array);
+
+        foreach ($array as $event) {
+            $this->assertArrayHasKey('raids', $event);
+            $this->assertArrayNotHasKey('duration', $event);
+        }
+    }
+
+    #[Test]
+    #[Group('contract')]
+    public function event_resource_declares_the_members_visitors_and_template_scopes(): void
+    {
+        $this->assertSame(['members', 'template', 'visitors'], array_keys(EventResource::definedScopes()));
+    }
+
     // ==================== helpers ====================
 
-    private function mockChannel(string $id = '111222333', ?string $name = 'general', ?int $position = 0): Channel
+    private function attachToComposition(Event $event, ?int $groupNumber, ?int $slotNumber, bool $isBenched = false): Character
     {
-        $channel = Channel::from(['id' => $id, 'name' => $name, 'position' => $position]);
+        $character = Character::factory()->withRank()->create();
 
-        $discord = $this->createStub(Discord::class);
-        $discord->method('getChannel')->willReturn($channel);
-        $this->app->instance(Discord::class, $discord);
+        $event->characters()->attach($character->id, [
+            'slot_number' => $slotNumber,
+            'group_number' => $groupNumber,
+            'signup_status' => SignupStatus::Confirmed->value,
+            'is_benched' => $isBenched,
+        ]);
 
-        return $channel;
+        return $character;
     }
 
     private function makeResource(Event $event): array
     {
         $event->load('raids.bosses.media', 'bosses.media', 'assignments.group', 'characters.rank');
 
-        return (new EventResource($event))->toArray(new Request);
+        return (new EventResource($event))->resolve(new Request);
     }
 
     private function makeMemberResource(Event $event): array
     {
-        return EventResource::forMembers($event)->toArray(new Request);
+        return (new EventResource($event))
+            ->withChannel(['id' => '1', 'name' => 'raid-chat', 'position' => 3])
+            ->scope('members')
+            ->resolve(new Request);
     }
 
     private function makeVisitorResource(Event $event): array
     {
-        return EventResource::forVisitors($event->load('raids'))->toArray(new Request);
+        return (new EventResource($event->load('raids')))->scope('visitors')->resolve(new Request);
+    }
+
+    private function makeTemplateResource(Event $event): array
+    {
+        return (new EventResource($event->load('raids')))->scope('template')->resolve(new Request);
+    }
+
+    private function unsavedEventInGameVersion(): Event
+    {
+        $gameVersion = (new GameVersion)->forceFill([
+            'id' => 7,
+            'title' => 'World of Warcraft: Forever',
+            'slug' => 'forever',
+            'color' => '226e73',
+        ])->setRelation('media', new EloquentCollection);
+
+        return (new Event)
+            ->forceFill([
+                'id' => '0199f2a4-6c1e-7a51-9d1b-1f3c2e4a5b6c',
+                'title' => 'Karazhan',
+                'start_time' => '2026-11-07 19:00:00',
+                'end_time' => '2026-11-07 22:00:00',
+            ])
+            ->setRelation('gameVersion', $gameVersion);
     }
 }

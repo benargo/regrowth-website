@@ -26,7 +26,7 @@ class BlizzardIconPathGeneratorTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('public');
+        Storage::fake('s3');
     }
 
     private function mediaFor(string $fileName, ?int $size): Media

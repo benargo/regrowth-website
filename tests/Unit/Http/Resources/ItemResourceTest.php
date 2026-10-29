@@ -9,10 +9,10 @@ use App\Models\Boss;
 use App\Models\Item;
 use App\Models\LootPriority;
 use App\Models\Raid;
+use App\Support\MediaLibrary\UnknownBlizzardIcon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\URL;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -30,6 +30,16 @@ class ItemResourceTest extends TestCase
         $array = (new ItemResource($item))->toArray(new Request);
 
         $this->assertSame($item->id, $array['id']);
+    }
+
+    #[Test]
+    public function it_returns_blizzard_id(): void
+    {
+        $item = Item::factory()->create(['blizzard_id' => 19019]);
+
+        $array = (new ItemResource($item))->toArray(new Request);
+
+        $this->assertSame(19019, $array['blizzard_id']);
     }
 
     #[Test]
@@ -59,7 +69,7 @@ class ItemResourceTest extends TestCase
     #[Test]
     public function it_returns_wowhead_url_with_item_name(): void
     {
-        $item = Item::factory()->create(['id' => 19019, 'name' => 'Thunderfury, Blessed Blade of the Windseeker']);
+        $item = Item::factory()->create(['blizzard_id' => 19019, 'name' => 'Thunderfury, Blessed Blade of the Windseeker']);
 
         $array = (new ItemResource($item))->toArray(new Request);
 
@@ -72,7 +82,7 @@ class ItemResourceTest extends TestCase
     #[Test]
     public function it_returns_wowhead_url_without_slug_when_name_is_null(): void
     {
-        $item = Item::factory()->create(['id' => 19019, 'name' => null]);
+        $item = Item::factory()->create(['blizzard_id' => 19019, 'name' => null]);
 
         $array = (new ItemResource($item))->toArray(new Request);
 
@@ -325,7 +335,7 @@ class ItemResourceTest extends TestCase
     #[Test]
     public function it_returns_icon_url(): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $item = Item::factory()->create();
         $item->addMediaFromString('BINARY')
@@ -337,19 +347,19 @@ class ItemResourceTest extends TestCase
         $array = $resource->toArray(new Request);
 
         $this->assertNotNull($array['icon']);
-        $this->assertStringContainsString('/icons/56/foo.jpg', $array['icon']);
-        $this->assertTrue(URL::hasValidSignature(request()->create($array['icon'])));
+        $this->assertSame(Storage::disk('s3')->url('blizzard-cdn/icons/56/foo.jpg'), $array['icon']);
     }
 
     #[Test]
-    public function it_returns_null_icon_when_no_media_attached(): void
+    public function it_returns_the_questionmark_icon_when_no_media_attached(): void
     {
+        Storage::fake('s3');
         $item = Item::factory()->create();
 
         $resource = new ItemResource($item);
         $array = $resource->toArray(new Request);
 
-        $this->assertNull($array['icon']);
+        $this->assertSame(app(UnknownBlizzardIcon::class)->url(), $array['icon']);
     }
 
     // ==================== priorities relation ====================
@@ -400,6 +410,7 @@ class ItemResourceTest extends TestCase
         $array = (new ItemResource($item))->toArray(new Request);
 
         $this->assertArrayHasKey('id', $array);
+        $this->assertArrayHasKey('blizzard_id', $array);
         $this->assertArrayHasKey('name', $array);
         $this->assertArrayHasKey('slug', $array);
         $this->assertArrayHasKey('group', $array);

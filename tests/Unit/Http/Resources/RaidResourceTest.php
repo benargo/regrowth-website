@@ -2,14 +2,16 @@
 
 namespace Tests\Unit\Http\Resources;
 
-use App\Enums\RaidBackground;
 use App\Http\Resources\RaidResource;
 use App\Models\Boss;
 use App\Models\Comment;
+use App\Models\Event;
 use App\Models\Item;
+use App\Models\Phase;
 use App\Models\Raid;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -44,13 +46,13 @@ class RaidResourceTest extends TestCase
     // ==================== difficulty and player count ====================
 
     #[Test]
-    public function it_does_not_return_difficulty(): void
+    public function it_returns_difficulty(): void
     {
         $raid = Raid::factory()->heroic()->create();
 
         $array = (new RaidResource($raid))->toArray(new Request);
 
-        $this->assertArrayNotHasKey('difficulty', $array);
+        $this->assertSame('Heroic', $array['difficulty']);
     }
 
     #[Test]
@@ -146,7 +148,7 @@ class RaidResourceTest extends TestCase
         $this->assertNull($array['max_loot_councillors']);
     }
 
-    // ==================== color and background ====================
+    // ==================== color and banner ====================
 
     #[Test]
     public function it_returns_color(): void
@@ -160,23 +162,41 @@ class RaidResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_background_css_class_value(): void
+    public function it_returns_the_banner_url_and_position(): void
     {
-        $raid = Raid::factory()->withBackground(RaidBackground::Karazhan)->create();
+        Storage::fake('s3');
+        $raid = Raid::factory()->withBanner('center top')->create()->load('media');
 
         $array = (new RaidResource($raid))->toArray(new Request);
 
-        $this->assertSame('bg-raid-karazhan', $array['background']);
+        $this->assertSame($raid->getFirstMediaUrl(Raid::MEDIA_BANNER, Raid::MEDIA_CONVERSION_HEADER), $array['banner_url']);
+        $this->assertSame('center top', $array['banner_position']);
     }
 
     #[Test]
-    public function it_returns_null_for_background_when_not_set(): void
+    public function it_returns_null_banner_fields_without_a_banner(): void
     {
-        $raid = Raid::factory()->create();
+        $raid = Raid::factory()->create()->load('media');
 
         $array = (new RaidResource($raid))->toArray(new Request);
 
-        $this->assertNull($array['background']);
+        $this->assertArrayHasKey('banner_url', $array);
+        $this->assertArrayHasKey('banner_position', $array);
+        $this->assertNull($array['banner_url']);
+        $this->assertNull($array['banner_position']);
+        $this->assertArrayNotHasKey('background', $array);
+    }
+
+    #[Test]
+    public function it_excludes_banner_fields_when_media_is_not_loaded(): void
+    {
+        Storage::fake('s3');
+        $raid = Raid::factory()->withBanner('center top')->create()->fresh();
+
+        $array = (new RaidResource($raid))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('banner_url', $array);
+        $this->assertArrayNotHasKey('banner_position', $array);
     }
 
     // ==================== has trash items ====================
@@ -269,7 +289,7 @@ class RaidResourceTest extends TestCase
     #[Test]
     public function it_returns_all_expected_keys(): void
     {
-        $raid = Raid::factory()->create();
+        $raid = Raid::factory()->create()->load('media');
 
         $array = (new RaidResource($raid))->toArray(new Request);
 
@@ -277,8 +297,117 @@ class RaidResourceTest extends TestCase
         $this->assertArrayHasKey('name', $array);
         $this->assertArrayHasKey('slug', $array);
         $this->assertArrayHasKey('color', $array);
-        $this->assertArrayHasKey('background', $array);
+        $this->assertArrayHasKey('banner_url', $array);
+        $this->assertArrayHasKey('banner_position', $array);
         $this->assertArrayHasKey('max_players', $array);
         $this->assertArrayHasKey('max_loot_councillors', $array);
+    }
+
+    #[Group('contract')]
+    #[Test]
+    public function the_default_shape_has_exactly_the_existing_keys(): void
+    {
+        $raid = Raid::factory()->create()->load('media');
+
+        $array = (new RaidResource($raid))->resolve(new Request);
+
+        $this->assertSame(
+            ['id', 'name', 'slug', 'difficulty', 'color', 'banner_url', 'banner_position', 'max_players', 'max_loot_councillors'],
+            array_keys($array),
+        );
+    }
+
+    #[Group('contract')]
+    #[Test]
+    public function the_default_shape_leaves_out_the_management_fields_even_when_loaded(): void
+    {
+        $raid = Raid::factory()->create()
+            ->load(['media', 'phase'])
+            ->loadCount(['bosses', 'upcomingEvents', 'pastEvents', 'templateEvents', 'items']);
+
+        $array = (new RaidResource($raid))->withLinks(['edit' => '/edit'])->resolve(new Request);
+
+        $this->assertSame(
+            ['id', 'name', 'slug', 'difficulty', 'color', 'banner_url', 'banner_position', 'max_players', 'max_loot_councillors', 'phase_number'],
+            array_keys($array),
+        );
+    }
+
+    // ==================== scopes ====================
+
+    #[Test]
+    public function the_summary_scope_emits_only_the_id_and_name(): void
+    {
+        Storage::fake('s3');
+        $raid = Raid::factory()->withBanner()->create()->load('media', 'phase');
+
+        $array = (new RaidResource($raid))->scope('summary')->resolve(new Request);
+
+        $this->assertSame(['id', 'name'], array_keys($array));
+    }
+
+    #[Test]
+    public function the_management_scope_adds_the_phase_usage_counts_and_links(): void
+    {
+        $this->freezeTime();
+        $phase = Phase::factory()->create(['number' => '1.0']);
+        $raid = Raid::factory()->for($phase)->withItems(2)->create();
+        Boss::factory()->for($raid)->create();
+        $past = Event::factory()->create(['start_time' => now()->subDays(2), 'end_time' => now()->subDays(2)->addHours(3)]);
+        $raid->events()->attach($past->id, ['sort_order' => 1]);
+        $template = Event::factory()->template()->create(['start_time' => null, 'end_time' => null]);
+        $raid->events()->attach($template->id, ['sort_order' => 2]);
+        $raid->load(['media', 'phase', 'bosses'])->loadCount(['bosses', 'upcomingEvents', 'pastEvents', 'templateEvents', 'items']);
+
+        $array = (new RaidResource($raid))
+            ->withLinks(['edit' => '/edit', 'destroy' => '/destroy'])
+            ->scope('management')
+            ->resolve(new Request);
+
+        $this->assertSame([
+            'id', 'name', 'slug', 'difficulty', 'color', 'banner_url', 'banner_position', 'max_players', 'max_loot_councillors',
+            'bosses', 'phase_id', 'phase', 'bosses_count', 'upcoming_events_count', 'past_events_count', 'template_events_count', 'items_count', 'links',
+        ], array_keys($array));
+        $this->assertSame($phase->id, $array['phase_id']);
+        $this->assertSame('Phase 1', $array['phase']['name']);
+        $this->assertSame(1, $array['bosses_count']);
+        $this->assertSame(0, $array['upcoming_events_count']);
+        $this->assertSame(1, $array['past_events_count']);
+        $this->assertSame(1, $array['template_events_count']);
+        $this->assertSame(2, $array['items_count']);
+        $this->assertSame(['edit' => '/edit', 'destroy' => '/destroy'], $array['links']);
+    }
+
+    #[Test]
+    public function the_management_scope_leaves_out_what_was_not_loaded(): void
+    {
+        $raid = Raid::factory()->create()->load('media');
+
+        $array = (new RaidResource($raid))->scope('management')->resolve(new Request);
+
+        $this->assertSame(
+            ['id', 'name', 'slug', 'difficulty', 'color', 'banner_url', 'banner_position', 'max_players', 'max_loot_councillors', 'phase_id'],
+            array_keys($array),
+        );
+    }
+
+    #[Test]
+    public function it_sends_the_banners_accepted_types_with_the_management_scope(): void
+    {
+        $raid = Raid::factory()->create();
+
+        $this->assertSame(
+            ['media' => ['banner' => ['accepts' => ['image/jpeg', 'image/png', 'image/webp']]]],
+            (new RaidResource($raid))->scope('management')->with(new Request),
+        );
+    }
+
+    #[Test]
+    public function it_sends_no_extra_data_outside_the_management_scope(): void
+    {
+        $raid = Raid::factory()->create();
+
+        $this->assertSame([], (new RaidResource($raid))->with(new Request));
+        $this->assertSame([], (new RaidResource($raid))->scope('summary')->with(new Request));
     }
 }

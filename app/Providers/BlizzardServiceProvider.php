@@ -7,17 +7,17 @@ use App\Contracts\HasCharacterMedia;
 use App\Facades\Blizzard as BlizzardFacade;
 use App\Facades\BlizzardRenderPath;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
-use App\Http\Integrations\Blizzard\GameVersion;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
+use App\Http\Integrations\Blizzard\Support\BattleNetSession;
 use App\Http\Integrations\Blizzard\Support\MirrorPaths;
+use App\Http\Integrations\ServedFromCache;
 use App\Support\MediaLibrary\BlizzardIconPathGenerator;
 use App\Support\MediaLibrary\CharacterMediaPathGenerator;
-use Illuminate\Cache\RateLimiting\Limit;
+use App\Support\MediaLibrary\UnknownBlizzardIcon;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Filesystem\FilesystemManager;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use RuntimeException;
 use Spatie\MediaLibrary\Support\PathGenerator\PathGeneratorFactory;
@@ -35,13 +35,17 @@ class BlizzardServiceProvider extends ServiceProvider
             return new BlizzardConnector(
                 clientId: data_get($config, 'client_id'),
                 clientSecret: data_get($config, 'client_secret'),
-                gameVersion: GameVersion::fromName(data_get($config, 'game_version', 'Anniversary')),
                 region: Region::from(data_get($config, 'region', 'eu')),
                 locale: data_get($config, 'locale'),
-                defaultRealmSlug: data_get($config, 'realm.slug'),
-                defaultGuildSlug: data_get($config, 'guild.slug'),
+                redirectUri: route('battlenet.callback'),
                 eagerlyMirrorAssets: $app->make(EagerlyMirrorAssets::class),
+                servedFromCache: $app->make(ServedFromCache::class),
             );
+        });
+
+        // Scoped so each request gets a helper wrapping its own session.
+        $this->app->scoped(BattleNetSession::class, function (Application $app) {
+            return new BattleNetSession($app->make('session.store'));
         });
 
         $this->app->bind(CharacterMediaPathGenerator::class, function () use ($config) {
@@ -55,6 +59,8 @@ class BlizzardServiceProvider extends ServiceProvider
                 region: Region::from(data_get($config, 'region', 'eu')),
             );
         });
+
+        $this->app->singleton(UnknownBlizzardIcon::class);
 
         $this->app->singleton(RenderConnector::class, function (Application $app) use ($config) {
             return new RenderConnector(
@@ -87,11 +93,6 @@ class BlizzardServiceProvider extends ServiceProvider
             HasCharacterMedia::class,
             CharacterMediaPathGenerator::class,
         );
-
-        // Define a rate limiter for the FetchGuildRoster job to prevent it from being dispatched too frequently.
-        RateLimiter::for('fetch-guild-roster-job', function (object $job) {
-            return Limit::perHour(1);
-        });
     }
 
     /**
@@ -102,10 +103,12 @@ class BlizzardServiceProvider extends ServiceProvider
     public function provides(): array
     {
         return [
+            BattleNetSession::class,
             BlizzardConnector::class,
             CharacterMediaPathGenerator::class,
             MirrorPaths::class,
             RenderConnector::class,
+            UnknownBlizzardIcon::class,
         ];
     }
 }

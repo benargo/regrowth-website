@@ -3,31 +3,58 @@
 namespace App\Console\Commands;
 
 use App\Jobs\FetchGuildRoster as FetchGuildRosterJob;
-use Carbon\CarbonInterval;
+use App\Jobs\FetchGuildRosters;
+use App\Models\GameVersion;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\RateLimiter;
 
-#[Signature('fetch:blizzard-roster')]
+#[Signature('fetch:blizzard-roster {--game-version= : Only refresh the roster for this game version ID}')]
 #[Description('Refresh the guild roster from Blizzard API and update the cache.')]
 class FetchGuildRoster extends Command
 {
-    /**
-     * Execute the console command.
-     */
-    public function handle(): void
+    public function handle(): int
     {
-        if (RateLimiter::tooManyAttempts('fetch-guild-roster-job', 1)) {
-            $retryAfter = CarbonInterval::seconds(RateLimiter::availableIn('fetch-guild-roster-job'))->cascade()->forHumans();
+        $gameVersionOption = $this->option('game-version');
 
-            $this->warn("The guild roster was refreshed recently. Please wait {$retryAfter} before refreshing again.");
+        if ($gameVersionOption === null) {
+            FetchGuildRosters::dispatchSync(bypassRateLimit: true);
 
-            return;
+            $this->info('Guild roster refresh queued for each game version.');
+
+            return self::SUCCESS;
         }
 
-        FetchGuildRosterJob::dispatchSync();
+        if (! ctype_digit((string) $gameVersionOption)) {
+            $this->error('The --game-version option must be a numeric game version ID.');
+
+            return self::FAILURE;
+        }
+
+        $gameVersion = GameVersion::find((int) $gameVersionOption);
+
+        if ($gameVersion === null) {
+            $this->error("Game version {$gameVersionOption} not found.");
+
+            return self::FAILURE;
+        }
+
+        if ($gameVersion->blizzard_namespace === null) {
+            $this->error("Game version {$gameVersion->id} has no Blizzard namespace configured.");
+
+            return self::FAILURE;
+        }
+
+        if ($gameVersion->realm === null && $gameVersion->blizzard_namespace->requiresRealm()) {
+            $this->error("Game version {$gameVersion->id} has no realm configured.");
+
+            return self::FAILURE;
+        }
+
+        FetchGuildRosterJob::dispatchSync($gameVersion->id, bypassRateLimit: true);
 
         $this->info('Guild roster refreshed.');
+
+        return self::SUCCESS;
     }
 }

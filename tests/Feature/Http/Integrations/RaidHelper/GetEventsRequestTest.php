@@ -6,6 +6,7 @@ use App\Http\Integrations\RaidHelper\Data\Events\EventData;
 use App\Http\Integrations\RaidHelper\Pagination\EventsPaginator;
 use App\Http\Integrations\RaidHelper\RaidHelperConnector;
 use App\Http\Integrations\RaidHelper\Requests\GetEventsRequest;
+use App\Http\Integrations\ServedFromCache;
 use Carbon\Carbon;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -83,7 +84,7 @@ class GetEventsRequestTest extends TestCase
 
     private function connector(): RaidHelperConnector
     {
-        return new RaidHelperConnector(token: 'test-token', serverId: '111222333444555666');
+        return new RaidHelperConnector(token: 'test-token', serverId: '111222333444555666', servedFromCache: app(ServedFromCache::class));
     }
 
     private function listingEvent(string $id): array

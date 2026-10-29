@@ -16,6 +16,7 @@ use Tests\TestCase;
 
 #[Group('comments')]
 #[Group('loot')]
+#[Group('discord-integration')]
 class ReplyPropTest extends TestCase
 {
     use MocksBlizzardServices;
@@ -29,7 +30,8 @@ class ReplyPropTest extends TestCase
         $this->mockGetItem();
         $this->applyBlizzardMocks();
 
-        $this->mockDiscordChannel()->shouldReceive('createMessage')->andReturn($this->makeDiscordMessage());
+        $this->fakeDiscordChannel();
+        $this->fakeDiscordMessageCreated();
     }
 
     #[Test]
@@ -272,7 +274,7 @@ class ReplyPropTest extends TestCase
     {
         return route('loot.items.show', [
             'item' => $item->id,
-            'slug' => $item->slug ?: "item-{$item->id}",
+            'slug' => $item->slug ?: "item-{$item->blizzard_id}",
         ]);
     }
 

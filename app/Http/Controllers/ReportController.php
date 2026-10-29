@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
 use App\Http\Filters\Reports\FiltersDaysOfWeek;
 use App\Http\Filters\Reports\FiltersZoneIds;
+use App\Http\Middleware\RemembersRecordGameVersion;
 use App\Http\Requests\Raid\ReportsIndexRequest;
 use App\Http\Requests\Raid\StoreReportRequest;
 use App\Http\Requests\Raid\UpdateReportRequest;
@@ -12,13 +14,14 @@ use App\Http\Resources\ReportResource;
 use App\Http\Resources\WarcraftLogs\LinkedReportResource;
 use App\Http\Resources\WarcraftLogs\ReportClusterResource;
 use App\Models\Character;
-use App\Models\GuildTag;
 use App\Models\Report;
 use App\Models\ReportLink;
 use App\Models\User;
-use App\Models\Zone;
+use App\Models\WarcraftLogs\GuildTag;
+use App\Models\WarcraftLogs\Zone;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -36,7 +39,7 @@ class ReportController extends Controller
     // ============ Index ============
 
     /**
-     * Display a paginated index of WarcraftLogs reports with optional filters.
+     * Display a paginated, filterable index of the current game version's WarcraftLogs reports.
      */
     public function index(ReportsIndexRequest $request): Response
     {
@@ -47,6 +50,9 @@ class ReportController extends Controller
             ->push((object) ['id' => 0, 'name' => 'No zone']);
 
         $guildTags = GuildTag::orderBy('name')->get();
+
+        $gameVersion = ResolveCurrentGameVersion::run();
+        $hasReports = $gameVersion !== null && Report::where('game_version_id', $gameVersion->id)->exists();
 
         return Inertia::render('Raiding/Reports/Index', [
             'zones' => $zones,
@@ -59,9 +65,10 @@ class ReportController extends Controller
                 'before_date' => $request->input('filter.before_date'),
             ],
             'earliestDate' => $request->resolveMinDate(),
-            'reports' => Inertia::defer(function () use ($timezone) {
+            'hasReports' => $hasReports,
+            'reports' => $hasReports ? Inertia::defer(function () use ($timezone, $gameVersion) {
                 return new ReportCollection(
-                    QueryBuilder::for(Report::class)
+                    QueryBuilder::for(Report::where('game_version_id', $gameVersion->id))
                         ->with(['guildTag', 'zone'])
                         ->withCount('linkedReports')
                         ->allowedFilters(
@@ -69,28 +76,27 @@ class ReportController extends Controller
                             AllowedFilter::exact('guild_tag_ids', 'guild_tag_id'),
                             AllowedFilter::custom('days', new FiltersDaysOfWeek),
                             AllowedFilter::callback('since_date', function (Builder $query, string $value) use ($timezone) {
-                                $query->where('start_time', '>=', Carbon::parse($value, $timezone)->startOfDay()->utc());
+                                $query->where('start_time', '>=', Carbon::parse($value, $timezone)->startOfDay());
                             })->delimiter(''),
                             AllowedFilter::callback('before_date', function (Builder $query, string $value) use ($timezone) {
-                                $query->where('start_time', '<=', Carbon::parse($value, $timezone)->endOfDay()->utc());
+                                $query->where('start_time', '<=', Carbon::parse($value, $timezone)->endOfDay());
                             })->delimiter(''),
                         )
                         ->orderBy('start_time', 'desc')
                         ->paginate(25)
                         ->withQueryString()
                 );
-            }),
+            }) : null,
         ]);
     }
 
     // ============ Show ============
 
-    /**
-     * Display the details of a single WarcraftLogs report.
-     */
+    /** Display the details of a single WarcraftLogs report. */
+    #[Middleware(RemembersRecordGameVersion::class.':report,reports.index')]
     public function show(Request $request, Report $report): Response
     {
-        $report->load(['guildTag', 'zone', 'characters.rank', 'characters.playableClass', 'characters.playableRace', 'linkedReports']);
+        $report->load(['gameVersion', 'guildTag', 'zone', 'characters.rank', 'characters.playableClass', 'characters.playableRace', 'linkedReports']);
 
         return Inertia::render('Raiding/Reports/Show', [
             'report' => new ReportResource($report),
@@ -111,9 +117,11 @@ class ReportController extends Controller
                     ->get();
             }),
             'impactedReports' => Inertia::optional(function () use ($report) {
-                return LinkedReportResource::collection(
-                    $report->linkedReports()->wherePivotNotNull('created_by')->get()
-                );
+                $linkedReports = $report->linkedReports()->wherePivotNotNull('created_by')->get();
+
+                (new EloquentCollection($linkedReports->pluck('pivot')->all()))->load('creator.media');
+
+                return LinkedReportResource::collection($linkedReports);
             }),
             'nearbyReports' => Inertia::optional(
                 fn () => ReportClusterResource::collection($this->buildNearbyReportClusters($request))
@@ -172,9 +180,10 @@ class ReportController extends Controller
     {
         $report = Report::create([
             'title' => $request->title,
-            'start_time' => Carbon::parse($request->start_time, 'Europe/Paris')->utc(),
-            'end_time' => Carbon::parse($request->end_time, 'Europe/Paris')->utc(),
+            'start_time' => Carbon::parse($request->start_time, config('app.timezone'))->setTimezone(config('app.timezone')),
+            'end_time' => Carbon::parse($request->end_time, config('app.timezone'))->setTimezone(config('app.timezone')),
             'guild_tag_id' => $request->guild_tag_id,
+            'warcraft_logs_guild_id' => GuildTag::whereKey($request->guild_tag_id)->value('warcraft_logs_guild_id'),
             'zone_id' => $request->zone_id,
         ]);
 
@@ -305,7 +314,7 @@ class ReportController extends Controller
         $perPage = 5;
 
         $reportTimes = Report::hydrate(
-            Cache::tags(['raiding', 'warcraftlogs'])->remember(
+            Cache::tags(['reports'])->remember(
                 'reports:select:id,start_time',
                 now()->addMinutes(5),
                 fn () => Report::select('id', 'start_time')->get()->toArray()
@@ -313,7 +322,7 @@ class ReportController extends Controller
         )->pluck('start_time', 'id');
 
         $links = ReportLink::hydrate(
-            Cache::tags(['raiding', 'warcraftlogs'])->remember(
+            Cache::tags(['reports'])->remember(
                 'reports:links:all_edges',
                 now()->addMinutes(5),
                 fn () => DB::table('pivot_report_links')->select('report_1', 'report_2')->get()->toArray()

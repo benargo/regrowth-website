@@ -17,7 +17,7 @@ class PresenceUserResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'avatar_url' => $this->avatar_url,
+            'avatar_url' => $this->avatar_thumb_url,
         ];
     }
 }

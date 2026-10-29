@@ -5,10 +5,13 @@ namespace App\Models;
 use App\Contracts\Models\DatasetModel;
 use App\Policies\DatasetPolicy;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Spatie\EloquentSortable\Sortable;
@@ -32,13 +35,7 @@ class GuildRank extends Model implements DatasetModel, Sortable
     // ============ Sorting ============
 
     /**
-     * GuildRank sort_order is 0-based, unlike the other sortable models in this app.
-     *
-     * The value doubles as Blizzard's numeric guild-rank index (see FetchGuildRoster,
-     * AddonController, GuildRosterMemberCollection), which the WoW API defines as
-     * 0-based. Keeping them identical avoids an offset translation at every call site,
-     * so the first rank in an empty table must be assigned 0 rather than the package
-     * default of 1.
+     * Assign the next sort_order, starting from 0 when no ranks exist.
      */
     public function setHighestOrderNumber(): void
     {
@@ -48,13 +45,19 @@ class GuildRank extends Model implements DatasetModel, Sortable
     }
 
     /**
-     * Only auto-assign sort_order when the caller hasn't set one — GuildRankSeeder
-     * relies on an explicitly provided sort_order surviving create() so it can
-     * seed ranks with their Blizzard-defined index via updateOrCreate().
+     * Determine whether sort_order should be auto-assigned on create.
      */
     public function shouldSortWhenCreating(): bool
     {
         return $this->sort_order === null;
+    }
+
+    /**
+     * Scope sorting to ranks within the same game version.
+     */
+    public function buildSortQuery(): Builder
+    {
+        return static::query()->where('game_version_id', $this->game_version_id);
     }
 
     // ============ Casting ============
@@ -84,7 +87,26 @@ class GuildRank extends Model implements DatasetModel, Sortable
         );
     }
 
+    /**
+     * Scope a query to ranks whose characters' attendance is counted.
+     */
+    #[Scope]
+    protected function countsAttendance(Builder $query): void
+    {
+        $query->where('count_attendance', true);
+    }
+
     // ============ Relationships ============
+
+    /**
+     * Get the game version whose guild has this rank.
+     *
+     * @return BelongsTo<GameVersion, $this>
+     */
+    public function gameVersion(): BelongsTo
+    {
+        return $this->belongsTo(GameVersion::class);
+    }
 
     /**
      * Get the characters for the guild rank.

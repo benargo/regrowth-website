@@ -3,12 +3,12 @@
 namespace Tests\Unit\Models;
 
 use App\Helpers\Database\Eloquent\Relations\HasManyKeyBy;
-use App\Models\Boss;
-use App\Models\GuildTag;
+use App\Models\GameVersion;
 use App\Models\Phase;
 use App\Models\Raid;
+use App\Models\Report;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Carbon;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -48,6 +48,8 @@ class PhaseTest extends ModelTestCase
             'number',
             'description',
             'start_date',
+            'sort_order',
+            'game_version_id',
         ]);
     }
 
@@ -155,7 +157,104 @@ class PhaseTest extends ModelTestCase
         $this->assertNull($phase->start_date);
     }
 
-    // ==================== number accessor ====================
+    #[Test]
+    public function factory_for_game_version_state_sets_game_version_id(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        $phase = $this->factory()->forGameVersion($gameVersion)->create();
+
+        $this->assertSame($gameVersion->id, $phase->game_version_id);
+    }
+
+    #[Test]
+    public function factory_default_game_version_id_is_null(): void
+    {
+        $phase = $this->create();
+
+        $this->assertNull($phase->game_version_id);
+    }
+
+    // ==================== usage ====================
+
+    #[Test]
+    public function it_is_in_use_while_it_has_raids(): void
+    {
+        $phase = Phase::factory()->create();
+        $this->assertFalse($phase->isInUse());
+
+        Raid::factory()->for($phase)->create();
+
+        $this->assertTrue($phase->isInUse());
+    }
+
+    #[Test]
+    public function it_is_in_use_while_reports_fall_in_it(): void
+    {
+        $phase = Phase::factory()->create();
+        Report::withoutEvents(fn () => Report::factory()->create(['phase_id' => $phase->id]));
+
+        $this->assertTrue($phase->isInUse());
+    }
+
+    #[Test]
+    public function with_usage_counts_counts_raids_and_reports(): void
+    {
+        $phase = Phase::factory()->create();
+        Raid::factory()->for($phase)->count(2)->create();
+
+        $counted = Phase::withUsageCounts()->find($phase->id);
+
+        $this->assertSame(2, $counted->raids_count);
+        $this->assertSame(0, $counted->reports_count);
+    }
+
+    // ==================== buildSortQuery ====================
+
+    #[Test]
+    public function a_new_unscheduled_phase_goes_to_the_end_of_its_game_versions_list(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        Phase::factory()->for($gameVersion)->unscheduled()->create(['number' => 4]);
+        Phase::factory()->for(GameVersion::factory())->unscheduled()->create(['number' => 4]);
+
+        $phase = Phase::factory()->for($gameVersion)->unscheduled()->create(['number' => 5]);
+
+        $this->assertSame(2, $phase->sort_order);
+    }
+
+    // ==================== attributes ====================
+
+    #[Test]
+    public function has_started_returns_true_when_start_date_is_in_the_past(): void
+    {
+        $phase = $this->factory()->started()->create();
+
+        $this->assertTrue($phase->has_started);
+    }
+
+    #[Test]
+    public function has_started_returns_false_when_start_date_is_in_the_future(): void
+    {
+        $phase = $this->factory()->upcoming()->create();
+
+        $this->assertFalse($phase->has_started);
+    }
+
+    #[Test]
+    public function has_started_returns_false_when_start_date_is_null(): void
+    {
+        $phase = $this->factory()->unscheduled()->create();
+
+        $this->assertFalse($phase->has_started);
+    }
+
+    #[Test]
+    public function name_reads_phase_and_its_number(): void
+    {
+        $this->assertSame('Phase 3.5', Phase::factory()->make(['number' => '3.5'])->name);
+        $this->assertSame('Phase 2', Phase::factory()->make(['number' => '2.0'])->name);
+    }
 
     #[Test]
     public function number_accessor_returns_int_for_whole_numbers(): void
@@ -178,6 +277,16 @@ class PhaseTest extends ModelTestCase
     // ==================== relationships ====================
 
     #[Test]
+    public function it_belongs_to_a_game_version(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $phase = $this->create(['game_version_id' => $gameVersion->id]);
+
+        $this->assertRelation($phase, 'gameVersion', BelongsTo::class);
+        $this->assertTrue($phase->gameVersion->is($gameVersion));
+    }
+
+    #[Test]
     public function it_has_many_raids(): void
     {
         $phase = $this->create();
@@ -198,53 +307,67 @@ class PhaseTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_has_many_bosses_through_raids(): void
+    public function it_has_many_reports(): void
     {
         $phase = $this->create();
-        $raid1 = Raid::factory()->create(['phase_id' => $phase->id]);
-        $raid2 = Raid::factory()->create(['phase_id' => $phase->id]);
-        Boss::factory()->count(2)->create(['raid_id' => $raid1->id]);
-        Boss::factory()->count(3)->create(['raid_id' => $raid2->id]);
+        $report = Report::factory()->create();
+        Report::whereKey($report->id)->update(['phase_id' => $phase->id]);
 
-        $this->assertRelation($phase, 'bosses', HasManyThrough::class);
-        $this->assertCount(5, $phase->bosses);
+        $this->assertRelation($phase, 'reports', HasMany::class);
+        $this->assertTrue($phase->reports->sole()->is($report));
     }
 
-    // ==================== has started ====================
+    // ==================== scopes ====================
 
     #[Test]
-    public function has_started_returns_true_when_start_date_is_in_the_past(): void
+    public function in_release_order_lists_dated_phases_by_start_date_then_undated_by_sort_order(): void
     {
-        $phase = $this->factory()->started()->create();
+        $gameVersion = GameVersion::factory()->create();
+        $laterUndated = Phase::factory()->for($gameVersion)->unscheduled()->create(['number' => 4]);
+        $earlierUndated = Phase::factory()->for($gameVersion)->unscheduled()->create(['number' => 5]);
+        $laterUndated->update(['sort_order' => 2]);
+        $earlierUndated->update(['sort_order' => 1]);
+        $later = Phase::factory()->for($gameVersion)->create(['number' => 1, 'start_date' => '2026-05-15 00:00:00']);
+        $earlier = Phase::factory()->for($gameVersion)->create(['number' => 3, 'start_date' => '2026-01-01 00:00:00']);
 
-        $this->assertTrue($phase->hasStarted());
+        $this->assertSame(
+            [$earlier->id, $later->id, $earlierUndated->id, $laterUndated->id],
+            Phase::inReleaseOrder()->pluck('id')->all(),
+        );
     }
 
     #[Test]
-    public function has_started_returns_false_when_start_date_is_in_the_future(): void
+    public function started_scope_keeps_phases_that_started_by_now(): void
     {
-        $phase = $this->factory()->upcoming()->create();
+        $this->freezeTime();
+        $started = Phase::factory()->create(['start_date' => now()->subDay()]);
+        $startingNow = Phase::factory()->create(['start_date' => now()]);
+        Phase::factory()->upcoming()->create();
+        Phase::factory()->unscheduled()->create();
 
-        $this->assertFalse($phase->hasStarted());
+        $this->assertEqualsCanonicalizing([$started->id, $startingNow->id], Phase::started()->pluck('id')->all());
     }
 
     #[Test]
-    public function has_started_returns_false_when_start_date_is_null(): void
+    public function unscheduled_in_scope_keeps_the_game_versions_phases_without_a_start_date(): void
     {
-        $phase = $this->factory()->unscheduled()->create();
+        $gameVersion = GameVersion::factory()->create();
+        $unscheduled = Phase::factory()->for($gameVersion)->unscheduled()->create(['number' => 1]);
+        Phase::factory()->for($gameVersion)->started()->create(['number' => 2]);
+        Phase::factory()->for($gameVersion)->upcoming()->create(['number' => 3]);
+        Phase::factory()->for(GameVersion::factory())->unscheduled()->create(['number' => 4]);
+        Phase::factory()->unscheduled()->create(['number' => 5]);
 
-        $this->assertFalse($phase->hasStarted());
+        $this->assertSame([$unscheduled->id], Phase::unscheduledIn($gameVersion->id)->pluck('id')->all());
     }
 
-    // ==================== guild tags ====================
-
     #[Test]
-    public function it_has_many_guild_tags(): void
+    public function unscheduled_in_scope_keeps_phases_without_a_game_version_when_given_null(): void
     {
-        $phase = $this->create();
-        GuildTag::factory()->count(3)->create(['tbc_phase_id' => $phase->id]);
+        $unscheduled = Phase::factory()->unscheduled()->create(['number' => 1]);
+        Phase::factory()->started()->create(['number' => 2]);
+        Phase::factory()->for(GameVersion::factory())->unscheduled()->create(['number' => 3]);
 
-        $this->assertRelation($phase, 'guildTags', HasMany::class);
-        $this->assertCount(3, $phase->guildTags);
+        $this->assertSame([$unscheduled->id], Phase::unscheduledIn(null)->pluck('id')->all());
     }
 }

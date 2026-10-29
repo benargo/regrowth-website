@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { DialogTitle } from "@headlessui/react";
 import {
     DndContext,
     DragOverlay,
@@ -12,17 +13,22 @@ import {
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useDroppable } from "@dnd-kit/core";
-import { Link, router, useForm } from "@inertiajs/react";
+import { router, useForm } from "@inertiajs/react";
 import { useSocketId } from "@laravel/echo-react";
 import useItemChannel from "@/Hooks/useItemChannel";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Icon from "@/Components/FontAwesome/Icon";
+import IconButton from "@/Components/IconButton";
+import { PrimaryButton } from "@/Components/FormControls";
 import CommentsSection from "@/Components/Comments/CommentsSection";
 import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
 import MarkdownEditor from "@/Components/MarkdownEditor";
+import Modal from "@/Components/Modal";
+import RemoveButton from "@/Components/RemoveButton";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
-import ToolNav from "@/Components/ToolNav";
+import SectionNav from "@/Components/Navigation/SectionNav";
+import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import Master from "@/Layouts/Master";
 import getItemRaid from "@/Helpers/GetItemRaid";
 
@@ -42,22 +48,19 @@ function DraggablePriorityItem({ priority, onRemove }) {
         <div
             ref={setNodeRef}
             style={style}
-            className="min-w-50 relative flex cursor-grab items-center justify-center gap-2 rounded-md border border-primary bg-ground-800 p-6"
+            className="border-primary bg-brown-800 relative flex min-w-50 cursor-grab items-center justify-center gap-2 rounded-md border p-6"
             {...attributes}
             {...listeners}
         >
             {priority.media && <img src={priority.media} alt="" className="h-6 w-6 rounded-xs" />}
             <span>{priority.title}</span>
-            <button
-                type="button"
+            <RemoveButton
+                label={`Remove ${priority.title}`}
                 onClick={(e) => {
                     e.stopPropagation();
                     onRemove(priority.id);
                 }}
-                className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs text-white transition-colors hover:bg-red-700"
-            >
-                <Icon icon="times" style="solid" />
-            </button>
+            />
         </div>
     );
 }
@@ -66,7 +69,7 @@ function PriorityOverlay({ priority }) {
     if (!priority) return null;
 
     return (
-        <div className="flex w-60 cursor-grabbing items-center justify-center gap-2 rounded-md border border-primary bg-ground-800 p-6 shadow-lg">
+        <div className="border-primary bg-brown-800 flex w-60 cursor-grabbing items-center justify-center gap-2 rounded-md border p-6 shadow-lg">
             {priority.media && <img src={priority.media} alt="" className="h-6 w-6 rounded-xs" />}
             <span>{priority.title}</span>
         </div>
@@ -82,18 +85,17 @@ function DroppableWeightRow({ weight, children, onAddClick }) {
     return (
         <div
             ref={setNodeRef}
-            className={`flex min-h-24 items-center justify-center transition-colors ${isOver ? "bg-ink-600/30" : ""}`}
+            className={`flex min-h-24 items-center justify-center transition-colors ${isOver ? "bg-amber-600/30" : ""}`}
         >
             <div className="w-12 flex-none text-4xl">{weight + 1}</div>
             <div className="ml-4 flex w-full flex-wrap items-center justify-center gap-4 py-4">
                 {children}
-                <button
-                    type="button"
+                <IconButton
+                    icon="plus"
+                    label={`Add bias to level ${weight + 1}`}
                     onClick={() => onAddClick(weight)}
-                    className="flex h-12 w-12 items-center justify-center rounded-full bg-ink-600 text-white transition-colors hover:bg-ink-700"
-                >
-                    <Icon icon="plus" style="solid" />
-                </button>
+                    className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-600 text-white transition-colors hover:bg-amber-700"
+                />
             </div>
         </div>
     );
@@ -113,23 +115,22 @@ function InsertWeightZone({ afterWeight, onDrop, onAddClick }) {
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            <div className="my-4 text-center text-4xl font-bold text-ink-600">
+            <div className="my-4 text-center text-4xl font-bold text-amber-600">
                 <Icon icon="chevron-down" style="solid" />
             </div>
             <div
-                className={`absolute inset-x-0 top-1/2 flex -translate-y-1/2 items-center justify-center transition-opacity ${
+                className={`absolute inset-x-0 top-1/2 flex -translate-y-1/2 items-center justify-center transition-opacity focus-within:opacity-100 ${
                     isHovered || isOver ? "opacity-100" : "opacity-0"
                 }`}
             >
-                <button
-                    type="button"
+                <IconButton
+                    icon="plus"
+                    label={`Insert new bias level after level ${afterWeight + 1}`}
                     onClick={() => onAddClick(afterWeight)}
                     className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
-                        isOver ? "bg-ink-500 text-white" : "bg-ink-600 text-white hover:bg-ink-700"
+                        isOver ? "text-brown-900 bg-amber-500" : "bg-amber-600 text-white hover:bg-amber-700"
                     }`}
-                >
-                    <Icon icon="plus" style="solid" />
-                </button>
+                />
             </div>
         </div>
     );
@@ -145,17 +146,18 @@ function AddNewWeightRow({ weight, onAddClick }) {
         <div
             ref={setNodeRef}
             className={`flex items-center justify-center rounded-lg border-2 border-dashed py-8 transition-colors ${
-                isOver ? "border-ink-500 bg-ink-600/20" : "border-ink-600/30"
+                isOver ? "border-amber-500 bg-amber-600/20" : "border-amber-600/30"
             }`}
         >
-            <button
-                type="button"
+            <IconButton
+                icon="plus"
+                label="Add new bias level"
                 onClick={() => onAddClick(weight)}
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-ink-600 text-white transition-colors hover:bg-ink-700"
-            >
-                <Icon icon="plus" style="solid" />
-            </button>
-            <span className="ml-4 text-secondary-400">Add new bias level</span>
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-600 text-white transition-colors hover:bg-amber-700"
+            />
+            <span className="ml-4 text-gray-400" aria-hidden="true">
+                Add new bias level
+            </span>
         </div>
     );
 }
@@ -172,30 +174,30 @@ function PriorityPickerModal({ isOpen, onClose, priorities, onSelect }) {
         }, {});
     }, [priorities]);
 
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-            <div
-                className="max-h-[80vh] max-w-6xl overflow-y-auto rounded-lg border border-primary bg-ground-900 p-6"
-                onClick={(e) => e.stopPropagation()}
-            >
+        <Modal show={isOpen} onClose={onClose} maxWidth="6xl">
+            <div className="max-h-[80vh] overflow-y-auto p-6">
                 <div className="mb-4 flex items-center justify-between">
-                    <h3 className="text-xl font-bold">Select an option</h3>
-                    <button type="button" onClick={onClose} className="text-secondary-400 hover:text-white">
-                        <Icon icon="times" style="solid" />
-                    </button>
+                    <DialogTitle as="h3" className="text-xl font-bold">
+                        Select an option
+                    </DialogTitle>
+                    <IconButton
+                        icon="times"
+                        label="Close dialog"
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-white"
+                    />
                 </div>
                 {Object.entries(groupedPriorities).map(([type, typePriorities]) => (
                     <div key={type} className="mb-4">
-                        <h4 className="mb-2 text-sm font-semibold uppercase text-ink-500">{type}</h4>
+                        <h4 className="mb-2 text-sm font-semibold text-amber-500 uppercase">{type}</h4>
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                             {typePriorities.map((priority) => (
                                 <button
                                     key={priority.id}
                                     type="button"
                                     onClick={() => onSelect(priority.id)}
-                                    className="flex items-center gap-2 rounded-md border border-primary/50 bg-ground-800 p-3 text-left transition-colors hover:bg-ground-700"
+                                    className="border-primary/50 bg-brown-800 hover:bg-brown-700 flex items-center gap-2 rounded-md border p-3 text-left transition-colors"
                                 >
                                     {priority.media && (
                                         <img src={priority.media} alt="" className="h-5 w-5 rounded-xs" />
@@ -207,10 +209,10 @@ function PriorityPickerModal({ isOpen, onClose, priorities, onSelect }) {
                     </div>
                 ))}
                 {Object.keys(groupedPriorities).length === 0 && (
-                    <p className="py-4 text-center text-secondary-400">All options have been assigned to this item.</p>
+                    <p className="py-4 text-center text-gray-400">All options have been assigned to this item.</p>
                 )}
             </div>
-        </div>
+        </Modal>
     );
 }
 
@@ -352,15 +354,11 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
     if (priorities.length === 0 && data.priorities.length === 0) {
         return (
             <div className="py-8 text-center">
-                <p className="mb-4 text-secondary-400">No biases assigned to this item.</p>
-                <button
-                    type="button"
-                    onClick={() => handleAddNewWeight(0)}
-                    className="inline-flex items-center gap-2 rounded-md bg-ink-600 px-4 py-2 text-white transition-colors hover:bg-ink-700"
-                >
+                <p className="mb-4 text-gray-400">No biases assigned to this item.</p>
+                <PrimaryButton onClick={() => handleAddNewWeight(0)}>
                     <Icon icon="plus" style="solid" />
                     Add first bias level
-                </button>
+                </PrimaryButton>
                 <PriorityPickerModal
                     isOpen={showPicker}
                     onClose={() => {
@@ -391,7 +389,7 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
                             {groupedPriorities[weight].map((priority, index) => (
                                 <div key={priority.id} className="flex items-center">
                                     {index > 0 && (
-                                        <div className="mx-2 w-12 flex-none items-center text-center text-2xl font-bold text-ink-600">
+                                        <div className="mx-2 w-12 flex-none items-center text-center text-2xl font-bold text-amber-600">
                                             <Icon icon="equals" style="solid" className="-ml-4" />
                                         </div>
                                     )}
@@ -436,7 +434,11 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
     const [notesError, setNotesError] = useState(null);
     const [saving, setSaving] = useState(false);
 
-    const { data: notesData, setData: setNotesData, reset: resetNotes } = useForm({
+    const {
+        data: notesData,
+        setData: setNotesData,
+        reset: resetNotes,
+    } = useForm({
         notes: item.data.notes || "",
     });
 
@@ -552,17 +554,22 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
 
     return (
         <Master title={`Editing ${item.data.name}`}>
-            <SharedHeader backgroundClass={raid?.background ?? "bg-vashj-and-kaelthas"} title="Edit Loot Biases" subtitle={raid?.name} />
+            <SharedHeader
+                image={raid?.banner_url}
+                imagePosition={raid?.banner_position}
+                color={raid?.color}
+                backgroundClass="bg-vashj-and-kaelthas"
+                title="Edit Loot Biases"
+                subtitle={raid?.name}
+            />
+            <SectionNav section="loot" />
             {/* Tool navigation */}
             <ToolNav>
                 <div className="flex-initial space-x-4">
-                    <Link
-                        href={route("loot.items.show", { item: item.data.id, slug: item.data.slug })}
-                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-ground-800 active:border-primary"
-                    >
+                    <ToolNavLink href={route("loot.items.show", { item: item.data.id, slug: item.data.slug })}>
                         <Icon icon="arrow-left" style="solid" className="mr-2" />
                         <span>Finish editing {item.data.name}</span>
-                    </Link>
+                    </ToolNavLink>
                 </div>
                 <div className="flex space-x-4">
                     <AutoSaveLabel processing={saving} />
@@ -573,8 +580,8 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
                 <ItemDetailsCard item={item.data} />
 
                 {/* Editable Priorities */}
-                <h2 className="mb-2 mt-8 text-xl font-bold">Loot Biases</h2>
-                <p className="mb-4 text-secondary-400">
+                <h2 className="mt-8 mb-2 text-xl font-bold">Loot Biases</h2>
+                <p className="mb-4 text-gray-400">
                     Drag biases between rows to change their weight. Use the + buttons to add new biases.
                 </p>
                 <div className="mt-8 w-full">
@@ -589,7 +596,7 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
                 {/* Notes Section */}
                 <div className="mt-8">
                     <h2 className="mb-2 text-xl font-bold">Officers&rsquo; notes</h2>
-                    <p className="text-md mb-4 text-secondary-400">
+                    <p className="text-md mb-4 text-gray-400">
                         Notes are unique to each loot item. If you change what another officer has written, it will
                         overwrite their notes.
                     </p>
@@ -610,7 +617,7 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
                             <button
                                 type="button"
                                 onClick={() => resetNotes("notes")}
-                                className="hover:bg-ground-700 focus:bg-ground-700 focus:ring-ink-500 active:bg-ground-800 inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:outline-hidden"
+                                className="hover:bg-brown-700 focus:bg-brown-700 active:bg-brown-800 inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:outline-hidden"
                             >
                                 <Icon icon="trash" style="solid" className="mr-1" /> Reset notes
                             </button>

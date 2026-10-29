@@ -1,72 +1,24 @@
 <laravel-boost-guidelines>
-=== .ai/api-services rules ===
+=== .ai/comments rules ===
 
-# Third-Party API Service Classes
+# Comments & Docblocks
 
-This project integrates with several external APIs (Blizzard, Discord, Warcraft Logs, Raid Helper). All service/connector classes for those APIs follow these rules.
+## Describe *what*, not *why*
 
-## API services make HTTP calls only
-
-Keep each API service class focused purely on making HTTP calls (optionally wrapped in `Cache::remember`). Do **not** add methods that:
-
-- depend on another service,
-- map responses into domain objects, or
-- touch the database.
-
-That work belongs to the consumer (job, controller, seeder). Example: a `getPlayableClassIconUrl()` method was rejected because it combined an API call with a `MediaService` resolution — consumers should call `getPlayableClassMedia()` and resolve URLs through `MediaService` themselves.
-
-## Give each resource type its own dedicated method
-
-When an API has a specific endpoint for a known resource type, give it its own method that calls that path directly (e.g. `getItemMedia`, `getPlayableClassMedia`). Dedicated methods keep their own cache keys, TTLs, and skip unnecessary validation.
-
-Only use a generic `findMedia(tag, id)`-style method when the resource type genuinely varies at runtime.
-
-## Inject config through the constructor
-
-Pass config values into service classes through the constructor via the service provider. Do **not** call the `config()` helper inside the class. The class may expose a local `config(string $key)` helper using `Arr::get()` to read nested values, throwing if a required key is missing.
-
-## Prefer dependency injection over facades
-
-Use Laravel facades only as a last resort. Prefer constructor/method dependency injection wherever possible — it makes dependencies explicit and simplifies testing (real bindings + `Saloon::fake()` instead of facade-mocking).
-
-- Controllers / Jobs / Commands / Notifications / Seeders → type-hint `BlizzardConnector` / `RenderConnector` in the constructor (or `handle()` for queue jobs) and let Laravel resolve them via the `BlizzardServiceProvider` singleton bindings.
-- Where an existing helper exposes a facade (`Blizzard::send(...)`, `BlizzardAsset::...`), refactor the caller to receive the connector by DI and migrate the call to `$blizzard->send(...)`.
-- Resources/Models cannot accept constructor injection — there `app(BlizzardConnector::class)` is acceptable, but call it out explicitly and minimise it (e.g. resolve once into a property).
-- New code should never reach for `App\Facades\Blizzard` or `App\Facades\BlizzardAsset` unless DI is genuinely impossible.
-
-## Catch the abstract `NotFoundException` in Blizzard batch loops
-
-A 404 from the render CDN (`FetchAssetRequest` / `RenderConnector`) throws `App\Http\Integrations\Blizzard\Exceptions\MediaNotFoundException`. The item-data path (`GetItemRequest`) throws `ItemNotFoundException`. Both extend the abstract `App\Http\Integrations\Blizzard\Exceptions\NotFoundException`.
-
-In seeders/resources that send both `GetItemRequest`/`GetItemMediaRequest` **and** `FetchAssetRequest`, catch the abstract parent so a single icon-CDN 404 doesn't abort the whole batch:
+Comments and docblocks (PHP and JS alike) describe **what** the code does — its behaviour, inputs, outputs, and side effects. Do not explain **why** it was written that way: design rationale, rejected alternatives, bug history, and workarounds belong in the commit message or PR description, not the source.
 
 ```php
-catch (NotFoundException | BlizzardApiException | FatalRequestException $e) {
-    // skip this record, continue the loop
-}
+// Wrong — explains the reasoning
+/**
+ * We cache this for an hour because the Blizzard API rate-limits us
+ * and the data rarely changes.
+ */
+
+// Right — describes the behaviour
+/**
+ * Fetch the playable class media, cached for one hour.
+ */
 ```
-
-Add a test that fakes a `FetchAssetRequest` 404 and asserts the loop continues with no media attached.
-
-=== .ai/frontend rules ===
-
-# Frontend (Inertia + React)
-
-## Search shared components before writing new front-end code
-
-Before proposing or implementing any front-end change, search `resources/js/Components/`, `resources/js/Helpers/`, and `resources/js/Hooks/` for existing shared components, helpers, and hooks, and reuse them. The project has a rich shared library; duplicating it creates inconsistency and maintenance burden.
-
-## Render from props, not `useState`, on pages that call `router.reload()`
-
-In read-only Inertia pages that call `router.reload()` in response to broadcast events, render directly from the incoming props — do **not** copy them into `useState`.
-
-`useState` initialises once at mount and ignores later prop changes, so when `router.reload()` delivers fresh props the component re-renders but the state stays frozen and the UI never updates. Render from the prop directly (e.g. `event.composition?.groups`). Only use `useState` for data that needs client-side-only mutation (optimistic updates, UI toggles) that won't be reconciled via a reload.
-
-## Never define `broadcastAs()` on Notification classes
-
-Never define `broadcastAs()` on a Laravel notification class (extends `Illuminate\Notifications\Notification`, implements `ShouldBroadcast`). Doing so renames the wire event, but `useEchoNotification` from `@laravel/echo-react` hardcodes listening for `.Illuminate\Notifications\Events\BroadcastNotificationCreated` and will never match — the frontend callback never fires.
-
-To filter notifications on the frontend, use `broadcastType()` instead — it sets the `type` field that `useEchoNotification`'s third argument matches. `broadcastAs()` is fine on genuine broadcast **Event** classes (e.g. `BossKilled`, `EventAssignment`).
 
 === .ai/php-conventions rules ===
 
@@ -84,14 +36,11 @@ public function __construct(MockInterface $service = null) {}
 public function __construct(?MockInterface $service = null) {}
 ```
 
-## Value objects / DTOs implement `Arrayable` + `JsonSerializable`
+## Value objects / DTOs extend `Spatie\LaravelData\Data`
 
-Any new value object or DTO (a `final class` that wraps data rather than a service with behaviour) must implement:
+Any new value object or DTO (a `final class` that wraps data rather than a service with behaviour) extends `Spatie\LaravelData\Data`, as a `final` class with `readonly` constructor-promoted properties. Override `toArray()`/`jsonSerialize()` only when the output shape must differ from the raw constructor properties (computed/renamed fields, nested resolution).
 
-- `Illuminate\Contracts\Support\Arrayable` — `toArray(): array` returning the canonical array shape
-- `JsonSerializable` — `jsonSerialize(): array`, usually `return $this->toArray();`
-
-Consistent with existing VOs like `app/Services/Attendance/Filters.php`. This keeps VOs interoperable with Eloquent, Resource responses, JSON encoding, and `collect()->toArray()`.
+Applies both to API response data under `app/Http/Integrations/**/Data/**` and to domain VOs/DTOs elsewhere (e.g. `app/Services/Attendance/*Data.php`).
 
 ## Don't call `->value` on enums inside Resource arrays
 
@@ -127,6 +76,16 @@ Always use `vendor/bin/sail test` (which wraps `php artisan test`). Never invoke
 - Standard run: `vendor/bin/sail test --display-phpunit-notices`
 - Filtered run: `vendor/bin/sail test --compact --display-phpunit-notices --filter=...`
 
+## Run tests from a git worktree via `bin/wt`
+
+Inside a git worktree, run tests with `bin/wt php artisan test` instead of `vendor/bin/sail test`. `bin/wt` executes the command in the main checkout's Sail container, in the worktree's directory, against a dedicated `testing_<worktree-name>` database, so concurrent runs in different worktrees don't overwrite each other.
+
+- Worktrees must live under the main checkout (Claude Code's default `.claude/worktrees/<name>`); the container cannot see worktrees elsewhere.
+- Never run `vendor/bin/sail up` from a worktree — it starts a second stack that collides with the main one's ports.
+- Worktree run: `bin/wt php artisan test --compact --display-phpunit-notices --filter=...`
+- Other commands work the same way: `bin/wt composer install`, `bin/wt npm run build`.
+- `bin/wt prune` drops testing databases whose worktree has been removed.
+
 ## `make:test` naming
 
 Pass only the path relative to the test type's base directory — Artisan prepends `tests/Unit/` for `--unit` and `tests/Feature/` otherwise.
@@ -145,6 +104,15 @@ vendor/bin/sail artisan db:seed --env=testing
 
 A `.env.testing` file at the repo root points to `DB_DATABASE=laravel_testing`. Never call factory `create()` or run seeders without `--env=testing` unless deliberately seeding dev data.
 
+## Use the Manual Login Routes for browser testing
+
+When driving the app through a browser automation tool (Playwright, claude-in-chrome, etc.), authenticate via the Manual Login Routes defined in `routes/auth.php` instead of going through Discord OAuth.
+
+- `GET login/local` (`login.local`) renders the local login form.
+- `POST login/local` (`login.local.store`) logs the user in.
+
+These routes are only registered when `app()->environment(['local', 'testing'])`, guarded by the `env:local,testing` middleware, so they're unavailable in production and never reach Ziggy's route list there.
+
 === .ai/upgrades rules ===
 
 # Dependency Upgrades
@@ -159,14 +127,12 @@ The codemod handles the mechanical bulk (build pipeline, renames, directive swap
 
 # Laravel Boost Guidelines
 
-The Laravel Boost guidelines are specifically curated by Laravel maintainers for this application. These guidelines should be followed closely to ensure the best experience when building Laravel applications.
-
 ## Foundational Context
 
-This application is a Laravel application running on PHP 8.4. You are an expert with the Laravel ecosystem. Always use the APIs that match the installed major version of each package — do not assume a version.
+This application is a Laravel application running on PHP 8.4. Always use the APIs that match the installed major version of each package — do not assume a version.
 
 Before relying on a package's API, confirm its installed version:
-- PHP packages: run `composer show --direct` to list direct dependencies with versions, or `composer show <vendor/package>` for a single package.
+- PHP packages: run `vendor/bin/sail composer show --direct` to list direct dependencies with versions, or `vendor/bin/sail composer show <vendor/package>` for a single package.
 - JS packages: check `package.json` for the installed versions.
 
 ## Skills Activation
@@ -190,15 +156,11 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 ## Frontend Bundling
 
-- If the user doesn't see a frontend change reflected in the UI, it could mean they need to run `vendor/bin/sail npm run build`, `vendor/bin/sail npm run dev`, or `vendor/bin/sail composer run dev`. Ask them.
+- If a frontend change doesn't show in the UI or you get a "Unable to locate file in Vite manifest" error, run `vendor/bin/sail npm run build` or ask the user to run `vendor/bin/sail npm run dev` or `vendor/bin/sail composer run dev`.
 
 ## Documentation Files
 
 - You must only create documentation files if explicitly requested by the user.
-
-## Replies
-
-- Be concise in your explanations - focus on what's important rather than explaining obvious details.
 
 === boost rules ===
 
@@ -228,8 +190,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 ## Project Rules
 
-- This project contains committed, area-grouped rules in `.ai/rules` when that directory exists (settled decisions, non-obvious traps, standing constraints). Framework and package guidelines that only apply to specific paths (testing, frontend, components) also live there, under `.ai/rules/boost` — this is not just recorded decisions, it is load-bearing guidance you have not seen inline. Before you enter plan mode or create/edit any file, you MUST first: open @.ai/rules/index.md (it maps file globs to rule files), read every rule file whose globs cover the path(s) in scope, and run `grep -rin 'keyword' .ai/rules` to catch what a path match alone misses. Do not write code until you have read and are following every matching rule. If `.ai/rules` does not exist, continue without it.
-- Record a rule with `record-rule` only when the user explicitly asks for one. Instructions for the work at hand are not rules, no matter how emphatic: "remove this typo", "use X here" are work to do, not rules to record. Never record a rule on your own initiative, as a byproduct of a change, or to summarize what you just did. When the user does ask, pass a `glob` (e.g. `app/Http/Controllers/**`), a short `title`, and a few-line `note`. Use `record-rule` rather than your native memory or notes tool, because native memory is personal and session-scoped, while only `.ai/rules` is shared with the team and persists in the repo.
+- This project contains committed, area-grouped rules in `.ai/rules` when that directory exists, including path-scoped framework guidelines under `.ai/rules/boost`. Before you enter plan mode or create/edit any file, you MUST first: open @.ai/rules/index.md (it maps file globs to rule files), read every rule file whose globs cover the path(s) in scope, and run `grep -rin 'keyword' .ai/rules` to catch what a path match alone misses. Do not write code until you have read and are following every matching rule. If `.ai/rules` does not exist, continue without it.
 
 ## Artisan
 
@@ -259,7 +220,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 # Deployment
 
 - Laravel can be deployed using [Laravel Cloud](https://cloud.laravel.com/), which is the fastest way to deploy and scale production Laravel applications.
-- Activate the `deploying-to-cloud` skill whenever deploying to Laravel Cloud, configuring Cloud environments or resources, using the Cloud CLI, or troubleshooting Cloud deployments.
 
 === sail rules ===
 
@@ -334,10 +294,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Faker: Use methods such as `$this->faker->word()` or `fake()->randomDigit()`. Follow existing conventions whether to use `$this->faker` or `fake()`.
 - When creating tests, make use of `vendor/bin/sail artisan make:test [options] {name}` to create a feature test, and pass `--unit` to create a unit test. Most tests should be feature tests.
 
-## Vite Error
-
-- If you receive an "Illuminate\Foundation\ViteException: Unable to locate file in Vite manifest" error, you can run `vendor/bin/sail npm run build` or ask the user to run `vendor/bin/sail npm run dev` or `vendor/bin/sail composer run dev`.
-
 === pint/core rules ===
 
 # Laravel Pint Code Formatter
@@ -397,7 +353,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
 
 Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- For codebase questions, first run `graphify query "<question>" --budget 8000` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

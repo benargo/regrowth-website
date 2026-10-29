@@ -4,6 +4,8 @@ Before planning or editing, find the row whose globs match the file's path and r
 
 | Applies to | Rule file |
 | --- | --- |
+| app/Http/Integrations/**, app/Http/Controllers/**, app/Http/Resources/**, app/Jobs/**, app/Console/**, app/Notifications/**, app/Providers/**, database/seeders/** | .ai/rules/api-services.md |
+| app/**/*.php | .ai/rules/app.md |
 | tests/**,routes/auth.php,app/Http/Controllers/Auth/** | .ai/rules/auth.md |
 | app/Casts/*.php | .ai/rules/casts.md |
 | app/Http/Controllers/** | .ai/rules/controllers.md |
@@ -13,6 +15,8 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Listeners/** | .ai/rules/listeners.md |
 | database/migrations/** | .ai/rules/migrations.md |
 | app/Models/GuildRank.php, app/Models/*.php | .ai/rules/models.md |
+| app/Notifications/** | .ai/rules/notifications.md |
+| docs/superpowers/plans/** | .ai/rules/plans.md |
 | app/Http/Resources/** | .ai/rules/resources.md |
 | app/Services/**/*Data.php, app/Services/** | .ai/rules/services.md |
 | tests/** | .ai/rules/testing-groups.md |

@@ -2,15 +2,18 @@
 
 namespace App\Jobs\RaidHelper;
 
+use App\Http\Integrations\Discord\DiscordConnector;
+use App\Http\Integrations\Discord\Exceptions\DiscordRequestException;
+use App\Http\Integrations\Discord\Requests\Guilds\GetGuildChannelsRequest;
 use App\Http\Integrations\RaidHelper\RaidHelperConnector;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Exceptions\RateLimitedException;
+use App\Jobs\Middleware\ReleaseWhenDiscordRateLimited;
 use Carbon\CarbonInterface;
-use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Queue\Attributes\MaxExceptions;
+use Saloon\Exceptions\Request\FatalRequestException;
 
+#[MaxExceptions(3)]
 class FetchEvents implements ShouldQueue
 {
     use Queueable;
@@ -34,21 +37,32 @@ class FetchEvents implements ShouldQueue
         $this->endTimeFilter = $endTimeFilter ?? now()->addWeek()->setTime(5, 59, 59);
     }
 
-    public function handle(Discord $discord, RaidHelperConnector $raidHelper): void
+    /**
+     * Rate-limit releases keep the job alive until this deadline.
+     */
+    public function retryUntil(): CarbonInterface
+    {
+        return now()->addHour();
+    }
+
+    /**
+     * @return array<int, object>
+     */
+    public function middleware(): array
+    {
+        return [new ReleaseWhenDiscordRateLimited];
+    }
+
+    public function handle(DiscordConnector $discord, RaidHelperConnector $raidHelper): void
     {
         try {
-            $validChannels = $discord->getGuildChannels($raidHelper->serverId())->whereIn('id', $this->channelIds)->pluck('id');
-        } catch (RateLimitedException $e) {
-            Log::warning('FetchEvents: Discord rate limited fetching guild channels, releasing job.', [
-                'endpoint' => $e->endpoint,
-                'retry_after' => $e->retryAfter,
-                'scope' => $e->scope,
-            ]);
-            $this->release($e->retryAfter);
+            $validChannels = $discord->send(new GetGuildChannelsRequest($raidHelper->serverId()))
+                ->dto()
+                ->whereIn('id', $this->channelIds)
+                ->pluck('id');
+        } catch (DiscordRequestException|FatalRequestException $e) {
+            report($e);
 
-            return;
-        } catch (Exception $e) {
-            Log::error("Failed to fetch channels from Discord API for server ID {$raidHelper->serverId()}. Error: {$e->getMessage()}");
             $validChannels = collect();
         }
 

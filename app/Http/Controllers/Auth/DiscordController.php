@@ -2,29 +2,34 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Actions\Discord\FetchGuildMember;
+use App\Actions\Discord\RetrieveOAuthUser;
+use App\Actions\Discord\UpsertUserFromGuildMember;
 use App\Http\Controllers\Controller;
-use App\Models\DiscordRole;
-use App\Models\User;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Exceptions\UserNotInGuildException;
+use App\Http\Integrations\Discord\Exceptions\DiscordRequestException;
+use App\Http\Integrations\Discord\Exceptions\RateLimitedException;
+use App\Http\Integrations\Discord\Exceptions\UserNotInGuildException;
+use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 use Laravel\Socialite\Facades\Socialite;
+use Saloon\Exceptions\Request\FatalRequestException;
+use Symfony\Component\HttpFoundation\Response;
 
 class DiscordController extends Controller
 {
-    public function __construct(
-        protected Discord $discord
-    ) {}
-
     /**
-     * Redirect to Discord OAuth.
+     * Redirect to Discord OAuth, as a full page visit for Inertia requests.
      */
-    public function redirect(): RedirectResponse
+    public function redirect(): Response
     {
-        return Socialite::driver('discord')
-            ->scopes(['identify', 'guilds.members.read'])
-            ->redirect();
+        return Inertia::location(
+            Socialite::driver('discord')
+                ->scopes(['identify', 'guilds.members.read'])
+                ->redirect()
+                ->getTargetUrl()
+        );
     }
 
     /**
@@ -33,43 +38,27 @@ class DiscordController extends Controller
     public function callback(): RedirectResponse
     {
         try {
-            $discordUser = Socialite::driver('discord')->user();
-        } catch (\Exception $e) {
+            $discordUser = RetrieveOAuthUser::run();
+            $member = FetchGuildMember::run($discordUser->getId());
+        } catch (UserNotInGuildException) {
+            return redirect('/')
+                ->with('error', 'You must be a member of the Regrowth Discord server to log in.');
+        } catch (DiscordRequestException|RateLimitedException|FatalRequestException $e) {
+            report($e);
+
+            return redirect('/')
+                ->with('error', 'Failed to verify your Discord server membership. Please try again.');
+        } catch (Exception) {
             return redirect('/')
                 ->with('error', 'Failed to authenticate with Discord. Please try again.');
         }
 
-        $discordId = $discordUser->getId();
+        $user = UpsertUserFromGuildMember::run($member);
 
-        // Fetch guild member data
-        try {
-            $member = $this->discord->getGuildMember($discordId);
-        } catch (UserNotInGuildException $e) {
-            return redirect('/')
-                ->with('error', 'You must be a member of the Regrowth Discord server to log in.');
-        } catch (\Exception $e) {
+        if ($user === null) {
             return redirect('/')
                 ->with('error', 'Failed to verify your Discord server membership. Please try again.');
         }
-
-        $rawData = $discordUser->getRaw();
-
-        // Create or update user
-        $user = User::updateOrCreate(
-            ['id' => $discordId],
-            [
-                'username' => $rawData['username'],
-                'discriminator' => $rawData['discriminator'] ?? '0',
-                'nickname' => $member->nick,
-                'avatar' => $rawData['avatar'] ?? null,
-                'guild_avatar' => $member->avatar,
-                'banner' => $member->banner ?? $rawData['banner'] ?? null,
-            ]
-        );
-
-        $incomingRoleIds = $member->roles;
-        $recognizedRoleIds = DiscordRole::whereIn('id', $incomingRoleIds)->pluck('id')->toArray();
-        $user->discordRoles()->sync($recognizedRoleIds);
 
         Auth::login($user, remember: true);
 

@@ -6,12 +6,12 @@ import Pill from "@/Components/Pill";
 import PlannedAbsenceRow from "@/Components/PlannedAbsences/Row";
 import EmptyState from "@/Components/EmptyState";
 import { Can } from "@/Components/Authorizable";
-import Section from "@/Themes/Forever/Section";
-import DisplayHeading from "@/Themes/Forever/DisplayHeading";
+import Band from "@/Components/Band/Band";
+import BandHeading from "@/Components/Band/BandHeading";
 
 export default function Index() {
     const { auth, roles, planned_absences } = usePage().props;
-    const user = auth.user;
+    const user = auth.user.data;
 
     return (
         <Master title="My Account">
@@ -19,13 +19,15 @@ export default function Index() {
             <SharedHeader title="My Account" backgroundClass="bg-arcatraz" />
 
             {/* User profile section */}
-            <Section tone="mid" edge="bottom" edgeTone="deep">
+            <Band tone="light">
                 <div className="container mx-auto px-4">
                     <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
                         <img src={user.avatar} alt={user.display_name} className="h-20 w-20 rounded-full" />
                         <div>
-                            <DisplayHeading level={1}>{user.display_name}</DisplayHeading>
-                            <p className="text-secondary-400 text-sm">@{user.username}</p>
+                            <BandHeading level={2} headingClassName="text-5xl md:text-7xl">
+                                {user.display_name}
+                            </BandHeading>
+                            <p className="text-sm text-gray-400">@{user.username}</p>
                             {roles.length > 0 && (
                                 <div className="mt-2 flex flex-wrap gap-2">
                                     {roles.map((role) => (
@@ -42,18 +44,18 @@ export default function Index() {
                         </div>
                     </div>
                 </div>
-            </Section>
+            </Band>
 
             {/* Planned absences section */}
-            <Section tone="deep">
+            <Band tone="shaded" edge="both">
                 <header className="mb-4 flex flex-col items-center justify-between md:flex-row">
-                    <DisplayHeading level={2} eyebrow="My Account">
+                    <BandHeading level={2} eyebrow="My Account">
                         Planned Absences
-                    </DisplayHeading>
+                    </BandHeading>
                     <Can permission="create-planned-absences">
                         <Link
-                            href={route("raiding.absences.create")}
-                            className="bg-ink-600 hover:bg-ink-700 focus:bg-ink-700 focus:ring-ink-500 active:bg-ink-800 mt-3 inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:outline-hidden md:mt-0"
+                            href={route("account.absences.create")}
+                            className="mt-3 inline-flex items-center rounded-md border border-transparent bg-amber-700 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-amber-800 focus:bg-amber-800 focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:outline-hidden active:bg-amber-900 md:mt-0"
                         >
                             <Icon icon="plus" style="solid" className="mr-1.5 h-4" />
                             Add Absence
@@ -70,11 +72,17 @@ export default function Index() {
                 ) : (
                     <div className="flex flex-col gap-2">
                         {planned_absences.data.map((absence) => (
-                            <PlannedAbsenceRow key={absence.id} absence={absence} showCreatedBy />
+                            <PlannedAbsenceRow
+                                key={absence.id}
+                                absence={absence}
+                                showCreatedBy
+                                canEdit={Boolean(planned_absences.permissions.edit[absence.id])}
+                                canDelete={Boolean(planned_absences.permissions.delete[absence.id])}
+                            />
                         ))}
                     </div>
                 )}
-            </Section>
+            </Band>
         </Master>
     );
 }

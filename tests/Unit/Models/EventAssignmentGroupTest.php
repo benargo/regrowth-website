@@ -2,12 +2,15 @@
 
 namespace Tests\Unit\Models;
 
+use App\Events\RaidingDataChanged;
 use App\Models\Boss;
 use App\Models\Event;
 use App\Models\EventAssignment;
 use App\Models\EventAssignmentGroup;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Event as EventFacade;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
@@ -279,5 +282,46 @@ class EventAssignmentGroupTest extends ModelTestCase
         $group->delete();
 
         $this->assertDatabaseMissing('event_assignments', ['id' => $assignment->id]);
+    }
+
+    // ==================== model events ====================
+
+    #[Test]
+    public function it_dispatches_raiding_data_changed_when_created(): void
+    {
+        EventFacade::fake([RaidingDataChanged::class]);
+
+        $eventAssignmentGroup = EventAssignmentGroup::factory()->create();
+
+        $this->assertSame(1, $this->dispatchedFor($eventAssignmentGroup));
+    }
+
+    #[Test]
+    public function it_dispatches_raiding_data_changed_when_updated(): void
+    {
+        $eventAssignmentGroup = EventAssignmentGroup::factory()->create();
+        EventFacade::fake([RaidingDataChanged::class]);
+
+        $eventAssignmentGroup->update(['name' => 'Renamed']);
+
+        $this->assertSame(1, $this->dispatchedFor($eventAssignmentGroup));
+    }
+
+    #[Test]
+    public function it_dispatches_raiding_data_changed_when_deleted(): void
+    {
+        $eventAssignmentGroup = EventAssignmentGroup::factory()->create();
+        EventFacade::fake([RaidingDataChanged::class]);
+
+        $eventAssignmentGroup->delete();
+
+        $this->assertSame(1, $this->dispatchedFor($eventAssignmentGroup));
+    }
+
+    // ==================== helpers ====================
+
+    private function dispatchedFor(Model $model): int
+    {
+        return EventFacade::dispatched(RaidingDataChanged::class, fn (RaidingDataChanged $event): bool => $event->model->is($model))->count();
     }
 }

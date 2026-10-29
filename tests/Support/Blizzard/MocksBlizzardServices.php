@@ -4,6 +4,7 @@ namespace Tests\Support\Blizzard;
 
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
+use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRequest;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
@@ -102,6 +103,21 @@ trait MocksBlizzardServices
     /**
      * @param  array<string, mixed>  $responseData
      */
+    protected function mockGetGuild(array $responseData = []): void
+    {
+        $this->pendingBlizzardMocks = array_merge($this->pendingBlizzardMocks, [
+            self::TOKEN_MOCK_KEY => MockResponse::make(body: self::TOKEN_MOCK_RESPONSE, status: 200),
+            GetGuildRequest::class => MockResponse::make(body: array_merge([
+                'id' => 1,
+                'name' => 'Wild Growth',
+                'member_count' => 0,
+            ], $responseData), status: 200),
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $responseData
+     */
     protected function mockGetGuildRoster(array $responseData = []): void
     {
         $this->pendingBlizzardMocks = array_merge($this->pendingBlizzardMocks, [
@@ -126,7 +142,7 @@ trait MocksBlizzardServices
      */
     protected function mockGetItem(array $responseData = []): void
     {
-        Storage::fake('public');
+        Storage::fake('s3');
 
         $itemRequest = $responseData
             ? MockResponse::make(body: array_merge([

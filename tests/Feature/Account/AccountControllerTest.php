@@ -1,0 +1,181 @@
+<?php
+
+namespace Tests\Feature\Account;
+
+use App\Enums\PlannedAbsenceReason;
+use App\Models\Character;
+use App\Models\DiscordRole;
+use App\Models\PlannedAbsence;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
+
+#[Group('account')]
+class AccountControllerTest extends TestCase
+{
+    use RefreshDatabase;
+
+    // ==================== index: Access Control ====================
+
+    #[Test]
+    public function index_requires_authentication(): void
+    {
+        $response = $this->get(route('account.index'));
+
+        $response->assertRedirect('/login');
+    }
+
+    #[Test]
+    public function index_allows_authenticated_user(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('account.index'));
+
+        $response->assertOk();
+    }
+
+    // ==================== index: Inertia Response ====================
+
+    #[Test]
+    public function index_renders_correct_inertia_component(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('account.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Account/Index')
+        );
+    }
+
+    #[Test]
+    public function index_returns_user_roles(): void
+    {
+        $role = DiscordRole::firstOrCreate(
+            ['id' => '829021769448816691'],
+            ['name' => 'Officer', 'position' => 6, 'is_visible' => true]
+        );
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($role);
+
+        $response = $this->actingAs($user)->get(route('account.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Account/Index')
+            ->has('roles', 1)
+            ->where('roles.0.name', 'Officer')
+        );
+    }
+
+    #[Test]
+    public function index_excludes_hidden_roles(): void
+    {
+        $visibleRole = DiscordRole::firstOrCreate(
+            ['id' => '829021769448816691'],
+            ['name' => 'Officer', 'position' => 6, 'is_visible' => true]
+        );
+        $hiddenRole = DiscordRole::firstOrCreate(
+            ['id' => '829021769448816692'],
+            ['name' => 'HiddenRole', 'position' => 1, 'is_visible' => false]
+        );
+        $user = User::factory()->create();
+        $user->discordRoles()->attach([$visibleRole->id, $hiddenRole->id]);
+
+        $response = $this->actingAs($user)->get(route('account.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('roles', 1)
+            ->where('roles.0.name', 'Officer')
+        );
+    }
+
+    #[Test]
+    public function index_returns_planned_absences_for_user(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+
+        PlannedAbsence::factory()->withCharacter()->create(['user_id' => $user->id]);
+        PlannedAbsence::factory()->withCharacter()->create(['user_id' => $other->id]);
+
+        $response = $this->actingAs($user)->get(route('account.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Account/Index')
+            ->has('planned_absences.data', 1)
+        );
+    }
+
+    #[Test]
+    public function index_planned_absences_include_character(): void
+    {
+        $character = Character::factory()->main()->create(['name' => 'Aragorn']);
+        $user = User::factory()->create();
+        PlannedAbsence::factory()->create([
+            'user_id' => $user->id,
+            'character_id' => $character->id,
+            'start_date' => '2026-04-01',
+            'reason' => PlannedAbsenceReason::Holiday,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('account.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Account/Index')
+            ->has('planned_absences.data', 1)
+            ->has('planned_absences.data.0', fn (Assert $absence) => $absence
+                ->has('id')
+                ->has('character')
+                ->where('character.name', 'Aragorn')
+                ->has('start_date')
+                ->has('end_date')
+                ->has('reason', fn (Assert $reason) => $reason->hasAll(['key', 'label', 'description', 'icon']))
+                ->has('notes')
+                ->has('created_at')
+                ->has('updated_at')
+                ->has('deleted_at')
+                ->has('meta')
+                ->missing('permissions')
+            )
+            ->has('planned_absences.permissions', fn (Assert $permissions) => $permissions->hasAll(['edit', 'delete']))
+        );
+    }
+
+    #[Test]
+    public function index_marks_only_the_absences_the_user_can_delete(): void
+    {
+        $this->freezeTime();
+        $user = User::factory()->create();
+        $officer = User::factory()->create();
+        $upcoming = PlannedAbsence::factory()->withCharacter()->create(['user_id' => $user->id, 'created_by' => $user->id, 'start_date' => today()->addWeek()]);
+        PlannedAbsence::factory()->withCharacter()->create(['user_id' => $user->id, 'created_by' => $user->id, 'start_date' => today()->subDay()]);
+        PlannedAbsence::factory()->withCharacter()->create(['user_id' => $user->id, 'created_by' => $officer->id, 'start_date' => today()->addWeek()]);
+
+        $this->actingAs($user)
+            ->get(route('account.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('planned_absences.permissions.delete', fn ($flags) => collect($flags)->count() === 3 && collect($flags)->filter()->keys()->all() === [$upcoming->id])
+            );
+    }
+
+    #[Test]
+    public function index_marks_only_the_absences_the_user_can_edit(): void
+    {
+        $this->freezeTime();
+        $user = User::factory()->create();
+        $officer = User::factory()->create();
+        $upcoming = PlannedAbsence::factory()->withCharacter()->create(['user_id' => $user->id, 'created_by' => $user->id, 'start_date' => today()->addWeek()]);
+        PlannedAbsence::factory()->withCharacter()->create(['user_id' => $user->id, 'created_by' => $user->id, 'start_date' => today()->subDay()]);
+        PlannedAbsence::factory()->withCharacter()->create(['user_id' => $user->id, 'created_by' => $officer->id, 'start_date' => today()->addWeek()]);
+
+        $this->actingAs($user)
+            ->get(route('account.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('planned_absences.permissions.edit', fn ($flags) => collect($flags)->count() === 3 && collect($flags)->filter()->keys()->all() === [$upcoming->id])
+            );
+    }
+}

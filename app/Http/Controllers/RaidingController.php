@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\EventResource;
+use App\Actions\Events\ListUpcomingRaidingEvents;
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Actions\Reports\ListRecentReports;
 use App\Models\Event;
-use App\Models\Report;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -28,31 +28,16 @@ class RaidingController extends Controller
     }
 
     /**
-     * Display the main raiding dashboard, showing upcoming events and recent reports.
+     * Display the raiding hub: the current game version's events in the coming week
+     * and its five most recent reports.
      */
     public function index(Request $request): Response
     {
+        $gameVersion = ResolveCurrentGameVersion::run();
+
         return Inertia::render('Raiding/Index', [
-            'upcomingEvents' => Inertia::defer(function () use ($request) {
-                return Cache::tags('raiding', 'events')->remember('events:upcoming', now()->addMinutes(10), function () use ($request) {
-                    return EventResource::collectionForMembers(
-                        Event::live()->where('end_time', '>=', now()->subHours(2))
-                            ->where('end_time', '<=', now()->addWeek()->endOfDay())
-                            ->orderBy('start_time')
-                            ->get()
-                    )->map->resolve($request)->all();
-                });
-            }),
-            'reports' => Inertia::defer(function () use ($request) {
-                return Cache::tags('raiding', 'reports')->remember('reports:recent:10', now()->addMinutes(10), function () use ($request) {
-                    return Report::withCount('linkedReports')
-                        ->orderBy('start_time', 'desc')
-                        ->take(10)
-                        ->get()
-                        ->toResourceCollection()
-                        ->resolve($request);
-                });
-            }),
+            'upcomingEvents' => Inertia::defer(fn (): array => ListUpcomingRaidingEvents::run($gameVersion, $request)),
+            'reports' => Inertia::defer(fn (): array => ListRecentReports::run($gameVersion, $request)),
         ]);
     }
 }

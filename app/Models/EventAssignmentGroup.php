@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\FlushesRaidingCacheOnSave;
+use App\Events\RaidingDataChanged;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -22,7 +22,7 @@ use Spatie\EloquentSortable\SortableTrait;
 #[Hidden(['event_id', 'created_at', 'updated_at'])]
 class EventAssignmentGroup extends Model implements Sortable
 {
-    use BroadcastsEvents, FlushesRaidingCacheOnSave, HasFactory, SortableTrait;
+    use BroadcastsEvents, HasFactory, SortableTrait;
 
     /**
      * The model's default values for attributes.
@@ -31,6 +31,17 @@ class EventAssignmentGroup extends Model implements Sortable
      */
     protected $attributes = [
         'name' => 'New group',
+    ];
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'created' => RaidingDataChanged::class,
+        'updated' => RaidingDataChanged::class,
+        'deleted' => RaidingDataChanged::class,
     ];
 
     // ============ Sorting ============

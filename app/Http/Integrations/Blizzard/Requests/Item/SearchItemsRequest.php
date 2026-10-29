@@ -3,7 +3,8 @@
 namespace App\Http\Integrations\Blizzard\Requests\Item;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
-use App\Http\Integrations\Blizzard\Concerns\HasCaching;
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Http\Integrations\Blizzard\Concerns\CachesBlizzardResponses;
 use App\Http\Integrations\Blizzard\Pagination\SearchPaginator;
 use Saloon\CachePlugin\Contracts\Cacheable;
 use Saloon\Enums\Method;
@@ -16,7 +17,7 @@ use Saloon\PaginationPlugin\Paginator;
 
 class SearchItemsRequest extends Request implements Cacheable, HasRequestPagination, Paginatable
 {
-    use HasCaching;
+    use CachesBlizzardResponses;
 
     protected Method $method = Method::GET;
 
@@ -27,6 +28,7 @@ class SearchItemsRequest extends Request implements Cacheable, HasRequestPaginat
         protected ?string $orderby = null,
         protected ?int $page = null,
         protected ?int $pageSize = null,
+        protected ?BlizzardNamespace $namespace = null,
     ) {}
 
     public function resolveEndpoint(): string
@@ -43,7 +45,8 @@ class SearchItemsRequest extends Request implements Cacheable, HasRequestPaginat
 
         $pendingRequest->headers()->add(
             'Battlenet-Namespace',
-            $connector->namespace('static'),
+            ($this->namespace ?? BlizzardNamespace::default())
+                ->forStaticRequests($connector->getRegion()),
         );
     }
 

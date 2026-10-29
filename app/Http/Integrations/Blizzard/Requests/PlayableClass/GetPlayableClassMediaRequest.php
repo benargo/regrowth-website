@@ -4,7 +4,8 @@ namespace App\Http\Integrations\Blizzard\Requests\PlayableClass;
 
 use App\Http\Integrations\Blizzard\Attributes\EagerlyMirrorsAssets;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
-use App\Http\Integrations\Blizzard\Concerns\HasCaching;
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Http\Integrations\Blizzard\Concerns\CachesBlizzardResponses;
 use App\Http\Integrations\Blizzard\Responses\GetPlayableClassMediaResponse;
 use Saloon\CachePlugin\Contracts\Cacheable;
 use Saloon\Enums\Method;
@@ -14,7 +15,7 @@ use Saloon\Http\Request;
 #[EagerlyMirrorsAssets]
 class GetPlayableClassMediaRequest extends Request implements Cacheable
 {
-    use HasCaching;
+    use CachesBlizzardResponses;
 
     protected ?string $response = GetPlayableClassMediaResponse::class;
 
@@ -22,6 +23,7 @@ class GetPlayableClassMediaRequest extends Request implements Cacheable
 
     public function __construct(
         protected int $playableClassId,
+        protected ?BlizzardNamespace $namespace = null,
     ) {}
 
     public function resolveEndpoint(): string
@@ -36,7 +38,8 @@ class GetPlayableClassMediaRequest extends Request implements Cacheable
 
         $pendingRequest->headers()->add(
             'Battlenet-Namespace',
-            $connector->namespace('static'),
+            ($this->namespace ?? BlizzardNamespace::default())
+                ->forStaticRequests($connector->getRegion()),
         );
     }
 

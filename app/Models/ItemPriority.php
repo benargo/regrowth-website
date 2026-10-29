@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
-use App\Events\ItemPriorityDeleted;
-use App\Events\ItemPrioritySaved;
+use App\Observers\ItemObserver;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
+#[ObservedBy(ItemObserver::class)]
 #[Table(
     name: 'pivot_items_priorities',
     key: 'id',
@@ -21,16 +22,6 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 class ItemPriority extends Pivot
 {
     use HasFactory;
-
-    /**
-     * The event map for the model.
-     *
-     * @var array<string, string>
-     */
-    protected $dispatchesEvents = [
-        'saved' => ItemPrioritySaved::class,
-        'deleted' => ItemPriorityDeleted::class,
-    ];
 
     /**
      * Get the item that this priority belongs to.

@@ -1,0 +1,102 @@
+<?php
+
+namespace Tests\Unit\Http\Resources\WarcraftLogs;
+
+use App\Http\Resources\WarcraftLogs\GuildTagResource;
+use App\Models\WarcraftLogs\Guild;
+use App\Models\WarcraftLogs\GuildTag;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
+
+#[Group('raiding')]
+class GuildTagResourceTest extends TestCase
+{
+    use RefreshDatabase;
+
+    #[Test]
+    public function it_returns_all_expected_keys(): void
+    {
+        $guildTag = GuildTag::factory()->create();
+
+        $array = (new GuildTagResource($guildTag))->resolve(new Request);
+
+        $this->assertArrayHasKey('id', $array);
+        $this->assertArrayHasKey('name', $array);
+        $this->assertArrayHasKey('count_attendance', $array);
+        $this->assertArrayHasKey('guild_id', $array);
+    }
+
+    #[Test]
+    public function it_returns_correct_id(): void
+    {
+        $guildTag = GuildTag::factory()->create();
+
+        $array = (new GuildTagResource($guildTag))->resolve(new Request);
+
+        $this->assertSame($guildTag->id, $array['id']);
+    }
+
+    #[Test]
+    public function it_returns_correct_name(): void
+    {
+        $guildTag = GuildTag::factory()->create(['name' => 'Fury']);
+
+        $array = (new GuildTagResource($guildTag))->resolve(new Request);
+
+        $this->assertSame('Fury', $array['name']);
+    }
+
+    #[Test]
+    public function it_returns_true_when_counting_attendance(): void
+    {
+        $guildTag = GuildTag::factory()->countsAttendance()->create();
+
+        $array = (new GuildTagResource($guildTag))->resolve(new Request);
+
+        $this->assertTrue($array['count_attendance']);
+    }
+
+    #[Test]
+    public function it_returns_false_when_not_counting_attendance(): void
+    {
+        $guildTag = GuildTag::factory()->doesNotCountAttendance()->create();
+
+        $array = (new GuildTagResource($guildTag))->resolve(new Request);
+
+        $this->assertFalse($array['count_attendance']);
+    }
+
+    #[Test]
+    public function it_returns_the_guild_id(): void
+    {
+        $guild = Guild::factory()->create();
+        $guildTag = GuildTag::factory()->forGuild($guild)->create();
+
+        $array = (new GuildTagResource($guildTag))->resolve(new Request);
+
+        $this->assertSame($guild->id, $array['guild_id']);
+    }
+
+    #[Test]
+    public function it_returns_a_null_guild_id_when_the_tag_has_no_guild(): void
+    {
+        $guildTag = GuildTag::factory()->create();
+
+        $array = (new GuildTagResource($guildTag))->resolve(new Request);
+
+        $this->assertNull($array['guild_id']);
+    }
+
+    #[Test]
+    public function it_does_not_expose_extra_keys(): void
+    {
+        $guildTag = GuildTag::factory()->create();
+
+        $array = (new GuildTagResource($guildTag))->resolve(new Request);
+
+        $this->assertSame(['id', 'name', 'count_attendance', 'guild_id'], array_keys($array));
+    }
+}

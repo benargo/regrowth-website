@@ -72,10 +72,17 @@ class AttachRenderToCharacter implements HasCharacterMedia, ShouldQueue
             return;
         }
 
+        $gameVersion = $character->gameVersion;
+
+        if ($gameVersion?->realm_slug === null) {
+            return;
+        }
+
         try {
             $assets = $blizzardConnector->send(new GetCharacterMediaRequest(
-                $blizzardConnector->defaultRealmSlug(),
+                $gameVersion->realm_slug,
                 $character->name,
+                $gameVersion->blizzard_namespace,
             ))->dto()->assets;
 
             $render = collect($assets)->first(fn ($asset): bool => $asset->key === 'main-raw');

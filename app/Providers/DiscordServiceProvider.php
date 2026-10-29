@@ -2,16 +2,14 @@
 
 namespace App\Providers;
 
-use App\Jobs\SyncDiscordRoles;
-use App\Jobs\SyncDiscordUser;
-use App\Models\User;
-use App\Services\Discord\Discord;
-use App\Services\Discord\DiscordClient;
+use App\Http\Integrations\Discord\DiscordCdnConnector;
+use App\Http\Integrations\Discord\DiscordConnector;
+use App\Http\Integrations\Discord\RateLimitCache;
+use App\Http\Integrations\ServedFromCache;
 use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Queue\Events\JobProcessed;
-use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\ServiceProvider;
+use RuntimeException;
 use SocialiteProviders\Discord\Provider as DiscordProvider;
 use SocialiteProviders\Manager\SocialiteWasCalled;
 
@@ -22,22 +20,31 @@ class DiscordServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        /** API client */
-        $this->app->singleton(DiscordClient::class, function (Application $app) {
-            return new DiscordClient(
-                config('services.discord.token'),
-                'DiscordBot ('.config('app.url').', 1.0)',
+        /**
+         * Saloon connector for the Discord API. Throws when the bot token or server id is not configured.
+         */
+        $this->app->singleton(DiscordConnector::class, function (Application $app): DiscordConnector {
+            $token = (string) config('services.discord.token');
+
+            if ($token === '') {
+                throw new RuntimeException('Discord is not configured: services.discord.token is empty.');
+            }
+
+            if ((string) config('services.discord.server_id') === '') {
+                throw new RuntimeException('Discord is not configured: services.discord.server_id is empty.');
+            }
+
+            $appUrl = config('app.url');
+
+            return new DiscordConnector(
+                $token,
+                "DiscordBot ({$appUrl}, 1.0)",
+                new RateLimitCache(Cache::store()->tags(['discord', 'discord-rate-limit'])),
+                $app->make(ServedFromCache::class),
             );
         });
 
-        /** Main Discord service */
-        $this->app->singleton(Discord::class, function (Application $app) {
-            return new Discord(
-                $app->make(DiscordClient::class),
-                (string) config('services.discord.server_id'),
-                (array) config('services.discord.channels', []),
-            );
-        });
+        $this->app->singleton(DiscordCdnConnector::class);
     }
 
     /**
@@ -49,13 +56,6 @@ class DiscordServiceProvider extends ServiceProvider
         $this->app['events']->listen(SocialiteWasCalled::class, function (SocialiteWasCalled $event) {
             $event->extendSocialite('discord', DiscordProvider::class);
         });
-
-        Queue::after(function (JobProcessed $event) {
-            if ($event->job->resolveName() === SyncDiscordRoles::class) {
-                $jobs = User::all()->map(fn (User $user) => new SyncDiscordUser($user->id));
-                Bus::batch($jobs)->dispatch();
-            }
-        });
     }
 
     /**
@@ -66,8 +66,8 @@ class DiscordServiceProvider extends ServiceProvider
     public function provides(): array
     {
         return [
-            DiscordClient::class,
-            Discord::class,
+            DiscordConnector::class,
+            DiscordCdnConnector::class,
         ];
     }
 }

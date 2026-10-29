@@ -1,23 +1,41 @@
 ---
 paths:
-  - 'app/**/*.php'
+    - "app/**/*.php"
 ---
 
 # App
 
-## Use UPPERCASE case names in enums
-Backed enum cases should use UPPERCASE names (e.g. `case RETAIL = 'retail';`), not lowercase or StudlyCase. This applies to the case identifier only — the backing string value's casing is unaffected and should match whatever the external system/API expects.
+## Use PascalCase case names in enums
 
-## Prefer constructor/method injection over app()/resolve() service location
-Acquire dependencies via constructor property promotion (or method-injected handle() parameters for jobs) everywhere DI is possible. Reach for app(Class::class) only where constructor injection is structurally unavailable — Eloquent Model accessors and Job failed()/other non-handle() callbacks — and nowhere else.
+Name enum cases in PascalCase (e.g. `case GuildRanks = 'guild_ranks';`), not UPPERCASE or snake_case. The backing value keeps whatever format the external system or storage expects. Some existing enums still use UPPERCASE cases; leave them alone unless you are doing a coordinated rename of the whole enum and its callers.
+
+## Inject dependencies; use app() only where injection is impossible
+
+Use constructor property promotion for dependencies an object needs throughout its lifetime, and method injection (e.g. a job's `handle()`) for dependencies one container-invoked method needs. Use `app(Class::class)` only where injection is structurally unavailable, such as Eloquent model accessors and job `failed()` callbacks. Never use `resolve()`.
 
 ## Use DB::transaction() closures, not manual begin/commit/rollback
-Wrap multi-write operations in DB::transaction(function () { ... }). Never call DB::beginTransaction()/commit()/rollBack() manually.
 
-## foreach for side effects, collect() pipelines for transforms
-Use foreach for imperative/side-effecting iteration (DB writes, building up state across iterations). Use collect()->map()/filter()/... pipelines for data transformation. Avoid raw array_map/array_filter where either idiom above fits.
+Wrap multi-write operations in `DB::transaction(function () { ... })`. Never call `DB::beginTransaction()`, `commit()` or `rollBack()` by hand.
 
-## Prefer Carbon:: over now() for the current instant
-Use Carbon::now() (not the now() global helper) to get the current instant, for consistency with other Carbon:: static calls used elsewhere (parsing, constructing from other values, e.g. Carbon::parse(), Carbon::yesterday()/tomorrow()).
+## foreach for side effects, collection pipelines for transforms
 
-This is a deliberate forward-looking convention: most existing code still uses now(), but new work should default to Carbon::now().
+Use `foreach` for side-effecting iteration (DB writes, building up state across iterations); a higher-order `$models->each->method()` is fine for a single call on each item of an existing collection. Use `collect()->map()/filter()/...` pipelines to transform data, in preference to raw `array_map`/`array_filter` when the pipeline reads more clearly.
+
+## Start Eloquent queries with a static call, not query()
+
+Start a model query by calling the builder method statically (`Phase::whereHas(...)`, `User::where(...)->first()`). Don't prefix it with `::query()` — Eloquent's `__callStatic()` already forwards the call to a fresh builder, so `query()` is an extra call that adds nothing. Keep `Model::query()` only when you need the bare builder itself, e.g. to return it or pass it on before any constraint is applied.
+
+## Use now() for the current instant
+
+Use the `now()` and `today()` helpers rather than `Carbon::now()`/`Carbon::today()`. Keep `Carbon::` for constructing other instants (`Carbon::parse()`, `Carbon::createFromTimestamp()`).
+
+## Match within game versions; never delete data to reconcile
+Characters and reports only ever match against characters in the same game version; never match a name across the whole `characters` table. A report's version is its stored `game_version_id`, derived from its Warcraft Logs guild and `start_time`. An event's version is its stored `game_version_id`, the single version its raids share. Resolve every external name through `App\Actions\Characters\MatchCharacterName`, one version and one name per call.
+
+Reconciling old rows (pivots, attendance, event links) written under earlier matching rules may reassign or flag them, but must never delete them — this is a red line. A character with a null `game_version_id` is missing its match-up, not wrong: never detach, delete or overwrite its rows on that basis.
+
+## Call Actions with ::run(), not dependency injection
+Never inject Laravel Actions (`AsAction`) through constructor or method DI. For a single call, use `ActionClassName::run(...)`. When the same action runs multiple times in one scope (e.g. a loop or collection pipeline), resolve it once with `$action = ActionClassName::make()` and call `$action->handle(...)` each time. This overrides the general "inject dependencies" rule for Action classes only.
+
+## Don't reference public constants on other classes
+A class must not reference public constants defined on another concrete class (e.g. `OtherClass::SOME_CONSTANT`). When classes need to share a constant, define it on a contract (interface in `app/Contracts/**`) and have each class that needs it implement that contract, then reference it via `self::`/`static::`.

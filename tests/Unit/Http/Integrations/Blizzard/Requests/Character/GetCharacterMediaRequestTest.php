@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Http\Integrations\Blizzard\Requests\Character;
 
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Data\Characters\CharacterMediaData;
 use App\Http\Integrations\Blizzard\Exceptions\CharacterNotFoundException;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterMediaRequest;
@@ -64,6 +65,14 @@ class GetCharacterMediaRequestTest extends BlizzardTestCase
     }
 
     #[Test]
+    public function it_keeps_diacritics_in_the_character_name(): void
+    {
+        $request = new GetCharacterMediaRequest('Thunderstrike', 'Ízepo');
+
+        $this->assertSame('/profile/wow/character/thunderstrike/ízepo/character-media', $request->resolveEndpoint());
+    }
+
+    #[Test]
     public function it_accepts_already_slugged_inputs_unchanged(): void
     {
         $request = new GetCharacterMediaRequest('thunderstrike', 'wastedhippy');
@@ -80,7 +89,7 @@ class GetCharacterMediaRequestTest extends BlizzardTestCase
         ]);
 
         $connector = $this->makeConnector();
-        $expected = $connector->namespace('profile');
+        $expected = BlizzardNamespace::default()->forProfileRequests($connector->getRegion());
 
         $connector->send(new GetCharacterMediaRequest('thunderstrike', 'wastedhippy'));
 

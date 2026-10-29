@@ -2,13 +2,15 @@
 
 namespace Tests\Unit\Providers;
 
+use App\Http\Integrations\ServedFromCache;
+use App\Jobs\FetchGuildRoster;
 use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\Report;
 use App\Models\User;
-use App\Services\LootPriorities\HighestPriorityStats;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
@@ -40,19 +42,10 @@ class AppServiceProviderTest extends TestCase
     // ==================== container bindings ====================
 
     #[Test]
-    public function it_registers_the_highest_priority_stats_service(): void
+    public function it_binds_served_from_cache_as_a_singleton(): void
     {
-        $this->assertTrue($this->app->bound(HighestPriorityStats::class));
-        $this->assertInstanceOf(HighestPriorityStats::class, $this->app->make(HighestPriorityStats::class));
-    }
-
-    #[Test]
-    public function it_registers_highest_priority_stats_as_a_singleton(): void
-    {
-        $first = $this->app->make(HighestPriorityStats::class);
-        $second = $this->app->make(HighestPriorityStats::class);
-
-        $this->assertSame($first, $second);
+        $this->assertTrue($this->app->isShared(ServedFromCache::class));
+        $this->assertSame($this->app->make(ServedFromCache::class), $this->app->make(ServedFromCache::class));
     }
 
     // ==================== authorization gates ====================
@@ -86,5 +79,18 @@ class AppServiceProviderTest extends TestCase
         $user = User::factory()->member()->create();
 
         $this->assertFalse(Gate::forUser($user)->allows('view-priorities-page'));
+    }
+
+    // ==================== rate limiting ====================
+
+    #[Test]
+    public function it_rate_limits_fetch_guild_roster_per_game_version(): void
+    {
+        $limiter = RateLimiter::limiter('fetch-guild-roster-job');
+
+        $this->assertNotSame(
+            $limiter(new FetchGuildRoster(1))->key,
+            $limiter(new FetchGuildRoster(2))->key,
+        );
     }
 }

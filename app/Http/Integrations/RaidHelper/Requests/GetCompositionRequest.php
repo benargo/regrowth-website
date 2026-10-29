@@ -2,7 +2,7 @@
 
 namespace App\Http\Integrations\RaidHelper\Requests;
 
-use App\Http\Integrations\RaidHelper\Concerns\HasCaching;
+use App\Http\Integrations\RaidHelper\Concerns\CachesRaidHelperResponses;
 use App\Http\Integrations\RaidHelper\Data\Compositions\CompositionData;
 use Saloon\CachePlugin\Contracts\Cacheable;
 use Saloon\Enums\Method;
@@ -11,7 +11,7 @@ use Saloon\Http\Response;
 
 class GetCompositionRequest extends Request implements Cacheable
 {
-    use HasCaching;
+    use CachesRaidHelperResponses;
 
     protected Method $method = Method::GET;
 

@@ -12,8 +12,9 @@ use Spatie\MediaLibrary\Support\PathGenerator\PathGenerator;
  *
  *   blizzard-cdn/characters/{realmSlug}/{size}/{file_name}
  *
- * The realm slug is injected via the constructor so it can be resolved from config
- * by the service container, keeping the generator testable with any slug.
+ * getPath() returns the directory only; Media Library appends the file name. The
+ * realm slug is injected via the constructor and resolved from config by the
+ * service container.
  */
 class CharacterMediaPathGenerator implements HasCharacterMedia, PathGenerator
 {

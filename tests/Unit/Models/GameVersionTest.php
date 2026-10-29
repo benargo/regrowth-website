@@ -1,0 +1,677 @@
+<?php
+
+namespace Tests\Unit\Models;
+
+use App\Casts\AsBinaryColor;
+use App\Casts\AsSlug;
+use App\Contracts\Models\DatasetModel;
+use App\Enums\Faction;
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Models\Character;
+use App\Models\GameVersion;
+use App\Models\GuildRank;
+use App\Models\Item;
+use App\Models\Phase;
+use App\Models\PlayableClass;
+use App\Models\PlayableRace;
+use App\Models\Raid;
+use App\Models\Report;
+use App\Models\User;
+use App\Models\WarcraftLogs\Guild;
+use App\Policies\DatasetPolicy;
+use Illuminate\Database\Eloquent\Attributes\UsePolicy;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\MediaCollections\Exceptions\FileUnacceptableForCollection;
+use Tests\Concerns\BuildsAttendanceFixtures;
+use Tests\Support\ModelTestCase;
+
+#[Group('platform')]
+class GameVersionTest extends ModelTestCase
+{
+    use BuildsAttendanceFixtures;
+
+    protected function modelClass(): string
+    {
+        return GameVersion::class;
+    }
+
+    #[Test]
+    public function it_uses_game_versions_table(): void
+    {
+        $model = new GameVersion;
+
+        $this->assertSame('game_versions', $model->getTable());
+    }
+
+    #[Test]
+    public function it_uses_auto_incrementing_id(): void
+    {
+        $model = new GameVersion;
+
+        $this->assertSame('id', $model->getKeyName());
+        $this->assertTrue($model->getIncrementing());
+    }
+
+    #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new GameVersion;
+
+        $this->assertFillableAttribute($model, [
+            'title',
+            'slug',
+            'realm',
+            'guild_name',
+            'uses_surnames',
+            'faction',
+            'release_date',
+            'color',
+            'blizzard_namespace',
+            'warcraft_logs_guild_id',
+        ]);
+    }
+
+    #[Test]
+    public function it_has_expected_casts(): void
+    {
+        $model = new GameVersion;
+
+        $this->assertCasts($model, [
+            'slug' => AsSlug::class,
+            'faction' => Faction::class,
+            'release_date' => 'datetime',
+            'uses_surnames' => 'boolean',
+            'color' => AsBinaryColor::class,
+            'blizzard_namespace' => BlizzardNamespace::class,
+        ]);
+
+        $this->assertArrayNotHasKey('warcraftlogs_guild', (new GameVersion)->getCasts());
+        $this->assertArrayNotHasKey('warcraftlogs_namespace', (new GameVersion)->getCasts());
+    }
+
+    #[Test]
+    public function it_is_a_dataset_model_governed_by_the_dataset_policy(): void
+    {
+        $this->assertInstanceOf(DatasetModel::class, new GameVersion);
+
+        $attributes = (new \ReflectionClass(GameVersion::class))->getAttributes(UsePolicy::class);
+
+        $this->assertNotEmpty($attributes);
+        $this->assertSame(DatasetPolicy::class, $attributes[0]->newInstance()->class);
+    }
+
+    #[Test]
+    public function factory_creates_valid_model(): void
+    {
+        $gameVersion = $this->create();
+
+        $this->assertNotEmpty($gameVersion->title);
+        $this->assertModelExists($gameVersion);
+    }
+
+    #[Test]
+    #[Group('edge-case')]
+    public function it_allows_nullable_fields_to_be_null(): void
+    {
+        $gameVersion = $this->create([
+            'realm' => null,
+            'faction' => null,
+            'blizzard_namespace' => null,
+            'warcraft_logs_guild_id' => null,
+        ])->fresh();
+
+        $this->assertNull($gameVersion->realm);
+        $this->assertNull($gameVersion->faction);
+        $this->assertNull($gameVersion->blizzard_namespace);
+        $this->assertNull($gameVersion->warcraft_logs_guild_id);
+    }
+
+    // ==================== casts ====================
+
+    #[Test]
+    public function slug_is_stored_as_a_slug(): void
+    {
+        $gameVersion = $this->create(['slug' => 'TBC Anniversary']);
+
+        $this->assertSame('tbc-anniversary', $gameVersion->fresh()->slug);
+    }
+
+    #[Test]
+    public function faction_is_cast_to_faction_enum(): void
+    {
+        $gameVersion = $this->create(['faction' => Faction::HORDE]);
+
+        $this->assertSame(Faction::HORDE, $gameVersion->fresh()->faction);
+    }
+
+    #[Test]
+    public function blizzard_namespace_is_cast_to_blizzard_namespace_enum(): void
+    {
+        $gameVersion = $this->create(['blizzard_namespace' => BlizzardNamespace::CLASSIC]);
+
+        $this->assertSame(BlizzardNamespace::CLASSIC, $gameVersion->fresh()->blizzard_namespace);
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function blizzard_namespace_throws_for_a_value_outside_the_enum(): void
+    {
+        $gameVersion = $this->create();
+
+        DB::table('game_versions')
+            ->where('id', $gameVersion->id)
+            ->update(['blizzard_namespace' => 'some-future-namespace']);
+
+        $this->expectException(\ValueError::class);
+
+        $gameVersion->fresh()->blizzard_namespace;
+    }
+
+    #[Test]
+    public function color_is_stored_from_a_hex_string_and_read_back_as_hex(): void
+    {
+        $gameVersion = $this->create(['color' => '#8B7ED0']);
+
+        $this->assertSame('8b7ed0', $gameVersion->fresh()->color);
+    }
+
+    #[Test]
+    public function color_is_stored_from_an_integer_and_read_back_as_hex(): void
+    {
+        $gameVersion = $this->create(['color' => 0x4AE832]);
+
+        $this->assertSame('4ae832', $gameVersion->fresh()->color);
+    }
+
+    #[Test]
+    public function color_stays_null_when_not_set(): void
+    {
+        $gameVersion = $this->create(['color' => null]);
+
+        $this->assertNull($gameVersion->fresh()->color);
+    }
+
+    #[Test]
+    public function release_date_round_trips_without_a_timezone_shift(): void
+    {
+        $releaseDate = Carbon::create(2026, 2, 6, 0, 0, 0, config('app.timezone'));
+
+        $gameVersion = $this->create(['release_date' => $releaseDate])->fresh();
+
+        $this->assertInstanceOf(Carbon::class, $gameVersion->release_date);
+        $this->assertTrue($releaseDate->eq($gameVersion->release_date));
+    }
+
+    // ==================== accessors ====================
+
+    #[Test]
+    public function it_computes_guild_slug_from_guild_name(): void
+    {
+        $gameVersion = $this->make(['guild_name' => 'the Old Guard']);
+
+        $this->assertSame('the-old-guard', $gameVersion->guild_slug);
+    }
+
+    #[Test]
+    public function it_keeps_diacritics_in_the_guild_slug(): void
+    {
+        $gameVersion = $this->make(['guild_name' => 'Ténèbres Éternelles']);
+
+        $this->assertSame('ténèbres-éternelles', $gameVersion->guild_slug);
+    }
+
+    #[Test]
+    public function it_computes_realm_slug_from_realm(): void
+    {
+        $gameVersion = $this->make(['realm' => 'Gehennas']);
+
+        $this->assertSame('gehennas', $gameVersion->realm_slug);
+    }
+
+    #[Test]
+    #[Group('edge-case')]
+    public function it_returns_a_null_realm_slug_when_realm_is_null(): void
+    {
+        $gameVersion = $this->make(['realm' => null]);
+
+        $this->assertNull($gameVersion->realm_slug);
+    }
+
+    // ==================== relationships ====================
+
+    #[Test]
+    public function it_belongs_to_a_warcraft_logs_guild(): void
+    {
+        $guild = Guild::factory()->create();
+        $gameVersion = $this->factory()->forGuild($guild)->create();
+
+        $this->assertRelation($gameVersion, 'warcraftLogsGuild', BelongsTo::class);
+        $this->assertTrue($gameVersion->warcraftLogsGuild->is($guild));
+    }
+
+    #[Test]
+    public function it_has_no_warcraft_logs_guild_by_default(): void
+    {
+        $this->assertNull($this->create()->warcraftLogsGuild);
+    }
+
+    /**
+     * @param  class-string<Model>  $relatedModel
+     */
+    #[Test]
+    #[DataProvider('usageRelations')]
+    public function it_has_many_usage_relations(string $relation, string $relatedModel): void
+    {
+        $gameVersion = $this->create();
+        $related = $relatedModel::factory()->for($gameVersion)->create();
+
+        $this->assertRelation($gameVersion, $relation, HasMany::class);
+        $this->assertTrue($gameVersion->{$relation}->contains($related));
+    }
+
+    #[Test]
+    public function it_has_many_raids_through_phases(): void
+    {
+        $gameVersion = $this->create();
+        $phase = Phase::factory()->for($gameVersion)->create();
+        $raid = Raid::factory()->for($phase)->create();
+
+        $this->assertRelation($gameVersion, 'raids', HasManyThrough::class);
+        $this->assertTrue($gameVersion->raids->contains($raid));
+    }
+
+    #[Test]
+    public function it_has_many_reports(): void
+    {
+        $gameVersion = $this->factory()->forGuild()->create(['release_date' => '2024-01-01']);
+        $report = Report::factory()->forGuild($gameVersion->warcraftLogsGuild)->create(['start_time' => '2025-01-01 20:00:00']);
+
+        $this->assertRelation($gameVersion, 'reports', HasMany::class);
+        $this->assertTrue($gameVersion->reports->contains($report));
+    }
+
+    #[Test]
+    public function it_belongs_to_many_playable_races(): void
+    {
+        $gameVersion = $this->create();
+        $race = PlayableRace::factory()->create();
+
+        $gameVersion->playableRaces()->attach($race);
+
+        $this->assertRelation($gameVersion, 'playableRaces', BelongsToMany::class);
+        $this->assertTrue($gameVersion->playableRaces->contains($race));
+        $this->assertTrue($race->gameVersions->contains($gameVersion));
+    }
+
+    #[Test]
+    public function it_belongs_to_many_playable_classes(): void
+    {
+        $gameVersion = $this->create();
+        $class = PlayableClass::factory()->create();
+
+        $gameVersion->playableClasses()->attach($class);
+
+        $this->assertRelation($gameVersion, 'playableClasses', BelongsToMany::class);
+        $this->assertTrue($gameVersion->playableClasses->contains($class));
+        $this->assertTrue($class->gameVersions->contains($gameVersion));
+    }
+
+    // ==================== isInUse ====================
+
+    #[Test]
+    public function usage_relations_cover_every_has_many_relation(): void
+    {
+        $this->assertEqualsCanonicalizing(
+            array_keys(self::usageRelations()),
+            (new GameVersion)->usageRelations(),
+        );
+    }
+
+    #[Test]
+    public function it_is_not_in_use_without_related_records(): void
+    {
+        $this->assertFalse($this->create()->isInUse());
+    }
+
+    /**
+     * @param  class-string<Model>  $relatedModel
+     */
+    #[Test]
+    #[DataProvider('usageRelations')]
+    public function it_is_in_use_when_a_related_record_references_it(string $relation, string $relatedModel): void
+    {
+        $gameVersion = $this->create();
+        $relatedModel::factory()->for($gameVersion)->create();
+
+        $this->assertTrue($gameVersion->isInUse(), "Expected a related [{$relation}] record to mark the game version as in use.");
+    }
+
+    #[Test]
+    public function it_is_not_in_use_when_only_playable_races_and_classes_are_attached(): void
+    {
+        $gameVersion = $this->create();
+        $gameVersion->playableRaces()->attach(PlayableRace::factory()->create());
+        $gameVersion->playableClasses()->attach(PlayableClass::factory()->create());
+
+        $this->assertFalse($gameVersion->isInUse());
+    }
+
+    #[Test]
+    public function it_is_not_in_use_when_related_records_belong_to_another_game_version(): void
+    {
+        $gameVersion = $this->create();
+        Phase::factory()->for(GameVersion::factory())->create();
+
+        $this->assertFalse($gameVersion->isInUse());
+    }
+
+    #[Test]
+    public function with_usage_counts_loads_a_count_for_every_usage_relation(): void
+    {
+        $gameVersion = $this->create();
+        Phase::factory()->for($gameVersion)->count(2)->create();
+
+        $counted = GameVersion::query()->withUsageCounts()->findOrFail($gameVersion->id);
+
+        $this->assertSame(2, $counted->phases_count);
+        $this->assertSame(0, $counted->items_count);
+        $this->assertSame(0, $counted->characters_count);
+        $this->assertSame(0, $counted->guild_ranks_count);
+    }
+
+    // ==================== isBeingEdited ====================
+
+    #[Test]
+    public function it_is_not_being_edited_when_nobody_holds_the_edit_lock(): void
+    {
+        $this->assertFalse($this->create()->isBeingEdited());
+    }
+
+    #[Test]
+    public function it_is_being_edited_while_an_officer_holds_the_edit_lock(): void
+    {
+        $gameVersion = $this->create();
+        $gameVersion->acquireEditLock(User::factory()->officer()->create());
+
+        $this->assertTrue($gameVersion->isBeingEdited());
+    }
+
+    #[Test]
+    public function it_is_no_longer_being_edited_once_the_edit_lock_expires(): void
+    {
+        $gameVersion = $this->create();
+        $gameVersion->acquireEditLock(User::factory()->officer()->create());
+
+        $this->travel(GameVersion::EDIT_LOCK_SECONDS + 1)->seconds();
+
+        $this->assertFalse($gameVersion->isBeingEdited());
+    }
+
+    #[Test]
+    public function it_keys_the_edit_lock_cache_entries_under_the_game_versions_prefix(): void
+    {
+        $gameVersion = $this->create();
+        $officer = User::factory()->officer()->create();
+
+        $gameVersion->acquireEditLock($officer);
+
+        $this->assertSame($officer->id, Cache::get("game-versions.{$gameVersion->id}.editor"));
+        $this->assertTrue(Cache::lock("game-versions.{$gameVersion->id}.editing")->isLocked());
+    }
+
+    // ==================== released scope ====================
+
+    #[Test]
+    public function released_includes_past_versions_and_excludes_future_ones(): void
+    {
+        $past = $this->create(['release_date' => now()->subDay()]);
+        $this->create(['release_date' => now()->addDay()]);
+
+        $this->assertEquals([$past->id], GameVersion::released()->pluck('id')->all());
+    }
+
+    #[Test]
+    public function released_filters_by_the_given_date(): void
+    {
+        $older = $this->create(['release_date' => now()->subYear()]);
+        $this->create(['release_date' => now()->subMonth()]);
+
+        $this->assertEquals([$older->id], GameVersion::released(now()->subMonths(6))->pluck('id')->all());
+    }
+
+    // ==================== withCountedAttendance scope ====================
+
+    #[Test]
+    public function with_counted_attendance_lists_versions_newest_release_first(): void
+    {
+        $older = $this->createAttendanceVersion(['release_date' => '2024-01-01']);
+        $newer = $this->createAttendanceVersion(['release_date' => '2024-06-01']);
+        $this->createReport($older, '2025-01-01 20:00');
+        $this->createReport($newer, '2025-01-01 20:00');
+
+        $this->assertSame([$newer->id, $older->id], GameVersion::withCountedAttendance()->get()->modelKeys());
+    }
+
+    #[Test]
+    public function with_counted_attendance_breaks_release_date_ties_by_id(): void
+    {
+        $first = $this->createAttendanceVersion();
+        $second = $this->createAttendanceVersion();
+        $this->createReport($second, '2025-01-01 20:00');
+        $this->createReport($first, '2025-01-01 20:00');
+
+        $this->assertSame([$first->id, $second->id], GameVersion::withCountedAttendance()->get()->modelKeys());
+    }
+
+    #[Test]
+    public function with_counted_attendance_excludes_versions_without_counted_reports(): void
+    {
+        $uncounted = $this->createAttendanceVersion();
+        $this->createReport($uncounted, '2025-01-01 20:00', $this->createTag($uncounted, countsAttendance: false));
+        $this->createAttendanceVersion();
+
+        $this->assertFalse(GameVersion::withCountedAttendance()->exists());
+    }
+
+    // ==================== hasCountedAttendance ====================
+
+    #[Test]
+    public function has_counted_attendance_is_true_with_a_counted_report(): void
+    {
+        $gameVersion = $this->createAttendanceVersion();
+        $this->createReport($gameVersion, '2025-01-01 20:00');
+
+        $this->assertTrue($gameVersion->hasCountedAttendance());
+    }
+
+    #[Test]
+    public function has_counted_attendance_is_false_without_one(): void
+    {
+        $gameVersion = $this->createAttendanceVersion();
+        $this->createReport($gameVersion, '2025-01-01 20:00', $this->createTag($gameVersion, countsAttendance: false));
+
+        $this->assertFalse($gameVersion->hasCountedAttendance());
+    }
+
+    // ==================== current rosters ====================
+
+    #[Test]
+    public function it_owns_its_roster_when_it_is_the_latest_release_sharing_it(): void
+    {
+        $this->createFetchable(['release_date' => now()->subYear()]);
+        $latest = $this->createFetchable(['release_date' => now()->subMonth()]);
+
+        $this->assertTrue($latest->ownsCurrentRoster());
+    }
+
+    #[Test]
+    public function it_does_not_own_a_roster_superseded_by_a_later_release(): void
+    {
+        $older = $this->createFetchable(['release_date' => now()->subYear()]);
+        $this->createFetchable(['release_date' => now()->subMonth()]);
+
+        $this->assertFalse($older->ownsCurrentRoster());
+    }
+
+    #[Test]
+    public function it_owns_its_roster_when_a_later_release_is_another_guild(): void
+    {
+        $older = $this->createFetchable(['release_date' => now()->subYear()]);
+        $this->createFetchable(['release_date' => now()->subMonth(), 'guild_name' => 'Another Guild']);
+
+        $this->assertTrue($older->ownsCurrentRoster());
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    #[DataProvider('unfetchableRosterAttributes')]
+    #[Group('edge-case')]
+    #[Test]
+    public function it_does_not_own_a_roster_it_cannot_fetch(array $attributes): void
+    {
+        $this->assertFalse($this->createFetchable($attributes)->ownsCurrentRoster());
+    }
+
+    #[Test]
+    public function default_roster_is_the_most_recently_released_current_roster(): void
+    {
+        GameVersion::factory()->fetchableRoster()->create(['release_date' => now()->subYear(), 'guild_name' => 'Older Guild']);
+        $latest = GameVersion::factory()->fetchableRoster()->create(['release_date' => now()->subDay(), 'guild_name' => 'Latest Guild']);
+
+        $this->assertTrue($latest->is(GameVersion::defaultRoster()));
+    }
+
+    #[Test]
+    public function default_roster_ignores_unreleased_versions(): void
+    {
+        GameVersion::factory()->fetchableRoster()->create(['release_date' => now()->addMonth()]);
+
+        $this->assertNull(GameVersion::defaultRoster());
+    }
+
+    #[Test]
+    public function default_roster_is_null_when_no_versions_exist(): void
+    {
+        $this->assertNull(GameVersion::defaultRoster());
+    }
+
+    // ==================== warcraft logs cache ====================
+
+    #[Test]
+    public function saving_a_version_leaves_the_warcraft_logs_cache_to_its_guild(): void
+    {
+        $guild = Guild::factory()->create();
+        Cache::tags(['warcraftlogs', 'warcraftlogs-api-response'])->put('response_key', 'response', now()->addMinutes(5));
+
+        $gameVersion = GameVersion::factory()->forGuild($guild)->create();
+        $gameVersion->update(['warcraft_logs_guild_id' => null]);
+
+        $this->assertTrue(Cache::tags(['warcraftlogs', 'warcraftlogs-api-response'])->has('response_key'));
+    }
+
+    // ==================== media ====================
+
+    #[Test]
+    public function it_implements_has_media_interface(): void
+    {
+        $this->assertInstanceOf(HasMedia::class, new GameVersion);
+    }
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    #[TestWith([GameVersion::MEDIA_BANNER])]
+    #[TestWith([GameVersion::MEDIA_ICON])]
+    #[TestWith([GameVersion::MEDIA_LOGO])]
+    public function it_registers_a_single_file_image_collection(string $name): void
+    {
+        $collection = (new GameVersion)->getRegisteredMediaCollections()->firstWhere('name', $name);
+
+        $this->assertNotNull($collection);
+        $this->assertTrue($collection->singleFile);
+    }
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function a_new_banner_replaces_the_old_one(): void
+    {
+        Storage::fake('s3');
+        $gameVersion = $this->create();
+
+        $gameVersion->addMedia(UploadedFile::fake()->image('old.png'))->toMediaCollection(GameVersion::MEDIA_BANNER);
+        $gameVersion->addMedia(UploadedFile::fake()->image('new.png'))->toMediaCollection(GameVersion::MEDIA_BANNER);
+
+        $media = $gameVersion->fresh()->getMedia(GameVersion::MEDIA_BANNER);
+        $this->assertCount(1, $media);
+        $this->assertSame('new.png', $media->first()->file_name);
+    }
+
+    #[Group('laravel-media-library')]
+    #[Test]
+    public function it_rejects_a_file_that_is_not_an_image(): void
+    {
+        Storage::fake('s3');
+        $gameVersion = $this->create();
+
+        $this->expectException(FileUnacceptableForCollection::class);
+
+        $gameVersion->addMediaFromString('not an image')
+            ->usingFileName('notes.txt')
+            ->toMediaCollection(GameVersion::MEDIA_LOGO);
+    }
+
+    // ==================== helpers ====================
+
+    /**
+     * @return array<string, array{string, class-string<Model>}>
+     */
+    public static function usageRelations(): array
+    {
+        return [
+            'phases' => ['phases', Phase::class],
+            'items' => ['items', Item::class],
+            'characters' => ['characters', Character::class],
+            'guildRanks' => ['guildRanks', GuildRank::class],
+        ];
+    }
+
+    /**
+     * @return array<string, array{array<string, mixed>}>
+     */
+    public static function unfetchableRosterAttributes(): array
+    {
+        return [
+            'no Blizzard namespace' => [['blizzard_namespace' => null]],
+            'not released yet' => [['release_date' => '2999-01-01']],
+            'no realm' => [['realm' => null]],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     */
+    private function createFetchable(array $overrides = []): GameVersion
+    {
+        return $this->create([
+            'realm' => 'Thunderstrike',
+            'guild_name' => 'Regrowth',
+            'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
+            'release_date' => now()->subMonth(),
+            ...$overrides,
+        ]);
+    }
+}

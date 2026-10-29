@@ -3,13 +3,13 @@
 namespace App\Providers;
 
 use App\Actions\EventBossResolver;
+use App\Http\Integrations\ServedFromCache;
 use App\Http\Resources\PermissionGroupsResource;
+use App\Jobs\FetchGuildRoster;
 use App\Models\User;
-use App\Services\LootPriorities\HighestPriorityStats;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Vite;
@@ -30,9 +30,9 @@ class AppServiceProvider extends ServiceProvider
         });
 
         /**
-         * Loot priorities
+         * Saloon response cache hits
          */
-        $this->app->singleton(HighestPriorityStats::class);
+        $this->app->singleton(ServedFromCache::class);
 
         /**
          * Event boss resolution
@@ -60,18 +60,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('view-attendance', fn (User $user) => $user->isAuthorizedTo('view-attendance'));
         Gate::define('view-officer-dashboard', fn (User $user) => $user->isAuthorizedTo('view-officer-dashboard'));
         Gate::define('view-priorities-page', fn (User $user) => $user->isAuthorizedTo('view-priorities-page'));
-        Gate::define('set-daily-quests', fn (User $user) => $user->isAuthorizedTo('set-daily-quests'));
-        Gate::define('audit-daily-quests', fn (User $user) => $user->isAuthorizedTo('audit-daily-quests'));
 
         /**
          * Rate limiting
          */
-        RateLimiter::for('build-addon-export', function (object $job) {
-            return Limit::perMinutes(10, 1)->by(get_class($job)); // Allow 1 job per 10 minutes for each type of export job
-        });
-
-        RateLimiter::for('icons', function (Request $request) {
-            return Limit::perMinute(120)->by($request->ip());
+        RateLimiter::for('fetch-guild-roster-job', function (FetchGuildRoster $job) {
+            return Limit::perHour(1)->by((string) $job->gameVersionId);
         });
     }
 }

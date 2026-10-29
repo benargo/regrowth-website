@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Http\Integrations\Blizzard\Requests\PlayableClass;
 
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassIndexRequest;
 use PHPUnit\Framework\Attributes\Group;
@@ -60,7 +61,7 @@ class GetPlayableClassIndexRequestTest extends BlizzardTestCase
         ]);
 
         $connector = $this->makeConnector();
-        $expected = $connector->namespace('static');
+        $expected = BlizzardNamespace::default()->forStaticRequests($connector->getRegion());
 
         $connector->send(new GetPlayableClassIndexRequest);
 

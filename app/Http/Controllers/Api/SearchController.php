@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SearchRequest;
 use App\Http\Resources\ItemResource;
+use App\Models\GameVersion;
 use App\Models\Item;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
@@ -18,15 +19,13 @@ class SearchController extends Controller
 
     /**
      * Return the top matching items for the search overlay.
-     *
-     * Cached under the shared ['db', 'lootcouncil'] tags, so the existing
-     * FlushLootCouncilCache listener invalidates results whenever an item changes.
      */
     public function __invoke(SearchRequest $request): JsonResponse
     {
         $query = $request->string('q')->toString();
         $raidId = $request->raidId();
-        $key = 'search:'.md5($query).':'.self::LIMIT.':raid:'.($raidId ?? 'all');
+        $gameVersionId = GameVersion::query()->value('id');
+        $key = 'search:'.md5($query).':'.self::LIMIT.':raid:'.($raidId ?? 'all').':version:'.($gameVersionId ?? 'none');
 
         $payload = Cache::tags(['db', 'lootcouncil'])->remember(
             $key,

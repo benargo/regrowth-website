@@ -3,7 +3,8 @@
 namespace App\Http\Integrations\Blizzard\Requests\PlayableRace;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
-use App\Http\Integrations\Blizzard\Concerns\HasCaching;
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Http\Integrations\Blizzard\Concerns\CachesBlizzardResponses;
 use App\Http\Integrations\Blizzard\Data\PlayableRace\PlayableRaceData;
 use Illuminate\Support\Arr;
 use Saloon\CachePlugin\Contracts\Cacheable;
@@ -14,9 +15,13 @@ use Saloon\Http\Response;
 
 class GetPlayableRaceIndexRequest extends Request implements Cacheable
 {
-    use HasCaching;
+    use CachesBlizzardResponses;
 
     protected Method $method = Method::GET;
+
+    public function __construct(
+        protected ?BlizzardNamespace $namespace = null,
+    ) {}
 
     public function resolveEndpoint(): string
     {
@@ -30,7 +35,8 @@ class GetPlayableRaceIndexRequest extends Request implements Cacheable
 
         $pendingRequest->headers()->add(
             'Battlenet-Namespace',
-            $connector->namespace('static'),
+            ($this->namespace ?? BlizzardNamespace::default())
+                ->forStaticRequests($connector->getRegion()),
         );
     }
 

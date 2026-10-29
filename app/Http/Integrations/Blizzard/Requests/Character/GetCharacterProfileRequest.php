@@ -3,9 +3,11 @@
 namespace App\Http\Integrations\Blizzard\Requests\Character;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
-use App\Http\Integrations\Blizzard\Concerns\HasCaching;
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Http\Integrations\Blizzard\Concerns\CachesBlizzardResponses;
+use App\Http\Integrations\Blizzard\Concerns\RequiresRealm;
 use App\Http\Integrations\Blizzard\Data\Characters\CharacterProfileData;
-use Illuminate\Support\Str;
+use App\Http\Integrations\Blizzard\Support\NameSlug;
 use Saloon\CachePlugin\Contracts\Cacheable;
 use Saloon\Enums\Method;
 use Saloon\Http\PendingRequest;
@@ -14,16 +16,17 @@ use Saloon\Http\Response;
 
 class GetCharacterProfileRequest extends Request implements Cacheable
 {
-    use HasCaching;
+    use CachesBlizzardResponses, RequiresRealm;
 
     protected Method $method = Method::GET;
 
     public function __construct(
-        protected string $realm,
+        protected ?string $realm,
         protected string $character,
+        protected ?BlizzardNamespace $namespace = null,
     ) {
-        $this->realm = Str::slug($realm);
-        $this->character = Str::slug($character);
+        $this->realm = self::normalizeRealm($realm);
+        $this->character = NameSlug::from($character);
     }
 
     public function resolveEndpoint(): string
@@ -38,7 +41,8 @@ class GetCharacterProfileRequest extends Request implements Cacheable
 
         $pendingRequest->headers()->add(
             'Battlenet-Namespace',
-            $connector->namespace('profile'),
+            ($this->namespace ?? BlizzardNamespace::default())
+                ->forProfileRequests($connector->getRegion()),
         );
     }
 

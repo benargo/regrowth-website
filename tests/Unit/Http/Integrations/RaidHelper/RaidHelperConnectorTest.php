@@ -3,6 +3,9 @@
 namespace Tests\Unit\Http\Integrations\RaidHelper;
 
 use App\Http\Integrations\RaidHelper\RaidHelperConnector;
+use App\Http\Integrations\RaidHelper\Requests\GetEventRequest;
+use App\Http\Integrations\ServedFromCache;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -97,6 +100,54 @@ class RaidHelperConnectorTest extends TestCase
         $this->makeConnector()->send(new ConnectorProbeRequest);
     }
 
+    #[Group('error-handling')]
+    #[Test]
+    public function the_retry_after_expiry_is_an_exact_offset_from_now_when_the_clocks_go_back(): void
+    {
+        $this->travelTo(Carbon::createFromTimestamp(4096572600));
+        Saloon::fake([
+            ConnectorProbeRequest::class => MockResponse::make([], 429, ['Retry-After' => '60']),
+        ]);
+
+        $this->assertSame(now()->getTimestamp() + 60, $this->expiryAfterA429());
+    }
+
+    #[Group('error-handling')]
+    #[Test]
+    public function it_leaves_the_expiry_to_the_plugin_when_retry_after_is_zero(): void
+    {
+        $this->travelTo(Carbon::createFromTimestamp(4096572600));
+        Saloon::fake([
+            ConnectorProbeRequest::class => MockResponse::make([], 429, ['Retry-After' => '0']),
+        ]);
+
+        $this->assertNotSame(now()->getTimestamp(), $this->expiryAfterA429());
+    }
+
+    #[Group('error-handling')]
+    #[Test]
+    public function it_serves_a_cached_response_while_a_limit_is_exceeded(): void
+    {
+        Saloon::fake([
+            GetEventRequest::class => MockResponse::make(['id' => '1'], 200),
+            ConnectorProbeRequest::class => MockResponse::make([], 429, ['Retry-After' => '60']),
+        ]);
+        $connector = $this->makeConnector();
+
+        $connector->send(new GetEventRequest('1'));
+
+        try {
+            $connector->send(new ConnectorProbeRequest);
+        } catch (RateLimitReachedException) {
+            // Expected: the 429 marks the limit exceeded.
+        }
+
+        $response = $connector->send(new GetEventRequest('1'));
+
+        $this->assertTrue($response->isCached());
+        Saloon::assertSentCount(2);
+    }
+
     #[Test]
     public function its_default_store_does_not_leak_exceeded_state_between_instances(): void
     {
@@ -163,7 +214,18 @@ class RaidHelperConnectorTest extends TestCase
 
     private function makeConnector(): RaidHelperConnector
     {
-        return new RaidHelperConnector(token: 'test-token', serverId: '111222333444555666');
+        return new RaidHelperConnector(token: 'test-token', serverId: '111222333444555666', servedFromCache: app(ServedFromCache::class));
+    }
+
+    private function expiryAfterA429(): ?int
+    {
+        try {
+            $this->makeConnector()->send(new ConnectorProbeRequest);
+        } catch (RateLimitReachedException $exception) {
+            return $exception->getLimit()->getExpiryTimestamp();
+        }
+
+        $this->fail('Expected a RateLimitReachedException.');
     }
 
     /**
@@ -186,7 +248,7 @@ class RaidHelperConnectorTest extends TestCase
                 private readonly int $tierLimit,
                 private readonly int $tierSeconds,
             ) {
-                parent::__construct($token, $serverId, $memoryStore);
+                parent::__construct($token, $serverId, app(ServedFromCache::class), $memoryStore);
             }
 
             protected function resolveLimits(): array

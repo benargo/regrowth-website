@@ -2,9 +2,7 @@ import { Link, useForm } from "@inertiajs/react";
 import SharedHeader from "@/Components/SharedHeader";
 import Master from "@/Layouts/Master";
 import FormContainer from "@/Components/FormContainer";
-import FormField from "@/Components/FormField";
-import TextInput from "@/Components/TextInput";
-import PrimaryButton from "@/Components/PrimaryButton";
+import { Checkbox, FieldError, FormRow, PrimaryButton, TextInput } from "@/Components/FormControls";
 
 export default function Create({ raids }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -31,51 +29,47 @@ export default function Create({ raids }) {
             <FormContainer>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-6">
                     {/* Title */}
-                    <FormField label="Template name" htmlFor="title" error={errors.title}>
+                    <FormRow label="Template name" error={errors.title}>
                         <TextInput
-                            id="title"
-                            type="text"
                             value={data.title}
                             onChange={(e) => setData("title", e.target.value)}
                             placeholder="e.g. SSC Default Setup"
-                            className="w-full"
+                            invalid={!!errors.title}
                         />
-                    </FormField>
+                    </FormRow>
 
                     {/* Raids */}
                     <div className="flex flex-col gap-2">
-                        <p className="text-sm font-semibold text-secondary-300">Raids</p>
-                        {raids.length === 0 ? (
-                            <p className="text-sm text-secondary-500">No raids available.</p>
+                        <p className="text-sm font-semibold text-gray-300">Raids</p>
+                        {raids.data.length === 0 ? (
+                            <p className="text-sm text-gray-400">No raids available.</p>
                         ) : (
                             <div className="flex flex-col gap-2">
-                                {raids.map((raid) => (
+                                {raids.data.map((raid) => (
                                     <label
                                         key={raid.id}
-                                        className="flex cursor-pointer items-center gap-3 rounded border border-secondary-700 px-3 py-2 transition-colors hover:border-ink-600/50 hover:bg-ink-600/10"
+                                        className="flex cursor-pointer items-center gap-3 rounded border border-gray-700 px-3 py-2 transition-colors hover:border-amber-600/50 hover:bg-amber-600/10"
                                     >
-                                        <input
-                                            type="checkbox"
+                                        <Checkbox
                                             checked={data.raid_ids.includes(raid.id)}
                                             onChange={() => toggleRaid(raid.id)}
-                                            className="accent-ink-500"
                                         />
                                         <span>{raid.name}</span>
                                     </label>
                                 ))}
                             </div>
                         )}
-                        {errors.raid_ids && <p className="mt-1 text-sm text-red-400">{errors.raid_ids}</p>}
+                        <FieldError message={errors.raid_ids} className="mt-1" />
                     </div>
 
                     {/* Actions */}
                     <div className="flex items-center gap-4">
                         <PrimaryButton type="submit" processing={processing}>
-                            {processing ? "Creating…" : "Create Template"}
+                            {processing ? "Creating…" : "Create template"}
                         </PrimaryButton>
                         <Link
                             href={route("management.event-templates.index")}
-                            className="text-sm text-secondary-400 hover:text-secondary-200"
+                            className="text-sm text-gray-400 hover:text-gray-200"
                         >
                             Cancel
                         </Link>

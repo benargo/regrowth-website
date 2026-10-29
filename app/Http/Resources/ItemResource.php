@@ -17,10 +17,11 @@ class ItemResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'blizzard_id' => $this->blizzard_id,
             'name' => $this->name,
             'slug' => $this->slug,
             'group' => $this->whenNotNull($this->group),
-            'icon' => $this->getFirstMediaUrl('blizzard_icons') ?: null,
+            'icon' => $this->getFirstMediaUrl('blizzard_icons'),
             'inventory_type' => $this->whenHas('inventoryType', fn () => data_get($this, 'inventoryType.name')),
             'item_class' => $this->whenHas('itemClass', fn () => data_get($this, 'itemClass.name')),
             'item_subclass' => $this->whenHas('itemSubclass', fn () => data_get($this, 'itemSubclass.name')),

@@ -7,9 +7,7 @@ const maxWidthClasses = {
 export default function FormContainer({ maxWidth = "xl", children }) {
     return (
         <div className="py-12 text-white">
-            <main className={`container mx-auto ${maxWidthClasses[maxWidth] ?? "max-w-xl"} px-4`}>
-                {children}
-            </main>
+            <div className={`container mx-auto ${maxWidthClasses[maxWidth] ?? "max-w-xl"} px-4`}>{children}</div>
         </div>
     );
 }

@@ -1,0 +1,137 @@
+import DetailsForm from "@/Components/Datasets/DetailsForm";
+import { FormRow, FormSection, TextInput } from "@/Components/FormControls";
+
+const FIELD_LABELS = {
+    title: "Title",
+    slug: "Slug",
+    release_date: "Release date",
+    realm: "Realm",
+    guild_name: "Guild name",
+    uses_surnames: "Characters have surnames",
+    faction: "Faction",
+    blizzard_namespace: "Blizzard API namespace",
+    warcraft_logs_guild_id: "Warcraft Logs guild",
+};
+
+/**
+ * Build the initial useForm state for a game version.
+ */
+export function gameVersionFormData(gameVersion = null) {
+    return {
+        title: gameVersion?.title ?? "",
+        ...(gameVersion === null && { slug: "" }),
+        realm: gameVersion?.realm ?? "",
+        guild_name: gameVersion?.guild_name ?? "",
+        uses_surnames: gameVersion?.uses_surnames ?? false,
+        faction: gameVersion?.faction ?? "",
+        release_date: gameVersion?.release_date ?? "",
+        blizzard_namespace: gameVersion?.blizzard?.namespace ?? "",
+        warcraft_logs_guild_id: gameVersion?.warcraftlogs?.guild ?? "",
+    };
+}
+
+/**
+ * The game version details form, for creating or editing (`gameVersion`).
+ * Props other than `options` pass through to DetailsForm.
+ */
+export default function GameVersionForm({ form, options, gameVersion = null, ...detailsFormProps }) {
+    const { errors } = form;
+
+    return (
+        <DetailsForm form={form} {...detailsFormProps}>
+            {({ text, slug, select, checkbox }) => (
+                <>
+                    <FormSection legend="The version">
+                        <FormRow
+                            htmlFor="title"
+                            label={FIELD_LABELS.title}
+                            required
+                            error={errors.title}
+                            className="md:col-span-2"
+                        >
+                            {text("title", { required: true, autoComplete: "off" })}
+                        </FormRow>
+                        {gameVersion === null ? (
+                            <FormRow
+                                htmlFor="slug"
+                                label={FIELD_LABELS.slug}
+                                required
+                                hint="A short name for links, such as tbc. Aim for 16 characters or fewer. It can't be changed later."
+                                error={errors.slug}
+                            >
+                                {slug("slug", { required: true, maxLength: 255 })}
+                            </FormRow>
+                        ) : (
+                            <FormRow
+                                htmlFor="slug"
+                                label={FIELD_LABELS.slug}
+                                hint="Set when the game version was created. It can't be changed."
+                            >
+                                <TextInput id="slug" value={gameVersion.slug} disabled />
+                            </FormRow>
+                        )}
+                        <FormRow
+                            htmlFor="release_date"
+                            label={FIELD_LABELS.release_date}
+                            required
+                            error={errors.release_date}
+                        >
+                            {text("release_date", { type: "date", required: true })}
+                        </FormRow>
+                    </FormSection>
+
+                    <FormSection legend="Where the guild plays">
+                        <FormRow htmlFor="realm" label={FIELD_LABELS.realm} error={errors.realm}>
+                            {text("realm", { autoComplete: "off" })}
+                        </FormRow>
+                        <FormRow
+                            htmlFor="guild_name"
+                            label={FIELD_LABELS.guild_name}
+                            required
+                            error={errors.guild_name}
+                        >
+                            {text("guild_name", { required: true, maxLength: 24, autoComplete: "off" })}
+                        </FormRow>
+                        <FormRow htmlFor="faction" label={FIELD_LABELS.faction} error={errors.faction}>
+                            {select("faction", { options: options.factions, placeholder: "Not set" })}
+                        </FormRow>
+                        <FormRow
+                            htmlFor="uses_surnames"
+                            label={FIELD_LABELS.uses_surnames}
+                            hint="Tick this if every character in this version has a surname. It changes how names from Warcraft Logs and Raid-Helper are matched to characters."
+                            hintAsTooltip
+                            error={errors.uses_surnames}
+                        >
+                            {checkbox("uses_surnames")}
+                        </FormRow>
+                    </FormSection>
+
+                    <FormSection legend="Integrations">
+                        <FormRow
+                            htmlFor="blizzard_namespace"
+                            label={FIELD_LABELS.blizzard_namespace}
+                            hint="Which Blizzard API data set items and media are fetched from."
+                            error={errors.blizzard_namespace}
+                        >
+                            {select("blizzard_namespace", {
+                                options: options.blizzard_namespaces,
+                                placeholder: "Not set",
+                            })}
+                        </FormRow>
+                        <FormRow
+                            htmlFor="warcraft_logs_guild_id"
+                            label={FIELD_LABELS.warcraft_logs_guild_id}
+                            hint="Reports and attendance for this version come from this guild. Add guilds, or change a guild's Warcraft Logs site, on the Warcraft Logs guilds page."
+                            error={errors.warcraft_logs_guild_id}
+                        >
+                            {select("warcraft_logs_guild_id", {
+                                options: options.warcraft_logs_guilds,
+                                placeholder: "Not set",
+                            })}
+                        </FormRow>
+                    </FormSection>
+                </>
+            )}
+        </DetailsForm>
+    );
+}

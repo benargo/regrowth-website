@@ -2,16 +2,30 @@
 
 namespace Database\Seeders;
 
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use Illuminate\Database\Seeder;
 
 class GuildRankSeeder extends Seeder
 {
     /**
+     * The slug of the game version this seeder scopes its records to.
+     */
+    public string $gameVersionSlug = 'anniversary';
+
+    /**
      * Run the database seeds.
      */
     public function run(): void
     {
+        $gameVersion = GameVersion::where('slug', $this->gameVersionSlug)->first();
+
+        if ($gameVersion === null) {
+            $this->command?->error("Game version [{$this->gameVersionSlug}] not found — skipping.");
+
+            return;
+        }
+
         $ranks = [
             ['sort_order' => 0, 'name' => 'Officer'],
             ['sort_order' => 1, 'name' => 'Officer'],
@@ -27,7 +41,7 @@ class GuildRankSeeder extends Seeder
 
         foreach ($ranks as $rank) {
             GuildRank::updateOrCreate(
-                ['sort_order' => $rank['sort_order']],
+                ['game_version_id' => $gameVersion->id, 'sort_order' => $rank['sort_order']],
                 $rank
             );
         }

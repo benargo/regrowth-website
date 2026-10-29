@@ -3,7 +3,9 @@
 namespace Tests\Unit\Models;
 
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -171,6 +173,15 @@ class GuildRankTest extends ModelTestCase
         $this->assertFalse($guildRank->count_attendance);
     }
 
+    #[Test]
+    public function counts_attendance_scope_keeps_only_counting_ranks(): void
+    {
+        $counting = GuildRank::factory()->create(['count_attendance' => true]);
+        GuildRank::factory()->doesNotCountAttendance()->create();
+
+        $this->assertSame([$counting->id], GuildRank::countsAttendance()->pluck('id')->all());
+    }
+
     // ==================== name constraints ====================
 
     #[Test]
@@ -286,5 +297,35 @@ class GuildRankTest extends ModelTestCase
         Character::factory()->create(['rank_id' => $guildRank->id, 'is_main' => false]);
 
         $this->assertCount(0, $guildRank->mainCharacters);
+    }
+
+    #[Test]
+    public function game_version_returns_belongs_to_relationship(): void
+    {
+        $this->assertInstanceOf(BelongsTo::class, (new GuildRank)->gameVersion());
+    }
+
+    #[Test]
+    public function game_version_returns_the_owning_game_version(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $rank = GuildRank::factory()->for($gameVersion)->create();
+
+        $this->assertTrue($rank->gameVersion->is($gameVersion));
+    }
+
+    #[Test]
+    public function it_numbers_ranks_from_zero_within_each_game_version(): void
+    {
+        $classic = GameVersion::factory()->create();
+        $anniversary = GameVersion::factory()->create();
+
+        $first = GuildRank::factory()->for($classic)->create(['sort_order' => null]);
+        $second = GuildRank::factory()->for($classic)->create(['sort_order' => null]);
+        $otherVersionsFirst = GuildRank::factory()->for($anniversary)->create(['sort_order' => null]);
+
+        $this->assertSame(0, $first->sort_order);
+        $this->assertSame(1, $second->sort_order);
+        $this->assertSame(0, $otherVersionsFirst->sort_order);
     }
 }

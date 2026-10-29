@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\Zone;
-use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
-use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
+use App\Http\Integrations\WarcraftLogs\Data\World\DifficultyData;
+use App\Http\Integrations\WarcraftLogs\Data\World\ExpansionData;
+use App\Models\WarcraftLogs\Zone;
 use Illuminate\Database\Seeder;
 
 class ZoneSeeder extends Seeder

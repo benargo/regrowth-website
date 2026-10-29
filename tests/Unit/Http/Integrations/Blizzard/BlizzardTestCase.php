@@ -3,35 +3,30 @@
 namespace Tests\Unit\Http\Integrations\Blizzard;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
-use App\Http\Integrations\Blizzard\GameVersion;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
+use App\Http\Integrations\ServedFromCache;
 use Illuminate\Support\Facades\Storage;
 use Saloon\Http\Faking\MockResponse;
 use Tests\TestCase;
 
 abstract class BlizzardTestCase extends TestCase
 {
-    protected function makeConnector(
-        ?Region $region = null,
-        GameVersion $gameVersion = GameVersion::Anniversary,
-        string $defaultRealmSlug = 'thunderstrike',
-        string $defaultGuildSlug = 'regrowth',
-    ): BlizzardConnector {
+    protected function makeConnector(?Region $region = null): BlizzardConnector
+    {
         $region ??= Region::EU;
 
-        $renderConnector = new RenderConnector($region, Storage::disk('public'));
+        $renderConnector = new RenderConnector($region, Storage::disk('s3'));
 
         return new BlizzardConnector(
             clientId: 'test_id',
             clientSecret: 'test_secret',
             region: $region,
             locale: $region->defaultLocale(),
-            gameVersion: $gameVersion,
-            defaultRealmSlug: $defaultRealmSlug,
-            defaultGuildSlug: $defaultGuildSlug,
+            redirectUri: 'https://regrowth.test/auth/battlenet/callback',
             eagerlyMirrorAssets: new EagerlyMirrorAssets($renderConnector),
+            servedFromCache: app(ServedFromCache::class),
         );
     }
 

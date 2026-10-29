@@ -2,7 +2,7 @@
 
 namespace App\Casts;
 
-use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
+use App\Http\Integrations\WarcraftLogs\Data\World\ExpansionData;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;

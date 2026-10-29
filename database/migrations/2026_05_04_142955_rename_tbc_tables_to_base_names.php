@@ -38,7 +38,6 @@ return new class extends Migration
         Schema::rename('tbc_phases', 'phases');
         Schema::rename('tbc_raids', 'raids');
         Schema::rename('tbc_bosses', 'bosses');
-        Schema::rename('tbc_daily_quests', 'daily_quests');
 
         // Recreate FKs with new table names
         Schema::table('raids', function (Blueprint $table) {
@@ -88,7 +87,6 @@ return new class extends Migration
         Schema::rename('phases', 'tbc_phases');
         Schema::rename('raids', 'tbc_raids');
         Schema::rename('bosses', 'tbc_bosses');
-        Schema::rename('daily_quests', 'tbc_daily_quests');
 
         // Recreate original FKs
         Schema::table('tbc_raids', function (Blueprint $table) {

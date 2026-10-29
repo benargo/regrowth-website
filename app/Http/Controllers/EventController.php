@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Contracts\HasBlizzardIcons;
+use App\Actions\Events\AttachEventChannel;
+use App\Actions\Events\BuildEventsForViewer;
+use App\Actions\GameVersion\ResolveCurrentGameVersion;
+use App\Http\Middleware\RemembersRecordGameVersion;
 use App\Http\Resources\CharacterSummaryResource;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\PlayableClassResource;
@@ -14,46 +17,70 @@ use App\Models\EventAssignmentGroup;
 use App\Models\PlayableClass;
 use App\Models\Spell;
 use App\Models\TargetMarker;
+use App\Support\MediaLibrary\UnknownBlizzardIcon;
 use Illuminate\Contracts\Queue\QueueableCollection;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class EventController extends Controller implements HasBlizzardIcons
+class EventController extends Controller
 {
+    private const int PAST_EVENTS_PER_PAGE = 20;
+
     /**
-     * Display a listing of the resource.
+     * Display the current game version's upcoming events, soonest first, then its past events,
+     * newest first and paginated. Viewers without view-old-raid-plans only see past events that
+     * ended within the last two weeks. `hasAnyEvents` reports whether the version has any live event.
      */
-    public function index(): void
+    public function index(Request $request): Response
     {
-        // TODO: Implement listing of events
-        // This should display upcoming events, with past events accessible via a filter that is toggleable.
-        // The filter should be implemented client-side so that its setting is remembered on a per-user basis.
-        // The events can be fetched after the initial page load via Inertia::optional. We do not need to use
-        // pagination for events, as they are automatically pruned a month after they end.
-        // Each event listing should show basic details such as the title, date/time, and raids, and
-        // clicking on an event should navigate to the event details page.
+        $gameVersion = ResolveCurrentGameVersion::run();
+
+        if ($gameVersion === null) {
+            return Inertia::render('Raiding/Events/Index', [
+                'hasAnyEvents' => false,
+                'upcomingEvents' => EventResource::collection([]),
+                'pastEvents' => EventResource::collection(new LengthAwarePaginator([], 0, self::PAST_EVENTS_PER_PAGE)),
+            ]);
+        }
+
+        $events = Event::live()->where('game_version_id', $gameVersion->id);
+        $canViewOldEvents = $request->user()?->isAuthorizedTo('view-old-raid-plans') ?? false;
+
+        return Inertia::render('Raiding/Events/Index', [
+            'hasAnyEvents' => $events->clone()->exists(),
+            'upcomingEvents' => BuildEventsForViewer::run(
+                $events->clone()->where('end_time', '>=', now())->orderBy('start_time'),
+                $request,
+            ),
+            'pastEvents' => BuildEventsForViewer::run(
+                $events->clone()
+                    ->where('end_time', '<', now())
+                    ->unless($canViewOldEvents, fn (Builder $query) => $query->where('end_time', '>=', now()->subWeeks(2)))
+                    ->orderByDesc('start_time')
+                    ->orderByDesc('id'),
+                $request,
+                self::PAST_EVENTS_PER_PAGE,
+            ),
+        ]);
     }
 
-    /**
-     * Display the specified resource.
-     */
+    /** Display the specified resource. */
     #[Authorize('view', 'event')]
-    public function show(Event $event, Request $request): Response
+    #[Middleware(RemembersRecordGameVersion::class.':event,events.index')]
+    public function show(Event $event, Request $request, UnknownBlizzardIcon $unknownIcon): Response
     {
-        $event->load('raids.bosses.media', 'bosses.media', 'assignments.group', 'characters.rank');
+        $event->load('raids.bosses.media', 'raids.media', 'bosses.media', 'assignments.group', 'characters.rank');
 
         return Inertia::render('Raiding/Plans/Show', [
-            'event' => (new EventResource($event))->resolve($request),
-            'questionMarkIconUrl' => URL::signedRoute('icons.show', [
-                'size' => self::DEFAULT_MEDIA_SIZE,
-                'name' => self::BLIZZARD_UNKNOWN_ICON.'.jpg',
-            ]),
+            'event' => AttachEventChannel::run(new EventResource($event))->resolve($request),
+            'questionMarkIconUrl' => $unknownIcon->url(),
         ]);
     }
 
@@ -62,12 +89,12 @@ class EventController extends Controller implements HasBlizzardIcons
      */
     #[Middleware('auth')]
     #[Authorize('update', 'event')]
-    public function edit(Event $event, Request $request): Response
+    public function edit(Event $event, Request $request, UnknownBlizzardIcon $unknownIcon): Response
     {
-        $event->load('raids.bosses.media', 'bosses.media', 'assignments.group', 'characters.rank');
+        $event->load('raids.bosses.media', 'raids.media', 'bosses.media', 'assignments.group', 'characters.rank');
 
         return Inertia::render('Raiding/Plans/Edit', [
-            'event' => (new EventResource($event))->resolve($request),
+            'event' => AttachEventChannel::run(new EventResource($event))->resolve($request),
             'targetMarkers' => TargetMarker::all()->map(fn (TargetMarker $m) => ['slug' => $m->slug, 'name' => $m->name])->values(),
             'characters' => Inertia::optional(function () use ($request) {
                 return Character::with('rank', 'playableClass')
@@ -84,10 +111,7 @@ class EventController extends Controller implements HasBlizzardIcons
                 return SpellResource::collection(Spell::all())->resolve($request);
             }),
             'templates' => $this->loadTemplatesForEvent($event)->all(),
-            'questionMarkIconUrl' => URL::signedRoute('icons.show', [
-                'size' => self::DEFAULT_MEDIA_SIZE,
-                'name' => self::BLIZZARD_UNKNOWN_ICON.'.'.self::DEFAULT_MEDIA_FILE_EXTENSION,
-            ]),
+            'questionMarkIconUrl' => $unknownIcon->url(),
         ]);
     }
 

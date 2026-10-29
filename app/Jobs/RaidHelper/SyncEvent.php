@@ -2,28 +2,61 @@
 
 namespace App\Jobs\RaidHelper;
 
+use App\Actions\Discord\FetchGuildMember;
+use App\Actions\Discord\UpsertUserFromGuildMember;
 use App\Actions\EventBossResolver;
+use App\Actions\Events\RefreshEventGameVersion;
 use App\Enums\SignupStatus;
 use App\Events\Broadcasts\CompositionChanged;
+use App\Http\Integrations\Discord\Exceptions\DiscordRequestException;
+use App\Http\Integrations\Discord\Exceptions\RateLimitedException;
+use App\Http\Integrations\Discord\Exceptions\UserNotInGuildException;
 use App\Http\Integrations\RaidHelper\Data\Events\EventData;
+use App\Http\Integrations\RaidHelper\Data\Events\SignUpData;
 use App\Http\Integrations\RaidHelper\Data\Zones\ZoneData;
 use App\Http\Resources\EventCompositionResource;
+use App\Jobs\AttachCharactersToUser;
+use App\Jobs\Concerns\ResolvesCharacterNames;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
+use App\Models\GameVersion;
 use App\Models\Raid;
+use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Saloon\Exceptions\Request\FatalRequestException;
 
 class SyncEvent implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, ResolvesCharacterNames;
 
     private string $timezone;
+
+    /** @var Collection<int, ZoneData> */
+    private Collection $zones;
+
+    /** @var Collection<int, Raid> */
+    private Collection $raids;
+
+    /** @var Collection<int, Boss> */
+    private Collection $bosses;
+
+    private Event $event;
+
+    /** @var array<int|string, array<int, int>> */
+    private array $characterIdsByUser = [];
+
+    /** @var array<int, int> */
+    private array $signedUpCharacterIds;
+
+    /** @var Collection<int, string> */
+    private Collection $syncedUserIds;
 
     public function __construct(public readonly EventData $data)
     {
@@ -53,20 +86,45 @@ class SyncEvent implements ShouldQueue
     }
 
     /**
-     * Resolve the zones to raids, keyed by id and kept in zone order.
-     *
-     * A zone must match both the id and the name to resolve, guarding against a
-     * stale payload pointing at a raid that has since been replaced. Zones that
-     * do not resolve are skipped and logged rather than failing the sync.
-     *
-     * @param  Collection<int, ZoneData>  $zones
-     * @return Collection<int, Raid>
+     * Execute the job.
      */
-    private function resolveRaids(Collection $zones): Collection
+    public function handle(EventBossResolver $eventBossResolver): void
     {
-        $raids = Raid::whereIn('id', $zones->pluck('id'))->get()->keyBy('id');
+        $this->resolveZones();
+        $this->resolveRaids();
+        $this->discardUnresolvedZones();
+        $this->bosses = $eventBossResolver->fromZones($this->zones, $this->raids);
 
-        return $zones
+        $this->upsertEvent();
+        $this->syncRaidsAndBosses();
+        $this->syncBench();
+        $this->syncUsers();
+        $this->attachSignedUpCharactersToUsers();
+
+        $this->broadcastComposition();
+        Cache::tags(['events'])->flush();
+
+        FetchComposition::dispatch($this->event->id);
+    }
+
+    /**
+     * Decode the zones from the event description, in payload order.
+     */
+    private function resolveZones(): void
+    {
+        $this->zones = ZoneData::collectFromDescription($this->data->description)
+            ->sortBy(fn (ZoneData $zone, int $index): array => [$zone->order ?? PHP_INT_MAX, $index])
+            ->values();
+    }
+
+    /**
+     * Resolve the zones to raids, keyed by id and kept in zone order.
+     */
+    private function resolveRaids(): void
+    {
+        $raids = Raid::whereIn('id', $this->zones->pluck('id'))->get()->keyBy('id');
+
+        $this->raids = $this->zones
             ->filter(function (ZoneData $zone) use ($raids): bool {
                 $resolved = $raids->get($zone->id);
 
@@ -85,105 +143,266 @@ class SyncEvent implements ShouldQueue
     }
 
     /**
-     * Execute the job.
+     * Drop zones whose raid could not be resolved, as they contribute nothing.
      */
-    public function handle(EventBossResolver $eventBossResolver): void
+    private function discardUnresolvedZones(): void
     {
-        // Decode the zones from the event description, in payload order.
-        $zones = ZoneData::collectFromDescription($this->data->description)
-            ->sortBy(fn (ZoneData $zone, int $index): array => [$zone->order ?? PHP_INT_MAX, $index])
+        $this->zones = $this->zones
+            ->filter(fn (ZoneData $zone): bool => $this->raids->has($zone->id))
             ->values();
+    }
 
-        $raids = $this->resolveRaids($zones);
-
-        // Zones whose raid could not be resolved contribute nothing.
-        $zones = $zones->filter(fn (ZoneData $zone): bool => $raids->has($zone->id))->values();
-
-        $bosses = $eventBossResolver->fromZones($zones, $raids);
-
-        // Upsert the event.
-        $event = Event::updateOrCreate(
+    /**
+     * Create or update the event from the RaidHelper payload.
+     */
+    private function upsertEvent(): void
+    {
+        $this->event = Event::updateOrCreate(
             ['raid_helper_event_id' => $this->data->id],
             [
                 'title' => $this->data->title,
                 'start_time' => $this->data->startTime->setTimezone($this->timezone),
                 'end_time' => $this->data->endTime->setTimezone($this->timezone),
-                'background_css_class' => $raids->values()->firstWhere('background_css_class')?->background_css_class ?? null,
                 'color' => $this->data->color,
                 'channel_id' => $this->data->channelId,
             ]
         );
+    }
 
-        // Sync the raids and bosses together so the two cannot diverge. Both
-        // are written with explicit, contiguous positions derived from the
-        // payload sequence — the payload's own `order` values are only a
-        // sorting hint and are never stored verbatim.
-        DB::transaction(function () use ($event, $zones, $bosses): void {
-            $event->raids()->sync(
-                $zones->values()
+    /**
+     * Sync the raids, bosses and game version in one transaction, storing
+     * contiguous positions based on the payload sequence.
+     */
+    private function syncRaidsAndBosses(): void
+    {
+        DB::transaction(function (): void {
+            $this->event->raids()->sync(
+                $this->zones
                     ->mapWithKeys(fn (ZoneData $zone, int $index): array => [
                         $zone->id => ['sort_order' => $index + 1],
                     ])
                     ->all()
             );
 
-            $event->bosses()->sync(
-                $bosses->mapWithKeys(fn (Boss $boss, int $index): array => [
+            $this->event->bosses()->sync(
+                $this->bosses->mapWithKeys(fn (Boss $boss, int $index): array => [
                     $boss->id => ['sort_order' => $index + 1],
                 ])->all()
             );
+
+            RefreshEventGameVersion::run($this->event);
         });
+    }
 
-        // Sync benched characters from sign-ups (all signed-up, non-absent players not in comp are benched).
-        $characterSync = [];
+    /**
+     * Bench the event's sign-ups among the characters of its game version. An
+     * event with no game version is left untouched, since an empty sign-up set
+     * would otherwise detach every benched character.
+     */
+    private function syncBench(): void
+    {
+        $gameVersion = $this->event->gameVersion;
 
-        $signUps = collect($this->data->signUps ?? [])
-            ->whereNotIn('className', ['Absence', 'Late', 'Tentative']);
+        if ($gameVersion === null) {
+            Log::error('Skipped benching Raid-Helper sign-ups for an event with no game version.', [
+                'event_id' => $this->event->id,
+                'raid_helper_event_id' => $this->data->id,
+            ]);
 
-        Character::whereIn('name', $signUps->pluck('name'))->get()
-            ->each(function (Character $character) use (&$characterSync): void {
-                $characterSync[$character->id] = [
-                    'slot_number' => null,
-                    'group_number' => null,
-                    'signup_status' => SignupStatus::Unconfirmed,
-                    'is_benched' => true,
-                ];
-            });
+            return;
+        }
 
-        // Only attach characters not already on the pivot to avoid overwriting SyncComposition slot data.
-        $signedUpCharacterIds = array_keys($characterSync);
+        $this->resolveSignedUpCharacters($gameVersion);
+        $this->attachNewSignedUpCharacters();
+        $this->detachBenchedCharactersNoLongerSignedUp($gameVersion);
+    }
 
-        $alreadyAttachedIds = $event->characters()
-            ->whereIn('characters.id', $signedUpCharacterIds)
+    /**
+     * Resolve the characters of every sign-up who isn't absent, among the
+     * event's game version, and record the characters each sign-up user
+     * resolved to. Bench, Late and Tentative sign-ups are included so they are
+     * on the event before an officer slots them. Anyone not placed in the
+     * composition is benched.
+     */
+    private function resolveSignedUpCharacters(GameVersion $gameVersion): void
+    {
+        $signUps = $this->nonAbsentSignUps();
+
+        $characterIdsByName = $this->resolveCharacterIds(
+            $gameVersion,
+            $signUps->pluck('name'),
+            Character::whereBelongsTo($gameVersion)->get(['id', 'name']),
+            'raidhelper.signups',
+        );
+
+        foreach ($signUps as $signUp) {
+            $characterId = $characterIdsByName->get($signUp->name);
+
+            if ($characterId !== null) {
+                data_set($this->characterIdsByUser, "{$signUp->userId}.{$characterId}", $characterId);
+            }
+        }
+
+        $this->signedUpCharacterIds = $characterIdsByName
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Attach signed-up characters as benched, skipping any already on the pivot
+     * to avoid overwriting SyncComposition slot data.
+     */
+    private function attachNewSignedUpCharacters(): void
+    {
+        $alreadyAttachedIds = $this->event->characters()
+            ->whereIn('characters.id', $this->signedUpCharacterIds)
             ->pluck('characters.id')
             ->all();
 
-        $newCharacterIds = array_diff($signedUpCharacterIds, $alreadyAttachedIds);
-
-        foreach ($newCharacterIds as $characterId) {
-            $event->characters()->attach($characterId, $characterSync[$characterId]);
+        foreach (array_diff($this->signedUpCharacterIds, $alreadyAttachedIds) as $characterId) {
+            $this->event->characters()->attach($characterId, [
+                'slot_number' => null,
+                'group_number' => null,
+                'signup_status' => SignupStatus::Unconfirmed,
+                'is_benched' => true,
+            ]);
         }
+    }
 
-        // Detach benched characters who are no longer in the sign-ups list.
-        // Slotted characters (is_benched=false) are managed by SyncComposition and must not be touched.
-        $benchedNoLongerSignedUp = $event->characters()
+    /**
+     * Detach this game version's benched characters who are no longer in the
+     * sign-ups list.
+     */
+    private function detachBenchedCharactersNoLongerSignedUp(GameVersion $gameVersion): void
+    {
+        $benchedNoLongerSignedUp = $this->event->characters()
+            ->whereBelongsTo($gameVersion)
             ->wherePivot('is_benched', true)
             ->pluck('characters.id')
-            ->diff($signedUpCharacterIds)
+            ->diff($this->signedUpCharacterIds)
             ->values()
             ->all();
 
         if (! empty($benchedNoLongerSignedUp)) {
-            $event->characters()->detach($benchedNoLongerSignedUp);
+            $this->event->characters()->detach($benchedNoLongerSignedUp);
+        }
+    }
+
+    /**
+     * Sync the event's users to the Discord users of every sign-up who isn't
+     * absent, attaching new sign-ups and detaching users no longer signed up.
+     * Users missing from the database are imported from Discord first; any
+     * that can't be imported are left off the event.
+     */
+    private function syncUsers(): void
+    {
+        $signedUpUserIds = $this->nonAbsentSignUps()
+            ->pluck('userId')
+            ->unique()
+            ->values();
+
+        $existingUserIds = User::whereIn('id', $signedUpUserIds)->pluck('id');
+
+        $this->syncedUserIds = $existingUserIds->merge(
+            $this->importUsers($signedUpUserIds->diff($existingUserIds)),
+        );
+
+        $this->event->users()->sync($this->syncedUserIds->all());
+    }
+
+    /**
+     * Fetch each of the given users from the Discord server and store them,
+     * skipping any whose lookup fails and stopping once Discord rate limits the
+     * lookups, and return the ids of the stored users.
+     *
+     * @param  Collection<int, string>  $userIds
+     * @return Collection<int, string>
+     */
+    private function importUsers(Collection $userIds): Collection
+    {
+        $fetchMemberAction = FetchGuildMember::make();
+        $upsertUserAction = UpsertUserFromGuildMember::make();
+        $importedUserIds = collect();
+
+        foreach ($userIds as $userId) {
+            try {
+                $user = $upsertUserAction->handle($fetchMemberAction->handle($userId));
+
+                if ($user) {
+                    $importedUserIds->push($user->id);
+                }
+            } catch (UserNotInGuildException) {
+                Log::info('SyncEvent: skipped a sign-up whose user is not in the Discord server.', [
+                    'raid_helper_event_id' => $this->data->id,
+                    'user_id' => $userId,
+                ]);
+            } catch (RateLimitedException $exception) {
+                report($exception);
+
+                break;
+            } catch (DiscordRequestException|FatalRequestException $exception) {
+                report($exception);
+            }
         }
 
-        // Broadcast and flush cache.
-        $event->load(['characters.playableClass', 'characters.rank', 'raids', 'bosses']);
-        $composition = (new EventCompositionResource($event))->resolve();
-        broadcast(new CompositionChanged($event->id, $composition));
+        return $importedUserIds;
+    }
 
-        Cache::tags(['events'])->flush();
+    /**
+     * Queue linking each signed-up user to the characters their sign-ups
+     * resolved to, among characters with no user yet. A character resolved
+     * from more than one user's sign-ups is logged and left unlinked.
+     */
+    private function attachSignedUpCharactersToUsers(): void
+    {
+        $claimedCharacterIds = collect($this->characterIdsByUser)->flatten();
+        $contestedCharacterIds = $claimedCharacterIds->duplicates()->unique()->values();
 
-        FetchComposition::dispatch($event->id);
+        foreach ($contestedCharacterIds as $characterId) {
+            Log::info('SyncEvent: skipped linking a character signed up by more than one user.', [
+                'raid_helper_event_id' => $this->data->id,
+                'character_id' => $characterId,
+                'user_ids' => collect($this->characterIdsByUser)
+                    ->filter(fn (array $characterIds): bool => isset($characterIds[$characterId]))
+                    ->keys()
+                    ->map(fn (int|string $userId): string => (string) $userId)
+                    ->all(),
+            ]);
+        }
+
+        $unlinkedCharacters = Character::whereKey($claimedCharacterIds->diff($contestedCharacterIds)->all())
+            ->whereNull('user_id')
+            ->get(['id']);
+
+        foreach (Arr::only($this->characterIdsByUser, $this->syncedUserIds->all()) as $userId => $characterIds) {
+            $characters = $unlinkedCharacters->only($characterIds);
+
+            if ($characters->isNotEmpty()) {
+                AttachCharactersToUser::dispatch((string) $userId, $characters, onlyUnlinked: true);
+            }
+        }
+    }
+
+    /**
+     * Get the sign-ups whose class isn't Absence.
+     *
+     * @return Collection<int, SignUpData>
+     */
+    private function nonAbsentSignUps(): Collection
+    {
+        return collect($this->data->signUps ?? [])
+            ->where('className', '!==', 'Absence')
+            ->values();
+    }
+
+    /**
+     * Broadcast the event's refreshed composition.
+     */
+    private function broadcastComposition(): void
+    {
+        $this->event->load(['characters.playableClass', 'characters.rank', 'raids', 'bosses']);
+        $composition = (new EventCompositionResource($this->event))->resolve();
+        broadcast(new CompositionChanged($this->event->id, $composition));
     }
 }

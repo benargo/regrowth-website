@@ -14,7 +14,10 @@ use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
+use App\Models\Boss;
+use App\Models\GameVersion;
 use App\Models\Item;
+use App\Models\Raid;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 use Saloon\Exceptions\Request\FatalRequestException;
@@ -23,6 +26,11 @@ use Saloon\Exceptions\Request\Statuses\ForbiddenException;
 
 class ItemSeeder extends Seeder
 {
+    /**
+     * The slug of the game version this seeder scopes its records to.
+     */
+    public string $gameVersionSlug = 'anniversary';
+
     public function __construct(
         private readonly BlizzardConnector $blizzard,
         private readonly RenderConnector $renderConnector,
@@ -750,10 +758,21 @@ class ItemSeeder extends Seeder
 
     public function run(): void
     {
+        $gameVersion = GameVersion::where('slug', $this->gameVersionSlug)->first();
+
+        if ($gameVersion === null) {
+            $this->command?->error("Game version [{$this->gameVersionSlug}] not found — skipping.");
+
+            return;
+        }
+
+        $raidIds = Raid::pluck('id')->all();
+        $bossIds = Boss::pluck('id')->all();
+
         foreach ($this->items as $item) {
             try {
                 /** @var ItemData $itemDto */
-                $itemDto = $this->blizzard->send(new GetItemRequest($item['id']))->dto();
+                $itemDto = $this->blizzard->send(new GetItemRequest($item['id'], $gameVersion->blizzard_namespace))->dto();
 
                 /** @var MediaData $mediaDto */
                 $mediaDto = $this->blizzard->send(new GetItemMediaRequest($item['id']))->dto();
@@ -764,19 +783,19 @@ class ItemSeeder extends Seeder
                 continue;
             }
 
-            $model = Item::withoutEvents(function () use ($item, $itemDto) {
+            $model = Item::withoutEvents(function () use ($item, $itemDto, $gameVersion, $bossIds) {
                 return Item::updateOrCreate(
-                    ['id' => $item['id']],
+                    ['game_version_id' => $gameVersion->id, 'blizzard_id' => $item['id']],
                     [
                         'name' => $itemDto->name,
                         'quality' => ItemQuality::{$itemDto->quality->type},
-                        'boss_id' => $item['boss_id'],
+                        'boss_id' => in_array($item['boss_id'], $bossIds, true) ? $item['boss_id'] : null,
                         'group' => $item['group'],
                     ]
                 );
             });
 
-            $model->raids()->sync($item['raid_ids']);
+            $model->raids()->sync(array_values(array_intersect($item['raid_ids'], $raidIds)));
 
             if (! $model->hasMedia('blizzard_icons')) {
                 $asset = $mediaDto->assets[0] ?? null;

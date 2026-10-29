@@ -2,28 +2,37 @@
 
 namespace Tests\Feature\Raiding;
 
-use App\Models\Character;
+use App\Contracts\Actions\GameVersion\SharesCurrentGameVersionSession;
+use App\Enums\PlannedAbsenceReason;
+use App\Enums\Presence;
 use App\Models\DiscordRole;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
-use App\Models\GuildTag;
 use App\Models\Permission;
 use App\Models\PlannedAbsence;
 use App\Models\PlayableClass;
-use App\Models\Report;
 use App\Models\User;
+use App\Models\WarcraftLogs\Zone;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\Concerns\BuildsAttendanceFixtures;
 use Tests\TestCase;
 
 #[Group('raiding')]
 class AttendanceMatrixControllerTest extends TestCase
 {
+    use BuildsAttendanceFixtures;
     use RefreshDatabase;
+
+    private GameVersion $gameVersion;
+
+    private GuildRank $rank;
 
     protected function setUp(): void
     {
@@ -38,6 +47,9 @@ class AttendanceMatrixControllerTest extends TestCase
             ['name' => 'Officer', 'position' => 5, 'is_visible' => true]
         );
         $officerRole->givePermissionTo($permission);
+
+        $this->gameVersion = $this->createAttendanceVersion();
+        $this->rank = $this->createRank($this->gameVersion);
     }
 
     // ==================== matrix: Access Control ====================
@@ -109,6 +121,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_prop_is_deferred_and_not_in_initial_response(): void
     {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
@@ -120,13 +133,13 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function invoke_deferred_prop_returns_raids_and_rows(): void
+    public function invoke_deferred_prop_returns_columns_and_rows(): void
     {
-        $rank = GuildRank::factory()->create();
-        $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
-        $report->characters()->attach($character->id, ['presence' => 1]);
+        $rank = $this->createRank($this->gameVersion);
+        $character = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
+        $tag = $this->createTag($this->gameVersion);
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00', $tag);
+        $this->attend($report, $character);
 
         $user = User::factory()->officer()->create();
 
@@ -137,9 +150,16 @@ class AttendanceMatrixControllerTest extends TestCase
             ->missing('matrix')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('matrix')
-                ->has('matrix.raids', 1)
+                ->has('matrix.columns', 1)
+                ->where('matrix.columns.0.id', (string) $report->id)
+                ->missing('matrix.columns.0.code')
+                ->where('matrix.columns.0.start_time', $report->start_time->setTimezone(config('app.timezone'))->toAtomString())
+                ->has('matrix.columns.0.zone_name')
                 ->has('matrix.rows', 1)
-                ->where('matrix.rows.0.name', 'Thrall')
+                ->where('matrix.rows.0.character.name', 'Thrall')
+                ->where('matrix.rows.0.character.rank.name', $rank->name)
+                ->missing('matrix.rows.0.character.rank.id')
+                ->missing('matrix.rows.0.character.rank.sort_order')
                 ->where('matrix.rows.0.attendance.0', 1)
             )
         );
@@ -148,16 +168,16 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_deferred_prop_rows_include_playable_class_with_icon_url(): void
     {
-        $rank = GuildRank::factory()->create();
+        $rank = $this->createRank($this->gameVersion);
         $playableClass = PlayableClass::factory()->create(['name' => 'Warrior']);
-        $character = Character::factory()->main()->create([
+        $character = $this->createCharacter($this->gameVersion, $rank, [
             'name' => 'Thrall',
-            'rank_id' => $rank->id,
             'playable_class_id' => $playableClass->id,
+            'is_main' => true,
         ]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
-        $report->characters()->attach($character->id, ['presence' => 1]);
+        $tag = $this->createTag($this->gameVersion);
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00', $tag);
+        $this->attend($report, $character);
 
         $user = User::factory()->officer()->create();
 
@@ -166,26 +186,64 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('matrix.rows', 1)
-                ->where('matrix.rows.0.name', 'Thrall')
-                ->has('matrix.rows.0.playable_class')
-                ->where('matrix.rows.0.playable_class.name', 'Warrior')
-                ->has('matrix.rows.0.playable_class.icon_url')
+                ->where('matrix.rows.0.character.name', 'Thrall')
+                ->has('matrix.rows.0.character.playable_class')
+                ->where('matrix.rows.0.character.playable_class.name', 'Warrior')
+                ->has('matrix.rows.0.character.playable_class.icon_url')
+                ->missing('matrix.rows.0.character.playable_class.slug')
             )
         );
     }
 
     #[Test]
-    public function invoke_deferred_prop_returns_empty_when_no_data(): void
+    public function invoke_deferred_prop_returns_no_rows_when_no_one_attended(): void
     {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('matrix.raids', [])
+                ->has('matrix.columns', 1)
                 ->where('matrix.rows', [])
             )
+        );
+    }
+
+    // ==================== matrix: Game Version ====================
+
+    #[Test]
+    public function invoke_follows_the_session_version(): void
+    {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $other = $this->createAttendanceVersion(['release_date' => '2020-01-01']);
+        $this->createReport($other, '2025-01-01 20:00');
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $other->slug])
+            ->get(route('raiding.attendance.matrix'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('gameVersion.data.id', $other->id)
+            ->where('hasAttendance', true)
+        );
+    }
+
+    #[Test]
+    public function invoke_shows_the_empty_state_for_a_version_without_counted_attendance(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['rank_ids' => '1,2']));
+
+        $response->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('hasAttendance', false)
+            ->where('gameVersion.data.id', $this->gameVersion->id)
+            ->missing('matrix')
+            ->missing('filters')
+            ->missing('ranks')
         );
     }
 
@@ -194,8 +252,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_includes_filter_option_props(): void
     {
-        GuildRank::factory()->create();
-        GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
 
         $user = User::factory()->officer()->create();
 
@@ -203,9 +260,11 @@ class AttendanceMatrixControllerTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/Attendance/Matrix')
-            ->has('ranks')
-            ->has('zones')
-            ->has('guildTags')
+            ->has('gameVersion.data')
+            ->where('hasAttendance', true)
+            ->has('ranks.data')
+            ->has('zones.data')
+            ->has('guildTags.data')
             ->has('filters')
             ->has('filters.character')
             ->has('filters.zone_ids')
@@ -219,22 +278,24 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_ranks_includes_all_ranks_regardless_of_count_attendance(): void
     {
-        $counting = GuildRank::factory()->create();
-        $nonCounting = GuildRank::factory()->doesNotCountAttendance()->create();
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $counting = $this->rank;
+        $nonCounting = $this->createRank($this->gameVersion, false);
 
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('ranks', 2)
-            ->where('ranks', fn ($ranks) => collect($ranks)->pluck('id')->sort()->values()->toArray() === collect([$counting->id, $nonCounting->id])->sort()->values()->toArray())
+            ->has('ranks.data', 2)
+            ->where('ranks.data', fn ($ranks) => collect($ranks)->pluck('id')->sort()->values()->toArray() === collect([$counting->id, $nonCounting->id])->sort()->values()->toArray())
         );
     }
 
     #[Test]
     public function invoke_character_filter_is_null_when_not_specified(): void
     {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
@@ -247,7 +308,8 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_character_filter_returns_character_name(): void
     {
-        $character = Character::factory()->main()->create(['name' => 'Thrall']);
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $character = $this->createCharacter($this->gameVersion, null, ['name' => 'Thrall', 'is_main' => true]);
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['character' => $character->id]));
@@ -259,33 +321,51 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function invoke_default_guild_tag_ids_include_only_attendance_counting_tags(): void
+    public function invoke_character_filter_for_an_alt_returns_its_mains_combined_row(): void
     {
-        $countingTag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        GuildTag::factory()->withoutPhase()->create(['count_attendance' => false]);
+        $main = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
+        $alt = $this->createCharacter($this->gameVersion, null, ['name' => 'Go\'el', 'is_main' => false]);
+        $this->linkCharacters($main, $alt);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $alt);
 
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->where('filters.guild_tag_ids', [$countingTag->id])
-        );
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.matrix', ['character' => $alt->id]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filters.character', ['id' => $main->id, 'name' => 'Thrall'])
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('matrix.rows', 1)
+                    ->where('matrix.rows.0.character.id', $main->id)));
     }
 
     #[Test]
-    public function invoke_default_rank_ids_include_only_attendance_counting_ranks(): void
+    public function invoke_character_filter_returns_only_that_characters_row_when_not_combining(): void
     {
-        $countingRank = GuildRank::factory()->create();
-        GuildRank::factory()->doesNotCountAttendance()->create();
+        $main = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
+        $alt = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Go\'el', 'is_main' => false]);
+        $this->linkCharacters($main, $alt);
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $this->attend($report, $main);
+        $this->attend($report, $alt);
 
-        $user = User::factory()->officer()->create();
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.matrix', ['character' => $main->id, 'combine_linked_characters' => 0]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('matrix.rows', 1)
+                    ->where('matrix.rows.0.character.id', $main->id)));
+    }
 
-        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
+    #[Test]
+    public function invoke_filter_id_lists_are_null_by_default(): void
+    {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
 
-        $response->assertInertia(fn (Assert $page) => $page
-            ->where('filters.rank_ids', [$countingRank->id])
-        );
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.matrix'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filters.rank_ids', null)
+                ->where('filters.zone_ids', null)
+                ->where('filters.guild_tag_ids', null));
     }
 
     // ==================== matrix: Validation ====================
@@ -303,7 +383,8 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_accepts_valid_character_id(): void
     {
-        $character = Character::factory()->main()->create();
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $character = $this->createCharacter($this->gameVersion, null, ['is_main' => true]);
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['character' => $character->id]));
@@ -466,8 +547,8 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_accepts_since_date_equal_to_minimum(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'Europe/Paris')]);
+        $tag = $this->createTag($this->gameVersion);
+        $this->createReport($this->gameVersion, '2025-01-05 20:00', $tag);
 
         $user = User::factory()->officer()->create();
 
@@ -481,8 +562,8 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_rejects_since_date_before_minimum(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'Europe/Paris')]);
+        $tag = $this->createTag($this->gameVersion);
+        $this->createReport($this->gameVersion, '2025-01-05 20:00', $tag);
 
         $user = User::factory()->officer()->create();
 
@@ -495,8 +576,8 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_accepts_before_date_equal_to_minimum(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'Europe/Paris')]);
+        $tag = $this->createTag($this->gameVersion);
+        $this->createReport($this->gameVersion, '2025-01-05 20:00', $tag);
 
         $user = User::factory()->officer()->create();
 
@@ -509,8 +590,8 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_rejects_before_date_before_minimum(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'Europe/Paris')]);
+        $tag = $this->createTag($this->gameVersion);
+        $this->createReport($this->gameVersion, '2025-01-05 20:00', $tag);
 
         $user = User::factory()->officer()->create();
 
@@ -532,23 +613,23 @@ class AttendanceMatrixControllerTest extends TestCase
     // ==================== matrix: Earliest Date Prop ====================
 
     #[Test]
-    public function invoke_earliest_date_is_null_when_no_reports_exist(): void
+    public function invoke_earliest_date_is_omitted_when_no_reports_exist(): void
     {
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('earliestDate', null)
+            ->missing('earliestDate')
         );
     }
 
     #[Test]
     public function invoke_earliest_date_is_day_before_earliest_report(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-03-10 20:00', 'Europe/Paris')]);
-        Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'Europe/Paris')]);
+        $tag = $this->createTag($this->gameVersion);
+        $this->createReport($this->gameVersion, '2025-03-10 20:00', $tag);
+        $this->createReport($this->gameVersion, '2025-01-05 20:00', $tag);
 
         $user = User::factory()->officer()->create();
 
@@ -564,15 +645,15 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_character_filter_limits_data_to_that_character(): void
     {
-        $rank = GuildRank::factory()->create();
-        $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $rank = $this->createRank($this->gameVersion);
+        $thrall = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
+        $jaina = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Jaina', 'is_main' => true]);
 
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = $this->createTag($this->gameVersion);
 
-        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
-        $report->characters()->attach($thrall->id, ['presence' => 1]);
-        $report->characters()->attach($jaina->id, ['presence' => 1]);
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00', $tag);
+        $this->attend($report, $thrall);
+        $this->attend($report, $jaina);
 
         $user = User::factory()->officer()->create();
 
@@ -581,7 +662,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('matrix.rows', 1)
-                ->where('matrix.rows.0.name', 'Thrall')
+                ->where('matrix.rows.0.character.name', 'Thrall')
             )
         );
     }
@@ -589,17 +670,17 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_guild_tag_filter_limits_data_to_selected_tag(): void
     {
-        $rank = GuildRank::factory()->create();
-        $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $rank = $this->createRank($this->gameVersion);
+        $thrall = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
+        $jaina = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Jaina', 'is_main' => true]);
 
-        $tag1 = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        $tag2 = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag1 = $this->createTag($this->gameVersion);
+        $tag2 = $this->createTag($this->gameVersion);
 
-        $report1 = Report::factory()->withGuildTag($tag1)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
-        $report2 = Report::factory()->withGuildTag($tag2)->create(['start_time' => Carbon::parse('2025-01-08 20:00', 'Europe/Paris')]);
-        $report1->characters()->attach($thrall->id, ['presence' => 1]);
-        $report2->characters()->attach($jaina->id, ['presence' => 1]);
+        $report1 = $this->createReport($this->gameVersion, '2025-01-01 20:00', $tag1);
+        $report2 = $this->createReport($this->gameVersion, '2025-01-08 20:00', $tag2);
+        $this->attend($report1, $thrall);
+        $this->attend($report2, $jaina);
 
         $user = User::factory()->officer()->create();
 
@@ -608,7 +689,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('matrix.rows', 1)
-                ->where('matrix.rows.0.name', 'Thrall')
+                ->where('matrix.rows.0.character.name', 'Thrall')
             )
         );
     }
@@ -616,26 +697,26 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_since_date_filter_excludes_older_reports(): void
     {
-        $rank = GuildRank::factory()->create();
-        $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $rank = $this->createRank($this->gameVersion);
+        $thrall = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
+        $jaina = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Jaina', 'is_main' => true]);
 
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = $this->createTag($this->gameVersion);
 
-        $oldReport = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
-        $newReport = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-02-01 20:00', 'Europe/Paris')]);
-        $oldReport->characters()->attach($thrall->id, ['presence' => 1]);
-        $newReport->characters()->attach($jaina->id, ['presence' => 1]);
+        $oldReport = $this->createReport($this->gameVersion, '2025-01-01 20:00', $tag);
+        $newReport = $this->createReport($this->gameVersion, '2025-02-01 20:00', $tag);
+        $this->attend($oldReport, $thrall);
+        $this->attend($newReport, $jaina);
 
         $user = User::factory()->officer()->create();
 
-        // since_date = 2025-01-15, which means only reports on or after Jan 15 05:00 are included
+        // since_date = 2025-01-15, which means only reports dated after 2025-01-15 are included
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['since_date' => '2025-01-15']));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('matrix.rows', 1)
-                ->where('matrix.rows.0.name', 'Jaina')
+                ->where('matrix.rows.0.character.name', 'Jaina')
             )
         );
     }
@@ -643,26 +724,26 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_before_date_filter_excludes_newer_reports(): void
     {
-        $rank = GuildRank::factory()->create();
-        $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $rank = $this->createRank($this->gameVersion);
+        $thrall = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
+        $jaina = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Jaina', 'is_main' => true]);
 
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag = $this->createTag($this->gameVersion);
 
-        $oldReport = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
-        $newReport = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-02-01 20:00', 'Europe/Paris')]);
-        $oldReport->characters()->attach($thrall->id, ['presence' => 1]);
-        $newReport->characters()->attach($jaina->id, ['presence' => 1]);
+        $oldReport = $this->createReport($this->gameVersion, '2025-01-01 20:00', $tag);
+        $newReport = $this->createReport($this->gameVersion, '2025-02-01 20:00', $tag);
+        $this->attend($oldReport, $thrall);
+        $this->attend($newReport, $jaina);
 
         $user = User::factory()->officer()->create();
 
-        // before_date = 2025-01-15, which means only reports before Jan 16 05:00 are included
+        // before_date = 2025-01-15, which means only reports dated before 2025-01-15 are included
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['before_date' => '2025-01-15']));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('matrix.rows', 1)
-                ->where('matrix.rows.0.name', 'Thrall')
+                ->where('matrix.rows.0.character.name', 'Thrall')
             )
         );
     }
@@ -672,6 +753,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_filters_include_combine_linked_characters_filter(): void
     {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
@@ -684,6 +766,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_combine_linked_characters_defaults_to_true_when_not_specified(): void
     {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
@@ -696,6 +779,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_combine_linked_characters_can_be_set_to_false(): void
     {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['combine_linked_characters' => false]));
@@ -721,11 +805,11 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_result_is_served_from_cache_on_second_request(): void
     {
-        $rank = GuildRank::factory()->create();
-        $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
-        $report->characters()->attach($thrall->id, ['presence' => 1]);
+        $rank = $this->createRank($this->gameVersion);
+        $thrall = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
+        $tag = $this->createTag($this->gameVersion);
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00', $tag);
+        $this->attend($report, $thrall);
 
         $user = User::factory()->officer()->create();
         $params = ['guild_tag_ids' => (string) $tag->id];
@@ -735,21 +819,20 @@ class AttendanceMatrixControllerTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
                     ->has('matrix.rows', 1)
-                    ->where('matrix.rows.0.name', 'Thrall')
+                    ->where('matrix.rows.0.character.name', 'Thrall')
                 )
             );
 
         // Add a new character to the DB — if caching is working this should not appear.
-        $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
-        $report2 = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-02-01 20:00', 'UTC')]);
-        $report2->characters()->attach($jaina->id, ['presence' => 1]);
+        $jaina = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Jaina', 'is_main' => true]);
+        $this->attend($report, $jaina);
 
         // Second request with identical filters should return the cached result.
         $this->actingAs($user)->get(route('raiding.attendance.matrix', $params))
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
                     ->has('matrix.rows', 1)
-                    ->where('matrix.rows.0.name', 'Thrall')
+                    ->where('matrix.rows.0.character.name', 'Thrall')
                 )
             );
     }
@@ -761,7 +844,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        // Non-null zone_ids exercises the sort($zoneIds) branch in matrixCacheKey()
+        // Non-null zone_ids exercises the zone_ids entry in AttendanceMatrixRequest::cacheKey()
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['zone_ids' => '3,1,2']));
 
         $response->assertOk();
@@ -771,20 +854,22 @@ class AttendanceMatrixControllerTest extends TestCase
     // ==================== matrix: Planned Absences ====================
 
     #[Test]
-    public function invoke_includes_referenced_planned_absences_in_response(): void
+    public function invoke_rows_carry_their_planned_absences(): void
     {
-        $rank = GuildRank::factory()->create();
-        $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $rank = $this->createRank($this->gameVersion);
+        $character = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
+        $tag = $this->createTag($this->gameVersion);
 
-        $raidDate = Carbon::parse('2025-01-15 20:00', 'UTC');
-        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => $raidDate]);
-        $report->characters()->attach($character->id, ['presence' => 1]);
+        $raidDate = '2025-01-15 20:00';
+        $report = $this->createReport($this->gameVersion, $raidDate, $tag);
+        $this->attend($report, $character);
 
         PlannedAbsence::factory()->create([
             'character_id' => $character->id,
             'start_date' => '2025-01-15',
             'end_date' => '2025-01-15',
+            'reason' => PlannedAbsenceReason::Work,
+            'notes' => 'Late shift.',
         ]);
 
         $user = User::factory()->officer()->create();
@@ -793,7 +878,12 @@ class AttendanceMatrixControllerTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('matrix.planned_absences', 1)
+                ->missing('matrix.planned_absences')
+                ->has('matrix.rows.0.planned_absences', 1)
+                ->has('matrix.rows.0.planned_absences.0', 2)
+                ->where('matrix.rows.0.planned_absences.0.reason.label', 'Stuck at work')
+                ->where('matrix.rows.0.planned_absences.0.reason.icon', 'briefcase')
+                ->where('matrix.rows.0.planned_absences.0.notes', 'Late shift.')
             )
         );
     }
@@ -803,15 +893,15 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_excludes_mains_whose_rank_is_not_in_the_rank_filter(): void
     {
-        $rank1 = GuildRank::factory()->create();
-        $rank2 = GuildRank::factory()->create();
-        $main1 = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank1->id]);
-        $main2 = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank2->id]);
+        $rank1 = $this->createRank($this->gameVersion);
+        $rank2 = $this->createRank($this->gameVersion);
+        $main1 = $this->createCharacter($this->gameVersion, $rank1, ['name' => 'Thrall', 'is_main' => true]);
+        $main2 = $this->createCharacter($this->gameVersion, $rank2, ['name' => 'Jaina', 'is_main' => true]);
 
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:00', 'UTC')]);
-        $report->characters()->attach($main1->id, ['presence' => 1]);
-        $report->characters()->attach($main2->id, ['presence' => 1]);
+        $tag = $this->createTag($this->gameVersion);
+        $report = $this->createReport($this->gameVersion, '2025-01-15 20:00', $tag);
+        $this->attend($report, $main1);
+        $this->attend($report, $main2);
 
         $user = User::factory()->officer()->create();
 
@@ -822,7 +912,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('matrix.rows', 1)
-                ->where('matrix.rows.0.name', 'Thrall')
+                ->where('matrix.rows.0.character.name', 'Thrall')
             )
         );
     }
@@ -832,19 +922,15 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_records_zero_attendance_when_all_merged_characters_were_absent(): void
     {
-        $rank = GuildRank::factory()->create();
-        $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $alt = Character::factory()->create(['name' => 'ThrallAlt', 'is_main' => false, 'rank_id' => $rank->id]);
+        $rank = $this->createRank($this->gameVersion);
+        $main = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
+        $alt = $this->createCharacter($this->gameVersion, $rank, ['name' => 'ThrallAlt', 'is_main' => false]);
+        $this->linkCharacters($main, $alt);
 
-        \DB::table('character_links')->insert([
-            ['character_id' => $main->id, 'linked_character_id' => $alt->id, 'created_at' => now(), 'updated_at' => now()],
-            ['character_id' => $alt->id, 'linked_character_id' => $main->id, 'created_at' => now(), 'updated_at' => now()],
-        ]);
-
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:00', 'UTC')]);
-        $report->characters()->attach($main->id, ['presence' => 0]);
-        $report->characters()->attach($alt->id, ['presence' => 0]);
+        $tag = $this->createTag($this->gameVersion);
+        $report = $this->createReport($this->gameVersion, '2025-01-15 20:00', $tag);
+        $this->attend($report, $main, Presence::Absent);
+        $this->attend($report, $alt, Presence::Absent);
 
         $user = User::factory()->officer()->create();
 
@@ -861,17 +947,17 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_cache_is_distinct_per_filter_combination(): void
     {
-        $rank = GuildRank::factory()->create();
-        $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $rank = $this->createRank($this->gameVersion);
+        $thrall = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Thrall', 'is_main' => true]);
+        $jaina = $this->createCharacter($this->gameVersion, $rank, ['name' => 'Jaina', 'is_main' => true]);
 
-        $tag1 = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        $tag2 = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag1 = $this->createTag($this->gameVersion);
+        $tag2 = $this->createTag($this->gameVersion);
 
-        $report1 = Report::factory()->withGuildTag($tag1)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
-        $report2 = Report::factory()->withGuildTag($tag2)->create(['start_time' => Carbon::parse('2025-01-08 20:00', 'UTC')]);
-        $report1->characters()->attach($thrall->id, ['presence' => 1]);
-        $report2->characters()->attach($jaina->id, ['presence' => 1]);
+        $report1 = $this->createReport($this->gameVersion, '2025-01-01 20:00', $tag1);
+        $report2 = $this->createReport($this->gameVersion, '2025-01-08 20:00', $tag2);
+        $this->attend($report1, $thrall);
+        $this->attend($report2, $jaina);
 
         $user = User::factory()->officer()->create();
 
@@ -880,7 +966,7 @@ class AttendanceMatrixControllerTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
                     ->has('matrix.rows', 1)
-                    ->where('matrix.rows.0.name', 'Thrall')
+                    ->where('matrix.rows.0.character.name', 'Thrall')
                 )
             );
 
@@ -888,8 +974,253 @@ class AttendanceMatrixControllerTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
                     ->has('matrix.rows', 1)
-                    ->where('matrix.rows.0.name', 'Jaina')
+                    ->where('matrix.rows.0.character.name', 'Jaina')
                 )
             );
+    }
+
+    // ==================== matrix: game version ====================
+
+    #[Test]
+    public function invoke_ranks_include_only_the_selected_versions_ranks(): void
+    {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $this->createRank($this->createAttendanceVersion());
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.matrix'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('ranks.data', 1)
+                ->where('ranks.data.0.id', $this->rank->id));
+    }
+
+    #[Test]
+    public function invoke_zones_and_guild_tags_list_only_those_used_by_the_versions_reports(): void
+    {
+        $zone = Zone::factory()->create();
+        $tag = $this->createTag($this->gameVersion);
+        $this->createReport($this->gameVersion, '2025-01-01 20:00', $tag, ['zone_id' => $zone->id]);
+        Zone::factory()->create();
+        $this->createTag($this->gameVersion);
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.matrix'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('zones.data', 1)
+                ->where('zones.data.0.id', $zone->id)
+                ->has('guildTags.data', 1)
+                ->where('guildTags.data.0.id', $tag->id));
+    }
+
+    #[Test]
+    public function invoke_uses_the_session_game_version(): void
+    {
+        $newer = $this->createAttendanceVersion(['release_date' => '2024-06-01']);
+        $this->createReport($newer, '2025-01-01 20:00');
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $this->gameVersion->slug])
+            ->get(route('raiding.attendance.matrix'))
+            ->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', $this->gameVersion->slug));
+    }
+
+    #[Test]
+    public function invoke_falls_back_to_the_newest_version_for_a_stale_session_slug(): void
+    {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => 'retired-version'])
+            ->get(route('raiding.attendance.matrix'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('gameVersion.data.slug', $this->gameVersion->slug));
+    }
+
+    #[Test]
+    public function invoke_filters_to_a_character_of_the_game_version_named_in_the_query(): void
+    {
+        $newer = $this->createAttendanceVersion(['release_date' => '2024-06-01']);
+        $this->createReport($newer, '2025-01-01 20:00');
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $character = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->withSession([SharesCurrentGameVersionSession::SESSION_KEY => $newer->slug])
+            ->followingRedirects()
+            ->get(route('raiding.attendance.matrix', ['game_version' => $this->gameVersion->slug, 'character' => $character->id]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('gameVersion.data.slug', $this->gameVersion->slug)
+                ->where('filters.character.id', $character->id));
+    }
+
+    #[Test]
+    public function invoke_remembers_a_game_version_query_and_redirects_without_it(): void
+    {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.matrix', ['game_version' => $this->gameVersion->slug, 'rank_ids' => '1']))
+            ->assertRedirect(route('raiding.attendance.matrix', ['rank_ids' => '1']))
+            ->assertSessionHas(SharesCurrentGameVersionSession::SESSION_KEY, $this->gameVersion->slug);
+    }
+
+    #[Test]
+    public function invoke_renders_the_empty_state_without_a_game_version(): void
+    {
+        GameVersion::query()->delete();
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.matrix'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('gameVersion', null)
+                ->where('hasAttendance', false)
+                ->missing('matrix')
+                ->missing('ranks'));
+    }
+
+    #[Test]
+    public function invoke_rows_carry_a_null_playable_class_for_a_character_without_one(): void
+    {
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.matrix'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload->where('matrix.rows.0.character.playable_class', null)));
+    }
+
+    #[Test]
+    public function invoke_combining_folds_an_alt_into_its_main(): void
+    {
+        $main = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
+        $alt = $this->createCharacter($this->gameVersion, null, ['is_main' => false]);
+        $this->linkCharacters($main, $alt);
+        $this->attend($this->createReport($this->gameVersion, '2025-01-01 20:00'), $alt);
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.matrix'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('matrix.rows', 1)
+                    ->where('matrix.rows.0.character.name', 'Thrall')
+                    ->where('matrix.rows.0.attendance.0', 1)));
+    }
+
+    #[Test]
+    public function invoke_deferred_prop_rows_omit_linked_characters_when_combining(): void
+    {
+        $main = $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]);
+        $alt = $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => false]);
+        $this->linkCharacters($main, $alt);
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $this->attend($report, $main);
+        $this->attend($report, $alt);
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.matrix'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('matrix.rows', 1)
+                    ->where('matrix.rows.0.character.id', $main->id)
+                    ->missing('matrix.rows.0.character.linked_characters')));
+    }
+
+    #[Test]
+    public function invoke_payload_query_count_does_not_grow_with_rows(): void
+    {
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $this->attend($report, $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
+        $user = User::factory()->officer()->create();
+        $this->actingAs($user)->get(route('raiding.attendance.matrix'));
+        Cache::tags(['attendance'])->flush();
+        $oneRow = $this->countMatrixQueries($user);
+
+        foreach (range(1, 3) as $ignored) {
+            $this->attend($report, $this->createCharacter($this->gameVersion, $this->rank, ['is_main' => true]));
+        }
+        Cache::tags(['attendance'])->flush();
+
+        $this->assertSame($oneRow, $this->countMatrixQueries($user));
+    }
+
+    // ==================== matrix: attendance names ====================
+
+    #[Test]
+    public function invoke_sends_no_separate_attendance_names_prop(): void
+    {
+        $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.matrix'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->missing('attendanceNames')
+                ->loadDeferredProps(fn (Assert $reload) => $reload->missing('attendanceNames')));
+    }
+
+    #[Test]
+    public function invoke_rows_carry_each_raids_attendance_names(): void
+    {
+        $thrall = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
+        $jaina = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Jaina', 'is_main' => true]);
+        $earlier = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $later = $this->createReport($this->gameVersion, '2025-01-08 20:00');
+        $this->attend($earlier, $thrall);
+        $this->attend($later, $thrall, Presence::Absent);
+        $this->attend($later, $jaina);
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.matrix'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->where('matrix.rows.0.character.id', $jaina->id)
+                    ->where('matrix.rows.0.attendance_names', [['Jaina'], []])
+                    ->where('matrix.rows.1.character.id', $thrall->id)
+                    ->where('matrix.rows.1.attendance_names', [[], ['Thrall']])));
+    }
+
+    #[Test]
+    public function invoke_attendance_names_merge_an_alt_into_its_main(): void
+    {
+        $main = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]);
+        $alt = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'ThrallAlt', 'is_main' => false]);
+        $this->linkCharacters($main, $alt);
+        $report = $this->createReport($this->gameVersion, '2025-01-15 20:00');
+        $this->attend($report, $main);
+        $this->attend($report, $alt);
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.matrix'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('matrix.rows', 1)
+                    ->where('matrix.rows.0.attendance_names', [['Thrall', 'ThrallAlt']])));
+    }
+
+    #[Test]
+    public function invoke_attendance_names_are_omitted_without_combining_linked_characters(): void
+    {
+        $this->attend(
+            $this->createReport($this->gameVersion, '2025-01-15 20:00'),
+            $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'is_main' => true]),
+        );
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->get(route('raiding.attendance.matrix', ['combine_linked_characters' => 0]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload->missing('matrix.rows.0.attendance_names')));
+    }
+
+    // ==================== helpers ====================
+
+    private function countMatrixQueries(User $user): int
+    {
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $this->actingAs($user)->get(route('raiding.attendance.matrix'))
+            ->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload->has('matrix')));
+        DB::disableQueryLog();
+
+        return count(DB::getQueryLog());
     }
 }

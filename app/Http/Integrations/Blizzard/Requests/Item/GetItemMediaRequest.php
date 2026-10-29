@@ -3,7 +3,8 @@
 namespace App\Http\Integrations\Blizzard\Requests\Item;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
-use App\Http\Integrations\Blizzard\Concerns\HasCaching;
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Http\Integrations\Blizzard\Concerns\CachesBlizzardResponses;
 use App\Http\Integrations\Blizzard\Responses\GetItemMediaResponse;
 use Saloon\CachePlugin\Contracts\Cacheable;
 use Saloon\Enums\Method;
@@ -12,7 +13,7 @@ use Saloon\Http\Request;
 
 class GetItemMediaRequest extends Request implements Cacheable
 {
-    use HasCaching;
+    use CachesBlizzardResponses;
 
     protected ?string $response = GetItemMediaResponse::class;
 
@@ -20,6 +21,7 @@ class GetItemMediaRequest extends Request implements Cacheable
 
     public function __construct(
         protected int $itemId,
+        protected ?BlizzardNamespace $namespace = null,
     ) {}
 
     public function resolveEndpoint(): string
@@ -34,7 +36,8 @@ class GetItemMediaRequest extends Request implements Cacheable
 
         $pendingRequest->headers()->add(
             'Battlenet-Namespace',
-            $connector->namespace('static'),
+            ($this->namespace ?? BlizzardNamespace::default())
+                ->forStaticRequests($connector->getRegion()),
         );
     }
 

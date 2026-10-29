@@ -4,6 +4,7 @@ namespace Tests\Feature\Jobs\RaidHelper;
 
 use App\Http\Integrations\RaidHelper\RaidHelperConnector;
 use App\Http\Integrations\RaidHelper\Requests\GetCompositionRequest;
+use App\Http\Integrations\ServedFromCache;
 use App\Jobs\RaidHelper\FetchComposition;
 use App\Jobs\RaidHelper\SyncComposition;
 use App\Models\Event;
@@ -31,7 +32,7 @@ class FetchCompositionTest extends TestCase
     {
         parent::setUp();
 
-        $this->connector = new RaidHelperConnector(token: 'test-token', serverId: '111222333444555666');
+        $this->connector = new RaidHelperConnector(token: 'test-token', serverId: '111222333444555666', servedFromCache: app(ServedFromCache::class));
         $this->app->instance(RaidHelperConnector::class, $this->connector);
     }
 

@@ -1,0 +1,77 @@
+name: Feature
+description: New behaviour or a change to what the site does.
+title: "Feature: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Write the title as the outcome, e.g. `Feature: store Discord avatars locally on User via MediaLibrary`.
+        Describe behaviour, not implementation, in the summary. Put implementation detail under **Proposed change**.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What should change and who benefits (members, officers, visitors).
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Current behaviour
+      description: How it works today, with file references. Write "None" if this is entirely new.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed change
+      description: |
+        The change, broken into numbered parts where useful (new request, action, job, page...).
+        Link external API documentation for any integration endpoint.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - Backend (controllers, actions, models)
+        - Frontend (React / Inertia pages and components)
+        - Integrations (Blizzard, Discord, Warcraft Logs, Raid Helper)
+        - Database (migrations, seeders, data)
+        - Queues, jobs and scheduling
+        - Caching
+        - Tests and tooling
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: Files affected
+      description: Files to create, change or delete, as far as they are known.
+  - type: textarea
+    id: testing
+    attributes:
+      label: Tests
+      description: The red/green TDD cycles, in order. Each new Action gets its own test under tests/Feature/Actions.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: A checklist that decides when this is done.
+      value: |
+        - [ ] 
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: Things deliberately left for later, so the work doesn't grow.
+  - type: textarea
+    id: related
+    attributes:
+      label: Related
+      description: Linked issues and PRs.

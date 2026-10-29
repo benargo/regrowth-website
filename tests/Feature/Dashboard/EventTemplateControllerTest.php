@@ -8,8 +8,9 @@ use App\Models\Event;
 use App\Models\Permission;
 use App\Models\Raid;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -17,6 +18,7 @@ use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 #[Group('raiding')]
 class EventTemplateControllerTest extends TestCase
 {
@@ -46,7 +48,7 @@ class EventTemplateControllerTest extends TestCase
         $this->officer = User::factory()->create();
         $this->officer->discordRoles()->attach($this->officerRole->id);
 
-        $this->mockDiscordChannel(name: 'raids', position: 1, byDefault: true);
+        $this->fakeDiscordChannel(name: 'raids', position: 1);
     }
 
     // ==================== index ====================
@@ -61,7 +63,7 @@ class EventTemplateControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_templates_and_raid_groups_on_index(): void
+    public function it_returns_raid_groups_on_index(): void
     {
         $raid = Raid::factory()->create();
         $template = Event::factory()->template()->create(['title' => 'SSC Setup']);
@@ -70,12 +72,46 @@ class EventTemplateControllerTest extends TestCase
         $response = $this->actingAs($this->officer)->get(route('management.event-templates.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('templates', 1)
-            ->where('templates.0.title', 'SSC Setup')
+            ->missing('templates')
             ->has('raidGroups', 1)
-            ->where('raidGroups.0.raid.id', $raid->id)
-            ->has('raidGroups.0.templates', 1)
+            ->where('raidGroups.0.raid.data', ['id' => $raid->id, 'name' => $raid->name])
+            ->has('raidGroups.0.templates.data', 1)
+            ->where('raidGroups.0.templates.data.0.title', 'SSC Setup')
         );
+    }
+
+    #[Test]
+    public function it_limits_index_templates_to_the_template_scope(): void
+    {
+        $template = Event::factory()->template()->create();
+        $template->raids()->attach(Raid::factory()->create());
+
+        $response = $this->actingAs($this->officer)->get(route('management.event-templates.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('raidGroups.0.templates.data.0', fn (Assert $item) => $item->hasAll(['id', 'title', 'updated_at', 'raids']))
+        );
+    }
+
+    #[Test]
+    public function it_lists_templates_without_lazy_loading_raids_or_media(): void
+    {
+        Storage::fake('s3');
+        foreach (range(1, 2) as $index) {
+            Event::factory()->template()->create()->raids()->attach(Raid::factory()->withBanner()->create());
+        }
+
+        config(['media-library.force_lazy_loading' => false]);
+        Model::preventLazyLoading();
+
+        try {
+            $response = $this->actingAs($this->officer)->get(route('management.event-templates.index'));
+
+            $response->assertOk();
+            $response->assertInertia(fn (Assert $page) => $page->has('raidGroups', 2));
+        } finally {
+            Model::preventLazyLoading(false);
+        }
     }
 
     #[Test]
@@ -124,9 +160,40 @@ class EventTemplateControllerTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Manage/EventTemplates/Create')
-            ->has('raids', 1)
-            ->where('raids.0.id', $raid->id)
+            ->has('raids.data', 1)
+            ->where('raids.data.0.id', $raid->id)
         );
+    }
+
+    #[Test]
+    public function it_limits_create_raids_to_the_summary_scope(): void
+    {
+        Raid::factory()->create();
+
+        $response = $this->actingAs($this->officer)->get(route('management.event-templates.create'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('raids.data.0', fn (Assert $raid) => $raid->hasAll(['id', 'name']))
+        );
+    }
+
+    #[Test]
+    public function it_lists_create_raids_without_lazy_loading_media(): void
+    {
+        Storage::fake('s3');
+        Raid::factory()->withBanner()->count(2)->create();
+        config(['media-library.force_lazy_loading' => false]);
+
+        Model::preventLazyLoading();
+
+        try {
+            $response = $this->actingAs($this->officer)->get(route('management.event-templates.create'));
+        } finally {
+            Model::preventLazyLoading(false);
+        }
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page->has('raids.data', 2));
     }
 
     // ==================== store ====================
@@ -240,16 +307,16 @@ class EventTemplateControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_passes_question_mark_icon_url_as_signed_url_in_initial_props(): void
+    public function it_passes_question_mark_icon_url_as_cdn_url_in_initial_props(): void
     {
+        Storage::fake('s3');
         $template = Event::factory()->template()->create();
 
         $response = $this->actingAs($this->officer)->get(route('management.event-templates.edit', $template));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Manage/EventTemplates/Edit')
-            ->where('questionMarkIconUrl', fn ($url) => str_contains((string) $url, '/icons/56/inv_misc_questionmark.jpg')
-                && URL::hasValidSignature(request()->create((string) $url)))
+            ->where('questionMarkIconUrl', Storage::disk('s3')->url('blizzard-cdn/icons/56/inv_misc_questionmark.jpg'))
         );
     }
 

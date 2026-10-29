@@ -18,22 +18,22 @@ export default function ItemResultRow({ item, index, isHighlighted, onMouseEnter
                 tabIndex={-1}
                 onMouseEnter={onMouseEnter}
                 className={`flex items-center gap-4 rounded p-2 transition-colors ${
-                    isHighlighted ? "bg-ground-700" : "bg-ground-800/50 hover:bg-ground-800/70"
+                    isHighlighted ? "bg-brown-700" : "bg-brown-800/50 hover:bg-brown-800/70"
                 }`}
             >
                 {item.icon && <div className="h-8 w-8 flex-none" />}
                 <div className="flex min-w-0 flex-col text-left">
-                    {breadcrumb && <p className="truncate text-xs text-secondary-400">{breadcrumb}</p>}
+                    {breadcrumb && <p className="truncate text-xs text-gray-300">{breadcrumb}</p>}
                     <h4 className="text-md truncate font-bold text-white">{item.name}</h4>
                     <div className="flex items-center gap-2">
                         {item.comments_count > 0 && (
-                            <p className="inline-flex items-center gap-1 text-xs text-secondary-200">
+                            <p className="inline-flex items-center gap-1 text-xs text-gray-200">
                                 <Icon icon="comments" style="solid" className="h-3 w-3" />
                                 {`${item.comments_count} ${labelComments}`}
                             </p>
                         )}
                         {item.notes && (
-                            <p className="inline-flex items-center gap-1 text-xs text-secondary-200">
+                            <p className="inline-flex items-center gap-1 text-xs text-gray-200">
                                 <Icon icon="sticky-note" style="solid" className="h-3 w-3" />
                                 Notes
                             </p>
@@ -44,7 +44,7 @@ export default function ItemResultRow({ item, index, isHighlighted, onMouseEnter
             {item.icon && (
                 <div className="absolute top-1/2 left-2 -translate-y-1/2">
                     <ItemIcon
-                        itemId={item.id}
+                        itemId={item.blizzard_id}
                         itemName={item.name}
                         iconUrl={item.icon}
                         itemQuality={item.quality_border_class}

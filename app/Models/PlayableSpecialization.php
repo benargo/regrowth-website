@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Contracts\HasBlizzardIcons;
 use App\Enums\PlayableSpecRole;
+use App\Models\Concerns\InteractsWithBlizzardIcons;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,7 +18,15 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 #[Hidden(['created_at', 'updated_at'])]
 class PlayableSpecialization extends Model implements HasBlizzardIcons, HasMedia
 {
-    use HasFactory, InteractsWithMedia;
+    use HasFactory, InteractsWithBlizzardIcons, InteractsWithMedia;
+
+    /**
+     * Register the `blizzard_icons` collection, falling back to the questionmark icon.
+     */
+    public function registerMediaCollections(): void
+    {
+        $this->addBlizzardIconCollection();
+    }
 
     /**
      * Get the attributes that should be cast.

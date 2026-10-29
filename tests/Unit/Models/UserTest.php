@@ -2,7 +2,10 @@
 
 namespace Tests\Unit\Models;
 
+use App\Models\Character;
+use App\Models\DiscordNotification;
 use App\Models\DiscordRole;
+use App\Models\Event;
 use App\Models\Permission;
 use App\Models\PlannedAbsence;
 use App\Models\User;
@@ -42,7 +45,6 @@ class UserTest extends ModelTestCase
             'nickname',
             'avatar',
             'guild_avatar',
-            'banner',
         ]);
     }
 
@@ -58,7 +60,6 @@ class UserTest extends ModelTestCase
             'nickname',
             'avatar',
             'guild_avatar',
-            'banner',
         ]);
     }
 
@@ -170,46 +171,17 @@ class UserTest extends ModelTestCase
     public function avatar_url_returns_default_avatar_when_avatar_is_null(): void
     {
         $user = $this->create([
-            'id' => '123456789012345689',
+            'id' => '175928847299117063',
             'username' => 'testuser',
             'discriminator' => '0',
             'avatar' => null,
             'guild_avatar' => null,
         ]);
 
-        $this->assertStringStartsWith('https://cdn.discordapp.com/embed/avatars/', $user->avatar_url);
+        $this->assertSame('https://cdn.test/discord-cdn/embed/avatars/2.png', $user->avatar_url);
     }
 
-    #[Test]
-    public function banner_url_returns_cdn_url_when_banner_set(): void
-    {
-        $user = $this->create([
-            'id' => '123456789012345690',
-            'username' => 'testuser',
-            'discriminator' => '0',
-            'banner' => 'banner123',
-        ]);
-
-        $this->assertSame(
-            'https://cdn.discordapp.com/banners/123456789012345690/banner123.webp',
-            $user->banner_url
-        );
-    }
-
-    #[Test]
-    public function banner_url_returns_null_when_banner_is_null(): void
-    {
-        $user = $this->create([
-            'id' => '123456789012345691',
-            'username' => 'testuser',
-            'discriminator' => '0',
-            'banner' => null,
-        ]);
-
-        $this->assertNull($user->banner_url);
-    }
-
-    // ==================== persistence and discord roles ====================
+    // ==================== persistence ====================
 
     #[Test]
     public function it_persists_with_discord_id_as_primary_key(): void
@@ -222,6 +194,61 @@ class UserTest extends ModelTestCase
 
         $this->assertTableHas(['id' => '123456789012345678', 'username' => 'testuser']);
         $this->assertModelExists($user);
+    }
+
+    // ==================== relationships ====================
+
+    #[Test]
+    public function characters_returns_has_many_relationship(): void
+    {
+        $model = new User;
+
+        $this->assertInstanceOf(HasMany::class, $model->characters());
+    }
+
+    #[Test]
+    public function characters_returns_characters_belonging_to_user(): void
+    {
+        $user = User::factory()->create();
+        $character = Character::factory()->forUser($user)->create();
+
+        $this->assertCount(1, $user->characters);
+        $this->assertTrue($user->characters->first()->is($character));
+    }
+
+    #[Test]
+    public function characters_does_not_return_characters_of_other_users(): void
+    {
+        $user = User::factory()->create();
+        Character::factory()->forUser()->create();
+
+        $this->assertCount(0, $user->characters);
+    }
+
+    #[Test]
+    public function characters_returns_empty_collection_when_none_owned(): void
+    {
+        $user = User::factory()->create();
+
+        $this->assertCount(0, $user->characters);
+    }
+
+    #[Test]
+    public function with_characters_factory_state_attaches_given_characters(): void
+    {
+        $characters = Character::factory()->count(2)->create();
+
+        $user = User::factory()->withCharacters($characters->all())->create();
+
+        $this->assertEqualsCanonicalizing($characters->pluck('id')->all(), $user->characters->pluck('id')->all());
+    }
+
+    #[Test]
+    public function with_characters_factory_state_creates_characters_when_none_given(): void
+    {
+        $user = User::factory()->withCharacters(count: 3)->create();
+
+        $this->assertCount(3, $user->characters);
     }
 
     #[Test]
@@ -247,6 +274,137 @@ class UserTest extends ModelTestCase
         $this->assertTrue($user->discordRoles->contains($officer));
         $this->assertTrue($user->discordRoles->contains($member));
     }
+
+    #[Test]
+    public function events_returns_belongs_to_many_relationship(): void
+    {
+        $model = new User;
+
+        $this->assertInstanceOf(BelongsToMany::class, $model->events());
+    }
+
+    #[Test]
+    public function it_can_attach_events(): void
+    {
+        $user = User::factory()->create();
+        $event = Event::factory()->create();
+
+        $user->events()->attach($event->id);
+
+        $this->assertCount(1, $user->events);
+        $this->assertSame($event->id, $user->events->first()->id);
+    }
+
+    #[Test]
+    public function events_returns_empty_collection_when_none_attached(): void
+    {
+        $user = User::factory()->create();
+
+        $this->assertCount(0, $user->events);
+    }
+
+    #[Test]
+    public function deleting_user_cascades_to_events_pivot(): void
+    {
+        $user = User::factory()->create();
+        $event = Event::factory()->create();
+        $user->events()->attach($event->id);
+
+        $user->delete();
+
+        $this->assertDatabaseMissing('pivot_events_users', [
+            'user_id' => $user->id,
+        ]);
+    }
+
+    #[Test]
+    public function with_events_factory_state_attaches_given_events(): void
+    {
+        $events = Event::factory()->count(2)->create();
+
+        $user = User::factory()->withEvents($events->all())->create();
+
+        $this->assertEqualsCanonicalizing($events->pluck('id')->all(), $user->events->pluck('id')->all());
+    }
+
+    #[Test]
+    public function with_events_factory_state_creates_events_when_none_given(): void
+    {
+        $user = User::factory()->withEvents(count: 3)->create();
+
+        $this->assertCount(3, $user->events);
+    }
+
+    #[Test]
+    public function planned_absences_returns_has_many_relationship(): void
+    {
+        $model = new User;
+
+        $this->assertInstanceOf(HasMany::class, $model->plannedAbsences());
+    }
+
+    #[Test]
+    public function planned_absences_returns_absences_for_user(): void
+    {
+        $user = User::factory()->create();
+        $absence = PlannedAbsence::factory()->create(['user_id' => $user->id]);
+
+        $this->assertCount(1, $user->plannedAbsences);
+        $this->assertTrue($user->plannedAbsences->contains($absence));
+    }
+
+    #[Test]
+    public function planned_absences_does_not_return_absences_for_other_users(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        PlannedAbsence::factory()->create(['user_id' => $otherUser->id]);
+
+        $this->assertCount(0, $user->plannedAbsences);
+    }
+
+    #[Test]
+    public function planned_absences_created_returns_has_many_relationship(): void
+    {
+        $model = new User;
+
+        $this->assertInstanceOf(HasMany::class, $model->plannedAbsencesCreated());
+    }
+
+    #[Test]
+    public function planned_absences_created_returns_absences_created_by_user(): void
+    {
+        $user = User::factory()->create();
+        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id]);
+
+        $this->assertCount(1, $user->plannedAbsencesCreated);
+        $this->assertTrue($user->plannedAbsencesCreated->contains($absence));
+    }
+
+    #[Test]
+    public function planned_absences_created_does_not_return_absences_created_by_other_users(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        PlannedAbsence::factory()->create(['created_by' => $otherUser->id]);
+
+        $this->assertCount(0, $user->plannedAbsencesCreated);
+    }
+
+    #[Test]
+    public function notifications_created_returns_only_notifications_created_by_user(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $own = DiscordNotification::factory()->createdByUser($user)->create();
+        DiscordNotification::factory()->createdByUser($otherUser)->create();
+
+        $notificationIds = $user->notificationsCreated->pluck('id')->all();
+
+        $this->assertSame([$own->id], $notificationIds);
+    }
+
+    // ==================== roles ====================
 
     #[Test]
     public function is_officer_returns_true_for_officer_role(): void
@@ -338,69 +496,25 @@ class UserTest extends ModelTestCase
     }
 
     #[Test]
+    public function highest_role_ignores_roles_that_are_not_visible(): void
+    {
+        $user = User::factory()->officer()->create();
+        $officer = $user->discordRoles->first();
+        $hiddenRole = DiscordRole::factory()->create(['position' => 999]);
+        $user->discordRoles()->attach($hiddenRole->id);
+        $user->load('discordRoles');
+
+        $highestRole = $user->highestRole();
+
+        $this->assertTrue($highestRole->is($officer));
+    }
+
+    #[Test]
     public function highest_role_returns_null_when_no_recognized_roles(): void
     {
         $user = User::factory()->create();
 
         $this->assertNull($user->highestRole());
-    }
-
-    // ==================== planned absences relationships ====================
-
-    #[Test]
-    public function planned_absences_returns_has_many_relationship(): void
-    {
-        $model = new User;
-
-        $this->assertInstanceOf(HasMany::class, $model->plannedAbsences());
-    }
-
-    #[Test]
-    public function planned_absences_returns_absences_for_user(): void
-    {
-        $user = User::factory()->create();
-        $absence = PlannedAbsence::factory()->create(['user_id' => $user->id]);
-
-        $this->assertCount(1, $user->plannedAbsences);
-        $this->assertTrue($user->plannedAbsences->contains($absence));
-    }
-
-    #[Test]
-    public function planned_absences_does_not_return_absences_for_other_users(): void
-    {
-        $user = User::factory()->create();
-        $otherUser = User::factory()->create();
-        PlannedAbsence::factory()->create(['user_id' => $otherUser->id]);
-
-        $this->assertCount(0, $user->plannedAbsences);
-    }
-
-    #[Test]
-    public function planned_absences_created_returns_has_many_relationship(): void
-    {
-        $model = new User;
-
-        $this->assertInstanceOf(HasMany::class, $model->plannedAbsencesCreated());
-    }
-
-    #[Test]
-    public function planned_absences_created_returns_absences_created_by_user(): void
-    {
-        $user = User::factory()->create();
-        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id]);
-
-        $this->assertCount(1, $user->plannedAbsencesCreated);
-        $this->assertTrue($user->plannedAbsencesCreated->contains($absence));
-    }
-
-    #[Test]
-    public function planned_absences_created_does_not_return_absences_created_by_other_users(): void
-    {
-        $user = User::factory()->create();
-        $otherUser = User::factory()->create();
-        PlannedAbsence::factory()->create(['created_by' => $otherUser->id]);
-
-        $this->assertCount(0, $user->plannedAbsencesCreated);
     }
 
     // ==================== permissions ====================
@@ -447,7 +561,7 @@ class UserTest extends ModelTestCase
     }
 
     #[Test]
-    public function has_permission_via_discord_roles_returns_true_when_role_has_permission(): void
+    public function is_authorized_to_returns_true_when_a_role_has_the_permission(): void
     {
         Permission::firstOrCreate(['name' => 'test-permission', 'guard_name' => 'web']);
 
@@ -462,7 +576,7 @@ class UserTest extends ModelTestCase
     }
 
     #[Test]
-    public function has_permission_via_discord_roles_returns_false_when_role_lacks_permission(): void
+    public function is_authorized_to_returns_false_when_no_role_has_the_permission(): void
     {
         Permission::firstOrCreate(['name' => 'test-permission', 'guard_name' => 'web']);
 
@@ -475,12 +589,23 @@ class UserTest extends ModelTestCase
     }
 
     #[Test]
-    public function has_permission_via_discord_roles_returns_false_when_user_has_no_roles(): void
+    public function is_authorized_to_returns_false_when_user_has_no_roles(): void
     {
         Permission::firstOrCreate(['name' => 'test-permission', 'guard_name' => 'web']);
 
         $user = User::factory()->create();
 
         $this->assertFalse($user->isAuthorizedTo('test-permission'));
+    }
+
+    #[Test]
+    public function is_authorized_to_returns_true_for_admin_without_any_role_permission(): void
+    {
+        Permission::firstOrCreate(['name' => 'test-permission', 'guard_name' => 'web']);
+        $user = User::factory()->admin()->create();
+
+        $isAuthorized = $user->isAuthorizedTo('test-permission');
+
+        $this->assertTrue($isAuthorized);
     }
 }

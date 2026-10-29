@@ -4,9 +4,11 @@ namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\CharacterSummaryResource;
 use App\Models\Character;
+use App\Support\MediaLibrary\UnknownBlizzardIcon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -46,7 +48,7 @@ class CharacterSummaryResourceTest extends TestCase
         $this->assertArrayHasKey('name', $array['playable_class']);
         $this->assertArrayHasKey('slug', $array['playable_class']);
         $this->assertArrayHasKey('icon_url', $array['playable_class']);
-        $this->assertNull($array['playable_class']['icon_url']);
+        $this->assertSame(app(UnknownBlizzardIcon::class)->url(), $array['playable_class']['icon_url']);
     }
 
     #[Test]
@@ -92,5 +94,41 @@ class CharacterSummaryResourceTest extends TestCase
 
         $this->assertArrayHasKey('rank', $array);
         $this->assertIsArray($array['rank']);
+    }
+
+    #[Test]
+    public function it_omits_portrait_url_when_media_is_not_loaded(): void
+    {
+        $character = Character::factory()->create();
+
+        $array = (new CharacterSummaryResource($character))->toArray(new Request);
+
+        $this->assertInstanceOf(MissingValue::class, $array['portrait_url']);
+    }
+
+    #[Test]
+    public function it_returns_null_portrait_url_when_media_is_loaded_but_none_attached(): void
+    {
+        $character = Character::factory()->create();
+
+        $array = (new CharacterSummaryResource($character->load('media')))->toArray(new Request);
+
+        $this->assertNull($array['portrait_url']);
+    }
+
+    #[Test]
+    #[Group('media')]
+    public function it_returns_the_portrait_url_when_media_is_loaded(): void
+    {
+        Storage::fake('s3');
+
+        $character = Character::factory()->create();
+        $character->addMediaFromString('BINARY')
+            ->usingFileName('character_15678.jpg')
+            ->toMediaCollection(Character::MEDIA_COLLECTION);
+
+        $array = (new CharacterSummaryResource($character->load('media')))->toArray(new Request);
+
+        $this->assertSame($character->getFirstMediaUrl(Character::MEDIA_COLLECTION), $array['portrait_url']);
     }
 }

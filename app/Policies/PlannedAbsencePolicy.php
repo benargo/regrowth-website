@@ -32,19 +32,11 @@ class PlannedAbsencePolicy
     }
 
     /**
-     * Determine whether the user can create models for others.
+     * Determine whether the user can backdate planned absences.
      */
-    public function createForOthers(User $user): bool
+    public function backdate(User $user): bool
     {
-        return $user->isAuthorizedTo('manage-planned-absences');
-    }
-
-    /**
-     * Determine whether the user can create backdated planned absences.
-     */
-    public function createBackdated(User $user): bool
-    {
-        return $user->isAuthorizedTo('manage-planned-absences');
+        return $user->isAuthorizedTo('backdate-planned-absences');
     }
 
     /**
@@ -52,7 +44,8 @@ class PlannedAbsencePolicy
      */
     public function update(User $user, PlannedAbsence $plannedAbsence): bool
     {
-        return $user->isAuthorizedTo('update-planned-absences') || $plannedAbsence->createdBy()->is($user);
+        return $user->isAuthorizedTo('update-planned-absences')
+            || $this->creatorCanChange($user, $plannedAbsence);
     }
 
     /**
@@ -60,13 +53,14 @@ class PlannedAbsencePolicy
      */
     public function delete(User $user, PlannedAbsence $plannedAbsence): bool
     {
-        return $user->isAuthorizedTo('delete-planned-absences') || $plannedAbsence->createdBy()->is($user);
+        return $user->isAuthorizedTo('delete-planned-absences')
+            || $this->creatorCanChange($user, $plannedAbsence);
     }
 
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, PlannedAbsence $plannedAbsence): bool
+    public function restore(User $user, ?PlannedAbsence $plannedAbsence = null): bool
     {
         return $user->isAdmin() ?? false;
     }
@@ -77,5 +71,13 @@ class PlannedAbsencePolicy
     public function forceDelete(User $user, PlannedAbsence $plannedAbsence): bool
     {
         return $user->isAdmin() ?? false;
+    }
+
+    /**
+     * Determine whether the user created the absence and it starts today or later.
+     */
+    private function creatorCanChange(User $user, PlannedAbsence $plannedAbsence): bool
+    {
+        return $plannedAbsence->createdBy()->is($user) && $plannedAbsence->start_date->gte(today());
     }
 }

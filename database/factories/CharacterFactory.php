@@ -3,9 +3,11 @@
 namespace Database\Factories;
 
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class CharacterFactory extends Factory
@@ -24,6 +26,7 @@ class CharacterFactory extends Factory
     public function definition(): array
     {
         return [
+            'game_version_id' => null,
             'name' => fake()->randomElement($this->characterNames),
             'level' => fake()->numberBetween(1, 80),
             'rank_id' => null,
@@ -61,6 +64,26 @@ class CharacterFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'name' => fake()->unique()->firstName(),
+        ]);
+    }
+
+    /**
+     * Indicate that the character belongs to the given game version.
+     */
+    public function forGameVersion(GameVersion $gameVersion): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'game_version_id' => $gameVersion->id,
+        ]);
+    }
+
+    /**
+     * Indicate that the character belongs to the given user, or a new one.
+     */
+    public function forUser(?User $user = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'user_id' => $user ?? User::factory(),
         ]);
     }
 

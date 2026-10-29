@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { usePage } from "@inertiajs/react";
 import { usePermission } from "@/Components/Authorizable";
-import Checkbox from "@/Components/Checkbox";
+import { Checkbox } from "@/Components/FormControls";
 import CommentForm from "@/Components/Comments/CommentForm";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import Icon from "@/Components/FontAwesome/Icon";
+import IconButton from "@/Components/IconButton";
 import Pill from "@/Components/Pill";
 import Tooltip from "@/Components/Tooltip";
 
@@ -43,7 +44,7 @@ export default function CommentItem({
     }
 
     function ownReaction() {
-        return comment.reactions.find((reaction) => reaction.user?.id === auth.user?.id) ?? null;
+        return comment.reactions.find((reaction) => reaction.user?.id === auth.user?.data?.id) ?? null;
     }
 
     function userHasReacted() {
@@ -51,7 +52,7 @@ export default function CommentItem({
     }
 
     function isOwnComment() {
-        return comment.user?.id === auth.user?.id;
+        return comment.user?.id === auth.user?.data?.id;
     }
 
     function handleDelete() {
@@ -75,24 +76,26 @@ export default function CommentItem({
 
     if (comment.is_deleted) {
         return (
-            <div className={`border-ink-600 bg-ground-800/50 rounded-lg border border-dashed ${isReply ? "p-3" : "p-4"}`}>
+            <div
+                className={`bg-brown-800/50 rounded-lg border border-dashed border-amber-600 ${isReply ? "p-3" : "p-4"}`}
+            >
                 <div className="flex items-center gap-3">
                     <img
                         src={comment.user.avatar}
                         alt={comment.user.display_name}
                         className={`rounded-full opacity-50 grayscale ${isReply ? "h-6 w-6" : "h-8 w-8"}`}
                     />
-                    <span className="text-sm font-medium text-secondary-400">{comment.user.display_name}</span>
-                    <span className="ml-auto text-sm text-secondary-500">{formatDate(comment.created_at)}</span>
+                    <span className="text-sm font-medium text-gray-400">{comment.user.display_name}</span>
+                    <span className="ml-auto text-sm text-gray-400">{formatDate(comment.created_at)}</span>
                 </div>
-                <p className="mt-2 text-sm text-secondary-500 italic">[deleted]</p>
+                <p className="mt-2 text-sm text-gray-400 italic">[deleted]</p>
             </div>
         );
     }
 
     return (
         <>
-            <div className={`border-ink-600 bg-ground-800 rounded-lg border ${isReply ? "p-3" : "p-4"}`}>
+            <div className={`bg-brown-800 rounded-lg border border-amber-600 ${isReply ? "p-3" : "p-4"}`}>
                 {/* Header with user info and timestamp */}
                 <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -117,7 +120,7 @@ export default function CommentItem({
                             )}
                         </div>
                     </div>
-                    <span className="text-sm text-secondary-400">{formatDate(comment.created_at)}</span>
+                    <span className="text-sm text-gray-300">{formatDate(comment.created_at)}</span>
                 </div>
 
                 {/* Comment body or edit form */}
@@ -136,12 +139,12 @@ export default function CommentItem({
 
                 {/* Actions */}
                 {!isEditing && (
-                    <div className="border-ink-600 mt-3 flex flex-col justify-start gap-4 border-t pt-3 text-sm md:flex-row">
+                    <div className="mt-3 flex flex-col justify-start gap-4 border-t border-amber-600 pt-3 text-sm md:flex-row">
                         {!readOnly && onReply && comment.permissions.reply && canReplyToComments && (
                             <button
                                 type="button"
                                 onClick={() => onReply()}
-                                className="text-ink-400 transition-colors hover:text-ink-300"
+                                className="text-amber-400 transition-colors hover:text-amber-300"
                             >
                                 <Icon icon="reply" style="solid" className="mr-1" /> Reply
                             </button>
@@ -149,7 +152,7 @@ export default function CommentItem({
                         {!readOnly && comment.permissions.edit && (
                             <button
                                 onClick={() => setIsEditing(true)}
-                                className="text-ink-400 transition-colors hover:text-ink-300"
+                                className="text-amber-400 transition-colors hover:text-amber-300"
                             >
                                 <Icon icon="edit" style="solid" className="mr-1" /> Edit
                             </button>
@@ -157,7 +160,7 @@ export default function CommentItem({
                         {!readOnly && comment.permissions.delete && (
                             <button
                                 onClick={() => setConfirmingDelete(true)}
-                                className="text-red-400 transition-colors hover:text-red-300"
+                                className="text-red-300 transition-colors hover:text-red-200"
                             >
                                 <Icon icon="trash" style="solid" className="mr-1" /> Delete
                             </button>
@@ -171,7 +174,7 @@ export default function CommentItem({
                                         id={`resolve-${comment.id}`}
                                         checked={comment.is_resolved}
                                         onChange={handleResolveToggle}
-                                        className="cursor-pointer checked:bg-green-400 hover:checked:bg-green-600"
+                                        className="checked:bg-green-400 hover:checked:bg-green-600"
                                     />
                                     <label
                                         htmlFor={`resolve-${comment.id}`}
@@ -198,29 +201,35 @@ export default function CommentItem({
                                                   : "You may not react to this comment."
                                         }
                                     >
-                                        <button className="cursor-not-allowed text-secondary-400" disabled>
-                                            <Icon icon="thumbs-up" style="regular" />
-                                        </button>
+                                        <IconButton
+                                            icon="thumbs-up"
+                                            iconStyle="regular"
+                                            label="You can't react to this comment"
+                                            className="cursor-not-allowed text-gray-400"
+                                            aria-disabled="true"
+                                            onClick={(event) => event.preventDefault()}
+                                        />
                                     </Tooltip>
                                 )}
                                 {!readOnly && comment.permissions.react && userHasReacted() && (
                                     <Tooltip body="Click to remove your reaction.">
-                                        <button
-                                            className="text-ink-400 transition-colors hover:text-ink-300"
+                                        <IconButton
+                                            icon="thumbs-up"
+                                            label="Remove your like"
+                                            className="text-amber-400 transition-colors hover:text-amber-300"
                                             onClick={handleReactionToggle}
-                                        >
-                                            <Icon icon="thumbs-up" style="solid" />
-                                        </button>
+                                        />
                                     </Tooltip>
                                 )}
                                 {!readOnly && comment.permissions.react && !userHasReacted() && (
                                     <Tooltip body="Click to like this comment.">
-                                        <button
-                                            className="text-white-400 transition-colors hover:text-secondary-300"
+                                        <IconButton
+                                            icon="thumbs-up"
+                                            iconStyle="regular"
+                                            label="Like comment"
+                                            className="text-white-400 transition-colors hover:text-gray-300"
                                             onClick={handleReactionToggle}
-                                        >
-                                            <Icon icon="thumbs-up" style="regular" />
-                                        </button>
+                                        />
                                     </Tooltip>
                                 )}
                                 {comment.reactions.length > 0 && (
@@ -237,7 +246,7 @@ export default function CommentItem({
                                                 <img
                                                     src={reaction.user?.avatar}
                                                     alt={reaction.user?.display_name}
-                                                    className="border-ink-600 h-6 w-6 rounded-full border-2"
+                                                    className="h-6 w-6 rounded-full border-2 border-amber-600"
                                                 />
                                             </Tooltip>
                                         ))}

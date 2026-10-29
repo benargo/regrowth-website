@@ -34,6 +34,8 @@ class ItemFactory extends Factory
             'quality' => fake()->randomElement(ItemQuality::cases()),
             'group' => fake()->optional(0.5)->randomElement(['Tokens', 'Weapons', 'Armor', 'Trinkets', 'Rings']),
             'notes' => null,
+            'blizzard_id' => fake()->unique()->numberBetween(1, 200000),
+            'game_version_id' => null,
         ];
     }
 

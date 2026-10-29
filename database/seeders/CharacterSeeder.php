@@ -25,13 +25,22 @@ class CharacterSeeder extends Seeder
             $query->whereNull('playable_class_id')
                 ->orWhereNull('playable_race_id')
                 ->orWhereNull('gender');
-        })->get();
+        })->with('gameVersion')->get();
 
         $characters->each(function (Character $character) {
+            $gameVersion = $character->gameVersion;
+
+            if ($gameVersion?->realm_slug === null) {
+                $this->command?->warn("  ⚠ Character {$character->name} has no game version realm. Skipping.");
+
+                return;
+            }
+
             try {
                 $profile = $this->blizzard->send(new GetCharacterProfileRequest(
-                    $this->blizzard->defaultRealmSlug(),
+                    $gameVersion->realm_slug,
                     Str::lower($character->name),
+                    $gameVersion->blizzard_namespace,
                 ))->dto();
 
                 $playableClass = PlayableClass::find($profile->characterClass->id ?? null);

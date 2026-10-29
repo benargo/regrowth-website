@@ -2,20 +2,25 @@
 
 namespace Tests\Feature\Jobs;
 
+use App\Actions\Characters\RefreshCharacterPortrait;
 use App\Contracts\HasCharacterMedia;
 use App\Enums\Gender;
 use App\Events\Broadcasts\CharacterPortraitAttached;
-use App\Events\CharacterUpdated;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchCharacterMediaRequest;
+use App\Jobs\Addon\BuildExportFile;
 use App\Jobs\AttachPortraitToCharacter;
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\PlayableRace;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Uri;
@@ -36,10 +41,13 @@ class AttachPortraitToCharacterTest extends TestCase
 
     private const PORTRAIT_URL = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
 
+    private GameVersion $gameVersion;
+
     protected function setUp(): void
     {
         parent::setUp();
-        Storage::fake('public');
+        $this->gameVersion = GameVersion::factory()->create(['realm' => 'Thunderstrike', 'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY]);
+        Storage::fake('s3');
     }
 
     // ==================== job contract ====================
@@ -126,7 +134,7 @@ class AttachPortraitToCharacterTest extends TestCase
     #[Test]
     public function it_fetches_the_portrait_and_attaches_media_to_the_character(): void
     {
-        $character = Character::factory()->create(['gender' => null]);
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => null]);
 
         $this->mockGetCharacterProfile();
         $this->mockFetchCharacterMedia();
@@ -145,9 +153,27 @@ class AttachPortraitToCharacterTest extends TestCase
 
     #[Group('happy-path')]
     #[Test]
+    public function it_stores_the_portrait_at_a_single_file_name_path(): void
+    {
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => null]);
+
+        $this->mockGetCharacterProfile();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        (new AttachPortraitToCharacter($character->id, self::PORTRAIT_URL))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
+
+        $directory = 'blizzard-cdn/characters/thunderstrike/'.HasCharacterMedia::DEFAULT_MEDIA_SIZE.'/';
+
+        Storage::disk('s3')->assertExists($directory.'51042439-avatar.jpg');
+        Storage::disk('s3')->assertMissing($directory.'51042439-avatar.jpg51042439-avatar.jpg');
+    }
+
+    #[Group('happy-path')]
+    #[Test]
     public function it_is_idempotent_and_skips_attachment_when_portrait_already_present(): void
     {
-        $character = Character::factory()->create(['gender' => null]);
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => null]);
 
         $this->mockGetCharacterProfile();
         $this->mockFetchCharacterMedia();
@@ -163,11 +189,33 @@ class AttachPortraitToCharacterTest extends TestCase
         Saloon::assertSentCount(3);
     }
 
+    #[Group('happy-path')]
+    #[Test]
+    public function it_replaces_a_stale_portrait_with_the_new_one(): void
+    {
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => Gender::MALE]);
+        $stalePortrait = $character->addMediaFromString('OLD')
+            ->usingFileName('51042439-avatar.jpg')
+            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION);
+        $this->travel(RefreshCharacterPortrait::STALE_AFTER_SECONDS)->seconds();
+
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        (new AttachPortraitToCharacter($character->id, self::PORTRAIT_URL))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
+
+        $portraits = $character->fresh()->getMedia(HasCharacterMedia::MEDIA_COLLECTION);
+        $this->assertCount(1, $portraits);
+        $this->assertSame('51042439-avatar.jpg', $portraits->first()->file_name);
+        $this->assertModelMissing($stalePortrait);
+        $this->assertSame('BINARY', Storage::disk('s3')->get($portraits->first()->getPathRelativeToRoot()));
+    }
+
     #[Group('error-handling')]
     #[Test]
     public function it_throws_when_the_asset_fetch_returns_a_non_200(): void
     {
-        $character = Character::factory()->create(['gender' => null]);
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => null]);
 
         $this->mockGetCharacterProfile();
         $this->mockFetchCharacterMedia(status: 403);
@@ -186,7 +234,7 @@ class AttachPortraitToCharacterTest extends TestCase
     #[Test]
     public function it_accepts_a_uri_instance_for_the_asset_url(): void
     {
-        $character = Character::factory()->create(['gender' => null]);
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => null]);
 
         $this->mockGetCharacterProfile();
         $this->mockFetchCharacterMedia();
@@ -204,7 +252,7 @@ class AttachPortraitToCharacterTest extends TestCase
     #[Test]
     public function it_round_trips_through_queue_serialization_with_a_uri_asset_url(): void
     {
-        $character = Character::factory()->create(['gender' => null]);
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => null]);
 
         $this->mockGetCharacterProfile();
         $this->mockFetchCharacterMedia();
@@ -228,7 +276,7 @@ class AttachPortraitToCharacterTest extends TestCase
     #[Test]
     public function it_derives_the_filename_from_the_url_stripping_query_strings(): void
     {
-        $character = Character::factory()->create(['gender' => null]);
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => null]);
 
         $this->mockGetCharacterProfile();
         $this->mockFetchCharacterMedia();
@@ -248,7 +296,7 @@ class AttachPortraitToCharacterTest extends TestCase
     #[Test]
     public function it_syncs_male_gender_from_the_blizzard_profile_when_gender_is_null(): void
     {
-        $character = Character::factory()->create(['gender' => null]);
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => null]);
 
         $this->mockGetCharacterProfile(gender: 'Male');
         $this->mockFetchCharacterMedia();
@@ -266,7 +314,7 @@ class AttachPortraitToCharacterTest extends TestCase
     #[Test]
     public function it_syncs_female_gender_from_the_blizzard_profile_when_gender_is_null(): void
     {
-        $character = Character::factory()->create(['gender' => null]);
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => null]);
 
         $this->mockGetCharacterProfile(gender: 'Female');
         $this->mockFetchCharacterMedia();
@@ -280,11 +328,59 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->assertSame(Gender::FEMALE, $character->fresh()->gender);
     }
 
+    #[Test]
+    public function it_syncs_gender_from_the_characters_game_version_realm_and_namespace(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['realm' => 'Living Flame', 'blizzard_namespace' => BlizzardNamespace::ERA]);
+        $character = Character::factory()->create(['gender' => null, 'game_version_id' => $gameVersion->id]);
+        $this->mockGetCharacterProfile();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        (new AttachPortraitToCharacter($character->id, self::PORTRAIT_URL))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
+
+        Saloon::assertSent(fn ($request, $response) => $request instanceof GetCharacterProfileRequest
+            && str_contains($request->resolveEndpoint(), '/living-flame/')
+            && $response->getPendingRequest()->headers()->get('Battlenet-Namespace') === BlizzardNamespace::ERA->forProfileRequests(Region::from(config('services.blizzard.region'))));
+    }
+
+    #[Group('edge-case')]
+    #[Test]
+    public function it_skips_gender_sync_when_the_character_has_no_game_version(): void
+    {
+        $character = Character::factory()->create(['gender' => null, 'game_version_id' => null]);
+        $this->mockGetCharacterProfile();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        (new AttachPortraitToCharacter($character->id, self::PORTRAIT_URL))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
+
+        Saloon::assertNotSent(GetCharacterProfileRequest::class);
+        $this->assertTrue($character->fresh()->hasMedia(HasCharacterMedia::MEDIA_COLLECTION));
+    }
+
+    #[Group('edge-case')]
+    #[Test]
+    public function it_skips_gender_sync_and_still_attaches_the_portrait_when_the_game_version_has_no_realm(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['realm' => null, 'blizzard_namespace' => BlizzardNamespace::ERA]);
+        $character = Character::factory()->create(['gender' => null, 'game_version_id' => $gameVersion->id]);
+        $this->mockGetCharacterProfile();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        (new AttachPortraitToCharacter($character->id, self::PORTRAIT_URL))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
+
+        Saloon::assertNotSent(GetCharacterProfileRequest::class);
+        $this->assertNull($character->fresh()->gender);
+        $this->assertTrue($character->fresh()->hasMedia(HasCharacterMedia::MEDIA_COLLECTION));
+    }
+
     #[Group('happy-path')]
     #[Test]
     public function it_does_not_overwrite_gender_when_already_set(): void
     {
-        $character = Character::factory()->create(['gender' => Gender::FEMALE]);
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => Gender::FEMALE]);
 
         $this->mockFetchCharacterMedia();
         $this->applyBlizzardMocks();
@@ -302,7 +398,7 @@ class AttachPortraitToCharacterTest extends TestCase
     #[Test]
     public function it_syncs_gender_even_when_portrait_is_already_attached(): void
     {
-        $character = Character::factory()->create(['gender' => null]);
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => null]);
 
         $this->mockGetCharacterProfile(gender: 'Male');
         $this->mockFetchCharacterMedia();
@@ -331,7 +427,7 @@ class AttachPortraitToCharacterTest extends TestCase
     #[Test]
     public function it_skips_gender_sync_silently_when_the_profile_api_returns_an_error(): void
     {
-        $character = Character::factory()->create(['gender' => null]);
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => null]);
 
         $this->mockNotFoundResponse(GetCharacterProfileRequest::class);
         $this->mockFetchCharacterMedia();
@@ -350,7 +446,7 @@ class AttachPortraitToCharacterTest extends TestCase
     #[Test]
     public function it_skips_gender_sync_silently_when_the_profile_returns_an_unrecognised_gender_value(): void
     {
-        $character = Character::factory()->create(['gender' => null]);
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => null]);
 
         $this->mockGetCharacterProfile(gender: 'Unknown');
         $this->mockFetchCharacterMedia();
@@ -367,11 +463,11 @@ class AttachPortraitToCharacterTest extends TestCase
 
     #[Group('happy-path')]
     #[Test]
-    public function it_does_not_fire_character_updated_event_when_saving_gender(): void
+    public function it_does_not_schedule_addon_export_build_when_saving_gender(): void
     {
-        Event::fake([CharacterUpdated::class]);
+        Bus::fake([BuildExportFile::class]);
 
-        $character = Character::factory()->create(['gender' => null]);
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => null]);
 
         $this->mockGetCharacterProfile();
         $this->mockFetchCharacterMedia();
@@ -382,7 +478,7 @@ class AttachPortraitToCharacterTest extends TestCase
         (new AttachPortraitToCharacter($character->id, $assetUrl))
             ->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
-        Event::assertNotDispatched(CharacterUpdated::class);
+        Bus::assertNotDispatched(BuildExportFile::class);
     }
 
     // ==================== fallback URL ====================
@@ -450,7 +546,7 @@ class AttachPortraitToCharacterTest extends TestCase
     #[Test]
     public function it_omits_the_fallback_parameter_when_race_id_is_null(): void
     {
-        $character = Character::factory()->create(['gender' => Gender::MALE]);
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => Gender::MALE]);
 
         $this->mockFetchCharacterMedia();
         $this->applyBlizzardMocks();
@@ -491,7 +587,7 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         Event::fake([CharacterPortraitAttached::class]);
 
-        $character = Character::factory()->create(['gender' => Gender::MALE]);
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => Gender::MALE]);
 
         $this->mockFetchCharacterMedia();
         $this->applyBlizzardMocks();
@@ -509,7 +605,7 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         Event::fake([CharacterPortraitAttached::class]);
 
-        $character = Character::factory()->create(['gender' => Gender::MALE]);
+        $character = Character::factory()->for($this->gameVersion)->create(['gender' => Gender::MALE]);
 
         $this->mockFetchCharacterMedia();
         $this->applyBlizzardMocks();

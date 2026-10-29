@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use App\Contracts\HasBlizzardIcons;
+use App\Models\Concerns\InteractsWithBlizzardIcons;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\WithoutIncrementing;
 use Illuminate\Database\Eloquent\Attributes\WithoutTimestamps;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
@@ -19,7 +21,15 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 #[WithoutTimestamps]
 class PlayableClass extends Model implements HasBlizzardIcons, HasMedia
 {
-    use HasFactory, InteractsWithMedia;
+    use HasFactory, InteractsWithBlizzardIcons, InteractsWithMedia;
+
+    /**
+     * Register the `blizzard_icons` collection, falling back to the questionmark icon.
+     */
+    public function registerMediaCollections(): void
+    {
+        $this->addBlizzardIconCollection();
+    }
 
     // ============ Custom attributes ============
 
@@ -54,5 +64,14 @@ class PlayableClass extends Model implements HasBlizzardIcons, HasMedia
     public function lootPriorities(): HasMany
     {
         return $this->hasMany(LootPriority::class);
+    }
+
+    /**
+     * @return BelongsToMany<GameVersion, $this>
+     */
+    public function gameVersions(): BelongsToMany
+    {
+        return $this->belongsToMany(GameVersion::class, 'pivot_game_versions_playable_classes')
+            ->withTimestamps();
     }
 }

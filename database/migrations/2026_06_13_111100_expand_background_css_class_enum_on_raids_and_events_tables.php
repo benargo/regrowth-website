@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\RaidBackground;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -14,8 +13,8 @@ return new class extends Migration
             return;
         }
 
-        $values = collect(RaidBackground::cases())
-            ->map(fn ($case) => "'{$case->value}'")
+        $values = collect(['bg-raid-karazhan', 'bg-raid-gruul', 'bg-raid-magtheridon', 'bg-raid-serpentshrine-cavern', 'bg-raid-tempest-keep', 'bg-raid-hyjal-summit', 'bg-raid-black-temple', 'bg-raid-zulaman', 'bg-raid-sunwell-plateau', 'bg-raid-gruul-magtheridon', 'bg-ssctk'])
+            ->map(fn (string $value): string => "'{$value}'")
             ->implode(',');
 
         foreach (['raids', 'events'] as $table) {

@@ -2,17 +2,20 @@ import { useCallback, useEffect, useState } from "react";
 import Master from "@/Layouts/Master";
 import { Link, router, usePage } from "@inertiajs/react";
 import CommentThread from "@/Components/Comments/CommentThread";
-import Icon from "@/Components/FontAwesome/Icon";
+import EmptyState from "@/Components/EmptyState";
+import SectionNav from "@/Components/Navigation/SectionNav";
 import Pagination from "@/Components/Pagination";
 import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
 import ItemIcon from "@/Components/Items/ItemIcon";
-import ToolNav from "@/Components/ToolNav";
 import useExpandedThreads from "@/Hooks/useExpandedThreads";
+import { useResetQueryOnGameVersionSwitch } from "@/Hooks/useGameVersionSwitch";
 
 export default function Comments({ comments, replies }) {
+    useResetQueryOnGameVersionSwitch();
+
     const { auth } = usePage().props;
-    const { isExpanded, toggle } = useExpandedThreads(auth.user?.id);
+    const { isExpanded, toggle } = useExpandedThreads(auth.user?.data?.id);
     const [threadCache, setThreadCache] = useState({});
     const [loadingRoots, setLoadingRoots] = useState([]);
 
@@ -86,15 +89,7 @@ export default function Comments({ comments, replies }) {
         <Master title="All Comments">
             <SharedHeader backgroundClass="bg-vashj-and-kaelthas" title="Loot Bias" />
 
-            <ToolNav>
-                <Link
-                    href={route("loot.index")}
-                    className="hover:border-primary hover:bg-ground-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
-                >
-                    <Icon icon="arrow-left" style="solid" className="mr-2" />
-                    <span>Back to loot biases</span>
-                </Link>
-            </ToolNav>
+            <SectionNav section="loot" />
 
             {/* Content */}
             <PageContainer>
@@ -111,10 +106,10 @@ export default function Comments({ comments, replies }) {
                                                 item: group.item.id,
                                                 slug: group.item.slug,
                                             })}
-                                            className="flex items-center gap-3 transition-colors hover:text-ink-300"
+                                            className="flex items-center gap-3 transition-colors hover:text-amber-300"
                                         >
                                             {group.item?.icon && <div className="h-8 w-8 flex-none" />}
-                                            <h3 className="text-lg font-semibold text-ink-400 hover:text-ink-300">
+                                            <h3 className="text-lg font-semibold text-amber-400 hover:text-amber-300">
                                                 {group.item?.name ?? `Item #${itemId}`}
                                             </h3>
                                         </Link>
@@ -158,7 +153,7 @@ export default function Comments({ comments, replies }) {
                         <Pagination links={comments.meta.links} meta={comments.meta} itemName="comments" />
                     </>
                 ) : (
-                    <p className="py-8 text-center text-secondary-400">No comments yet.</p>
+                    <EmptyState icon="comments" message="No comments for this game version yet." />
                 )}
             </PageContainer>
         </Master>

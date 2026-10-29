@@ -2,13 +2,14 @@
 
 namespace Tests\Feature\Comments;
 
-use App\Jobs\RefreshCommentDiscordMessage;
 use App\Models\Comment;
 use App\Models\DiscordRole;
 use App\Models\Item;
 use App\Models\Permission;
 use App\Models\User;
+use App\Notifications\CommentPostedToItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Notifications\SendQueuedNotifications;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\Fluent\AssertableJson;
 use PHPUnit\Framework\Attributes\Group;
@@ -189,8 +190,8 @@ class ThreadedCommentsTest extends TestCase
 
         $response->assertNoContent();
         Queue::assertPushed(
-            RefreshCommentDiscordMessage::class,
-            fn (RefreshCommentDiscordMessage $job): bool => $job->root->is($root),
+            SendQueuedNotifications::class,
+            fn (SendQueuedNotifications $job): bool => $job->notification instanceof CommentPostedToItem,
         );
     }
 
@@ -212,7 +213,7 @@ class ThreadedCommentsTest extends TestCase
 
         $response = $this->actingAs($author)->get(route('loot.items.show', [
             'item' => $item->id,
-            'slug' => $item->slug ?: "item-{$item->id}",
+            'slug' => $item->slug ?: "item-{$item->blizzard_id}",
         ]));
 
         $response->assertInertia(fn (AssertableJson $page) => $page
