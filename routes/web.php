@@ -242,6 +242,10 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
 /**
  * Static information pages
  */
+Route::get('/about', function () {
+    return Inertia::render('Info/About');
+})->name('about');
+
 Route::get('/info/privacy', function () {
     return Inertia::render('Info/PrivacyPolicy');
 })->name('privacypolicy');

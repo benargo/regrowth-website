@@ -296,6 +296,12 @@ svg.recharts-surface {
     background-size: cover;
 }
 
+.bg-regrowth-gathering {
+    background-image: url("../images/bg_regrowth_gathering.webp");
+    background-position: center;
+    background-size: cover;
+}
+
 .bg-stormwind {
     background-image: url("../images/bg_stormwind.webp");
     background-position: bottom -60px center;
