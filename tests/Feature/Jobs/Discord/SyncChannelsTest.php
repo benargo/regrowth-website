@@ -147,16 +147,17 @@ class SyncChannelsTest extends TestCase
     }
 
     #[Test]
-    public function it_restores_a_trashed_thread_found_by_id(): void
+    public function it_does_not_fetch_a_trashed_thread_or_stub(): void
     {
-        DiscordChannel::factory()->thread()->trashed()->create(['id' => '300', 'name' => 'old-name']);
-        $this->fakeGuildChannels([], [
-            '300' => MockResponse::make($this->makeChannel('300', 'new-name', ChannelType::PublicThread)),
-        ]);
+        $thread = DiscordChannel::factory()->thread()->trashed()->create(['id' => '300']);
+        $stub = DiscordChannel::factory()->stub()->trashed()->create(['id' => '400']);
+        $this->fakeGuildChannels([]);
 
         SyncChannels::dispatchSync();
 
-        $this->assertDatabaseHas('discord_channels', ['id' => '300', 'name' => 'new-name', 'deleted_at' => null]);
+        Saloon::assertNotSent(GetChannelRequest::class);
+        $this->assertSoftDeleted($thread);
+        $this->assertSoftDeleted($stub);
     }
 
     #[Test]
@@ -185,6 +186,26 @@ class SyncChannelsTest extends TestCase
 
         $this->assertDatabaseHas('discord_channels', ['id' => '300', 'name' => 'secret', 'deleted_at' => null]);
         Log::shouldHaveReceived('warning')->withArgs(fn (string $message, array $context): bool => $context['channel_id'] === '300');
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_leaves_a_thread_that_returns_a_server_error_and_syncs_the_rest(): void
+    {
+        Log::spy();
+        DiscordChannel::factory()->thread()->create(['id' => '300', 'name' => 'flaky']);
+        DiscordChannel::factory()->thread()->create(['id' => '301', 'name' => 'old-name']);
+        $this->fakeGuildChannels([$this->makeChannel('200', 'raids')], [
+            '300' => $this->makeDiscordErrorResponse(500, 0, 'Internal Server Error'),
+            '301' => MockResponse::make($this->makeChannel('301', 'new-name', ChannelType::PublicThread)),
+        ]);
+
+        SyncChannels::dispatchSync();
+
+        $this->assertDatabaseHas('discord_channels', ['id' => '300', 'name' => 'flaky', 'deleted_at' => null]);
+        $this->assertDatabaseHas('discord_channels', ['id' => '301', 'name' => 'new-name']);
+        $this->assertDatabaseHas('discord_channels', ['id' => '200', 'name' => 'raids']);
+        Log::shouldHaveReceived('warning')->withArgs(fn (string $message, array $context): bool => ($context['channel_id'] ?? null) === '300');
     }
 
     #[Test]
@@ -234,6 +255,15 @@ class SyncChannelsTest extends TestCase
 
         Saloon::assertNothingSent();
         $this->assertDatabaseCount('discord_channels', 0);
+    }
+
+    #[Test]
+    #[Group('contract')]
+    public function it_expires_its_overlap_lock_after_ten_minutes(): void
+    {
+        $overlap = collect((new SyncChannels)->middleware())->first(fn (object $middleware): bool => $middleware instanceof WithoutOverlapping);
+
+        $this->assertSame(600, $overlap->expiresAfter);
     }
 
     #[Test]

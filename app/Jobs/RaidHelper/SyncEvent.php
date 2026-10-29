@@ -21,6 +21,7 @@ use App\Jobs\Concerns\ResolvesCharacterNames;
 use App\Jobs\Middleware\ReleaseWhenDiscordRateLimited;
 use App\Models\Boss;
 use App\Models\Character;
+use App\Models\DiscordChannel;
 use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\Raid;
@@ -28,7 +29,6 @@ use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Queue\Attributes\Backoff;
 use Illuminate\Queue\Attributes\MaxExceptions;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
@@ -37,8 +37,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Saloon\Exceptions\Request\FatalRequestException;
 
-#[MaxExceptions(3)]
-#[Backoff(60)]
+#[MaxExceptions(1)]
 class SyncEvent implements ShouldQueue
 {
     use Queueable, ResolvesCharacterNames;
@@ -71,7 +70,7 @@ class SyncEvent implements ShouldQueue
     }
 
     /**
-     * Rate-limit releases keep the job alive until this deadline; three real errors still fail it.
+     * Rate-limit releases keep the job alive until this deadline; the first real error fails it.
      */
     public function retryUntil(): CarbonInterface
     {
@@ -182,9 +181,23 @@ class SyncEvent implements ShouldQueue
                 'start_time' => $this->data->startTime->setTimezone($this->timezone),
                 'end_time' => $this->data->endTime->setTimezone($this->timezone),
                 'color' => $this->data->color,
-                'channel_id' => ResolveDiscordChannel::run($this->data->channelId)->id,
+                'channel_id' => $this->resolveChannelId(),
             ]
         );
+    }
+
+    /**
+     * Resolve the stored channel ID for the event, reporting a failed Discord lookup and storing an ID-only stub channel instead.
+     */
+    private function resolveChannelId(): string
+    {
+        try {
+            return ResolveDiscordChannel::run($this->data->channelId)->id;
+        } catch (DiscordRequestException $exception) {
+            report($exception);
+
+            return DiscordChannel::firstOrCreate(['id' => $this->data->channelId])->id;
+        }
     }
 
     /**

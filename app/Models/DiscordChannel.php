@@ -15,9 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 
 /**
- * This model must NOT use Spatie's `SortableTrait`. The `position` column
- * and every other synced column reflect the channel as Discord reports it
- * and are set by Discord, not by this application.
+ * A Discord channel as Discord reports it, including its position, synced from the Discord API.
  */
 #[Fillable(['id', 'name', 'type', 'position', 'parent_id', 'topic', 'nsfw'])]
 #[Table(keyType: 'string', incrementing: false)]

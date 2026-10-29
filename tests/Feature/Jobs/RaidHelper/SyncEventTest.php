@@ -6,7 +6,6 @@ use App\Actions\Characters\MatchCharacterName;
 use App\Actions\EventBossResolver;
 use App\Enums\SignupStatus;
 use App\Events\Broadcasts\CompositionChanged;
-use App\Http\Integrations\Discord\Exceptions\ChannelNotFoundException;
 use App\Http\Integrations\Discord\Requests\Channels\GetChannelRequest;
 use App\Http\Integrations\Discord\Requests\Guilds\GetGuildMemberRequest;
 use App\Http\Integrations\RaidHelper\Data\Events\EventData;
@@ -25,7 +24,6 @@ use App\Models\Raid;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Queue\Attributes\Backoff;
 use Illuminate\Queue\Attributes\MaxExceptions;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event as EventFacade;
@@ -1182,18 +1180,15 @@ class SyncEventTest extends TestCase
 
     #[Test]
     #[Group('error-handling')]
-    public function it_throws_and_writes_no_event_when_the_channel_lookup_fails(): void
+    public function it_stores_a_stub_channel_and_the_event_when_the_channel_lookup_fails(): void
     {
         $this->channel->forceDelete();
-        $this->fakeDiscord([GetChannelRequest::class => $this->makeDiscordErrorResponse(404, 10003, 'Unknown Channel')]);
+        $this->fakeDiscord([GetChannelRequest::class => $this->makeDiscordErrorResponse(500, 0, 'Internal Server Error')]);
 
-        try {
-            SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload()));
-            $this->fail('Expected ChannelNotFoundException.');
-        } catch (ChannelNotFoundException) {
-            $this->assertDatabaseCount('events', 0);
-            $this->assertDatabaseCount('discord_channels', 0);
-        }
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload()));
+
+        $this->assertSame('100000000000000001', Event::sole()->channel_id);
+        $this->assertDatabaseHas('discord_channels', ['id' => '100000000000000001', 'name' => null, 'type' => null]);
     }
 
     #[Test]
@@ -1213,7 +1208,7 @@ class SyncEventTest extends TestCase
 
     #[Test]
     #[Group('contract')]
-    public function it_retries_for_an_hour_with_backoff(): void
+    public function it_retries_rate_limit_releases_for_an_hour_but_fails_on_the_first_exception(): void
     {
         $this->freezeTime();
 
@@ -1221,8 +1216,7 @@ class SyncEventTest extends TestCase
         $class = new ReflectionClass(SyncEvent::class);
 
         $this->assertTrue($job->retryUntil()->equalTo(now()->addHour()));
-        $this->assertSame(3, $class->getAttributes(MaxExceptions::class)[0]->newInstance()->maxExceptions);
-        $this->assertSame(60, $class->getAttributes(Backoff::class)[0]->newInstance()->backoff);
+        $this->assertSame(1, $class->getAttributes(MaxExceptions::class)[0]->newInstance()->maxExceptions);
     }
 
     // ==================== timezone handling ====================

@@ -44,13 +44,13 @@ class SyncChannels implements ShouldQueue
     public function middleware(): array
     {
         return [
-            (new WithoutOverlapping)->dontRelease(),
+            (new WithoutOverlapping)->dontRelease()->expireAfter(600),
             new ReleaseWhenDiscordRateLimited,
         ];
     }
 
     /**
-     * Sync the guild's channels, refresh stored threads and stubs by ID, and soft-delete channels Discord no longer returns.
+     * Sync the guild's channels, refresh stored untrashed threads and stubs by ID, skipping any that fail to fetch, and soft-delete channels Discord no longer returns.
      */
     public function handle(DiscordConnector $discord, #[Config('services.discord.server_id')] string $serverId): void
     {
@@ -58,8 +58,8 @@ class SyncChannels implements ShouldQueue
         $guildChannels = $discord->send(new GetGuildChannelsRequest($serverId))->dto();
         $guildIds = $guildChannels->pluck('id')->all();
 
-        $fetchIds = DiscordChannel::withTrashed()->threads()->pluck('id')
-            ->merge(DiscordChannel::withTrashed()->stubs()->pluck('id'))
+        $fetchIds = DiscordChannel::threads()->pluck('id')
+            ->merge(DiscordChannel::stubs()->pluck('id'))
             ->diff($guildIds)
             ->unique()
             ->values();
@@ -73,11 +73,11 @@ class SyncChannels implements ShouldQueue
             } catch (ChannelNotFoundException) {
                 $notFoundIds[] = $channelId;
             } catch (ApiException $exception) {
-                if ($exception->getStatus() !== 403) {
-                    throw $exception;
-                }
-
-                Log::warning('Skipped a Discord channel the bot cannot access.', ['channel_id' => $channelId]);
+                Log::warning('Skipped a Discord channel that could not be fetched.', [
+                    'channel_id' => $channelId,
+                    'status' => $exception->getStatus(),
+                    'error' => $exception->getMessage(),
+                ]);
             }
         }
 

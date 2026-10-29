@@ -3,7 +3,8 @@
 namespace App\Jobs\Discord;
 
 use App\Actions\Discord\ResolveDiscordChannel;
-use App\Http\Integrations\Discord\Exceptions\DiscordRequestException;
+use App\Http\Integrations\Discord\Exceptions\ApiException;
+use App\Http\Integrations\Discord\Exceptions\ChannelNotFoundException;
 use App\Jobs\Middleware\ReleaseWhenDiscordRateLimited;
 use App\Notifications\Discord\DiscordNotification;
 use Carbon\CarbonInterface;
@@ -46,7 +47,7 @@ class NotifyDiscordChannel implements ShouldQueue
     }
 
     /**
-     * Notify the channel, logging a warning and returning when the channel is unconfigured or Discord cannot return it.
+     * Notify the channel, logging a warning and returning when the channel is unconfigured, unknown or forbidden; other Discord errors are rethrown.
      */
     public function handle(): void
     {
@@ -60,7 +61,11 @@ class NotifyDiscordChannel implements ShouldQueue
 
         try {
             ResolveDiscordChannel::run($this->channelId)->notifyNow($this->notification);
-        } catch (DiscordRequestException $exception) {
+        } catch (ChannelNotFoundException|ApiException $exception) {
+            if ($exception instanceof ApiException && $exception->getStatus() !== 403) {
+                throw $exception;
+            }
+
             Log::warning('Skipped a Discord notification for a channel Discord could not return.', [
                 'channel_id' => $this->channelId,
                 'error' => $exception->getMessage(),

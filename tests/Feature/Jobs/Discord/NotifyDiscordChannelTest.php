@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Jobs\Discord;
 
+use App\Http\Integrations\Discord\Exceptions\ApiException;
 use App\Http\Integrations\Discord\Requests\Channels\GetChannelRequest;
 use App\Jobs\Discord\NotifyDiscordChannel;
 use App\Models\Comment;
@@ -97,6 +98,33 @@ class NotifyDiscordChannelTest extends TestCase
         Log::shouldHaveReceived('warning')
             ->withArgs(fn (string $message, array $context): bool => ($context['channel_id'] ?? null) === '777')
             ->once();
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_returns_quietly_when_the_channel_is_unknown(): void
+    {
+        Log::spy();
+        $this->fakeDiscord([GetChannelRequest::class => $this->makeDiscordErrorResponse(404, 10003, 'Unknown Channel')]);
+
+        $job = new NotifyDiscordChannel('777', $this->makeNotification());
+        $job->withFakeQueueInteractions();
+        $this->runJobThroughMiddleware($job);
+
+        $job->assertNotFailed();
+        Notification::assertNothingSent();
+        Log::shouldHaveReceived('warning')->once();
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_throws_on_a_discord_server_error_so_the_job_retries(): void
+    {
+        $this->fakeDiscord([GetChannelRequest::class => $this->makeDiscordErrorResponse(500, 0, 'Internal Server Error')]);
+
+        $this->expectException(ApiException::class);
+
+        NotifyDiscordChannel::dispatchSync('777', $this->makeNotification());
     }
 
     #[Test]
