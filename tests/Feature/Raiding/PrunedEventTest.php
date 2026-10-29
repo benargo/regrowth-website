@@ -76,7 +76,7 @@ class PrunedEventTest extends TestCase
     }
 
     #[Test]
-    public function it_renders_the_gone_inertia_page_for_a_pruned_event(): void
+    public function it_renders_the_branded_gone_page_for_a_pruned_event(): void
     {
         $this->mockDiscordChannel(id: '123', name: 'test-channel');
 
@@ -86,7 +86,7 @@ class PrunedEventTest extends TestCase
 
         $this->get(route('raiding.plans.show', $eventId))
             ->assertStatus(410)
-            ->assertInertia(fn ($page) => $page->component('Errors/Gone'));
+            ->assertSee('images/sticker_jaina_410.webp');
     }
 
     #[Test]
@@ -99,6 +99,20 @@ class PrunedEventTest extends TestCase
         PrunedModel::create(['id' => $eventId, 'type' => Event::class]);
 
         $this->actingAs($user)->patchJson("/api/events/{$eventId}/groups/reorder", [])
+            ->assertStatus(410)
+            ->assertJson(['message' => 'The requested resource has been pruned and is no longer available.']);
+    }
+
+    #[Test]
+    public function it_returns_json_410_for_a_pruned_event_on_api_routes_without_an_accept_header(): void
+    {
+        $user = User::factory()->create();
+
+        $eventId = fake()->uuid();
+
+        PrunedModel::create(['id' => $eventId, 'type' => Event::class]);
+
+        $this->actingAs($user)->patch("/api/events/{$eventId}/groups/reorder")
             ->assertStatus(410)
             ->assertJson(['message' => 'The requested resource has been pruned and is no longer available.']);
     }
