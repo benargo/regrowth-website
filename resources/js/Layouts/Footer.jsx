@@ -251,14 +251,6 @@ export default function Footer({ classes, discordInviteUrl, warcraftLogsUrl, gam
                                 </Link>
                             </li>
                             <li>
-                                <Link href={route("battlenet-usage")} className={footerLinkClass}>
-                                    <FooterLinkIcon>
-                                        <Icon icon="battle-net" style="brands" className="h-5 w-5" />
-                                    </FooterLinkIcon>
-                                    <span className="text-nowrap">Battle.net API Usage</span>
-                                </Link>
-                            </li>
-                            <li>
                                 <a
                                     href="https://benargo.com"
                                     target="_blank"

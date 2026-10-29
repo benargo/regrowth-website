@@ -19,6 +19,20 @@ use Tests\Support\DashboardTestCase;
 #[Group('platform')]
 class DeprecatedRoutesTest extends DashboardTestCase
 {
+    // ==================== battle.net usage ====================
+
+    #[Test]
+    #[Group('deprecated')]
+    public function the_battlenet_usage_page_redirects_to_the_privacy_policy(): void
+    {
+        $this->assertFalse(Route::has('battlenet-usage'));
+
+        $response = $this->get('/info/battlenet-usage');
+
+        $response->assertMovedPermanently();
+        $response->assertRedirect(route('privacypolicy').'#blizzard-api');
+    }
+
     // ==================== icons ====================
 
     #[Test]

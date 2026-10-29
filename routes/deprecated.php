@@ -56,5 +56,8 @@ Route::patch('/manage/boss-strategies/{boss}', fn () => abort(410));
 Route::get('/raiding/boss-strategies', fn () => redirect()->route('raiding.raids.index', status: 301));
 Route::get('/raiding/boss-strategies/{boss}/{slug}', fn (Boss $boss) => redirect()->route('raiding.bosses.show', ['boss' => $boss, 'slug' => $boss->slug], 301));
 
+// Old Battle.net API usage statement, now a section of the privacy policy.
+Route::get('/info/battlenet-usage', fn () => redirect(route('privacypolicy').'#blizzard-api', 301));
+
 // Old signed icon proxy, icons are now served straight from the media disk. Returns 410 Gone.
 Route::get('/icons/{size}/{name}', fn () => abort(410));

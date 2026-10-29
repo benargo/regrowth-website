@@ -242,10 +242,6 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
 /**
  * Static information pages
  */
-Route::get('/info/battlenet-usage', function () {
-    return Inertia::render('Info/BattlenetUsage');
-})->name('battlenet-usage');
-
 Route::get('/info/privacy', function () {
     return Inertia::render('Info/PrivacyPolicy');
 })->name('privacypolicy');
