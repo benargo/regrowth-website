@@ -82,11 +82,4 @@
             <span class="plank-path">{{ $requestedPath }}</span>
         </p>
     </x-slot:motif>
-
-    <x-slot:primary-action>
-        <a class="button button-primary" href="{{ route('home') }}">
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5 10 3.5l7 6"/><path d="M5 8v8.5h10V8"/><path d="M8.5 16.5v-4.5h3v4.5"/></svg>
-            Go to the home page
-        </a>
-    </x-slot:primary-action>
 </x-error-page>

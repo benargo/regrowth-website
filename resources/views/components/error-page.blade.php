@@ -336,7 +336,14 @@
                 {{ $motif ?? '' }}
 
                 <div class="actions">
-                    {{ $primaryAction }}
+                    @isset($primaryAction)
+                        {{ $primaryAction }}
+                    @else
+                        <a class="button button-primary" href="{{ route('home') }}">
+                            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5 10 3.5l7 6"/><path d="M5 8v8.5h10V8"/><path d="M8.5 16.5v-4.5h3v4.5"/></svg>
+                            Go to the home page
+                        </a>
+                    @endisset
 
                     @if ($discordInviteUrl)
                         <a class="button button-secondary" href="{{ $discordInviteUrl }}" target="_blank" rel="noopener">
