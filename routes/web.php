@@ -25,6 +25,8 @@ use App\Http\Controllers\LootBiasToolController;
 use App\Http\Controllers\PhaseController;
 use App\Http\Controllers\PlannedAbsenceController;
 use App\Http\Controllers\RaidController;
+use App\Http\Controllers\RaidInformationChapterController;
+use App\Http\Controllers\RaidInformationController;
 use App\Http\Controllers\RaidingController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SearchController;
@@ -32,6 +34,7 @@ use App\Http\Controllers\Session\GameVersionController as SessionGameVersionCont
 use App\Http\Controllers\WarcraftLogs\GuildController;
 use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use App\Http\Middleware\DefersCacheFlushes;
+use App\Http\Middleware\NormaliseNewLines;
 use App\Http\Middleware\RemembersCurrentGameVersion;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -114,6 +117,10 @@ Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () use ($raid
         Route::patch('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'update'])->name('absences.update');
         Route::delete('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'destroy'])->name('absences.destroy');
         Route::post('/absences/{plannedAbsence}/restore', [PlannedAbsenceController::class, 'restore'])->withTrashed()->name('absences.restore');
+
+        // Raid information routes (version-independent)
+        Route::get('/information', [RaidInformationController::class, 'index'])->name('information.index');
+        Route::get('/information/{chapter}', [RaidInformationController::class, 'show'])->where('chapter', '[a-z0-9-]+')->name('information.show');
     });
 
     // Attendance routes
@@ -222,6 +229,18 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::get('/raids/{raid}/review', [RaidController::class, 'review'])->name('raids.review');
     Route::patch('/raids/{raid}', [RaidController::class, 'update'])->middleware(DefersCacheFlushes::class)->name('raids.update');
     Route::delete('/raids/{raid}', [RaidController::class, 'destroy'])->name('raids.destroy');
+
+    /**
+     * Raid information management
+     */
+    Route::get('/raid-information', [RaidInformationChapterController::class, 'index'])->name('raid-information.index');
+    Route::get('/raid-information/create', [RaidInformationChapterController::class, 'create'])->name('raid-information.create');
+    Route::post('/raid-information', [RaidInformationChapterController::class, 'store'])->middleware(NormaliseNewLines::class)->name('raid-information.store');
+    Route::put('/raid-information/order', [RaidInformationChapterController::class, 'reorder'])->name('raid-information.reorder');
+    Route::get('/raid-information/{chapter}/edit', [RaidInformationChapterController::class, 'edit'])->where('chapter', '[a-z0-9-]+')->name('raid-information.edit');
+    Route::patch('/raid-information/{chapter}', [RaidInformationChapterController::class, 'update'])->where('chapter', '[a-z0-9-]+')->middleware(NormaliseNewLines::class)->name('raid-information.update');
+    Route::delete('/raid-information/{chapter}', [RaidInformationChapterController::class, 'destroy'])->where('chapter', '[a-z0-9-]+')->name('raid-information.destroy');
+    Route::post('/raid-information/{chapter}/restore', [RaidInformationChapterController::class, 'restore'])->where('chapter', '[a-z0-9-]+')->name('raid-information.restore');
 
     /**
      * Warcraft Logs guilds management

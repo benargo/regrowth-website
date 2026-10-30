@@ -13,14 +13,14 @@ function isSameOrder(keys, otherKeys) {
 /**
  * A list's order that changes as soon as an item is dropped and saves straight
  * away: `field` holds the item keys in their new order, sent with `data` to
- * `url` as an autosave PATCH. New props become the saved order; the shown
- * order resyncs from them unless a move since the last save is still waiting
- * to go out and the same items are listed, in which case it keeps the move
- * and saves it next. `items` must keep its identity between renders (memoise
+ * `url` as an autosave visit with `method` (PATCH by default). New props
+ * become the saved order; the shown order resyncs from them unless a move
+ * since the last save is still waiting to go out and the same items are
+ * listed, in which case it keeps the move and saves it next. `items` must keep its identity between renders (memoise
  * a filtered list). Returns the ordered items, move(activeKey, overKey), and
  * the save state.
  */
-export default function useOrderAutosave({ items, getKey, url, field, data = {}, key }) {
+export default function useOrderAutosave({ items, getKey, url, method = "patch", field, data = {}, key }) {
     const [ordered, setOrdered] = useState(items);
     const [isSaving, setIsSaving] = useState(false);
     const [hasSaved, setHasSaved] = useState(false);
@@ -50,7 +50,7 @@ export default function useOrderAutosave({ items, getKey, url, field, data = {},
         const sent = latest.current.map(getKey);
         setIsSaving(true);
 
-        const result = await autosaveVisit(router, "patch", url, {
+        const result = await autosaveVisit(router, method, url, {
             data: { ...data, [field]: sent },
             headers: AUTOSAVE_HEADERS,
         });
