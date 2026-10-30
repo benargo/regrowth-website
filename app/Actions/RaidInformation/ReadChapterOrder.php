@@ -3,7 +3,8 @@
 namespace App\Actions\RaidInformation;
 
 use App\Contracts\Actions\RaidInformation\StoresRaidInformation;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Container\Attributes\Storage;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 /**
@@ -13,18 +14,20 @@ class ReadChapterOrder implements StoresRaidInformation
 {
     use AsAction;
 
+    public function __construct(
+        #[Storage(self::DISK)] protected Filesystem $disk,
+    ) {}
+
     /**
      * @return array<int, string>
      */
     public function handle(): array
     {
-        $disk = Storage::disk(self::DISK);
-
-        if (! $disk->exists(self::ORDER_FILE)) {
+        if (! $this->disk->exists(self::ORDER_FILE)) {
             return [];
         }
 
-        $order = json_decode((string) $disk->get(self::ORDER_FILE), true);
+        $order = json_decode((string) $this->disk->get(self::ORDER_FILE), true);
 
         if (! is_array($order) || ! array_is_list($order)) {
             return [];

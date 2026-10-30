@@ -3,8 +3,9 @@
 namespace App\Actions\RaidInformation;
 
 use App\Contracts\Actions\RaidInformation\StoresRaidInformation;
+use Illuminate\Container\Attributes\Storage;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Storage;
 use JsonException;
 use Lorisleiva\Actions\Concerns\AsAction;
 
@@ -14,6 +15,10 @@ use Lorisleiva\Actions\Concerns\AsAction;
 class WriteChapterOrder implements StoresRaidInformation
 {
     use AsAction;
+
+    public function __construct(
+        #[Storage(self::DISK)] protected Filesystem $disk,
+    ) {}
 
     /**
      * @param  array<int, string>  $slugs
@@ -27,7 +32,7 @@ class WriteChapterOrder implements StoresRaidInformation
             fn (string $slug): bool => $slug !== self::INTRODUCTION,
         )));
 
-        Storage::disk(self::DISK)->put(
+        $this->disk->put(
             self::ORDER_FILE,
             json_encode([self::INTRODUCTION, ...$rest], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
         );
