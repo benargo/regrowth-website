@@ -4,23 +4,53 @@ namespace App\Contracts\Actions\RaidInformation;
 
 interface StoresRaidInformation
 {
-    public const DISK = 'raid-information';
+    /**
+     * The filesystem disk holding the chapter files.
+     */
+    public const string DISK = 'raid-information';
 
-    public const ORDER_FILE = 'chapters.json';
+    /**
+     * The file on the disk holding the ordered list of chapter slugs.
+     */
+    public const string ORDER_FILE = 'chapters.json';
 
-    public const TRASH_DIRECTORY = '.trashed';
+    /**
+     * The directory on the disk holding trashed chapter files.
+     */
+    public const string TRASH_DIRECTORY = '.trashed';
 
-    public const INTRODUCTION = 'introduction';
+    /**
+     * The slug of the chapter that always comes first and can't be deleted.
+     */
+    public const string INTRODUCTION = 'introduction';
 
-    public const CHARACTER_LIMIT = 2000;
+    /**
+     * The maximum length of a chapter, in Discord characters.
+     */
+    public const int CHARACTER_LIMIT = 2000;
 
-    public const CACHE_TAG = 'raid-information';
+    /**
+     * The cache tag holding the chapter list.
+     */
+    public const string CACHE_TAG = 'raid-information';
 
-    public const TTL_MINUTES = 10;
+    /**
+     * The number of minutes the chapter list stays cached.
+     */
+    public const int TTL_MINUTES = 10;
 
-    public const TRASH_DAYS = 30;
+    /**
+     * The number of days a trashed chapter is kept before it is permanently deleted.
+     */
+    public const int TRASH_DAYS = 30;
 
-    public const WRITE_LOCK = 'raid-information:write';
+    /**
+     * The cache lock held while chapter files or the order file are written.
+     */
+    public const string WRITE_LOCK = 'raid-information:write';
 
-    public const SLUG_PATTERN = '/^[a-z0-9-]+$/';
+    /**
+     * The pattern a chapter slug must match.
+     */
+    public const string SLUG_PATTERN = '/^[a-z0-9-]+$/';
 }

@@ -20,12 +20,11 @@ use App\Http\Requests\StoreRaidInformationChapterRequest;
 use App\Http\Requests\UpdateRaidInformationChapterRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
-use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
 
 #[Authorize('manage-raid-information')]
-class RaidInformationChapterController extends Controller
+class RaidInformationChapterController extends Controller implements StoresRaidInformation
 {
     /**
      * List the live chapters, the recently deleted chapters and the mention directory.
@@ -58,7 +57,7 @@ class RaidInformationChapterController extends Controller
     {
         $chapter = CreateChapter::run($request->validated('content'));
 
-        return Redirect::route('management.raid-information.edit', $chapter->slug)
+        return redirect()->route('management.raid-information.edit', $chapter->slug)
             ->with('success', "Added {$chapter->title}.");
     }
 
@@ -69,7 +68,7 @@ class RaidInformationChapterController extends Controller
     {
         ReorderChapters::run($request->validated('slugs'));
 
-        return Redirect::back();
+        return back();
     }
 
     /**
@@ -92,7 +91,7 @@ class RaidInformationChapterController extends Controller
 
         $saved = UpdateChapter::run($chapter, $request->validated('content'), $request->validated('base_hash'));
 
-        return Redirect::back()->with('success', $saved ? "Saved {$existing->title}." : 'No changes to save.');
+        return back()->with('success', $saved ? "Saved {$existing->title}." : 'No changes to save.');
     }
 
     /**
@@ -104,8 +103,8 @@ class RaidInformationChapterController extends Controller
 
         TrashChapter::run($chapter);
 
-        return Redirect::route('management.raid-information.index')
-            ->with('success', "Deleted {$existing->title}. You can restore it for ".StoresRaidInformation::TRASH_DAYS.' days.');
+        return redirect()->route('management.raid-information.index')
+            ->with('success', "Deleted {$existing->title}. You can restore it for ".self::TRASH_DAYS.' days.');
     }
 
     /**
@@ -119,7 +118,7 @@ class RaidInformationChapterController extends Controller
 
         RestoreChapter::run($chapter);
 
-        return Redirect::route('management.raid-information.index')
+        return redirect()->route('management.raid-information.index')
             ->with('success', "Restored {$trashed->title}.");
     }
 

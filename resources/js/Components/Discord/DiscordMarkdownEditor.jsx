@@ -91,6 +91,17 @@ function counterColour(length) {
 }
 
 /**
+ * The editor content's accessible name and its link to the character counter.
+ *
+ * @param {string} label
+ * @param {string} counterId
+ * @returns {import("@codemirror/state").Extension}
+ */
+function contentAttributes(label, counterId) {
+    return EditorView.contentAttributes.of({ "aria-label": label, "aria-describedby": counterId });
+}
+
+/**
  * A CodeMirror editor for Discord markdown with a formatting toolbar, channel,
  * role and emoji pickers, tags drawn as chips, and a character counter. The
  * document is held to 2,000 characters; `onTrim` receives the number of
@@ -133,9 +144,7 @@ export default function DiscordMarkdownEditor({ value, onChange, mentions, onTri
                     markdown(),
                     EditorView.lineWrapping,
                     EDITOR_THEME,
-                    attributesRef.current.of(
-                        EditorView.contentAttributes.of({ "aria-label": label, "aria-describedby": counterId }),
-                    ),
+                    attributesRef.current.of(contentAttributes(label, counterId)),
                     mentionChips(lookupRef),
                     lengthLimit({
                         limit: DISCORD_MESSAGE_LIMIT,
@@ -207,9 +216,7 @@ export default function DiscordMarkdownEditor({ value, onChange, mentions, onTri
 
     useEffect(() => {
         viewRef.current?.dispatch({
-            effects: attributesRef.current.reconfigure(
-                EditorView.contentAttributes.of({ "aria-label": label, "aria-describedby": counterId }),
-            ),
+            effects: attributesRef.current.reconfigure(contentAttributes(label, counterId)),
         });
     }, [label, counterId]);
 

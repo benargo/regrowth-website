@@ -56,11 +56,15 @@ class ListChapters implements StoresRaidInformation
     {
         $files = collect($this->disk->files())
             ->filter(fn (string $path): bool => str_ends_with($path, '.md') && preg_match(self::SLUG_PATTERN, basename($path, '.md')) === 1)
-            ->mapWithKeys(fn (string $path): array => [basename($path, '.md') => [
-                'slug' => basename($path, '.md'),
-                'content' => (string) $this->disk->get($path),
-                'updated_at' => $this->disk->lastModified($path),
-            ]]);
+            ->mapWithKeys(function (string $path): array {
+                $slug = basename($path, '.md');
+
+                return [$slug => [
+                    'slug' => $slug,
+                    'content' => (string) $this->disk->get($path),
+                    'updated_at' => $this->disk->lastModified($path),
+                ]];
+            });
 
         $listed = collect([self::INTRODUCTION, ...ReadChapterOrder::run()])
             ->unique()

@@ -5,8 +5,8 @@ const MUTED = "text-gray-500";
 
 /**
  * A Discord tag as Discord shows it: a `#channel` pill linking to the channel
- * on discord.com, an `@role` pill, a custom
- * emoji image, or muted text for a deleted channel or an unknown target.
+ * on discord.com, an `@role` pill, a custom emoji image, or muted text for a
+ * deleted channel or an unknown target.
  * `lookup` is the result of `buildMentionLookup`.
  *
  * @param {{ raw: string, lookup: { channels: Map, roles: Map, emoji: Map } }} props

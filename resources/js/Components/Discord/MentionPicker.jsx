@@ -71,6 +71,23 @@ function groupByCategory(channels) {
 }
 
 /**
+ * A channel or role option: its name after a muted `prefix` sign.
+ */
+function NamedOption({ option, prefix }) {
+    return (
+        <ComboboxOption
+            value={option}
+            className="data-focus:bg-brown-700 flex cursor-pointer items-center gap-1.5 rounded px-2 py-1 text-sm text-white"
+        >
+            <span className="text-gray-400" aria-hidden="true">
+                {prefix}
+            </span>
+            <span className="truncate">{option.name}</span>
+        </ComboboxOption>
+    );
+}
+
+/**
  * A searchable list of the channels, roles or emoji in the mention
  * directory, closing and passing the picked one's Discord tag to `onPick`.
  */
@@ -117,33 +134,12 @@ function PickerSearch({ kind, mentions, onPick, close }) {
                         <div key={category} role="presentation">
                             <div className="px-2 pt-2 pb-1 text-xs font-semibold text-amber-200/80">{category}</div>
                             {channels.map((channel) => (
-                                <ComboboxOption
-                                    key={channel.id}
-                                    value={channel}
-                                    className="data-focus:bg-brown-700 flex cursor-pointer items-center gap-1.5 rounded px-2 py-1 text-sm text-white"
-                                >
-                                    <span className="text-gray-400" aria-hidden="true">
-                                        #
-                                    </span>
-                                    <span className="truncate">{channel.name}</span>
-                                </ComboboxOption>
+                                <NamedOption key={channel.id} option={channel} prefix="#" />
                             ))}
                         </div>
                     ))}
 
-                {kind === "role" &&
-                    matches.map((role) => (
-                        <ComboboxOption
-                            key={role.id}
-                            value={role}
-                            className="data-focus:bg-brown-700 flex cursor-pointer items-center gap-1.5 rounded px-2 py-1 text-sm text-white"
-                        >
-                            <span className="text-gray-400" aria-hidden="true">
-                                @
-                            </span>
-                            <span className="truncate">{role.name}</span>
-                        </ComboboxOption>
-                    ))}
+                {kind === "role" && matches.map((role) => <NamedOption key={role.id} option={role} prefix="@" />)}
 
                 {kind === "emoji" &&
                     matches.map((emoji) => (

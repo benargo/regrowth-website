@@ -33,7 +33,9 @@ class PurgeTrashedChapters implements ShouldQueue, StoresRaidInformation
                 return;
             }
 
-            $expired->each(fn (string $path): bool => $disk->delete($path));
+            foreach ($expired as $path) {
+                $disk->delete($path);
+            }
 
             Cache::tags([self::CACHE_TAG])->flush();
 

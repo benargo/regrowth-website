@@ -34,7 +34,7 @@ class ImportRaidInformation extends Command implements StoresRaidInformation
         $orderPath = "{$directory}/".self::ORDER_FILE;
 
         if (! File::exists($orderPath)) {
-            $this->error('chapters.json was not found in '.$directory.'.');
+            $this->error("chapters.json was not found in {$directory}.");
 
             return self::FAILURE;
         }
@@ -110,6 +110,8 @@ class ImportRaidInformation extends Command implements StoresRaidInformation
     }
 
     /**
+     * Determine whether any of the given files is a Markdown file.
+     *
      * @param  array<int, string>  $files
      */
     private function holdsMarkdown(array $files): bool

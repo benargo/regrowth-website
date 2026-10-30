@@ -16,9 +16,9 @@ function isSameOrder(keys, otherKeys) {
  * `url` as an autosave visit with `method` (PATCH by default). New props
  * become the saved order; the shown order resyncs from them unless a move
  * since the last save is still waiting to go out and the same items are
- * listed, in which case it keeps the move and saves it next. `items` must keep its identity between renders (memoise
- * a filtered list). Returns the ordered items, move(activeKey, overKey), and
- * the save state.
+ * listed, in which case it keeps the move and saves it next. `items` must
+ * keep its identity between renders (memoise a filtered list). Returns the
+ * ordered items, move(activeKey, overKey), and the save state.
  */
 export default function useOrderAutosave({ items, getKey, url, method = "patch", field, data = {}, key }) {
     const [ordered, setOrdered] = useState(items);

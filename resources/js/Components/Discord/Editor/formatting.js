@@ -27,6 +27,21 @@ function selectedLines(state) {
 }
 
 /**
+ * Dispatches the transaction specs as typed input scrolled into view, then
+ * focuses the editor. Always returns true, as a handled command.
+ *
+ * @param {import("@codemirror/view").EditorView} view
+ * @param {...import("@codemirror/state").TransactionSpec} specs
+ * @returns {boolean}
+ */
+function dispatchInput(view, ...specs) {
+    view.dispatch(...specs, { scrollIntoView: true, userEvent: "input" });
+    view.focus();
+
+    return true;
+}
+
+/**
  * Applies line-start changes and keeps the selection on the same text.
  *
  * @param {import("@codemirror/view").EditorView} view
@@ -36,15 +51,7 @@ function selectedLines(state) {
 function dispatchLineChanges(view, changes) {
     const changeSet = view.state.changes(changes);
 
-    view.dispatch({
-        changes: changeSet,
-        selection: view.state.selection.map(changeSet),
-        scrollIntoView: true,
-        userEvent: "input",
-    });
-    view.focus();
-
-    return true;
+    return dispatchInput(view, { changes: changeSet, selection: view.state.selection.map(changeSet) });
 }
 
 /**
@@ -170,10 +177,7 @@ export function wrapSelection(marker) {
             };
         });
 
-        view.dispatch(state.update(transaction, { scrollIntoView: true, userEvent: "input" }));
-        view.focus();
-
-        return true;
+        return dispatchInput(view, transaction);
     };
 }
 
@@ -204,10 +208,7 @@ export function insertLink(view) {
         };
     });
 
-    view.dispatch(state.update(transaction, { scrollIntoView: true, userEvent: "input" }));
-    view.focus();
-
-    return true;
+    return dispatchInput(view, transaction);
 }
 
 /**
@@ -219,9 +220,6 @@ export function insertLink(view) {
  */
 export function insertText(text) {
     return (view) => {
-        view.dispatch(view.state.replaceSelection(text), { scrollIntoView: true, userEvent: "input" });
-        view.focus();
-
-        return true;
+        return dispatchInput(view, view.state.replaceSelection(text));
     };
 }

@@ -32,19 +32,22 @@ class BuildDiscordMentionDirectory
             ->when($channelIds !== null, fn ($query) => $query->whereIn('id', $channelIds))
             ->with(['parent' => $this->withTrashedParents(), 'parent.parent' => $this->withTrashedParents()])
             ->get()
-            ->map(fn (DiscordChannel $channel): array => [$this->categoryName($channel) ?? '', $channel])
-            ->sortBy([
-                fn (array $a, array $b): int => strcasecmp($a[0], $b[0]),
-                fn (array $a, array $b): int => $a[1]->position <=> $b[1]->position,
-                fn (array $a, array $b): int => strcasecmp($a[1]->name, $b[1]->name),
+            ->map(fn (DiscordChannel $channel): array => [
+                'category' => $this->categoryName($channel),
+                'channel' => $channel,
             ])
-            ->map(fn (array $pair): MentionChannelData => new MentionChannelData(
-                id: $pair[1]->id,
-                name: $pair[1]->name,
-                category: $pair[0] === '' ? null : $pair[0],
-                isCategory: $pair[1]->type === ChannelType::GuildCategory,
-                isDeleted: $pair[1]->trashed(),
-                url: $this->channelUrl($pair[1]),
+            ->sortBy([
+                fn (array $a, array $b): int => strcasecmp($a['category'] ?? '', $b['category'] ?? ''),
+                fn (array $a, array $b): int => $a['channel']->position <=> $b['channel']->position,
+                fn (array $a, array $b): int => strcasecmp($a['channel']->name, $b['channel']->name),
+            ])
+            ->map(fn (array $entry): MentionChannelData => new MentionChannelData(
+                id: $entry['channel']->id,
+                name: $entry['channel']->name,
+                category: $entry['category'],
+                isCategory: $entry['channel']->type === ChannelType::GuildCategory,
+                isDeleted: $entry['channel']->trashed(),
+                url: $this->channelUrl($entry['channel']),
             ))
             ->values()
             ->all();

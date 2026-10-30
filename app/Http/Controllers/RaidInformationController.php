@@ -16,14 +16,14 @@ use Inertia\Response;
 
 #[Middleware('auth')]
 #[Authorize('view-raid-information')]
-class RaidInformationController extends Controller
+class RaidInformationController extends Controller implements StoresRaidInformation
 {
     /**
      * Display the introduction chapter.
      */
     public function index(): Response
     {
-        return $this->render(StoresRaidInformation::INTRODUCTION);
+        return $this->render(self::INTRODUCTION);
     }
 
     /**
@@ -31,7 +31,7 @@ class RaidInformationController extends Controller
      */
     public function show(string $chapter): Response|RedirectResponse
     {
-        if ($chapter === StoresRaidInformation::INTRODUCTION) {
+        if ($chapter === self::INTRODUCTION) {
             return redirect()->route('raiding.information.index');
         }
 
@@ -58,6 +58,8 @@ class RaidInformationController extends Controller
     }
 
     /**
+     * Summarise the chapter at the given position, or return null when there is none.
+     *
      * @param  Collection<int, ChapterData>  $chapters
      */
     private function summary(Collection $chapters, int $position): ?ChapterSummaryData

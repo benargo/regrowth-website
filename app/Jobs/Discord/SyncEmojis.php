@@ -2,7 +2,6 @@
 
 namespace App\Jobs\Discord;
 
-use App\Http\Integrations\Discord\Data\Guilds\EmojiData;
 use App\Http\Integrations\Discord\DiscordConnector;
 use App\Http\Integrations\Discord\Requests\Guilds\GetGuildEmojisRequest;
 use App\Jobs\Middleware\ReleaseWhenDiscordRateLimited;
@@ -51,10 +50,10 @@ class SyncEmojis implements ShouldQueue
     {
         $emoji = $discord->send(new GetGuildEmojisRequest($serverId))->dto();
 
-        $syncedIds = $emoji->map(fn (EmojiData $emoji): string => $emoji->id)->values()->all();
+        $syncedIds = $emoji->pluck('id')->all();
 
         DB::transaction(function () use ($emoji, $syncedIds): void {
-            $deleted = DiscordEmoji::whereNotIn('id', $syncedIds)->delete();
+            DiscordEmoji::whereNotIn('id', $syncedIds)->delete();
 
             foreach ($emoji as $item) {
                 DiscordEmoji::updateOrCreate(

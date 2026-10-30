@@ -27,8 +27,7 @@ class ReorderChapters implements StoresRaidInformation
         Cache::lock(self::WRITE_LOCK, 10)->block(5, function () use ($slugs): void {
             $live = ListChapters::run()
                 ->reject(fn (ChapterData $chapter): bool => $chapter->isIntroduction)
-                ->map(fn (ChapterData $chapter): string => $chapter->slug)
-                ->values()
+                ->pluck('slug')
                 ->all();
 
             Validator::make(['slugs' => $slugs], [
