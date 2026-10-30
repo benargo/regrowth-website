@@ -42,6 +42,17 @@ class PermissionSeederTest extends TestCase
     }
 
     #[Test]
+    public function it_defines_the_raid_information_permissions(): void
+    {
+        $permissions = collect($this->permissions)
+            ->filter(fn (array $permission): bool => Str::endsWith($permission['name'], '-raid-information'))
+            ->values();
+
+        $this->assertSame(['manage-raid-information', 'view-raid-information'], $permissions->pluck('name')->sort()->values()->all());
+        $this->assertSame(['raid-management'], $permissions->pluck('group')->unique()->values()->all());
+    }
+
+    #[Test]
     public function it_no_longer_defines_the_manage_boss_strategies_permission(): void
     {
         $this->assertNotContains('manage-boss-strategies', array_column($this->permissions, 'name'));

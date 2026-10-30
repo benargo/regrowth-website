@@ -57,9 +57,11 @@ class AppServiceProvider extends ServiceProvider
          */
         Gate::define('edit-datasets', fn (User $user) => $user->isAuthorizedTo('edit-datasets'));
         Gate::define('impersonate-roles', fn (User $user) => $user->isAuthorizedTo('impersonate-roles'));
+        Gate::define('manage-raid-information', fn (User $user) => $user->isAuthorizedTo('manage-raid-information'));
         Gate::define('view-attendance', fn (User $user) => $user->isAuthorizedTo('view-attendance'));
         Gate::define('view-officer-dashboard', fn (User $user) => $user->isAuthorizedTo('view-officer-dashboard'));
         Gate::define('view-priorities-page', fn (User $user) => $user->isAuthorizedTo('view-priorities-page'));
+        Gate::define('view-raid-information', fn (User $user) => $user->isAuthorizedTo('view-raid-information'));
 
         /**
          * Rate limiting
