@@ -42,6 +42,21 @@ class PermissionSeederTest extends TestCase
     }
 
     #[Test]
+    public function it_defines_the_handbook_permissions(): void
+    {
+        $permissions = collect($this->permissions)
+            ->whereIn('name', ['manage-handbook', 'view-handbook'])
+            ->sortBy('name')
+            ->values()
+            ->all();
+
+        $this->assertSame([
+            ['name' => 'manage-handbook', 'group' => 'raid-management', 'guard_name' => 'web'],
+            ['name' => 'view-handbook', 'group' => 'raid-management', 'guard_name' => 'web'],
+        ], $permissions);
+    }
+
+    #[Test]
     public function it_no_longer_defines_the_manage_boss_strategies_permission(): void
     {
         $this->assertNotContains('manage-boss-strategies', array_column($this->permissions, 'name'));

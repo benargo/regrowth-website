@@ -1,0 +1,129 @@
+<?php
+
+namespace App\Actions\Discord;
+
+use App\Data\Discord\MentionChannelData;
+use App\Data\Discord\MentionDirectoryData;
+use App\Data\Discord\MentionEmojiData;
+use App\Data\Discord\MentionRoleData;
+use App\Http\Integrations\Discord\Enums\ChannelType;
+use App\Models\DiscordChannel;
+use App\Models\DiscordEmoji;
+use App\Models\DiscordRole;
+use Closure;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use Lorisleiva\Actions\Concerns\AsAction;
+
+/**
+ * Builds the directory of stored Discord channels, roles and emoji, optionally limited to the tags in some content.
+ */
+class BuildDiscordMentionDirectory
+{
+    use AsAction;
+
+    public function handle(?string $content = null): MentionDirectoryData
+    {
+        $channelIds = $this->tagIds($content, '/<#(\d+)>/');
+        $roleIds = $this->tagIds($content, '/<@&(\d+)>/');
+        $emojiIds = $this->tagIds($content, '/<a?:\w+:(\d+)>/');
+
+        $channels = DiscordChannel::withTrashed()
+            ->whereNotNull('name')
+            ->when($channelIds !== null, fn ($query) => $query->whereIn('id', $channelIds))
+            ->with(['parent' => $this->withTrashedParents(), 'parent.parent' => $this->withTrashedParents()])
+            ->get()
+            ->map(fn (DiscordChannel $channel): array => [
+                'category' => $this->categoryName($channel),
+                'channel' => $channel,
+            ])
+            ->sortBy([
+                fn (array $a, array $b): int => strcasecmp($a['category'] ?? '', $b['category'] ?? ''),
+                fn (array $a, array $b): int => $a['channel']->position <=> $b['channel']->position,
+                fn (array $a, array $b): int => strcasecmp($a['channel']->name, $b['channel']->name),
+            ])
+            ->map(fn (array $entry): MentionChannelData => new MentionChannelData(
+                id: $entry['channel']->id,
+                name: $entry['channel']->name,
+                category: $entry['category'],
+                isCategory: $entry['channel']->type === ChannelType::GuildCategory,
+                isDeleted: $entry['channel']->trashed(),
+                url: $this->channelUrl($entry['channel']),
+            ))
+            ->values()
+            ->all();
+
+        return new MentionDirectoryData(
+            channels: $channels,
+            roles: DiscordRole::when($roleIds !== null, fn ($query) => $query->whereIn('id', $roleIds))
+                ->orderByDesc('position')
+                ->get()
+                ->map(fn (DiscordRole $role): MentionRoleData => new MentionRoleData($role->id, $role->name))
+                ->all(),
+            emoji: DiscordEmoji::when($emojiIds !== null, fn ($query) => $query->whereIn('id', $emojiIds))
+                ->orderBy('name')
+                ->get()
+                ->map(fn (DiscordEmoji $emoji): MentionEmojiData => new MentionEmojiData(
+                    id: $emoji->id,
+                    name: $emoji->name,
+                    animated: $emoji->animated,
+                    available: $emoji->available,
+                    url: $emoji->url,
+                ))
+                ->all(),
+        );
+    }
+
+    /**
+     * Extract the IDs captured by the pattern, or null when no content is given.
+     *
+     * @return array<int, string>|null
+     */
+    protected function tagIds(?string $content, string $pattern): ?array
+    {
+        if ($content === null) {
+            return null;
+        }
+
+        preg_match_all($pattern, $content, $matches);
+
+        return array_values(array_unique($matches[1]));
+    }
+
+    /**
+     * The name of the category a channel sits in: its parent, or its grandparent when the parent is not a category.
+     */
+    protected function categoryName(DiscordChannel $channel): ?string
+    {
+        $parent = $channel->parent;
+
+        if ($parent === null) {
+            return null;
+        }
+
+        if ($parent->type === ChannelType::GuildCategory) {
+            return $parent->name;
+        }
+
+        return $parent->parent?->name;
+    }
+
+    /**
+     * The discord.com link to a channel, routed through the parent channel for threads.
+     */
+    protected function channelUrl(DiscordChannel $channel): string
+    {
+        $path = in_array($channel->type, ChannelType::threadTypes(), true) && $channel->parent_id !== null
+            ? "{$channel->parent_id}/{$channel->id}"
+            : $channel->id;
+
+        return 'https://discord.com/channels/'.config('services.discord.server_id')."/{$path}";
+    }
+
+    /**
+     * Constrain a parent relation to include soft-deleted channels.
+     */
+    protected function withTrashedParents(): Closure
+    {
+        return fn (Relation $relation) => $relation->withTrashed();
+    }
+}

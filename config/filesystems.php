@@ -84,6 +84,13 @@ return [
             'prefix' => 'addon/',
         ],
 
+        'handbook' => [
+            'driver' => 'scoped',
+            'disk' => 's3-private',
+            'prefix' => 'handbook/',
+            'throw' => true,
+        ],
+
     ],
 
     /*

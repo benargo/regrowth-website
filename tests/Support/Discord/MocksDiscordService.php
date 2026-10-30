@@ -93,10 +93,10 @@ trait MocksDiscordService
     /**
      * Fake the GET channel request with a channel built from the given id/name/position.
      */
-    protected function fakeDiscordChannel(string $id = '123456789', ?string $name = null, ?int $position = null): void
+    protected function fakeDiscordChannel(string $id = '123456789', ?string $name = null, ?int $position = null, ?int $type = null): void
     {
         $this->fakeDiscord([
-            GetChannelRequest::class => MockResponse::make($this->makeDiscordChannelResponse($id, $name, $position)),
+            GetChannelRequest::class => MockResponse::make($this->makeDiscordChannelResponse($id, $name, $position, $type)),
         ]);
     }
 
@@ -136,10 +136,10 @@ trait MocksDiscordService
     /**
      * @return array<string, mixed>
      */
-    protected function makeDiscordChannelResponse(string $id = '123456789', ?string $name = null, ?int $position = null): array
+    protected function makeDiscordChannelResponse(string $id = '123456789', ?string $name = null, ?int $position = null, ?int $type = null): array
     {
         return array_filter(
-            ['id' => $id, 'name' => $name, 'position' => $position],
+            ['id' => $id, 'name' => $name, 'position' => $position, 'type' => $type],
             fn (mixed $value): bool => $value !== null,
         );
     }
@@ -159,6 +159,22 @@ trait MocksDiscordService
             'managed' => false,
             'mentionable' => false,
             'flags' => 0,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function makeDiscordEmojiResponse(string $id, string $name, bool $animated = false, bool $available = true): array
+    {
+        return [
+            'id' => $id,
+            'name' => $name,
+            'roles' => [],
+            'require_colons' => true,
+            'managed' => false,
+            'animated' => $animated,
+            'available' => $available,
         ];
     }
 }

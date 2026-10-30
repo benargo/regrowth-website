@@ -58,6 +58,16 @@ export const SITE_SECTIONS = {
                 currentPatterns: ["raiding.absences.*"],
                 permission: "view-planned-absences",
             },
+            {
+                key: "handbook",
+                label: "Handbook",
+                icon: "book",
+                description: "How we raid: expectations, schedule, teams, loot and more.",
+                routeName: "raiding.handbook.index",
+                currentPatterns: ["raiding.handbook.*"],
+                permission: "view-handbook",
+                isHubCard: true,
+            },
         ],
     },
     loot: {

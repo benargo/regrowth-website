@@ -19,6 +19,8 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTemplateController;
 use App\Http\Controllers\GameVersionController;
 use App\Http\Controllers\GuildRosterManager\ImportController;
+use App\Http\Controllers\HandbookChapterController;
+use App\Http\Controllers\HandbookController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LootBiasToolController;
@@ -32,6 +34,7 @@ use App\Http\Controllers\Session\GameVersionController as SessionGameVersionCont
 use App\Http\Controllers\WarcraftLogs\GuildController;
 use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use App\Http\Middleware\DefersCacheFlushes;
+use App\Http\Middleware\NormaliseNewLines;
 use App\Http\Middleware\RemembersCurrentGameVersion;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -114,6 +117,10 @@ Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () use ($raid
         Route::patch('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'update'])->name('absences.update');
         Route::delete('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'destroy'])->name('absences.destroy');
         Route::post('/absences/{plannedAbsence}/restore', [PlannedAbsenceController::class, 'restore'])->withTrashed()->name('absences.restore');
+
+        // Raid handbook routes (version-independent)
+        Route::get('/handbook', [HandbookController::class, 'index'])->name('handbook.index');
+        Route::get('/handbook/{chapter}', [HandbookController::class, 'show'])->where('chapter', '[a-z0-9-]+')->name('handbook.show');
     });
 
     // Attendance routes
@@ -222,6 +229,18 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::get('/raids/{raid}/review', [RaidController::class, 'review'])->name('raids.review');
     Route::patch('/raids/{raid}', [RaidController::class, 'update'])->middleware(DefersCacheFlushes::class)->name('raids.update');
     Route::delete('/raids/{raid}', [RaidController::class, 'destroy'])->name('raids.destroy');
+
+    /**
+     * Raid handbook management
+     */
+    Route::get('/handbook', [HandbookChapterController::class, 'index'])->name('handbook.index');
+    Route::get('/handbook/create', [HandbookChapterController::class, 'create'])->name('handbook.create');
+    Route::post('/handbook', [HandbookChapterController::class, 'store'])->middleware(NormaliseNewLines::class)->name('handbook.store');
+    Route::put('/handbook/order', [HandbookChapterController::class, 'reorder'])->name('handbook.reorder');
+    Route::get('/handbook/{chapter}/edit', [HandbookChapterController::class, 'edit'])->where('chapter', '[a-z0-9-]+')->name('handbook.edit');
+    Route::patch('/handbook/{chapter}', [HandbookChapterController::class, 'update'])->where('chapter', '[a-z0-9-]+')->middleware(NormaliseNewLines::class)->name('handbook.update');
+    Route::delete('/handbook/{chapter}', [HandbookChapterController::class, 'destroy'])->where('chapter', '[a-z0-9-]+')->name('handbook.destroy');
+    Route::post('/handbook/{chapter}/restore', [HandbookChapterController::class, 'restore'])->where('chapter', '[a-z0-9-]+')->name('handbook.restore');
 
     /**
      * Warcraft Logs guilds management

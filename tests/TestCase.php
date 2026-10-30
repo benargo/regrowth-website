@@ -27,6 +27,7 @@ abstract class TestCase extends BaseTestCase
 
         Queue::fake([BuildExportFile::class, AttachAvatarToUser::class]);
         Storage::fake('addon');
+        Storage::fake('handbook');
 
         if (! self::$strayRequestsPrevented) {
             Config::preventStrayRequests();

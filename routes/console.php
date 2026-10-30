@@ -3,17 +3,19 @@
 use App\Jobs\Addon\BuildExportFiles;
 use App\Jobs\Discord\RefreshUserAvatars;
 use App\Jobs\Discord\SyncChannels as SyncDiscordChannels;
+use App\Jobs\Discord\SyncEmojis as SyncDiscordEmojis;
 use App\Jobs\Discord\SyncRoles as SyncDiscordRoles;
 use App\Jobs\Discord\SyncUsers as SyncDiscordUsers;
 use App\Jobs\FetchGuildRosters;
+use App\Jobs\Handbook\PurgeTrashedChapters;
 use App\Jobs\RaidHelper\FetchEvents as FetchRaidHelperEvents;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Schedule;
 
 /**
- * Synchronise Discord channels and roles, then every user's profile and roles, every hour.
+ * Synchronise Discord channels, roles and emoji, then every user's profile and roles, every hour.
  */
-Schedule::call(fn () => Bus::chain([new SyncDiscordChannels, new SyncDiscordRoles, new SyncDiscordUsers])->dispatch())
+Schedule::call(fn () => Bus::chain([new SyncDiscordChannels, new SyncDiscordRoles, new SyncDiscordEmojis, new SyncDiscordUsers])->dispatch())
     ->hourly()
     ->name('sync-discord');
 
@@ -48,6 +50,11 @@ Schedule::job(new BuildExportFiles)->dailyAt('03:15')->name('build-addon-export-
 Schedule::command('fetch:warcraft-logs --latest')
     ->twiceDailyAt(16, 23, 30)
     ->name('fetch-warcraft-logs-latest');
+
+/**
+ * Permanently delete raid handbook chapters trashed more than 30 days ago, daily.
+ */
+Schedule::job(new PurgeTrashedChapters)->daily()->name('purge-trashed-handbook-chapters')->withoutOverlapping();
 
 /**
  * This should be the last job to run each day.

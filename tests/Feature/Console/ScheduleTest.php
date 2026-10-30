@@ -5,8 +5,10 @@ namespace Tests\Feature\Console;
 use App\Jobs\Discord\AttachAvatarToUser;
 use App\Jobs\Discord\RefreshUserAvatars;
 use App\Jobs\Discord\SyncChannels;
+use App\Jobs\Discord\SyncEmojis;
 use App\Jobs\Discord\SyncRoles;
 use App\Jobs\Discord\SyncUsers;
+use App\Jobs\Handbook\PurgeTrashedChapters;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Bus;
@@ -19,7 +21,7 @@ use Tests\TestCase;
 class ScheduleTest extends TestCase
 {
     #[Test]
-    public function it_chains_the_discord_channel_role_and_user_sync_hourly(): void
+    public function it_chains_the_discord_channel_role_emoji_and_user_sync_hourly(): void
     {
         Bus::fake();
 
@@ -31,7 +33,7 @@ class ScheduleTest extends TestCase
 
         $event->run($this->app);
 
-        Bus::assertChained([SyncChannels::class, SyncRoles::class, SyncUsers::class]);
+        Bus::assertChained([SyncChannels::class, SyncRoles::class, SyncEmojis::class, SyncUsers::class]);
     }
 
     #[Test]
@@ -48,5 +50,21 @@ class ScheduleTest extends TestCase
         $event->run($this->app);
 
         Queue::assertPushed(RefreshUserAvatars::class);
+    }
+
+    #[Test]
+    public function it_purges_trashed_handbook_daily(): void
+    {
+        Queue::fake([PurgeTrashedChapters::class]);
+
+        $event = collect(app(Schedule::class)->events())
+            ->first(fn (Event $event): bool => $event->description === 'purge-trashed-handbook-chapters');
+
+        $this->assertNotNull($event);
+        $this->assertSame('0 0 * * *', $event->expression);
+
+        $event->run($this->app);
+
+        Queue::assertPushed(PurgeTrashedChapters::class);
     }
 }
