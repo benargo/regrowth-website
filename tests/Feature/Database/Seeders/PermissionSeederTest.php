@@ -45,11 +45,15 @@ class PermissionSeederTest extends TestCase
     public function it_defines_the_raid_information_permissions(): void
     {
         $permissions = collect($this->permissions)
-            ->filter(fn (array $permission): bool => Str::endsWith($permission['name'], '-raid-information'))
-            ->values();
+            ->whereIn('name', ['manage-raid-information', 'view-raid-information'])
+            ->sortBy('name')
+            ->values()
+            ->all();
 
-        $this->assertSame(['manage-raid-information', 'view-raid-information'], $permissions->pluck('name')->sort()->values()->all());
-        $this->assertSame(['raid-management'], $permissions->pluck('group')->unique()->values()->all());
+        $this->assertSame([
+            ['name' => 'manage-raid-information', 'group' => 'raid-management', 'guard_name' => 'web'],
+            ['name' => 'view-raid-information', 'group' => 'raid-management', 'guard_name' => 'web'],
+        ], $permissions);
     }
 
     #[Test]
