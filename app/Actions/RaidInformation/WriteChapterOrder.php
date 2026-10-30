@@ -1,0 +1,37 @@
+<?php
+
+namespace App\Actions\RaidInformation;
+
+use App\Contracts\Actions\RaidInformation\StoresRaidInformation;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
+use JsonException;
+use Lorisleiva\Actions\Concerns\AsAction;
+
+/**
+ * Writes the order file with the introduction first and duplicates removed, then flushes the chapter cache.
+ */
+class WriteChapterOrder implements StoresRaidInformation
+{
+    use AsAction;
+
+    /**
+     * @param  array<int, string>  $slugs
+     *
+     * @throws JsonException when the slugs cannot be encoded
+     */
+    public function handle(array $slugs): void
+    {
+        $rest = array_values(array_unique(array_filter(
+            $slugs,
+            fn (string $slug): bool => $slug !== self::INTRODUCTION,
+        )));
+
+        Storage::disk(self::DISK)->put(
+            self::ORDER_FILE,
+            json_encode([self::INTRODUCTION, ...$rest], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+        );
+
+        Cache::tags([self::CACHE_TAG])->flush();
+    }
+}
