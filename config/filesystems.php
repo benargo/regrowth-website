@@ -84,6 +84,13 @@ return [
             'prefix' => 'addon/',
         ],
 
+        'raid-information' => [
+            'driver' => 'scoped',
+            'disk' => 's3-private',
+            'prefix' => 'raid-information/',
+            'throw' => true,
+        ],
+
     ],
 
     /*

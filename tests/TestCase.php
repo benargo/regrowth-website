@@ -27,6 +27,7 @@ abstract class TestCase extends BaseTestCase
 
         Queue::fake([BuildExportFile::class, AttachAvatarToUser::class]);
         Storage::fake('addon');
+        Storage::fake('raid-information');
 
         if (! self::$strayRequestsPrevented) {
             Config::preventStrayRequests();
