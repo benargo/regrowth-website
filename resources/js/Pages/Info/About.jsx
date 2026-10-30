@@ -5,7 +5,8 @@ import Band from "@/Components/Band/Band";
 import BandHeading from "@/Components/Band/BandHeading";
 import JoinDiscordButton from "@/Components/Discord/JoinDiscordButton";
 import CountryFlag from "@/Components/CountryFlag";
-import Timeline, { TimelineEntry, TimelineHeading } from "@/Components/Timeline/Timeline";
+import ItemLink from "@/Components/Items/ItemLink";
+import Timeline, { TimelineEntry, TimelineHeading, TimelineLegendary } from "@/Components/Timeline/Timeline";
 
 const SECTIONS = [
     { value: "classic", label: "World of Warcraft: Classic" },
@@ -146,6 +147,30 @@ export default function About() {
                                 </p>
                             </TimelineEntry>
 
+                            <TimelineLegendary
+                                date="2021"
+                                dateTime="2021"
+                                title="The guild's first legendary"
+                                marker="classic"
+                                item={{
+                                    id: 19019,
+                                    name: "Thunderfury, Blessed Blade of the Windseeker",
+                                    icon: "inv_sword_39",
+                                    domain: "classic",
+                                }}
+                                sticker={{
+                                    src: "/images/sticker_zarlei_with_thunderfury.webp",
+                                    alt: "A cartoon sticker of Zar holding Thunderfury",
+                                    width: 2224,
+                                    height: 2065,
+                                }}
+                            >
+                                <p>
+                                    <Name>Zar</Name> completed Thunderfury, Blessed Blade of the Windseeker, the guild's
+                                    first legendary.
+                                </p>
+                            </TimelineLegendary>
+
                             <TimelineEntry
                                 date="June 2021"
                                 dateTime="2021-06"
@@ -227,6 +252,55 @@ export default function About() {
                                 </p>
                             </TimelineEntry>
 
+                            <TimelineLegendary
+                                date="2025"
+                                dateTime="2025"
+                                title="Sulfuras"
+                                marker="anniversary"
+                                item={{
+                                    id: 17182,
+                                    name: "Sulfuras, Hand of Ragnaros",
+                                    icon: "inv_hammer_unique_sulfuras",
+                                    domain: "classic",
+                                }}
+                            >
+                                <p>
+                                    <Name>Izepo</Name> claimed the{" "}
+                                    <ItemLink
+                                        id="17204"
+                                        name="Eye of Sulfuras"
+                                        icon="inv_misc_gem_pearl_05"
+                                        quality="legendary"
+                                        domain="classic"
+                                    />{" "}
+                                    and used it to forge the iconic hammer.
+                                </p>
+                            </TimelineLegendary>
+
+                            <TimelineLegendary
+                                date="18 July 2025"
+                                dateTime="2025-07-18"
+                                title="Scarab Lord"
+                                marker="anniversary"
+                                item={{
+                                    id: 21176,
+                                    name: "Black Qiraji Resonating Crystal",
+                                    icon: "inv_misc_qirajicrystal_05",
+                                    domain: "classic",
+                                }}
+                                sticker={{
+                                    src: "/images/sticker_loktorious_scarab_lord.webp",
+                                    alt: "A cartoon sticker of Loktorious as Scarab Lord",
+                                    width: 1971,
+                                    height: 1822,
+                                }}
+                            >
+                                <p>
+                                    <Name>Loktorious</Name> completed the Scepter of the Shifting Sands quest chain to
+                                    obtain the Black Qiraji Resonating Crystal and claim the title of Scarab Lord.
+                                </p>
+                            </TimelineLegendary>
+
                             <TimelineEntry
                                 date="July 2025"
                                 dateTime="2025-07"
@@ -239,6 +313,75 @@ export default function About() {
                                     servers.
                                 </p>
                             </TimelineEntry>
+
+                            <TimelineLegendary
+                                date="July 2025"
+                                dateTime="2025-07"
+                                title="Thunderfury, again"
+                                marker="anniversary"
+                                item={{
+                                    id: 19019,
+                                    name: "Thunderfury, Blessed Blade of the Windseeker",
+                                    icon: "inv_sword_39",
+                                    domain: "classic",
+                                }}
+                                sticker={{
+                                    src: "/images/sticker_shiniko_thunderfury.webp",
+                                    alt: "A cartoon sticker of Shiniko holding Thunderfury",
+                                    width: 1872,
+                                    height: 2364,
+                                }}
+                            >
+                                <p>
+                                    On a crazy night in Molten Core, <Name>Shiniko</Name> made a bet with several
+                                    raiders that we wouldn't get both bindings in a single night. He lost the bet, but
+                                    completed the guild's second Thunderfury.
+                                </p>
+                                <p>
+                                    Rumour has it he is still accepting donations of{" "}
+                                    <ItemLink
+                                        id={4784}
+                                        name="Lifeless Stone"
+                                        icon="inv_stone_10"
+                                        quality="poor"
+                                        domain="classic"
+                                    />{" "}
+                                    to pay off his debt.
+                                </p>
+                            </TimelineLegendary>
+
+                            <TimelineLegendary
+                                date="16 December 2025"
+                                dateTime="2025-12-16"
+                                title="Atiesh"
+                                marker="anniversary"
+                                item={{
+                                    id: 22589,
+                                    name: "Atiesh, Greatstaff of the Guardian",
+                                    icon: "inv_staff_medivh",
+                                    domain: "classic",
+                                }}
+                                sticker={{
+                                    src: "/images/sticker_fizzywigs_with_atiesh.webp",
+                                    alt: "A cartoon sticker of Fizzywigs holding Atiesh",
+                                    width: 1664,
+                                    height: 2042,
+                                    isSmall: true,
+                                }}
+                            >
+                                <p>
+                                    <Name>Fizzywigs</Name> pulled off an incredible feat and collected all fourty{" "}
+                                    <ItemLink
+                                        id="22726"
+                                        name="Splinters of Atiesh"
+                                        icon="inv_qiraj_jewelblessed"
+                                        quality="legendary"
+                                        domain="classic"
+                                    />
+                                    {", "}
+                                    as well as the head and base, and was able to reform Medivh's legendary staff.
+                                </p>
+                            </TimelineLegendary>
 
                             <TimelineEntry
                                 date="February 2026"
@@ -348,8 +491,8 @@ export default function About() {
                             compositions and important announcements to the Regrowth Discord server.
                         </p>
                         <p>
-                            When she isn’t keeping the guild organised, she can often be heard in the background
-                            during raids, adding her own commentary to the boss fights.
+                            When she isn’t keeping the guild organised, she can often be heard in the background during
+                            raids, adding her own commentary to the boss fights.
                         </p>
                     </div>
                     <img
