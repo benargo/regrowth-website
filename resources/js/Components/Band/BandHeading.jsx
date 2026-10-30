@@ -42,7 +42,7 @@ export default function BandHeading({
             )}
             <Tag
                 className={cn(
-                    "bg-linear-to-b bg-clip-text pb-1 font-serif font-normal text-transparent text-shadow-sm",
+                    "bg-linear-to-b bg-clip-text pb-1 font-serif font-normal text-balance text-transparent text-shadow-sm",
                     colors.heading,
                     SIZES[level] ?? SIZES[2],
                     headingClassName,

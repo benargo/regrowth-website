@@ -4,12 +4,13 @@ import RaggedEdge from "@/Components/Home/RaggedEdge";
 import LaunchCountdown from "@/Components/Home/LaunchCountdown";
 import OfficerTeam from "@/Components/Home/OfficerTeam";
 import UpcomingEvents from "@/Components/Home/UpcomingEvents";
+import HistoryTimeline from "@/Components/Home/HistoryTimeline";
 import Section from "@/Components/Home/Section";
 import DisplayHeading from "@/Components/Home/DisplayHeading";
-import Icon from "@/Components/FontAwesome/Icon";
+import JoinDiscordButton from "@/Components/Discord/JoinDiscordButton";
 
 export default function Home({ foreverLaunchAt, officers, canViewPlans }) {
-    const { navigation, upcomingEvents } = usePage().props;
+    const { upcomingEvents } = usePage().props;
     return (
         <Master title="Home" isHomepage>
             <div className="text-base">
@@ -51,28 +52,20 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans }) {
                     <UpcomingEvents events={upcomingEvents} canViewPlans={canViewPlans} />
                 </Deferred>
 
-                <Section tone="deep" maxWidth="max-w-2xl text-center">
+                <HistoryTimeline />
+
+                <Section tone="mid" maxWidth="max-w-2xl text-center">
                     <DisplayHeading level={2} eyebrow="Join us" className="mb-4">
                         Your Journey Starts Here
                     </DisplayHeading>
 
-                    <p className="text-camel-400 mx-auto mb-8 max-w-xl">
+                    <p className="text-camel-400 mx-auto mb-8 max-w-xl text-pretty">
                         Whether you’re a seasoned raider or stepping into Azeroth for the first time, there’s a place
                         for you in Regrowth. Come and say hello — recruitment, raid chatter and everything else happens
                         on our Discord.
                     </p>
 
-                    {navigation?.discord_invite_url && (
-                        <a
-                            href={navigation.discord_invite_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="border-discord/30 text-camel-200 bg-discord focus-visible:outline-camel-400 inline-flex items-center gap-3 rounded border px-8 py-4 text-lg shadow-lg transition-[filter,box-shadow] hover:shadow-xl hover:brightness-115 focus-visible:outline-2 focus-visible:outline-offset-2"
-                        >
-                            <Icon icon="discord" style="brands" className="h-6 w-6 text-white" />
-                            Join Our Discord
-                        </a>
-                    )}
+                    <JoinDiscordButton />
                 </Section>
             </div>
         </Master>

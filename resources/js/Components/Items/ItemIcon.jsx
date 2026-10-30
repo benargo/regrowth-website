@@ -1,6 +1,15 @@
 import { extractBreakpointProps } from "@/Helpers/TailwindBreakpoints";
 
-export default function ItemIcon({ itemId, itemName, itemQuality, iconUrl, size, wowheadUrl, ...props }) {
+export default function ItemIcon({
+    itemId,
+    itemName,
+    itemQuality,
+    iconUrl,
+    size,
+    wowheadUrl,
+    domain = "tbc",
+    ...props
+}) {
     const sizeClasses = [
         `h-${size} w-${size}`,
         ...extractBreakpointProps(props)
@@ -13,8 +22,8 @@ export default function ItemIcon({ itemId, itemName, itemQuality, iconUrl, size,
 
     return (
         <a
-            href={wowheadUrl || `https://www.wowhead.com/tbc/item=${itemId}`}
-            data-wowhead={`item=${itemId}&domain=tbc`}
+            href={wowheadUrl || `https://www.wowhead.com/${domain}/item=${itemId}`}
+            data-wowhead={`item=${itemId}&domain=${domain}`}
             target="_blank"
             rel="noopener noreferrer"
             tabIndex={-1}

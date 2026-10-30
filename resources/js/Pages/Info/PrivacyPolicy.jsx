@@ -1,11 +1,10 @@
-import { usePage } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
-import Icon from "@/Components/FontAwesome/Icon";
 import SharedHeader from "@/Components/SharedHeader";
 import OnThisPage from "@/Components/OnThisPage";
 import ExternalLink from "@/Components/ExternalLink";
 import Band from "@/Components/Band/Band";
 import BandHeading from "@/Components/Band/BandHeading";
+import JoinDiscordButton from "@/Components/Discord/JoinDiscordButton";
 
 const SECTIONS = [
     { value: "about", label: "About this policy" },
@@ -103,8 +102,6 @@ const COOKIES = [
 ];
 
 export default function PrivacyPolicy() {
-    const { navigation } = usePage().props;
-
     return (
         <Master title="Privacy Policy">
             <SharedHeader
@@ -341,15 +338,7 @@ export default function PrivacyPolicy() {
                     If you have any questions about this privacy policy or the data we hold about you, or you'd like to
                     exercise any of your data protection rights, join our Discord server and ask an officer.
                 </p>
-                <a
-                    href={navigation?.discord_invite_url ?? "https://discord.gg/regrowth"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-discord border-discord/30 inline-flex items-center gap-3 rounded border px-8 py-4 text-lg text-white shadow-lg transition-[filter,box-shadow] hover:shadow-xl hover:brightness-115 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
-                >
-                    <Icon icon="discord" style="brands" className="h-6 w-6" />
-                    Join our Discord
-                </a>
+                <JoinDiscordButton />
             </Band>
         </Master>
     );

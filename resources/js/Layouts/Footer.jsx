@@ -86,6 +86,19 @@ function RosterLink({ linkClass }) {
     );
 }
 
+function HistoryLink({ linkClass }) {
+    return (
+        <li>
+            <Link href={route("about")} className={linkClass}>
+                <FooterLinkIcon>
+                    <Icon icon="book-open" style="solid" className="h-5 w-5" />
+                </FooterLinkIcon>
+                <span className="text-nowrap">Our history</span>
+            </Link>
+        </li>
+    );
+}
+
 function WarcraftLogsLink({ linkClass, url }) {
     if (!url) {
         return null;
@@ -163,6 +176,7 @@ export default function Footer({ classes, discordInviteUrl, warcraftLogsUrl, gam
                         <FooterHeading classes={classes}>Guild</FooterHeading>
                         <ul className="flex flex-col">
                             <RosterLink linkClass={footerLinkClass} />
+                            <HistoryLink linkClass={footerLinkClass} />
                             <li>
                                 <Link href={route("raiding.index")} className={footerLinkClass}>
                                     <FooterLinkIcon />
@@ -192,6 +206,7 @@ export default function Footer({ classes, discordInviteUrl, warcraftLogsUrl, gam
                         <FooterHeading classes={classes}>Guild</FooterHeading>
                         <ul className="flex flex-col">
                             <RosterLink linkClass={footerLinkClass} />
+                            <HistoryLink linkClass={footerLinkClass} />
                             <WarcraftLogsLink linkClass={footerLinkClass} url={warcraftLogsUrl} />
                             <DiscordLink linkClass={footerLinkClass} discordInviteUrl={discordInviteUrl} />
                         </ul>
