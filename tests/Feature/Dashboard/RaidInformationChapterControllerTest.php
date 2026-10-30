@@ -6,6 +6,7 @@ use App\Actions\RaidInformation\TrashChapter;
 use App\Jobs\Addon\BuildExportFile;
 use App\Jobs\Discord\AttachAvatarToUser;
 use App\Jobs\RaidInformation\ResolveChapterChannels;
+use App\Models\DiscordEmoji;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -69,6 +70,23 @@ class RaidInformationChapterControllerTest extends TestCase
                 ->where('trashed.0.slug', 'tactics')
                 ->where('trashed.0.days_remaining', 30)
                 ->has('mentions')
+            );
+    }
+
+    #[Test]
+    public function index_includes_the_custom_emoji_of_trashed_chapter_headings_in_the_mentions(): void
+    {
+        $emoji = DiscordEmoji::factory()->create(['name' => 'skull']);
+        DiscordEmoji::factory()->create(['name' => 'unused']);
+        Storage::disk('raid-information')->put('tactics.md', "## <:skull:{$emoji->id}> Tactics\n\nBe good.");
+        TrashChapter::run('tactics');
+        Cache::flush();
+
+        $this->actingAs($this->manager())
+            ->get(route('management.raid-information.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('mentions.emoji', 1)
+                ->where('mentions.emoji.0.id', $emoji->id)
             );
     }
 

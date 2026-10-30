@@ -32,11 +32,14 @@ class RaidInformationChapterController extends Controller implements StoresRaidI
     public function index(): Response
     {
         $chapters = ListChapters::run();
+        $trashed = ListTrashedChapters::run();
 
         return Inertia::render('Manage/RaidInformation/Index', [
             'chapters' => $chapters->map(fn (ChapterData $chapter): ChapterSummaryData => ChapterSummaryData::from($chapter))->values(),
-            'trashed' => ListTrashedChapters::run(),
-            'mentions' => BuildDiscordMentionDirectory::run($chapters->pluck('content')->implode("\n")),
+            'trashed' => $trashed,
+            'mentions' => BuildDiscordMentionDirectory::run(
+                $chapters->pluck('content')->concat($trashed->pluck('emoji')->filter())->implode("\n"),
+            ),
         ]);
     }
 

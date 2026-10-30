@@ -65,7 +65,7 @@ function trimInsertion(transaction, limit, onTrim) {
     });
 
     if (changedRanges.length !== 1) {
-        onTrim(transaction.newDoc.length - limit);
+        onTrim(0);
 
         return [];
     }
@@ -93,10 +93,9 @@ function trimInsertion(transaction, limit, onTrim) {
 /**
  * Keeps the document within `limit` UTF-16 code units. A paste or drop that
  * doesn't fit is cut at a grapheme boundary before any Discord tag the cut
- * would split, and `onTrim` receives the number of characters removed; a
- * paste into several ranges at once is rejected and `onTrim` receives the
- * overflow. Any other change that would pass the limit is rejected and
- * `onTrim` receives 0. Transactions marked `externalSync`, and those that
+ * would split, and `onTrim` receives the number of characters removed. A
+ * paste into several ranges at once, and any other change that would pass
+ * the limit, is rejected and `onTrim` receives 0. Transactions marked `externalSync`, and those that
  * don't lengthen the document, pass untouched.
  *
  * @param {{ limit: number, onTrim: (cutCount: number) => void }} options

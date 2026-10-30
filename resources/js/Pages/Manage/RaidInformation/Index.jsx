@@ -3,7 +3,7 @@ import { router } from "@inertiajs/react";
 import AutosavedSortableList from "@/Components/Datasets/AutosavedSortableList";
 import IndexLayout from "@/Components/Datasets/IndexLayout";
 import EmptyState from "@/Components/EmptyState";
-import { SecondaryButton } from "@/Components/FormControls";
+import { FieldError, SecondaryButton } from "@/Components/FormControls";
 import ChapterTitle from "@/Components/Discord/ChapterTitle";
 import ChapterRow from "@/Components/RaidInformation/ChapterRow";
 import SharedHeader from "@/Components/SharedHeader";
@@ -28,14 +28,17 @@ export default function Index({ chapters, trashed, mentions }) {
     const introduction = chapters.find((chapter) => chapter.is_introduction) ?? null;
     const orderedChapters = useMemo(() => chapters.filter((chapter) => !chapter.is_introduction), [chapters]);
     const [restoringSlug, setRestoringSlug] = useState(null);
+    const [restoreError, setRestoreError] = useState("");
 
     function restore(chapter) {
         setRestoringSlug(chapter.slug);
+        setRestoreError("");
         router.post(
             route("management.raid-information.restore", chapter.slug),
             {},
             {
                 preserveScroll: true,
+                onError: (errors) => setRestoreError(errors.chapter ?? ""),
                 onFinish: () => setRestoringSlug(null),
             },
         );
@@ -90,6 +93,9 @@ export default function Index({ chapters, trashed, mentions }) {
                             <p className="text-sm text-gray-300">
                                 Deleted chapters stay here for 30 days. Restoring one puts it at the end of the list.
                             </p>
+                        </div>
+                        <div role="alert">
+                            <FieldError message={restoreError} />
                         </div>
                         {trashed.length === 0 ? (
                             <EmptyState

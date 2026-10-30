@@ -96,7 +96,7 @@ class ImportRaidInformation extends Command implements StoresRaidInformation
             return self::FAILURE;
         }
 
-        Cache::lock(self::WRITE_LOCK, 10)->block(5, function () use ($contents, $slugs): void {
+        Cache::lock(self::WRITE_LOCK, 120)->block(5, function () use ($contents, $slugs): void {
             foreach ($contents as $slug => $content) {
                 PutChapter::run($slug, $content);
             }
