@@ -2,9 +2,9 @@
 
 namespace App\Rules;
 
-use App\Actions\RaidInformation\CountDiscordCharacters;
-use App\Actions\RaidInformation\ParseChapterHeading;
-use App\Contracts\Actions\RaidInformation\StoresRaidInformation;
+use App\Actions\Handbook\CountDiscordCharacters;
+use App\Actions\Handbook\ParseChapterHeading;
+use App\Contracts\Actions\Handbook\StoresHandbook;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Translation\PotentiallyTranslatedString;
@@ -13,7 +13,7 @@ use Illuminate\Translation\PotentiallyTranslatedString;
  * Validates chapter content: within the Discord character limit and opening with the correct heading,
  * which holds no mentions or custom emoji beyond one leading custom emoji.
  */
-class ChapterContent implements StoresRaidInformation, ValidationRule
+class ChapterContent implements StoresHandbook, ValidationRule
 {
     public function __construct(public readonly bool $isIntroduction = false) {}
 

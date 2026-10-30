@@ -2,7 +2,7 @@
 
 namespace App\Rules;
 
-use App\Contracts\Actions\RaidInformation\StoresRaidInformation;
+use App\Contracts\Actions\Handbook\StoresHandbook;
 use Closure;
 use Illuminate\Container\Attributes\Storage;
 use Illuminate\Contracts\Filesystem\Filesystem;
@@ -13,7 +13,7 @@ use League\Flysystem\UnableToReadFile;
 /**
  * Validates that a hash matches the stored content of a live chapter.
  */
-class MatchesChapterHash implements StoresRaidInformation, ValidationRule
+class MatchesChapterHash implements StoresHandbook, ValidationRule
 {
     public function __construct(
         #[Storage(self::DISK)] protected Filesystem $disk,

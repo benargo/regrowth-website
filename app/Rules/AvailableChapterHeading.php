@@ -2,8 +2,8 @@
 
 namespace App\Rules;
 
-use App\Actions\RaidInformation\ParseChapterHeading;
-use App\Contracts\Actions\RaidInformation\StoresRaidInformation;
+use App\Actions\Handbook\ParseChapterHeading;
+use App\Contracts\Actions\Handbook\StoresHandbook;
 use Closure;
 use Illuminate\Container\Attributes\Storage;
 use Illuminate\Contracts\Filesystem\Filesystem;
@@ -14,7 +14,7 @@ use Illuminate\Translation\PotentiallyTranslatedString;
 /**
  * Validates that chapter content's heading yields a slug that is not empty, reserved, in use or in Recently deleted.
  */
-class AvailableChapterHeading implements StoresRaidInformation, ValidationRule
+class AvailableChapterHeading implements StoresHandbook, ValidationRule
 {
     public function __construct(
         #[Storage(self::DISK)] protected Filesystem $disk,

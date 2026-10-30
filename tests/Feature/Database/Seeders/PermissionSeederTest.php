@@ -42,17 +42,17 @@ class PermissionSeederTest extends TestCase
     }
 
     #[Test]
-    public function it_defines_the_raid_information_permissions(): void
+    public function it_defines_the_handbook_permissions(): void
     {
         $permissions = collect($this->permissions)
-            ->whereIn('name', ['manage-raid-information', 'view-raid-information'])
+            ->whereIn('name', ['manage-handbook', 'view-handbook'])
             ->sortBy('name')
             ->values()
             ->all();
 
         $this->assertSame([
-            ['name' => 'manage-raid-information', 'group' => 'raid-management', 'guard_name' => 'web'],
-            ['name' => 'view-raid-information', 'group' => 'raid-management', 'guard_name' => 'web'],
+            ['name' => 'manage-handbook', 'group' => 'raid-management', 'guard_name' => 'web'],
+            ['name' => 'view-handbook', 'group' => 'raid-management', 'guard_name' => 'web'],
         ], $permissions);
     }
 

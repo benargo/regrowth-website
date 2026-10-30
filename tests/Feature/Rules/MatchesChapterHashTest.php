@@ -17,7 +17,7 @@ class MatchesChapterHashTest extends TestCase
     {
         parent::setUp();
 
-        Storage::disk('raid-information')->put('loot.md', "## Loot\nBody");
+        Storage::disk('handbook')->put('loot.md', "## Loot\nBody");
     }
 
     #[Test]
@@ -48,6 +48,6 @@ class MatchesChapterHashTest extends TestCase
 
     private function validate(string $slug, string $baseHash): ValidatorContract
     {
-        return Validator::make(['base_hash' => $baseHash], ['base_hash' => [new MatchesChapterHash(Storage::disk('raid-information'), $slug)]]);
+        return Validator::make(['base_hash' => $baseHash], ['base_hash' => [new MatchesChapterHash(Storage::disk('handbook'), $slug)]]);
     }
 }

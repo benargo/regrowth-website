@@ -84,10 +84,10 @@ return [
             'prefix' => 'addon/',
         ],
 
-        'raid-information' => [
+        'handbook' => [
             'driver' => 'scoped',
             'disk' => 's3-private',
-            'prefix' => 'raid-information/',
+            'prefix' => 'handbook/',
             'throw' => true,
         ],
 

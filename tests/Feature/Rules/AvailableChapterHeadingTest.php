@@ -17,7 +17,7 @@ class AvailableChapterHeadingTest extends TestCase
     #[Test]
     public function it_accepts_a_heading_whose_slug_is_free(): void
     {
-        Storage::disk('raid-information')->put('loot.md', "## Loot\nBody");
+        Storage::disk('handbook')->put('loot.md', "## Loot\nBody");
 
         $this->assertFalse($this->validate("## 🔄 Changing Mains or Specs\nBody")->fails());
     }
@@ -26,7 +26,7 @@ class AvailableChapterHeadingTest extends TestCase
     #[Group('validation')]
     public function it_rejects_a_slug_already_in_use(): void
     {
-        Storage::disk('raid-information')->put('loot.md', "## Loot\nBody");
+        Storage::disk('handbook')->put('loot.md', "## Loot\nBody");
 
         $validator = $this->validate("## Loot\nOther");
 
@@ -38,7 +38,7 @@ class AvailableChapterHeadingTest extends TestCase
     #[Group('validation')]
     public function it_rejects_a_slug_in_the_trash(): void
     {
-        Storage::disk('raid-information')->put('.trashed/loot.md', "## Loot\nBody");
+        Storage::disk('handbook')->put('.trashed/loot.md', "## Loot\nBody");
 
         $validator = $this->validate("## Loot\nOther");
 
@@ -80,6 +80,6 @@ class AvailableChapterHeadingTest extends TestCase
 
     private function validate(string $content): ValidatorContract
     {
-        return Validator::make(['content' => $content], ['content' => [new AvailableChapterHeading(Storage::disk('raid-information'))]]);
+        return Validator::make(['content' => $content], ['content' => [new AvailableChapterHeading(Storage::disk('handbook'))]]);
     }
 }

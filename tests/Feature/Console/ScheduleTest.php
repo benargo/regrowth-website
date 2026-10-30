@@ -8,7 +8,7 @@ use App\Jobs\Discord\SyncChannels;
 use App\Jobs\Discord\SyncEmojis;
 use App\Jobs\Discord\SyncRoles;
 use App\Jobs\Discord\SyncUsers;
-use App\Jobs\RaidInformation\PurgeTrashedChapters;
+use App\Jobs\Handbook\PurgeTrashedChapters;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Bus;
@@ -53,12 +53,12 @@ class ScheduleTest extends TestCase
     }
 
     #[Test]
-    public function it_purges_trashed_raid_information_daily(): void
+    public function it_purges_trashed_handbook_daily(): void
     {
         Queue::fake([PurgeTrashedChapters::class]);
 
         $event = collect(app(Schedule::class)->events())
-            ->first(fn (Event $event): bool => $event->description === 'purge-trashed-raid-information');
+            ->first(fn (Event $event): bool => $event->description === 'purge-trashed-handbook-chapters');
 
         $this->assertNotNull($event);
         $this->assertSame('0 0 * * *', $event->expression);

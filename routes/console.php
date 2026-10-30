@@ -7,8 +7,8 @@ use App\Jobs\Discord\SyncEmojis as SyncDiscordEmojis;
 use App\Jobs\Discord\SyncRoles as SyncDiscordRoles;
 use App\Jobs\Discord\SyncUsers as SyncDiscordUsers;
 use App\Jobs\FetchGuildRosters;
+use App\Jobs\Handbook\PurgeTrashedChapters;
 use App\Jobs\RaidHelper\FetchEvents as FetchRaidHelperEvents;
-use App\Jobs\RaidInformation\PurgeTrashedChapters;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Schedule;
 
@@ -52,9 +52,9 @@ Schedule::command('fetch:warcraft-logs --latest')
     ->name('fetch-warcraft-logs-latest');
 
 /**
- * Permanently delete raid information chapters trashed more than 30 days ago, daily.
+ * Permanently delete raid handbook chapters trashed more than 30 days ago, daily.
  */
-Schedule::job(new PurgeTrashedChapters)->daily()->name('purge-trashed-raid-information')->withoutOverlapping();
+Schedule::job(new PurgeTrashedChapters)->daily()->name('purge-trashed-handbook-chapters')->withoutOverlapping();
 
 /**
  * This should be the last job to run each day.

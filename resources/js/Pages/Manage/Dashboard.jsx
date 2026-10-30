@@ -67,9 +67,9 @@ export default function Dashboard({ discordRoles }) {
                                 <p className="mb-1 text-sm">Create and manage reusable raid event templates.</p>
                             </DashboardCard>
                         </Can>
-                        <Can permission="manage-raid-information">
-                            <DashboardCard href={route("management.raid-information.index")} icon="book">
-                                <h3 className="text-md">Raid information</h3>
+                        <Can permission="manage-handbook">
+                            <DashboardCard href={route("management.handbook.index")} icon="book">
+                                <h3 className="text-md">Raid handbook</h3>
                                 <p className="mb-1 text-sm">Edit the raid handbook members read on the site.</p>
                             </DashboardCard>
                         </Can>

@@ -2,7 +2,7 @@ import DiscordMention from "@/Components/Discord/DiscordMention";
 import { parseDiscordTag } from "@/Helpers/discordTags";
 
 /**
- * A raid information chapter's emoji (unicode, or a custom Discord emoji) and
+ * A raid handbook chapter's emoji (unicode, or a custom Discord emoji) and
  * title, rendered as the `as` element. `lookup` is the result of `buildMentionLookup`.
  *
  * @param {{ chapter: { title: string, emoji: string|null }, lookup: object, as?: string, className?: string }} props

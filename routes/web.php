@@ -19,14 +19,14 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTemplateController;
 use App\Http\Controllers\GameVersionController;
 use App\Http\Controllers\GuildRosterManager\ImportController;
+use App\Http\Controllers\HandbookChapterController;
+use App\Http\Controllers\HandbookController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LootBiasToolController;
 use App\Http\Controllers\PhaseController;
 use App\Http\Controllers\PlannedAbsenceController;
 use App\Http\Controllers\RaidController;
-use App\Http\Controllers\RaidInformationChapterController;
-use App\Http\Controllers\RaidInformationController;
 use App\Http\Controllers\RaidingController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SearchController;
@@ -118,9 +118,9 @@ Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () use ($raid
         Route::delete('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'destroy'])->name('absences.destroy');
         Route::post('/absences/{plannedAbsence}/restore', [PlannedAbsenceController::class, 'restore'])->withTrashed()->name('absences.restore');
 
-        // Raid information routes (version-independent)
-        Route::get('/information', [RaidInformationController::class, 'index'])->name('information.index');
-        Route::get('/information/{chapter}', [RaidInformationController::class, 'show'])->where('chapter', '[a-z0-9-]+')->name('information.show');
+        // Raid handbook routes (version-independent)
+        Route::get('/handbook', [HandbookController::class, 'index'])->name('handbook.index');
+        Route::get('/handbook/{chapter}', [HandbookController::class, 'show'])->where('chapter', '[a-z0-9-]+')->name('handbook.show');
     });
 
     // Attendance routes
@@ -231,16 +231,16 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::delete('/raids/{raid}', [RaidController::class, 'destroy'])->name('raids.destroy');
 
     /**
-     * Raid information management
+     * Raid handbook management
      */
-    Route::get('/raid-information', [RaidInformationChapterController::class, 'index'])->name('raid-information.index');
-    Route::get('/raid-information/create', [RaidInformationChapterController::class, 'create'])->name('raid-information.create');
-    Route::post('/raid-information', [RaidInformationChapterController::class, 'store'])->middleware(NormaliseNewLines::class)->name('raid-information.store');
-    Route::put('/raid-information/order', [RaidInformationChapterController::class, 'reorder'])->name('raid-information.reorder');
-    Route::get('/raid-information/{chapter}/edit', [RaidInformationChapterController::class, 'edit'])->where('chapter', '[a-z0-9-]+')->name('raid-information.edit');
-    Route::patch('/raid-information/{chapter}', [RaidInformationChapterController::class, 'update'])->where('chapter', '[a-z0-9-]+')->middleware(NormaliseNewLines::class)->name('raid-information.update');
-    Route::delete('/raid-information/{chapter}', [RaidInformationChapterController::class, 'destroy'])->where('chapter', '[a-z0-9-]+')->name('raid-information.destroy');
-    Route::post('/raid-information/{chapter}/restore', [RaidInformationChapterController::class, 'restore'])->where('chapter', '[a-z0-9-]+')->name('raid-information.restore');
+    Route::get('/handbook', [HandbookChapterController::class, 'index'])->name('handbook.index');
+    Route::get('/handbook/create', [HandbookChapterController::class, 'create'])->name('handbook.create');
+    Route::post('/handbook', [HandbookChapterController::class, 'store'])->middleware(NormaliseNewLines::class)->name('handbook.store');
+    Route::put('/handbook/order', [HandbookChapterController::class, 'reorder'])->name('handbook.reorder');
+    Route::get('/handbook/{chapter}/edit', [HandbookChapterController::class, 'edit'])->where('chapter', '[a-z0-9-]+')->name('handbook.edit');
+    Route::patch('/handbook/{chapter}', [HandbookChapterController::class, 'update'])->where('chapter', '[a-z0-9-]+')->middleware(NormaliseNewLines::class)->name('handbook.update');
+    Route::delete('/handbook/{chapter}', [HandbookChapterController::class, 'destroy'])->where('chapter', '[a-z0-9-]+')->name('handbook.destroy');
+    Route::post('/handbook/{chapter}/restore', [HandbookChapterController::class, 'restore'])->where('chapter', '[a-z0-9-]+')->name('handbook.restore');
 
     /**
      * Warcraft Logs guilds management
