@@ -44,6 +44,7 @@ class BuildDiscordMentionDirectory
                 category: $pair[0] === '' ? null : $pair[0],
                 isCategory: $pair[1]->type === ChannelType::GuildCategory,
                 isDeleted: $pair[1]->trashed(),
+                url: $this->channelUrl($pair[1]),
             ))
             ->values()
             ->all();
@@ -101,6 +102,18 @@ class BuildDiscordMentionDirectory
         }
 
         return $parent->parent?->name;
+    }
+
+    /**
+     * The discord.com link to a channel, routed through the parent channel for threads.
+     */
+    protected function channelUrl(DiscordChannel $channel): string
+    {
+        $path = in_array($channel->type, ChannelType::threadTypes(), true) && $channel->parent_id !== null
+            ? "{$channel->parent_id}/{$channel->id}"
+            : $channel->id;
+
+        return 'https://discord.com/channels/'.config('services.discord.server_id')."/{$path}";
     }
 
     /**

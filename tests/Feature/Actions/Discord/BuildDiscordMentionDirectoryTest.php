@@ -127,6 +127,31 @@ class BuildDiscordMentionDirectoryTest extends TestCase
         $this->assertSame([], $directory->roles);
     }
 
+    // ==================== links ====================
+
+    #[Test]
+    public function it_links_a_channel_to_discord(): void
+    {
+        config(['services.discord.server_id' => '9999999999999999999']);
+        $channel = DiscordChannel::factory()->create();
+
+        $found = collect(BuildDiscordMentionDirectory::run()->channels)->firstWhere('id', $channel->id);
+
+        $this->assertSame("https://discord.com/channels/9999999999999999999/{$channel->id}", $found->url);
+    }
+
+    #[Test]
+    public function it_links_a_thread_through_its_parent_channel(): void
+    {
+        config(['services.discord.server_id' => '9999999999999999999']);
+        $text = DiscordChannel::factory()->create();
+        $thread = DiscordChannel::factory()->thread()->create(['parent_id' => $text->id]);
+
+        $found = collect(BuildDiscordMentionDirectory::run()->channels)->firstWhere('id', $thread->id);
+
+        $this->assertSame("https://discord.com/channels/9999999999999999999/{$text->id}/{$thread->id}", $found->url);
+    }
+
     // ==================== deleted categories ====================
 
     #[Test]

@@ -24,6 +24,7 @@ class MentionDirectoryDataTest extends TestCase
                 category: 'Raiding',
                 isCategory: false,
                 isDeleted: false,
+                url: 'https://discord.com/channels/9999999999999999999/1111111111111111111',
             )],
             roles: [new MentionRoleData(id: '2222222222222222222', name: 'Raider')],
             emoji: [new MentionEmojiData(
@@ -42,6 +43,7 @@ class MentionDirectoryDataTest extends TestCase
                 'category' => 'Raiding',
                 'is_category' => false,
                 'is_deleted' => false,
+                'url' => 'https://discord.com/channels/9999999999999999999/1111111111111111111',
             ]],
             'roles' => [[
                 'id' => '2222222222222222222',
