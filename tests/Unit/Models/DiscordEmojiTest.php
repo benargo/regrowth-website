@@ -26,6 +26,19 @@ class DiscordEmojiTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new DiscordEmoji;
+
+        $this->assertFillableAttribute($model, [
+            'id',
+            'name',
+            'animated',
+            'available',
+        ]);
+    }
+
+    #[Test]
     public function it_casts_animated_and_available(): void
     {
         $emoji = $this->make(['animated' => 1, 'available' => 0]);
