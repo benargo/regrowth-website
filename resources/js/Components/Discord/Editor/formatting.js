@@ -42,7 +42,8 @@ function dispatchInput(view, ...specs) {
 }
 
 /**
- * Applies line-start changes and keeps the selection on the same text.
+ * Applies line-start changes and keeps the selection on the same text, so a
+ * cursor at the start of a line ends up after any inserted prefix.
  *
  * @param {import("@codemirror/view").EditorView} view
  * @param {Array<{ from: number, to: number, insert: string }>} changes
@@ -51,7 +52,7 @@ function dispatchInput(view, ...specs) {
 function dispatchLineChanges(view, changes) {
     const changeSet = view.state.changes(changes);
 
-    return dispatchInput(view, { changes: changeSet, selection: view.state.selection.map(changeSet) });
+    return dispatchInput(view, { changes: changeSet, selection: view.state.selection.map(changeSet, 1) });
 }
 
 /**

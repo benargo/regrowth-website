@@ -34,6 +34,8 @@ class ChapterContentTest extends TestCase
         $this->assertFalse($this->passes($this->padded("## A\n", 1999).'🌳'));
     }
 
+    // ==================== heading level ====================
+
     #[Test]
     #[Group('validation')]
     public function it_requires_a_level_two_heading_for_a_chapter(): void
@@ -96,6 +98,49 @@ class ChapterContentTest extends TestCase
     {
         $this->assertTrue($this->passes('## A', ChapterContent::forSlug('some-chapter')));
         $this->assertFalse($this->passes('# A', ChapterContent::forSlug('some-chapter')));
+    }
+
+    // ==================== heading mentions ====================
+
+    #[Test]
+    #[Group('validation')]
+    public function it_rejects_mentions_and_custom_emoji_in_the_heading(): void
+    {
+        $headings = [
+            '## A <#123>',
+            '## A <@&123>',
+            '## A <@123>',
+            '## A <@!123>',
+            '## A <:regrowth:123>',
+            '## A<a:party:123>',
+            '## 🌳 A <:regrowth:123>',
+            '## <:regrowth:123> <@&456>',
+            '## <:regrowth:123> A <:party:456>',
+        ];
+
+        foreach ($headings as $content) {
+            $this->assertFalse($this->passes($content), $content);
+        }
+
+        $this->assertFalse($this->passes('# A <#123>', new ChapterContent(isIntroduction: true)));
+    }
+
+    #[Test]
+    public function it_accepts_one_leading_custom_emoji_and_mentions_below_the_heading(): void
+    {
+        $this->assertTrue($this->passes('## <:regrowth:123> Loot'));
+        $this->assertTrue($this->passes('## <a:party:123> Fun'));
+        $this->assertTrue($this->passes("## 🌳 A\n<#123> <@&456> <:regrowth:789>"));
+    }
+
+    #[Test]
+    #[Group('validation')]
+    public function it_explains_that_the_heading_cannot_hold_mentions(): void
+    {
+        $validator = $this->validate('## A <@&123>');
+
+        $this->assertTrue($validator->fails());
+        $this->assertSame("The heading can't contain mentions or custom emoji, apart from one custom emoji at the start.", $validator->errors()->first('content'));
     }
 
     // ==================== helpers ====================

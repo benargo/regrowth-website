@@ -3,13 +3,15 @@
 namespace App\Rules;
 
 use App\Actions\RaidInformation\CountDiscordCharacters;
+use App\Actions\RaidInformation\ParseChapterHeading;
 use App\Contracts\Actions\RaidInformation\StoresRaidInformation;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Translation\PotentiallyTranslatedString;
 
 /**
- * Validates chapter content: within the Discord character limit and opening with the correct heading.
+ * Validates chapter content: within the Discord character limit and opening with the correct heading,
+ * which holds no mentions or custom emoji beyond one leading custom emoji.
  */
 class ChapterContent implements StoresRaidInformation, ValidationRule
 {
@@ -42,6 +44,12 @@ class ChapterContent implements StoresRaidInformation, ValidationRule
 
         if (preg_match('/^'.preg_quote($prefix, '/').'\S/u', $firstLine) !== 1) {
             $fail("The first line must be a heading starting with \"{$prefix}\".");
+
+            return;
+        }
+
+        if (preg_match('/<(?:#|@[!&]?|a?:\w+:)\d+>/u', ParseChapterHeading::run($content)->title) === 1) {
+            $fail("The heading can't contain mentions or custom emoji, apart from one custom emoji at the start.");
         }
     }
 }
