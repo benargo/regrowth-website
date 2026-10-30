@@ -15,7 +15,6 @@ use Tests\Unit\Http\Integrations\Discord\DiscordTestCase;
 class GetGuildEmojisRequestTest extends DiscordTestCase
 {
     #[Test]
-    #[Group('happy-path')]
     public function it_lists_the_guild_emojis(): void
     {
         Saloon::fake([GetGuildEmojisRequest::class => MockResponse::make([
