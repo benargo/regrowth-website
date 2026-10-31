@@ -28,7 +28,7 @@ const COUNTRY_NAMES = {
 
 const MEMBER_COUNTRIES = {
     Awak: "NL",
-    Caldru: "GB",
+    Cal: "GB",
     Deo: "GB",
     Dudum: "DK",
     Fizzywigs: "GB",
@@ -140,16 +140,16 @@ export default function About() {
                                 marker="classic"
                             >
                                 <p>
-                                    Regrowth was founded on <ProperNoun>Mirage Raceway</ProperNoun> after the fall of
-                                    our previous guild, <ProperNoun>Low Level Fightclub</ProperNoun>, whose leadership
-                                    had collapsed. The active members came together under the guild's three founders:{" "}
-                                    <Name>Zar</Name>, <Name>Pjolk</Name> and <Name>Obscured</Name>.
+                                    Regrowth was founded as a Horde guild on <ProperNoun>Mirage Raceway</ProperNoun>{" "}
+                                    after the fall of our previous guild, <ProperNoun>Low Level Fightclub</ProperNoun>,
+                                    whose leadership had collapsed. The active members came together under the guild's
+                                    three founders: <Name>Zar</Name>, <Name>Pjolk</Name> and <Name>Obscured</Name>.
                                 </p>
                             </TimelineEntry>
 
                             <TimelineLegendary
-                                date="2021"
-                                dateTime="2021"
+                                date="May 2021"
+                                dateTime="2021-05"
                                 title="The guild's first legendary"
                                 marker="classic"
                                 item={{
@@ -166,8 +166,9 @@ export default function About() {
                                 }}
                             >
                                 <p>
-                                    <Name>Zar</Name> completed Thunderfury, Blessed Blade of the Windseeker, the guild's
-                                    first legendary.
+                                    With the launch of The Burning Crusade imminent, <Name>Zar</Name> completed
+                                    Thunderfury, Blessed Blade of the Windseeker, the guild's first legendary. It proved
+                                    invaluable as we progressed through the new content together.
                                 </p>
                             </TimelineLegendary>
 
@@ -219,10 +220,10 @@ export default function About() {
                                 marker="classic"
                             >
                                 <p>
-                                    Regrowth reunited for the launch of Season of Discovery, heading back to the
-                                    Alliance. We completed the first phase of raiding and cleared Blackfathom Deeps, but
-                                    the guild’s heart wasn’t in it and we didn’t push far into the next phase. Our focus
-                                    remained on raiding in Wrath.
+                                    Regrowth reunited for the launch of Season of Discovery, heading back to the Horde
+                                    on <ProperNoun>Living Flame</ProperNoun>. We completed the first phase of raiding
+                                    and cleared Blackfathom Deeps, but the guild’s heart wasn’t in it and we didn’t push
+                                    far into the next phase. Our focus remained on raiding in Wrath.
                                 </p>
                             </TimelineEntry>
 
@@ -278,8 +279,8 @@ export default function About() {
                             </TimelineLegendary>
 
                             <TimelineLegendary
-                                date="18 July 2025"
-                                dateTime="2025-07-18"
+                                date="July 2025"
+                                dateTime="2025-07"
                                 title="Scarab Lord"
                                 marker="anniversary"
                                 item={{
@@ -290,14 +291,16 @@ export default function About() {
                                 }}
                                 sticker={{
                                     src: "/images/sticker_loktorious_scarab_lord.webp",
-                                    alt: "A cartoon sticker of Loktorious as Scarab Lord",
+                                    alt: "A cartoon sticker of Lok as Scarab Lord",
                                     width: 1971,
                                     height: 1822,
                                 }}
                             >
                                 <p>
-                                    <Name>Loktorious</Name> completed the Scepter of the Shifting Sands quest chain to
-                                    obtain the Black Qiraji Resonating Crystal and claim the title of Scarab Lord.
+                                    After an enormous effort by the whole guild, and a loan of over 13,000 gold,{" "}
+                                    <Name>Lok</Name> completed the Scepter of the Shifting Sands quest chain with mere
+                                    hours to spare. His reward of obtaining the Black Qiraji Resonating Crystal and the
+                                    title of Scarab Lord was a permanent advertisement of the guild's combined efforts.
                                 </p>
                             </TimelineLegendary>
 
@@ -334,8 +337,8 @@ export default function About() {
                             >
                                 <p>
                                     On a crazy night in Molten Core, <Name>Shiniko</Name> made a bet with several
-                                    raiders that we wouldn't get both bindings in a single night. He lost the bet, but
-                                    completed the guild's second Thunderfury.
+                                    raiders that we wouldn't get his second binding. He lost the bet, but completed the
+                                    guild's second Thunderfury.
                                 </p>
                                 <p>
                                     Rumour has it he is still accepting donations of{" "}
@@ -351,8 +354,8 @@ export default function About() {
                             </TimelineLegendary>
 
                             <TimelineLegendary
-                                date="16 December 2025"
-                                dateTime="2025-12-16"
+                                date="December 2025"
+                                dateTime="2025-12"
                                 title="Atiesh"
                                 marker="anniversary"
                                 item={{
@@ -370,7 +373,7 @@ export default function About() {
                                 }}
                             >
                                 <p>
-                                    <Name>Fizzywigs</Name> pulled off an incredible feat and collected all fourty{" "}
+                                    <Name>Fizzywigs</Name> collected all forty{" "}
                                     <ItemLink
                                         id="22726"
                                         name="Splinters of Atiesh"
@@ -423,24 +426,24 @@ export default function About() {
                                     </p>
                                     <Attendees
                                         label="Sheffield attendees"
-                                        names={["Caldru", "Deo", "Dudum", "Lok", "Zar"]}
+                                        names={["Cal", "Deo", "Dudum", "Lok", "Zar"]}
                                     />
                                 </TimelineEntry>
 
                                 <TimelineEntry date="July 2022" dateTime="2022-07" title="The Lincolnshire BBQ">
                                     <p>
                                         Our second, bigger meet-up took place in the exotic setting of Lincolnshire,
-                                        hosted by <Name>Zar</Name> and <Name>Caldru</Name>, with a BBQ, plenty of
-                                        drinks, a palm tree and a sweet potato. Guests travelled from Bahrain, South
-                                        Africa, Denmark and the Netherlands to join many more from across the UK. Those
-                                        who couldn’t make the journey tuned in via a Discord livestream. It was
-                                        certainly memorable in a number of ways!
+                                        hosted by <Name>Zar</Name> and <Name>Cal</Name>, with a BBQ, plenty of drinks, a
+                                        palm tree and a sweet potato. Guests travelled from Bahrain, South Africa,
+                                        Denmark and the Netherlands to join many more from across the UK. Those who
+                                        couldn’t make the journey tuned in via a Discord livestream. It was certainly
+                                        memorable in a number of ways, including some strange roommates!
                                     </p>
                                     <Attendees
                                         label="Lincolnshire BBQ attendees"
                                         names={[
                                             "Awak",
-                                            "Caldru",
+                                            "Cal",
                                             "Deo",
                                             "Dudum",
                                             "Joe",
@@ -470,7 +473,7 @@ export default function About() {
                                     <p>We met up for a pub lunch just outside the M25 in Hertfordshire.</p>
                                     <Attendees
                                         label="Hertfordshire attendees"
-                                        names={["Caldru", "Fizzywigs", "Souljuice", "Zar"]}
+                                        names={["Cal", "Fizzywigs", "Souljuice", "Zar"]}
                                     />
                                 </TimelineEntry>
                             </Timeline>
@@ -517,13 +520,10 @@ export default function About() {
                 <BandHeading level={2} id="join-us-heading" className="mb-4">
                     Join us on WoW&nbsp;Forever
                 </BandHeading>
-                <p className="mx-auto mb-4 max-w-xl leading-relaxed text-gray-300">
+                <p className="mx-auto mb-8 max-w-xl leading-relaxed text-gray-300">
                     The next chapter of Regrowth is being written right now, as Horde on the Normal ruleset. Whether
                     you’re a returning friend or a new face, there’s a place for you in the raids, the dungeons and the
                     long evenings in between.
-                </p>
-                <p className="mx-auto mb-8 max-w-xl font-serif text-xl text-amber-200">
-                    Join our Discord and become part of Regrowth.
                 </p>
                 <JoinDiscordButton />
             </Band>
