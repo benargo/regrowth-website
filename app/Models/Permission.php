@@ -5,13 +5,12 @@ namespace App\Models;
 use App\Events\PermissionUpdated;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission as SpatiePermission;
 
-#[Fillable(['name', 'guard_name', 'group'])]
+#[Fillable(['name', 'guard_name', 'label', 'description', 'permission_group_id'])]
 #[Hidden(['guard_name', 'created_at', 'updated_at'])]
 class Permission extends SpatiePermission
 {
@@ -27,16 +26,6 @@ class Permission extends SpatiePermission
     ];
 
     /**
-     * Get the group attribute, ensuring it's stored in snake_case.
-     */
-    protected function group(): Attribute
-    {
-        return Attribute::make(
-            set: fn (?string $value) => $value !== null ? Str::slug($value) : null
-        );
-    }
-
-    /**
      * Get the Discord roles associated with this permission.
      *
      * @return BelongsToMany<DiscordRole>
@@ -44,5 +33,15 @@ class Permission extends SpatiePermission
     public function discordRoles(): BelongsToMany
     {
         return $this->belongsToMany(DiscordRole::class, 'discord_role_has_permissions');
+    }
+
+    /**
+     * Get the group this permission belongs to.
+     *
+     * @return BelongsTo<PermissionGroup, $this>
+     */
+    public function permissionGroup(): BelongsTo
+    {
+        return $this->belongsTo(PermissionGroup::class);
     }
 }

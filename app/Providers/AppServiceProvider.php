@@ -4,10 +4,8 @@ namespace App\Providers;
 
 use App\Actions\EventBossResolver;
 use App\Http\Integrations\ServedFromCache;
-use App\Http\Resources\PermissionGroupsResource;
 use App\Jobs\FetchGuildRoster;
 use App\Models\User;
-use Database\Seeders\PermissionSeeder;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
@@ -22,13 +20,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        /**
-         * Permission groups
-         */
-        $this->app->bind(PermissionGroupsResource::class, function () {
-            return new PermissionGroupsResource(collect(PermissionSeeder::groups()));
-        });
-
         /**
          * Saloon response cache hits
          */

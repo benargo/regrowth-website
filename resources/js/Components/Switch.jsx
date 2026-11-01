@@ -2,17 +2,19 @@ import cn from "@/Helpers/cn";
 
 /**
  * An on/off switch: a green track when `checked`, grey when not, with a sliding thumb.
- * `label` is its accessible name. Clicking it calls `onChange` with the new state.
+ * `label` is its accessible name, and `describedBy` the optional id of an element describing it.
+ * Clicking it calls `onChange` with the new state.
  * While `isBusy` it is faded, shows a wait cursor, is marked `aria-disabled` and ignores clicks,
  * keeping keyboard focus.
  */
-export default function Switch({ checked, isBusy = false, onChange, label, className = "" }) {
+export default function Switch({ checked, isBusy = false, onChange, label, describedBy, className = "" }) {
     return (
         <button
             type="button"
             role="switch"
             aria-checked={checked}
             aria-label={label}
+            aria-describedby={describedBy}
             aria-disabled={isBusy}
             onClick={() => {
                 if (!isBusy) {

@@ -22,15 +22,9 @@ class PermissionFactory extends Factory
         return [
             'name' => fake()->unique()->slug(2),
             'guard_name' => 'web',
-            'group' => null,
+            'label' => null,
+            'description' => null,
+            'permission_group_id' => null,
         ];
-    }
-
-    /**
-     * Indicate this permission belongs to a specific group.
-     */
-    public function inGroup(string $group): static
-    {
-        return $this->state(fn () => ['group' => $group]);
     }
 }

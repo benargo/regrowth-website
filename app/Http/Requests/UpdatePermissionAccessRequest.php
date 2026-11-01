@@ -1,12 +1,14 @@
 <?php
 
-namespace App\Http\Requests\Dashboard;
+namespace App\Http\Requests;
 
+use App\Models\DiscordRole;
+use App\Models\Permission;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class TogglePermissionRequest extends FormRequest
+class UpdatePermissionAccessRequest extends FormRequest
 {
     /**
      * Get the validation rules that apply to the request.
@@ -16,23 +18,22 @@ class TogglePermissionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'discord_role_id' => ['required', 'string', Rule::exists('discord_roles', 'id')->where('grants_permissions', true)],
+            'discord_role_id' => ['required', 'string', Rule::exists(DiscordRole::class, 'id')->where('grants_permissions', true)],
+            'permission_ids' => ['required', 'array', 'min:1'],
+            'permission_ids.*' => ['integer', 'distinct', Rule::exists(Permission::class, 'id')],
             'enabled' => ['required', 'boolean'],
         ];
     }
 
     /**
-     * Get custom messages for validator errors.
+     * Get the custom validation messages.
      *
      * @return array<string, string>
      */
     public function messages(): array
     {
         return [
-            'discord_role_id.required' => 'A Discord role is required.',
             'discord_role_id.exists' => 'The selected Discord role does not grant permissions.',
-            'enabled.required' => 'The enabled field is required.',
-            'enabled.boolean' => 'The enabled field must be true or false.',
         ];
     }
 }

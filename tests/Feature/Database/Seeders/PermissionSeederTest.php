@@ -4,9 +4,9 @@ namespace Tests\Feature\Database\Seeders;
 
 use App\Models\DiscordRole;
 use App\Models\Permission;
+use App\Models\PermissionGroup;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
@@ -17,7 +17,7 @@ class PermissionSeederTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @var array<int, array{name: string, guard_name: string, group?: string}> */
+    /** @var array<int, array{name: string, guard_name: string, label: string, description: string}> */
     private array $permissions;
 
     protected function setUp(): void
@@ -36,24 +36,9 @@ class PermissionSeederTest extends TestCase
     #[Test]
     public function it_defines_the_warcraft_logs_permissions(): void
     {
-        $names = collect($this->permissions)->where('group', 'warcraftlogs')->pluck('name')->sort()->values()->all();
+        $names = collect($this->permissions)->pluck('name')->filter(fn (string $name): bool => str_contains($name, 'warcraft-logs'))->sort()->values()->all();
 
         $this->assertSame(['create-warcraft-logs-guilds', 'delete-warcraft-logs-guilds', 'update-warcraft-logs-guilds', 'update-warcraft-logs-tags', 'view-warcraft-logs-guilds'], $names);
-    }
-
-    #[Test]
-    public function it_defines_the_handbook_permissions(): void
-    {
-        $permissions = collect($this->permissions)
-            ->whereIn('name', ['manage-handbook', 'view-handbook'])
-            ->sortBy('name')
-            ->values()
-            ->all();
-
-        $this->assertSame([
-            ['name' => 'manage-handbook', 'group' => 'raid-management', 'guard_name' => 'web'],
-            ['name' => 'view-handbook', 'group' => 'raid-management', 'guard_name' => 'web'],
-        ], $permissions);
     }
 
     #[Test]
@@ -107,24 +92,6 @@ class PermissionSeederTest extends TestCase
     }
 
     #[Test]
-    public function every_permission_group_when_present_is_in_slug_format(): void
-    {
-        foreach ($this->permissions as $index => $permission) {
-            if (! isset($permission['group'])) {
-                continue;
-            }
-
-            $this->assertIsString($permission['group'], "Permission at index {$index} has a non-string 'group'.");
-            $this->assertNotEmpty($permission['group'], "Permission at index {$index} has an empty 'group'.");
-            $this->assertSame(
-                Str::slug($permission['group']),
-                $permission['group'],
-                "Permission at index {$index} has a 'group' value that is not slug format: '{$permission['group']}'."
-            );
-        }
-    }
-
-    #[Test]
     public function permission_names_are_unique(): void
     {
         $names = array_column($this->permissions, 'name');
@@ -136,7 +103,7 @@ class PermissionSeederTest extends TestCase
     #[Test]
     public function permission_entries_contain_no_unexpected_keys(): void
     {
-        $allowedKeys = ['name', 'guard_name', 'group'];
+        $allowedKeys = ['name', 'guard_name', 'label', 'description'];
 
         foreach ($this->permissions as $index => $permission) {
             $unexpectedKeys = array_diff(array_keys($permission), $allowedKeys);
@@ -145,6 +112,19 @@ class PermissionSeederTest extends TestCase
                 $unexpectedKeys,
                 "Permission at index {$index} contains unexpected keys: ".implode(', ', $unexpectedKeys)
             );
+        }
+    }
+
+    #[Test]
+    public function every_grouped_permission_is_defined(): void
+    {
+        $groups = (new \ReflectionMethod(PermissionSeeder::class, 'groups'))->invoke(new PermissionSeeder);
+        $names = array_column($this->permissions, 'name');
+
+        foreach ($groups as $group => $permissionNames) {
+            foreach ($permissionNames as $permissionName) {
+                $this->assertContains($permissionName, $names, "{$group} lists undefined permission {$permissionName}.");
+            }
         }
     }
 
@@ -173,23 +153,6 @@ class PermissionSeederTest extends TestCase
     }
 
     #[Test]
-    public function seeder_updates_group_on_existing_permissions(): void
-    {
-        $first = $this->permissions[0];
-        Permission::firstOrCreate(
-            ['name' => $first['name'], 'guard_name' => $first['guard_name']],
-            ['group' => 'old_group']
-        );
-
-        $this->seed(PermissionSeeder::class);
-
-        $this->assertDatabaseHas('permissions', [
-            'name' => $first['name'],
-            'group' => $first['group'] ?? null,
-        ]);
-    }
-
-    #[Test]
     public function seeder_deletes_stale_permissions_no_longer_in_the_list(): void
     {
         Permission::firstOrCreate(['name' => 'stale-permission', 'guard_name' => 'web']);
@@ -210,30 +173,88 @@ class PermissionSeederTest extends TestCase
     }
 
     #[Test]
-    public function seeder_assigns_all_permissions_to_the_officer_role(): void
+    public function every_permission_has_a_label_and_a_description_within_160_characters(): void
     {
-        $officerRole = DiscordRole::firstOrCreate(
-            ['id' => '829021769448816691'],
-            ['name' => 'Officer', 'position' => 5]
-        );
-
-        $this->seed(PermissionSeeder::class);
-
-        app()[PermissionRegistrar::class]->forgetCachedPermissions();
-
         foreach ($this->permissions as $permission) {
-            $this->assertTrue(
-                $officerRole->fresh()->hasPermissionTo($permission['name']),
-                "Officer role does not have permission '{$permission['name']}'."
-            );
+            $this->assertNotEmpty($permission['label'] ?? null, "{$permission['name']} has no label.");
+            $this->assertNotEmpty($permission['description'] ?? null, "{$permission['name']} has no description.");
+            $this->assertLessThanOrEqual(160, mb_strlen($permission['description']), "{$permission['name']}'s description is too long.");
         }
     }
 
     #[Test]
-    public function seeder_does_not_assign_permissions_when_officer_role_does_not_exist(): void
+    public function seeder_creates_the_starting_groups_when_no_permission_is_grouped(): void
     {
         $this->seed(PermissionSeeder::class);
 
-        $this->assertDatabaseCount('role_has_permissions', 0);
+        $this->assertSame(
+            ['Loot Bias Tool', 'Raid Management', 'Planned Absences', 'Character Management', 'Warcraft Logs'],
+            PermissionGroup::ordered()->pluck('name')->all()
+        );
+        $this->assertSame('Raid Management', Permission::findByName('manage-raid-plans')->permissionGroup->name);
+        $this->assertNull(Permission::findByName('edit-datasets')->permission_group_id);
+    }
+
+    #[Test]
+    public function seeder_leaves_grouping_alone_once_any_permission_is_grouped(): void
+    {
+        $this->seed(PermissionSeeder::class);
+        Permission::findByName('manage-raid-plans')->update(['permission_group_id' => null]);
+
+        $this->seed(PermissionSeeder::class);
+
+        $this->assertNull(Permission::findByName('manage-raid-plans')->permission_group_id);
+        $this->assertDatabaseCount('permission_groups', 5);
+    }
+
+    #[Test]
+    public function seeder_keeps_admin_edits_to_existing_permissions(): void
+    {
+        $this->seed(PermissionSeeder::class);
+        $elsewhere = PermissionGroup::factory()->create();
+        Permission::findByName('manage-raid-plans')->update([
+            'label' => 'Plan raids', 'description' => 'Custom.', 'permission_group_id' => $elsewhere->id,
+        ]);
+
+        $this->seed(PermissionSeeder::class);
+
+        $this->assertDatabaseHas('permissions', [
+            'name' => 'manage-raid-plans', 'label' => 'Plan raids', 'description' => 'Custom.', 'permission_group_id' => $elsewhere->id,
+        ]);
+    }
+
+    #[Test]
+    public function seeder_keeps_a_cleared_description(): void
+    {
+        $this->seed(PermissionSeeder::class);
+        Permission::findByName('view-attendance')->update(['label' => 'View attendance', 'description' => null]);
+
+        $this->seed(PermissionSeeder::class);
+
+        $this->assertNull(Permission::findByName('view-attendance')->description);
+    }
+
+    #[Test]
+    public function seeder_fills_labels_and_descriptions_on_unedited_permissions(): void
+    {
+        Permission::create(['name' => 'view-attendance', 'guard_name' => 'web']);
+
+        $this->seed(PermissionSeeder::class);
+
+        $permission = Permission::findByName('view-attendance');
+        $this->assertSame('View attendance', $permission->label);
+        $this->assertSame("See everyone's raid attendance.", $permission->description);
+    }
+
+    #[Test]
+    public function seeder_leaves_role_assignments_untouched(): void
+    {
+        $role = DiscordRole::factory()->grantsPermissions()->create();
+        $this->seed(PermissionSeeder::class);
+        $role->givePermissionTo('view-attendance');
+
+        $this->seed(PermissionSeeder::class);
+
+        $this->assertSame(['view-attendance'], $role->fresh()->permissions->pluck('name')->all());
     }
 }

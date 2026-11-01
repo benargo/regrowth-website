@@ -15,7 +15,9 @@ use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\DiscordRoleController;
+use App\Http\Controllers\Dashboard\PermissionAccessController;
 use App\Http\Controllers\Dashboard\PermissionController;
+use App\Http\Controllers\Dashboard\PermissionGroupController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTemplateController;
 use App\Http\Controllers\GameVersionController;
@@ -222,8 +224,15 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
      * Permissions management
      */
     Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
-    Route::get('/permissions/{group}', [PermissionController::class, 'showGroup'])->name('permissions.group.show');
-    Route::patch('/permissions/{group}/{permission}', [PermissionController::class, 'update'])->name('permissions.permission.update');
+    Route::patch('/permissions/access', PermissionAccessController::class)->name('permissions.access.update');
+    Route::get('/permissions/manage', [PermissionController::class, 'manage'])->name('permissions.manage');
+    Route::patch('/permissions/{permission}', [PermissionController::class, 'update'])->whereNumber('permission')->name('permissions.update');
+
+    Route::get('/permission-groups', [PermissionGroupController::class, 'index'])->name('permission-groups.index');
+    Route::post('/permission-groups', [PermissionGroupController::class, 'store'])->name('permission-groups.store');
+    Route::patch('/permission-groups/order', [PermissionGroupController::class, 'reorder'])->name('permission-groups.reorder');
+    Route::patch('/permission-groups/{permissionGroup}', [PermissionGroupController::class, 'update'])->whereUuid('permissionGroup')->name('permission-groups.update');
+    Route::delete('/permission-groups/{permissionGroup}', [PermissionGroupController::class, 'destroy'])->whereUuid('permissionGroup')->name('permission-groups.destroy');
 
     /**
      * Raids management
