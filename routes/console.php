@@ -7,6 +7,7 @@ use App\Jobs\Discord\SyncEmojis as SyncDiscordEmojis;
 use App\Jobs\Discord\SyncRoles as SyncDiscordRoles;
 use App\Jobs\Discord\SyncUsers as SyncDiscordUsers;
 use App\Jobs\FetchGuildRosters;
+use App\Jobs\GuildRosterManager\PurgeArchivedUploads as PurgeArchivedGrmUploads;
 use App\Jobs\Handbook\PurgeTrashedChapters;
 use App\Jobs\RaidHelper\FetchEvents as FetchRaidHelperEvents;
 use Illuminate\Support\Facades\Bus;
@@ -55,6 +56,11 @@ Schedule::command('fetch:warcraft-logs --latest')
  * Permanently delete raid handbook chapters trashed more than 30 days ago, daily.
  */
 Schedule::job(new PurgeTrashedChapters)->daily()->name('purge-trashed-handbook-chapters')->withoutOverlapping();
+
+/**
+ * Permanently delete archived GRM uploads older than three months, daily.
+ */
+Schedule::job(new PurgeArchivedGrmUploads)->daily()->name('purge-archived-grm-uploads')->withoutOverlapping();
 
 /**
  * This should be the last job to run each day.
