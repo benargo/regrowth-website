@@ -199,23 +199,25 @@ export default function Dashboard({ discordRoles }) {
                         </Collapsible>
 
                         {/* Testing */}
-                        <Collapsible title="Testing" style="gray">
-                            <p className="text-md mb-4 text-gray-400">
-                                View the site as different user roles for testing purposes. Use the user menu to switch
-                                back to your own account.
-                            </p>
-                            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                                {discordRoles.map((role) => (
-                                    <DashboardCard
-                                        key={role.id}
-                                        href={route("auth.view-as", { role: role.id })}
-                                        icon="user-secret"
-                                    >
-                                        <h4 className="text-md">View site as {role.name}</h4>
-                                    </DashboardCard>
-                                ))}
-                            </div>
-                        </Collapsible>
+                        {user?.admin && (
+                            <Collapsible title="Testing" style="gray">
+                                <p className="text-md mb-4 text-gray-400">
+                                    View the site as different user roles for testing purposes. Use the user menu to
+                                    switch back to your own account.
+                                </p>
+                                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                                    {discordRoles.map((role) => (
+                                        <DashboardCard
+                                            key={role.id}
+                                            href={route("auth.view-as", { role: role.id })}
+                                            icon="user-secret"
+                                        >
+                                            <h4 className="text-md">View site as {role.name}</h4>
+                                        </DashboardCard>
+                                    ))}
+                                </div>
+                            </Collapsible>
+                        )}
                     </div>
                 </div>
             </Band>

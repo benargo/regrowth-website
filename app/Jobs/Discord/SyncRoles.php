@@ -14,7 +14,6 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\Backoff;
 use Illuminate\Queue\Attributes\MaxExceptions;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\LaravelData\Optional;
@@ -57,11 +56,9 @@ class SyncRoles implements ShouldQueue
         $syncedIds = $roles->map(fn (RoleData $role): string => $role->id)->values()->all();
 
         DB::transaction(function () use ($roles, $syncedIds): void {
-            $deleted = DiscordRole::whereNotIn('id', $syncedIds)->delete();
-
-            if ($deleted > 0) {
-                DB::afterCommit(fn () => Cache::tags(['permissions'])->flush());
-            }
+            $staleRoles = DiscordRole::whereNotIn('id', $syncedIds)->get();
+            $staleRoles->each->delete();
+            $deleted = $staleRoles->count();
 
             foreach ($roles as $role) {
                 DiscordRole::updateOrCreate(

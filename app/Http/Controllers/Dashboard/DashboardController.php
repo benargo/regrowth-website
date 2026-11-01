@@ -18,7 +18,7 @@ class DashboardController extends Controller
     public function __invoke(Request $request): Response
     {
         return Inertia::render('Manage/Dashboard', [
-            'discordRoles' => DiscordRole::grantingPermissions()->orderByDesc('position')->get(['id', 'name']),
+            'discordRoles' => DiscordRole::visible()->orderByDesc('position')->get(['id', 'name']),
         ]);
     }
 }

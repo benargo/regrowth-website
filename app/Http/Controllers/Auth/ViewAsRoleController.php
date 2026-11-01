@@ -20,7 +20,10 @@ class ViewAsRoleController extends Controller
         try {
             $currentUser = $request->user();
 
-            $tempUser = $this->getTestUser($role);
+            $discordRole = DiscordRole::visible()->find($role)
+                ?? throw new InvalidArgumentException('Invalid role specified.');
+
+            $tempUser = $this->getTestUser($discordRole);
 
             Auth::login($tempUser);
 
@@ -29,7 +32,7 @@ class ViewAsRoleController extends Controller
                 $request->session()->put('impersonating_user_id', $currentUser->id);
             }
 
-            return redirect('/')->with('success', 'You are now viewing the site as a '.(DiscordRole::find($role)?->name ?? 'Unknown').'.');
+            return redirect('/')->with('success', 'You are now viewing the site as a '.$discordRole->name.'.');
         } catch (InvalidArgumentException $e) {
             return redirect()->back()->with('error', 'Invalid role specified.');
         }
@@ -58,13 +61,10 @@ class ViewAsRoleController extends Controller
     }
 
     /**
-     * Get a test user for a specific role.
+     * Get the test user, holding only the given role.
      */
-    protected function getTestUser(string $role): User
+    protected function getTestUser(DiscordRole $discordRole): User
     {
-        $discordRole = DiscordRole::grantingPermissions()->find($role)
-            ?? throw new InvalidArgumentException('Invalid role specified.');
-
         $userId = config('auth.local_users.view_as');
 
         if (blank($userId)) {

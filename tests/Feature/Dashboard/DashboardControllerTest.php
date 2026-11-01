@@ -50,11 +50,11 @@ class DashboardControllerTest extends DashboardTestCase
     }
 
     #[Test]
-    public function it_passes_permission_granting_roles_in_position_order(): void
+    public function it_passes_visible_roles_in_position_order(): void
     {
-        $low = DiscordRole::factory()->grantsPermissions()->create(['position' => 99998]);
-        $high = DiscordRole::factory()->grantsPermissions()->create(['position' => 99999]);
-        $nonGranting = DiscordRole::factory()->create(['position' => 99997]);
+        $low = DiscordRole::factory()->visible()->create(['position' => 99998]);
+        $high = DiscordRole::factory()->visible()->create(['position' => 99999]);
+        $hidden = DiscordRole::factory()->grantsPermissions()->create(['position' => 99997]);
 
         $this->actingAs($this->officer)
             ->get(route('management.dashboard'))
@@ -62,7 +62,7 @@ class DashboardControllerTest extends DashboardTestCase
                 ->where('discordRoles.0.id', $high->id)
                 ->where('discordRoles.0.name', $high->name)
                 ->where('discordRoles.1.id', $low->id)
-                ->where('discordRoles', fn ($roles) => collect($roles)->pluck('id')->doesntContain($nonGranting->id))
+                ->where('discordRoles', fn ($roles) => collect($roles)->pluck('id')->doesntContain($hidden->id))
                 ->etc()
             );
     }

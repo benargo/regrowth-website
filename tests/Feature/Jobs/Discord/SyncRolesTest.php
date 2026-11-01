@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Jobs\Discord;
 
+use App\Events\DiscordRoleDeleted;
 use App\Http\Integrations\Discord\Requests\Guilds\GetGuildRolesRequest;
 use App\Jobs\Discord\SyncRoles;
 use App\Jobs\Discord\SyncUser;
@@ -12,6 +13,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
@@ -183,9 +185,9 @@ class SyncRolesTest extends TestCase
     }
 
     #[Test]
-    public function it_flushes_the_permissions_cache_when_roles_are_deleted(): void
+    public function it_dispatches_a_deleted_event_for_each_role_no_longer_in_discord(): void
     {
-        Cache::tags(['permissions'])->put('probe', true);
+        Event::fake([DiscordRoleDeleted::class]);
         DiscordRole::factory()->create([
             'id' => '999999999999999999',
             'name' => 'Deleted Role',
@@ -196,7 +198,8 @@ class SyncRolesTest extends TestCase
 
         SyncRoles::dispatchSync();
 
-        $this->assertNull(Cache::tags(['permissions'])->get('probe'));
+        Event::assertDispatchedTimes(DiscordRoleDeleted::class, 1);
+        Event::assertDispatched(DiscordRoleDeleted::class, fn (DiscordRoleDeleted $event): bool => $event->discordRole->id === '999999999999999999');
     }
 
     // ==================== side effects ====================

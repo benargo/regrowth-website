@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\AsBinaryColor;
+use App\Events\DiscordRoleDeleted;
 use App\Events\DiscordRoleUpdated;
 use App\Traits\HasPermissions;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -42,6 +43,7 @@ class DiscordRole extends Model
      * @var array<string, string>
      */
     protected $dispatchesEvents = [
+        'deleted' => DiscordRoleDeleted::class,
         'updated' => DiscordRoleUpdated::class,
     ];
 
@@ -80,5 +82,16 @@ class DiscordRole extends Model
     protected function grantingPermissions(Builder $query): void
     {
         $query->where('grants_permissions', true);
+    }
+
+    /**
+     * Scope the query to roles that are visible on the site.
+     *
+     * @param  Builder<DiscordRole>  $query
+     */
+    #[Scope]
+    protected function visible(Builder $query): void
+    {
+        $query->where('is_visible', true);
     }
 }
