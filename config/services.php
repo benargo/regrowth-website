@@ -38,7 +38,7 @@ return [
     'discord' => [
         'client_id' => env('DISCORD_CLIENT_ID'),
         'client_secret' => env('DISCORD_CLIENT_SECRET'),
-        'redirect' => env('DISCORD_REDIRECT_URI', '/auth/discord/callback'),
+        'redirect' => null,
         'token' => env('DISCORD_BOT_TOKEN'),
         'server_id' => env('DISCORD_SERVER_ID'),
         'channels' => [

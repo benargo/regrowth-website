@@ -21,9 +21,21 @@ class RetrieveOAuthUserTest extends TestCase
         $socialiteUser = (new SocialiteUser)->setRaw(['id' => '123456789012345678']);
 
         Socialite::shouldReceive('driver')->once()->with('discord')->andReturnSelf();
+        Socialite::shouldReceive('redirectUrl')->andReturnSelf();
         Socialite::shouldReceive('user')->once()->andReturn($socialiteUser);
 
         $this->assertSame($socialiteUser, RetrieveOAuthUser::run());
+    }
+
+    #[Test]
+    #[Group('happy-path')]
+    public function it_exchanges_the_code_with_the_discord_callback_route_as_the_redirect_uri(): void
+    {
+        Socialite::shouldReceive('driver')->with('discord')->andReturnSelf();
+        Socialite::shouldReceive('redirectUrl')->once()->with(route('discord.callback'))->andReturnSelf();
+        Socialite::shouldReceive('user')->andReturn(new SocialiteUser);
+
+        RetrieveOAuthUser::run();
     }
 
     #[Test]
@@ -31,6 +43,7 @@ class RetrieveOAuthUserTest extends TestCase
     public function it_lets_the_driver_exception_propagate(): void
     {
         Socialite::shouldReceive('driver')->with('discord')->andReturnSelf();
+        Socialite::shouldReceive('redirectUrl')->andReturnSelf();
         Socialite::shouldReceive('user')->andThrow(new InvalidStateException);
 
         $this->expectException(InvalidStateException::class);

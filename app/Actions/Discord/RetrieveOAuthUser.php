@@ -19,6 +19,8 @@ class RetrieveOAuthUser
 
     public function handle(): User
     {
-        return $this->socialite->driver('discord')->user();
+        return $this->socialite->driver('discord')
+            ->redirectUrl(route('discord.callback'))
+            ->user();
     }
 }

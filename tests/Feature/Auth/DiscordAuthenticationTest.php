@@ -15,7 +15,6 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Exceptions;
 use Laravel\Socialite\Contracts\Factory;
-use Laravel\Socialite\Contracts\Provider;
 use Laravel\Socialite\Two\User as SocialiteUser;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
@@ -25,6 +24,7 @@ use Saloon\Exceptions\Request\FatalRequestException;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\PendingRequest;
 use Saloon\Laravel\Facades\Saloon;
+use SocialiteProviders\Discord\Provider as DiscordProvider;
 use Tests\Support\DashboardTestCase;
 use Tests\Support\Discord\MocksDiscordService;
 
@@ -54,6 +54,17 @@ class DiscordAuthenticationTest extends DashboardTestCase
         $scopes = explode(' ', $query['scope']);
         $this->assertContains('identify', $scopes);
         $this->assertContains('guilds.members.read', $scopes);
+    }
+
+    #[Test]
+    public function login_sends_the_discord_callback_route_as_the_redirect_uri(): void
+    {
+        config(['services.discord.redirect' => 'https://elsewhere.test/callback']);
+
+        $response = $this->get('/login');
+
+        parse_str((string) parse_url($response->headers->get('Location'), PHP_URL_QUERY), $query);
+        $this->assertSame(route('discord.callback'), $query['redirect_uri']);
     }
 
     #[Test]
@@ -377,7 +388,8 @@ class DiscordAuthenticationTest extends DashboardTestCase
      */
     private function mockSocialiteProvider(): MockInterface
     {
-        $provider = $this->mock(Provider::class);
+        $provider = $this->mock(DiscordProvider::class);
+        $provider->shouldReceive('redirectUrl')->andReturnSelf();
 
         $this->mock(Factory::class)
             ->shouldReceive('driver')

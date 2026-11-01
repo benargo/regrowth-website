@@ -26,6 +26,7 @@ class DiscordController extends Controller
     {
         return Inertia::location(
             Socialite::driver('discord')
+                ->redirectUrl(route('discord.callback'))
                 ->scopes(['identify', 'guilds.members.read'])
                 ->redirect()
                 ->getTargetUrl()
