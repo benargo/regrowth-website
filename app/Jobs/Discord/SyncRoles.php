@@ -69,9 +69,9 @@ class SyncRoles implements ShouldQueue
                     [
                         'name' => $role->name,
                         'position' => $role->position,
-                        'primary_color' => $role->colors->primaryColor ?: null,
-                        'secondary_color' => $role->colors->secondaryColor instanceof Optional ? null : ($role->colors->secondaryColor ?: null),
-                        'tertiary_color' => $role->colors->tertiaryColor instanceof Optional ? null : ($role->colors->tertiaryColor ?: null),
+                        'primary_color' => $this->colorOrNull($role->colors->primaryColor),
+                        'secondary_color' => $this->colorOrNull($role->colors->secondaryColor),
+                        'tertiary_color' => $this->colorOrNull($role->colors->tertiaryColor),
                     ],
                 );
             }
@@ -96,5 +96,17 @@ class SyncRoles implements ShouldQueue
     public function tags(): array
     {
         return ['discord', 'discord:roles'];
+    }
+
+    /**
+     * Normalise a Discord role colour, returning null when it is absent or 0 (no colour).
+     */
+    private function colorOrNull(int|Optional|null $color): ?int
+    {
+        if ($color instanceof Optional) {
+            return null;
+        }
+
+        return $color ?: null;
     }
 }

@@ -25,7 +25,9 @@ class ViewAsRoleController extends Controller
             Auth::login($tempUser);
 
             $request->session()->regenerate();
-            $request->session()->put('impersonating_user_id', $request->session()->get('impersonating_user_id', $currentUser->id));
+            if (! $request->session()->has('impersonating_user_id')) {
+                $request->session()->put('impersonating_user_id', $currentUser->id);
+            }
 
             return redirect('/')->with('success', 'You are now viewing the site as a '.(DiscordRole::find($role)?->name ?? 'Unknown').'.');
         } catch (InvalidArgumentException $e) {
