@@ -130,9 +130,9 @@ return [
         'officer' => env('LOCAL_USER_OFFICER_ID'),
         'loot_councillor' => env('LOCAL_USER_LOOT_COUNCILLOR_ID'),
         'raider' => env('LOCAL_USER_RAIDER_ID'),
-        'member' => env('LOCAL_USER_MEMBER_ID'),
         'guest' => env('LOCAL_USER_GUEST_ID'),
         'admin' => env('LOCAL_USER_ADMIN_ID'),
+        'view_as' => env('LOCAL_USER_VIEW_AS_ID'),
     ],
 
 ];

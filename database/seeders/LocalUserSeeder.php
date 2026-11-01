@@ -69,15 +69,7 @@ class LocalUserSeeder extends Seeder
                 'username' => 'local-raider',
                 'discriminator' => '0000',
                 'nickname' => 'Local Raider',
-                'roles' => ['1265247017215594496', '829022020301094922'],
-                'is_admin' => false,
-            ],
-            [
-                'config' => 'member',
-                'username' => 'local-member',
-                'discriminator' => '0000',
-                'nickname' => 'Local Member',
-                'roles' => ['829022020301094922'],
+                'roles' => ['1265247017215594496'],
                 'is_admin' => false,
             ],
             [

@@ -27,6 +27,8 @@ class SyncRolesTest extends TestCase
     use MocksDiscordService;
     use RefreshDatabase;
 
+    // ==================== sync ====================
+
     #[Test]
     public function it_creates_new_roles_from_discord(): void
     {
@@ -108,6 +110,97 @@ class SyncRolesTest extends TestCase
         ]);
     }
 
+    // ==================== colours ====================
+
+    #[Test]
+    public function it_stores_role_colours(): void
+    {
+        $this->fakeDiscord([GetGuildRolesRequest::class => MockResponse::make([
+            $this->makeDiscordRoleResponse('111111111111111111', 'Officer', 10, [
+                'primary_color' => 0xAA3B3B,
+                'secondary_color' => 0x112233,
+                'tertiary_color' => 0x445566,
+            ]),
+        ])]);
+
+        SyncRoles::dispatchSync();
+
+        $role = DiscordRole::find('111111111111111111');
+        $this->assertSame('aa3b3b', $role->primary_color);
+        $this->assertSame('112233', $role->secondary_color);
+        $this->assertSame('445566', $role->tertiary_color);
+    }
+
+    #[Test]
+    public function it_stores_no_colour_as_null(): void
+    {
+        $this->fakeGuildRoles();
+
+        SyncRoles::dispatchSync();
+
+        $role = DiscordRole::find('111111111111111111');
+        $this->assertNull($role->primary_color);
+        $this->assertNull($role->secondary_color);
+        $this->assertNull($role->tertiary_color);
+    }
+
+    #[Test]
+    public function it_clears_a_colour_removed_in_discord(): void
+    {
+        DiscordRole::factory()->create([
+            'id' => '111111111111111111',
+            'name' => 'Officer',
+            'position' => 10,
+            'primary_color' => 'aa3b3b',
+        ]);
+
+        $this->fakeGuildRoles();
+
+        SyncRoles::dispatchSync();
+
+        $this->assertNull(DiscordRole::find('111111111111111111')->primary_color);
+    }
+
+    // ==================== permissions ====================
+
+    #[Test]
+    public function it_preserves_grants_permissions_on_existing_roles(): void
+    {
+        DiscordRole::factory()->grantsPermissions()->create([
+            'id' => '111111111111111111',
+            'name' => 'Officer',
+            'position' => 10,
+        ]);
+
+        $this->fakeGuildRoles();
+
+        SyncRoles::dispatchSync();
+
+        $this->assertDatabaseHas('discord_roles', [
+            'id' => '111111111111111111',
+            'grants_permissions' => true,
+        ]);
+    }
+
+    #[Test]
+    public function it_flushes_the_permissions_cache_when_roles_are_deleted(): void
+    {
+        Cache::tags(['permissions'])->put('probe', true);
+        DiscordRole::factory()->create([
+            'id' => '999999999999999999',
+            'name' => 'Deleted Role',
+            'position' => 50,
+        ]);
+
+        $this->fakeGuildRoles();
+
+        SyncRoles::dispatchSync();
+
+        $this->assertNull(Cache::tags(['permissions'])->get('probe'));
+    }
+
+    // ==================== side effects ====================
+
     #[Test]
     public function it_does_not_dispatch_any_user_sync_jobs(): void
     {
@@ -136,6 +229,8 @@ class SyncRolesTest extends TestCase
         Saloon::assertNothingSent();
         $this->assertDatabaseCount('discord_roles', 0);
     }
+
+    // ==================== rate limiting ====================
 
     #[Test]
     #[Group('error-handling')]

@@ -22,7 +22,7 @@ class UserResource extends JsonResource
             'display_name' => $this->display_name,
             'avatar' => $this->avatar_thumb_url,
             'roles' => $this->discordRoles->pluck('id')->values()->toArray(),
-            'highest_role' => $this->highestRole()?->name,
+            'highest_role' => $this->highestRole()?->toResource(DiscordRoleResource::class),
             'admin' => $this->is_admin,
             'characters' => $this->whenLoaded('characters', fn () => $this->characters->toResourceCollection()),
             'events' => $this->whenLoaded('events', fn () => $this->events->toResourceCollection(EventResource::class)->scope('members')),

@@ -16,6 +16,7 @@ import SectionDisclosure from "@/Components/Navigation/SectionDisclosure";
 import SectionFlyout from "@/Components/Navigation/SectionFlyout";
 import Footer from "@/Layouts/Footer";
 import cn from "@/Helpers/cn";
+import modelColor from "@/Helpers/ModelColor";
 
 const MOBILE_LINK =
     "flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:bg-white/5 hover:text-white active:bg-white/10";
@@ -82,6 +83,8 @@ export default function Master({ title, isHomepage = false, children }) {
     const isLootActive = route().current("loot.*");
     const isAddonsActive = route().current("addons.*");
     const user = auth?.user?.data;
+    const highestRoleColor = user?.highest_role ? modelColor(user.highest_role.primary_color, ["bg"]) : null;
+    const highestRoleTextColor = user?.highest_role ? modelColor(user.highest_role.primary_color, ["text"]) : null;
     const discordInviteUrl = navigation?.discord_invite_url;
     const impersonating = auth?.impersonating;
 
@@ -290,9 +293,10 @@ export default function Master({ title, isHomepage = false, children }) {
                                                 {user.highest_role && (
                                                     <span className="hidden 2xl:inline-flex">
                                                         <Pill
-                                                            bgColor={`bg-discord-${user.highest_role ? user.highest_role.toLowerCase() : "grey-800"}`}
+                                                            bgColor={highestRoleColor.className || undefined}
+                                                            style={highestRoleColor.style}
                                                         >
-                                                            {user.highest_role}
+                                                            {user.highest_role.name}
                                                         </Pill>
                                                     </span>
                                                 )}
@@ -392,9 +396,10 @@ export default function Master({ title, isHomepage = false, children }) {
                                         <span className="text-base font-medium text-white">{user.display_name}</span>
                                         {user.highest_role && (
                                             <span
-                                                className={`text-sm text-discord-${user.highest_role.replace(/\s+/g, "").toLowerCase()}`}
+                                                className={`text-sm ${highestRoleTextColor.className}`}
+                                                style={highestRoleTextColor.style}
                                             >
-                                                {user.highest_role}
+                                                {user.highest_role.name}
                                             </span>
                                         )}
                                     </span>

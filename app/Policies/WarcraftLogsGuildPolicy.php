@@ -11,7 +11,7 @@ use App\Models\WarcraftLogs\GuildTag;
  * policy: tags come from Warcraft Logs, so the only thing an officer can
  * change on one is whether it counts toward attendance.
  */
-class WarcraftLogsGuildPolicy extends AuthorizationPolicy
+class WarcraftLogsGuildPolicy
 {
     /**
      * Determine whether the user can list guilds.

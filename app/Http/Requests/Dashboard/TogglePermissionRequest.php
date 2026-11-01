@@ -4,6 +4,7 @@ namespace App\Http\Requests\Dashboard;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class TogglePermissionRequest extends FormRequest
 {
@@ -12,7 +13,7 @@ class TogglePermissionRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->can('view-officer-dashboard');
+        return $this->user()->can('manage-permissions');
     }
 
     /**
@@ -23,7 +24,7 @@ class TogglePermissionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'discord_role_id' => ['required', 'string', 'exists:discord_roles,id'],
+            'discord_role_id' => ['required', 'string', Rule::exists('discord_roles', 'id')->where('grants_permissions', true)],
             'enabled' => ['required', 'boolean'],
         ];
     }
@@ -37,7 +38,7 @@ class TogglePermissionRequest extends FormRequest
     {
         return [
             'discord_role_id.required' => 'A Discord role is required.',
-            'discord_role_id.exists' => 'The selected Discord role does not exist.',
+            'discord_role_id.exists' => 'The selected Discord role does not grant permissions.',
             'enabled.required' => 'The enabled field is required.',
             'enabled.boolean' => 'The enabled field must be true or false.',
         ];

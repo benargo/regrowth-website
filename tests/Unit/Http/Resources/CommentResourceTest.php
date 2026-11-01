@@ -509,7 +509,7 @@ class CommentResourceTest extends TestCase
             'id' => '1234567890',
             'name' => 'Test Role',
             'position' => 1,
-            'is_visible' => true,
+            'is_visible' => true, 'grants_permissions' => true,
         ]);
         $discordRole->permissions()->create([
             'name' => 'react-to-comments',
@@ -702,7 +702,7 @@ class CommentResourceTest extends TestCase
             'id' => '1265247017215594497',
             'name' => 'Test Reply Role',
             'position' => 1,
-            'is_visible' => true,
+            'is_visible' => true, 'grants_permissions' => true,
         ]);
         $discordRole->permissions()->create([
             'name' => 'comment-on-loot-items',
@@ -755,7 +755,7 @@ class CommentResourceTest extends TestCase
 
     private function setUpPermissions(): void
     {
-        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true]);
+        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true, 'grants_permissions' => true]);
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'edit-any-comment', 'guard_name' => 'web']));
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'delete-any-comment', 'guard_name' => 'web']));
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'mark-comment-as-resolved', 'guard_name' => 'web']));

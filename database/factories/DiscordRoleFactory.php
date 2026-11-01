@@ -21,7 +21,9 @@ class DiscordRoleFactory extends Factory
             'id' => (string) fake()->unique()->numerify('##################'),
             'name' => fake()->word(),
             'position' => fake()->unique()->numberBetween(100, 999),
+            'primary_color' => fake()->hexColor(),
             'is_visible' => false,
+            'grants_permissions' => false,
         ];
     }
 
@@ -36,6 +38,16 @@ class DiscordRoleFactory extends Factory
     }
 
     /**
+     * Indicate the role grants permissions.
+     */
+    public function grantsPermissions(): static
+    {
+        return $this->state(fn () => [
+            'grants_permissions' => true,
+        ]);
+    }
+
+    /**
      * Indicate the role is Officer.
      */
     public function officer(): static
@@ -43,8 +55,10 @@ class DiscordRoleFactory extends Factory
         return $this->state(fn () => [
             'id' => '829021769448816691',
             'name' => 'Officer',
+            'primary_color' => 'aa3b3b',
             'position' => 5,
             'is_visible' => true,
+            'grants_permissions' => true,
         ]);
     }
 
@@ -56,8 +70,10 @@ class DiscordRoleFactory extends Factory
         return $this->state(fn () => [
             'id' => '1467994755953852590',
             'name' => 'Loot Councillor',
+            'primary_color' => 'a335ee',
             'position' => 4,
             'is_visible' => true,
+            'grants_permissions' => true,
         ]);
     }
 
@@ -69,8 +85,10 @@ class DiscordRoleFactory extends Factory
         return $this->state(fn () => [
             'id' => '1265247017215594496',
             'name' => 'Raider',
+            'primary_color' => 'e67e22',
             'position' => 3,
             'is_visible' => true,
+            'grants_permissions' => true,
         ]);
     }
 
@@ -80,10 +98,11 @@ class DiscordRoleFactory extends Factory
     public function member(): static
     {
         return $this->state(fn () => [
-            'id' => '829022020301094922',
             'name' => 'Member',
+            'primary_color' => '1f8b4c',
             'position' => 2,
             'is_visible' => true,
+            'grants_permissions' => true,
         ]);
     }
 
@@ -95,8 +114,10 @@ class DiscordRoleFactory extends Factory
         return $this->state(fn () => [
             'id' => '829022292590985226',
             'name' => 'Guest',
+            'primary_color' => '9b59b6',
             'position' => 1,
             'is_visible' => true,
+            'grants_permissions' => false,
         ]);
     }
 }

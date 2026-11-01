@@ -229,7 +229,7 @@ class EditItemPageTest extends TestCase
     {
         $editItems = Permission::firstOrCreate(['name' => 'edit-items', 'guard_name' => 'web']);
 
-        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 5, 'is_visible' => true]);
+        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 5, 'is_visible' => true, 'grants_permissions' => true]);
         $officerRole->givePermissionTo($editItems);
     }
 

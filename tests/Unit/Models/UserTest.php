@@ -407,65 +407,6 @@ class UserTest extends ModelTestCase
     // ==================== roles ====================
 
     #[Test]
-    public function is_officer_returns_true_for_officer_role(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $this->assertTrue($user->isOfficer());
-    }
-
-    #[Test]
-    public function is_officer_returns_false_for_non_officer(): void
-    {
-        $user = User::factory()->member()->create();
-
-        $this->assertFalse($user->isOfficer());
-    }
-
-    #[Test]
-    public function is_raider_returns_true_for_raider_role(): void
-    {
-        $user = User::factory()->raider()->create();
-
-        $this->assertTrue($user->isRaider());
-    }
-
-    #[Test]
-    public function is_member_returns_true_for_member_role(): void
-    {
-        $user = User::factory()->member()->create();
-
-        $this->assertTrue($user->isMember());
-    }
-
-    #[Test]
-    public function is_loot_councillor_returns_true_for_loot_councillor_role(): void
-    {
-        $councillor = DiscordRole::find('1467994755953852590') ??
-            DiscordRole::factory()->lootCouncillor()->create();
-        $user = User::factory()->create();
-        $user->discordRoles()->attach($councillor->id);
-
-        $this->assertTrue($user->isLootCouncillor());
-    }
-
-    #[Test]
-    public function is_loot_councillor_returns_false_for_non_loot_councillor(): void
-    {
-        $user = User::factory()->member()->create();
-
-        $this->assertFalse($user->isLootCouncillor());
-    }
-
-    #[Test]
-    public function is_guest_returns_true_for_guest_role(): void
-    {
-        $user = User::factory()->guest()->create();
-
-        $this->assertTrue($user->isGuest());
-    }
-
-    #[Test]
     public function highest_role_returns_officer_when_has_multiple_roles(): void
     {
         $officer = DiscordRole::find('829021769448816691') ??
@@ -539,25 +480,54 @@ class UserTest extends ModelTestCase
     }
 
     #[Test]
-    public function permissions_does_not_include_permissions_from_lower_roles(): void
+    public function permissions_returns_the_union_across_granting_roles(): void
     {
-        Permission::firstOrCreate(['name' => 'view-officer-dashboard', 'guard_name' => 'web']);
-        Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
-
-        $officer = DiscordRole::find('829021769448816691') ??
-            DiscordRole::factory()->officer()->create();
-        $officer->givePermissionTo('view-officer-dashboard');
-
-        $member = DiscordRole::find('829022020301094922') ??
-            DiscordRole::factory()->member()->create();
-        $member->givePermissionTo('comment-on-loot-items');
-
+        $first = DiscordRole::factory()->grantsPermissions()->create();
+        $first->givePermissionTo(Permission::firstOrCreate(['name' => 'perm-a', 'guard_name' => 'web']));
+        $second = DiscordRole::factory()->grantsPermissions()->create();
+        $second->givePermissionTo(Permission::firstOrCreate(['name' => 'perm-b', 'guard_name' => 'web']));
         $user = User::factory()->create();
-        $user->discordRoles()->attach([$officer->id, $member->id]);
+        $user->discordRoles()->attach([$first->id, $second->id]);
 
-        // Officer is the highest role — only its permissions are returned
-        $this->assertTrue($user->permissions()->where('name', 'view-officer-dashboard')->exists());
-        $this->assertFalse($user->permissions()->where('name', 'comment-on-loot-items')->exists());
+        $names = $user->permissions()->pluck('name')->sort()->values()->all();
+
+        $this->assertSame(['perm-a', 'perm-b'], $names);
+    }
+
+    #[Test]
+    public function permissions_ignores_roles_that_do_not_grant_permissions(): void
+    {
+        $role = DiscordRole::factory()->create(['grants_permissions' => false]);
+        $role->givePermissionTo(Permission::firstOrCreate(['name' => 'perm-c', 'guard_name' => 'web']));
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($role->id);
+
+        $this->assertFalse($user->permissions()->where('name', 'perm-c')->exists());
+    }
+
+    #[Test]
+    public function permissions_has_no_duplicates(): void
+    {
+        $permission = Permission::firstOrCreate(['name' => 'perm-a', 'guard_name' => 'web']);
+        $first = DiscordRole::factory()->grantsPermissions()->create();
+        $first->givePermissionTo($permission);
+        $second = DiscordRole::factory()->grantsPermissions()->create();
+        $second->givePermissionTo($permission);
+        $user = User::factory()->create();
+        $user->discordRoles()->attach([$first->id, $second->id]);
+
+        $this->assertCount(1, $user->permissions()->get());
+    }
+
+    #[Test]
+    public function is_authorized_to_ignores_roles_that_do_not_grant_permissions(): void
+    {
+        $role = DiscordRole::factory()->create(['grants_permissions' => false]);
+        $role->givePermissionTo(Permission::firstOrCreate(['name' => 'perm-c', 'guard_name' => 'web']));
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($role->id);
+
+        $this->assertFalse($user->isAuthorizedTo('perm-c'));
     }
 
     #[Test]
@@ -565,7 +535,7 @@ class UserTest extends ModelTestCase
     {
         Permission::firstOrCreate(['name' => 'test-permission', 'guard_name' => 'web']);
 
-        $role = DiscordRole::factory()->create();
+        $role = DiscordRole::factory()->grantsPermissions()->create();
         $role->givePermissionTo('test-permission');
 
         $user = User::factory()->create();

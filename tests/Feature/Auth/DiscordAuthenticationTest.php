@@ -84,11 +84,10 @@ class DiscordAuthenticationTest extends DashboardTestCase
     #[Test]
     public function discord_callback_creates_new_user(): void
     {
-        DiscordRole::find('829022020301094922') ??
-            DiscordRole::factory()->member()->create();
+        $memberRole = DiscordRole::factory()->member()->create();
 
         $this->mockDiscordOAuth();
-        $this->fakeDiscordGuildMember();
+        $this->fakeDiscordGuildMember(['roles' => [$memberRole->id]]);
 
         $response = $this->get('/auth/discord/callback?code=test_code');
 

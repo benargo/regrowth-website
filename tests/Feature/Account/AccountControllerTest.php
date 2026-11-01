@@ -57,7 +57,7 @@ class AccountControllerTest extends TestCase
     {
         $role = DiscordRole::firstOrCreate(
             ['id' => '829021769448816691'],
-            ['name' => 'Officer', 'position' => 6, 'is_visible' => true]
+            ['name' => 'Officer', 'position' => 6, 'is_visible' => true, 'grants_permissions' => true]
         );
         $user = User::factory()->create();
         $user->discordRoles()->attach($role);
@@ -76,7 +76,7 @@ class AccountControllerTest extends TestCase
     {
         $visibleRole = DiscordRole::firstOrCreate(
             ['id' => '829021769448816691'],
-            ['name' => 'Officer', 'position' => 6, 'is_visible' => true]
+            ['name' => 'Officer', 'position' => 6, 'is_visible' => true, 'grants_permissions' => true]
         );
         $hiddenRole = DiscordRole::firstOrCreate(
             ['id' => '829021769448816692'],

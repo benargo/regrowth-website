@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Models;
 
+use App\Casts\AsBinaryColor;
 use App\Events\DiscordRoleUpdated;
 use App\Models\DiscordRole;
 use App\Models\Permission;
@@ -47,7 +48,11 @@ class DiscordRoleTest extends ModelTestCase
             'id',
             'name',
             'position',
+            'primary_color',
+            'secondary_color',
+            'tertiary_color',
             'is_visible',
+            'grants_permissions',
         ]);
     }
 
@@ -60,7 +65,11 @@ class DiscordRoleTest extends ModelTestCase
             'id',
             'name',
             'position',
+            'primary_color',
+            'secondary_color',
+            'tertiary_color',
             'is_visible',
+            'grants_permissions',
         ]);
     }
 
@@ -72,7 +81,11 @@ class DiscordRoleTest extends ModelTestCase
         $this->assertCasts($model, [
             'id' => 'string',
             'position' => 'integer',
+            'primary_color' => AsBinaryColor::class,
+            'secondary_color' => AsBinaryColor::class,
+            'tertiary_color' => AsBinaryColor::class,
             'is_visible' => 'boolean',
+            'grants_permissions' => 'boolean',
         ]);
     }
 
@@ -82,6 +95,25 @@ class DiscordRoleTest extends ModelTestCase
         $model = new DiscordRole;
 
         $this->assertFalse($model->is_visible);
+    }
+
+    #[Test]
+    public function it_defaults_grants_permissions_to_false(): void
+    {
+        $model = new DiscordRole;
+
+        $this->assertFalse($model->grants_permissions);
+    }
+
+    #[Test]
+    public function granting_permissions_scope_returns_only_roles_that_grant_permissions(): void
+    {
+        $granting = DiscordRole::factory()->grantsPermissions()->create();
+        DiscordRole::factory()->create();
+
+        $ids = DiscordRole::grantingPermissions()->pluck('id');
+
+        $this->assertSame([$granting->id], $ids->all());
     }
 
     #[Test]

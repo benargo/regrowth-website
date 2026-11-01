@@ -311,7 +311,7 @@ class LootToolSettingsControllerTest extends DashboardTestCase
      */
     protected function officerWithPermissions(array $permissions): User
     {
-        $role = DiscordRole::factory()->create();
+        $role = DiscordRole::factory()->grantsPermissions()->create();
         $role->givePermissionTo(Permission::firstOrCreate(['name' => 'view-officer-dashboard', 'guard_name' => 'web']));
 
         foreach ($permissions as $permission) {

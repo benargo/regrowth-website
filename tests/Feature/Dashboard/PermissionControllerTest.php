@@ -13,9 +13,13 @@ use Tests\Support\DashboardTestCase;
 #[Group('auth')]
 class PermissionControllerTest extends DashboardTestCase
 {
+    protected User $admin;
+
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->admin = User::factory()->officer()->admin()->create();
 
         // Clear cached permissions to ensure the tests reflect the current state of permissions.
         Cache::tags(['permissions'])->flush();
@@ -68,11 +72,80 @@ class PermissionControllerTest extends DashboardTestCase
     }
 
     #[Test]
-    public function index_allows_officer_users(): void
+    public function index_allows_admin_users(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('management.permissions.index'));
+
+        $response->assertRedirect(route('management.permissions.group.show', ['group' => 'loot-bias-tool']));
+    }
+
+    #[Group('authorization')]
+    #[Test]
+    public function index_forbids_officers_who_are_not_admins(): void
     {
         $response = $this->actingAs($this->officer)->get(route('management.permissions.index'));
 
-        $response->assertRedirect(route('management.permissions.group.show', ['group' => 'loot-bias-tool']));
+        $response->assertForbidden();
+    }
+
+    #[Group('authorization')]
+    #[Test]
+    public function show_group_forbids_officers_who_are_not_admins(): void
+    {
+        $response = $this->actingAs($this->officer)->get(route('management.permissions.group.show', ['group' => 'loot-bias-tool']));
+
+        $response->assertForbidden();
+    }
+
+    #[Test]
+    public function show_group_lists_only_roles_that_grant_permissions(): void
+    {
+        $granting = DiscordRole::factory()->visible()->grantsPermissions()->create();
+        DiscordRole::factory()->visible()->create();
+        Cache::tags(['db', 'discord', 'permissions'])->flush();
+
+        $response = $this->actingAs($this->admin)->get(route('management.permissions.group.show', ['group' => 'loot-bias-tool']));
+
+        $response->assertInertia(fn ($page) => $page
+            ->where('discordRoles', fn ($roles) => collect($roles)->pluck('id')->sort()->values()->all() === collect(['829021769448816691', $granting->id])->sort()->values()->all())
+        );
+    }
+
+    #[Group('authorization')]
+    #[Test]
+    public function toggle_forbids_officers_who_are_not_admins(): void
+    {
+        $role = DiscordRole::factory()->grantsPermissions()->create();
+        $permission = Permission::findByName('comment-on-loot-items');
+
+        $response = $this->actingAs($this->officer)->patch(route('management.permissions.permission.update', [
+            'group' => $permission->group,
+            'permission' => $permission->id,
+        ]), [
+            'discord_role_id' => $role->id,
+            'enabled' => true,
+        ]);
+
+        $response->assertForbidden();
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function toggle_rejects_a_role_that_does_not_grant_permissions(): void
+    {
+        $role = DiscordRole::factory()->create();
+        $permission = Permission::findByName('comment-on-loot-items');
+
+        $response = $this->actingAs($this->admin)->patch(route('management.permissions.permission.update', [
+            'group' => $permission->group,
+            'permission' => $permission->id,
+        ]), [
+            'discord_role_id' => $role->id,
+            'enabled' => true,
+        ]);
+
+        $response->assertSessionHasErrors(['discord_role_id']);
+        $this->assertDatabaseMissing('role_has_permissions', ['role_id' => $role->id, 'permission_id' => $permission->id]);
     }
 
     // ==================== show group ====================
@@ -97,9 +170,9 @@ class PermissionControllerTest extends DashboardTestCase
     }
 
     #[Test]
-    public function show_group_allows_officer_users(): void
+    public function show_group_allows_admin_users(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('management.permissions.group.show', ['group' => 'loot-bias-tool']));
+        $response = $this->actingAs($this->admin)->get(route('management.permissions.group.show', ['group' => 'loot-bias-tool']));
 
         $response->assertOk();
     }
@@ -107,7 +180,7 @@ class PermissionControllerTest extends DashboardTestCase
     #[Test]
     public function show_group_returns_discord_roles_groups_and_permissions(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('management.permissions.group.show', ['group' => 'loot-bias-tool']));
+        $response = $this->actingAs($this->admin)->get(route('management.permissions.group.show', ['group' => 'loot-bias-tool']));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
@@ -121,7 +194,7 @@ class PermissionControllerTest extends DashboardTestCase
     #[Test]
     public function show_group_saves_group_to_session(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('management.permissions.group.show', ['group' => 'loot-bias-tool']));
+        $response = $this->actingAs($this->admin)->get(route('management.permissions.group.show', ['group' => 'loot-bias-tool']));
 
         $response->assertSessionHas('dashboard.permissions.group', 'loot-bias-tool');
     }
@@ -129,7 +202,7 @@ class PermissionControllerTest extends DashboardTestCase
     #[Test]
     public function show_group_returns_404_for_unknown_group(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('management.permissions.group.show', ['group' => 'nonexistent-group']));
+        $response = $this->actingAs($this->admin)->get(route('management.permissions.group.show', ['group' => 'nonexistent-group']));
 
         $response->assertNotFound();
     }
@@ -142,7 +215,7 @@ class PermissionControllerTest extends DashboardTestCase
             ['group' => 'roster'],
         );
 
-        $response = $this->actingAs($this->officer)
+        $response = $this->actingAs($this->admin)
             ->withSession(['dashboard.permissions.group' => 'roster'])
             ->get(route('management.permissions.index'));
 
@@ -154,7 +227,7 @@ class PermissionControllerTest extends DashboardTestCase
     #[Test]
     public function toggle_requires_authentication(): void
     {
-        $role = DiscordRole::factory()->create();
+        $role = DiscordRole::factory()->grantsPermissions()->create();
         $permission = Permission::findByName('comment-on-loot-items');
 
         $response = $this->patch(route('management.permissions.permission.update', [
@@ -173,7 +246,7 @@ class PermissionControllerTest extends DashboardTestCase
     public function toggle_forbids_non_officer_users(): void
     {
         $user = User::factory()->member()->create();
-        $role = DiscordRole::factory()->create();
+        $role = DiscordRole::factory()->grantsPermissions()->create();
         $permission = Permission::findByName('comment-on-loot-items');
 
         $response = $this->actingAs($user)->patch(route('management.permissions.permission.update', [
@@ -190,12 +263,12 @@ class PermissionControllerTest extends DashboardTestCase
     #[Test]
     public function toggle_can_enable_a_permission(): void
     {
-        $role = DiscordRole::factory()->create();
+        $role = DiscordRole::factory()->grantsPermissions()->create();
         $permission = Permission::findByName('comment-on-loot-items');
 
         $this->assertFalse($role->hasPermissionTo('comment-on-loot-items'));
 
-        $response = $this->actingAs($this->officer)->patch(route('management.permissions.permission.update', [
+        $response = $this->actingAs($this->admin)->patch(route('management.permissions.permission.update', [
             'group' => $permission->group,
             'permission' => $permission->id,
         ]), [
@@ -211,13 +284,13 @@ class PermissionControllerTest extends DashboardTestCase
     #[Test]
     public function toggle_can_disable_a_permission(): void
     {
-        $role = DiscordRole::factory()->create();
+        $role = DiscordRole::factory()->grantsPermissions()->create();
         $role->givePermissionTo('comment-on-loot-items');
         $permission = Permission::findByName('comment-on-loot-items');
 
         $this->assertTrue($role->hasPermissionTo('comment-on-loot-items'));
 
-        $response = $this->actingAs($this->officer)->patch(route('management.permissions.permission.update', [
+        $response = $this->actingAs($this->admin)->patch(route('management.permissions.permission.update', [
             'group' => $permission->group,
             'permission' => $permission->id,
         ]), [
@@ -238,7 +311,7 @@ class PermissionControllerTest extends DashboardTestCase
     {
         $permission = Permission::findByName('comment-on-loot-items');
 
-        $response = $this->actingAs($this->officer)->patch(route('management.permissions.permission.update', [
+        $response = $this->actingAs($this->admin)->patch(route('management.permissions.permission.update', [
             'group' => $permission->group,
             'permission' => $permission->id,
         ]), [
@@ -254,7 +327,7 @@ class PermissionControllerTest extends DashboardTestCase
     {
         $permission = Permission::findByName('comment-on-loot-items');
 
-        $response = $this->actingAs($this->officer)->patch(route('management.permissions.permission.update', [
+        $response = $this->actingAs($this->admin)->patch(route('management.permissions.permission.update', [
             'group' => $permission->group,
             'permission' => $permission->id,
         ]), [
@@ -268,9 +341,9 @@ class PermissionControllerTest extends DashboardTestCase
     #[Test]
     public function toggle_returns_404_for_nonexistent_permission(): void
     {
-        $role = DiscordRole::factory()->create();
+        $role = DiscordRole::factory()->grantsPermissions()->create();
 
-        $response = $this->actingAs($this->officer)->patch(route('management.permissions.permission.update', [
+        $response = $this->actingAs($this->admin)->patch(route('management.permissions.permission.update', [
             'group' => 'loot-bias-tool',
             'permission' => 9999,
         ]), [
@@ -285,10 +358,10 @@ class PermissionControllerTest extends DashboardTestCase
     #[Test]
     public function toggle_validates_enabled_is_required(): void
     {
-        $role = DiscordRole::factory()->create();
+        $role = DiscordRole::factory()->grantsPermissions()->create();
         $permission = Permission::findByName('comment-on-loot-items');
 
-        $response = $this->actingAs($this->officer)->patch(route('management.permissions.permission.update', [
+        $response = $this->actingAs($this->admin)->patch(route('management.permissions.permission.update', [
             'group' => $permission->group,
             'permission' => $permission->id,
         ]), [
@@ -298,70 +371,18 @@ class PermissionControllerTest extends DashboardTestCase
         $response->assertSessionHasErrors(['enabled']);
     }
 
-    // ==================== toggle — highest role restrictions ====================
-
-    #[Group('authorization')]
-    #[Test]
-    public function toggle_forbids_non_admin_from_modifying_their_highest_role(): void
-    {
-        $officerRole = DiscordRole::firstOrCreate(
-            ['id' => '829021769448816691'],
-            ['name' => 'Officer', 'position' => 5],
-        );
-        $officerRole->update(['is_visible' => true]);
-
-        $permission = Permission::findByName('comment-on-loot-items');
-
-        $response = $this->actingAs($this->officer)->patch(route('management.permissions.permission.update', [
-            'group' => $permission->group,
-            'permission' => $permission->id,
-        ]), [
-            'discord_role_id' => $officerRole->id,
-            'enabled' => true,
-        ]);
-
-        $response->assertForbidden();
-        $this->assertDatabaseMissing('role_has_permissions', [
-            'role_id' => $officerRole->id,
-            'permission_id' => $permission->id,
-        ]);
-    }
-
-    #[Test]
-    public function toggle_allows_admin_to_modify_their_highest_role(): void
-    {
-        $officerRole = DiscordRole::firstOrCreate(
-            ['id' => '829021769448816691'],
-            ['name' => 'Officer', 'position' => 5],
-        );
-        $officerRole->update(['is_visible' => true]);
-
-        $user = User::factory()->officer()->admin()->create();
-        $permission = Permission::findByName('comment-on-loot-items');
-
-        $response = $this->actingAs($user)->patch(route('management.permissions.permission.update', [
-            'group' => $permission->group,
-            'permission' => $permission->id,
-        ]), [
-            'discord_role_id' => $officerRole->id,
-            'enabled' => true,
-        ]);
-
-        $response->assertRedirect();
-        $officerRole->load('permissions');
-        $this->assertTrue($officerRole->hasPermissionTo('comment-on-loot-items'));
-    }
+    // ==================== toggle — side effects ====================
 
     #[Test]
     public function toggle_does_not_affect_other_roles(): void
     {
-        $role1 = DiscordRole::factory()->create();
-        $role2 = DiscordRole::factory()->create();
+        $role1 = DiscordRole::factory()->grantsPermissions()->create();
+        $role2 = DiscordRole::factory()->grantsPermissions()->create();
         $permission = Permission::findByName('comment-on-loot-items');
 
         $role2->givePermissionTo('comment-on-loot-items');
 
-        $this->actingAs($this->officer)->patch(route('management.permissions.permission.update', [
+        $this->actingAs($this->admin)->patch(route('management.permissions.permission.update', [
             'group' => $permission->group,
             'permission' => $permission->id,
         ]), [

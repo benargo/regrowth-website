@@ -49,7 +49,7 @@ class PublishAssignmentsControllerTest extends TestCase
             'id' => '829022020301094922',
             'name' => 'Member',
             'position' => 1,
-            'is_visible' => true,
+            'is_visible' => true, 'grants_permissions' => true,
         ]);
         $memberRole->givePermissionTo(Permission::firstOrCreate(['name' => 'manage-raid-plans', 'guard_name' => 'web']));
 

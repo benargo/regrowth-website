@@ -14,8 +14,10 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\Backoff;
 use Illuminate\Queue\Attributes\MaxExceptions;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Spatie\LaravelData\Optional;
 use Throwable;
 
 #[MaxExceptions(3)]
@@ -44,7 +46,7 @@ class SyncRoles implements ShouldQueue
     }
 
     /**
-     * Sync the guild's roles, deleting any no longer in Discord and skipping @everyone.
+     * Sync the guild's roles with their colours, deleting any no longer in Discord and skipping @everyone.
      */
     public function handle(DiscordConnector $discord, #[Config('services.discord.server_id')] string $serverId): void
     {
@@ -57,10 +59,20 @@ class SyncRoles implements ShouldQueue
         DB::transaction(function () use ($roles, $syncedIds): void {
             $deleted = DiscordRole::whereNotIn('id', $syncedIds)->delete();
 
+            if ($deleted > 0) {
+                DB::afterCommit(fn () => Cache::tags(['permissions'])->flush());
+            }
+
             foreach ($roles as $role) {
                 DiscordRole::updateOrCreate(
                     ['id' => $role->id],
-                    ['name' => $role->name, 'position' => $role->position],
+                    [
+                        'name' => $role->name,
+                        'position' => $role->position,
+                        'primary_color' => $role->colors->primaryColor ?: null,
+                        'secondary_color' => $role->colors->secondaryColor instanceof Optional ? null : ($role->colors->secondaryColor ?: null),
+                        'tertiary_color' => $role->colors->tertiaryColor instanceof Optional ? null : ($role->colors->tertiaryColor ?: null),
+                    ],
                 );
             }
 

@@ -15,7 +15,7 @@ class ViewAsRoleController extends Controller
     /**
      * Temporarily view the site as a different role.
      */
-    public function viewAsRole(int $role, Request $request)
+    public function viewAsRole(string $role, Request $request)
     {
         try {
             $currentUser = $request->user();
@@ -25,7 +25,7 @@ class ViewAsRoleController extends Controller
             Auth::login($tempUser);
 
             $request->session()->regenerate();
-            $request->session()->put('impersonating_user_id', $currentUser->id);
+            $request->session()->put('impersonating_user_id', $request->session()->get('impersonating_user_id', $currentUser->id));
 
             return redirect('/')->with('success', 'You are now viewing the site as a '.(DiscordRole::find($role)?->name ?? 'Unknown').'.');
         } catch (InvalidArgumentException $e) {
@@ -60,40 +60,25 @@ class ViewAsRoleController extends Controller
      */
     protected function getTestUser(string $role): User
     {
-        $discordRole = DiscordRole::find($role)
+        $discordRole = DiscordRole::grantingPermissions()->find($role)
             ?? throw new InvalidArgumentException('Invalid role specified.');
 
-        $testUsers = [
-            'Raider' => ['id' => config('auth.local_users.raider'), 'discriminator' => '0000', 'nickname' => 'Test Raider'],
-            'Member' => ['id' => config('auth.local_users.member'), 'discriminator' => '0001', 'nickname' => 'Test Member'],
-            'Guest' => ['id' => config('auth.local_users.guest'), 'discriminator' => '0002', 'nickname' => 'Test Guest'],
-        ];
+        $userId = config('auth.local_users.view_as');
 
-        $config = $testUsers[$discordRole->name]
-            ?? throw new InvalidArgumentException('Invalid role specified.');
-
-        if (blank($config['id'])) {
+        if (blank($userId)) {
             throw new InvalidArgumentException('Invalid role specified.');
         }
 
         $user = User::firstOrCreate(
-            ['id' => $config['id']],
+            ['id' => $userId],
             [
                 'username' => 'testuser',
-                'discriminator' => $config['discriminator'],
-                'nickname' => $config['nickname'],
+                'discriminator' => '0000',
+                'nickname' => 'Test User',
             ]
         );
 
-        $roleIds = [$discordRole->id];
-        if ($discordRole->name === 'Raider') {
-            $memberRole = DiscordRole::where('name', 'Member')->first();
-            if ($memberRole) {
-                $roleIds[] = $memberRole->id;
-            }
-        }
-
-        $user->discordRoles()->sync($roleIds);
+        $user->discordRoles()->sync([$discordRole->id]);
 
         return $user;
     }

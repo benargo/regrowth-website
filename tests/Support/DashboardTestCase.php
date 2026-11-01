@@ -22,7 +22,7 @@ abstract class DashboardTestCase extends TestCase
         // Clear cached permissions and roles to ensure a clean state for each test.
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true]);
+        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true, 'grants_permissions' => true]);
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'view-officer-dashboard', 'guard_name' => 'web']));
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'edit-datasets', 'guard_name' => 'web']));
 

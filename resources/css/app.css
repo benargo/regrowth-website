@@ -91,11 +91,7 @@
 
     /* discord branding and role colors */
     --color-discord: #5865f2;
-    --color-discord-officer: #aa3b3b;
-    --color-discord-raider: #e67e22;
-    --color-discord-member: #1f8b4c;
     --color-discord-lootcouncillor: #a335ee;
-    --color-discord-guest: #9b59b6;
 
     /* playable class colors */
     --color-playable-class-death-knight: #c41f3b;
@@ -158,7 +154,6 @@
  * Brace-expansion mirrors the v3 safelist regex patterns.
  */
 @source inline("{bg,text,border}-affect-{curse,disease,magic,poison,physical}");
-@source inline("{bg,text,border}-discord-{officer,raider,member,lootcouncillor,guest}");
 @source inline(
     "{bg,text,border}-guild-rank-{guild-master,officer,raider,trial-raider,warden,champion,veteran,member,initiate,inactive}"
 );

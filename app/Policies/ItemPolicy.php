@@ -5,7 +5,7 @@ namespace App\Policies;
 use App\Models\Item;
 use App\Models\User;
 
-class ItemPolicy extends AuthorizationPolicy
+class ItemPolicy
 {
     /**
      * Determine whether the user can create models.

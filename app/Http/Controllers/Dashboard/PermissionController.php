@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
-#[Authorize('view-officer-dashboard')]
+#[Authorize('manage-permissions')]
 class PermissionController extends Controller
 {
     /**
@@ -64,9 +64,9 @@ class PermissionController extends Controller
             'active' => $item['slug'] === $group,
         ]);
 
-        // Cache the list of visible Discord roles for 5 minutes to reduce database queries.
+        // Cache the list of permission-granting Discord roles for 5 minutes to reduce database queries.
         $discordRoles = Cache::tags(['db', 'discord', 'permissions'])->remember('discord:roles:with_permissions', now()->addMinutes(5), function () {
-            return DiscordRole::where('is_visible', true)
+            return DiscordRole::grantingPermissions()
                 ->with('permissions')
                 ->orderByDesc('position')
                 ->get()
@@ -92,12 +92,6 @@ class PermissionController extends Controller
             abort(404, 'Permission not found in the specified group.');
         }
         $role = DiscordRole::findOrFail($request->validated('discord_role_id'));
-
-        $user = $request->user();
-
-        if (! $user->isAdmin() && $user->highestRole()?->is($role)) {
-            abort(403, 'You cannot modify permissions for your own highest role.');
-        }
 
         if ($request->validated('enabled')) {
             $role->givePermissionTo($permission);

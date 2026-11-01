@@ -14,6 +14,7 @@ use App\Http\Controllers\BossController;
 use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Dashboard\DiscordRoleController;
 use App\Http\Controllers\Dashboard\PermissionController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTemplateController;
@@ -210,6 +211,12 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::get('/phases/{phase}/edit', [PhaseController::class, 'edit'])->name('phases.edit');
     Route::patch('/phases/{phase}', [PhaseController::class, 'update'])->name('phases.update');
     Route::delete('/phases/{phase}', [PhaseController::class, 'destroy'])->name('phases.destroy');
+
+    /**
+     * Discord roles management
+     */
+    Route::get('/discord-roles', [DiscordRoleController::class, 'index'])->name('discord-roles.index');
+    Route::patch('/discord-roles/{discordRole}', [DiscordRoleController::class, 'update'])->name('discord-roles.update');
 
     /**
      * Permissions management

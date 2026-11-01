@@ -36,7 +36,7 @@ class ApplyTemplateTest extends TestCase
             'id' => '829022020301094901',
             'name' => 'Officer',
             'position' => 5,
-            'is_visible' => true,
+            'is_visible' => true, 'grants_permissions' => true,
         ]);
 
         $this->officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'manage-raid-plans', 'guard_name' => 'web']));

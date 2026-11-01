@@ -3,6 +3,7 @@
 namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\CharacterResource;
+use App\Http\Resources\DiscordRoleResource;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\UserResource;
 use App\Models\Character;
@@ -219,47 +220,20 @@ class UserResourceTest extends TestCase
     // ==================== highest role ====================
 
     #[Test]
-    public function it_returns_highest_role_officer(): void
+    public function it_returns_the_highest_visible_role_as_a_role_resource(): void
     {
+        DiscordRole::factory()->officer()->create();
         $user = User::factory()->officer()->create();
+        $raider = DiscordRole::factory()->raider()->create();
+        $user->discordRoles()->syncWithoutDetaching([$raider->id]);
 
-        $resource = new UserResource($user);
+        $resource = new UserResource($user->fresh()->load('discordRoles'));
         $array = $resource->toArray(new Request);
 
-        $this->assertSame('Officer', $array['highest_role']);
-    }
-
-    #[Test]
-    public function it_returns_highest_role_raider(): void
-    {
-        $user = User::factory()->raider()->create();
-
-        $resource = new UserResource($user);
-        $array = $resource->toArray(new Request);
-
-        $this->assertSame('Raider', $array['highest_role']);
-    }
-
-    #[Test]
-    public function it_returns_highest_role_member(): void
-    {
-        $user = User::factory()->member()->create();
-
-        $resource = new UserResource($user);
-        $array = $resource->toArray(new Request);
-
-        $this->assertSame('Member', $array['highest_role']);
-    }
-
-    #[Test]
-    public function it_returns_highest_role_guest(): void
-    {
-        $user = User::factory()->guest()->create();
-
-        $resource = new UserResource($user);
-        $array = $resource->toArray(new Request);
-
-        $this->assertSame('Guest', $array['highest_role']);
+        $this->assertInstanceOf(DiscordRoleResource::class, $array['highest_role']);
+        $resolved = $array['highest_role']->resolve();
+        $this->assertSame('Officer', $resolved['name']);
+        $this->assertSame('aa3b3b', $resolved['primary_color']);
     }
 
     #[Test]
@@ -292,7 +266,7 @@ class UserResourceTest extends TestCase
         $resource = new UserResource($user->fresh()->load('discordRoles'));
         $array = $resource->toArray(new Request);
 
-        $this->assertSame('Officer', $array['highest_role']);
+        $this->assertSame('Officer', $array['highest_role']->resolve()['name']);
     }
 
     // ==================== admin ====================
