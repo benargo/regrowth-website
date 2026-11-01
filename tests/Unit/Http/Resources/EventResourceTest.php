@@ -14,6 +14,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -500,6 +501,24 @@ class EventResourceTest extends TestCase
         $this->assertFalse($bossData['is_visible']);
         $this->assertArrayHasKey('groups', $bossData['assignments']);
         $this->assertArrayHasKey('ungrouped', $bossData['assignments']);
+    }
+
+    #[Test]
+    public function it_lists_boss_images_by_id_and_url(): void
+    {
+        Storage::fake('s3');
+        $raid = Raid::factory()->create();
+        $boss = Boss::factory()->for($raid)->create();
+        $image = $boss->addMedia(UploadedFile::fake()->image('strategy.png'))->toMediaCollection();
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid->id);
+
+        $array = $this->makeResource($event);
+
+        $this->assertSame(
+            [['id' => $image->id, 'url' => $image->getUrl()]],
+            $array['raids'][0]['bosses'][0]['images'],
+        );
     }
 
     // ==================== raids.bosses — is_visible ====================

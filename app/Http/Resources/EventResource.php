@@ -12,6 +12,7 @@ use App\Models\Raid;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * Transform an event, optionally limited to the `members`, `visitors` or `template` scope;
@@ -230,7 +231,7 @@ class EventResource extends JsonResource implements ScopedResource
      *     name: string,
      *     slug: string,
      *     sort_order: int,
-     *     images: array<int, string>,
+     *     images: array<int, array{id: int, url: string}>,
      *     notes: ?string,
      *     is_visible: bool,
      *     assignments: array<int, mixed>
@@ -243,7 +244,10 @@ class EventResource extends JsonResource implements ScopedResource
             'name' => $boss->name,
             'slug' => $boss->slug,
             'sort_order' => $boss->sort_order,
-            'images' => $boss->getMedia()->map->getUrl()->values()->all(),
+            'images' => $boss->getMedia()
+                ->map(fn (Media $media): array => ['id' => $media->id, 'url' => $media->getUrl()])
+                ->values()
+                ->all(),
             'notes' => $boss->notes,
             'is_visible' => $visibleBossIds->has($boss->id),
             'assignments' => (new EventAssignmentsCollection(
