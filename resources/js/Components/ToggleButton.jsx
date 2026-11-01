@@ -1,6 +1,6 @@
 /**
  * An on/off button that shows `enabledLabel` in green or `disabledLabel` in grey,
- * and "..." while `processing`. Clicking it calls `onToggle`. The button is
+ * and "…" while `processing`. Clicking it calls `onToggle`. The button is
  * inert while `processing` or `disabled`.
  */
 export default function ToggleButton({
@@ -17,13 +17,13 @@ export default function ToggleButton({
             onClick={onToggle}
             disabled={disabled || processing}
             aria-pressed={enabled}
-            className={`rounded px-3 py-1 text-sm font-medium transition-colors ${
+            className={`rounded px-3 py-1 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
                 enabled
                     ? "bg-green-600" + (disabled ? "" : " hover:bg-green-700")
                     : "bg-gray-600" + (disabled ? "" : " hover:bg-gray-700")
             } ${processing ? "cursor-wait opacity-50" : ""} ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
         >
-            {processing ? "..." : enabled ? enabledLabel : disabledLabel}
+            {processing ? "…" : enabled ? enabledLabel : disabledLabel}
         </button>
     );
 }

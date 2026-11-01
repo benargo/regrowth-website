@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, Head, usePage } from "@inertiajs/react";
+import { Link, Head, router, usePage } from "@inertiajs/react";
 import { PopoverGroup } from "@headlessui/react";
 import Dropdown from "@/Components/Dropdown";
 import FlashMessage from "@/Components/FlashMessage";
@@ -75,7 +75,8 @@ const NAV_CLASSES = {
 };
 
 export default function Master({ title, isHomepage = false, children }) {
-    const { auth, flash, errors, navigation, gameVersions: { data: gameVersions = [] } = {} } = usePage().props;
+    const { props, flash: clientFlash } = usePage();
+    const { auth, flash, errors, navigation, gameVersions: { data: gameVersions = [] } = {} } = props;
     const classes = isHomepage ? NAV_CLASSES.forever : NAV_CLASSES.classic;
     const mobileLinkClass = cn(MOBILE_LINK, classes.mobileLink);
     const isRosterActive = route().current("roster.*") || route().current("characters.show");
@@ -90,22 +91,47 @@ export default function Master({ title, isHomepage = false, children }) {
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
     const mobileMenuToggleRef = useRef(null);
-    const [flashError, setFlashError] = useState(flash?.error);
-    const [flashSuccess, setFlashSuccess] = useState(flash?.success);
+    const [errorFlash, setErrorFlash] = useState({ message: flash?.error, key: 0 });
+    const [successFlash, setSuccessFlash] = useState({ message: flash?.success, key: 0 });
     const [searchOpen, setSearchOpen] = useState(false);
     const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 
-    // Update flash messages when props change
+    /** Show `message` in the error banner, remounting it so a repeated or dismissed message appears again. */
+    const showError = (message) => setErrorFlash((previous) => ({ message, key: previous.key + 1 }));
+    /** Show `message` in the success banner, remounting it so a repeated or dismissed message appears again. */
+    const showSuccess = (message) => setSuccessFlash((previous) => ({ message, key: previous.key + 1 }));
+
+    // Update flash messages when the session-backed shared props change
     useEffect(() => {
-        setFlashError(flash?.error);
-        setFlashSuccess(flash?.success);
-    }, [flash?.error, flash?.success]);
+        showError(flash?.error);
+    }, [flash?.error]);
+
+    useEffect(() => {
+        showSuccess(flash?.success);
+    }, [flash?.success]);
+
+    // Show messages raised on the client with router.flash(), then clear them.
+    useEffect(() => {
+        if (!clientFlash?.error && !clientFlash?.success) {
+            return;
+        }
+
+        if (clientFlash.error) {
+            showError(clientFlash.error);
+        }
+
+        if (clientFlash.success) {
+            showSuccess(clientFlash.success);
+        }
+
+        router.flash(() => ({}));
+    }, [clientFlash]);
 
     // Surface game version switch validation errors as a flash error.
     const gameVersionSwitchError = errors?.[GAME_VERSION_SWITCH_ERROR_BAG]?.game_version;
     useEffect(() => {
         if (gameVersionSwitchError) {
-            setFlashError(gameVersionSwitchError);
+            showError(gameVersionSwitchError);
         }
     }, [gameVersionSwitchError]);
 
@@ -452,8 +478,18 @@ export default function Master({ title, isHomepage = false, children }) {
 
                 <div inert={showingNavigationDropdown} className="contents">
                     {/* Flash Messages */}
-                    <FlashMessage type="error" message={flashError} onDismiss={() => setFlashError(null)} />
-                    <FlashMessage type="success" message={flashSuccess} onDismiss={() => setFlashSuccess(null)} />
+                    <FlashMessage
+                        key={`error-${errorFlash.key}`}
+                        type="error"
+                        message={errorFlash.message}
+                        onDismiss={() => setErrorFlash((previous) => ({ ...previous, message: null }))}
+                    />
+                    <FlashMessage
+                        key={`success-${successFlash.key}`}
+                        type="success"
+                        message={successFlash.message}
+                        onDismiss={() => setSuccessFlash((previous) => ({ ...previous, message: null }))}
+                    />
 
                     <main id="main-content" tabIndex={-1} className="flex flex-1 flex-col focus:outline-none">
                         {children}
