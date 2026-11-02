@@ -16,7 +16,7 @@ import SectionDisclosure from "@/Components/Navigation/SectionDisclosure";
 import SectionFlyout from "@/Components/Navigation/SectionFlyout";
 import Footer from "@/Layouts/Footer";
 import cn from "@/Helpers/cn";
-import modelColor from "@/Helpers/ModelColor";
+import modelColor, { contrastingTextColor } from "@/Helpers/ModelColor";
 
 const MOBILE_LINK =
     "flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:bg-white/5 hover:text-white active:bg-white/10";
@@ -101,14 +101,17 @@ export default function Master({ title, isHomepage = false, children }) {
     /** Show `message` in the success banner, remounting it so a repeated or dismissed message appears again. */
     const showSuccess = (message) => setSuccessFlash((previous) => ({ message, key: previous.key + 1 }));
 
-    // Update flash messages when the session-backed shared props change
-    useEffect(() => {
-        showError(flash?.error);
-    }, [flash?.error]);
+    // Show the session-backed flash messages from every successful visit, including a repeat of the last one.
+    useEffect(
+        () =>
+            router.on("success", (event) => {
+                const { error, success } = event.detail.page.props.flash ?? {};
 
-    useEffect(() => {
-        showSuccess(flash?.success);
-    }, [flash?.success]);
+                showError(error);
+                showSuccess(success);
+            }),
+        [],
+    );
 
     // Show messages raised on the client with router.flash(), then clear them.
     useEffect(() => {
@@ -321,6 +324,7 @@ export default function Master({ title, isHomepage = false, children }) {
                                                         <Pill
                                                             bgColor={highestRoleColor.className || undefined}
                                                             style={highestRoleColor.style}
+                                                            textColor={contrastingTextColor(user.highest_role.primary_color)}
                                                         >
                                                             {user.highest_role.name}
                                                         </Pill>

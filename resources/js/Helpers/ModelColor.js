@@ -21,6 +21,39 @@ export function toHex(color) {
     return color ? `#${color.replace(/^#/, "")}` : null;
 }
 
+/** The WCAG relative luminance of a six-digit hex colour, such as "#8b7ed0". */
+function relativeLuminance(hex) {
+    const [red, green, blue] = [1, 3, 5].map((start) => {
+        const channel = parseInt(hex.slice(start, start + 2), 16) / 255;
+
+        return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+    });
+
+    return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+}
+
+/** The luminance of Tailwind's gray-900 (#101828), the dark text colour. */
+const DARK_TEXT_LUMINANCE = relativeLuminance("#101828");
+
+/**
+ * The text colour utility, "text-gray-900" or "text-white", with the higher
+ * contrast against a background of the given model colour. Returns
+ * "text-white" when there is no colour.
+ */
+export function contrastingTextColor(color) {
+    const hex = toHex(color);
+
+    if (!hex || hex.length !== 7) {
+        return "text-white";
+    }
+
+    const luminance = relativeLuminance(hex);
+    const contrastWithWhite = 1.05 / (luminance + 0.05);
+    const contrastWithDark = (luminance + 0.05) / (DARK_TEXT_LUMINANCE + 0.05);
+
+    return contrastWithDark > contrastWithWhite ? "text-gray-900" : "text-white";
+}
+
 /**
  * The className and style that paint an element with a model's colour, for
  * any model with a hex `color` (game versions, raids). Spread both onto the

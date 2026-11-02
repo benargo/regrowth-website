@@ -8,7 +8,7 @@ import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import Icon from "@/Components/FontAwesome/Icon";
 import IconButton from "@/Components/IconButton";
 import Pill from "@/Components/Pill";
-import modelColor from "@/Helpers/ModelColor";
+import modelColor, { contrastingTextColor } from "@/Helpers/ModelColor";
 import Tooltip from "@/Components/Tooltip";
 
 /**
@@ -118,6 +118,7 @@ export default function CommentItem({
                                     <Pill
                                         bgColor={highestRoleColor.className || undefined}
                                         style={highestRoleColor.style}
+                                        textColor={contrastingTextColor(comment.user.highest_role.primary_color)}
                                     >
                                         {comment.user.highest_role.name}
                                     </Pill>

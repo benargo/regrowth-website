@@ -3,7 +3,7 @@ import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import Pill from "@/Components/Pill";
-import modelColor from "@/Helpers/ModelColor";
+import modelColor, { contrastingTextColor } from "@/Helpers/ModelColor";
 import PlannedAbsenceRow from "@/Components/PlannedAbsences/Row";
 import EmptyState from "@/Components/EmptyState";
 import { Can } from "@/Components/Authorizable";
@@ -39,7 +39,7 @@ export default function Index() {
                                                 key={role.id}
                                                 bgColor={roleColor.className || undefined}
                                                 style={roleColor.style}
-                                                textColor="text-white"
+                                                textColor={contrastingTextColor(role.primary_color)}
                                             >
                                                 {role.name}
                                             </Pill>

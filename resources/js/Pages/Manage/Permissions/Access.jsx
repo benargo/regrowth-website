@@ -69,6 +69,7 @@ function RoleAccess({ role, sections }) {
             route("management.permissions.access.update"),
             { discord_role_id: role.id, permission_ids: permissionIds, enabled: isEnabled },
             {
+                async: true,
                 preserveScroll: true,
                 preserveState: true,
                 onSuccess: () => setAnnouncement(message),

@@ -198,6 +198,7 @@ export default function ManageDiscordRoles({ discordRoles }) {
             route("management.discord-roles.update", { discordRole: role.id }),
             { [flag]: !currentState },
             {
+                async: true,
                 preserveScroll: true,
                 preserveState: true,
                 onSuccess: () => setAnnouncement(describeChange(role, flag, !currentState)),
