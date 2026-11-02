@@ -57,7 +57,7 @@ class AccountControllerTest extends TestCase
     {
         $role = DiscordRole::firstOrCreate(
             ['id' => '829021769448816691'],
-            ['name' => 'Officer', 'position' => 6, 'is_visible' => true, 'grants_permissions' => true]
+            ['name' => 'Officer', 'position' => 6, 'is_visible' => true, 'grants_permissions' => true, 'primary_color' => 'aa3b3b']
         );
         $user = User::factory()->create();
         $user->discordRoles()->attach($role);
@@ -68,6 +68,7 @@ class AccountControllerTest extends TestCase
             ->component('Account/Index')
             ->has('roles', 1)
             ->where('roles.0.name', 'Officer')
+            ->where('roles.0.primary_color', 'aa3b3b')
         );
     }
 

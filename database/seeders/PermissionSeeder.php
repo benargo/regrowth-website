@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\PermissionGroup;
 use Illuminate\Database\Seeder;
@@ -9,6 +10,11 @@ use Illuminate\Support\Arr;
 
 class PermissionSeeder extends Seeder
 {
+    /**
+     * The Officer role, which receives every permission on a database where no role holds any.
+     */
+    private const string OFFICER_ROLE_ID = '829021769448816691';
+
     /**
      * The permissions to seed.
      *
@@ -91,6 +97,10 @@ class PermissionSeeder extends Seeder
         }
 
         Permission::whereNotIn('name', Arr::pluck($this->permissions, 'name'))->where('guard_name', 'web')->delete();
+
+        if (! DiscordRole::has('permissions')->exists()) {
+            DiscordRole::find(self::OFFICER_ROLE_ID)?->permissions()->sync(Permission::where('guard_name', 'web')->pluck('id'));
+        }
 
         if (Permission::whereNotNull('permission_group_id')->exists()) {
             return;

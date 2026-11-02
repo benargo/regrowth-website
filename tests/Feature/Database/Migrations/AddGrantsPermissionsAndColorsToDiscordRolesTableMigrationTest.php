@@ -19,7 +19,7 @@ class AddGrantsPermissionsAndColorsToDiscordRolesTableMigrationTest extends Test
 
     protected function migration(): Migration
     {
-        return require database_path('migrations/2026_11_01_120000_add_grants_permissions_and_colors_to_discord_roles_table.php');
+        return require database_path('migrations/2026_11_02_135527_add_grants_permissions_and_colors_to_discord_roles_table.php');
     }
 
     protected function dropNewColumns(): void

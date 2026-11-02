@@ -17,7 +17,7 @@ class MovePermissionsOntoPermissionGroupsMigrationTest extends TestCase
 
     protected function migration(): Migration
     {
-        return require database_path('migrations/2026_11_01_130100_move_permissions_onto_permission_groups.php');
+        return require database_path('migrations/2026_11_02_135531_move_permissions_onto_permission_groups.php');
     }
 
     // ==================== down ====================

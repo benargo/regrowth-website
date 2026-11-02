@@ -5,9 +5,12 @@ namespace Tests\Feature\Dashboard;
 use App\Models\Permission;
 use App\Models\PermissionGroup;
 use App\Models\User;
+use Illuminate\Support\Facades\Event;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
+use Spatie\EloquentSortable\EloquentModelSortedEvent;
 use Tests\Support\DashboardTestCase;
 
 #[Group('auth')]
@@ -217,6 +220,33 @@ class PermissionGroupControllerTest extends DashboardTestCase
         $this->assertSame(1, $third->fresh()->sort_order);
         $this->assertSame(2, $second->fresh()->sort_order);
         $this->assertSame(3, $first->fresh()->sort_order);
+    }
+
+    #[Test]
+    public function reorder_rolls_back_when_the_reorder_fails(): void
+    {
+        [$first, $second, $third] = PermissionGroup::factory()->count(3)->create();
+        $original = [$first->sort_order, $second->sort_order, $third->sort_order];
+
+        Event::listen(EloquentModelSortedEvent::class, function (): void {
+            throw new RuntimeException('Reorder failed.');
+        });
+
+        $this->withoutExceptionHandling();
+
+        try {
+            $this->actingAs($this->admin)
+                ->patch(route('management.permission-groups.reorder'), ['permission_group_ids' => [$second->id, $third->id, $first->id]]);
+            $this->fail('Expected the reorder to throw.');
+        } catch (RuntimeException) {
+            // Expected.
+        }
+
+        $this->assertSame($original, [
+            $first->fresh()->sort_order,
+            $second->fresh()->sort_order,
+            $third->fresh()->sort_order,
+        ]);
     }
 
     #[Group('validation')]

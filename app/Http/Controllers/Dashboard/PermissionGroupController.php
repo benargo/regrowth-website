@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Dashboard;
 
-use App\Actions\Permissions\ReorderPermissionGroups;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ReorderPermissionGroupsRequest;
 use App\Http\Requests\StorePermissionGroupRequest;
@@ -11,6 +10,7 @@ use App\Http\Resources\PermissionGroupResource;
 use App\Models\PermissionGroup;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -54,11 +54,11 @@ class PermissionGroupController extends Controller
     }
 
     /**
-     * Store the order of the permission groups.
+     * Store the order of the permission groups inside a single transaction: the first id gets sort order 1.
      */
     public function reorder(ReorderPermissionGroupsRequest $request): RedirectResponse
     {
-        ReorderPermissionGroups::run($request->validated('permission_group_ids'));
+        DB::transaction(fn () => PermissionGroup::setNewOrder(array_values($request->validated('permission_group_ids'))));
 
         return back();
     }

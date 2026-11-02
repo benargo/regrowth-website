@@ -68,7 +68,7 @@ function PermissionsLink({ role }) {
     }
 
     return (
-        <Link href={route("management.permissions.index")} className={LINK_CLASS}>
+        <Link href={route("management.permissions.index", { role: role.id })} className={LINK_CLASS}>
             {NUMBER_FORMAT.format(role.permissions_count)} {role.permissions_count === 1 ? "permission" : "permissions"}
         </Link>
     );

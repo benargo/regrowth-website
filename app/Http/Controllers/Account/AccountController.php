@@ -23,7 +23,7 @@ class AccountController extends Controller
                 ->where('is_visible', true)
                 ->sortByDesc('position')
                 ->values()
-                ->map(fn ($role) => ['id' => $role->id, 'name' => $role->name]),
+                ->map(fn ($role) => ['id' => $role->id, 'name' => $role->name, 'primary_color' => $role->primary_color]),
             'planned_absences' => $user->plannedAbsences
                 ->toResourceCollection()
                 ->additional(['permissions' => [

@@ -247,6 +247,19 @@ class PermissionSeederTest extends TestCase
     }
 
     #[Test]
+    public function seeder_grants_every_permission_to_the_officer_role_when_no_role_holds_any(): void
+    {
+        $officer = DiscordRole::factory()->officer()->create();
+
+        $this->seed(PermissionSeeder::class);
+
+        $this->assertEqualsCanonicalizing(
+            array_column($this->permissions, 'name'),
+            $officer->fresh()->permissions->pluck('name')->all()
+        );
+    }
+
+    #[Test]
     public function seeder_leaves_role_assignments_untouched(): void
     {
         $role = DiscordRole::factory()->grantsPermissions()->create();

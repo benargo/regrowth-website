@@ -3,6 +3,7 @@ import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import Pill from "@/Components/Pill";
+import modelColor from "@/Helpers/ModelColor";
 import PlannedAbsenceRow from "@/Components/PlannedAbsences/Row";
 import EmptyState from "@/Components/EmptyState";
 import { Can } from "@/Components/Authorizable";
@@ -30,15 +31,20 @@ export default function Index() {
                             <p className="text-sm text-gray-400">@{user.username}</p>
                             {roles.length > 0 && (
                                 <div className="mt-2 flex flex-wrap gap-2">
-                                    {roles.map((role) => (
-                                        <Pill
-                                            key={role.id}
-                                            bgColor={`bg-discord-${role.name.toLowerCase().replace(/\s+/g, "")}`}
-                                            textColor="text-white"
-                                        >
-                                            {role.name}
-                                        </Pill>
-                                    ))}
+                                    {roles.map((role) => {
+                                        const roleColor = modelColor(role.primary_color, ["bg"]);
+
+                                        return (
+                                            <Pill
+                                                key={role.id}
+                                                bgColor={roleColor.className || undefined}
+                                                style={roleColor.style}
+                                                textColor="text-white"
+                                            >
+                                                {role.name}
+                                            </Pill>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
