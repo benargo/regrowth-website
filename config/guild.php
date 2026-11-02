@@ -70,19 +70,19 @@ return [
     */
 
     'officers' => [
-        ['name' => 'Ani', 'nationality' => 'GBR', 'country_code' => 'gb', 'demonym' => 'British', 'tier' => 'council', 'role' => 'Guild historian', 'image' => '/images/officer_ani.webp', 'width' => 543, 'height' => 795],
-        ['name' => 'Phoenyx', 'nationality' => 'BHR', 'country_code' => 'bh', 'demonym' => 'Bahraini', 'tier' => 'council', 'role' => 'Raid leader', 'image' => '/images/officer_pho.webp', 'width' => 190, 'height' => 795],
+        ['name' => 'Animorphus', 'nationality' => 'GBR', 'country_code' => 'gb', 'demonym' => 'British', 'tier' => 'council', 'role' => 'Guild historian', 'image' => '/images/officer_ani.webp', 'width' => 543, 'height' => 795],
+        ['name' => 'Phoonix', 'nationality' => 'BHR', 'country_code' => 'bh', 'demonym' => 'Bahraini', 'tier' => 'council', 'role' => 'Raid leader', 'image' => '/images/officer_pho.webp', 'width' => 190, 'height' => 795],
         ['name' => 'Soul', 'nationality' => 'GBR', 'country_code' => 'gb', 'demonym' => 'British', 'tier' => 'council', 'role' => 'Raid leader', 'image' => '/images/officer_soul.webp', 'width' => 233, 'height' => 795],
         ['name' => 'Zar', 'nationality' => 'GBR', 'country_code' => 'gb', 'demonym' => 'British', 'tier' => 'council', 'role' => 'Guild master', 'image' => '/images/officer_zar.webp', 'width' => 645, 'height' => 795],
 
         ['name' => 'Cal', 'nationality' => 'GBR', 'country_code' => 'gb', 'demonym' => 'British', 'tier' => 'officer', 'role' => null, 'image' => '/images/officer_cal.webp', 'width' => 196, 'height' => 795],
-        ['name' => 'Baka Scratcher', 'nationality' => 'GBR', 'country_code' => 'gb', 'demonym' => 'Out and proud', 'flag' => 'pride', 'tier' => 'officer', 'role' => null, 'image' => '/images/officer_cross.webp', 'width' => 423, 'height' => 795],
+        ['name' => 'Baka', 'nationality' => 'GBR', 'country_code' => 'gb', 'demonym' => 'Crippled', 'tier' => 'officer', 'role' => null, 'image' => '/images/officer_cross.webp', 'width' => 423, 'height' => 795],
         ['name' => 'Dudum', 'nationality' => 'DNK', 'country_code' => 'dk', 'demonym' => 'Danish', 'tier' => 'officer', 'role' => null, 'image' => '/images/officer_dudum.webp', 'width' => 348, 'height' => 795],
         ['name' => 'Izepo', 'nationality' => 'GBR', 'country_code' => 'gb', 'demonym' => 'British', 'tier' => 'officer', 'role' => null, 'image' => '/images/officer_izepo.webp', 'width' => 561, 'height' => 795],
         ['name' => 'Mad', 'nationality' => 'BHR', 'country_code' => 'bh', 'demonym' => 'Bahraini', 'tier' => 'officer', 'role' => null, 'image' => '/images/officer_mad.webp', 'width' => 200, 'height' => 795],
         ['name' => 'Obscured', 'nationality' => 'NLD', 'country_code' => 'nl', 'demonym' => 'Dutch', 'tier' => 'officer', 'role' => null, 'image' => '/images/officer_obscured.webp', 'width' => 680, 'height' => 795],
         ['name' => 'Shiniko', 'nationality' => 'FRA', 'country_code' => 'fr', 'demonym' => 'French', 'tier' => 'officer', 'role' => null, 'image' => '/images/officer_shiniko.webp', 'width' => 429, 'height' => 795],
-        ['name' => 'Waidelfi', 'nationality' => 'DEU', 'country_code' => 'de', 'demonym' => 'German', 'tier' => 'officer', 'role' => null, 'image' => '/images/officer_waid.webp', 'width' => 768, 'height' => 795],
+        ['name' => 'Waidelfi', 'nationality' => 'AUT', 'country_code' => 'at', 'demonym' => 'Austrian', 'tier' => 'officer', 'role' => null, 'image' => '/images/officer_waid.webp', 'width' => 768, 'height' => 795],
     ],
 
 ];
