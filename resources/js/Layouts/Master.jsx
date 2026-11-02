@@ -419,7 +419,7 @@ export default function Master({ title, isHomepage = false, children }) {
 
                     <div className={cn("border-t pt-4 pb-3", classes.mobileDivider)}>
                         {user ? (
-                            <div className="space-y-2 px-2">
+                            <div key="mobile-account-user" className="space-y-2 px-2">
                                 <Link href={route("account.index")} className={cn(mobileLinkClass, "gap-3")}>
                                     <img src={user.avatar} alt="" className="h-10 w-10 rounded-full" />
                                     <span className="flex flex-1 flex-col">
@@ -454,7 +454,7 @@ export default function Master({ title, isHomepage = false, children }) {
                                 </Link>
                             </div>
                         ) : (
-                            <div className="px-4">
+                            <div key="mobile-account-guest" className="px-4">
                                 <Link
                                     href={route("login")}
                                     className="flex items-center justify-center space-x-2 rounded-md bg-[#5865F2] px-4 py-2 text-white transition-colors hover:bg-[#4752C4]"
