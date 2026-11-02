@@ -40,12 +40,8 @@ import Icon from "@/Components/FontAwesome/Icon";
 import Switch from "@/Components/Switch";
 import RoleName from "@/Components/Discord/RoleName";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/Components/Table";
+import { LINK_CLASS, NUMBER_FORMAT } from "@/Components/Permissions/PermissionsPage";
 import cn from "@/Helpers/cn";
-
-const NUMBER_FORMAT = new Intl.NumberFormat("en-GB");
-
-const LINK_CLASS =
-    "rounded-sm text-sm text-amber-500 underline-offset-4 hover:text-amber-400 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400";
 
 /** Whether a role grants permissions or is shown on the site. */
 function isRoleInUse(role) {

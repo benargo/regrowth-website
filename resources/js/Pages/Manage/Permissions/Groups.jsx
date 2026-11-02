@@ -21,7 +21,8 @@
  *   `management.permission-groups.destroy` via a DELETE request; a successful delete is announced and focus
  *   moves to the next row's Rename button, the previous row's when the last row went, or "Add group" when no
  *   groups are left. A failed request raises Master's error flash.
- * - When there are no groups, an empty state offers "Add group".
+ * - When there are no groups, an empty state offers "Add group". The empty state and the list both stay
+ *   mounted; whichever doesn't apply is hidden.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -145,55 +146,49 @@ export default function ManagePermissionGroups({ permissionGroups }) {
                     </EmptyState>
                 </div>
 
-                {hasGroups && (
-                    <>
-                        <div className="mb-4 flex justify-end">
-                            <PrimaryButton
-                                ref={registerButton(ADD_GROUP_KEY)}
-                                onClick={openAdd}
-                                className="min-h-11 w-full justify-center sm:w-auto md:min-h-0"
-                            >
-                                Add group
-                            </PrimaryButton>
-                        </div>
+                <div className={cn(!hasGroups && "hidden")}>
+                    <div className="mb-4 flex justify-end">
+                        <PrimaryButton
+                            ref={hasGroups ? registerButton(ADD_GROUP_KEY) : undefined}
+                            onClick={openAdd}
+                            className="min-h-11 w-full justify-center sm:w-auto md:min-h-0"
+                        >
+                            Add group
+                        </PrimaryButton>
+                    </div>
 
-                        <AutosavedSortableList
-                            items={groups}
-                            url={route("management.permission-groups.reorder")}
-                            field="permission_group_ids"
-                            saveKey="permission-group-order"
-                            label="Permission groups"
-                            className="divide-y divide-amber-600/25 border-y border-amber-600/25"
-                            renderItem={(group, { isDragging, dragHandle }) => (
-                                <div
-                                    className={cn("flex items-center gap-3 py-2.5", isDragging && "bg-stone-900 px-2")}
-                                >
-                                    {dragHandle}
-                                    <div className="min-w-0 flex-1">
-                                        <p className="break-words text-stone-200">{group.name}</p>
-                                        <p className="text-sm text-gray-400">
-                                            {permissionsText(group.permissions_count)}
-                                        </p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        ref={isDragging ? undefined : registerButton(renameKey(group))}
-                                        aria-label={`Rename ${group.name}`}
-                                        onClick={() => openRename(group)}
-                                        className={cn(
-                                            LINK_CLASS,
-                                            "inline-flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center underline md:min-h-0 md:min-w-0",
-                                        )}
-                                    >
-                                        Rename
-                                    </button>
+                    <AutosavedSortableList
+                        items={groups}
+                        url={route("management.permission-groups.reorder")}
+                        field="permission_group_ids"
+                        saveKey="permission-group-order"
+                        label="Permission groups"
+                        className="divide-y divide-amber-600/25 border-y border-amber-600/25"
+                        renderItem={(group, { isDragging, dragHandle }) => (
+                            <div className={cn("flex items-center gap-3 py-2.5", isDragging && "bg-stone-900 px-2")}>
+                                {dragHandle}
+                                <div className="min-w-0 flex-1">
+                                    <p className="break-words text-stone-200">{group.name}</p>
+                                    <p className="text-sm text-gray-400">{permissionsText(group.permissions_count)}</p>
                                 </div>
-                            )}
-                        />
+                                <button
+                                    type="button"
+                                    ref={isDragging ? undefined : registerButton(renameKey(group))}
+                                    aria-label={`Rename ${group.name}`}
+                                    onClick={() => openRename(group)}
+                                    className={cn(
+                                        LINK_CLASS,
+                                        "inline-flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center underline md:min-h-0 md:min-w-0",
+                                    )}
+                                >
+                                    Rename
+                                </button>
+                            </div>
+                        )}
+                    />
 
-                        <p className="mt-3 text-sm text-gray-400">Only empty groups can be deleted.</p>
-                    </>
-                )}
+                    <p className="mt-3 text-sm text-gray-400">Only empty groups can be deleted.</p>
+                </div>
 
                 <PermissionGroupFormModal
                     group={formGroup}
@@ -211,6 +206,7 @@ export default function ManagePermissionGroups({ permissionGroups }) {
                     processing={isDeleting}
                     processingLabel="Deleting…"
                     variant="delete"
+                    unmount={false}
                 >
                     This can't be undone.
                 </ConfirmationModal>

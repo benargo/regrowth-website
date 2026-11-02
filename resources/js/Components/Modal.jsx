@@ -1,6 +1,18 @@
 import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
 
-export default function Modal({ children, show = false, maxWidth = "2xl", closeable = true, onClose = () => {} }) {
+/**
+ * A dialog panel over a dimmed backdrop. `closeable` false ignores Esc and backdrop clicks. `unmount` false
+ * keeps the closed dialog mounted but hidden, so closing it leaves focus wherever the page put it instead
+ * of returning focus to the element focused before it opened.
+ */
+export default function Modal({
+    children,
+    show = false,
+    maxWidth = "2xl",
+    closeable = true,
+    unmount = true,
+    onClose = () => {},
+}) {
     const close = () => {
         if (closeable) {
             onClose();
@@ -17,7 +29,7 @@ export default function Modal({ children, show = false, maxWidth = "2xl", closea
     }[maxWidth];
 
     return (
-        <Dialog open={show} onClose={close} className="relative z-50">
+        <Dialog open={show} onClose={close} unmount={unmount} className="relative z-50">
             <DialogBackdrop
                 transition
                 className="fixed inset-0 bg-gray-500/75 transition duration-300 ease-out data-closed:opacity-0"
