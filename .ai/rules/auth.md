@@ -15,8 +15,8 @@ When you need an authenticated session for browser tests (Playwright/Dusk) or ma
 
 ## Seeded test users
 - `database/seeders/LocalUserSeeder` provisions one user per Discord role plus a site admin, keyed by IDs from `config('auth.local_users')`.
-- Config keys: `officer`, `loot_councillor`, `raider`, `member`, `guest`, `admin` — each from env vars `LOCAL_USER_*_ID` (e.g. `LOCAL_USER_OFFICER_ID`), set in `.env.testing`.
-- The same config IDs drive `ViewAsRoleController`'s role impersonation.
+- Config keys: `officer`, `loot_councillor`, `raider`, `guest`, `admin` — each from env vars `LOCAL_USER_*_ID` (e.g. `LOCAL_USER_OFFICER_ID`), set in `.env.testing`.
+- `ViewAsRoleController`'s role impersonation uses a separate shared user from `view_as` (`LOCAL_USER_VIEW_AS_ID`), whose roles it replaces on each view-as.
 
 ## Recipe
 1. Ensure `LocalUserSeeder` has run and the `LOCAL_USER_*_ID` env vars are set.
