@@ -175,10 +175,20 @@ export default function Dashboard({ discordRoles }) {
                         <Collapsible title="Site options" style="gray">
                             <p className="text-md mb-4 text-gray-400">Configure site-wide options and permissions.</p>
                             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                                <DashboardCard href={route("management.permissions.index")} icon="shield-check">
-                                    <h4 className="text-md">Site permissions</h4>
-                                    <p className="mb-1 text-sm">Manage site permissions and access control.</p>
-                                </DashboardCard>
+                                {user?.admin && (
+                                    <DashboardCard href={route("management.permissions.index")} icon="shield-check">
+                                        <h4 className="text-md">Site permissions</h4>
+                                        <p className="mb-1 text-sm">Manage site permissions and access control.</p>
+                                    </DashboardCard>
+                                )}
+                                {user?.admin && (
+                                    <DashboardCard href={route("management.discord-roles.index")} icon="users-cog">
+                                        <h4 className="text-md">Discord roles</h4>
+                                        <p className="mb-1 text-sm">
+                                            Choose which Discord roles grant permissions and appear on the site.
+                                        </p>
+                                    </DashboardCard>
+                                )}
                                 {user?.admin && (
                                     <DashboardCard href={route("horizon.index")} icon="tachometer-alt" external>
                                         <h4 className="text-md">Scheduled jobs</h4>
@@ -189,32 +199,25 @@ export default function Dashboard({ discordRoles }) {
                         </Collapsible>
 
                         {/* Testing */}
-                        <Collapsible title="Testing" style="gray">
-                            <p className="text-md mb-4 text-gray-400">
-                                View the site as different user roles for testing purposes. Use the user menu to switch
-                                back to your own account.
-                            </p>
-                            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                                <DashboardCard
-                                    href={route("auth.view-as", { role: discordRoles.raider })}
-                                    icon="user-headset"
-                                >
-                                    <h4 className="text-md">View site as a Raider</h4>
-                                </DashboardCard>
-                                <DashboardCard
-                                    href={route("auth.view-as", { role: discordRoles.member })}
-                                    icon="street-view"
-                                >
-                                    <h4 className="text-md">View site as a Member</h4>
-                                </DashboardCard>
-                                <DashboardCard
-                                    href={route("auth.view-as", { role: discordRoles.guest })}
-                                    icon="user-alien"
-                                >
-                                    <h4 className="text-md">View site as a Guest</h4>
-                                </DashboardCard>
-                            </div>
-                        </Collapsible>
+                        {user?.admin && (
+                            <Collapsible title="Testing" style="gray">
+                                <p className="text-md mb-4 text-gray-400">
+                                    View the site as different user roles for testing purposes. Use the user menu to
+                                    switch back to your own account.
+                                </p>
+                                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                                    {discordRoles.map((role) => (
+                                        <DashboardCard
+                                            key={role.id}
+                                            href={route("auth.view-as", { role: role.id })}
+                                            icon="user-secret"
+                                        >
+                                            <h4 className="text-md">View site as {role.name}</h4>
+                                        </DashboardCard>
+                                    ))}
+                                </div>
+                            </Collapsible>
+                        )}
                     </div>
                 </div>
             </Band>

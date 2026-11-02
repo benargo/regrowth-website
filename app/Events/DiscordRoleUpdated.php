@@ -2,11 +2,13 @@
 
 namespace App\Events;
 
+use App\Contracts\Events\FlushesPermissionsCache;
 use App\Models\DiscordRole;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class DiscordRoleUpdated
+class DiscordRoleUpdated implements FlushesPermissionsCache, ShouldDispatchAfterCommit
 {
     use Dispatchable, SerializesModels;
 

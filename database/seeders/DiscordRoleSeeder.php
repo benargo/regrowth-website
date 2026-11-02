@@ -8,27 +8,19 @@ use Illuminate\Database\Seeder;
 class DiscordRoleSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Seed the guild roles, leaving any existing role rows untouched.
      */
     public function run(): void
     {
         $roles = [
-            ['id' => '829021769448816691', 'name' => 'Officer', 'position' => 6, 'is_visible' => true],
-            ['id' => '1467994755953852590', 'name' => 'Loot Councillor', 'position' => 5, 'is_visible' => true],
-            ['id' => '1265247017215594496', 'name' => 'Raider', 'position' => 4, 'is_visible' => true],
-            ['id' => '829022020301094922', 'name' => 'Member', 'position' => 3, 'is_visible' => true],
-            ['id' => '829022292590985226', 'name' => 'Guest', 'position' => 2, 'is_visible' => true],
+            ['id' => '829021769448816691', 'name' => 'Officer', 'position' => 6, 'is_visible' => true, 'grants_permissions' => true, 'primary_color' => 'aa3b3b'],
+            ['id' => '1467994755953852590', 'name' => 'Loot Councillor', 'position' => 5, 'is_visible' => true, 'grants_permissions' => true, 'primary_color' => 'a335ee'],
+            ['id' => '1265247017215594496', 'name' => 'Raider', 'position' => 4, 'is_visible' => true, 'grants_permissions' => true, 'primary_color' => 'e67e22'],
+            ['id' => '829022292590985226', 'name' => 'Guest', 'position' => 2, 'is_visible' => true, 'grants_permissions' => false, 'primary_color' => '9b59b6'],
         ];
 
-        // Shift existing positions out of the target range to avoid unique constraint
-        // conflicts when reordering records row-by-row.
-        DiscordRole::query()->increment('position', 1000);
-
         foreach ($roles as $role) {
-            DiscordRole::updateOrCreate(
-                ['id' => $role['id']],
-                $role
-            );
+            DiscordRole::firstOrCreate(['id' => $role['id']], $role);
         }
     }
 }

@@ -50,18 +50,19 @@ class DashboardControllerTest extends DashboardTestCase
     }
 
     #[Test]
-    public function it_shares_discord_role_ids(): void
+    public function it_passes_visible_roles_in_position_order(): void
     {
-        $raider = DiscordRole::factory()->create(['name' => 'Raider']);
-        $member = DiscordRole::factory()->create(['name' => 'Member']);
-        $guest = DiscordRole::factory()->create(['name' => 'Guest']);
+        $low = DiscordRole::factory()->visible()->create(['position' => 99998]);
+        $high = DiscordRole::factory()->visible()->create(['position' => 99999]);
+        $hidden = DiscordRole::factory()->grantsPermissions()->create(['position' => 99997]);
 
         $this->actingAs($this->officer)
             ->get(route('management.dashboard'))
             ->assertInertia(fn (Assert $page) => $page
-                ->where('discordRoles.raider', $raider->id)
-                ->where('discordRoles.member', $member->id)
-                ->where('discordRoles.guest', $guest->id)
+                ->where('discordRoles.0.id', $high->id)
+                ->where('discordRoles.0.name', $high->name)
+                ->where('discordRoles.1.id', $low->id)
+                ->where('discordRoles', fn ($roles) => collect($roles)->pluck('id')->doesntContain($hidden->id))
                 ->etc()
             );
     }

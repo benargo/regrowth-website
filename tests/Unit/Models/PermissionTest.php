@@ -5,6 +5,7 @@ namespace Tests\Unit\Models;
 use App\Events\PermissionUpdated;
 use App\Models\DiscordRole;
 use App\Models\Permission;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Group;
@@ -32,7 +33,7 @@ class PermissionTest extends ModelTestCase
     {
         $model = new Permission;
 
-        $this->assertFillable($model, ['name', 'guard_name', 'group']);
+        $this->assertFillable($model, ['name', 'guard_name', 'label', 'description', 'permission_group_id']);
     }
 
     #[Test]
@@ -40,69 +41,16 @@ class PermissionTest extends ModelTestCase
     {
         $model = new Permission;
 
-        $this->assertFillableAttribute($model, ['name', 'guard_name', 'group']);
-    }
-
-    #[Test]
-    public function it_can_create_a_permission_without_a_group(): void
-    {
-        $permission = $this->create(['name' => 'manage-reports']);
-
-        $this->assertTableHas(['name' => 'manage-reports', 'group' => null]);
-        $this->assertModelExists($permission);
-    }
-
-    #[Test]
-    public function it_can_create_a_permission_with_a_group(): void
-    {
-        $permission = $this->create(['name' => 'manage-reports', 'group' => 'raids']);
-
-        $this->assertTableHas(['name' => 'manage-reports', 'group' => 'raids']);
-        $this->assertModelExists($permission);
-    }
-
-    #[Test]
-    public function group_is_converted_to_slug_on_set(): void
-    {
-        $permission = $this->create(['name' => 'manage-reports', 'group' => 'My Group']);
-
-        $this->assertSame('my-group', $permission->group);
-        $this->assertTableHas(['name' => 'manage-reports', 'group' => 'my-group']);
-    }
-
-    #[Test]
-    public function group_converts_mixed_case_to_slug(): void
-    {
-        $permission = $this->create(['name' => 'manage-reports', 'group' => 'LootCouncil']);
-
-        $this->assertSame('lootcouncil', $permission->group);
-    }
-
-    #[Test]
-    public function group_leaves_kebab_case_unchanged(): void
-    {
-        $permission = $this->create(['name' => 'manage-reports', 'group' => 'loot-council']);
-
-        $this->assertSame('loot-council', $permission->group);
-    }
-
-    #[Test]
-    public function group_handles_null(): void
-    {
-        $permission = $this->create(['name' => 'manage-reports', 'group' => null]);
-
-        $this->assertNull($permission->group);
-    }
-
-    #[Test]
-    public function factory_in_group_state_sets_group(): void
-    {
-        $permission = Permission::factory()->inGroup('Raids')->create(['name' => 'manage-reports']);
-
-        $this->assertSame('raids', $permission->group);
+        $this->assertFillableAttribute($model, ['name', 'guard_name', 'label', 'description', 'permission_group_id']);
     }
 
     // ==================== relationships ====================
+
+    #[Test]
+    public function it_belongs_to_a_permission_group(): void
+    {
+        $this->assertInstanceOf(BelongsTo::class, (new Permission)->permissionGroup());
+    }
 
     #[Test]
     public function discord_roles_returns_belongs_to_many_relationship(): void
@@ -142,7 +90,7 @@ class PermissionTest extends ModelTestCase
         $permission = $this->create(['name' => 'manage-reports']);
         Event::fake();
 
-        $permission->update(['group' => 'raids']);
+        $permission->update(['label' => 'Manage reports']);
 
         Event::assertDispatched(PermissionUpdated::class);
     }

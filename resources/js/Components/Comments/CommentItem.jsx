@@ -8,6 +8,7 @@ import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import Icon from "@/Components/FontAwesome/Icon";
 import IconButton from "@/Components/IconButton";
 import Pill from "@/Components/Pill";
+import modelColor, { contrastingTextColor } from "@/Helpers/ModelColor";
 import Tooltip from "@/Components/Tooltip";
 
 /**
@@ -93,6 +94,10 @@ export default function CommentItem({
         );
     }
 
+    const highestRoleColor = comment.user.highest_role
+        ? modelColor(comment.user.highest_role.primary_color, ["bg"])
+        : null;
+
     return (
         <>
             <div className={`bg-brown-800 rounded-lg border border-amber-600 ${isReply ? "p-3" : "p-4"}`}>
@@ -111,10 +116,11 @@ export default function CommentItem({
                             {comment.user.highest_role && (
                                 <span className="mx-2">
                                     <Pill
-                                        bgColor={`bg-discord${comment.user.highest_role ? "-" + comment.user.highest_role.toLowerCase() : ""}`}
-                                        className="ml-2"
+                                        bgColor={highestRoleColor.className || undefined}
+                                        style={highestRoleColor.style}
+                                        textColor={contrastingTextColor(comment.user.highest_role.primary_color)}
                                     >
-                                        {comment.user.highest_role}
+                                        {comment.user.highest_role.name}
                                     </Pill>
                                 </span>
                             )}

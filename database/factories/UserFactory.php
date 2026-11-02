@@ -40,7 +40,7 @@ class UserFactory extends Factory
     public function officer(): static
     {
         return $this->afterCreating(function ($user) {
-            $role = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true]);
+            $role = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true, 'grants_permissions' => true]);
             $user->discordRoles()->syncWithoutDetaching([$role->id]);
         });
     }
@@ -51,7 +51,7 @@ class UserFactory extends Factory
     public function raider(): static
     {
         return $this->afterCreating(function ($user) {
-            $role = DiscordRole::firstOrCreate(['id' => '1265247017215594496'], ['name' => 'Raider', 'position' => 4, 'is_visible' => true]);
+            $role = DiscordRole::firstOrCreate(['id' => '1265247017215594496'], ['name' => 'Raider', 'position' => 4, 'is_visible' => true, 'grants_permissions' => true]);
             $user->discordRoles()->syncWithoutDetaching([$role->id]);
         });
     }
@@ -63,7 +63,7 @@ class UserFactory extends Factory
     {
         return $this->afterCreating(function ($user) {
             $user->discordRoles()->syncWithoutDetaching([
-                DiscordRole::firstOrCreate(['id' => '829022020301094922'], ['name' => 'Member', 'position' => 3, 'is_visible' => true])->id,
+                (DiscordRole::where('name', 'Member')->first() ?? DiscordRole::factory()->member()->create())->id,
             ]);
         });
     }
@@ -74,7 +74,7 @@ class UserFactory extends Factory
     public function lootCouncillor(): static
     {
         return $this->afterCreating(function ($user) {
-            $role = DiscordRole::firstOrCreate(['id' => '1467994755953852590'], ['name' => 'Loot Councillor', 'position' => 5, 'is_visible' => true]);
+            $role = DiscordRole::firstOrCreate(['id' => '1467994755953852590'], ['name' => 'Loot Councillor', 'position' => 5, 'is_visible' => true, 'grants_permissions' => true]);
             $user->discordRoles()->syncWithoutDetaching([$role->id]);
         });
     }
@@ -149,7 +149,7 @@ class UserFactory extends Factory
     public function withPermissions(string ...$permissions): static
     {
         return $this->afterCreating(function ($user) use ($permissions) {
-            $role = DiscordRole::factory()->create();
+            $role = DiscordRole::factory()->grantsPermissions()->create();
 
             foreach ($permissions as $permission) {
                 $role->givePermissionTo(

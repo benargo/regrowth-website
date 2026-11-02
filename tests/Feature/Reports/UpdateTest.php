@@ -32,7 +32,7 @@ class UpdateTest extends TestCase
 
     private function grantManageReports(): void
     {
-        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 5, 'is_visible' => true]);
+        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 5, 'is_visible' => true, 'grants_permissions' => true]);
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'manage-reports', 'guard_name' => 'web']));
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }

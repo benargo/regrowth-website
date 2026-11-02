@@ -45,11 +45,11 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $officerRole = DiscordRole::firstOrCreate(
             ['id' => '829021769448816691'],
-            ['name' => 'Officer', 'position' => 6, 'is_visible' => true]
+            ['name' => 'Officer', 'position' => 6, 'is_visible' => true, 'grants_permissions' => true]
         );
         $memberRole = DiscordRole::firstOrCreate(
             ['id' => '829022020301094922'],
-            ['name' => 'Member', 'position' => 3, 'is_visible' => true]
+            ['name' => 'Member', 'position' => 3, 'is_visible' => true, 'grants_permissions' => true]
         );
 
         $viewPermission = Permission::firstOrCreate(['name' => 'view-planned-absences', 'guard_name' => 'web']);
@@ -1774,7 +1774,7 @@ class PlannedAbsenceControllerTest extends TestCase
     {
         $role = DiscordRole::firstOrCreate(
             ['id' => '1265247017215594496'],
-            ['name' => 'Raider', 'position' => 4, 'is_visible' => true]
+            ['name' => 'Raider', 'position' => 4, 'is_visible' => true, 'grants_permissions' => true]
         );
         $role->givePermissionTo(Permission::firstOrCreate(['name' => 'create-planned-absences', 'guard_name' => 'web']));
 
@@ -1788,7 +1788,7 @@ class PlannedAbsenceControllerTest extends TestCase
      */
     private function userWithPermissions(array $permissions): User
     {
-        $role = DiscordRole::factory()->create();
+        $role = DiscordRole::factory()->grantsPermissions()->create();
 
         foreach ($permissions as $permission) {
             $role->givePermissionTo(Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']));

@@ -33,7 +33,7 @@ class CommentReactionPolicyTest extends TestCase
     {
         Permission::firstOrCreate(['name' => 'react-to-comments', 'guard_name' => 'web']);
 
-        $role = DiscordRole::factory()->create();
+        $role = DiscordRole::factory()->grantsPermissions()->create();
         $role->givePermissionTo('react-to-comments');
 
         $author = User::factory()->create();
@@ -52,7 +52,7 @@ class CommentReactionPolicyTest extends TestCase
     {
         Permission::firstOrCreate(['name' => 'react-to-comments', 'guard_name' => 'web']);
 
-        $role = DiscordRole::factory()->create();
+        $role = DiscordRole::factory()->grantsPermissions()->create();
         $role->givePermissionTo('react-to-comments');
 
         $author = User::factory()->create();
@@ -105,7 +105,7 @@ class CommentReactionPolicyTest extends TestCase
     {
         Permission::firstOrCreate(['name' => 'react-to-comments', 'guard_name' => 'web']);
 
-        $role = DiscordRole::factory()->create();
+        $role = DiscordRole::factory()->grantsPermissions()->create();
         $role->givePermissionTo('react-to-comments');
 
         $author = User::factory()->create();

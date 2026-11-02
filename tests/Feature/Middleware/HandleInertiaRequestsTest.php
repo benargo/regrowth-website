@@ -37,9 +37,9 @@ class HandleInertiaRequestsTest extends TestCase
         parent::setUp();
 
         $viewOfficerDashboard = Permission::firstOrCreate(['name' => 'view-officer-dashboard', 'guard_name' => 'web']);
-        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true]);
+        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true, 'grants_permissions' => true]);
         $officerRole->givePermissionTo($viewOfficerDashboard);
-        DiscordRole::firstOrCreate(['id' => '1467994755953852590'], ['name' => 'Loot Councillor', 'position' => 5, 'is_visible' => true]);
+        DiscordRole::firstOrCreate(['id' => '1467994755953852590'], ['name' => 'Loot Councillor', 'position' => 5, 'is_visible' => true, 'grants_permissions' => true]);
     }
 
     #[Test]
@@ -72,6 +72,36 @@ class HandleInertiaRequestsTest extends TestCase
         $this->actingAs($user)
             ->get('/')
             ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.permissions', fn ($permissions) => ! $permissions->contains('view-officer-dashboard'))
+            );
+    }
+
+    #[Test]
+    public function it_shares_the_union_of_permissions_across_granting_roles(): void
+    {
+        $first = DiscordRole::factory()->grantsPermissions()->create();
+        $first->givePermissionTo(Permission::firstOrCreate(['name' => 'view-handbook', 'guard_name' => 'web']));
+        $second = DiscordRole::factory()->grantsPermissions()->create();
+        $second->givePermissionTo(Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']));
+        $user = User::factory()->create();
+        $user->discordRoles()->attach([$first->id, $second->id]);
+
+        $this->actingAs($user)
+            ->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.permissions', fn ($permissions) => $permissions->contains('view-handbook') && $permissions->contains('comment-on-loot-items'))
+            );
+    }
+
+    #[Test]
+    public function it_shares_permissions_from_a_granting_role_that_is_not_visible(): void
+    {
+        $role = DiscordRole::factory()->grantsPermissions()->create(['is_visible' => false]);
+        $role->givePermissionTo(Permission::firstOrCreate(['name' => 'view-handbook', 'guard_name' => 'web']));
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($role->id);
+
+        $this->actingAs($user)
+            ->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.permissions', fn ($permissions) => $permissions->contains('view-handbook'))
             );
     }
 
@@ -113,9 +143,10 @@ class HandleInertiaRequestsTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page->has('auth.user.data')
                 ->where('auth.user.data.id', '123456789012345678')
                 ->where('auth.user.data.username', 'testuser')
-                ->where('auth.user.data.nickname', 'TestNick')
+                ->missing('auth.user.data.nickname')
                 ->where('auth.user.data.display_name', 'TestNick')
-                ->where('auth.user.data.highest_role', 'Member')
+                ->where('auth.user.data.highest_role.name', 'Member')
+                ->missing('auth.user.data.highest_role.id')
             );
     }
 
@@ -178,7 +209,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.user.data.highest_role', 'Officer')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.user.data.highest_role.name', 'Officer')
             );
     }
 

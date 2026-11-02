@@ -31,7 +31,7 @@ class WarcraftLogsGuildPolicyTest extends TestCase
     {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
 
-        $role = DiscordRole::factory()->create();
+        $role = DiscordRole::factory()->grantsPermissions()->create();
         $role->givePermissionTo($permission);
 
         $user = User::factory()->create();

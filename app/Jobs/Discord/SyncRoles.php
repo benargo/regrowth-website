@@ -16,6 +16,7 @@ use Illuminate\Queue\Attributes\MaxExceptions;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Spatie\LaravelData\Optional;
 use Throwable;
 
 #[MaxExceptions(3)]
@@ -44,7 +45,7 @@ class SyncRoles implements ShouldQueue
     }
 
     /**
-     * Sync the guild's roles, deleting any no longer in Discord and skipping @everyone.
+     * Sync the guild's roles with their colours, deleting any no longer in Discord and skipping @everyone.
      */
     public function handle(DiscordConnector $discord, #[Config('services.discord.server_id')] string $serverId): void
     {
@@ -55,12 +56,20 @@ class SyncRoles implements ShouldQueue
         $syncedIds = $roles->map(fn (RoleData $role): string => $role->id)->values()->all();
 
         DB::transaction(function () use ($roles, $syncedIds): void {
-            $deleted = DiscordRole::whereNotIn('id', $syncedIds)->delete();
+            $staleRoles = DiscordRole::whereNotIn('id', $syncedIds)->get();
+            $staleRoles->each->delete();
+            $deleted = $staleRoles->count();
 
             foreach ($roles as $role) {
                 DiscordRole::updateOrCreate(
                     ['id' => $role->id],
-                    ['name' => $role->name, 'position' => $role->position],
+                    [
+                        'name' => $role->name,
+                        'position' => $role->position,
+                        'primary_color' => $this->colorOrNull($role->colors->primaryColor),
+                        'secondary_color' => $this->colorOrNull($role->colors->secondaryColor),
+                        'tertiary_color' => $this->colorOrNull($role->colors->tertiaryColor),
+                    ],
                 );
             }
 
@@ -84,5 +93,17 @@ class SyncRoles implements ShouldQueue
     public function tags(): array
     {
         return ['discord', 'discord:roles'];
+    }
+
+    /**
+     * Normalise a Discord role colour, returning null when it is absent or 0 (no colour).
+     */
+    private function colorOrNull(int|Optional|null $color): ?int
+    {
+        if ($color instanceof Optional) {
+            return null;
+        }
+
+        return $color ?: null;
     }
 }

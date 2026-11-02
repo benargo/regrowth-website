@@ -6,7 +6,7 @@ use App\Contracts\Models\DatasetModel;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class DatasetPolicy extends AuthorizationPolicy
+class DatasetPolicy
 {
     use HandlesAuthorization;
 

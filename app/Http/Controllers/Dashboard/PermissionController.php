@@ -3,108 +3,85 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Dashboard\TogglePermissionRequest;
+use App\Http\Requests\UpdatePermissionRequest;
+use App\Http\Resources\DiscordRoleResource;
+use App\Http\Resources\PermissionGroupResource;
+use App\Http\Resources\PermissionResource;
 use App\Models\DiscordRole;
 use App\Models\Permission;
+use App\Models\PermissionGroup;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
-#[Authorize('view-officer-dashboard')]
+#[Authorize('manage-permissions')]
 class PermissionController extends Controller
 {
     /**
-     * Display the permissions management page.
+     * Display the permissions access tab for one Discord role at a time.
      */
-    public function index(Request $request): RedirectResponse
+    public function index(Request $request): Response
     {
-        // If a permission group is stored in the session, redirect to that group. Otherwise, redirect to the first available group.
-        if ($request->session()->has('dashboard.permissions.group')) {
-            return redirect()->route('management.permissions.group.show', ['group' => $request->session()->get('dashboard.permissions.group')]);
-        }
+        $discordRoles = DiscordRole::grantingPermissions()
+            ->withCount('permissions')
+            ->orderByDesc('position')
+            ->get();
 
-        $group = Cache::tags(['db', 'permissions'])->remember('permissions:first_group', now()->addMinutes(5), function () {
-            return Permission::whereNotNull('group')->orderBy('group')->value('group');
-        });
+        $requestedRoleId = $request->string('role')->toString();
+        $selectedRoleId = $discordRoles->contains('id', $requestedRoleId)
+            ? $requestedRoleId
+            : $discordRoles->first()?->id;
 
-        return redirect()->route('management.permissions.group.show', ['group' => $group]);
-    }
+        $orderedPermissions = fn ($query) => $query
+            ->with('discordRoles:id')
+            ->orderByRaw('COALESCE(label, name)');
 
-    /**
-     * Display permissions for a specific group and the list of Discord roles for management.
-     */
-    public function showGroup(Request $request, string $group): Response
-    {
-        // Store the selected group in the session to remember the user's last visited group.
-        $request->session()->put('dashboard.permissions.group', $group);
-
-        // Cache the list of permission groups for 5 minutes to reduce database queries.
-        $permissionGroups = collect(
-            Cache::tags(['db', 'permissions'])->remember('permissions:groups', now()->addMinutes(5), function () {
-                return Permission::whereNotNull('group')->distinct('group')->pluck('group')
-                    ->map(fn ($item) => [
-                        'name' => Str::headline($item),
-                        'slug' => $item,
-                    ])->toArray();
-            })
-        );
-
-        // If the requested group is not in the list of groups, throw a 404 error.
-        if ($permissionGroups->pluck('slug')->doesntContain($group)) {
-            abort(404, 'Permission group not found.');
-        }
-
-        // Mark the active group for the frontend.
-        $permissionGroups = $permissionGroups->map(fn ($item) => [
-            ...$item,
-            'active' => $item['slug'] === $group,
-        ]);
-
-        // Cache the list of visible Discord roles for 5 minutes to reduce database queries.
-        $discordRoles = Cache::tags(['db', 'discord', 'permissions'])->remember('discord:roles:with_permissions', now()->addMinutes(5), function () {
-            return DiscordRole::where('is_visible', true)
-                ->with('permissions')
-                ->orderByDesc('position')
-                ->get()
-                ->toArray();
-        });
-
-        // Do not cache these as they are managed through the dashboard and may change frequently.
-        $permissions = Permission::where('group', $group)->get()->toArray();
-
-        return Inertia::render('Manage/Permissions/Show', [
-            'discordRoles' => $discordRoles,
-            'groups' => $permissionGroups,
-            'permissions' => $permissions,
+        return Inertia::render('Manage/Permissions/Access', [
+            'discordRoles' => DiscordRoleResource::collection($discordRoles),
+            'selectedRoleId' => $selectedRoleId,
+            'permissionGroups' => PermissionGroupResource::collection(
+                PermissionGroup::ordered()
+                    ->whereHas('permissions')
+                    ->with(['permissions' => $orderedPermissions])
+                    ->get()
+            ),
+            'ungroupedPermissions' => PermissionResource::collection(
+                $orderedPermissions(Permission::whereNull('permission_group_id'))->get()
+            ),
         ]);
     }
 
     /**
-     * Toggle a permission for a Discord role.
+     * Display the permissions tab listing every group and its permissions.
      */
-    public function update(string $group, Permission $permission, TogglePermissionRequest $request): RedirectResponse
+    public function manage(): Response
     {
-        if ($permission->group !== $group) {
-            abort(404, 'Permission not found in the specified group.');
-        }
-        $role = DiscordRole::findOrFail($request->validated('discord_role_id'));
+        $orderedPermissions = fn ($query) => $query
+            ->withCount(['discordRoles' => fn (Builder $query) => $query->where('grants_permissions', true)])
+            ->orderByRaw('COALESCE(label, name)');
 
-        $user = $request->user();
+        return Inertia::render('Manage/Permissions/Manage', [
+            'permissionGroups' => PermissionGroupResource::collection(
+                PermissionGroup::ordered()
+                    ->with(['permissions' => $orderedPermissions])
+                    ->get()
+            ),
+            'ungroupedPermissions' => PermissionResource::collection(
+                $orderedPermissions(Permission::whereNull('permission_group_id'))->get()
+            ),
+        ]);
+    }
 
-        if (! $user->isAdmin() && $user->highestRole()?->is($role)) {
-            abort(403, 'You cannot modify permissions for your own highest role.');
-        }
+    /**
+     * Update a permission's label, description and group.
+     */
+    public function update(UpdatePermissionRequest $request, Permission $permission): RedirectResponse
+    {
+        $permission->update($request->validated());
 
-        if ($request->validated('enabled')) {
-            $role->givePermissionTo($permission);
-        } else {
-            $role->revokePermissionTo($permission);
-        }
-
-        return back();
+        return back()->with('success', "Saved {$permission->label}.");
     }
 }

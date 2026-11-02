@@ -147,12 +147,12 @@ trait MocksDiscordService
     /**
      * @return array<string, mixed>
      */
-    protected function makeDiscordRoleResponse(string $id, string $name, int $position): array
+    protected function makeDiscordRoleResponse(string $id, string $name, int $position, array $colors = ['primary_color' => 0]): array
     {
         return [
             'id' => $id,
             'name' => $name,
-            'colors' => ['primary_color' => 0],
+            'colors' => $colors,
             'hoist' => false,
             'position' => $position,
             'permissions' => '0',

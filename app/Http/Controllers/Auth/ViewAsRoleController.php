@@ -15,21 +15,24 @@ class ViewAsRoleController extends Controller
     /**
      * Temporarily view the site as a different role.
      */
-    public function viewAsRole(int $role, Request $request)
+    public function viewAsRole(string $role, Request $request)
     {
         try {
             $currentUser = $request->user();
 
-            $tempUser = $this->getTestUser($role);
+            $discordRole = DiscordRole::visible()->find($role)
+                ?? throw new InvalidArgumentException('Invalid role specified.');
+
+            $tempUser = $this->getTestUser($discordRole);
 
             Auth::login($tempUser);
 
             $request->session()->regenerate();
             $request->session()->put('impersonating_user_id', $currentUser->id);
 
-            return redirect('/')->with('success', 'You are now viewing the site as a '.(DiscordRole::find($role)?->name ?? 'Unknown').'.');
+            return redirect('/')->with('success', 'You are now viewing the site as a '.$discordRole->name.'.');
         } catch (InvalidArgumentException $e) {
-            return redirect()->back()->with('error', 'Invalid role specified.');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 
@@ -56,44 +59,31 @@ class ViewAsRoleController extends Controller
     }
 
     /**
-     * Get a test user for a specific role.
+     * Get the test user, holding only the given role. Throws when the
+     * view-as account is not configured or is an admin.
      */
-    protected function getTestUser(string $role): User
+    protected function getTestUser(DiscordRole $discordRole): User
     {
-        $discordRole = DiscordRole::find($role)
-            ?? throw new InvalidArgumentException('Invalid role specified.');
+        $userId = config('auth.local_users.view_as');
 
-        $testUsers = [
-            'Raider' => ['id' => config('auth.local_users.raider'), 'discriminator' => '0000', 'nickname' => 'Test Raider'],
-            'Member' => ['id' => config('auth.local_users.member'), 'discriminator' => '0001', 'nickname' => 'Test Member'],
-            'Guest' => ['id' => config('auth.local_users.guest'), 'discriminator' => '0002', 'nickname' => 'Test Guest'],
-        ];
-
-        $config = $testUsers[$discordRole->name]
-            ?? throw new InvalidArgumentException('Invalid role specified.');
-
-        if (blank($config['id'])) {
-            throw new InvalidArgumentException('Invalid role specified.');
+        if (blank($userId)) {
+            throw new InvalidArgumentException('View-as is not configured.');
         }
 
         $user = User::firstOrCreate(
-            ['id' => $config['id']],
+            ['id' => $userId],
             [
                 'username' => 'testuser',
-                'discriminator' => $config['discriminator'],
-                'nickname' => $config['nickname'],
+                'discriminator' => '0000',
+                'nickname' => 'Test User',
             ]
         );
 
-        $roleIds = [$discordRole->id];
-        if ($discordRole->name === 'Raider') {
-            $memberRole = DiscordRole::where('name', 'Member')->first();
-            if ($memberRole) {
-                $roleIds[] = $memberRole->id;
-            }
+        if ($user->isAdmin()) {
+            throw new InvalidArgumentException('The view-as account must not be an admin.');
         }
 
-        $user->discordRoles()->sync($roleIds);
+        $user->discordRoles()->sync([$discordRole->id]);
 
         return $user;
     }

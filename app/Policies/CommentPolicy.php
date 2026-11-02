@@ -6,7 +6,7 @@ use App\Models\Comment;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class CommentPolicy extends AuthorizationPolicy
+class CommentPolicy
 {
     use HandlesAuthorization;
 

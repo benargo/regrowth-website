@@ -1,25 +1,29 @@
-import { Description, DialogTitle } from '@headlessui/react';
-import Modal from '@/Components/Modal';
-import { DangerButton, PrimaryButton, SecondaryButton } from '@/Components/FormControls';
+import { Description, DialogTitle } from "@headlessui/react";
+import Modal from "@/Components/Modal";
+import { DangerButton, PrimaryButton, SecondaryButton } from "@/Components/FormControls";
 
-/** A confirm/cancel dialog. `title` labels the dialog and `children` describe it. */
+/**
+ * A confirm/cancel dialog. `title` labels the dialog and `children` describe it. Can't be dismissed while
+ * `processing`. `unmount` is passed to `Modal`.
+ */
 export default function ConfirmationModal({
     show = false,
     onClose,
     onConfirm,
     title,
-    confirmLabel = 'Confirm',
-    cancelLabel = 'Cancel',
+    confirmLabel = "Confirm",
+    cancelLabel = "Cancel",
     processing = false,
-    processingLabel = 'Processing…',
-    variant = 'confirm',
-    maxWidth = 'md',
+    processingLabel = "Processing…",
+    variant = "confirm",
+    maxWidth = "md",
+    unmount = true,
     children,
 }) {
-    const ConfirmButton = variant === 'delete' ? DangerButton : PrimaryButton;
+    const ConfirmButton = variant === "delete" ? DangerButton : PrimaryButton;
 
     return (
-        <Modal show={show} onClose={onClose} maxWidth={maxWidth}>
+        <Modal show={show} onClose={onClose} maxWidth={maxWidth} closeable={!processing} unmount={unmount}>
             <div className="p-6 text-white">
                 <DialogTitle as="h2" className="mb-2 text-lg font-semibold">
                     {title}

@@ -4,10 +4,8 @@ namespace App\Providers;
 
 use App\Actions\EventBossResolver;
 use App\Http\Integrations\ServedFromCache;
-use App\Http\Resources\PermissionGroupsResource;
 use App\Jobs\FetchGuildRoster;
 use App\Models\User;
-use Database\Seeders\PermissionSeeder;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
@@ -22,13 +20,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        /**
-         * Permission groups
-         */
-        $this->app->bind(PermissionGroupsResource::class, function () {
-            return new PermissionGroupsResource(collect(PermissionSeeder::groups()));
-        });
-
         /**
          * Saloon response cache hits
          */
@@ -56,8 +47,9 @@ class AppServiceProvider extends ServiceProvider
          * Authorization Gates
          */
         Gate::define('edit-datasets', fn (User $user) => $user->isAuthorizedTo('edit-datasets'));
-        Gate::define('impersonate-roles', fn (User $user) => $user->isAuthorizedTo('impersonate-roles'));
+        Gate::define('impersonate-roles', fn (User $user): bool => $user->isAdmin());
         Gate::define('manage-handbook', fn (User $user) => $user->isAuthorizedTo('manage-handbook'));
+        Gate::define('manage-permissions', fn (User $user): bool => $user->isAdmin());
         Gate::define('view-attendance', fn (User $user) => $user->isAuthorizedTo('view-attendance'));
         Gate::define('view-handbook', fn (User $user) => $user->isAuthorizedTo('view-handbook'));
         Gate::define('view-officer-dashboard', fn (User $user) => $user->isAuthorizedTo('view-officer-dashboard'));

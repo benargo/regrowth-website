@@ -56,11 +56,11 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $officerRole = DiscordRole::firstOrCreate(
             ['id' => '829021769448816691'],
-            ['name' => 'Officer', 'position' => 6, 'is_visible' => true]
+            ['name' => 'Officer', 'position' => 6, 'is_visible' => true, 'grants_permissions' => true]
         );
         $raiderRole = DiscordRole::firstOrCreate(
             ['id' => '1265247017215594496'],
-            ['name' => 'Raider', 'position' => 4, 'is_visible' => true]
+            ['name' => 'Raider', 'position' => 4, 'is_visible' => true, 'grants_permissions' => true]
         );
 
         foreach (['view-planned-absences', 'create-planned-absences', 'backdate-planned-absences', 'update-planned-absences', 'delete-planned-absences'] as $permission) {

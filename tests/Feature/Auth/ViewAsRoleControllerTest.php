@@ -3,6 +3,7 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\DiscordRole;
+use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
@@ -13,6 +14,13 @@ use Tests\TestCase;
 class ViewAsRoleControllerTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['auth.local_users.view_as' => '100000000000000099']);
+    }
 
     // ==================== viewAsRole: Access Control ====================
 
@@ -28,9 +36,9 @@ class ViewAsRoleControllerTest extends TestCase
 
     #[Group('authorization')]
     #[Test]
-    public function view_as_role_requires_impersonate_permission(): void
+    public function view_as_role_is_forbidden_for_non_admins_holding_the_impersonate_permission(): void
     {
-        $user = User::factory()->member()->create();
+        $user = User::factory()->withPermissions('impersonate-roles')->create();
         $role = DiscordRole::factory()->raider()->create();
 
         $response = $this->actingAs($user)->get(route('auth.view-as', $role->id));
@@ -41,86 +49,99 @@ class ViewAsRoleControllerTest extends TestCase
     // ==================== viewAsRole: Impersonation ====================
 
     #[Test]
-    public function view_as_role_impersonates_test_raider(): void
+    public function view_as_role_impersonates_the_shared_test_user_with_only_the_chosen_role(): void
     {
-        $user = User::factory()->withPermissions('impersonate-roles')->create();
-        $raiderRole = DiscordRole::factory()->raider()->create();
+        $user = User::factory()->admin()->create();
+        $role = DiscordRole::factory()->visible()->create();
 
-        $response = $this->actingAs($user)->get(route('auth.view-as', $raiderRole->id));
+        $response = $this->actingAs($user)->get(route('auth.view-as', $role->id));
 
         $response->assertRedirect('/');
         $response->assertSessionHas('impersonating_user_id', $user->id);
 
-        $this->assertAuthenticatedAs(User::find(config('auth.local_users.raider')));
+        $testUser = User::find('100000000000000099');
+        $this->assertAuthenticatedAs($testUser);
+        $this->assertSame([$role->id], $testUser->discordRoles()->pluck('discord_roles.id')->all());
     }
 
     #[Test]
-    public function view_as_raider_also_syncs_member_role(): void
+    public function view_as_role_replaces_roles_from_a_previous_view_as(): void
     {
-        $user = User::factory()->withPermissions('impersonate-roles')->create();
-        $raiderRole = DiscordRole::factory()->raider()->create();
-        $memberRole = DiscordRole::factory()->member()->create();
+        $user = User::factory()->admin()->create();
+        $previous = DiscordRole::factory()->visible()->create();
+        $role = DiscordRole::factory()->visible()->create();
+        $testUser = User::factory()->create(['id' => '100000000000000099']);
+        $testUser->discordRoles()->sync([$previous->id]);
 
-        $this->actingAs($user)->get(route('auth.view-as', $raiderRole->id));
+        $this->actingAs($user)->get(route('auth.view-as', $role->id));
 
-        $testUser = User::find(config('auth.local_users.raider'));
-        $roleIds = $testUser->discordRoles->pluck('id')->all();
-
-        $this->assertContains($raiderRole->id, $roleIds);
-        $this->assertContains($memberRole->id, $roleIds);
+        $this->assertSame([$role->id], $testUser->discordRoles()->pluck('discord_roles.id')->all());
     }
 
     #[Test]
-    public function view_as_member_does_not_sync_extra_roles(): void
+    public function view_as_role_can_view_as_the_guest_role(): void
     {
-        $user = User::factory()->withPermissions('impersonate-roles')->create();
-        $memberRole = DiscordRole::factory()->member()->create();
+        $user = User::factory()->admin()->create();
+        $role = DiscordRole::factory()->guest()->create();
 
-        $this->actingAs($user)->get(route('auth.view-as', $memberRole->id));
+        $response = $this->actingAs($user)->get(route('auth.view-as', $role->id));
 
-        $testUser = User::find(config('auth.local_users.member'));
-
-        $this->assertCount(1, $testUser->discordRoles);
-        $this->assertTrue($testUser->discordRoles->first()->is($memberRole));
+        $response->assertRedirect('/');
+        $this->assertAuthenticatedAs(User::find('100000000000000099'));
     }
 
     #[Test]
-    public function view_as_guest_creates_test_guest(): void
+    public function view_as_role_rejects_a_role_that_is_not_visible(): void
     {
-        $user = User::factory()->withPermissions('impersonate-roles')->create();
-        $guestRole = DiscordRole::factory()->guest()->create();
+        $user = User::factory()->admin()->create();
+        $role = DiscordRole::factory()->grantsPermissions()->create();
 
-        $this->actingAs($user)->get(route('auth.view-as', $guestRole->id));
+        $response = $this->actingAs($user)->get(route('auth.view-as', $role->id));
 
-        $testUser = User::find(config('auth.local_users.guest'));
-
-        $this->assertNotNull($testUser);
-        $this->assertSame('Test Guest', $testUser->nickname);
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+        $this->assertNull(User::find('100000000000000099'));
     }
 
     #[Test]
     public function view_as_role_with_invalid_role_redirects_with_error(): void
     {
-        $user = User::factory()->withPermissions('impersonate-roles')->create();
+        $user = User::factory()->admin()->create();
 
         $response = $this->actingAs($user)->get(route('auth.view-as', '999999'));
 
         $response->assertRedirect();
-        $response->assertSessionHas('error');
+        $response->assertSessionHas('error', 'Invalid role specified.');
     }
 
     #[Test]
     public function view_as_role_errors_when_local_user_id_is_not_configured(): void
     {
-        config()->set('auth.local_users.raider', null);
+        config()->set('auth.local_users.view_as', null);
 
-        $user = User::factory()->withPermissions('impersonate-roles')->create();
-        $raiderRole = DiscordRole::factory()->raider()->create();
+        $user = User::factory()->admin()->create();
+        $role = DiscordRole::factory()->visible()->create();
 
-        $response = $this->actingAs($user)->get(route('auth.view-as', $raiderRole->id));
+        $response = $this->actingAs($user)->get(route('auth.view-as', $role->id));
 
         $response->assertRedirect();
-        $response->assertSessionHas('error');
+        $response->assertSessionHas('error', 'View-as is not configured.');
+    }
+
+    #[Test]
+    public function view_as_role_refuses_a_view_as_account_that_is_an_admin(): void
+    {
+        $user = User::factory()->admin()->create();
+        User::factory()->admin()->create(['id' => '100000000000000099']);
+        $role = DiscordRole::factory()->visible()->create();
+
+        $response = $this->actingAs($user)->get(route('auth.view-as', $role->id));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error', 'The view-as account must not be an admin.');
+        $response->assertSessionMissing('impersonating_user_id');
+        $this->assertAuthenticatedAs($user);
+        $this->assertSame([], User::find('100000000000000099')->discordRoles->modelKeys());
     }
 
     // ==================== stopViewingAs ====================
@@ -128,7 +149,7 @@ class ViewAsRoleControllerTest extends TestCase
     #[Test]
     public function stop_viewing_as_restores_original_user(): void
     {
-        $originalUser = User::factory()->withPermissions('impersonate-roles')->create();
+        $originalUser = User::factory()->admin()->create();
         $raiderRole = DiscordRole::factory()->raider()->create();
 
         // Start impersonation
@@ -139,6 +160,22 @@ class ViewAsRoleControllerTest extends TestCase
 
         $response->assertRedirect(route('management.dashboard'));
         $response->assertSessionHas('success');
+
+        $this->assertAuthenticatedAs($originalUser);
+    }
+
+    #[Test]
+    public function view_as_role_is_forbidden_while_already_viewing_as_a_role(): void
+    {
+        $originalUser = User::factory()->admin()->create();
+        $roleA = DiscordRole::factory()->visible()->create();
+        $roleA->givePermissionTo(Permission::firstOrCreate(['name' => 'impersonate-roles', 'guard_name' => 'web']));
+        $roleB = DiscordRole::factory()->visible()->create();
+
+        $this->actingAs($originalUser)->get(route('auth.view-as', $roleA->id));
+        $this->get(route('auth.view-as', $roleB->id))->assertForbidden();
+
+        $this->get(route('auth.return-to-self'));
 
         $this->assertAuthenticatedAs($originalUser);
     }

@@ -28,7 +28,7 @@ class SpellControllerTest extends TestCase
             'id' => '829022020301094923',
             'name' => 'Editor',
             'position' => 2,
-            'is_visible' => true,
+            'is_visible' => true, 'grants_permissions' => true,
         ]);
         $this->editorRole->givePermissionTo(Permission::firstOrCreate(['name' => 'edit-datasets', 'guard_name' => 'web']));
     }

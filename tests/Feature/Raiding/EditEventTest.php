@@ -41,7 +41,7 @@ class EditEventTest extends TestCase
             'id' => '829022020301094922',
             'name' => 'Member',
             'position' => 1,
-            'is_visible' => true,
+            'is_visible' => true, 'grants_permissions' => true,
         ]);
         $this->memberRole->givePermissionTo(Permission::firstOrCreate(['name' => 'manage-raid-plans', 'guard_name' => 'web']));
 

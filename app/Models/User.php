@@ -232,46 +232,6 @@ class User extends Authenticatable implements HasDiscordAvatars, HasMedia
     }
 
     /**
-     * Check if user has Officer role.
-     */
-    public function isOfficer(): bool
-    {
-        return $this->discordRoles->contains('name', 'Officer');
-    }
-
-    /**
-     * Check if user has Raider role.
-     */
-    public function isRaider(): bool
-    {
-        return $this->discordRoles->contains('name', 'Raider');
-    }
-
-    /**
-     * Check if user has Member role.
-     */
-    public function isMember(): bool
-    {
-        return $this->discordRoles->contains('name', 'Member');
-    }
-
-    /**
-     * Check if user has the Loot Councillor role.
-     */
-    public function isLootCouncillor(): bool
-    {
-        return $this->discordRoles->contains('name', 'Loot Councillor');
-    }
-
-    /**
-     * Check if user has Guest role.
-     */
-    public function isGuest(): bool
-    {
-        return $this->discordRoles->contains('name', 'Guest');
-    }
-
-    /**
      * Get the user's highest visible role.
      */
     public function highestRole(): ?DiscordRole
@@ -288,17 +248,15 @@ class User extends Authenticatable implements HasDiscordAvatars, HasMedia
     }
 
     /**
-     * Get a query builder for all permissions the user has access to via their highest Discord role.
+     * Get a query builder for all permissions the user has via their permission-granting Discord roles.
      *
      * @return Builder<Permission>
      */
     public function permissions(): Builder
     {
-        $highestRoleId = $this->highestRole()?->id;
-
-        return Permission::join('discord_role_has_permissions', 'discord_role_has_permissions.permission_id', '=', 'permissions.id')
-            ->where('discord_role_has_permissions.discord_role_id', $highestRoleId)
-            ->select('permissions.*');
+        return Permission::whereHas('discordRoles', fn (Builder $query) => $query
+            ->grantingPermissions()
+            ->whereIn('discord_roles.id', $this->discordRoles->modelKeys()));
     }
 
     /**
@@ -310,6 +268,6 @@ class User extends Authenticatable implements HasDiscordAvatars, HasMedia
             return true;
         }
 
-        return $this->discordRoles->contains(fn (DiscordRole $role): bool => $role->hasPermissionTo($permission));
+        return $this->discordRoles->contains(fn (DiscordRole $role): bool => $role->grants_permissions && $role->hasPermissionTo($permission));
     }
 }
