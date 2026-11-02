@@ -469,7 +469,7 @@ class UserTest extends ModelTestCase
     }
 
     #[Test]
-    public function permissions_returns_permissions_from_highest_role(): void
+    public function permissions_returns_permissions_held_by_a_granting_role(): void
     {
         Permission::firstOrCreate(['name' => 'view-officer-dashboard', 'guard_name' => 'web']);
 

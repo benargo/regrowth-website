@@ -7,6 +7,7 @@ use App\Models\Permission;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdatePermissionAccessRequest extends FormRequest
 {
@@ -20,7 +21,7 @@ class UpdatePermissionAccessRequest extends FormRequest
         return [
             'discord_role_id' => ['required', 'string', Rule::exists(DiscordRole::class, 'id')->where('grants_permissions', true)],
             'permission_ids' => ['required', 'array', 'min:1'],
-            'permission_ids.*' => ['integer', 'distinct', Rule::exists(Permission::class, 'id')],
+            'permission_ids.*' => ['integer', 'distinct'],
             'enabled' => ['required', 'boolean'],
         ];
     }
@@ -34,6 +35,31 @@ class UpdatePermissionAccessRequest extends FormRequest
     {
         return [
             'discord_role_id.exists' => 'The selected Discord role does not grant permissions.',
+        ];
+    }
+
+    /**
+     * Get the "after" validation callables for the request.
+     *
+     * @return list<callable(Validator): void>
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                if ($validator->errors()->isNotEmpty()) {
+                    return;
+                }
+
+                $ids = $this->input('permission_ids');
+
+                if (Permission::whereKey($ids)->count() !== count($ids)) {
+                    $validator->errors()->add(
+                        'permission_ids',
+                        'One or more of the selected permissions do not exist.',
+                    );
+                }
+            },
         ];
     }
 }

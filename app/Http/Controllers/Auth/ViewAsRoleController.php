@@ -28,13 +28,11 @@ class ViewAsRoleController extends Controller
             Auth::login($tempUser);
 
             $request->session()->regenerate();
-            if (! $request->session()->has('impersonating_user_id')) {
-                $request->session()->put('impersonating_user_id', $currentUser->id);
-            }
+            $request->session()->put('impersonating_user_id', $currentUser->id);
 
             return redirect('/')->with('success', 'You are now viewing the site as a '.$discordRole->name.'.');
         } catch (InvalidArgumentException $e) {
-            return redirect()->back()->with('error', 'Invalid role specified.');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 
@@ -61,14 +59,15 @@ class ViewAsRoleController extends Controller
     }
 
     /**
-     * Get the test user, holding only the given role.
+     * Get the test user, holding only the given role. Throws when the
+     * view-as account is not configured or is an admin.
      */
     protected function getTestUser(DiscordRole $discordRole): User
     {
         $userId = config('auth.local_users.view_as');
 
         if (blank($userId)) {
-            throw new InvalidArgumentException('Invalid role specified.');
+            throw new InvalidArgumentException('View-as is not configured.');
         }
 
         $user = User::firstOrCreate(
@@ -79,6 +78,10 @@ class ViewAsRoleController extends Controller
                 'nickname' => 'Test User',
             ]
         );
+
+        if ($user->isAdmin()) {
+            throw new InvalidArgumentException('The view-as account must not be an admin.');
+        }
 
         $user->discordRoles()->sync([$discordRole->id]);
 

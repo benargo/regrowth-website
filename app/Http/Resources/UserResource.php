@@ -17,17 +17,10 @@ class UserResource extends JsonResource
         return [
             'id' => $this->id,
             'username' => $this->username,
-            'discriminator' => $this->discriminator,
-            'nickname' => $this->nickname,
             'display_name' => $this->display_name,
             'avatar' => $this->avatar_thumb_url,
-            'roles' => $this->discordRoles->pluck('id')->values()->toArray(),
-            'highest_role' => $this->highestRole()?->toResource(DiscordRoleResource::class),
+            'highest_role' => $this->highestRole()?->toResource(DiscordRoleResource::class)->scope('badge'),
             'admin' => $this->is_admin,
-            'characters' => $this->whenLoaded('characters', fn () => $this->characters->toResourceCollection()),
-            'events' => $this->whenLoaded('events', fn () => $this->events->toResourceCollection(EventResource::class)->scope('members')),
-            'planned_absences' => $this->whenLoaded('plannedAbsences'),
-            'planned_absences_created' => $this->whenLoaded('plannedAbsencesCreated'),
         ];
     }
 }

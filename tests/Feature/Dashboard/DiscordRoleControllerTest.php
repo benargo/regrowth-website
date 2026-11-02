@@ -22,6 +22,21 @@ class DiscordRoleControllerTest extends DashboardTestCase
     }
 
     #[Test]
+    #[Group('authorization')]
+    public function index_requires_authentication(): void
+    {
+        $this->get(route('management.discord-roles.index'))->assertRedirect('/login');
+    }
+
+    #[Test]
+    #[Group('authorization')]
+    public function update_requires_authentication(): void
+    {
+        $this->patch(route('management.discord-roles.update', DiscordRole::factory()->create()), ['is_visible' => true])
+            ->assertRedirect('/login');
+    }
+
+    #[Test]
     public function index_lists_every_role_in_position_order_for_admins(): void
     {
         DiscordRole::query()->delete();

@@ -143,9 +143,10 @@ class HandleInertiaRequestsTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page->has('auth.user.data')
                 ->where('auth.user.data.id', '123456789012345678')
                 ->where('auth.user.data.username', 'testuser')
-                ->where('auth.user.data.nickname', 'TestNick')
+                ->missing('auth.user.data.nickname')
                 ->where('auth.user.data.display_name', 'TestNick')
                 ->where('auth.user.data.highest_role.name', 'Member')
+                ->missing('auth.user.data.highest_role.id')
             );
     }
 

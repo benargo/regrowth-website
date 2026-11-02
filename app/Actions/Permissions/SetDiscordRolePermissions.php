@@ -2,16 +2,15 @@
 
 namespace App\Actions\Permissions;
 
-use App\Events\PermissionUpdated;
+use App\Events\DiscordRoleUpdated;
 use App\Models\DiscordRole;
-use App\Models\Permission;
 use Illuminate\Support\Facades\DB;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 /**
  * Grants or revokes several permissions on one Discord role in a single
- * pivot write, then dispatches PermissionUpdated once for each permission
- * whose state changed.
+ * pivot write, then dispatches DiscordRoleUpdated once when any permission's
+ * state changed.
  */
 class SetDiscordRolePermissions
 {
@@ -35,9 +34,9 @@ class SetDiscordRolePermissions
                 $role->permissions()->detach($permissionIds);
             }
 
-            Permission::whereKey($changedIds)->get()->each(
-                fn (Permission $permission) => PermissionUpdated::dispatch($permission)
-            );
+            if ($changedIds->isNotEmpty()) {
+                DiscordRoleUpdated::dispatch($role);
+            }
         });
     }
 }

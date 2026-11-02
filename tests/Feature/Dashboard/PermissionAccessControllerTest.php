@@ -114,6 +114,40 @@ class PermissionAccessControllerTest extends DashboardTestCase
                 'permission_ids' => [99999],
                 'enabled' => true,
             ])
+            ->assertInvalid(['permission_ids' => 'One or more of the selected permissions do not exist.']);
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_rejects_a_mix_of_known_and_unknown_permissions(): void
+    {
+        $role = DiscordRole::factory()->grantsPermissions()->create();
+        $permission = Permission::factory()->create();
+
+        $this->actingAs($this->admin)
+            ->patch(route('management.permissions.access.update'), [
+                'discord_role_id' => $role->id,
+                'permission_ids' => [$permission->id, 99999],
+                'enabled' => true,
+            ])
+            ->assertInvalid(['permission_ids' => 'One or more of the selected permissions do not exist.']);
+
+        $this->assertCount(0, $role->permissions()->get());
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_rejects_duplicate_permission_ids(): void
+    {
+        $role = DiscordRole::factory()->grantsPermissions()->create();
+        $permission = Permission::factory()->create();
+
+        $this->actingAs($this->admin)
+            ->patch(route('management.permissions.access.update'), [
+                'discord_role_id' => $role->id,
+                'permission_ids' => [$permission->id, $permission->id],
+                'enabled' => true,
+            ])
             ->assertInvalid(['permission_ids.0']);
     }
 }

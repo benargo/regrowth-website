@@ -2,14 +2,9 @@
 
 namespace Tests\Unit\Http\Resources;
 
-use App\Http\Resources\CharacterResource;
 use App\Http\Resources\DiscordRoleResource;
-use App\Http\Resources\EventResource;
 use App\Http\Resources\UserResource;
-use App\Models\Character;
 use App\Models\DiscordRole;
-use App\Models\Event;
-use App\Models\PlannedAbsence;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -40,7 +35,7 @@ class UserResourceTest extends TestCase
         $array = (new UserResource($user))->resolve(new Request);
 
         $this->assertSame(
-            ['id', 'username', 'discriminator', 'nickname', 'display_name', 'avatar', 'roles', 'highest_role', 'admin'],
+            ['id', 'username', 'display_name', 'avatar', 'highest_role', 'admin'],
             array_keys($array),
         );
     }
@@ -69,39 +64,6 @@ class UserResourceTest extends TestCase
         $array = $resource->toArray(new Request);
 
         $this->assertSame('testuser', $array['username']);
-    }
-
-    #[Test]
-    public function it_returns_discriminator(): void
-    {
-        $user = User::factory()->create(['discriminator' => '1234']);
-
-        $resource = new UserResource($user);
-        $array = $resource->toArray(new Request);
-
-        $this->assertSame('1234', $array['discriminator']);
-    }
-
-    #[Test]
-    public function it_returns_nickname(): void
-    {
-        $user = User::factory()->create(['nickname' => 'TestNick']);
-
-        $resource = new UserResource($user);
-        $array = $resource->toArray(new Request);
-
-        $this->assertSame('TestNick', $array['nickname']);
-    }
-
-    #[Test]
-    public function it_returns_null_nickname_when_not_set(): void
-    {
-        $user = User::factory()->create(['nickname' => null]);
-
-        $resource = new UserResource($user);
-        $array = $resource->toArray(new Request);
-
-        $this->assertNull($array['nickname']);
     }
 
     // ==================== display name ====================
@@ -187,40 +149,10 @@ class UserResourceTest extends TestCase
         $this->assertSame('https://cdn.test/discord-cdn/embed/avatars/2.png', $array['avatar']);
     }
 
-    // ==================== roles ====================
-
-    #[Test]
-    public function it_returns_roles(): void
-    {
-        $officer = DiscordRole::find('829021769448816691') ??
-            DiscordRole::factory()->officer()->create();
-        $member = DiscordRole::find('829022020301094922') ??
-            DiscordRole::factory()->member()->create();
-
-        $user = User::factory()->create();
-        $user->discordRoles()->attach([$officer->id, $member->id]);
-
-        $resource = new UserResource($user->fresh()->load('discordRoles'));
-        $array = $resource->toArray(new Request);
-
-        $this->assertEqualsCanonicalizing([$officer->id, $member->id], $array['roles']);
-    }
-
-    #[Test]
-    public function it_returns_empty_roles_array_when_no_roles(): void
-    {
-        $user = User::factory()->noRoles()->create();
-
-        $resource = new UserResource($user);
-        $array = $resource->toArray(new Request);
-
-        $this->assertSame([], $array['roles']);
-    }
-
     // ==================== highest role ====================
 
     #[Test]
-    public function it_returns_the_highest_visible_role_as_a_role_resource(): void
+    public function it_returns_the_highest_visible_role_as_a_badge(): void
     {
         DiscordRole::factory()->officer()->create();
         $user = User::factory()->officer()->create();
@@ -231,9 +163,7 @@ class UserResourceTest extends TestCase
         $array = $resource->toArray(new Request);
 
         $this->assertInstanceOf(DiscordRoleResource::class, $array['highest_role']);
-        $resolved = $array['highest_role']->resolve();
-        $this->assertSame('Officer', $resolved['name']);
-        $this->assertSame('aa3b3b', $resolved['primary_color']);
+        $this->assertSame(['name' => 'Officer', 'primary_color' => 'aa3b3b'], $array['highest_role']->resolve());
     }
 
     #[Test]
@@ -289,139 +219,5 @@ class UserResourceTest extends TestCase
         $array = (new UserResource($user))->toArray(new Request);
 
         $this->assertFalse($array['admin']);
-    }
-
-    // ==================== characters ====================
-
-    #[Test]
-    public function it_omits_characters_when_not_loaded(): void
-    {
-        $user = User::factory()->withCharacters()->create();
-
-        $array = (new UserResource($user))->resolve(new Request);
-
-        $this->assertArrayNotHasKey('characters', $array);
-    }
-
-    #[Test]
-    public function it_returns_characters_when_loaded(): void
-    {
-        $characters = Character::factory()->count(2)->create();
-        $user = User::factory()->withCharacters($characters->all())->create();
-
-        $request = new Request;
-        $array = (new UserResource($user->fresh()->load('characters')))->resolve($request);
-
-        $this->assertEqualsCanonicalizing(
-            $characters->pluck('id')->all(),
-            $array['characters']->map(fn (CharacterResource $character) => $character->resolve($request)['id'])->all(),
-        );
-    }
-
-    // ==================== events ====================
-
-    #[Test]
-    public function it_omits_events_when_not_loaded(): void
-    {
-        $user = User::factory()->create();
-
-        $resource = new UserResource($user);
-        $array = $resource->resolve(new Request);
-
-        $this->assertArrayNotHasKey('events', $array);
-    }
-
-    #[Test]
-    public function it_returns_events_when_loaded(): void
-    {
-        $this->fakeDiscordChannel();
-        $events = Event::factory()->count(2)->create();
-        $user = User::factory()->withEvents($events->all())->create();
-
-        $request = new Request;
-        $resource = new UserResource($user->fresh()->load('events'));
-        $array = $resource->resolve($request);
-
-        $this->assertArrayHasKey('events', $array);
-        $this->assertEqualsCanonicalizing(
-            $events->pluck('id')->all(),
-            $array['events']->map(fn (EventResource $event) => $event->resolve($request)['id'])->all(),
-        );
-    }
-
-    #[Test]
-    public function it_returns_events_in_the_member_shape(): void
-    {
-        $user = User::factory()->withEvents()->create();
-
-        $request = new Request;
-        $event = (new UserResource($user->fresh()->load('events')))->resolve($request)['events']->resolve($request)[0];
-
-        $this->assertArrayHasKey('duration', $event);
-        $this->assertArrayNotHasKey('composition', $event);
-        $this->assertArrayNotHasKey('channel', $event);
-    }
-
-    #[Test]
-    public function it_returns_an_empty_events_list_when_the_loaded_relation_is_empty(): void
-    {
-        $user = User::factory()->create();
-
-        $request = new Request;
-        $events = (new UserResource($user->fresh()->load('events')))->resolve($request)['events'];
-
-        $this->assertSame([], $events->resolve($request));
-    }
-
-    // ==================== planned absences ====================
-
-    #[Test]
-    public function it_omits_planned_absences_when_not_loaded(): void
-    {
-        $user = User::factory()->create();
-
-        $resource = new UserResource($user);
-        $array = $resource->resolve(new Request);
-
-        $this->assertArrayNotHasKey('planned_absences', $array);
-    }
-
-    #[Test]
-    public function it_returns_planned_absences_when_loaded(): void
-    {
-        $user = User::factory()->create();
-        PlannedAbsence::factory()->count(2)->create(['user_id' => $user->id]);
-
-        $resource = new UserResource($user->fresh()->load('plannedAbsences'));
-        $array = $resource->resolve(new Request);
-
-        $this->assertArrayHasKey('planned_absences', $array);
-        $this->assertCount(2, $array['planned_absences']);
-    }
-
-    // ==================== planned absences created ====================
-
-    #[Test]
-    public function it_omits_planned_absences_created_when_not_loaded(): void
-    {
-        $user = User::factory()->create();
-
-        $resource = new UserResource($user);
-        $array = $resource->resolve(new Request);
-
-        $this->assertArrayNotHasKey('planned_absences_created', $array);
-    }
-
-    #[Test]
-    public function it_returns_planned_absences_created_when_loaded(): void
-    {
-        $user = User::factory()->create();
-        PlannedAbsence::factory()->count(2)->create(['created_by' => $user->id]);
-
-        $resource = new UserResource($user->fresh()->load('plannedAbsencesCreated'));
-        $array = $resource->resolve(new Request);
-
-        $this->assertArrayHasKey('planned_absences_created', $array);
-        $this->assertCount(2, $array['planned_absences_created']);
     }
 }

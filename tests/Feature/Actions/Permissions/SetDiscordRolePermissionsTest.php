@@ -3,6 +3,7 @@
 namespace Tests\Feature\Actions\Permissions;
 
 use App\Actions\Permissions\SetDiscordRolePermissions;
+use App\Events\DiscordRoleUpdated;
 use App\Events\PermissionUpdated;
 use App\Models\DiscordRole;
 use App\Models\Permission;
@@ -70,30 +71,44 @@ class SetDiscordRolePermissionsTest extends TestCase
     }
 
     #[Test]
-    public function it_dispatches_permission_updated_once_for_each_changed_permission(): void
+    public function it_dispatches_discord_role_updated_once_when_several_permissions_change(): void
     {
         $role = DiscordRole::factory()->create();
-        [$a, $b] = Permission::factory()->count(2)->create();
-        $role->permissions()->attach($a->id);
-        Event::fake([PermissionUpdated::class]);
+        $permissions = Permission::factory()->count(3)->create();
+        Event::fake([DiscordRoleUpdated::class, PermissionUpdated::class]);
 
-        SetDiscordRolePermissions::run($role, [$a->id, $b->id], true);
+        SetDiscordRolePermissions::run($role, $permissions->pluck('id')->all(), true);
 
-        Event::assertDispatchedTimes(PermissionUpdated::class, 1);
-        Event::assertDispatched(PermissionUpdated::class, fn ($event) => $event->permission->is($b));
+        Event::assertDispatchedTimes(DiscordRoleUpdated::class, 1);
+        Event::assertDispatched(DiscordRoleUpdated::class, fn ($event) => $event->discordRole->is($role));
+        Event::assertNotDispatched(PermissionUpdated::class);
     }
 
     #[Test]
-    public function it_dispatches_permission_updated_only_for_revoked_permissions(): void
+    public function it_dispatches_discord_role_updated_once_when_revoking(): void
     {
         $role = DiscordRole::factory()->create();
         [$a, $b] = Permission::factory()->count(2)->create();
         $role->permissions()->attach($a->id);
-        Event::fake([PermissionUpdated::class]);
+        Event::fake([DiscordRoleUpdated::class, PermissionUpdated::class]);
 
         SetDiscordRolePermissions::run($role, [$a->id, $b->id], false);
 
-        Event::assertDispatchedTimes(PermissionUpdated::class, 1);
-        Event::assertDispatched(PermissionUpdated::class, fn ($event) => $event->permission->is($a));
+        Event::assertDispatchedTimes(DiscordRoleUpdated::class, 1);
+        Event::assertNotDispatched(PermissionUpdated::class);
+    }
+
+    #[Test]
+    public function it_dispatches_nothing_when_no_permission_changes(): void
+    {
+        $role = DiscordRole::factory()->create();
+        [$a, $b] = Permission::factory()->count(2)->create();
+        $role->permissions()->attach([$a->id, $b->id]);
+        Event::fake([DiscordRoleUpdated::class, PermissionUpdated::class]);
+
+        SetDiscordRolePermissions::run($role, [$a->id, $b->id], true);
+
+        Event::assertNotDispatched(DiscordRoleUpdated::class);
+        Event::assertNotDispatched(PermissionUpdated::class);
     }
 }

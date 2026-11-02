@@ -111,7 +111,7 @@ class ViewAsRoleControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('auth.view-as', '999999'));
 
         $response->assertRedirect();
-        $response->assertSessionHas('error');
+        $response->assertSessionHas('error', 'Invalid role specified.');
     }
 
     #[Test]
@@ -125,7 +125,23 @@ class ViewAsRoleControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('auth.view-as', $role->id));
 
         $response->assertRedirect();
-        $response->assertSessionHas('error');
+        $response->assertSessionHas('error', 'View-as is not configured.');
+    }
+
+    #[Test]
+    public function view_as_role_refuses_a_view_as_account_that_is_an_admin(): void
+    {
+        $user = User::factory()->admin()->create();
+        User::factory()->admin()->create(['id' => '100000000000000099']);
+        $role = DiscordRole::factory()->visible()->create();
+
+        $response = $this->actingAs($user)->get(route('auth.view-as', $role->id));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error', 'The view-as account must not be an admin.');
+        $response->assertSessionMissing('impersonating_user_id');
+        $this->assertAuthenticatedAs($user);
+        $this->assertSame([], User::find('100000000000000099')->discordRoles->modelKeys());
     }
 
     // ==================== stopViewingAs ====================

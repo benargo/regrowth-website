@@ -49,4 +49,27 @@ class PermissionResourceTest extends TestCase
 
         $this->assertArrayNotHasKey('discord_role_ids', $data);
     }
+
+    #[Test]
+    #[Group('resource')]
+    public function it_returns_the_role_count_when_counted(): void
+    {
+        $permission = Permission::factory()->make();
+        $permission->setAttribute('discord_roles_count', 2);
+
+        $data = (new PermissionResource($permission))->resolve(Request::create('/'));
+
+        $this->assertSame(2, $data['discord_roles_count']);
+    }
+
+    #[Test]
+    #[Group('resource')]
+    public function it_omits_the_role_count_when_not_counted(): void
+    {
+        $permission = Permission::factory()->make();
+
+        $data = (new PermissionResource($permission))->resolve(Request::create('/'));
+
+        $this->assertArrayNotHasKey('discord_roles_count', $data);
+    }
 }
