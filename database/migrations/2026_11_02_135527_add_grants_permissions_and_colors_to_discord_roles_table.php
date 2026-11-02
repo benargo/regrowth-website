@@ -23,4 +23,14 @@ return new class extends Migration
             ->whereIn('id', DB::table('discord_role_has_permissions')->select('discord_role_id'))
             ->update(['grants_permissions' => true]);
     }
+
+    /**
+     * Drop the colour and grants_permissions columns.
+     */
+    public function down(): void
+    {
+        Schema::table('discord_roles', function (Blueprint $table) {
+            $table->dropColumn(['primary_color', 'secondary_color', 'tertiary_color', 'grants_permissions']);
+        });
+    }
 };
