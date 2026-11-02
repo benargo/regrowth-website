@@ -249,3 +249,12 @@ class RosterTest extends TestCase
     }
 }
 ```
+
+## No dedicated tests for mechanical renames
+Don't add dedicated migration or unit tests for small mechanical changes such as table renames or namespace moves. Check the migration runs forward, back and forward again against the testing DB, and rely on the existing suite. Add tests only where there is real behaviour or logic to cover.
+
+## Media N+1 tests need force_lazy_loading off
+`media-library.force_lazy_loading` defaults to true, so `loadMedia()` calls `loadMissing('media')` and `Model::preventLazyLoading()` never sees a missing `media` eager-load; lazy-load tests must set `config(['media-library.force_lazy_loading' => false])`. `preventLazyLoading()` also only trips on multi-row results, so a single media row's `$media->model` lazy load slips through: assert `DB::getQueryLog() === []` instead (see `ListSelectableGameVersionsTest`). `App\Support\MediaLibrary\UrlGenerator` reads `$media->model` on every URL, so eager-loaded media relations need `->chaperone('model')` (as `Raid::media()` does).
+
+## Definition-array keys are alphabetical
+Keys in definition arrays (e.g. a Resource's `scopeDefinitions()`) go in alphabetical order. Add new keys in that order, and write `array_keys` assertions in alphabetical order. When a test's expected key order disagrees with alphabetical code, fix the test, not the code.

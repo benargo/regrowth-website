@@ -2,6 +2,8 @@
 paths:
   - 'app/Services/**/*Data.php'
   - 'app/Services/**'
+  - 'app/Data/**'
+  - 'app/Http/Integrations/**/Data/**'
 ---
 
 # Services

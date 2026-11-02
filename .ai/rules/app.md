@@ -39,3 +39,9 @@ Never inject Laravel Actions (`AsAction`) through constructor or method DI. For 
 
 ## Don't reference public constants on other classes
 A class must not reference public constants defined on another concrete class (e.g. `OtherClass::SOME_CONSTANT`). When classes need to share a constant, define it on a contract (interface in `app/Contracts/**`) and have each class that needs it implement that contract, then reference it via `self::`/`static::`.
+
+## No static helper classes; bind shared collaborators in a provider
+Don't design shared helpers or state holders with static methods or static state (e.g. a static WeakMap registry). Make them instance classes with a container binding and inject them. Bindings shared across several integrations go in AppServiceProvider, not an individual integration's provider.
+
+## Laravel-native mechanisms before new support classes
+Solve cross-cutting request concerns (e.g. coalescing cache-tag flushes) with Laravel's own mechanisms first: middleware, events/listeners, `Event::defer()`, the `defer()` helper for post-response work, and `Context` for request-scoped data. Don't invent bespoke helper/service classes under `app/Support` for them. Any plan that introduces a class type outside the usual Actions/Listeners/Middleware/Jobs/etc. must call it out and justify why a framework mechanism doesn't fit.

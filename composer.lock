@@ -62,16 +62,16 @@
         },
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.402.4",
+            "version": "3.402.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "c5118d25aa1cfe3aa9dbf03a4f06056945427edb"
+                "reference": "ffff4dbeda1c386f66e7e819afbd55406aa9799b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/c5118d25aa1cfe3aa9dbf03a4f06056945427edb",
-                "reference": "c5118d25aa1cfe3aa9dbf03a4f06056945427edb",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/ffff4dbeda1c386f66e7e819afbd55406aa9799b",
+                "reference": "ffff4dbeda1c386f66e7e819afbd55406aa9799b",
                 "shasum": ""
             },
             "require": {
@@ -153,9 +153,9 @@
             "support": {
                 "forum": "https://github.com/aws/aws-sdk-php/discussions",
                 "issues": "https://github.com/aws/aws-sdk-php/issues",
-                "source": "https://github.com/aws/aws-sdk-php/tree/3.402.4"
+                "source": "https://github.com/aws/aws-sdk-php/tree/3.402.5"
             },
-            "time": "2026-10-29T18:05:22+00:00"
+            "time": "2026-10-30T18:04:02+00:00"
         },
         {
             "name": "benargo/saloon-graphql",
@@ -1665,16 +1665,16 @@
         },
         {
             "name": "inertiajs/inertia-laravel",
-            "version": "v3.5.2",
+            "version": "v3.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/inertiajs/inertia-laravel.git",
-                "reference": "4e91cf45cad5ef97862d1ede40fe41616d4e4f91"
+                "reference": "9d3f9060c1614565eb4d3a3208015ed01de347bb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/inertiajs/inertia-laravel/zipball/4e91cf45cad5ef97862d1ede40fe41616d4e4f91",
-                "reference": "4e91cf45cad5ef97862d1ede40fe41616d4e4f91",
+                "url": "https://api.github.com/repos/inertiajs/inertia-laravel/zipball/9d3f9060c1614565eb4d3a3208015ed01de347bb",
+                "reference": "9d3f9060c1614565eb4d3a3208015ed01de347bb",
                 "shasum": ""
             },
             "require": {
@@ -1731,9 +1731,9 @@
             ],
             "support": {
                 "issues": "https://github.com/inertiajs/inertia-laravel/issues",
-                "source": "https://github.com/inertiajs/inertia-laravel/tree/v3.5.2"
+                "source": "https://github.com/inertiajs/inertia-laravel/tree/v3.7.0"
             },
-            "time": "2026-10-21T19:41:00+00:00"
+            "time": "2026-11-02T10:29:10+00:00"
         },
         {
             "name": "laravel-notification-channels/discord",
@@ -2574,16 +2574,16 @@
         },
         {
             "name": "league/commonmark",
-            "version": "2.10.5",
+            "version": "2.10.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thephpleague/commonmark.git",
-                "reference": "6d6ed049ee31e1e644ce51a11a7b1b12f2dc3ade"
+                "reference": "8eb53e906fd60c67038d22f1f1cab420ed58b8be"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thephpleague/commonmark/zipball/6d6ed049ee31e1e644ce51a11a7b1b12f2dc3ade",
-                "reference": "6d6ed049ee31e1e644ce51a11a7b1b12f2dc3ade",
+                "url": "https://api.github.com/repos/thephpleague/commonmark/zipball/8eb53e906fd60c67038d22f1f1cab420ed58b8be",
+                "reference": "8eb53e906fd60c67038d22f1f1cab420ed58b8be",
                 "shasum": ""
             },
             "require": {
@@ -2677,7 +2677,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-10-30T11:53:51+00:00"
+            "time": "2026-10-31T13:35:37+00:00"
         },
         {
             "name": "league/config",
@@ -4742,16 +4742,16 @@
         },
         {
             "name": "phpseclib/phpseclib",
-            "version": "4.0.2",
+            "version": "4.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpseclib/phpseclib.git",
-                "reference": "1fe20b9acb08ce810cec24d8a9d02e7c13426e4c"
+                "reference": "6077cecfed9e371993d3aa339b0afeb23f7bf636"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/1fe20b9acb08ce810cec24d8a9d02e7c13426e4c",
-                "reference": "1fe20b9acb08ce810cec24d8a9d02e7c13426e4c",
+                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/6077cecfed9e371993d3aa339b0afeb23f7bf636",
+                "reference": "6077cecfed9e371993d3aa339b0afeb23f7bf636",
                 "shasum": ""
             },
             "require": {
@@ -4775,9 +4775,6 @@
             },
             "type": "library",
             "autoload": {
-                "files": [
-                    "phpseclib/bootstrap.php"
-                ],
                 "psr-4": {
                     "phpseclib4\\": "phpseclib/"
                 }
@@ -4814,8 +4811,7 @@
                 },
                 {
                     "name": "Jack Worman",
-                    "email": "jack.worman@gmail.com",
-                    "homepage": "https://jackworman.com",
+                    "email": "jack.worman@proton.me",
                     "role": "Developer"
                 }
             ],
@@ -4842,7 +4838,7 @@
             ],
             "support": {
                 "issues": "https://github.com/phpseclib/phpseclib/issues",
-                "source": "https://github.com/phpseclib/phpseclib/tree/4.0.2"
+                "source": "https://github.com/phpseclib/phpseclib/tree/4.0.3"
             },
             "funding": [
                 {
@@ -4858,20 +4854,20 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-10-07T19:55:38+00:00"
+            "time": "2026-11-02T10:46:03+00:00"
         },
         {
             "name": "phpstan/phpdoc-parser",
-            "version": "2.4.0",
+            "version": "2.4.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpdoc-parser.git",
-                "reference": "e3647094ed8f0f1f67393d812b793a5143e25af3"
+                "reference": "af8e840551031d254cfdb3a18a62c3470a309c10"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpdoc-parser/zipball/e3647094ed8f0f1f67393d812b793a5143e25af3",
-                "reference": "e3647094ed8f0f1f67393d812b793a5143e25af3",
+                "url": "https://api.github.com/repos/phpstan/phpdoc-parser/zipball/af8e840551031d254cfdb3a18a62c3470a309c10",
+                "reference": "af8e840551031d254cfdb3a18a62c3470a309c10",
                 "shasum": ""
             },
             "require": {
@@ -4903,9 +4899,9 @@
             "description": "PHPDoc parser with support for nullable, intersection and generic types",
             "support": {
                 "issues": "https://github.com/phpstan/phpdoc-parser/issues",
-                "source": "https://github.com/phpstan/phpdoc-parser/tree/2.4.0"
+                "source": "https://github.com/phpstan/phpdoc-parser/tree/2.4.1"
             },
-            "time": "2026-10-28T20:28:58+00:00"
+            "time": "2026-10-30T19:36:28+00:00"
         },
         {
             "name": "psr/clock",
@@ -11127,16 +11123,16 @@
         },
         {
             "name": "filp/whoops",
-            "version": "2.18.7",
+            "version": "2.19.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/filp/whoops.git",
-                "reference": "50670ba239926c50f2073e868f6672f775cd57ec"
+                "reference": "2915c807d7af61d8fb5c31d90c57af91d30f29fc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/filp/whoops/zipball/50670ba239926c50f2073e868f6672f775cd57ec",
-                "reference": "50670ba239926c50f2073e868f6672f775cd57ec",
+                "url": "https://api.github.com/repos/filp/whoops/zipball/2915c807d7af61d8fb5c31d90c57af91d30f29fc",
+                "reference": "2915c807d7af61d8fb5c31d90c57af91d30f29fc",
                 "shasum": ""
             },
             "require": {
@@ -11186,7 +11182,7 @@
             ],
             "support": {
                 "issues": "https://github.com/filp/whoops/issues",
-                "source": "https://github.com/filp/whoops/tree/2.18.7"
+                "source": "https://github.com/filp/whoops/tree/2.19.1"
             },
             "funding": [
                 {
@@ -11194,7 +11190,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-10-18T13:17:38+00:00"
+            "time": "2026-11-02T12:00:00+00:00"
         },
         {
             "name": "hamcrest/hamcrest-php",
@@ -12504,16 +12500,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "12.5.42",
+            "version": "12.5.43",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "1d6dbe748c079e5d2b03bca1be69d0f4cc52a578"
+                "reference": "1d5a4a3c98fa1ca3a51402c74b66c2c8df85e0bb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/1d6dbe748c079e5d2b03bca1be69d0f4cc52a578",
-                "reference": "1d6dbe748c079e5d2b03bca1be69d0f4cc52a578",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/1d5a4a3c98fa1ca3a51402c74b66c2c8df85e0bb",
+                "reference": "1d5a4a3c98fa1ca3a51402c74b66c2c8df85e0bb",
                 "shasum": ""
             },
             "require": {
@@ -12582,7 +12578,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.42"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.43"
             },
             "funding": [
                 {
@@ -12590,7 +12586,7 @@
                     "type": "other"
                 }
             ],
-            "time": "2026-10-27T04:15:03+00:00"
+            "time": "2026-11-02T07:10:00+00:00"
         },
         {
             "name": "sebastian/cli-parser",
