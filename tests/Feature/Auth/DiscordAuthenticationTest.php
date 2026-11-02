@@ -121,6 +121,25 @@ class DiscordAuthenticationTest extends DashboardTestCase
     }
 
     #[Test]
+    public function discord_callback_remember_cookie_authenticates_the_user_after_the_session_ends(): void
+    {
+        $this->mockDiscordOAuth();
+        $this->fakeDiscordGuildMember();
+
+        $guard = Auth::guard();
+        $this->assertInstanceOf(SessionGuard::class, $guard);
+        $recallerName = $guard->getRecallerName();
+        $recaller = $this->get('/auth/discord/callback?code=test_code')->getCookie($recallerName)->getValue();
+
+        Auth::forgetGuards();
+        session()->flush();
+
+        $this->withCookie($recallerName, $recaller)->get('/');
+
+        $this->assertAuthenticatedAs(User::findOrFail('123456789012345678'));
+    }
+
+    #[Test]
     public function discord_callback_redirects_to_the_intended_url(): void
     {
         $this->mockDiscordOAuth();

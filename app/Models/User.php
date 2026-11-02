@@ -61,6 +61,14 @@ class User extends Authenticatable implements HasDiscordAvatars, HasMedia
     }
 
     /**
+     * Get the password hash for the user, which is always empty for Discord-authenticated users.
+     */
+    public function getAuthPassword(): string
+    {
+        return '';
+    }
+
+    /**
      * Get the user's display name (nickname or username).
      *
      * @return Attribute<string>
