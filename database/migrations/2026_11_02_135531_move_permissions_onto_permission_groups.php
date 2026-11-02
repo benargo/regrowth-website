@@ -71,5 +71,7 @@ return new class extends Migration
             $table->dropConstrainedForeignIdFor(PermissionGroup::class);
             $table->dropColumn(['label', 'description']);
         });
+
+        DB::table('permission_groups')->delete();
     }
 };

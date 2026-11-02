@@ -183,7 +183,7 @@ class PermissionSeederTest extends TestCase
     }
 
     #[Test]
-    public function seeder_creates_the_starting_groups_when_no_permission_is_grouped(): void
+    public function seeder_creates_the_starting_groups_for_new_permissions(): void
     {
         $this->seed(PermissionSeeder::class);
 
@@ -196,7 +196,7 @@ class PermissionSeederTest extends TestCase
     }
 
     #[Test]
-    public function seeder_leaves_grouping_alone_once_any_permission_is_grouped(): void
+    public function seeder_leaves_an_existing_permissions_group_alone(): void
     {
         $this->seed(PermissionSeeder::class);
         Permission::findByName('manage-raid-plans')->update(['permission_group_id' => null]);
@@ -204,6 +204,19 @@ class PermissionSeederTest extends TestCase
         $this->seed(PermissionSeeder::class);
 
         $this->assertNull(Permission::findByName('manage-raid-plans')->permission_group_id);
+        $this->assertDatabaseCount('permission_groups', 5);
+    }
+
+    #[Test]
+    public function seeder_puts_a_new_permission_into_its_existing_group(): void
+    {
+        $this->seed(PermissionSeeder::class);
+        $group = Permission::findByName('view-attendance')->permissionGroup;
+        Permission::findByName('view-attendance')->delete();
+
+        $this->seed(PermissionSeeder::class);
+
+        $this->assertSame($group->id, Permission::findByName('view-attendance')->permission_group_id);
         $this->assertDatabaseCount('permission_groups', 5);
     }
 
@@ -247,16 +260,13 @@ class PermissionSeederTest extends TestCase
     }
 
     #[Test]
-    public function seeder_grants_every_permission_to_the_officer_role_when_no_role_holds_any(): void
+    public function seeder_grants_no_permissions_to_any_role(): void
     {
-        $officer = DiscordRole::factory()->officer()->create();
+        DiscordRole::factory()->officer()->create();
 
         $this->seed(PermissionSeeder::class);
 
-        $this->assertEqualsCanonicalizing(
-            array_column($this->permissions, 'name'),
-            $officer->fresh()->permissions->pluck('name')->all()
-        );
+        $this->assertDatabaseEmpty('discord_role_has_permissions');
     }
 
     #[Test]

@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\PermissionGroup;
 use Illuminate\Database\Seeder;
@@ -10,11 +9,6 @@ use Illuminate\Support\Arr;
 
 class PermissionSeeder extends Seeder
 {
-    /**
-     * The Officer role, which receives every permission on a database where no role holds any.
-     */
-    private const string OFFICER_ROLE_ID = '829021769448816691';
-
     /**
      * The permissions to seed.
      *
@@ -86,7 +80,10 @@ class PermissionSeeder extends Seeder
                 ->first();
 
             if ($permission === null) {
-                Permission::create(Arr::only($entry, ['name', 'guard_name', 'label', 'description']));
+                Permission::create([
+                    ...Arr::only($entry, ['name', 'guard_name', 'label', 'description']),
+                    'permission_group_id' => $this->groupFor($entry['name'])?->id,
+                ]);
 
                 continue;
             }
@@ -97,23 +94,20 @@ class PermissionSeeder extends Seeder
         }
 
         Permission::whereNotIn('name', Arr::pluck($this->permissions, 'name'))->where('guard_name', 'web')->delete();
+    }
 
-        if (! DiscordRole::has('permissions')->exists()) {
-            DiscordRole::find(self::OFFICER_ROLE_ID)?->permissions()->sync(Permission::where('guard_name', 'web')->pluck('id'));
-        }
-
-        if (Permission::whereNotNull('permission_group_id')->exists()) {
-            return;
-        }
-
+    /**
+     * Find or create the starting group that lists the given permission, matched on its name.
+     */
+    private function groupFor(string $permissionName): ?PermissionGroup
+    {
         foreach ($this->groups() as $name => $permissionNames) {
-            $group = PermissionGroup::firstOrCreate(['name' => $name]);
-
-            Permission::whereIn('name', $permissionNames)
-                ->where('guard_name', 'web')
-                ->get()
-                ->each->update(['permission_group_id' => $group->id]);
+            if (in_array($permissionName, $permissionNames, true)) {
+                return PermissionGroup::firstOrCreate(['name' => $name]);
+            }
         }
+
+        return null;
     }
 
     /**
