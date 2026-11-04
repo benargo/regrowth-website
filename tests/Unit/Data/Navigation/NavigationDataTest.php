@@ -23,7 +23,6 @@ class NavigationDataTest extends TestCase
         $navigation = new NavigationData(
             nextRaid: $this->nextRaid(),
             latestDiscussions: [$this->latestDiscussion()],
-            discordInviteUrl: 'https://discord.gg/regrowth',
             warcraftLogsUrl: 'https://www.warcraftlogs.com/guild/id/1',
         );
 
@@ -50,7 +49,6 @@ class NavigationDataTest extends TestCase
                     'replies_count' => 3,
                 ],
             ],
-            'discord_invite_url' => 'https://discord.gg/regrowth',
             'warcraft_logs_url' => 'https://www.warcraftlogs.com/guild/id/1',
         ], $navigation->toArray());
     }
@@ -62,14 +60,12 @@ class NavigationDataTest extends TestCase
         $navigation = new NavigationData(
             nextRaid: null,
             latestDiscussions: [],
-            discordInviteUrl: null,
             warcraftLogsUrl: null,
         );
 
         $this->assertSame([
             'next_raid' => null,
             'latest_discussions' => [],
-            'discord_invite_url' => null,
             'warcraft_logs_url' => null,
         ], $navigation->toArray());
     }
@@ -82,7 +78,6 @@ class NavigationDataTest extends TestCase
         $navigation = NavigationData::from([
             'next_raid' => null,
             'latest_discussions' => [$this->latestDiscussion()->toArray()],
-            'discord_invite_url' => null,
             'warcraft_logs_url' => null,
         ]);
 

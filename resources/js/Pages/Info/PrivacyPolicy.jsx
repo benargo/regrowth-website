@@ -21,7 +21,7 @@ const SECTIONS = [
     { value: "contact", label: "How to contact us" },
 ];
 
-const LAST_UPDATED = "29 October 2026";
+const LAST_UPDATED = "4 November 2026";
 
 /**
  * A titled policy section, labelled by its heading.
@@ -181,6 +181,7 @@ export default function PrivacyPolicy() {
                                 <li>Organise raids and other guild events, and track attendance</li>
                                 <li>Decide on loot distribution</li>
                                 <li>Post event and guild updates to our Discord server</li>
+                                <li>Add you to our Discord server, if you ask to join through this website</li>
                                 <li>Provide the website's interactive features to guild members</li>
                             </List>
 
@@ -253,6 +254,13 @@ export default function PrivacyPolicy() {
                                 <li>
                                     Your Battle.net connection is held only in your current session, and is never saved
                                     to our database.
+                                </li>
+                                <li>
+                                    When you ask to join through this website, we hold your Discord access token in your
+                                    current session, encrypted, and use it to add you to our Discord server once you
+                                    agree. We remove it from the session before adding you, or when you decline. If you
+                                    leave without answering, it's removed when your session expires. The token is never
+                                    saved to your account.
                                 </li>
                                 <li>
                                     Your Discord account details, planned absences and comments are kept for as long as

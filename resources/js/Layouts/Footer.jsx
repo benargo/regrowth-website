@@ -116,10 +116,10 @@ function WarcraftLogsLink({ linkClass, url }) {
     );
 }
 
-function DiscordLink({ linkClass, discordInviteUrl }) {
+function DiscordLink({ linkClass }) {
     return (
         <li>
-            <a href={discordInviteUrl} target="_blank" rel="noopener noreferrer" className={linkClass}>
+            <a href={route("discord")} target="_blank" rel="nofollow noopener noreferrer" className={linkClass}>
                 <FooterLinkIcon>
                     <Icon icon="discord" style="brands" className="h-5 w-5" />
                 </FooterLinkIcon>
@@ -133,7 +133,7 @@ function DiscordLink({ linkClass, discordInviteUrl }) {
  * The site footer: brand, section columns (lg and up), guild links, game
  * version switcher, about links and the disclaimer.
  */
-export default function Footer({ classes, discordInviteUrl, warcraftLogsUrl, gameVersions = [] }) {
+export default function Footer({ classes, warcraftLogsUrl, gameVersions = [] }) {
     const { current: currentGameVersion, switchTo, isSwitching } = useGameVersionSwitch();
     const hasGameVersionColumn = gameVersions.length > 1;
     const footerLinkClass = cn(FOOTER_COLUMN_LINK, classes.footerLink);
@@ -197,7 +197,7 @@ export default function Footer({ classes, discordInviteUrl, warcraftLogsUrl, gam
                         <FooterHeading classes={classes}>Connect</FooterHeading>
                         <ul className="flex flex-col">
                             <WarcraftLogsLink linkClass={footerLinkClass} url={warcraftLogsUrl} />
-                            <DiscordLink linkClass={footerLinkClass} discordInviteUrl={discordInviteUrl} />
+                            <DiscordLink linkClass={footerLinkClass} />
                         </ul>
                     </nav>
 
@@ -208,7 +208,7 @@ export default function Footer({ classes, discordInviteUrl, warcraftLogsUrl, gam
                             <RosterLink linkClass={footerLinkClass} />
                             <HistoryLink linkClass={footerLinkClass} />
                             <WarcraftLogsLink linkClass={footerLinkClass} url={warcraftLogsUrl} />
-                            <DiscordLink linkClass={footerLinkClass} discordInviteUrl={discordInviteUrl} />
+                            <DiscordLink linkClass={footerLinkClass} />
                         </ul>
                     </nav>
 

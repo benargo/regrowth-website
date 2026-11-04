@@ -86,7 +86,6 @@ export default function Master({ title, isHomepage = false, children }) {
     const user = auth?.user?.data;
     const highestRoleColor = user?.highest_role ? modelColor(user.highest_role.primary_color, ["bg"]) : null;
     const highestRoleTextColor = user?.highest_role ? modelColor(user.highest_role.primary_color, ["text"]) : null;
-    const discordInviteUrl = navigation?.discord_invite_url;
     const impersonating = auth?.impersonating;
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
@@ -280,9 +279,10 @@ export default function Master({ title, isHomepage = false, children }) {
                                 <SectionFlyout section="addons" active={isAddonsActive} classes={classes} />
                                 <NavLink
                                     className={cn("hidden 2xl:flex", classes.navLink)}
-                                    href={discordInviteUrl}
+                                    href={route("discord")}
+                                    target="_blank"
+                                    rel="nofollow noopener noreferrer"
                                     external
-                                    rel="noopener noreferrer"
                                 >
                                     <Icon icon="discord" style="brands" className="mr-2 h-6" />
                                     Discord
@@ -469,9 +469,10 @@ export default function Master({ title, isHomepage = false, children }) {
                     <div className={cn("border-t px-2 pt-3", classes.mobileDivider)}>
                         <ResponsiveNavLink
                             className={classes.responsiveNavLink}
-                            href={discordInviteUrl}
+                            href={route("discord")}
+                            target="_blank"
+                            rel="nofollow noopener noreferrer"
                             external
-                            rel="noopener noreferrer"
                         >
                             <Icon icon="discord" style="brands" className="mr-2 h-6" />
                             <span className="flex-1">Discord</span>
@@ -501,7 +502,6 @@ export default function Master({ title, isHomepage = false, children }) {
 
                     <Footer
                         classes={classes}
-                        discordInviteUrl={discordInviteUrl}
                         warcraftLogsUrl={navigation?.warcraft_logs_url}
                         gameVersions={gameVersions}
                     />

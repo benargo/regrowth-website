@@ -18,6 +18,7 @@ use App\Http\Controllers\Dashboard\DiscordRoleController;
 use App\Http\Controllers\Dashboard\PermissionAccessController;
 use App\Http\Controllers\Dashboard\PermissionController;
 use App\Http\Controllers\Dashboard\PermissionGroupController;
+use App\Http\Controllers\DiscordJoinController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTemplateController;
 use App\Http\Controllers\GameVersionController;
@@ -45,6 +46,10 @@ use Inertia\Inertia;
 Route::get('/', HomeController::class)->name('home');
 
 Route::get('/search', SearchController::class)->name('search');
+
+Route::get('/discord', [DiscordJoinController::class, 'show'])->name('discord');
+Route::post('/discord', [DiscordJoinController::class, 'store'])->name('discord.store');
+Route::delete('/discord', [DiscordJoinController::class, 'destroy'])->name('discord.destroy');
 
 Route::patch('/session/game-version', [SessionGameVersionController::class, 'update'])->name('session.game-version.update');
 

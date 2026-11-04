@@ -90,14 +90,6 @@ class BuildNavigationDataTest extends TestCase
     // ==================== community links ====================
 
     #[Test]
-    public function it_includes_the_discord_invite_url(): void
-    {
-        config()->set('guild.discord_invite_url', 'https://discord.gg/example-invite');
-
-        $this->assertSame('https://discord.gg/example-invite', BuildNavigationData::run($this->user, $this->gameVersion)->discordInviteUrl);
-    }
-
-    #[Test]
     public function it_includes_the_versions_warcraft_logs_url(): void
     {
         $gameVersion = GameVersion::factory()
