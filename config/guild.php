@@ -19,18 +19,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Discord invite
-    |--------------------------------------------------------------------------
-    |
-    | Single source of truth for the public invite link, shared by the nav,
-    | the footer and the homepage call to action.
-    |
-    */
-
-    'discord_invite_url' => env('DISCORD_INVITE_URL'),
-
-    /*
-    |--------------------------------------------------------------------------
     | Regrowth Loot Tool
     |--------------------------------------------------------------------------
     |
@@ -42,6 +30,23 @@ return [
     'loot-tool' => [
         'curseforge_url' => 'https://www.curseforge.com/wow/addons/regrowthloottool',
         'github_url' => 'https://github.com/regrowth-guild/loot-tool',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Discord chat roles
+    |--------------------------------------------------------------------------
+    |
+    | The Discord roles that send a member to the Chat channel when they follow
+    | a link to the Discord server: Classic Member, Anniversary Member and
+    | Forever Member. Everyone else goes to the Introductions channel.
+    |
+    */
+
+    'discord_chat_role_ids' => [
+        '1549712849394335774',
+        '1549712327497228338',
+        '1548998062163107871',
     ],
 
     /*
