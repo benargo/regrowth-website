@@ -210,7 +210,7 @@ class GameVersionControllerTest extends DashboardTestCase
     {
         $response = $this->actingAs($this->officer)->post(route('management.game-versions.store'), $this->validPayload([
             'faction' => 'Scourge',
-            'blizzard_namespace' => 'forever',
+            'blizzard_namespace' => 'bogus',
         ]));
 
         $response->assertInvalid([

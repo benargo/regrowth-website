@@ -12,7 +12,7 @@ enum BlizzardNamespace: string
     case ANNIVERSARY = 'anniversary';
     case CLASSIC = 'classic';
     case ERA = 'era';
-    // case FOREVER = 'forever';
+    case FOREVER = 'forever';
     case RETAIL = 'retail';
 
     /** @var list<string> */
@@ -61,7 +61,7 @@ enum BlizzardNamespace: string
             self::ANNIVERSARY => "$category-classicann-{$region->value}",
             self::CLASSIC => "$category-classic-{$region->value}",
             self::ERA => "$category-classic1x-{$region->value}",
-            // self::FOREVER => "$category-forever-{$region->value}",
+            self::FOREVER => "$category-forever-{$region->value}",
             self::RETAIL => "$category-{$region->value}",
         };
     }
@@ -70,7 +70,7 @@ enum BlizzardNamespace: string
     {
         return match ($this) {
             self::ANNIVERSARY, self::CLASSIC, self::ERA, self::RETAIL => true,
-            // self::FOREVER => false,
+            self::FOREVER => false,
         };
     }
 
@@ -91,17 +91,13 @@ enum BlizzardNamespace: string
 
     /**
      * Map this namespace to its Wowhead URL path segment.
-     *
-     * Wowhead hosts retail content at the site root (no segment), Classic Era
-     * under `/classic`, and both Anniversary and TBC Classic under `/tbc` —
-     * Wowhead has never split Anniversary into its own segment, so it shares
-     * the `/tbc` path with TBC Classic.
      */
     public function expansionUrlSegment(): string
     {
         return match ($this) {
             self::RETAIL => '',
             self::ERA => 'classic',
+            self::FOREVER => 'forever',
             self::ANNIVERSARY, self::CLASSIC => 'tbc',
         };
     }

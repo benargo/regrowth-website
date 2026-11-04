@@ -16,9 +16,9 @@ class BlizzardNamespaceTest extends TestCase
 
     #[Test]
     #[Group('happy-path')]
-    public function it_has_exactly_four_cases(): void
+    public function it_has_exactly_five_cases(): void
     {
-        $this->assertCount(4, BlizzardNamespace::cases());
+        $this->assertCount(5, BlizzardNamespace::cases());
     }
 
     #[Test]
@@ -28,14 +28,8 @@ class BlizzardNamespaceTest extends TestCase
         $this->assertSame('anniversary', BlizzardNamespace::ANNIVERSARY->value);
         $this->assertSame('classic', BlizzardNamespace::CLASSIC->value);
         $this->assertSame('era', BlizzardNamespace::ERA->value);
+        $this->assertSame('forever', BlizzardNamespace::FOREVER->value);
         $this->assertSame('retail', BlizzardNamespace::RETAIL->value);
-    }
-
-    #[Test]
-    #[Group('happy-path')]
-    public function forever_is_not_yet_implemented(): void
-    {
-        $this->assertNull(BlizzardNamespace::tryFrom('forever'));
     }
 
     // ==================== value ====================
@@ -63,6 +57,10 @@ class BlizzardNamespaceTest extends TestCase
         $this->assertSame(
             'static-classic1x-eu',
             BlizzardNamespace::ERA->value('static', Region::EU),
+        );
+        $this->assertSame(
+            'static-forever-eu',
+            BlizzardNamespace::FOREVER->value('static', Region::EU),
         );
         $this->assertSame(
             'static-eu',
@@ -146,12 +144,32 @@ class BlizzardNamespaceTest extends TestCase
 
     #[Test]
     #[Group('happy-path')]
-    public function requires_realm_is_true_for_every_current_case(): void
+    public function requires_realm_is_true_for_every_case_except_forever(): void
     {
         $this->assertTrue(BlizzardNamespace::ANNIVERSARY->requiresRealm());
         $this->assertTrue(BlizzardNamespace::CLASSIC->requiresRealm());
         $this->assertTrue(BlizzardNamespace::ERA->requiresRealm());
         $this->assertTrue(BlizzardNamespace::RETAIL->requiresRealm());
+    }
+
+    #[Test]
+    #[Group('happy-path')]
+    public function requires_realm_is_false_for_forever(): void
+    {
+        $this->assertFalse(BlizzardNamespace::FOREVER->requiresRealm());
+    }
+
+    // ==================== expansionUrlSegment ====================
+
+    #[Test]
+    #[Group('happy-path')]
+    public function expansion_url_segment_maps_each_case_to_its_wowhead_path(): void
+    {
+        $this->assertSame('tbc', BlizzardNamespace::ANNIVERSARY->expansionUrlSegment());
+        $this->assertSame('tbc', BlizzardNamespace::CLASSIC->expansionUrlSegment());
+        $this->assertSame('classic', BlizzardNamespace::ERA->expansionUrlSegment());
+        $this->assertSame('forever', BlizzardNamespace::FOREVER->expansionUrlSegment());
+        $this->assertSame('', BlizzardNamespace::RETAIL->expansionUrlSegment());
     }
 
     // ==================== default ====================
@@ -185,17 +203,6 @@ class BlizzardNamespaceTest extends TestCase
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown Blizzard namespace: "bogus"');
-
-        BlizzardNamespace::default();
-    }
-
-    #[Test]
-    #[Group('validation')]
-    public function default_throws_for_the_unimplemented_forever_namespace(): void
-    {
-        config(['services.blizzard.namespace' => 'forever']);
-
-        $this->expectException(InvalidArgumentException::class);
 
         BlizzardNamespace::default();
     }
