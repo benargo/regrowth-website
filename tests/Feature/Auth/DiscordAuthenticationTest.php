@@ -10,6 +10,7 @@ use App\Models\DiscordRole;
 use App\Models\User;
 use Exception;
 use Illuminate\Auth\SessionGuard;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Exceptions;
 use Laravel\Socialite\Contracts\Factory;
 use Laravel\Socialite\Two\User as SocialiteUser;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
@@ -318,6 +320,166 @@ class DiscordAuthenticationTest extends DashboardTestCase
         $response->assertSessionHas('error', 'Failed to authenticate with Discord. Please try again.');
     }
 
+    // ==================== return to the previous page ====================
+
+    #[Test]
+    #[Group('happy-path')]
+    public function discord_callback_returns_to_the_page_the_login_link_was_clicked_on(): void
+    {
+        $this->mockDiscordOAuth();
+        $this->fakeDiscordGuildMember();
+        $previousPage = url('/roster?game_version=tbc');
+
+        $this->from($previousPage)->get('/login');
+        $response = $this->get('/auth/discord/callback?code=test_code');
+
+        $this->assertAuthenticated();
+        $response->assertRedirect($previousPage);
+    }
+
+    #[Test]
+    #[Group('happy-path')]
+    public function discord_callback_returns_to_the_page_an_inertia_login_visit_came_from(): void
+    {
+        $this->mockDiscordOAuth();
+        $this->fakeDiscordGuildMember();
+        $previousPage = url('/roster?game_version=tbc');
+
+        $this->from($previousPage)->get('/login', [
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => app(HandleInertiaRequests::class)->version(Request::create('/login')),
+        ]);
+        $response = $this->get('/auth/discord/callback?code=test_code');
+
+        $response->assertRedirect($previousPage);
+    }
+
+    #[Test]
+    public function discord_callback_prefers_the_url_stored_by_the_auth_middleware(): void
+    {
+        $this->mockDiscordOAuth();
+        $this->fakeDiscordGuildMember();
+
+        $this->get(route('management.dashboard'));
+        $this->from(url('/roster'))->get('/login');
+        $response = $this->get('/auth/discord/callback?code=test_code');
+
+        $response->assertRedirect(route('management.dashboard'));
+    }
+
+    #[Test]
+    #[DataProvider('referersThatAreNotRemembered')]
+    public function discord_callback_falls_back_to_the_homepage_for_a_referer_it_will_not_remember(string $referer): void
+    {
+        $this->mockDiscordOAuth();
+        $this->fakeDiscordGuildMember();
+
+        $this->from($referer)->get('/login');
+        $response = $this->get('/auth/discord/callback?code=test_code');
+
+        $this->assertAuthenticated();
+        $response->assertRedirect('/');
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function referersThatAreNotRemembered(): array
+    {
+        return [
+            'an external site' => ['https://evil.example/roster'],
+            'a host that starts with this host' => ['http://localhost.evil.example/roster'],
+            'this host as a username' => ['http://localhost@evil.example/roster'],
+            'this host after a backslash' => ['http://evil.example\\@localhost/roster'],
+            'a scheme-relative url' => ['//evil.example/roster'],
+            'another scheme' => ['https://localhost/roster'],
+            'another port' => ['http://localhost:8080/roster'],
+            'a malformed url' => ['http://'],
+            'the login route' => ['http://localhost/login'],
+            'the login route with a query string' => ['http://localhost/login?next=1'],
+            'the login route with a trailing slash' => ['http://localhost/login/'],
+            'the login route percent-encoded' => ['http://localhost/%6Cogin'],
+            'the local login route' => ['http://localhost/login/local'],
+            'the discord callback' => ['http://localhost/auth/discord/callback?code=stale'],
+            'the battle.net callback' => ['http://localhost/auth/battlenet/callback?code=stale'],
+        ];
+    }
+
+    #[Test]
+    public function discord_callback_keeps_a_double_slash_path_on_this_site(): void
+    {
+        $this->mockDiscordOAuth();
+        $this->fakeDiscordGuildMember();
+
+        $this->from('http://localhost//evil.example/roster')->get('/login');
+        $response = $this->get('/auth/discord/callback?code=test_code');
+
+        $this->assertSame('localhost', parse_url($response->headers->get('Location'), PHP_URL_HOST));
+    }
+
+    #[Test]
+    public function discord_callback_falls_back_to_the_homepage_without_a_referer(): void
+    {
+        $this->mockDiscordOAuth();
+        $this->fakeDiscordGuildMember();
+
+        $this->withSession(['_previous' => ['url' => url('/roster')]])->get('/login');
+        $response = $this->get('/auth/discord/callback?code=test_code');
+
+        $response->assertRedirect('/');
+    }
+
+    #[Test]
+    public function failed_login_goes_to_the_homepage_rather_than_the_previous_page(): void
+    {
+        $this->mockDiscordOAuth();
+
+        Saloon::fake([GetGuildMemberRequest::class => $this->makeDiscordErrorResponse(404, 10007, 'Unknown Member')]);
+
+        $this->from(url('/roster'))->get('/login');
+        $response = $this->get('/auth/discord/callback?code=test_code');
+
+        $this->assertGuest();
+        $response->assertRedirect('/');
+        $response->assertSessionHas('error', 'You must be a member of the Regrowth Discord server to log in.');
+    }
+
+    #[Test]
+    public function login_after_a_failed_attempt_returns_to_the_latest_page(): void
+    {
+        $this->mockDiscordOAuth();
+
+        Saloon::fake([GetGuildMemberRequest::class => $this->makeDiscordErrorResponse(404, 10007, 'Unknown Member')]);
+
+        $this->from(url('/roster'))->get('/login');
+        $this->get('/auth/discord/callback?code=test_code');
+
+        $this->fakeDiscordGuildMember();
+
+        $this->from(url('/about'))->get('/login');
+        $response = $this->get('/auth/discord/callback?code=test_code');
+
+        $response->assertRedirect(url('/about'));
+    }
+
+    #[Test]
+    public function login_after_a_failed_attempt_does_not_reuse_a_page_it_cannot_remember(): void
+    {
+        $this->mockDiscordOAuth();
+
+        Saloon::fake([GetGuildMemberRequest::class => $this->makeDiscordErrorResponse(404, 10007, 'Unknown Member')]);
+
+        $this->from(url('/roster'))->get('/login');
+        $this->get('/auth/discord/callback?code=test_code');
+
+        $this->fakeDiscordGuildMember();
+
+        $this->from('https://evil.example/roster')->get('/login');
+        $response = $this->get('/auth/discord/callback?code=test_code');
+
+        $response->assertRedirect('/');
+    }
+
     // ==================== logout ====================
 
     #[Test]
@@ -408,6 +570,8 @@ class DiscordAuthenticationTest extends DashboardTestCase
     {
         $provider = $this->mock(DiscordProvider::class);
         $provider->shouldReceive('redirectUrl')->andReturnSelf();
+        $provider->shouldReceive('scopes')->andReturnSelf();
+        $provider->shouldReceive('redirect')->andReturn(new RedirectResponse('https://discord.com/oauth2/authorize'));
 
         $this->mock(Factory::class)
             ->shouldReceive('driver')
