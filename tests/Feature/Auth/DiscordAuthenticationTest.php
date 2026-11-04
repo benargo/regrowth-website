@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Contracts\Actions\Discord\HoldsPendingGuildJoin;
 use App\Http\Integrations\Discord\Exceptions\ApiException;
 use App\Http\Integrations\Discord\Exceptions\RateLimitedException;
 use App\Http\Integrations\Discord\Requests\Guilds\GetGuildMemberRequest;
@@ -14,7 +15,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Exceptions;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Contracts\Factory;
 use Laravel\Socialite\Two\User as SocialiteUser;
 use Mockery\MockInterface;
@@ -79,6 +82,44 @@ class DiscordAuthenticationTest extends DashboardTestCase
 
         $response->assertStatus(409);
         $this->assertStringStartsWith('https://discord.com/', $response->headers->get('X-Inertia-Location'));
+    }
+
+    #[Test]
+    public function login_that_began_at_discord_requests_guilds_join_and_never_sends_prompt_none(): void
+    {
+        $response = $this->withSession(['url.intended' => route('discord')])->get('/login');
+
+        parse_str((string) parse_url($response->headers->get('Location'), PHP_URL_QUERY), $query);
+        $this->assertContains('guilds.join', explode(' ', $query['scope']));
+        $this->assertArrayNotHasKey('prompt', $query);
+    }
+
+    #[Test]
+    public function a_normal_login_keeps_prompt_none_and_does_not_request_guilds_join(): void
+    {
+        $response = $this->get('/login');
+
+        parse_str((string) parse_url($response->headers->get('Location'), PHP_URL_QUERY), $query);
+        $this->assertNotContains('guilds.join', explode(' ', $query['scope']));
+        $this->assertSame('none', $query['prompt']);
+    }
+
+    #[Test]
+    public function following_a_discord_link_with_a_query_string_begins_a_join_login(): void
+    {
+        $this->get('/discord?utm_source=forum');
+        $response = $this->get('/login');
+
+        parse_str((string) parse_url($response->headers->get('Location'), PHP_URL_QUERY), $query);
+        $this->assertContains('guilds.join', explode(' ', $query['scope']));
+    }
+
+    #[Test]
+    public function login_deletes_any_pending_join_before_redirecting(): void
+    {
+        $response = $this->withSession([HoldsPendingGuildJoin::SESSION_KEY => ['user_id' => '1', 'token' => 'x']])->get('/login');
+
+        $response->assertSessionMissing(HoldsPendingGuildJoin::SESSION_KEY);
     }
 
     // ==================== callback ====================
@@ -252,6 +293,7 @@ class DiscordAuthenticationTest extends DashboardTestCase
         $this->assertGuest();
         $response->assertRedirect('/');
         $response->assertSessionHas('error', 'You must be a member of the Regrowth Discord server to log in.');
+        $response->assertSessionMissing(HoldsPendingGuildJoin::SESSION_KEY);
     }
 
     #[Test]
@@ -318,6 +360,97 @@ class DiscordAuthenticationTest extends DashboardTestCase
         $this->assertGuest();
         $response->assertRedirect('/');
         $response->assertSessionHas('error', 'Failed to authenticate with Discord. Please try again.');
+    }
+
+    #[Test]
+    public function a_non_member_who_began_at_discord_gets_an_encrypted_pending_join(): void
+    {
+        $this->mockDiscordOAuth();
+        Saloon::fake([GetGuildMemberRequest::class => $this->makeDiscordErrorResponse(404, 10007, 'Unknown Member')]);
+
+        $response = $this->withSession(['url.intended' => route('discord')])->get('/auth/discord/callback?code=test_code');
+
+        $response->assertRedirect(route('discord'));
+        $response->assertSessionMissing('url.intended');
+        $pending = session(HoldsPendingGuildJoin::SESSION_KEY);
+        $this->assertSame('123456789012345678', $pending['user_id']);
+        $this->assertSame('test_access_token', Crypt::decryptString($pending['token']));
+        $this->assertGuest();
+        $this->assertDatabaseMissing('users', ['id' => '123456789012345678']);
+    }
+
+    #[Test]
+    public function storing_a_pending_join_starts_a_new_session_id(): void
+    {
+        $sessionId = Str::random(40);
+        $this->mockDiscordOAuth();
+        Saloon::fake([GetGuildMemberRequest::class => $this->makeDiscordErrorResponse(404, 10007, 'Unknown Member')]);
+
+        $this->withCookie(config('session.cookie'), $sessionId)
+            ->withSession(['url.intended' => route('discord')])
+            ->get('/auth/discord/callback?code=test_code');
+
+        $this->assertNotSame($sessionId, session()->getId());
+    }
+
+    #[Test]
+    public function a_member_who_began_at_discord_returns_there_without_a_stored_token(): void
+    {
+        $this->mockDiscordOAuth();
+        $this->fakeDiscordGuildMember();
+
+        $response = $this->withSession(['url.intended' => route('discord')])->get('/auth/discord/callback?code=test_code');
+
+        $this->assertAuthenticated();
+        $response->assertRedirect(route('discord'));
+        $response->assertSessionMissing(HoldsPendingGuildJoin::SESSION_KEY);
+    }
+
+    #[Test]
+    public function declining_then_logging_in_normally_is_refused(): void
+    {
+        $this->mockDiscordOAuth();
+        Saloon::fake([GetGuildMemberRequest::class => $this->makeDiscordErrorResponse(404, 10007, 'Unknown Member')]);
+
+        $this->withSession(['url.intended' => route('discord')])->get('/auth/discord/callback?code=test_code');
+        $this->delete('/discord');
+        $response = $this->get('/auth/discord/callback?code=test_code');
+
+        $response->assertRedirect('/');
+        $response->assertSessionHas('error', 'You must be a member of the Regrowth Discord server to log in.');
+        $response->assertSessionMissing(HoldsPendingGuildJoin::SESSION_KEY);
+    }
+
+    #[Test]
+    public function a_failed_join_login_clears_the_intended_url(): void
+    {
+        $this->mockSocialiteProvider()->shouldReceive('user')->andThrow(new Exception('OAuth failed'));
+
+        $response = $this->withSession(['url.intended' => route('discord')])->get('/auth/discord/callback?code=test_code');
+
+        $response->assertRedirect('/');
+        $response->assertSessionMissing('url.intended');
+    }
+
+    #[Test]
+    public function a_failed_join_login_from_the_guild_api_clears_the_intended_url(): void
+    {
+        $this->mockDiscordOAuth();
+        Saloon::fake([GetGuildMemberRequest::class => $this->makeDiscordErrorResponse(403, 50001, 'Missing Access')]);
+
+        $response = $this->withSession(['url.intended' => route('discord')])->get('/auth/discord/callback?code=test_code');
+
+        $response->assertSessionMissing('url.intended');
+    }
+
+    #[Test]
+    public function a_failed_normal_login_keeps_its_intended_url(): void
+    {
+        $this->mockSocialiteProvider()->shouldReceive('user')->andThrow(new Exception('OAuth failed'));
+
+        $response = $this->withSession(['url.intended' => '/dashboard'])->get('/auth/discord/callback?code=test_code');
+
+        $response->assertSessionHas('url.intended', '/dashboard');
     }
 
     // ==================== return to the previous page ====================
@@ -556,7 +689,8 @@ class DiscordAuthenticationTest extends DashboardTestCase
                 'banner' => null,
                 ...$rawOverrides,
             ], $omit))
-            ->map(['id' => '123456789012345678', 'nickname' => 'testuser']);
+            ->map(['id' => '123456789012345678', 'nickname' => 'testuser'])
+            ->setToken('test_access_token');
 
         $this->mockSocialiteProvider()
             ->shouldReceive('user')
