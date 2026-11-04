@@ -67,8 +67,8 @@ class DiscordController extends Controller implements HoldsPendingGuildJoin
             }
 
             return $this->refuseLogin('You must be a member of the Regrowth Discord server to log in.');
-        } catch (DiscordRequestException|RateLimitedException|FatalRequestException $e) {
-            report($e);
+        } catch (DiscordRequestException|RateLimitedException|FatalRequestException $exception) {
+            report($exception);
 
             return $this->refuseLogin('Failed to verify your Discord server membership. Please try again.');
         } catch (Exception) {
@@ -93,8 +93,8 @@ class DiscordController extends Controller implements HoldsPendingGuildJoin
     {
         Auth::logout();
 
-        request()->session()->invalidate();
-        request()->session()->regenerateToken();
+        session()->invalidate();
+        session()->regenerateToken();
 
         return redirect('/');
     }

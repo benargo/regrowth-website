@@ -10,6 +10,7 @@ use App\Http\Integrations\Discord\Exceptions\UserNotInGuildException;
 use App\Http\Integrations\Discord\Requests\Guilds\AddGuildMemberRequest;
 use Illuminate\Container\Attributes\Config;
 use Lorisleiva\Actions\Concerns\AsAction;
+use SensitiveParameter;
 use Spatie\LaravelData\Optional;
 
 /**
@@ -31,7 +32,7 @@ class AddGuildMember
      * @throws RateLimitedException
      * @throws UserNotInGuildException
      */
-    public static function run(string $userId, #[\SensitiveParameter] string $accessToken): GuildMemberData
+    public static function run(string $userId, #[SensitiveParameter] string $accessToken): GuildMemberData
     {
         return static::make()->handle($userId, $accessToken);
     }
@@ -44,7 +45,7 @@ class AddGuildMember
      * @throws RateLimitedException
      * @throws UserNotInGuildException
      */
-    public function handle(string $userId, #[\SensitiveParameter] string $accessToken): GuildMemberData
+    public function handle(string $userId, #[SensitiveParameter] string $accessToken): GuildMemberData
     {
         $member = $this->discord->send(new AddGuildMemberRequest($this->serverId, $userId, $accessToken))->dto();
 

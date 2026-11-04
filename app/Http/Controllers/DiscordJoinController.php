@@ -156,7 +156,8 @@ class DiscordJoinController extends Controller implements HoldsPendingGuildJoin
      */
     private function landingUrl(GuildMemberData $member): string
     {
-        $channelName = array_intersect($member->roles, config('guild.discord_chat_role_ids')) === [] ? 'introductions' : 'chat';
+        $hasChatRole = array_intersect($member->roles, config('guild.discord_chat_role_ids')) !== [];
+        $channelName = $hasChatRole ? 'chat' : 'introductions';
         $channelId = config("services.discord.channels.{$channelName}");
         $guildUrl = 'https://discord.com/channels/'.config('services.discord.server_id');
 

@@ -8,6 +8,7 @@ use Saloon\Enums\Method;
 use Saloon\Http\Request;
 use Saloon\Http\Response;
 use Saloon\Traits\Body\HasJsonBody;
+use SensitiveParameter;
 
 /**
  * Adds a user to a guild with their `guilds.join` access token. A 201 returns
@@ -22,7 +23,7 @@ final class AddGuildMemberRequest extends Request implements HasBody
     public function __construct(
         protected readonly string $guildId,
         protected readonly string $userId,
-        #[\SensitiveParameter] protected readonly string $accessToken,
+        #[SensitiveParameter] protected readonly string $accessToken,
     ) {}
 
     public function resolveEndpoint(): string
