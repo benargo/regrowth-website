@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Head, useForm } from "@inertiajs/react";
+import { useForm } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import Band from "@/Components/Band/Band";
 import BandHeading from "@/Components/Band/BandHeading";
-import Icon from "@/Components/FontAwesome/Icon";
+import DiscordButton from "@/Components/Discord/DiscordButton";
 
 /**
  * Asks someone who has signed in with Discord whether we may add them to the
@@ -25,9 +25,6 @@ export default function Join() {
 
     return (
         <Master title="Join our Discord">
-            <Head>
-                <meta name="robots" content="noindex, nofollow" />
-            </Head>
             <Band className="flex flex-1 items-center text-center" maxWidth="max-w-2xl">
                 <img
                     src="/images/jaina_thumbsup.webp"
@@ -44,15 +41,15 @@ export default function Join() {
                     won’t add you unless you say yes.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-6">
-                    <button
+                    <DiscordButton
+                        as="button"
                         type="button"
                         onClick={confirm}
                         disabled={form.processing}
-                        className="bg-discord border-discord/30 inline-flex items-center gap-3 rounded border px-8 py-4 text-lg text-white shadow-lg transition-[filter,box-shadow] hover:shadow-xl hover:brightness-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                        <Icon icon="discord" style="brands" className="h-6 w-6" />
                         {form.processing && isConfirming ? "Adding you…" : "Yes, add me"}
-                    </button>
+                    </DiscordButton>
                     <button
                         type="button"
                         onClick={decline}

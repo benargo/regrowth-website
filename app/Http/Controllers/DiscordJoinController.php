@@ -35,7 +35,8 @@ class DiscordJoinController extends Controller implements HoldsPendingGuildJoin
 
     /**
      * Show the consent page for a pending join, send guests to sign in, and
-     * send members to their landing channel.
+     * send members to their landing channel. A user viewing the site as a role
+     * is looked up by their own Discord ID, not the view-as account's.
      */
     public function show(): InertiaResponse|Response
     {
@@ -48,7 +49,7 @@ class DiscordJoinController extends Controller implements HoldsPendingGuildJoin
         }
 
         try {
-            $member = FetchGuildMember::run(Auth::id());
+            $member = FetchGuildMember::run(session('impersonating_user_id', Auth::id()));
         } catch (UserNotInGuildException) {
             Auth::logout();
 
@@ -59,7 +60,7 @@ class DiscordJoinController extends Controller implements HoldsPendingGuildJoin
         } catch (DiscordRequestException|RateLimitedException|FatalRequestException $exception) {
             report($exception);
 
-            return response()->view('errors.503', status: Response::HTTP_SERVICE_UNAVAILABLE);
+            return abort(500);
         }
 
         return Inertia::location($this->landingUrl($member));

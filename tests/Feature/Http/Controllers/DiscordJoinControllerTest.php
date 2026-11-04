@@ -134,6 +134,22 @@ class DiscordJoinControllerTest extends TestCase
 
     #[Test]
     #[Group('happy-path')]
+    public function a_user_viewing_as_a_role_is_looked_up_by_their_own_discord_id_and_stays_logged_in(): void
+    {
+        $viewAsUser = User::factory()->create();
+        $this->actingAs($viewAsUser);
+        $this->fakeMemberWithRoles([]);
+
+        $response = $this->withSession(['impersonating_user_id' => '444444444444444444'])->get('/discord');
+
+        $response->assertRedirect('https://discord.com/channels/'.config('services.discord.server_id').'/333333333333333333');
+        $response->assertSessionHas('impersonating_user_id', '444444444444444444');
+        $this->assertAuthenticatedAs($viewAsUser);
+        Saloon::assertSent(fn (SaloonRequest $request): bool => str_ends_with($request->resolveEndpoint(), '/members/444444444444444444'));
+    }
+
+    #[Test]
+    #[Group('happy-path')]
     public function a_logged_in_user_who_left_the_guild_is_logged_out_and_sent_to_login(): void
     {
         $this->actingAs(User::factory()->create());
@@ -168,8 +184,7 @@ class DiscordJoinControllerTest extends TestCase
 
         $response = $this->get('/discord');
 
-        $response->assertStatus(503);
-        $response->assertViewIs('errors.503');
+        $response->assertStatus(500);
         Exceptions::assertReported(ApiException::class);
     }
 
