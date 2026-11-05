@@ -9,11 +9,15 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/**/*.php | .ai/rules/app.md |
 | tests/**,routes/auth.php,app/Http/Controllers/Auth/** | .ai/rules/auth.md |
 | app/Http/Integrations/Blizzard/** | .ai/rules/blizzard.md |
+| app/Http/**, routes/** | .ai/rules/boost/http-routes.md |
+| app/Models/** | .ai/rules/boost/models.md |
+| tests/** | .ai/rules/boost/tests.md |
 | app/Casts/*.php | .ai/rules/casts.md |
 | app/Http/Controllers/** | .ai/rules/controllers.md |
 | app/Events/** | .ai/rules/events.md |
 | tests/Feature/** | .ai/rules/feature.md |
 | resources/** | .ai/rules/frontend.md |
+| app/Http/**, routes/**, resources/js/** | .ai/rules/inertia.md |
 | app/Jobs/** | .ai/rules/jobs.md |
 | resources/js/**/*.jsx | .ai/rules/js.md |
 | app/Listeners/** | .ai/rules/listeners.md |
@@ -30,3 +34,4 @@ Before planning or editing, find the row whose globs match the file's path and r
 | tests/** | .ai/rules/testing-groups.md |
 | tests/Feature/Middleware/** | .ai/rules/testing-middleware.md |
 | tests/** | .ai/rules/testing.md |
+| composer.json, package.json | .ai/rules/upgrades.md |

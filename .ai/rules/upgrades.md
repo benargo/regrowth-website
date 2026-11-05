@@ -1,3 +1,9 @@
+---
+paths:
+  - 'composer.json'
+  - 'package.json'
+---
+
 # Dependency Upgrades
 
 ## Build major-version upgrades around the official codemod

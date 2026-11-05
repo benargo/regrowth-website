@@ -21,13 +21,6 @@ Inside a git worktree, run tests with `bin/wt php artisan test` instead of `vend
 - Other commands work the same way: `bin/wt composer install`, `bin/wt npm run build`.
 - `bin/wt prune` drops testing databases whose worktree has been removed.
 
-## `make:test` naming
-
-Pass only the path relative to the test type's base directory — Artisan prepends `tests/Unit/` for `--unit` and `tests/Feature/` otherwise.
-
-- Correct: `make:test --unit "Services/Foo/BarTest"` → `tests/Unit/Services/Foo/BarTest.php`
-- Wrong: `make:test --unit "Unit/Services/Foo/BarTest"` → doubled `Unit/Unit/` prefix
-
 ## Use `--env=testing` for manual Artisan commands
 
 The dev database (`laravel`) holds real guild data synced from live sources. Always pass `--env=testing` to any manual `tinker`, `db:seed`, or `migrate` run so it targets the separate `laravel_testing` database:
@@ -38,12 +31,3 @@ vendor/bin/sail artisan db:seed --env=testing
 ```
 
 A `.env.testing` file at the repo root points to `DB_DATABASE=laravel_testing`. Never call factory `create()` or run seeders without `--env=testing` unless deliberately seeding dev data.
-
-## Use the Manual Login Routes for browser testing
-
-When driving the app through a browser automation tool (Playwright, claude-in-chrome, etc.), authenticate via the Manual Login Routes defined in `routes/auth.php` instead of going through Discord OAuth.
-
-- `GET login/local` (`login.local`) renders the local login form.
-- `POST login/local` (`login.local.store`) logs the user in.
-
-These routes are only registered when `app()->environment(['local', 'testing'])`, guarded by the `env:local,testing` middleware, so they're unavailable in production and never reach Ziggy's route list there.

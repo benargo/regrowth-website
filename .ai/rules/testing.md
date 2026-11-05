@@ -258,3 +258,10 @@ Don't add dedicated migration or unit tests for small mechanical changes such as
 
 ## Definition-array keys are alphabetical
 Keys in definition arrays (e.g. a Resource's `scopeDefinitions()`) go in alphabetical order. Add new keys in that order, and write `array_keys` assertions in alphabetical order. When a test's expected key order disagrees with alphabetical code, fix the test, not the code.
+
+## `make:test` naming
+
+Pass only the path relative to the test type's base directory — Artisan prepends `tests/Unit/` for `--unit` and `tests/Feature/` otherwise.
+
+- Correct: `make:test --unit "Services/Foo/BarTest"` → `tests/Unit/Services/Foo/BarTest.php`
+- Wrong: `make:test --unit "Unit/Services/Foo/BarTest"` → doubled `Unit/Unit/` prefix

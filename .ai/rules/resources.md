@@ -16,3 +16,9 @@ Computed state flags for the frontend (e.g. PlannedAbsence `has_started`/`has_en
 
 ## Definition-array keys are alphabetical
 Keys in definition arrays (e.g. a Resource's `scopeDefinitions()`) go in alphabetical order. Add new keys in that order, and write `array_keys` assertions in alphabetical order. When a test's expected key order disagrees with alphabetical code, fix the test, not the code.
+
+## Don't call `->value` on enums inside Resource arrays
+
+PHP's `json_encode` and Laravel's HTTP layer serialize backed enums to their value automatically at the final serialization boundary. A Resource's `toArray()` returns a plain PHP array internally, so the correct contract at that layer is the enum **case** itself, not its string value.
+
+When asserting on resource output via `->resolve()` in unit tests, compare against the enum case (e.g. `SignupStatus::Confirmed`), not `SignupStatus::Confirmed->value`. Only use `->value` when explicitly building a string for storage, display, or a non-JSON context.

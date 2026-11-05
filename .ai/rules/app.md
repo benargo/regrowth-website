@@ -45,3 +45,16 @@ Don't design shared helpers or state holders with static methods or static state
 
 ## Laravel-native mechanisms before new support classes
 Solve cross-cutting request concerns (e.g. coalescing cache-tag flushes) with Laravel's own mechanisms first: middleware, events/listeners, `Event::defer()`, the `defer()` helper for post-response work, and `Context` for request-scoped data. Don't invent bespoke helper/service classes under `app/Support` for them. Any plan that introduces a class type outside the usual Actions/Listeners/Middleware/Jobs/etc. must call it out and justify why a framework mechanism doesn't fit.
+
+## Union-Find must be iterative
+
+PHP recursive closures that capture themselves by reference (`&$find`) cause segmentation faults (signal 11) under PHPUnit when called deeply. Always implement Union-Find with an iterative find + path-compression loop:
+
+```php
+$find = function (string $id) use (&$parent): string {
+    $root = $id;
+    while ($parent[$root] !== $root) { $root = $parent[$root]; }
+    while ($parent[$id] !== $root) { $next = $parent[$id]; $parent[$id] = $root; $id = $next; }
+    return $root;
+};
+```

@@ -36,31 +36,6 @@ public function __construct(MockInterface $service = null) {}
 public function __construct(?MockInterface $service = null) {}
 ```
 
-## Value objects / DTOs extend `Spatie\LaravelData\Data`
-
-Any new value object or DTO (a `final class` that wraps data rather than a service with behaviour) extends `Spatie\LaravelData\Data`, as a `final` class with `readonly` constructor-promoted properties. Override `toArray()`/`jsonSerialize()` only when the output shape must differ from the raw constructor properties (computed/renamed fields, nested resolution).
-
-Applies both to API response data under `app/Http/Integrations/**/Data/**` and to domain VOs/DTOs elsewhere (e.g. `app/Services/Attendance/*Data.php`).
-
-## Don't call `->value` on enums inside Resource arrays
-
-PHP's `json_encode` and Laravel's HTTP layer serialize backed enums to their value automatically at the final serialization boundary. A Resource's `toArray()` returns a plain PHP array internally, so the correct contract at that layer is the enum **case** itself, not its string value.
-
-When asserting on resource output via `->resolve()` in unit tests, compare against the enum case (e.g. `SignupStatus::Confirmed`), not `SignupStatus::Confirmed->value`. Only use `->value` when explicitly building a string for storage, display, or a non-JSON context.
-
-## Union-Find must be iterative
-
-PHP recursive closures that capture themselves by reference (`&$find`) cause segmentation faults (signal 11) under PHPUnit when called deeply. Always implement Union-Find with an iterative find + path-compression loop:
-
-```php
-$find = function (string $id) use (&$parent): string {
-    $root = $id;
-    while ($parent[$root] !== $root) { $root = $parent[$root]; }
-    while ($parent[$id] !== $root) { $next = $parent[$id]; $parent[$id] = $root; $id = $next; }
-    return $root;
-};
-```
-
 === .ai/testing rules ===
 
 # Testing
@@ -86,13 +61,6 @@ Inside a git worktree, run tests with `bin/wt php artisan test` instead of `vend
 - Other commands work the same way: `bin/wt composer install`, `bin/wt npm run build`.
 - `bin/wt prune` drops testing databases whose worktree has been removed.
 
-## `make:test` naming
-
-Pass only the path relative to the test type's base directory — Artisan prepends `tests/Unit/` for `--unit` and `tests/Feature/` otherwise.
-
-- Correct: `make:test --unit "Services/Foo/BarTest"` → `tests/Unit/Services/Foo/BarTest.php`
-- Wrong: `make:test --unit "Unit/Services/Foo/BarTest"` → doubled `Unit/Unit/` prefix
-
 ## Use `--env=testing` for manual Artisan commands
 
 The dev database (`laravel`) holds real guild data synced from live sources. Always pass `--env=testing` to any manual `tinker`, `db:seed`, or `migrate` run so it targets the separate `laravel_testing` database:
@@ -103,25 +71,6 @@ vendor/bin/sail artisan db:seed --env=testing
 ```
 
 A `.env.testing` file at the repo root points to `DB_DATABASE=laravel_testing`. Never call factory `create()` or run seeders without `--env=testing` unless deliberately seeding dev data.
-
-## Use the Manual Login Routes for browser testing
-
-When driving the app through a browser automation tool (Playwright, claude-in-chrome, etc.), authenticate via the Manual Login Routes defined in `routes/auth.php` instead of going through Discord OAuth.
-
-- `GET login/local` (`login.local`) renders the local login form.
-- `POST login/local` (`login.local.store`) logs the user in.
-
-These routes are only registered when `app()->environment(['local', 'testing'])`, guarded by the `env:local,testing` middleware, so they're unavailable in production and never reach Ziggy's route list there.
-
-=== .ai/upgrades rules ===
-
-# Dependency Upgrades
-
-## Build major-version upgrades around the official codemod
-
-When a library ships an official upgrade/migration tool (e.g. `npx @tailwindcss/upgrade`), make running it the first explicit step of the plan, then scope manual work to only what the tool cannot do.
-
-The codemod handles the mechanical bulk (build pipeline, renames, directive swaps) reliably; hand-doing it is error-prone and slower. Document precisely which gaps remain manual — for the Tailwind v4 upgrade that was: regex safelist → `@source inline()`, and v3-default compatibility shims for border/ring/placeholder/cursor.
 
 === foundation rules ===
 
@@ -215,12 +164,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Prefer PHPDoc blocks over inline comments. Only add inline comments for exceptionally complex logic.
 - Use array shape type definitions in PHPDoc blocks.
 
-=== deployments rules ===
-
-# Deployment
-
-- Laravel can be deployed using [Laravel Cloud](https://cloud.laravel.com/), which is the fastest way to deploy and scale production Laravel applications.
-
 === sail rules ===
 
 # Laravel Sail
@@ -245,29 +188,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Test the changed behavior and its important failure modes, but do not add tests beyond them.
 - Read the `testing-best-practices` skill before writing tests.
 
-=== inertia-laravel/core rules ===
-
-# Inertia
-
-- Inertia creates fully client-side rendered SPAs without modern SPA complexity, leveraging existing server-side patterns.
-- Components live in `resources/js/Pages` (unless specified in `vite.config.js`). Use `Inertia::render()` for server-side routing instead of Blade views.
-- ALWAYS use `search-docs` tool for version-specific Inertia documentation and updated code examples.
-- IMPORTANT: Activate `inertia-react-development` when working with Inertia client-side patterns.
-
-# Inertia v3
-
-- Use all Inertia features from v1, v2, and v3. Check the documentation before making changes to ensure the correct approach.
-- New v3 features: standalone HTTP requests (`useHttp` hook), optimistic updates with automatic rollback, layout props (`useLayoutProps` hook), instant visits, simplified SSR via `@inertiajs/vite` plugin, custom exception handling for error pages.
-- Carried over from v2: deferred props, infinite scroll, merging props, polling, prefetching, once props, flash data.
-- When using deferred props, add an empty state with a pulsing or animated skeleton.
-- Axios has been removed. Use the built-in XHR client with interceptors, or install Axios separately if needed.
-- `Inertia::lazy()` / `LazyProp` has been removed. Use `Inertia::optional()` instead.
-- Prop types (`Inertia::optional()`, `Inertia::defer()`, `Inertia::merge()`) work inside nested arrays with dot-notation paths.
-- SSR works automatically in Vite dev mode with `@inertiajs/vite` - no separate Node.js server needed during development.
-- Event renames: `invalid` is now `httpException`, `exception` is now `networkError`.
-- `router.cancel()` replaced by `router.cancelAll()`.
-- The `future` configuration namespace has been removed - all v2 future options are now always enabled.
-
 === laravel/core rules ===
 
 # Do Things the Laravel Way
@@ -276,23 +196,9 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - If you're creating a generic PHP class, use `vendor/bin/sail artisan make:class`.
 - Pass `--no-interaction` to all Artisan commands to ensure they work without user input. You should also pass the correct `--options` to ensure correct behavior.
 
-### Model Creation
-
-- When creating new models, create useful factories and seeders for them too. Ask the user if they need any other things, using `vendor/bin/sail artisan make:model --help` to check the available options.
-
-## APIs & Eloquent Resources
-
-- For APIs, default to using Eloquent API Resources and API versioning unless existing API routes do not, then you should follow existing application convention.
-
 ## URL Generation
 
 - When generating links to other pages, prefer named routes and the `route()` function.
-
-## Testing
-
-- When creating models for tests, use the factories for the models. Check if the factory has custom states that can be used before manually setting up the model.
-- Faker: Use methods such as `$this->faker->word()` or `fake()->randomDigit()`. Follow existing conventions whether to use `$this->faker` or `fake()`.
-- When creating tests, make use of `vendor/bin/sail artisan make:test [options] {name}` to create a feature test, and pass `--unit` to create a unit test. Most tests should be feature tests.
 
 === pint/core rules ===
 
@@ -300,20 +206,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 - If you have modified any PHP files, you must run `vendor/bin/sail bin pint --dirty --format agent` before finalizing changes to ensure your code matches the project's expected style.
 - Do not run `vendor/bin/sail bin pint --test --format agent`, simply run `vendor/bin/sail bin pint --format agent` to fix any formatting issues.
-
-=== phpunit/core rules ===
-
-# PHPUnit
-
-- This project uses PHPUnit. Create tests with `vendor/bin/sail artisan make:test --phpunit {name}`.
-- Do not include the test suite directory in `{name}`. Use `SomeFeatureTest`, not `Feature/SomeFeatureTest`.
-- Read the `testing-best-practices` skill for guidance on coverage, naming, structure, dependency isolation, and review.
-
-## Running Tests
-
-- Run the narrowest set of tests that covers the change. Pass a file path or `--filter=testName` to `vendor/bin/sail artisan test --compact`.
-- Rerun a test after each change to it.
-- Run `vendor/bin/sail bin phpunit` to call the test runner directly. It accepts the same file path and `--filter=testName` arguments.
 
 === inertia-react/core rules ===
 
