@@ -109,37 +109,36 @@ export default function MacroForm({ macro = null, types, mentions, submitLabel, 
                     </div>
                 </div>
             ) : (
-                <FormRow
-                    htmlFor="content"
-                    label="Macro content"
-                    required
-                    hint="Plain text, pasted into a chat channel in game."
-                    error={errors.content}
-                >
-                    <textarea
-                        id="content"
-                        name="content"
-                        rows={4}
-                        value={data.content}
-                        onChange={(event) => setData("content", event.target.value)}
-                        aria-invalid={isOverLimit || Boolean(errors.content) ? true : undefined}
-                        aria-describedby="macro-character-count"
-                        className={cn(controlClassName, "font-mono")}
+                <>
+                    <FormRow
+                        htmlFor="content"
+                        label="Macro content"
                         required
-                    />
-                </FormRow>
-            )}
-
-            {data.type !== DISCORD && (
-                <p
-                    id="macro-character-count"
-                    role="status"
-                    className={cn("text-sm tabular-nums", isOverLimit ? "text-red-300" : "text-gray-300")}
-                >
-                    {characterCount.toLocaleString("en-GB")} / {selectedType.character_limit.toLocaleString("en-GB")}{" "}
-                    characters
-                    {isOverLimit && " — too long for " + selectedType.label}
-                </p>
+                        hint="Plain text, pasted into a chat channel in game."
+                        error={errors.content}
+                    >
+                        <textarea
+                            id="content"
+                            name="content"
+                            rows={4}
+                            value={data.content}
+                            onChange={(event) => setData("content", event.target.value)}
+                            aria-invalid={isOverLimit || Boolean(errors.content) ? true : undefined}
+                            aria-describedby="macro-character-count"
+                            className={cn(controlClassName, "font-mono")}
+                            required
+                        />
+                    </FormRow>
+                    <p
+                        id="macro-character-count"
+                        role="status"
+                        className={cn("text-sm tabular-nums", isOverLimit ? "text-red-300" : "text-gray-300")}
+                    >
+                        {characterCount.toLocaleString("en-GB")} /{" "}
+                        {selectedType.character_limit.toLocaleString("en-GB")} characters
+                        {isOverLimit && " — too long for " + selectedType.label}
+                    </p>
+                </>
             )}
 
             <div className="flex flex-wrap items-center gap-3">

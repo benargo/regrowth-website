@@ -2,18 +2,17 @@
 
 namespace App\Http\Resources;
 
-use App\Contracts\Models\TrashesRecruitmentMacros;
 use App\Models\RecruitmentMacro;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * A recruitment macro with its character count and limit. The `meta` block carries whether the
- * requesting user can delete or restore it and, for a trashed macro, the days until it is purged.
+ * requesting user can delete it and, for a trashed macro, the days until it is purged.
  *
  * @mixin RecruitmentMacro
  */
-class RecruitmentMacroResource extends JsonResource implements TrashesRecruitmentMacros
+class RecruitmentMacroResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -38,9 +37,8 @@ class RecruitmentMacroResource extends JsonResource implements TrashesRecruitmen
             'deleted_at' => $this->deleted_at?->toDateTimeString(),
             'meta' => [
                 'can_delete' => ! $this->trashed() && ($user?->can('delete', $this->resource) ?? false),
-                'can_restore' => $this->trashed() && ($user?->can('restore', $this->resource) ?? false),
                 'days_remaining' => $this->trashed()
-                    ? max(0, (int) ceil(now()->diffInDays($this->deleted_at->copy()->addDays(self::TRASH_DAYS))))
+                    ? max(0, (int) ceil(now()->diffInDays($this->deleted_at->copy()->addDays(RecruitmentMacro::TRASH_DAYS))))
                     : null,
             ],
         ];

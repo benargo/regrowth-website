@@ -12,12 +12,6 @@ import { AutosaveProvider } from "@/Hooks/useAutosave";
 import { usePermission } from "@/Hooks/usePermission";
 import Master from "@/Layouts/Master";
 
-/**
- * "{n} days left" for a trashed macro.
- *
- * @param {number} days
- * @returns {string}
- */
 function daysLeft(days) {
     return `${days} ${days === 1 ? "day" : "days"} left`;
 }

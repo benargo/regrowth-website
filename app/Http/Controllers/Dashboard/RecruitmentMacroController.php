@@ -6,7 +6,6 @@ use App\Actions\Discord\BuildDiscordMentionDirectory;
 use App\Actions\RecruitmentMacros\CreateRecruitmentMacro;
 use App\Actions\RecruitmentMacros\ReorderRecruitmentMacros;
 use App\Actions\RecruitmentMacros\RestoreRecruitmentMacro;
-use App\Contracts\Models\TrashesRecruitmentMacros;
 use App\Enums\RecruitmentMacroType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ReorderRecruitmentMacrosRequest;
@@ -20,10 +19,10 @@ use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class RecruitmentMacroController extends Controller implements TrashesRecruitmentMacros
+class RecruitmentMacroController extends Controller
 {
     /**
-     * List the live macros in order, the trashed macros the user can restore, and the mention directory.
+     * List the live macros in order and the trashed macros the user can restore.
      */
     #[Authorize('viewAny', RecruitmentMacro::class)]
     public function index(Request $request): Response
@@ -40,9 +39,6 @@ class RecruitmentMacroController extends Controller implements TrashesRecruitmen
         return Inertia::render('Manage/RecruitmentMacros/Index', [
             'macros' => RecruitmentMacroResource::collection($macros),
             'trashed' => RecruitmentMacroResource::collection($trashed),
-            'mentions' => BuildDiscordMentionDirectory::run(
-                $macros->where('type', RecruitmentMacroType::Discord)->pluck('content')->implode("\n"),
-            ),
         ]);
     }
 
@@ -114,7 +110,7 @@ class RecruitmentMacroController extends Controller implements TrashesRecruitmen
         $recruitmentMacro->delete();
 
         return redirect()->route('management.recruitment-macros.index')
-            ->with('success', "Deleted {$recruitmentMacro->title}. You can restore it for ".self::TRASH_DAYS.' days.');
+            ->with('success', "Deleted {$recruitmentMacro->title}. You can restore it for ".RecruitmentMacro::TRASH_DAYS.' days.');
     }
 
     /**

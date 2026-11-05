@@ -16,8 +16,8 @@ class RestoreRecruitmentMacro
     public function handle(RecruitmentMacro $macro): RecruitmentMacro
     {
         return DB::transaction(function () use ($macro): RecruitmentMacro {
+            $macro->setHighestOrderNumber();
             $macro->restore();
-            $macro->moveToEnd();
 
             return $macro;
         });

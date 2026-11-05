@@ -13,12 +13,6 @@ import formatDate from "@/Helpers/FormatDate";
 import { AutosaveProvider } from "@/Hooks/useAutosave";
 import Master from "@/Layouts/Master";
 
-/**
- * "{n} days left" for a trashed chapter.
- *
- * @param {number} days
- * @returns {string}
- */
 function daysLeft(days) {
     return `${days} ${days === 1 ? "day" : "days"} left`;
 }

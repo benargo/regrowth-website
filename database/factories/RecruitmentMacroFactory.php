@@ -28,16 +28,6 @@ class RecruitmentMacroFactory extends Factory
     }
 
     /**
-     * Indicate the macro is for in-game chat.
-     */
-    public function inGame(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'type' => RecruitmentMacroType::InGame,
-        ]);
-    }
-
-    /**
      * Indicate the macro is a Discord post.
      */
     public function discord(): static

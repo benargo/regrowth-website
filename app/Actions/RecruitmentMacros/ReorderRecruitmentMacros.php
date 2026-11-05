@@ -3,9 +3,7 @@
 namespace App\Actions\RecruitmentMacros;
 
 use App\Models\RecruitmentMacro;
-use Closure;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Lorisleiva\Actions\Concerns\AsAction;
 
@@ -26,13 +24,11 @@ class ReorderRecruitmentMacros
         DB::transaction(function () use ($macroIds): void {
             $live = RecruitmentMacro::pluck('id')->all();
 
-            Validator::make(['macro_ids' => $macroIds], [
-                'macro_ids' => [function (string $attribute, array $value, Closure $fail) use ($live): void {
-                    if (count($value) !== count($live) || array_diff($value, $live) !== [] || array_diff($live, $value) !== []) {
-                        $fail('The macro list has changed; reload the page and try again.');
-                    }
-                }],
-            ])->validate();
+            if (count($macroIds) !== count($live) || array_diff($macroIds, $live) !== [] || array_diff($live, $macroIds) !== []) {
+                throw ValidationException::withMessages([
+                    'macro_ids' => 'The macro list has changed; reload the page and try again.',
+                ]);
+            }
 
             RecruitmentMacro::setNewOrder(array_values($macroIds));
         });

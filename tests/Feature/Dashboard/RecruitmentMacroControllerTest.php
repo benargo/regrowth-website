@@ -113,7 +113,6 @@ class RecruitmentMacroControllerTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->has('trashed.data', 1)
                 ->where('trashed.data.0.id', $own->id)
-                ->where('trashed.data.0.meta.can_restore', true)
                 ->where('trashed.data.0.meta.days_remaining', 30)
             );
 

@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Contracts\Models\TrashesRecruitmentMacros;
 use App\Enums\RecruitmentMacroType;
 use App\Policies\RecruitmentMacroPolicy;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -19,9 +18,14 @@ use Spatie\EloquentSortable\SortableTrait;
 
 #[Fillable(['title', 'type', 'content', 'created_by'])]
 #[UsePolicy(RecruitmentMacroPolicy::class)]
-class RecruitmentMacro extends Model implements Sortable, TrashesRecruitmentMacros
+class RecruitmentMacro extends Model implements Sortable
 {
     use HasFactory, HasUuids, MassPrunable, SoftDeletes, SortableTrait;
+
+    /**
+     * The number of days a trashed macro is kept before it is permanently deleted.
+     */
+    public const int TRASH_DAYS = 30;
 
     /**
      * Get the attributes that should be cast.
