@@ -17,6 +17,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Events/** | .ai/rules/events.md |
 | tests/Feature/** | .ai/rules/feature.md |
 | resources/** | .ai/rules/frontend.md |
+| ** | .ai/rules/general.md |
 | app/Http/**, routes/**, resources/js/** | .ai/rules/inertia.md |
 | app/Jobs/** | .ai/rules/jobs.md |
 | resources/js/**/*.jsx | .ai/rules/js.md |
