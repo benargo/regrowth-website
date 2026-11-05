@@ -15,18 +15,6 @@ import cn from "@/Helpers/cn";
 const DISCORD = "discord";
 
 /**
- * Counts the content in the unit the type's limit uses: UTF-16 units for
- * Discord, characters for in-game chat.
- *
- * @param {string} content
- * @param {string} type
- * @returns {number}
- */
-function countCharacters(content, type) {
-    return type === DISCORD ? content.length : Array.from(content).length;
-}
-
-/**
  * A recruitment macro's title, type and content. In-game macros use a plain
  * textarea; Discord macros use the Discord markdown editor beside a preview.
  * With a `macro` it saves that macro, otherwise it adds a new one.
@@ -45,8 +33,8 @@ export default function MacroForm({ macro = null, types, mentions, submitLabel, 
         type: macro?.type ?? types[0].value,
         content: macro?.content ?? "",
     });
-    const selectedType = types.find((type) => type.value === data.type) ?? types[0];
-    const characterCount = countCharacters(data.content, data.type);
+    const selectedType = types.find((type) => type.value === data.type);
+    const characterCount = Array.from(data.content).length;
     const isOverLimit = characterCount > selectedType.character_limit;
 
     function submit(event) {

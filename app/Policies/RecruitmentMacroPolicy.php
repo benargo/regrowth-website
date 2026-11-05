@@ -61,8 +61,7 @@ class RecruitmentMacroPolicy
      */
     private function isCreatorWhoManages(User $user, RecruitmentMacro $recruitmentMacro): bool
     {
-        return $recruitmentMacro->created_by !== null
-            && $recruitmentMacro->created_by === $user->id
+        return $recruitmentMacro->created_by === $user->id
             && $user->isAuthorizedTo('manage-recruitment-macros');
     }
 }

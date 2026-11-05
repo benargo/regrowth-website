@@ -19,17 +19,17 @@ trait ValidatesRecruitmentMacroDetails
      */
     protected function recruitmentMacroRules(): array
     {
-        $type = RecruitmentMacroType::tryFrom((string) $this->input('type'));
+        $contentRules = ['bail', 'required', 'string'];
+        $type = $this->enum('type', RecruitmentMacroType::class);
+
+        if ($type !== null) {
+            $contentRules[] = new RecruitmentMacroContent($type);
+        }
 
         return [
             'title' => ['required', 'string', 'max:100'],
             'type' => ['required', Rule::enum(RecruitmentMacroType::class)],
-            'content' => array_values(array_filter([
-                'bail',
-                'required',
-                'string',
-                $type instanceof RecruitmentMacroType ? new RecruitmentMacroContent($type) : null,
-            ])),
+            'content' => $contentRules,
         ];
     }
 }

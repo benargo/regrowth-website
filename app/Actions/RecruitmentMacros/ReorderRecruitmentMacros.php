@@ -22,15 +22,15 @@ class ReorderRecruitmentMacros
     public function handle(array $macroIds): void
     {
         DB::transaction(function () use ($macroIds): void {
-            $live = RecruitmentMacro::pluck('id')->all();
+            $liveIds = RecruitmentMacro::pluck('id')->all();
 
-            if (count($macroIds) !== count($live) || array_diff($macroIds, $live) !== [] || array_diff($live, $macroIds) !== []) {
+            if (count($macroIds) !== count($liveIds) || array_diff($liveIds, $macroIds) !== []) {
                 throw ValidationException::withMessages([
                     'macro_ids' => 'The macro list has changed; reload the page and try again.',
                 ]);
             }
 
-            RecruitmentMacro::setNewOrder(array_values($macroIds));
+            RecruitmentMacro::setNewOrder($macroIds);
         });
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Actions\RecruitmentMacros;
 
 use App\Models\RecruitmentMacro;
-use Illuminate\Support\Facades\DB;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 /**
@@ -15,11 +14,9 @@ class RestoreRecruitmentMacro
 
     public function handle(RecruitmentMacro $macro): RecruitmentMacro
     {
-        return DB::transaction(function () use ($macro): RecruitmentMacro {
-            $macro->setHighestOrderNumber();
-            $macro->restore();
+        $macro->setHighestOrderNumber();
+        $macro->restore();
 
-            return $macro;
-        });
+        return $macro;
     }
 }

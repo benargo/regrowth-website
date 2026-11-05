@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Contracts\RecruitmentMacros\TrashesMacros;
 use App\Models\RecruitmentMacro;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -12,7 +13,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  *
  * @mixin RecruitmentMacro
  */
-class RecruitmentMacroResource extends JsonResource
+class RecruitmentMacroResource extends JsonResource implements TrashesMacros
 {
     /**
      * Transform the resource into an array.
@@ -38,7 +39,7 @@ class RecruitmentMacroResource extends JsonResource
             'meta' => [
                 'can_delete' => ! $this->trashed() && ($user?->can('delete', $this->resource) ?? false),
                 'days_remaining' => $this->trashed()
-                    ? max(0, (int) ceil(now()->diffInDays($this->deleted_at->copy()->addDays(RecruitmentMacro::TRASH_DAYS))))
+                    ? max(0, (int) ceil(now()->diffInDays($this->deleted_at->copy()->addDays(self::TRASH_DAYS))))
                     : null,
             ],
         ];

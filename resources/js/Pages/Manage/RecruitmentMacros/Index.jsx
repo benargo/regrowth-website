@@ -3,7 +3,7 @@ import { router } from "@inertiajs/react";
 import AutosavedSortableList from "@/Components/Datasets/AutosavedSortableList";
 import IndexLayout from "@/Components/Datasets/IndexLayout";
 import EmptyState from "@/Components/EmptyState";
-import { FieldError, SecondaryButton } from "@/Components/FormControls";
+import { SecondaryButton } from "@/Components/FormControls";
 import MacroRow from "@/Components/RecruitmentMacros/MacroRow";
 import SharedHeader from "@/Components/SharedHeader";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/Components/Table";
@@ -16,20 +16,52 @@ function daysLeft(days) {
     return `${days} ${days === 1 ? "day" : "days"} left`;
 }
 
+/**
+ * The live macros: drag-sortable with `canManage`, otherwise a read-only list.
+ *
+ * @param {{ macros: Array<Object>, canManage: boolean }} props
+ */
+function MacroList({ macros, canManage }) {
+    if (macros.length === 0) {
+        return <EmptyState icon="bullhorn" iconStyle="light" message="No live macros." />;
+    }
+
+    if (!canManage) {
+        return (
+            <div className="flex flex-col gap-4">
+                {macros.map((macro) => (
+                    <MacroRow key={macro.id} macro={macro} canEdit={false} />
+                ))}
+            </div>
+        );
+    }
+
+    return (
+        <AutosavedSortableList
+            items={macros}
+            getLabel={(macro) => macro.title}
+            url={route("management.recruitment-macros.reorder")}
+            method="put"
+            field="macro_ids"
+            saveKey="recruitment-macro-order"
+            label="Recruitment macros"
+            className="flex flex-col gap-4"
+            renderItem={(macro, { dragHandle }) => <MacroRow macro={macro} canEdit dragHandle={dragHandle} />}
+        />
+    );
+}
+
 export default function Index({ macros, trashed }) {
     const canManage = usePermission("manage-recruitment-macros");
     const [restoringId, setRestoringId] = useState(null);
-    const [restoreError, setRestoreError] = useState("");
 
     function restore(macro) {
         setRestoringId(macro.id);
-        setRestoreError("");
         router.post(
             route("management.recruitment-macros.restore", macro.id),
             {},
             {
                 preserveScroll: true,
-                onError: (errors) => setRestoreError(Object.values(errors)[0] ?? ""),
                 onFinish: () => setRestoringId(null),
             },
         );
@@ -53,29 +85,7 @@ export default function Index({ macros, trashed }) {
                         <h2 id="macros-heading" className="font-serif text-2xl text-white">
                             Macros
                         </h2>
-                        {macros.data.length === 0 ? (
-                            <EmptyState icon="bullhorn" iconStyle="light" message="No live macros." />
-                        ) : canManage ? (
-                            <AutosavedSortableList
-                                items={macros.data}
-                                getLabel={(macro) => macro.title}
-                                url={route("management.recruitment-macros.reorder")}
-                                method="put"
-                                field="macro_ids"
-                                saveKey="recruitment-macro-order"
-                                label="Recruitment macros"
-                                className="flex flex-col gap-4"
-                                renderItem={(macro, { dragHandle }) => (
-                                    <MacroRow macro={macro} canEdit dragHandle={dragHandle} />
-                                )}
-                            />
-                        ) : (
-                            <div className="flex flex-col gap-4">
-                                {macros.data.map((macro) => (
-                                    <MacroRow key={macro.id} macro={macro} canEdit={false} />
-                                ))}
-                            </div>
-                        )}
+                        <MacroList macros={macros.data} canManage={canManage} />
                     </section>
 
                     {canManage && (
@@ -88,9 +98,6 @@ export default function Index({ macros, trashed }) {
                                     Deleted macros you can restore stay here for 30 days. Restoring one puts it at the
                                     end of the list.
                                 </p>
-                            </div>
-                            <div role="alert">
-                                <FieldError message={restoreError} />
                             </div>
                             {trashed.data.length === 0 ? (
                                 <EmptyState

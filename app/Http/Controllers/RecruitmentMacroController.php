@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Http\Controllers\Dashboard;
+namespace App\Http\Controllers;
 
 use App\Actions\Discord\BuildDiscordMentionDirectory;
 use App\Actions\RecruitmentMacros\CreateRecruitmentMacro;
 use App\Actions\RecruitmentMacros\ReorderRecruitmentMacros;
 use App\Actions\RecruitmentMacros\RestoreRecruitmentMacro;
+use App\Contracts\RecruitmentMacros\TrashesMacros;
 use App\Enums\RecruitmentMacroType;
-use App\Http\Controllers\Controller;
 use App\Http\Requests\ReorderRecruitmentMacrosRequest;
 use App\Http\Requests\StoreRecruitmentMacroRequest;
 use App\Http\Requests\UpdateRecruitmentMacroRequest;
@@ -19,7 +19,7 @@ use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class RecruitmentMacroController extends Controller
+class RecruitmentMacroController extends Controller implements TrashesMacros
 {
     /**
      * List the live macros in order and the trashed macros the user can restore.
@@ -110,7 +110,7 @@ class RecruitmentMacroController extends Controller
         $recruitmentMacro->delete();
 
         return redirect()->route('management.recruitment-macros.index')
-            ->with('success', "Deleted {$recruitmentMacro->title}. You can restore it for ".RecruitmentMacro::TRASH_DAYS.' days.');
+            ->with('success', "Deleted {$recruitmentMacro->title}. You can restore it for ".self::TRASH_DAYS.' days.');
     }
 
     /**

@@ -2,7 +2,10 @@ import { Link } from "@inertiajs/react";
 import CopyButton from "@/Components/CopyButton";
 import { focusRing } from "@/Components/Datasets/RecordCard";
 import Icon from "@/Components/FontAwesome/Icon";
+import cn from "@/Helpers/cn";
 import formatDate from "@/Helpers/FormatDate";
+
+const ACTION_CLASS_NAME = `inline-flex shrink-0 items-center rounded border border-amber-500 px-3 py-1.5 text-sm text-white hover:bg-amber-600/30 ${focusRing}`;
 
 /**
  * A recruitment macro's row on the Index page: its drag handle (or an empty
@@ -46,16 +49,11 @@ export default function MacroRow({ macro, canEdit, dragHandle = null }) {
                         </dd>
                     </div>
                 </dl>
-                <CopyButton
-                    getValue={macro.content}
-                    label="Copy"
-                    as="span"
-                    className={`inline-flex shrink-0 items-center rounded border border-amber-500 px-3 py-1.5 text-sm text-white hover:bg-amber-600/30 ${focusRing}`}
-                />
+                <CopyButton getValue={macro.content} label="Copy" as="span" className={ACTION_CLASS_NAME} />
                 {canEdit && (
                     <Link
                         href={route("management.recruitment-macros.edit", macro.id)}
-                        className={`inline-flex shrink-0 items-center gap-1.5 rounded border border-amber-500 px-3 py-1.5 text-sm text-white hover:bg-amber-600/30 ${focusRing}`}
+                        className={cn(ACTION_CLASS_NAME, "gap-1.5")}
                     >
                         <Icon icon="edit" style="light" />
                         Edit<span className="sr-only"> {macro.title}</span>
