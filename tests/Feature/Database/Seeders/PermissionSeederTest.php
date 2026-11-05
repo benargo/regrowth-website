@@ -42,6 +42,24 @@ class PermissionSeederTest extends TestCase
     }
 
     #[Test]
+    public function it_defines_the_recruitment_macro_permissions(): void
+    {
+        $names = collect($this->permissions)->pluck('name')->filter(fn (string $name): bool => str_contains($name, 'recruitment-macro'))->sort()->values()->all();
+
+        $this->assertSame(['delete-any-recruitment-macro', 'manage-recruitment-macros', 'view-recruitment-macros'], $names);
+    }
+
+    #[Test]
+    public function seeder_puts_the_recruitment_macro_permissions_in_the_recruitment_group(): void
+    {
+        $this->seed(PermissionSeeder::class);
+
+        foreach (['view-recruitment-macros', 'manage-recruitment-macros', 'delete-any-recruitment-macro'] as $name) {
+            $this->assertSame('Recruitment', Permission::findByName($name)->permissionGroup->name);
+        }
+    }
+
+    #[Test]
     public function it_no_longer_defines_the_manage_boss_strategies_permission(): void
     {
         $this->assertNotContains('manage-boss-strategies', array_column($this->permissions, 'name'));
@@ -188,7 +206,7 @@ class PermissionSeederTest extends TestCase
         $this->seed(PermissionSeeder::class);
 
         $this->assertSame(
-            ['Loot Bias Tool', 'Raid Management', 'Planned Absences', 'Character Management', 'Warcraft Logs'],
+            ['Loot Bias Tool', 'Raid Management', 'Planned Absences', 'Character Management', 'Warcraft Logs', 'Recruitment'],
             PermissionGroup::ordered()->pluck('name')->all()
         );
         $this->assertSame('Raid Management', Permission::findByName('manage-raid-plans')->permissionGroup->name);
@@ -204,7 +222,7 @@ class PermissionSeederTest extends TestCase
         $this->seed(PermissionSeeder::class);
 
         $this->assertNull(Permission::findByName('manage-raid-plans')->permission_group_id);
-        $this->assertDatabaseCount('permission_groups', 5);
+        $this->assertDatabaseCount('permission_groups', 6);
     }
 
     #[Test]
@@ -217,7 +235,7 @@ class PermissionSeederTest extends TestCase
         $this->seed(PermissionSeeder::class);
 
         $this->assertSame($group->id, Permission::findByName('view-attendance')->permission_group_id);
-        $this->assertDatabaseCount('permission_groups', 5);
+        $this->assertDatabaseCount('permission_groups', 6);
     }
 
     #[Test]

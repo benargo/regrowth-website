@@ -73,6 +73,14 @@ export default function Dashboard({ discordRoles }) {
                                 <p className="mb-1 text-sm">Edit the raid handbook members read on the site.</p>
                             </DashboardCard>
                         </Can>
+                        <Can permission="view-recruitment-macros">
+                            <DashboardCard href={route("management.recruitment-macros.index")} icon="bullhorn">
+                                <h3 className="text-md">Recruitment macros</h3>
+                                <p className="mb-1 text-sm">
+                                    Copy ready-made recruitment messages for chat and Discord.
+                                </p>
+                            </DashboardCard>
+                        </Can>
                     </div>
                 </div>
             </Band>

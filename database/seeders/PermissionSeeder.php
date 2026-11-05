@@ -62,6 +62,13 @@ class PermissionSeeder extends Seeder
         ['name' => 'update-warcraft-logs-tags', 'guard_name' => 'web', 'label' => 'Edit Warcraft Logs tags', 'description' => 'Choose which report tags count towards attendance.'],
 
         /**
+         * Recruitment permissions
+         */
+        ['name' => 'view-recruitment-macros', 'guard_name' => 'web', 'label' => 'View recruitment macros', 'description' => 'See and copy recruitment macros.'],
+        ['name' => 'manage-recruitment-macros', 'guard_name' => 'web', 'label' => 'Manage recruitment macros', 'description' => 'Add, edit and reorder recruitment macros, and delete your own.'],
+        ['name' => 'delete-any-recruitment-macro', 'guard_name' => 'web', 'label' => 'Delete any recruitment macro', 'description' => 'Delete and restore recruitment macros written by anyone.'],
+
+        /**
          * Other permissions
          */
         ['name' => 'edit-datasets', 'guard_name' => 'web', 'label' => 'Edit datasets', 'description' => 'Edit game data such as phases, bosses and raids.'],
@@ -153,6 +160,11 @@ class PermissionSeeder extends Seeder
                 'update-warcraft-logs-guilds',
                 'delete-warcraft-logs-guilds',
                 'update-warcraft-logs-tags',
+            ],
+            'Recruitment' => [
+                'view-recruitment-macros',
+                'manage-recruitment-macros',
+                'delete-any-recruitment-macro',
             ],
         ];
     }

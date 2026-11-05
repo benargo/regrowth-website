@@ -18,6 +18,7 @@ use App\Http\Controllers\Dashboard\DiscordRoleController;
 use App\Http\Controllers\Dashboard\PermissionAccessController;
 use App\Http\Controllers\Dashboard\PermissionController;
 use App\Http\Controllers\Dashboard\PermissionGroupController;
+use App\Http\Controllers\Dashboard\RecruitmentMacroController;
 use App\Http\Controllers\DiscordJoinController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTemplateController;
@@ -262,6 +263,18 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::patch('/handbook/{chapter}', [HandbookChapterController::class, 'update'])->where('chapter', '[a-z0-9-]+')->middleware(NormaliseNewLines::class)->name('handbook.update');
     Route::delete('/handbook/{chapter}', [HandbookChapterController::class, 'destroy'])->where('chapter', '[a-z0-9-]+')->name('handbook.destroy');
     Route::post('/handbook/{chapter}/restore', [HandbookChapterController::class, 'restore'])->where('chapter', '[a-z0-9-]+')->name('handbook.restore');
+
+    /**
+     * Recruitment macros management
+     */
+    Route::get('/recruitment-macros', [RecruitmentMacroController::class, 'index'])->name('recruitment-macros.index');
+    Route::get('/recruitment-macros/create', [RecruitmentMacroController::class, 'create'])->name('recruitment-macros.create');
+    Route::post('/recruitment-macros', [RecruitmentMacroController::class, 'store'])->middleware(NormaliseNewLines::class)->name('recruitment-macros.store');
+    Route::put('/recruitment-macros/order', [RecruitmentMacroController::class, 'reorder'])->name('recruitment-macros.reorder');
+    Route::get('/recruitment-macros/{recruitmentMacro}/edit', [RecruitmentMacroController::class, 'edit'])->name('recruitment-macros.edit');
+    Route::patch('/recruitment-macros/{recruitmentMacro}', [RecruitmentMacroController::class, 'update'])->middleware(NormaliseNewLines::class)->name('recruitment-macros.update');
+    Route::delete('/recruitment-macros/{recruitmentMacro}', [RecruitmentMacroController::class, 'destroy'])->name('recruitment-macros.destroy');
+    Route::post('/recruitment-macros/{recruitmentMacro}/restore', [RecruitmentMacroController::class, 'restore'])->withTrashed()->name('recruitment-macros.restore');
 
     /**
      * Warcraft Logs guilds management

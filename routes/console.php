@@ -10,6 +10,7 @@ use App\Jobs\FetchGuildRosters;
 use App\Jobs\GuildRosterManager\PurgeArchivedUploads as PurgeArchivedGrmUploads;
 use App\Jobs\Handbook\PurgeTrashedChapters;
 use App\Jobs\RaidHelper\FetchEvents as FetchRaidHelperEvents;
+use App\Models\RecruitmentMacro;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Schedule;
 
@@ -56,6 +57,11 @@ Schedule::command('fetch:warcraft-logs --latest')
  * Permanently delete raid handbook chapters trashed more than 30 days ago, daily.
  */
 Schedule::job(new PurgeTrashedChapters)->daily()->name('purge-trashed-handbook-chapters')->withoutOverlapping();
+
+/**
+ * Permanently delete recruitment macros trashed more than 30 days ago, daily.
+ */
+Schedule::command('model:prune', ['--model' => [RecruitmentMacro::class]])->daily()->name('prune-recruitment-macros')->withoutOverlapping();
 
 /**
  * Permanently delete archived GRM uploads older than three months, daily.
