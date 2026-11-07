@@ -97,6 +97,34 @@ class RefreshCharacterPortraitTest extends TestCase
             && $response->getPendingRequest()->headers()->get('Battlenet-Namespace') === BlizzardNamespace::ERA->forProfileRequests(Region::from(config('services.blizzard.region'))));
     }
 
+    #[Test]
+    public function it_looks_up_the_portrait_without_a_realm_on_a_forever_game_version(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['realm' => null, 'blizzard_namespace' => BlizzardNamespace::FOREVER]);
+        $character = Character::factory()->for($gameVersion)->create(['name' => 'Thrall Stormrage']);
+        $this->mockGetCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        RefreshCharacterPortrait::run($character);
+
+        Saloon::assertSent(fn ($request) => $request instanceof GetCharacterMediaRequest
+            && $request->resolveEndpoint() === '/profile/wow/character/thrall-stormrage/character-media');
+    }
+
+    #[Group('edge-case')]
+    #[Test]
+    public function it_sends_no_request_when_the_namespace_needs_a_realm_but_the_game_version_has_none(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['realm' => null, 'blizzard_namespace' => BlizzardNamespace::ERA]);
+        $character = Character::factory()->for($gameVersion)->create();
+        $this->mockGetCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        RefreshCharacterPortrait::run($character);
+
+        Saloon::assertNotSent(GetCharacterMediaRequest::class);
+    }
+
     #[Group('edge-case')]
     #[Test]
     public function it_sends_no_request_when_the_character_has_no_realm(): void

@@ -6,6 +6,7 @@ use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterCharacterData;
 use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
 #[Group('blizzard-integration')]
@@ -47,5 +48,56 @@ class GuildRosterCharacterDataTest extends TestCase
         $this->assertInstanceOf(LinkData::class, $dto->realm);
         $this->assertSame('Silvermoon', $dto->realm->name);
         $this->assertSame(1605, $dto->realm->id);
+    }
+
+    #[Test]
+    public function it_casts_a_forever_roster_character_with_a_surname_and_no_realm(): void
+    {
+        $dto = GuildRosterCharacterData::from($this->foreverPayload());
+
+        $this->assertSame('Stormrage', $dto->surname);
+        $this->assertInstanceOf(Optional::class, $dto->realm);
+    }
+
+    #[Test]
+    public function full_name_joins_the_name_and_surname(): void
+    {
+        $dto = GuildRosterCharacterData::from($this->foreverPayload());
+
+        $this->assertSame('Thrall Stormrage', $dto->fullName());
+    }
+
+    #[Test]
+    public function full_name_is_the_name_alone_without_a_surname(): void
+    {
+        $payload = $this->foreverPayload();
+        unset($payload['surname']);
+
+        $dto = GuildRosterCharacterData::from($payload);
+
+        $this->assertSame('Thrall', $dto->fullName());
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function foreverPayload(): array
+    {
+        return [
+            'id' => 54321,
+            'name' => 'Thrall',
+            'surname' => 'Stormrage',
+            'slug' => 'thrall-stormrage',
+            'level' => 60,
+            'playable_class' => [
+                'key' => ['href' => 'https://eu.api.blizzard.com/data/wow/playable-class/7'],
+                'id' => 7,
+            ],
+            'playable_race' => [
+                'key' => ['href' => 'https://eu.api.blizzard.com/data/wow/playable-race/2'],
+                'id' => 2,
+            ],
+            'faction' => ['type' => 'HORDE'],
+        ];
     }
 }

@@ -45,7 +45,7 @@ class FetchGuildRoster extends Command
             return self::FAILURE;
         }
 
-        if ($gameVersion->realm === null && $gameVersion->blizzard_namespace->requiresRealm()) {
+        if (! $gameVersion->hasRequiredRealm()) {
             $this->error("Game version {$gameVersion->id} has no realm configured.");
 
             return self::FAILURE;

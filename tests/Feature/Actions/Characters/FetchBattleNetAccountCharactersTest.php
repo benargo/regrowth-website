@@ -93,6 +93,27 @@ class FetchBattleNetAccountCharactersTest extends TestCase
     }
 
     #[Test]
+    #[Group('happy-path')]
+    public function it_matches_forever_characters_that_have_a_surname_and_no_realm(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['realm' => null, 'blizzard_namespace' => BlizzardNamespace::FOREVER]);
+        $character = Character::factory()->forGameVersion($gameVersion)->create(['id' => 52963250, 'name' => 'Thrall Stormrage']);
+
+        $accountCharacter = $this->character(52963250, 'Thrall');
+        $accountCharacter['surname'] = 'Stormrage';
+        unset($accountCharacter['realm']);
+
+        $body = $this->profileSummaryBody([[]]);
+        $body['wow_accounts'][0]['characters'] = [$accountCharacter];
+
+        Saloon::fake([GetAccountProfileSummaryRequest::class => MockResponse::make($body)]);
+
+        $characters = FetchBattleNetAccountCharacters::run('user-token', $gameVersion);
+
+        $this->assertSame([$character->id], $characters->modelKeys());
+    }
+
+    #[Test]
     #[Group('error-handling')]
     public function it_throws_when_the_token_is_rejected(): void
     {

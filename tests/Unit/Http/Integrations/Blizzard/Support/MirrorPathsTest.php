@@ -42,6 +42,26 @@ class MirrorPathsTest extends TestCase
     }
 
     #[Test]
+    public function it_strips_the_forever_region_segment_from_icon_urls(): void
+    {
+        $resolver = new MirrorPaths(Region::EU);
+
+        $path = $resolver->fromUrl('https://render.worldofwarcraft.com/forever-eu/icons/56/135349.jpg');
+
+        $this->assertSame('blizzard-cdn/icons/56/135349.jpg', $path);
+    }
+
+    #[Test]
+    public function it_strips_the_forever_region_segment_from_character_urls(): void
+    {
+        $resolver = new MirrorPaths(Region::EU);
+
+        $path = $resolver->fromUrl('https://render.worldofwarcraft.com/forever-eu/character/10/528138-avatar.jpg');
+
+        $this->assertSame('blizzard-cdn/character/10/528138-avatar.jpg', $path);
+    }
+
+    #[Test]
     public function it_returns_null_for_urls_outside_the_render_host(): void
     {
         $resolver = new MirrorPaths(Region::EU);

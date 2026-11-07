@@ -26,8 +26,6 @@ class DatabaseSeeder extends Seeder
             RaidSeeder::class,
             BossSeeder::class,
             ZoneSeeder::class,
-            PlayableClassSeeder::class,
-            PlayableRaceSeeder::class,
             TargetMarkerSeeder::class,
 
             // Then seed the loot bias data.

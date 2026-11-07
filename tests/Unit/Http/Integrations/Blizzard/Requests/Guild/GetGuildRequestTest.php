@@ -83,4 +83,20 @@ class GetGuildRequestTest extends BlizzardTestCase
 
         $this->makeConnector()->send(new GetGuildRequest(null, 'regrowth', BlizzardNamespace::RETAIL));
     }
+
+    #[Test]
+    public function it_omits_the_realm_segment_when_forever_has_no_realm(): void
+    {
+        $request = new GetGuildRequest(null, 'Wild Growth', BlizzardNamespace::FOREVER);
+
+        $this->assertSame('/data/wow/guild/wild-growth', $request->resolveEndpoint());
+    }
+
+    #[Test]
+    public function it_ignores_a_realm_given_in_the_forever_namespace(): void
+    {
+        $request = new GetGuildRequest('Thunderstrike', 'Wild Growth', BlizzardNamespace::FOREVER);
+
+        $this->assertSame('/data/wow/guild/wild-growth', $request->resolveEndpoint());
+    }
 }

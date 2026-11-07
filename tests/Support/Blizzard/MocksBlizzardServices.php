@@ -8,6 +8,9 @@ use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRequest;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
+use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassMediaRequest;
+use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassRequest;
+use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchCharacterMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use Illuminate\Support\Facades\Storage;
@@ -71,6 +74,46 @@ trait MocksBlizzardServices
                 body: array_merge($this->makeCharacterProfileResponse($gender), $responseData),
                 status: $status,
             ),
+        ]);
+    }
+
+    protected function mockGetPlayableClass(int $id = 5, string $name = 'Priest', int $status = 200): void
+    {
+        $this->pendingBlizzardMocks = array_merge($this->pendingBlizzardMocks, [
+            self::TOKEN_MOCK_KEY => MockResponse::make(body: self::TOKEN_MOCK_RESPONSE, status: 200),
+            GetPlayableClassRequest::class => MockResponse::make(
+                body: ['id' => $id, 'name' => $name],
+                status: $status,
+            ),
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $responseData
+     */
+    protected function mockGetPlayableRace(int $id = 7, string $name = 'Gnome', array $responseData = ['faction' => ['type' => 'ALLIANCE', 'name' => 'Alliance']], int $status = 200): void
+    {
+        $this->pendingBlizzardMocks = array_merge($this->pendingBlizzardMocks, [
+            self::TOKEN_MOCK_KEY => MockResponse::make(body: self::TOKEN_MOCK_RESPONSE, status: 200),
+            GetPlayableRaceRequest::class => MockResponse::make(
+                body: array_merge(['id' => $id, 'name' => $name], $responseData),
+                status: $status,
+            ),
+        ]);
+    }
+
+    /**
+     * @param  list<array{key: string, value: string}>  $assets
+     */
+    protected function mockGetPlayableClassMedia(array $assets = [], int $status = 200): void
+    {
+        $this->pendingBlizzardMocks = array_merge($this->pendingBlizzardMocks, [
+            self::TOKEN_MOCK_KEY => MockResponse::make(body: self::TOKEN_MOCK_RESPONSE, status: 200),
+            GetPlayableClassMediaRequest::class => MockResponse::make(
+                body: ['id' => 5, 'assets' => $assets],
+                status: $status,
+            ),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
     }
 

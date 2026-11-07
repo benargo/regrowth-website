@@ -242,6 +242,36 @@ class AttachRenderToCharacterTest extends TestCase
             && $response->getPendingRequest()->headers()->get('Battlenet-Namespace') === BlizzardNamespace::ERA->forProfileRequests(Region::from(config('services.blizzard.region'))));
     }
 
+    #[Test]
+    public function it_looks_up_the_render_without_a_realm_on_a_forever_game_version(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['realm' => null, 'blizzard_namespace' => BlizzardNamespace::FOREVER]);
+        $character = Character::factory()->create(['game_version_id' => $gameVersion->id, 'name' => 'Thrall Stormrage']);
+        $this->mockGetCharacterMedia();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        (new AttachRenderToCharacter($character->id))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
+
+        Saloon::assertSent(fn ($request) => $request instanceof GetCharacterMediaRequest
+            && $request->resolveEndpoint() === '/profile/wow/character/thrall-stormrage/character-media');
+    }
+
+    #[Group('edge-case')]
+    #[Test]
+    public function it_sends_no_media_request_when_the_namespace_needs_a_realm_but_the_game_version_has_none(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['realm' => null, 'blizzard_namespace' => BlizzardNamespace::ERA]);
+        $character = Character::factory()->create(['game_version_id' => $gameVersion->id]);
+        $this->mockGetCharacterMedia();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        (new AttachRenderToCharacter($character->id))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
+
+        Saloon::assertNotSent(GetCharacterMediaRequest::class);
+    }
+
     #[Group('edge-case')]
     #[Test]
     public function it_sends_no_media_request_when_the_character_has_no_realm(): void

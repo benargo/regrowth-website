@@ -72,6 +72,8 @@ class GetCharacterProfileRequestTest extends BlizzardTestCase
         );
     }
 
+    // ==================== resolveEndpoint ====================
+
     #[Test]
     public function it_builds_a_slugged_endpoint_from_raw_realm_and_character_names(): void
     {
@@ -95,6 +97,8 @@ class GetCharacterProfileRequestTest extends BlizzardTestCase
 
         $this->assertSame('/profile/wow/character/thunderstrike/thunderlord', $request->resolveEndpoint());
     }
+
+    // ==================== boot ====================
 
     #[Test]
     public function it_sets_profile_namespace_header(): void
@@ -150,6 +154,8 @@ class GetCharacterProfileRequestTest extends BlizzardTestCase
         });
     }
 
+    // ==================== realm ====================
+
     #[Test]
     #[Group('validation')]
     public function it_throws_when_realm_is_null_for_a_namespace_that_requires_one(): void
@@ -163,5 +169,99 @@ class GetCharacterProfileRequestTest extends BlizzardTestCase
         $this->makeConnector()->send(
             new GetCharacterProfileRequest(null, 'foo', BlizzardNamespace::RETAIL),
         );
+    }
+
+    #[Test]
+    public function it_omits_the_realm_segment_when_forever_has_no_realm(): void
+    {
+        $request = new GetCharacterProfileRequest(null, 'Thrall Stormrage', BlizzardNamespace::FOREVER);
+
+        $this->assertSame('/profile/wow/character/thrall-stormrage', $request->resolveEndpoint());
+    }
+
+    #[Test]
+    public function it_ignores_a_realm_given_in_the_forever_namespace(): void
+    {
+        $request = new GetCharacterProfileRequest('Thunderstrike', 'Thrall Stormrage', BlizzardNamespace::FOREVER);
+
+        $this->assertSame('/profile/wow/character/thrall-stormrage', $request->resolveEndpoint());
+    }
+
+    #[Test]
+    public function it_sends_without_a_realm_in_the_forever_namespace(): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => $this->tokenMock(),
+            GetCharacterProfileRequest::class => MockResponse::make(body: [], status: 200),
+        ]);
+
+        $this->makeConnector()->send(new GetCharacterProfileRequest(null, 'Thrall Stormrage', BlizzardNamespace::FOREVER));
+
+        Saloon::assertSent(GetCharacterProfileRequest::class);
+    }
+
+    // ==================== namespace shapes ====================
+
+    #[Test]
+    #[Group('happy-path')]
+    public function it_casts_a_forever_profile_with_a_surname_and_no_realm(): void
+    {
+        $this->fakeProfile($this->profileBody(surname: 'Stormrage', realm: false));
+
+        /** @var CharacterProfileData $dto */
+        $dto = $this->makeConnector()
+            ->send(new GetCharacterProfileRequest(null, 'Thrall Stormrage', BlizzardNamespace::FOREVER))
+            ->dto();
+
+        $this->assertSame('Thrall', $dto->name);
+        $this->assertSame('Stormrage', $dto->surname);
+        $this->assertInstanceOf(Optional::class, $dto->realm);
+    }
+
+    #[Test]
+    #[Group('happy-path')]
+    public function it_casts_a_profile_with_a_realm_and_no_surname(): void
+    {
+        $this->fakeProfile($this->profileBody());
+
+        /** @var CharacterProfileData $dto */
+        $dto = $this->makeConnector()
+            ->send(new GetCharacterProfileRequest('thunderstrike', 'thrall', BlizzardNamespace::ANNIVERSARY))
+            ->dto();
+
+        $this->assertInstanceOf(Optional::class, $dto->surname);
+        $this->assertSame('Thunderstrike', $dto->realm->name);
+    }
+
+    /**
+     * @param  array<string, mixed>  $body
+     */
+    private function fakeProfile(array $body): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => $this->tokenMock(),
+            GetCharacterProfileRequest::class => MockResponse::make(body: $body, status: 200),
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function profileBody(?string $surname = null, bool $realm = true): array
+    {
+        return [
+            'id' => 1,
+            'name' => 'Thrall',
+            'gender' => ['type' => 'MALE', 'name' => 'Male'],
+            'faction' => ['type' => 'HORDE', 'name' => 'Horde'],
+            'race' => ['key' => ['href' => 'r'], 'name' => 'Orc', 'id' => 2],
+            'character_class' => ['key' => ['href' => 'c'], 'name' => 'Shaman', 'id' => 7],
+            'level' => 60,
+            'last_login_timestamp' => 1716900000000,
+            'average_item_level' => 220,
+            'equipped_item_level' => 220,
+            ...($surname === null ? [] : ['surname' => $surname]),
+            ...($realm ? ['realm' => ['key' => ['href' => 'rm'], 'name' => 'Thunderstrike', 'id' => 1234]] : []),
+        ];
     }
 }

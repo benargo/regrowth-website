@@ -256,6 +256,18 @@ class AttachBlizzardIconToModelTest extends TestCase
 
     #[Group('happy-path')]
     #[Test]
+    public function retail_asset_url_strips_forever_prefix_from_region(): void
+    {
+        $job = new AttachBlizzardIconToModel(Item::class, 1, 'https://render.worldofwarcraft.com/forever-eu/icons/56/135274.jpg');
+
+        $this->assertSame(
+            'https://render.worldofwarcraft.com/eu/icons/56/135274.jpg',
+            (string) $job->retailAssetUrl(),
+        );
+    }
+
+    #[Group('happy-path')]
+    #[Test]
     public function retail_asset_url_is_unchanged_when_url_already_uses_retail_region(): void
     {
         $job = new AttachBlizzardIconToModel(Item::class, 1, 'https://render.worldofwarcraft.com/eu/icons/56/inv_misc_questionmark.jpg');

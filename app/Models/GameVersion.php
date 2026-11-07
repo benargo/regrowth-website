@@ -262,6 +262,14 @@ class GameVersion extends Model implements DatasetModel, DispatchesChangesForMed
     }
 
     /**
+     * Determine whether this version has a realm, or a Blizzard namespace that doesn't need one.
+     */
+    public function hasRequiredRealm(): bool
+    {
+        return $this->realm_slug !== null || $this->blizzard_namespace?->requiresRealm() === false;
+    }
+
+    /**
      * Build the key that identifies this version's guild roster on Blizzard's side.
      */
     public function rosterKey(): string

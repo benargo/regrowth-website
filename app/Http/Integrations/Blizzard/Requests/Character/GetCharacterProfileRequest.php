@@ -31,7 +31,7 @@ class GetCharacterProfileRequest extends Request implements Cacheable
 
     public function resolveEndpoint(): string
     {
-        return sprintf('/profile/wow/character/%s/%s', $this->realm, $this->character);
+        return sprintf('/profile/wow/character/%s', $this->realmAndName($this->character));
     }
 
     public function boot(PendingRequest $pendingRequest): void

@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::create('playable_races', function (Blueprint $table) {
             $table->id();
             $table->string('name', length: 32)->unique();
-            $table->enum('faction', Faction::cases())->default(Faction::NEUTRAL->value)->index();
+            $table->enum('faction', Faction::cases())->nullable()->index();
         });
 
         Schema::table('characters', function (Blueprint $table) {

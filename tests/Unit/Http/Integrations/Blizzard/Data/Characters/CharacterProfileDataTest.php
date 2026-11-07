@@ -101,4 +101,15 @@ class CharacterProfileDataTest extends TestCase
         $this->assertInstanceOf(Optional::class, $dto->experience);
         $this->assertInstanceOf(Optional::class, $dto->achievementPoints);
     }
+
+    #[Test]
+    public function it_casts_a_profile_with_no_realm(): void
+    {
+        $payload = $this->sampleApiResponse();
+        unset($payload['realm']);
+
+        $dto = CharacterProfileData::from($payload);
+
+        $this->assertInstanceOf(Optional::class, $dto->realm);
+    }
 }

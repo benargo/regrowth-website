@@ -2,13 +2,17 @@
 
 namespace Database\Seeders;
 
+use App\Actions\GameVersion\FindOrImportPlayableClass;
 use App\Contracts\HasBlizzardIcons;
+use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
 use App\Http\Integrations\Blizzard\Exceptions\MediaNotFoundException;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\LootPriority;
+use App\Models\PlayableClass;
 use Illuminate\Database\Seeder;
+use Saloon\Exceptions\Request\FatalRequestException;
 use Saloon\Exceptions\Request\RequestException;
 use Saloon\Exceptions\Request\Statuses\ForbiddenException;
 
@@ -120,7 +124,13 @@ class PrioritySeeder extends Seeder implements HasBlizzardIcons
 
     protected function seedPriorities(): void
     {
+        $failedClassIds = $this->importMissingPlayableClasses();
+
         foreach (self::priorities() as $priority) {
+            if (in_array($priority['playable_class_id'] ?? null, $failedClassIds, true)) {
+                continue;
+            }
+
             $iconName = $priority['icon_name'];
 
             $model = LootPriority::query()->updateOrCreate(
@@ -153,5 +163,29 @@ class PrioritySeeder extends Seeder implements HasBlizzardIcons
                 $this->command?->warn("  ⚠ [{$model->title}] Icon skipped — {$e->getMessage()}");
             }
         }
+    }
+
+    /**
+     * Import each referenced class missing from the database, returning the IDs
+     * that could not be imported. A failed import is warned about and skipped.
+     *
+     * @return array<int, int>
+     */
+    protected function importMissingPlayableClasses(): array
+    {
+        $classIds = collect(self::priorities())->pluck('playable_class_id')->filter()->unique();
+        $missingClassIds = $classIds->diff(PlayableClass::query()->whereKey($classIds)->pluck('id'));
+        $failedClassIds = [];
+
+        foreach ($missingClassIds as $classId) {
+            try {
+                FindOrImportPlayableClass::run($classId, null);
+            } catch (BlizzardRequestException|FatalRequestException $e) {
+                $this->command?->warn("  ⚠ [Class {$classId}] Import failed, skipping its priorities — {$e->getMessage()}");
+                $failedClassIds[] = $classId;
+            }
+        }
+
+        return $failedClassIds;
     }
 }

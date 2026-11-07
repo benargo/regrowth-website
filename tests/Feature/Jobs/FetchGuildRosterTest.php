@@ -7,7 +7,9 @@ use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
+use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassRequest;
 use App\Jobs\Addon\BuildExportFile;
+use App\Jobs\AttachBlizzardIconToModel;
 use App\Jobs\FetchGuildRoster;
 use App\Models\Character;
 use App\Models\GameVersion;
@@ -21,6 +23,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Middleware\RateLimitedWithRedis;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Laravel\Facades\Saloon;
@@ -171,6 +175,8 @@ class FetchGuildRosterTest extends TestCase
     {
         $gameVersion = $this->createGameVersion();
         GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 1]);
+        PlayableRace::factory()->create(['id' => 1]);
 
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(999, 'Thrall', 80, 0),
@@ -239,7 +245,7 @@ class FetchGuildRosterTest extends TestCase
 
     #[Group('happy-path')]
     #[Test]
-    public function it_saves_the_character_without_a_class_when_not_in_the_local_table(): void
+    public function it_imports_a_class_missing_from_the_local_table(): void
     {
         $gameVersion = $this->createGameVersion();
         GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
@@ -252,15 +258,295 @@ class FetchGuildRosterTest extends TestCase
             'character_class' => ['key' => ['href' => 'https://example.test/class/5'], 'name' => 'Priest', 'id' => 5],
             'race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1],
         ]);
+        $this->mockGetPlayableClass(5, 'Priest');
+        $this->mockGetPlayableClassMedia();
         $this->applyBlizzardMocks();
 
         $this->assertDatabaseMissing('playable_classes', ['id' => 5]);
 
         (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
 
+        $this->assertSame('Priest', Character::find(1)->playableClass->name);
+        $this->assertTrue($gameVersion->playableClasses()->whereKey(5)->exists());
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_imports_a_race_missing_from_the_local_table(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(1, 'Alpha', 70, 0),
+        ]]);
+        $this->mockGetCharacterProfile(responseData: $this->makeCharacterProfileResponse(raceId: 7));
+        $this->mockGetPlayableRace(7, 'Gnome');
+        $this->applyBlizzardMocks();
+
+        $this->assertDatabaseMissing('playable_races', ['id' => 7]);
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        $this->assertSame('Gnome', Character::find(1)->playableRace->name);
+        $this->assertTrue($gameVersion->playableRaces()->whereKey(7)->exists());
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_imports_from_the_forever_namespace_for_a_forever_version(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['realm' => null, 'blizzard_namespace' => BlizzardNamespace::FOREVER, 'uses_surnames' => true]);
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableRace::factory()->create(['id' => 1, 'name' => 'Human']);
+
+        $member = $this->memberPayload(1, 'Thrall', 70, 0);
+        $member['character']['surname'] = 'Stormrage';
+        $member['character']['slug'] = 'thrall-stormrage';
+        $member['character']['faction'] = ['type' => 'HORDE'];
+        unset($member['character']['realm'], $member['character']['playable_class']['name'], $member['character']['playable_race']['name']);
+
+        $this->mockGetGuildRoster(['members' => [$member]]);
+        $this->mockGetCharacterProfile(responseData: $this->makeCharacterProfileResponse(classId: 5));
+        $this->mockGetPlayableClass(5, 'Priest');
+        $this->mockGetPlayableClassMedia();
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        Saloon::assertSent(
+            fn ($request, $response) => $request instanceof GetPlayableClassRequest
+                && $response->getPendingRequest()->headers()->get('Battlenet-Namespace') === 'static-forever-eu',
+        );
+        $this->assertSame(5, Character::find(1)->playable_class_id);
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_links_an_existing_class_and_race_to_the_game_version(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
+        PlayableRace::factory()->create(['id' => 1, 'name' => 'Human']);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(1, 'Alpha', 70, 0),
+        ]]);
+        $this->mockGetCharacterProfile();
+        $this->applyBlizzardMocks();
+
+        $this->assertFalse($gameVersion->playableClasses()->exists());
+        $this->assertFalse($gameVersion->playableRaces()->exists());
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        $this->assertTrue($gameVersion->playableClasses()->whereKey(1)->exists());
+        $this->assertTrue($gameVersion->playableRaces()->whereKey(1)->exists());
+    }
+
+    #[Group('edge-cases')]
+    #[Test]
+    public function it_stores_only_the_first_name_when_the_version_has_no_surnames(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 1]);
+        PlayableRace::factory()->create(['id' => 1]);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(1, 'Thrall', 70, 0, 'Stormrage'),
+        ]]);
+        $this->mockGetCharacterProfile();
+        $this->mockGetPlayableClassMedia();
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        $this->assertDatabaseHas('characters', ['id' => 1, 'name' => 'Thrall']);
+        Saloon::assertSent(fn ($request) => $request instanceof GetCharacterProfileRequest
+            && str_ends_with($request->resolveEndpoint(), '/thrall'));
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_stores_the_full_name_when_the_version_uses_surnames(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        $gameVersion->update(['uses_surnames' => true]);
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 1]);
+        PlayableRace::factory()->create(['id' => 1]);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(1, 'Thrall', 70, 0, 'Stormrage'),
+        ]]);
+        $this->mockGetCharacterProfile();
+        $this->mockGetPlayableClassMedia();
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        $this->assertDatabaseHas('characters', ['id' => 1, 'name' => 'Thrall Stormrage']);
+    }
+
+    #[Group('error-handling')]
+    #[Test]
+    public function it_logs_and_continues_when_two_members_share_a_first_name_without_surnames(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 1]);
+        PlayableRace::factory()->create(['id' => 1]);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(1, 'Thrall', 70, 0, 'Stormrage'),
+            $this->memberPayload(2, 'Thrall', 70, 0, 'Doomhammer'),
+            $this->memberPayload(3, 'Jaina', 70, 0),
+        ]]);
+        $this->mockGetCharacterProfile();
+        $this->mockGetPlayableClassMedia();
+        $this->applyBlizzardMocks();
+
+        Log::shouldReceive('warning')->once()->withArgs(
+            fn ($message, $context) => $message === 'Failed to sync character from guild roster.'
+                && $context['character_id'] === 2
+                && $context['character_name'] === 'Thrall Doomhammer',
+        );
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        $this->assertDatabaseHas('characters', ['id' => 1, 'name' => 'Thrall']);
+        $this->assertDatabaseMissing('characters', ['id' => 2]);
+        $this->assertDatabaseHas('characters', ['id' => 3, 'name' => 'Jaina']);
+    }
+
+    #[Group('edge-cases')]
+    #[Test]
+    public function it_queues_icons_for_a_rostered_class_with_no_icons(): void
+    {
+        Queue::fake();
+        Storage::fake('s3');
+
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        $playableClass = PlayableClass::factory()->create(['id' => 1]);
+        $playableClass->gameVersions()->attach($gameVersion);
+        PlayableRace::factory()->create(['id' => 1]);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(1, 'Alpha', 70, 0),
+        ]]);
+        $this->mockGetCharacterProfile();
+        $this->mockGetPlayableClassMedia([
+            ['key' => 'icon', 'value' => 'https://render.worldofwarcraft.com/eu/icons/56/class_warrior.jpg'],
+        ]);
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        Queue::assertPushed(AttachBlizzardIconToModel::class, 1);
+    }
+
+    #[Group('edge-cases')]
+    #[Test]
+    public function it_requests_a_failing_class_at_most_twice_per_sync(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableRace::factory()->create(['id' => 1]);
+
+        $members = collect(['Alpha', 'Bravo', 'Charlie'])->map(function (string $name, int $index): array {
+            $member = $this->memberPayload($index + 1, $name, 70, 0);
+            $member['character']['playable_class']['id'] = 5;
+
+            return $member;
+        });
+
+        $this->mockGetGuildRoster(['members' => $members->all()]);
+        $this->mockGetCharacterProfile(responseData: $this->makeCharacterProfileResponse(classId: 5));
+        $this->mockGetPlayableClass(status: 500);
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        Saloon::mockClient()->assertSentCount(2, GetPlayableClassRequest::class);
+        $this->assertSame(3, Character::whereBelongsTo($gameVersion)->count());
+    }
+
+    #[Group('edge-cases')]
+    #[Test]
+    public function it_keeps_the_existing_class_when_the_import_fails(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 3, 'name' => 'Hunter']);
+        PlayableRace::factory()->create(['id' => 1, 'name' => 'Human']);
+        Character::factory()->create([
+            'id' => 1,
+            'playable_class_id' => 3,
+            'playable_race_id' => 1,
+            'level' => 60,
+            'game_version_id' => $gameVersion->id,
+        ]);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(1, 'Alpha', 70, 0),
+        ]]);
+        $this->mockGetCharacterProfile(responseData: $this->makeCharacterProfileResponse(classId: 5));
+        $this->mockGetPlayableClass(status: 500);
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
         $character = Character::find(1);
-        $this->assertNotNull($character);
-        $this->assertNull($character->playableClass);
+        $this->assertSame(3, $character->playable_class_id);
+        $this->assertSame(70, $character->level);
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_links_the_class_and_race_of_a_member_below_the_minimum_level(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 1]);
+        PlayableRace::factory()->create(['id' => 1]);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(77, 'Newbie', 5, 0),
+        ]]);
+        $this->mockGetCharacterProfile();
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        $this->assertTrue($gameVersion->playableClasses()->whereKey(1)->exists());
+        $this->assertTrue($gameVersion->playableRaces()->whereKey(1)->exists());
+        $this->assertDatabaseMissing('characters', ['id' => 77]);
+    }
+
+    #[Group('error-handling')]
+    #[Test]
+    public function it_links_the_class_and_race_of_a_member_whose_profile_request_fails(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 1]);
+        PlayableRace::factory()->create(['id' => 1]);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(78, 'Broken', 70, 0),
+        ]]);
+        $this->mockGetCharacterProfile(status: 500);
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        $this->assertTrue($gameVersion->playableClasses()->whereKey(1)->exists());
+        $this->assertTrue($gameVersion->playableRaces()->whereKey(1)->exists());
+        $this->assertDatabaseMissing('characters', ['id' => 78]);
     }
 
     #[Group('happy-path')]
@@ -269,6 +555,8 @@ class FetchGuildRosterTest extends TestCase
     {
         $gameVersion = $this->createGameVersion();
         GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 1]);
+        PlayableRace::factory()->create(['id' => 1]);
 
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(55, 'Lowbie', 59, 0),
@@ -330,6 +618,8 @@ class FetchGuildRosterTest extends TestCase
         $gameVersion = $this->createGameVersion();
         GuildRank::factory()->for(GameVersion::factory())->create(['sort_order' => 0, 'name' => 'Elsewhere']);
         $rank = GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 1]);
+        PlayableRace::factory()->create(['id' => 1]);
 
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(1, 'Alpha', 70, 0),
@@ -411,6 +701,8 @@ class FetchGuildRosterTest extends TestCase
     {
         $gameVersion = $this->createGameVersion();
         GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 1]);
+        PlayableRace::factory()->create(['id' => 1]);
 
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(1, 'Thrall', 70, 0),
@@ -429,6 +721,8 @@ class FetchGuildRosterTest extends TestCase
     {
         $gameVersion = $this->createGameVersion();
         GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 1]);
+        PlayableRace::factory()->create(['id' => 1]);
 
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(2, 'Sylvanas', 70, 0),
@@ -470,6 +764,7 @@ class FetchGuildRosterTest extends TestCase
             $this->memberPayload(2, 'GoodChar', 70, 0),
         ]]);
         $this->mockGetCharacterProfile();
+        $this->mockGetPlayableClassMedia();
         $this->applyBlizzardMocks();
 
         Log::shouldReceive('warning')->once()->withArgs(function ($message, $context) {
@@ -489,11 +784,14 @@ class FetchGuildRosterTest extends TestCase
     {
         $gameVersion = $this->createGameVersion();
         GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 1]);
+        PlayableRace::factory()->create(['id' => 1]);
 
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(1, 'NoRankChar', 70, 99),
         ]]);
         $this->mockGetCharacterProfile();
+        $this->mockGetPlayableClassMedia();
         $this->applyBlizzardMocks();
 
         Log::shouldReceive('warning')->once()->withArgs(function ($message, $context) {
@@ -533,6 +831,36 @@ class FetchGuildRosterTest extends TestCase
         $this->assertDatabaseCount('characters', 0);
     }
 
+    // ==================== forever ====================
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_syncs_a_realmless_forever_member_under_their_full_name(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['realm' => null, 'blizzard_namespace' => BlizzardNamespace::FOREVER, 'uses_surnames' => true]);
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 1]);
+        PlayableRace::factory()->create(['id' => 1]);
+
+        $member = $this->memberPayload(1, 'Thrall', 70, 0);
+        $member['character']['surname'] = 'Stormrage';
+        $member['character']['slug'] = 'thrall-stormrage';
+        $member['character']['faction'] = ['type' => 'HORDE'];
+        unset($member['character']['realm'], $member['character']['playable_class']['name'], $member['character']['playable_race']['name']);
+
+        $this->mockGetGuildRoster(['members' => [$member]]);
+        $this->mockGetCharacterProfile();
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        Saloon::assertSent(fn ($request) => $request instanceof GetGuildRosterRequest
+            && $request->resolveEndpoint() === "/data/wow/guild/{$gameVersion->guild_slug}/roster");
+        Saloon::assertSent(fn ($request) => $request instanceof GetCharacterProfileRequest
+            && $request->resolveEndpoint() === '/profile/wow/character/thrall-stormrage');
+        $this->assertDatabaseHas('characters', ['id' => 1, 'name' => 'Thrall Stormrage', 'game_version_id' => $gameVersion->id]);
+    }
+
     // ==================== helpers ====================
 
     private function createGameVersion(): GameVersion
@@ -546,9 +874,9 @@ class FetchGuildRosterTest extends TestCase
     /**
      * @return array<string, mixed>
      */
-    private function memberPayload(int $id, string $name, int $level, int $rank = 0): array
+    private function memberPayload(int $id, string $name, int $level, int $rank = 0, ?string $surname = null): array
     {
-        return [
+        return array_replace_recursive([
             'character' => [
                 'key' => ['href' => "https://example.test/character/{$id}"],
                 'name' => $name,
@@ -559,6 +887,6 @@ class FetchGuildRosterTest extends TestCase
                 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike'],
             ],
             'rank' => $rank,
-        ];
+        ], $surname === null ? [] : ['character' => ['surname' => $surname]]);
     }
 }

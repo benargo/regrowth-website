@@ -19,6 +19,8 @@ class GuildRosterMemberCollection extends ResourceCollection
     /** @var array<int, string> */
     private array $rankNames;
 
+    private bool $usesSurnames;
+
     /** @param  list<GuildRosterMemberData>  $resource */
     public function __construct(array $resource, GameVersion $gameVersion)
     {
@@ -38,6 +40,8 @@ class GuildRosterMemberCollection extends ResourceCollection
             ->get()
             ->pluck('name', 'sort_order')
             ->all();
+
+        $this->usesSurnames = $gameVersion->uses_surnames;
     }
 
     /** @return array<int, array<string, mixed>> */
@@ -51,12 +55,13 @@ class GuildRosterMemberCollection extends ResourceCollection
             ])
             ->map(function (GuildRosterMemberData $member) use ($request) {
                 $character = $this->knownCharacters->get($member->character->id);
+                $characterName = $member->character->nameForVersion($this->usesSurnames);
 
                 return [
                     'character' => [
                         'id' => $member->character->id,
-                        'name' => $member->character->name,
-                        'slug' => Str::slug($member->character->name),
+                        'name' => $characterName,
+                        'slug' => Str::slug($characterName),
                         'level' => $member->character->level,
                         'playable_class_id' => $member->character->playableClass->id,
                         'playable_race_id' => $member->character->playableRace->id,

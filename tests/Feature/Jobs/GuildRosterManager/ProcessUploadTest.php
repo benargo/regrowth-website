@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Jobs\GuildRosterManager;
 
+use App\Enums\Gender;
 use App\Events\Broadcasts\GrmUploadCompleted as GrmUploadCompletedBroadcast;
 use App\Events\Broadcasts\GrmUploadFailed as GrmUploadFailedBroadcast;
 use App\Events\Broadcasts\GrmUploadProgressed;
@@ -9,6 +10,7 @@ use App\Events\Broadcasts\GrmUploadStarted;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterStatusRequest;
+use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassRequest;
 use App\Http\Integrations\Discord\Requests\Channels\GetChannelRequest;
 use App\Http\Integrations\Discord\Requests\Messages\CreateMessageRequest;
 use App\Jobs\FetchGuildRoster;
@@ -17,6 +19,8 @@ use App\Models\Character;
 use App\Models\DiscordChannel;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
+use App\Models\PlayableClass;
+use App\Models\PlayableRace;
 use App\Models\User;
 use App\Notifications\GuildRosterManagerUploadCompleted;
 use App\Notifications\GuildRosterManagerUploadFailed;
@@ -62,6 +66,8 @@ class ProcessUploadTest extends TestCase
         $this->user = User::factory()->create();
         $this->gameVersion = GameVersion::factory()->create();
         $this->officerChannel = DiscordChannel::factory()->create(['id' => '1407688195386114119']);
+        $this->gameVersion->playableClasses()->attach(PlayableClass::factory()->create(['id' => 1]));
+        $this->gameVersion->playableRaces()->attach(PlayableRace::factory()->create(['id' => 1]));
 
         // The test queue is sync, so the queued officer notification is delivered
         // inline; fake Discord's create message endpoint.
@@ -180,6 +186,58 @@ class ProcessUploadTest extends TestCase
             'character_id' => 11111,
             'linked_character_id' => 33333,
         ]);
+    }
+
+    #[Test]
+    public function it_stores_the_class_race_and_gender_of_an_alt(): void
+    {
+        $this->fakeCharacters(['MainChar' => 11111, 'AltOne' => 22222]);
+
+        $this->runUploadWithAlt();
+
+        $alt = Character::find(22222);
+        $this->assertSame(1, $alt->playable_class_id);
+        $this->assertSame(1, $alt->playable_race_id);
+        $this->assertSame(Gender::MALE, $alt->gender);
+    }
+
+    #[Test]
+    public function it_fills_in_an_existing_alt_with_no_class(): void
+    {
+        Character::factory()->create([
+            'id' => 22222,
+            'name' => 'AltOne',
+            'game_version_id' => $this->gameVersion->id,
+            'playable_class_id' => null,
+            'playable_race_id' => null,
+            'gender' => null,
+        ]);
+        $this->fakeCharacters(['MainChar' => 11111, 'AltOne' => 22222]);
+
+        $this->runUploadWithAlt();
+
+        $alt = Character::find(22222);
+        $this->assertSame(1, $alt->playable_class_id);
+        $this->assertSame(1, $alt->playable_race_id);
+        $this->assertSame(Gender::MALE, $alt->gender);
+        $this->assertSame('AltOne', $alt->name);
+        $this->assertSame($this->gameVersion->id, $alt->game_version_id);
+    }
+
+    #[Test]
+    public function it_saves_and_links_an_alt_when_its_class_import_fails(): void
+    {
+        $this->gameVersion->playableClasses()->detach();
+        PlayableClass::destroy(1);
+        $this->fakeCharacters(['MainChar' => 11111, 'AltOne' => 22222], additionalMocks: [
+            GetPlayableClassRequest::class => MockResponse::make(body: [], status: 500),
+        ]);
+
+        $this->runUploadWithAlt();
+
+        $this->assertNull(Character::find(22222)->playable_class_id);
+        $this->assertDatabaseHas('character_links', ['character_id' => 11111, 'linked_character_id' => 22222]);
+        $this->assertDatabaseHas('character_links', ['character_id' => 22222, 'linked_character_id' => 11111]);
     }
 
     #[Test]
@@ -774,8 +832,8 @@ class ProcessUploadTest extends TestCase
         ]);
 
         $main = Character::factory()->main()->create(['id' => 11111, 'name' => 'MainChar', 'game_version_id' => $this->gameVersion->id]);
-        $altOne = Character::factory()->create(['id' => 22222, 'name' => 'AltOne', 'game_version_id' => $this->gameVersion->id]);
-        $altTwo = Character::factory()->create(['id' => 33333, 'name' => 'AltTwo', 'game_version_id' => $this->gameVersion->id]);
+        $altOne = Character::factory()->create(['id' => 22222, 'name' => 'AltOne', 'game_version_id' => $this->gameVersion->id, 'playable_class_id' => 1, 'playable_race_id' => 1, 'gender' => Gender::MALE]);
+        $altTwo = Character::factory()->create(['id' => 33333, 'name' => 'AltTwo', 'game_version_id' => $this->gameVersion->id, 'playable_class_id' => 1, 'playable_race_id' => 1, 'gender' => Gender::MALE]);
         $altOne->linkedCharacters()->attach($main->id);
         $altTwo->linkedCharacters()->attach($main->id);
 
@@ -1009,7 +1067,7 @@ class ProcessUploadTest extends TestCase
      * @param  array<string, int>  $characterMap
      * @param  array<int, string>  $notFound
      */
-    protected function fakeCharacters(array $characterMap, array $notFound = []): void
+    protected function fakeCharacters(array $characterMap, array $notFound = [], array $additionalMocks = []): void
     {
         $idBySlug = [];
         foreach ($characterMap as $name => $id) {
@@ -1057,7 +1115,21 @@ class ProcessUploadTest extends TestCase
             ], status: 200),
             GetCharacterStatusRequest::class => $resolve,
             GetCharacterProfileRequest::class => $resolve,
+            ...$additionalMocks,
         ]);
+    }
+
+    private function runUploadWithAlt(): void
+    {
+        $job = new ProcessUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'MainChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => 'AltOne'],
+            ],
+        ], $this->user->id, $this->gameVersion->id);
+
+        $job->handle(app(BlizzardConnector::class));
     }
 
     /**

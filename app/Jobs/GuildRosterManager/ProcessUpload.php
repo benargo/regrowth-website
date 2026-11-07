@@ -2,7 +2,9 @@
 
 namespace App\Jobs\GuildRosterManager;
 
+use App\Actions\Characters\AssignPlayableClassAndRace;
 use App\Contracts\Http\Integrations\Blizzard\RequiresMinimumCharacterLevel;
+use App\Enums\Gender;
 use App\Events\Broadcasts\GrmUploadCompleted as GrmUploadCompletedBroadcast;
 use App\Events\Broadcasts\GrmUploadFailed as GrmUploadFailedBroadcast;
 use App\Events\Broadcasts\GrmUploadProgressed;
@@ -349,21 +351,25 @@ class ProcessUpload implements RequiresMinimumCharacterLevel, ShouldQueue
             }
 
             try {
-                $altStatus = $blizzard->send(new GetCharacterProfileRequest(
+                $altProfile = $blizzard->send(new GetCharacterProfileRequest(
                     $gameVersion->realm_slug,
                     $altName,
                     $gameVersion->blizzard_namespace,
                 ))->dto();
-                $altId = $altStatus->id;
-                $altLevel = $altStatus->level;
 
-                $this->checkCharacterLevel($altName, $altLevel);
+                $this->checkCharacterLevel($altName, $altProfile->level);
 
                 // Find or create the alt character
-                $altCharacter = Character::query()->updateOrCreate(
-                    ['id' => $altId],
-                    ['name' => $altName, 'game_version_id' => $gameVersion->id]
-                );
+                $altCharacter = Character::firstOrNew(['id' => $altProfile->id]);
+                $altCharacter->fill([
+                    'name' => $altName,
+                    'gender' => Gender::tryFrom(data_get($altProfile, 'gender.name')),
+                    'game_version_id' => $gameVersion->id,
+                ]);
+
+                AssignPlayableClassAndRace::run($altCharacter, $gameVersion, $altProfile->characterClass->id, $altProfile->race->id);
+
+                $altCharacter->save();
 
                 // Create links in both directions so either character can find the other.
                 if (! $altCharacter->linkedCharacters()->where('character_id', $mainCharacter->id)->exists()) {

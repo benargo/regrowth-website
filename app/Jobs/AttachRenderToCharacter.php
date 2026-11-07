@@ -74,7 +74,7 @@ class AttachRenderToCharacter implements HasCharacterMedia, ShouldQueue
 
         $gameVersion = $character->gameVersion;
 
-        if ($gameVersion?->realm_slug === null) {
+        if (! $gameVersion?->hasRequiredRealm()) {
             return;
         }
 

@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\OAuth2\GetClientCredentialsTokenBasicAuthRequest;
 use Saloon\Laravel\Facades\Saloon;
+use Spatie\LaravelData\Optional;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
 #[Group('blizzard-integration')]
@@ -188,7 +189,65 @@ class GetAccountProfileSummaryRequestTest extends BlizzardTestCase
         $this->assertFalse($retry->isCached());
     }
 
+    // ==================== namespace shapes ====================
+
+    #[Test]
+    #[Group('happy-path')]
+    public function it_casts_a_forever_character_with_a_surname_and_no_realm(): void
+    {
+        Saloon::fake([
+            GetAccountProfileSummaryRequest::class => MockResponse::make($this->singleCharacterBody(surname: 'Stormrage', realm: false)),
+        ]);
+
+        /** @var AccountProfileSummaryData $summary */
+        $summary = $this->makeConnector()
+            ->send(new GetAccountProfileSummaryRequest('user-token', BlizzardNamespace::FOREVER))
+            ->dto();
+
+        $character = $summary->wowAccounts[0]->characters[0];
+        $this->assertSame('Stormrage', $character->surname);
+        $this->assertInstanceOf(Optional::class, $character->realm);
+    }
+
+    #[Test]
+    #[Group('happy-path')]
+    public function it_casts_a_character_with_a_realm_and_no_surname(): void
+    {
+        Saloon::fake([
+            GetAccountProfileSummaryRequest::class => MockResponse::make($this->singleCharacterBody(surname: null, realm: true)),
+        ]);
+
+        /** @var AccountProfileSummaryData $summary */
+        $summary = $this->makeConnector()
+            ->send(new GetAccountProfileSummaryRequest('user-token', BlizzardNamespace::ANNIVERSARY))
+            ->dto();
+
+        $character = $summary->wowAccounts[0]->characters[0];
+        $this->assertSame('thunderstrike', $character->realm->slug);
+        $this->assertInstanceOf(Optional::class, $character->surname);
+    }
+
     // ==================== helpers ====================
+
+    /**
+     * A response with one WoW account holding one character.
+     *
+     * @return array<string, mixed>
+     */
+    private function singleCharacterBody(?string $surname, bool $realm): array
+    {
+        $character = $this->character(111, 'Thrall', ['Shaman', 7], ['Orc', 2], 'MALE', 'HORDE', 60);
+
+        if (! $realm) {
+            unset($character['realm']);
+        }
+
+        if ($surname !== null) {
+            $character['surname'] = $surname;
+        }
+
+        return ['id' => 1, 'wow_accounts' => [['id' => 2, 'characters' => [$character]]]];
+    }
 
     /**
      * A trimmed copy of a real `/profile/user/wow` response: one WoW account,

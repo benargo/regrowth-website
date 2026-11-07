@@ -3,6 +3,8 @@
 namespace Tests\Feature\Database\Seeders;
 
 use App\Contracts\HasBlizzardIcons;
+use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassMediaRequest;
+use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\LootPriority;
@@ -17,11 +19,13 @@ use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
 #[Group('loot')]
 class PrioritySeederTest extends TestCase
 {
+    use MocksBlizzardServices;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -249,6 +253,90 @@ class PrioritySeederTest extends TestCase
                 $this->assertArrayNotHasKey('playable_class_id', $priority, "Did not expect playable_class_id for '{$priority['title']}'");
             }
         }
+    }
+
+    #[Test]
+    public function seeder_imports_a_class_missing_from_the_database(): void
+    {
+        PlayableClass::destroy(11);
+
+        $this->mockGetPlayableClass(id: 11, name: 'Druid');
+        $this->mockGetPlayableClassMedia();
+        $this->pendingBlizzardMocks[FetchIconRequest::class] = MockResponse::make(body: 'BINARY', status: 200);
+        $this->applyBlizzardMocks();
+
+        $this->runSeeder();
+
+        $this->assertDatabaseHas('playable_classes', ['id' => 11, 'name' => 'Druid']);
+        $this->assertSame(11, LootPriority::where('title', 'Druid')->value('playable_class_id'));
+    }
+
+    #[Test]
+    public function seeder_skips_priorities_of_a_class_that_cannot_be_imported(): void
+    {
+        PlayableClass::destroy(11);
+
+        $this->mockGetPlayableClass(id: 11, status: 500);
+        $this->pendingBlizzardMocks[FetchIconRequest::class] = MockResponse::make(body: 'BINARY', status: 200);
+        $this->applyBlizzardMocks();
+
+        $this->runSeeder();
+
+        $this->assertDatabaseMissing('loot_priorities', ['title' => 'Druid']);
+        $this->assertDatabaseMissing('loot_priorities', ['title' => 'Balance Druid']);
+        $this->assertDatabaseHas('loot_priorities', ['title' => 'Tank']);
+        $this->assertDatabaseHas('loot_priorities', ['title' => 'Mage']);
+        Saloon::mockClient()->assertSentCount(1, GetPlayableClassRequest::class);
+    }
+
+    #[Test]
+    public function seeder_fills_in_skipped_priorities_on_the_next_run(): void
+    {
+        PlayableClass::destroy(11);
+
+        $this->mockGetPlayableClass(id: 11, status: 500);
+        $this->pendingBlizzardMocks[FetchIconRequest::class] = MockResponse::make(body: 'BINARY', status: 200);
+        $this->applyBlizzardMocks();
+
+        $this->runSeeder();
+
+        $this->mockGetPlayableClass(id: 11, name: 'Druid');
+        $this->mockGetPlayableClassMedia();
+        $this->applyBlizzardMocks();
+
+        $this->runSeeder();
+
+        $this->assertSame(11, LootPriority::where('title', 'Druid')->value('playable_class_id'));
+    }
+
+    #[Test]
+    public function seeder_still_seeds_other_priorities_when_the_token_request_fails(): void
+    {
+        PlayableClass::query()->delete();
+
+        $this->mockGetPlayableClass();
+        $this->pendingBlizzardMocks[self::TOKEN_MOCK_KEY] = MockResponse::make(body: ['error' => 'invalid_client'], status: 401);
+        $this->pendingBlizzardMocks[FetchIconRequest::class] = MockResponse::make(body: 'BINARY', status: 200);
+        $this->applyBlizzardMocks();
+
+        $this->runSeeder();
+
+        $this->assertDatabaseHas('loot_priorities', ['title' => 'Tank']);
+        $this->assertDatabaseHas('loot_priorities', ['title' => 'Disenchant']);
+        $this->assertDatabaseMissing('loot_priorities', ['title' => 'Druid']);
+    }
+
+    #[Test]
+    public function seeder_sends_no_blizzard_requests_when_every_class_exists(): void
+    {
+        $this->mockGetPlayableClass();
+        $this->mockGetPlayableClassMedia();
+        $this->applyBlizzardMocks();
+
+        $this->runSeeder();
+
+        Saloon::assertNotSent(GetPlayableClassRequest::class);
+        Saloon::assertNotSent(GetPlayableClassMediaRequest::class);
     }
 
     // ==================== helpers ====================

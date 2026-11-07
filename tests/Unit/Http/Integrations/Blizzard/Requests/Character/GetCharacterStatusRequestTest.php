@@ -88,4 +88,20 @@ class GetCharacterStatusRequestTest extends BlizzardTestCase
             new GetCharacterStatusRequest(null, 'foo', BlizzardNamespace::RETAIL),
         );
     }
+
+    #[Test]
+    public function it_omits_the_realm_segment_when_forever_has_no_realm(): void
+    {
+        $request = new GetCharacterStatusRequest(null, 'Thrall Stormrage', BlizzardNamespace::FOREVER);
+
+        $this->assertSame('/profile/wow/character/thrall-stormrage/status', $request->resolveEndpoint());
+    }
+
+    #[Test]
+    public function it_ignores_a_realm_given_in_the_forever_namespace(): void
+    {
+        $request = new GetCharacterStatusRequest('Thunderstrike', 'Thrall Stormrage', BlizzardNamespace::FOREVER);
+
+        $this->assertSame('/profile/wow/character/thrall-stormrage/status', $request->resolveEndpoint());
+    }
 }

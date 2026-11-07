@@ -17,7 +17,7 @@ class PlayableRaceResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'faction' => $this->faction->value,
+            'faction' => $this->faction?->value,
         ];
     }
 }

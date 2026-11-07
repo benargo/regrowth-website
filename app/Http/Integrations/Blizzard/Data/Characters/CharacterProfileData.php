@@ -18,11 +18,12 @@ class CharacterProfileData extends Data
     public function __construct(
         public readonly int $id,
         public readonly string $name,
+        public readonly Optional|string $surname,
         public readonly array $gender,
         public readonly array $faction,
         public readonly LinkData $race,
         public readonly LinkData $characterClass,
-        public readonly LinkData $realm,
+        public readonly Optional|LinkData $realm,
         public readonly int $level,
         public readonly int $lastLoginTimestamp,
         public readonly int $averageItemLevel,

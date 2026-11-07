@@ -251,6 +251,19 @@ class GameVersionTest extends ModelTestCase
         $this->assertNull($gameVersion->realm_slug);
     }
 
+    #[Test]
+    #[TestWith(['Gehennas', BlizzardNamespace::ERA, true])]
+    #[TestWith(['Gehennas', BlizzardNamespace::FOREVER, true])]
+    #[TestWith([null, BlizzardNamespace::FOREVER, true])]
+    #[TestWith([null, BlizzardNamespace::ERA, false])]
+    #[TestWith([null, null, false])]
+    public function it_has_the_required_realm_when_its_namespace_is_satisfied(?string $realm, ?BlizzardNamespace $namespace, bool $expected): void
+    {
+        $gameVersion = $this->make(['realm' => $realm, 'blizzard_namespace' => $namespace]);
+
+        $this->assertSame($expected, $gameVersion->hasRequiredRealm());
+    }
+
     // ==================== relationships ====================
 
     #[Test]

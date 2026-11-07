@@ -2,6 +2,8 @@
 
 namespace App\Jobs;
 
+use App\Actions\Characters\AssignPlayableClassAndRace;
+use App\Actions\GameVersion\LinkRosterClassesAndRaces;
 use App\Contracts\Http\Integrations\Blizzard\RequiresMinimumCharacterLevel;
 use App\Enums\Gender;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
@@ -12,8 +14,6 @@ use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
-use App\Models\PlayableClass;
-use App\Models\PlayableRace;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -78,13 +78,17 @@ class FetchGuildRoster implements RequiresMinimumCharacterLevel, ShouldQueue
 
         $roster = $this->fetchRoster($blizzard, $gameVersion);
 
+        LinkRosterClassesAndRaces::run($gameVersion, $roster->members);
+
+        $assignPlayableClassAndRace = AssignPlayableClassAndRace::make();
+
         foreach ($roster->members as $member) {
             try {
-                $this->syncCharacter($blizzard, $gameVersion, $guildRanks, $member);
+                $this->syncCharacter($blizzard, $gameVersion, $guildRanks, $member, $assignPlayableClassAndRace);
             } catch (Throwable $e) {
                 Log::warning('Failed to sync character from guild roster.', [
                     'character_id' => $member->character->id,
-                    'character_name' => $member->character->name,
+                    'character_name' => $member->character->fullName(),
                     'error' => $e->getMessage(),
                 ]);
             }
@@ -108,7 +112,7 @@ class FetchGuildRoster implements RequiresMinimumCharacterLevel, ShouldQueue
      *
      * @param  Collection<int, GuildRank>  $guildRanks  The game version's ranks, keyed by sort order.
      */
-    private function syncCharacter(BlizzardConnector $blizzard, GameVersion $gameVersion, Collection $guildRanks, GuildRosterMemberData $member): void
+    private function syncCharacter(BlizzardConnector $blizzard, GameVersion $gameVersion, Collection $guildRanks, GuildRosterMemberData $member, AssignPlayableClassAndRace $assignPlayableClassAndRace): void
     {
         if ($member->character->level < self::MIN_LEVEL) {
             return;
@@ -117,21 +121,23 @@ class FetchGuildRoster implements RequiresMinimumCharacterLevel, ShouldQueue
         $guildRank = $guildRanks->get($member->rank)
             ?? throw (new ModelNotFoundException)->setModel(GuildRank::class, [$member->rank]);
 
+        $characterName = $member->character->nameForVersion($gameVersion->uses_surnames);
+
         $characterDto = $blizzard->send(new GetCharacterProfileRequest(
             $gameVersion->realm_slug,
-            $member->character->name,
+            $characterName,
             $gameVersion->blizzard_namespace,
         ))->dto();
 
         $character = Character::firstOrNew(['id' => $member->character->id]);
         $character->fill([
-            'name' => $member->character->name,
+            'name' => $characterName,
             'level' => $member->character->level,
-            'playable_class_id' => PlayableClass::find(data_get($characterDto, 'characterClass.id'))?->getKey(),
-            'playable_race_id' => PlayableRace::find(data_get($characterDto, 'race.id'))?->getKey(),
             'gender' => Gender::tryFrom(data_get($characterDto, 'gender.name')),
             'game_version_id' => $gameVersion->id,
         ]);
+
+        $assignPlayableClassAndRace->handle($character, $gameVersion, $characterDto->characterClass->id, $characterDto->race->id);
 
         Character::withoutEvents(function () use ($character, $guildRank) {
             $character->rank()->associate($guildRank);

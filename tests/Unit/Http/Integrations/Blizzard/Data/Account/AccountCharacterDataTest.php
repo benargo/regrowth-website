@@ -8,6 +8,7 @@ use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
 use App\Http\Integrations\Blizzard\Data\Shared\RealmLinkData;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
 #[Group('blizzard-integration')]
@@ -57,5 +58,33 @@ class AccountCharacterDataTest extends TestCase
         $this->assertSame(['type' => 'MALE', 'name' => 'Male'], $dto->gender);
         $this->assertSame(['type' => 'HORDE', 'name' => 'Horde'], $dto->faction);
         $this->assertSame(70, $dto->level);
+    }
+
+    #[Test]
+    public function it_casts_a_forever_character_with_a_surname_and_no_realm(): void
+    {
+        $dto = AccountCharacterData::from([
+            'character' => ['href' => 'https://eu.api.blizzard.com/profile/wow/character/thrall-stormrage?namespace=profile-forever-eu'],
+            'protected_character' => ['href' => 'https://eu.api.blizzard.com/profile/user/wow/protected-character/1605-98765?namespace=profile-forever-eu'],
+            'name' => 'Thrall',
+            'surname' => 'Stormrage',
+            'id' => 98765,
+            'playable_class' => [
+                'key' => ['href' => 'https://eu.api.blizzard.com/data/wow/playable-class/7?namespace=static-forever-eu'],
+                'name' => 'Shaman',
+                'id' => 7,
+            ],
+            'playable_race' => [
+                'key' => ['href' => 'https://eu.api.blizzard.com/data/wow/playable-race/2?namespace=static-forever-eu'],
+                'name' => 'Orc',
+                'id' => 2,
+            ],
+            'gender' => ['type' => 'MALE', 'name' => 'Male'],
+            'faction' => ['type' => 'HORDE', 'name' => 'Horde'],
+            'level' => 70,
+        ]);
+
+        $this->assertSame('Stormrage', $dto->surname);
+        $this->assertInstanceOf(Optional::class, $dto->realm);
     }
 }

@@ -30,7 +30,9 @@ class GameVersionFactory extends Factory
             'faction' => fake()->randomElement(Faction::cases()),
             'release_date' => fake()->dateTimeBetween('-1 year', '+1 year'),
             'color' => fake()->hexColor(),
-            'blizzard_namespace' => fake()->randomElement(BlizzardNamespace::cases()),
+            'blizzard_namespace' => fake()->randomElement(
+                array_filter(BlizzardNamespace::cases(), fn (BlizzardNamespace $namespace): bool => $namespace->requiresRealm()),
+            ),
         ];
     }
 

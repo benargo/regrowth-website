@@ -2,9 +2,9 @@
 
 namespace Tests\Unit\Http\Integrations\Blizzard\Data\Characters;
 
+use App\Http\Integrations\Blizzard\Data\Characters\CharacterLinkData;
 use App\Http\Integrations\Blizzard\Data\Characters\CharacterMediaData;
 use App\Http\Integrations\Blizzard\Data\Media\AssetData;
-use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -40,7 +40,7 @@ class CharacterMediaDataTest extends TestCase
         $dto = CharacterMediaData::from($this->sampleApiResponse());
 
         $this->assertInstanceOf(CharacterMediaData::class, $dto);
-        $this->assertInstanceOf(LinkData::class, $dto->character);
+        $this->assertInstanceOf(CharacterLinkData::class, $dto->character);
         $this->assertSame('Wastedhippy', $dto->character->name);
         $this->assertSame(51042439, $dto->character->id);
         $this->assertIsArray($dto->assets);

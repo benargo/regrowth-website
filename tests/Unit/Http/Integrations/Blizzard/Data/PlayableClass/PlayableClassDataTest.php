@@ -7,6 +7,7 @@ use App\Http\Integrations\Blizzard\Data\Shared\HrefData;
 use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
 #[Group('blizzard-integration')]
@@ -93,5 +94,14 @@ class PlayableClassDataTest extends TestCase
         $dto = PlayableClassData::from($data);
 
         $this->assertSame([], $dto->playableRaces);
+    }
+
+    #[Test]
+    public function it_parses_a_response_with_only_an_id_and_name(): void
+    {
+        $dto = PlayableClassData::from(['id' => 5, 'name' => 'Priest']);
+
+        $this->assertSame('Priest', $dto->name);
+        $this->assertInstanceOf(Optional::class, $dto->pvpTalentSlots);
     }
 }

@@ -37,7 +37,7 @@ class RefreshCharacterPortrait implements ShouldBeUnique
     {
         $gameVersion = $character->gameVersion;
 
-        if ($gameVersion?->realm_slug === null || ! self::isStale($character)) {
+        if (! $gameVersion?->hasRequiredRealm() || ! self::isStale($character)) {
             return;
         }
 

@@ -31,7 +31,7 @@ class GetGuildRequest extends Request implements Cacheable
 
     public function resolveEndpoint(): string
     {
-        return sprintf('/data/wow/guild/%s/%s', $this->realm, $this->guild);
+        return sprintf('/data/wow/guild/%s', $this->realmAndName($this->guild));
     }
 
     public function boot(PendingRequest $pendingRequest): void

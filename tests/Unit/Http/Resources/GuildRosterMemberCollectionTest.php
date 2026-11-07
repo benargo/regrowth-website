@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Uri;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
 #[Group('characters')]
@@ -72,6 +73,28 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertSame(8, $result[0]['character']['playable_class_id']);
         $this->assertSame(7, $result[0]['character']['playable_race_id']);
         $this->assertSame('Warden', $result[0]['rank']);
+    }
+
+    #[Group('contract')]
+    #[Test]
+    public function it_returns_the_full_name_and_slug_of_a_member_with_a_surname(): void
+    {
+        $this->gameVersion->update(['uses_surnames' => true]);
+
+        $result = (new GuildRosterMemberCollection([$this->makeMember(name: 'Zar', surname: 'Darkguard')], $this->gameVersion))->toArray(new Request);
+
+        $this->assertSame('Zar Darkguard', $result[0]['character']['name']);
+        $this->assertSame('zar-darkguard', $result[0]['character']['slug']);
+    }
+
+    #[Group('contract')]
+    #[Test]
+    public function it_returns_only_the_first_name_and_slug_when_the_version_has_no_surnames(): void
+    {
+        $result = (new GuildRosterMemberCollection([$this->makeMember(name: 'Zar', surname: 'Darkguard')], $this->gameVersion))->toArray(new Request);
+
+        $this->assertSame('Zar', $result[0]['character']['name']);
+        $this->assertSame('zar', $result[0]['character']['slug']);
     }
 
     // ==================== rank resolution ====================
@@ -261,6 +284,7 @@ class GuildRosterMemberCollectionTest extends TestCase
         int $classId = 7,
         int $raceId = 2,
         int $rank = 3,
+        Optional|string $surname = new Optional,
     ): GuildRosterMemberData {
         $href = new HrefData(Uri::of('https://example.test'));
 
@@ -272,6 +296,7 @@ class GuildRosterMemberCollectionTest extends TestCase
                 playableClass: new LinkData(key: $href, name: 'Shaman', id: $classId),
                 playableRace: new LinkData(key: $href, name: 'Orc', id: $raceId),
                 realm: new LinkData(key: $href, name: 'Thunderstrike', id: 1),
+                surname: $surname,
             ),
             rank: $rank,
         );

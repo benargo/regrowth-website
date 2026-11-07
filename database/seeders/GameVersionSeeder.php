@@ -55,7 +55,7 @@ class GameVersionSeeder extends Seeder
                 'faction' => Faction::HORDE->value,
                 'release_date' => Carbon::create(2026, 11, 5, 0, 0, 0, CarbonTimeZone::create('Europe/Paris')),
                 'color' => 0xC69B3A, // 198, 155, 58
-                'blizzard_namespace' => null,
+                'blizzard_namespace' => BlizzardNamespace::FOREVER->value,
                 'warcraft_logs_guild' => null,
             ],
         ];

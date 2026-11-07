@@ -5,9 +5,9 @@ namespace App\Http\Integrations\Blizzard\Requests\Character;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Concerns\CachesBlizzardResponses;
+use App\Http\Integrations\Blizzard\Concerns\RequiresRealm;
 use App\Http\Integrations\Blizzard\Data\Characters\CharacterMediaData;
 use App\Http\Integrations\Blizzard\Support\NameSlug;
-use Illuminate\Support\Str;
 use Saloon\CachePlugin\Contracts\Cacheable;
 use Saloon\Enums\Method;
 use Saloon\Http\PendingRequest;
@@ -16,22 +16,22 @@ use Saloon\Http\Response;
 
 class GetCharacterMediaRequest extends Request implements Cacheable
 {
-    use CachesBlizzardResponses;
+    use CachesBlizzardResponses, RequiresRealm;
 
     protected Method $method = Method::GET;
 
     public function __construct(
-        protected string $realm,
+        protected ?string $realm,
         protected string $character,
         protected ?BlizzardNamespace $namespace = null,
     ) {
-        $this->realm = Str::slug($realm);
+        $this->realm = self::normalizeRealm($realm);
         $this->character = NameSlug::from($character);
     }
 
     public function resolveEndpoint(): string
     {
-        return sprintf('/profile/wow/character/%s/%s/character-media', $this->realm, $this->character);
+        return sprintf('/profile/wow/character/%s/character-media', $this->realmAndName($this->character));
     }
 
     public function boot(PendingRequest $pendingRequest): void

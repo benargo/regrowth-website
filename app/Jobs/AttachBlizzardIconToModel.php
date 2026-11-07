@@ -79,12 +79,12 @@ class AttachBlizzardIconToModel implements ShouldQueue
 
     /**
      * Rewrite the asset URL to the Retail-region equivalent by stripping the
-     * "classicann-" prefix from the region path segment (e.g. "classicann-eu" → "eu").
-     * The seeder dispatches this job only after a classicann 403, so Retail is always correct.
+     * "classicann-" or "forever-" prefix from the region path segment
+     * (e.g. "forever-eu" → "eu").
      */
     public function retailAssetUrl(): Uri
     {
-        $retailPath = preg_replace('#^/classicann-#', '/', Str::start((string) $this->assetUrl->path(), '/'));
+        $retailPath = preg_replace('#^/(?:classicann|forever)-#', '/', Str::start((string) $this->assetUrl->path(), '/'));
 
         return Uri::of('https://render.worldofwarcraft.com')->withPath($retailPath);
     }

@@ -59,6 +59,16 @@ class PlayableRaceResourceTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_a_null_faction_for_a_race_without_one(): void
+    {
+        $playableRace = PlayableRace::factory()->create(['faction' => null]);
+
+        $array = (new PlayableRaceResource($playableRace))->resolve(new Request);
+
+        $this->assertNull($array['faction']);
+    }
+
+    #[Test]
     public function it_does_not_expose_extra_keys(): void
     {
         $playableRace = PlayableRace::factory()->create();
