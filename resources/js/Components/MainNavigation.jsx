@@ -76,7 +76,7 @@ export const NAV_CLASSES = {
  * The signed-in user, impersonation flag, game versions and active section
  * flags shared by the desktop and mobile navigation.
  */
-function useNavigationState() {
+export function useNavigationState() {
     const { auth, gameVersions: { data: gameVersions = [] } = {} } = usePage().props;
 
     return {
@@ -86,7 +86,7 @@ function useNavigationState() {
         isRosterActive: route().current("roster.*") || route().current("characters.show"),
         isRaidingActive: route().current("raiding.*"),
         isLootActive: route().current("loot.*"),
-        isAddonsActive: route().current("addons.*"),
+        // isAddonsActive: route().current("addons.*"),
     };
 }
 
@@ -122,10 +122,11 @@ export function MobileMenuToggle({ classes, isOpen, onToggle, toggleRef }) {
  * The fixed main navigation bar: the logo, the section flyouts, search, the
  * game version switcher and the account menu, plus the given
  * `mobileMenuToggle` and a search button shown below the desktop breakpoint.
+ * `navigationState` is the value returned by `useNavigationState()`.
  */
-export function DesktopNavigation({ classes, mobileMenuToggle, onSearch }) {
-    const { user, impersonating, isRosterActive, isRaidingActive, isLootActive, isAddonsActive } = useNavigationState();
-    const highestRoleColor = user?.highest_role ? modelColor(user.highest_role.primary_color, ["bg"]) : null;
+export function DesktopNavigation({ classes, navigationState, mobileMenuToggle, onSearch }) {
+    const { user, impersonating, isRosterActive, isRaidingActive, isLootActive } = navigationState;
+    const highestRoleColor = modelColor(user?.highest_role?.primary_color, ["bg"]);
     const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 
     return (
@@ -175,9 +176,9 @@ export function DesktopNavigation({ classes, mobileMenuToggle, onSearch }) {
                         </NavLink>
                         <SectionFlyout section="raiding" active={isRaidingActive} classes={classes} />
                         <SectionFlyout section="loot" active={isLootActive} classes={classes} />
-                        <SectionFlyout section="addons" active={isAddonsActive} classes={classes} />
+                        {/* <SectionFlyout section="addons" active={isAddonsActive} classes={classes} /> */}
                         <NavLink
-                            className={cn("hidden 2xl:flex", classes.navLink)}
+                            className={classes.navLink}
                             href={route("discord")}
                             target="_blank"
                             rel="nofollow noopener noreferrer"
@@ -253,9 +254,7 @@ export function DesktopNavigation({ classes, mobileMenuToggle, onSearch }) {
                                             href={route("management.dashboard")}
                                         >
                                             <Icon icon="cogs" style="regular" className="mr-2" />
-                                            <div className="flex flex-col items-start gap-1">
-                                                <span>Control Panel</span>
-                                            </div>
+                                            Control Panel
                                         </Dropdown.Link>
                                     </Can>
                                     <Dropdown.Link
@@ -288,14 +287,14 @@ export function DesktopNavigation({ classes, mobileMenuToggle, onSearch }) {
 
 /**
  * The full-screen mobile menu with the section disclosures, game version
- * switcher, account links and Discord link. While open it locks page
+ * switcher and account links. While open it locks page
  * scrolling, closes on Escape (returning focus to `mobileMenuToggleRef`), and
  * closes once the viewport reaches the desktop breakpoint.
+ * `navigationState` is the value returned by `useNavigationState()`.
  */
-export function MobileNavigation({ classes, isOpen, onClose, mobileMenuToggleRef }) {
-    const { user, impersonating, gameVersions, isRosterActive, isRaidingActive, isLootActive, isAddonsActive } =
-        useNavigationState();
-    const highestRoleTextColor = user?.highest_role ? modelColor(user.highest_role.primary_color, ["text"]) : null;
+export function MobileNavigation({ classes, navigationState, isOpen, onClose, mobileMenuToggleRef }) {
+    const { user, impersonating, gameVersions, isRosterActive, isRaidingActive, isLootActive } = navigationState;
+    const highestRoleTextColor = modelColor(user?.highest_role?.primary_color, ["text"]);
     const mobileLinkClass = cn(MOBILE_LINK, classes.mobileLink);
 
     // Lock page scrolling while open, keeping any scrollbar's gutter in place.
@@ -357,7 +356,7 @@ export function MobileNavigation({ classes, isOpen, onClose, mobileMenuToggleRef
             <div className="space-y-1 px-2 pt-2 pb-3">
                 <SectionDisclosure section="raiding" active={isRaidingActive} classes={classes} />
                 <SectionDisclosure section="loot" active={isLootActive} classes={classes} />
-                <SectionDisclosure section="addons" active={isAddonsActive} classes={classes} />
+                {/* <SectionDisclosure section="addons" active={isAddonsActive} classes={classes} /> */}
                 <ResponsiveNavLink
                     className={classes.responsiveNavLink}
                     href={route("roster.index")}
@@ -365,6 +364,17 @@ export function MobileNavigation({ classes, isOpen, onClose, mobileMenuToggleRef
                 >
                     <Icon icon="users" style="solid" className="mr-2 h-6" />
                     Roster
+                </ResponsiveNavLink>
+                <ResponsiveNavLink
+                    className={classes.responsiveNavLink}
+                    href={route("discord")}
+                    target="_blank"
+                    rel="nofollow noopener noreferrer"
+                    external
+                >
+                    <Icon icon="discord" style="brands" className="mr-2 h-6" />
+                    <span className="flex-1">Discord</span>
+                    <Icon icon="external-link" style="regular" className="h-4" aria-hidden="true" />
                 </ResponsiveNavLink>
             </div>
 
@@ -421,20 +431,6 @@ export function MobileNavigation({ classes, isOpen, onClose, mobileMenuToggleRef
                         </Link>
                     </div>
                 )}
-            </div>
-
-            <div className={cn("border-t px-2 pt-3", classes.mobileDivider)}>
-                <ResponsiveNavLink
-                    className={classes.responsiveNavLink}
-                    href={route("discord")}
-                    target="_blank"
-                    rel="nofollow noopener noreferrer"
-                    external
-                >
-                    <Icon icon="discord" style="brands" className="mr-2 h-6" />
-                    <span className="flex-1">Discord</span>
-                    <Icon icon="external-link" style="regular" className="h-4" aria-hidden="true" />
-                </ResponsiveNavLink>
             </div>
         </div>
     );

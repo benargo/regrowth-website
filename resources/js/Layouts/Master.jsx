@@ -1,7 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Head, router, usePage } from "@inertiajs/react";
 import FlashMessage from "@/Components/FlashMessage";
-import { DesktopNavigation, MobileMenuToggle, MobileNavigation, NAV_CLASSES } from "@/Components/MainNavigation";
+import {
+    DesktopNavigation,
+    MobileMenuToggle,
+    MobileNavigation,
+    NAV_CLASSES,
+    useNavigationState,
+} from "@/Components/MainNavigation";
 import { GAME_VERSION_SWITCH_ERROR_BAG } from "@/Hooks/useGameVersionSwitch";
 import SearchPalette from "@/Components/Search/SearchPalette";
 import Footer from "@/Layouts/Footer";
@@ -9,8 +15,9 @@ import cn from "@/Helpers/cn";
 
 export default function Master({ title, isHomepage = false, children }) {
     const { props, flash: clientFlash } = usePage();
-    const { flash, errors, navigation, gameVersions: { data: gameVersions = [] } = {} } = props;
+    const { flash, errors, navigation } = props;
     const classes = isHomepage ? NAV_CLASSES.forever : NAV_CLASSES.classic;
+    const navigationState = useNavigationState();
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
     const mobileMenuToggleRef = useRef(null);
@@ -86,6 +93,7 @@ export default function Master({ title, isHomepage = false, children }) {
                 </a>
                 <DesktopNavigation
                     classes={classes}
+                    navigationState={navigationState}
                     mobileMenuToggle={
                         <MobileMenuToggle
                             classes={classes}
@@ -99,6 +107,7 @@ export default function Master({ title, isHomepage = false, children }) {
 
                 <MobileNavigation
                     classes={classes}
+                    navigationState={navigationState}
                     isOpen={showingNavigationDropdown}
                     onClose={closeMobileMenu}
                     mobileMenuToggleRef={mobileMenuToggleRef}
@@ -126,7 +135,7 @@ export default function Master({ title, isHomepage = false, children }) {
                     <Footer
                         classes={classes}
                         warcraftLogsUrl={navigation?.warcraft_logs_url}
-                        gameVersions={gameVersions}
+                        gameVersions={navigationState.gameVersions}
                     />
                 </div>
             </div>
