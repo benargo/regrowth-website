@@ -3,18 +3,21 @@
 namespace App\Actions\GameVersion;
 
 use App\Enums\Faction;
+use App\Enums\Gender;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceRequest;
+use App\Jobs\AttachShadowAvatarToPlayableRace;
 use App\Models\PlayableRace;
 use Lorisleiva\Actions\Concerns\AsAction;
 use Saloon\Exceptions\Request\FatalRequestException;
 
 /**
  * Returns the playable race with the given ID, importing it and its faction
- * from Blizzard when it does not exist locally. Returns null without importing
- * when the race's faction is not one of the app's factions.
+ * from Blizzard when it does not exist locally, and queues a fetch of each of
+ * its shadow avatars not yet stored. Returns null without importing when the
+ * race's faction is not one of the app's factions.
  */
 class FindOrImportPlayableRace
 {
@@ -29,12 +32,22 @@ class FindOrImportPlayableRace
      */
     public function handle(int $playableRaceId, ?BlizzardNamespace $namespace): ?PlayableRace
     {
-        $existing = PlayableRace::find($playableRaceId);
+        $playableRace = PlayableRace::find($playableRaceId) ?? $this->import($playableRaceId, $namespace);
 
-        if ($existing !== null) {
-            return $existing;
+        if ($playableRace === null) {
+            return null;
         }
 
+        $this->queueMissingShadowAvatars($playableRace);
+
+        return $playableRace;
+    }
+
+    /**
+     * @throws BlizzardRequestException|FatalRequestException
+     */
+    private function import(int $playableRaceId, ?BlizzardNamespace $namespace): ?PlayableRace
+    {
         $dto = $this->blizzardConnector
             ->send(new GetPlayableRaceRequest($playableRaceId, $namespace))
             ->dto();
@@ -49,5 +62,18 @@ class FindOrImportPlayableRace
             'name' => $dto->name,
             'faction' => $faction,
         ]);
+    }
+
+    private function queueMissingShadowAvatars(PlayableRace $playableRace): void
+    {
+        if ($playableRace->hasAllShadowAvatars()) {
+            return;
+        }
+
+        foreach (Gender::cases() as $gender) {
+            if (! $playableRace->hasShadowAvatar($gender)) {
+                AttachShadowAvatarToPlayableRace::dispatch($playableRace->id, $gender);
+            }
+        }
     }
 }

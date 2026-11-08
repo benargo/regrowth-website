@@ -10,6 +10,7 @@ use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassRequest;
 use App\Jobs\Addon\BuildExportFile;
 use App\Jobs\AttachBlizzardIconToModel;
+use App\Jobs\AttachShadowAvatarToPlayableRace;
 use App\Jobs\FetchGuildRoster;
 use App\Models\Character;
 use App\Models\GameVersion;
@@ -37,6 +38,13 @@ class FetchGuildRosterTest extends TestCase
 {
     use MocksBlizzardServices;
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Queue::fake([AttachShadowAvatarToPlayableRace::class]);
+    }
 
     // ==================== job contract ====================
 

@@ -13,6 +13,7 @@ use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassReques
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchCharacterMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchShadowAvatarRequest;
 use Illuminate\Support\Facades\Storage;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\PendingRequest;
@@ -99,6 +100,7 @@ trait MocksBlizzardServices
                 body: array_merge(['id' => $id, 'name' => $name], $responseData),
                 status: $status,
             ),
+            FetchShadowAvatarRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
     }
 

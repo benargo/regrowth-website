@@ -7,6 +7,7 @@ use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceRequest;
+use App\Jobs\AttachShadowAvatarToPlayableRace;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\PlayableClass;
@@ -14,6 +15,7 @@ use App\Models\PlayableRace;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Laravel\Facades\Saloon;
@@ -26,6 +28,13 @@ class AssignPlayableClassAndRaceTest extends TestCase
 {
     use MocksBlizzardServices;
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Queue::fake([AttachShadowAvatarToPlayableRace::class]);
+    }
 
     #[Group('happy-path')]
     #[Test]
