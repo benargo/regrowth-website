@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Characters\MapCharacterPortraits;
 use App\Actions\Characters\RefreshCharacterPortrait;
 use App\Actions\Discord\LookUpGuildMembers;
 use App\Actions\GameVersion\PreselectGameVersion;
-use App\Contracts\HasCharacterMedia;
 use App\Data\PlannedAbsenceReasonData;
 use App\Http\Controllers\Concerns\SharesCharacterPortrait;
 use App\Http\Requests\StorePlannedAbsenceRequest;
@@ -57,7 +57,7 @@ class PlannedAbsenceController extends Controller
                     ->additional(['permissions' => $this->officerPermissions($request->user())]);
             }),
             'past_planned_absences' => Inertia::defer(fn (): array => $this->pastAbsences($request)),
-            'character_portraits' => Inertia::optional(fn (): object => $this->characterPortraits()),
+            'character_portraits' => Inertia::optional(fn (): object => MapCharacterPortraits::run(Character::whereHas('plannedAbsences', fn (Builder $query) => $query->notEnded()))),
         ]);
     }
 
@@ -95,22 +95,6 @@ class PlannedAbsenceController extends Controller
             'delete' => $user->isAuthorizedTo('delete-planned-absences'),
             'restore' => $user->can('restore', PlannedAbsence::class),
         ];
-    }
-
-    /**
-     * Get the portrait URL of each character with a current or upcoming
-     * absence, keyed by character ID.
-     */
-    private function characterPortraits(): object
-    {
-        return (object) Character::query()
-            ->whereHas('plannedAbsences', fn (Builder $query) => $query->notEnded())
-            ->with('media')
-            ->get()
-            ->mapWithKeys(fn (Character $character): array => [
-                $character->id => $character->getFirstMediaUrl(HasCharacterMedia::MEDIA_COLLECTION) ?: null,
-            ])
-            ->all();
     }
 
     /**

@@ -18,6 +18,7 @@ class RacePlacementResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'character' => $this->whenLoaded('character', fn () => $this->character->toResource()->scope('race')),
             'medal' => $this->medal,
             'position' => $this->position,

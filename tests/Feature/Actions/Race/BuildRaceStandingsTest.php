@@ -16,6 +16,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -103,6 +104,24 @@ class BuildRaceStandingsTest extends TestCase
         $this->assertSame([$first->id, $second->id], array_column($pack, 'id'));
     }
 
+    #[Test]
+    public function it_loads_only_the_pack_when_racers_are_omitted(): void
+    {
+        foreach ([40, 38, 30, 12] as $level) {
+            $this->racer($level, 'Racer'.$level);
+        }
+
+        $retrieved = 0;
+        Event::listen('eloquent.retrieved: '.Character::class, function () use (&$retrieved): void {
+            $retrieved++;
+        });
+
+        $standings = $this->standings(withRacers: false);
+
+        $this->assertSame(2, $retrieved);
+        $this->assertSame(['Racer40', 'Racer38'], array_column($standings['pack']->resolve(), 'name'));
+    }
+
     // ==================== racers ====================
 
     #[Test]
@@ -151,6 +170,22 @@ class BuildRaceStandingsTest extends TestCase
         $this->assertSame([1, 2, 3, 4], array_column($placements, 'position'));
         $this->assertSame([Medal::Gold, Medal::Silver, Medal::Bronze, null], array_column($placements, 'medal'));
         $this->assertSame('P1', $placements[0]['character']->resolve()['name']);
+    }
+
+    #[Test]
+    public function it_lists_tied_placements_together_by_character_name(): void
+    {
+        $this->place($this->racer(60, 'Zed'), 2);
+        $this->place($this->racer(60, 'Borin'), 1);
+        $this->place($this->racer(60, 'Aelin'), 1);
+
+        $placements = $this->standings()['placements']->resolve();
+
+        $this->assertSame(
+            ['Aelin', 'Borin', 'Zed'],
+            array_map(fn (array $placement): string => $placement['character']->resolve()['name'], $placements),
+        );
+        $this->assertSame([1, 1, 2], array_column($placements, 'position'));
     }
 
     #[Test]

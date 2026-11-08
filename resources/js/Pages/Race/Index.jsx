@@ -167,7 +167,7 @@ function Standings({ race, characterPortraits, checkedAt }) {
                                 aria-label="Honourable mentions so far"
                             >
                                 {mentions.map((placement) => (
-                                    <li key={placement.position} className="text-camel-400 flex items-center gap-1.5">
+                                    <li key={placement.id} className="text-camel-400 flex items-center gap-1.5">
                                         <ClassToken playableClass={placement.character.playable_class} />
                                         {placement.character.name}
                                         <span className="text-camel-500 text-sm tabular-nums">
@@ -243,7 +243,7 @@ function Results({ race }) {
                     <ul key="mentions" className="grid gap-x-7 sm:grid-cols-2">
                         {mentions.map((placement) => (
                             <li
-                                key={placement.position}
+                                key={placement.id}
                                 className="border-camel-900 text-camel-400 flex items-center gap-2 border-b py-2 text-base"
                             >
                                 <ClassToken playableClass={placement.character.playable_class} />

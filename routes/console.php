@@ -36,7 +36,7 @@ Schedule::job(new RefreshUserAvatars)->daily()->name('refresh-user-avatars')->wi
 Schedule::job(new FetchRaidHelperEvents)->everySixHours()->name('fetch-raid-helper-events')->withoutOverlapping();
 
 /**
- * Fetch the guild roster for each game version every 6 hours to ensure we have the latest member information.
+ * Fetch the guild roster for each game version every hour to ensure we have the latest member information.
  */
 Schedule::job(new FetchGuildRosters)->hourly()->name('fetch-guild-rosters')->withoutOverlapping();
 

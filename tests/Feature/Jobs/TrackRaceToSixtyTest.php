@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Jobs;
 
+use App\Enums\RaceState;
 use App\Events\Broadcasts\RaceStandingsUpdated;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
@@ -18,6 +19,7 @@ use Illuminate\Config\Repository as ConfigRepository;
 use Illuminate\Console\Scheduling\Event as ScheduledEvent;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Queue\Attributes\Timeout;
 use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Arr;
@@ -80,6 +82,12 @@ class TrackRaceToSixtyTest extends TestCase
         $this->assertSame(1, $triesAttributes[0]->newInstance()->tries);
     }
 
+    #[Test]
+    public function it_times_out_after_five_minutes(): void
+    {
+        $this->assertSame(300, $this->timeoutSeconds());
+    }
+
     #[Group('contract')]
     #[Test]
     public function it_drops_an_overlapping_run_instead_of_releasing_it(): void
@@ -90,7 +98,17 @@ class TrackRaceToSixtyTest extends TestCase
         $this->assertNotNull($middleware);
         $this->assertSame('track-race-to-sixty', $middleware->key);
         $this->assertNull($middleware->releaseAfter);
-        $this->assertGreaterThan(0, $middleware->expiresAfter);
+        $this->assertSame(360, $middleware->expiresAfter);
+        $this->assertGreaterThan($this->timeoutSeconds(), $middleware->expiresAfter);
+    }
+
+    private function timeoutSeconds(): int
+    {
+        $timeoutAttributes = (new ReflectionClass(TrackRaceToSixty::class))->getAttributes(Timeout::class);
+
+        $this->assertCount(1, $timeoutAttributes);
+
+        return $timeoutAttributes[0]->newInstance()->timeout;
     }
 
     #[Group('contract')]
@@ -322,35 +340,109 @@ class TrackRaceToSixtyTest extends TestCase
     }
 
     #[Test]
-    public function it_orders_same_tick_finishers_by_last_login(): void
+    public function it_gives_same_tick_finishers_the_same_position(): void
     {
         $alpha = $this->createCharacter('Alpha', 59);
         $bravo = $this->createCharacter('Bravo', 59);
-        $this->mockGetCharacterProfilesByName([
-            'alpha' => ['level' => 60, 'last_login_timestamp' => 2000],
-            'bravo' => ['level' => 60, 'last_login_timestamp' => 1000],
-        ]);
+        $this->mockGetCharacterProfilesByName(['alpha' => ['level' => 60], 'bravo' => ['level' => 60]]);
 
         $this->runJob();
 
+        $this->assertSame(1, $alpha->racePlacement()->firstOrFail()->position);
         $this->assertSame(1, $bravo->racePlacement()->firstOrFail()->position);
-        $this->assertSame(2, $alpha->racePlacement()->firstOrFail()->position);
     }
 
     #[Test]
-    public function it_places_a_character_already_at_sixty_whose_profile_failed_last(): void
+    public function it_gives_the_next_finisher_after_a_tie_the_next_position(): void
+    {
+        $this->createCharacter('Alpha', 59);
+        $this->createCharacter('Bravo', 59);
+        $charlie = $this->createCharacter('Charlie', 59);
+
+        $this->mockGetCharacterProfilesByName([
+            'alpha' => ['level' => 60],
+            'bravo' => ['level' => 60],
+            'charlie' => ['level' => 59],
+        ]);
+        $this->runJob();
+
+        $this->mockGetCharacterProfilesByName(['charlie' => ['level' => 60]]);
+        $this->runJob();
+
+        $this->assertSame(2, $charlie->racePlacement()->firstOrFail()->position);
+    }
+
+    #[Test]
+    public function it_announces_a_tied_medal_once_naming_every_holder(): void
+    {
+        $alpha = $this->createCharacter('Alpha', 59);
+        $bravo = $this->createCharacter('Bravo', 59);
+        $this->mockGetCharacterProfilesByName(['alpha' => ['level' => 60], 'bravo' => ['level' => 60]]);
+
+        $this->runJob();
+
+        Bus::assertDispatchedTimes(NotifyDiscordChannel::class, 1);
+        Bus::assertDispatched(NotifyDiscordChannel::class, function (NotifyDiscordChannel $job) use ($alpha, $bravo): bool {
+            $ids = collect($job->notification->mapRelatedModels())
+                ->where('model_type', RacePlacement::class)
+                ->pluck('model_id')
+                ->sort()
+                ->values()
+                ->all();
+
+            return $ids === collect([$alpha->racePlacement()->firstOrFail()->id, $bravo->racePlacement()->firstOrFail()->id])->sort()->values()->all();
+        });
+    }
+
+    #[Test]
+    public function it_places_a_character_already_at_sixty_whose_profile_failed_alongside_same_tick_finishers(): void
     {
         $alpha = $this->createCharacter('Alpha', 60);
         $bravo = $this->createCharacter('Bravo', 59);
         $this->mockGetCharacterProfilesByName([
             'alpha' => 404,
-            'bravo' => ['level' => 60, 'last_login_timestamp' => 1000],
+            'bravo' => ['level' => 60],
         ]);
 
         $this->runJob();
 
         $this->assertSame(1, $bravo->racePlacement()->firstOrFail()->position);
-        $this->assertSame(2, $alpha->racePlacement()->firstOrFail()->position);
+        $this->assertSame(1, $alpha->racePlacement()->firstOrFail()->position);
+    }
+
+    #[Test]
+    public function it_closes_the_race_when_a_tie_takes_bronze(): void
+    {
+        $this->placeCharacter($this->createCharacter('Alpha', 60), 1, now()->subHours(3));
+        $this->placeCharacter($this->createCharacter('Bravo', 60), 2, now()->subHours(2));
+        $names = ['Charlie', 'Delta', 'Echo'];
+        $characters = array_map(fn (string $name): Character => $this->createCharacter($name, 59), $names);
+        $this->mockGetCharacterProfilesByName(collect($names)->mapWithKeys(fn (string $name): array => [strtolower($name) => ['level' => 60]])->all());
+
+        $this->runJob();
+
+        foreach ($characters as $character) {
+            $placement = $character->racePlacement()->firstOrFail();
+            $this->assertSame(3, $placement->position);
+            $this->assertSame(RaceState::Closing, RaceState::fromBronzeReachedAt($placement->reached_at));
+        }
+    }
+
+    #[Test]
+    public function it_shares_a_position_among_same_tick_honourable_mentions_without_announcing(): void
+    {
+        $this->placeCharacter($this->createCharacter('Alpha', 60), 1, now()->subHours(12));
+        $this->placeCharacter($this->createCharacter('Bravo', 60), 2, now()->subHours(11));
+        $this->placeCharacter($this->createCharacter('Charlie', 60), 3, now()->subHours(10));
+        $delta = $this->createCharacter('Delta', 59);
+        $echo = $this->createCharacter('Echo', 59);
+        $this->mockGetCharacterProfilesByName(['delta' => ['level' => 60], 'echo' => ['level' => 60]]);
+
+        $this->runJob();
+
+        $this->assertSame(4, $delta->racePlacement()->firstOrFail()->position);
+        $this->assertSame(4, $echo->racePlacement()->firstOrFail()->position);
+        Bus::assertDispatchedTimes(NotifyDiscordChannel::class, 0);
     }
 
     #[Test]
@@ -396,11 +488,43 @@ class TrackRaceToSixtyTest extends TestCase
         $this->runJob();
 
         Saloon::assertNothingSent();
-        Event::assertNotDispatched(RaceStandingsUpdated::class);
         $this->assertSame(3, RacePlacement::count());
     }
 
+    #[Test]
+    public function it_broadcasts_a_change_on_the_first_check_after_the_race_finishes(): void
+    {
+        $this->placeFinishedRace();
+        Cache::forever('race-to-60:checked-at', now()->subHours(2)->toIso8601String());
+
+        $this->runJob();
+
+        Saloon::assertNothingSent();
+        Event::assertDispatched(RaceStandingsUpdated::class, fn (RaceStandingsUpdated $event): bool => $event->hasChanges);
+        $this->assertSame(now()->toIso8601String(), Cache::get('race-to-60:checked-at'));
+    }
+
+    #[Test]
+    public function it_stays_silent_once_the_finish_has_been_reported(): void
+    {
+        $this->placeFinishedRace();
+        $checkedAt = now()->subMinute()->toIso8601String();
+        Cache::forever('race-to-60:checked-at', $checkedAt);
+
+        $this->runJob();
+
+        Event::assertNotDispatched(RaceStandingsUpdated::class);
+        $this->assertSame($checkedAt, Cache::get('race-to-60:checked-at'));
+    }
+
     // ==================== helpers ====================
+
+    private function placeFinishedRace(): void
+    {
+        $this->placeCharacter($this->createCharacter('Alpha', 60), 1, now()->subHours(51));
+        $this->placeCharacter($this->createCharacter('Bravo', 60), 2, now()->subHours(50));
+        $this->placeCharacter($this->createCharacter('Charlie', 60), 3, now()->subHours(49));
+    }
 
     private function runJob(): void
     {

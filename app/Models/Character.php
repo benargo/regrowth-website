@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -171,6 +172,29 @@ class Character extends Model implements HasCharacterMedia, HasMedia
         return $this->belongsToMany(Report::class, 'pivot_characters_raid_reports', 'character_id', 'raid_report_id')
             ->using(CharacterReport::class)
             ->withPivot('presence', 'is_loot_councillor');
+    }
+
+    // ========== Portrait ============
+
+    /**
+     * Remember for three days that Blizzard has no portrait for this character.
+     */
+    public function rememberPortraitMissing(): void
+    {
+        Cache::put($this->portraitMissingCacheKey(), true, HasCharacterMedia::PORTRAIT_MISSING_FOR_SECONDS);
+    }
+
+    /**
+     * Whether Blizzard was recently found to have no portrait for this character.
+     */
+    public function isPortraitKnownMissing(): bool
+    {
+        return Cache::has($this->portraitMissingCacheKey());
+    }
+
+    private function portraitMissingCacheKey(): string
+    {
+        return "character-portrait:missing:{$this->id}";
     }
 
     // ========== Prunable ============

@@ -226,9 +226,8 @@ class GameVersion extends Model implements DatasetModel, DispatchesChangesForMed
      */
     public static function currentRosters(): Collection
     {
-        return static::query()
+        return static::orderByDesc('release_date')
             ->withFetchableRoster()
-            ->orderByDesc('release_date')
             ->get()
             ->unique(fn (GameVersion $gameVersion): string => $gameVersion->rosterKey());
     }
@@ -239,9 +238,8 @@ class GameVersion extends Model implements DatasetModel, DispatchesChangesForMed
      */
     public static function defaultRoster(): ?static
     {
-        return static::query()
+        return static::orderByDesc('release_date')
             ->withFetchableRoster()
-            ->orderByDesc('release_date')
             ->first();
     }
 
@@ -250,7 +248,7 @@ class GameVersion extends Model implements DatasetModel, DispatchesChangesForMed
      */
     public static function forever(): ?static
     {
-        return static::query()->where('blizzard_namespace', BlizzardNamespace::FOREVER)->first();
+        return static::where('blizzard_namespace', BlizzardNamespace::FOREVER)->first();
     }
 
     /**

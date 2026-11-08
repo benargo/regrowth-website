@@ -4,6 +4,7 @@ namespace App\Actions\Characters;
 
 use App\Contracts\HasCharacterMedia;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterMediaRequest;
 use App\Jobs\AttachPortraitToCharacter;
 use App\Models\Character;
@@ -52,9 +53,15 @@ class RefreshCharacterPortrait implements ShouldBeUnique
 
             if ($avatarAsset !== null) {
                 AttachPortraitToCharacter::dispatch($character->id, $avatarAsset->value);
+            } else {
+                $character->rememberPortraitMissing();
             }
-        } catch (\Throwable) {
-            // Blizzard outage must not break the page render.
+        } catch (\Throwable $exception) {
+            if ($exception instanceof BlizzardRequestException && $exception->getBlizzardStatus() === 404) {
+                $character->rememberPortraitMissing();
+            }
+
+            // Any other failure is swallowed so the page still renders.
         }
     }
 
@@ -73,7 +80,7 @@ class RefreshCharacterPortrait implements ShouldBeUnique
      */
     public static function queueIfStale(Character $character): void
     {
-        if (self::isStale($character)) {
+        if (! $character->isPortraitKnownMissing() && self::isStale($character)) {
             self::dispatch($character);
         }
     }

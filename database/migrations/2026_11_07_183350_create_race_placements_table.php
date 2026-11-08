@@ -22,7 +22,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['game_version_id', 'character_id']);
-            $table->unique(['game_version_id', 'position']);
+            $table->index(['game_version_id', 'position']);
         });
     }
 

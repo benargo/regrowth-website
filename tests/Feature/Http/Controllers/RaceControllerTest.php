@@ -53,6 +53,31 @@ class RaceControllerTest extends TestCase
     }
 
     #[Test]
+    public function it_sends_every_holder_of_a_tied_medal(): void
+    {
+        $forever = GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::FOREVER]);
+
+        foreach (['Borin', 'Aelin'] as $name) {
+            $character = Character::factory()->forGameVersion($forever)->create(['level' => 60, 'name' => $name]);
+            RacePlacement::factory()->create([
+                'game_version_id' => $forever->id,
+                'character_id' => $character->id,
+                'position' => 1,
+            ]);
+        }
+
+        $this->get(route('race.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('race.placements.data', 2)
+                ->where('race.placements.data.0.medal', 'gold')
+                ->where('race.placements.data.0.character.name', 'Aelin')
+                ->where('race.placements.data.1.medal', 'gold')
+                ->where('race.placements.data.1.character.name', 'Borin')
+            );
+    }
+
+    #[Test]
     public function it_renders_with_no_race_when_forever_is_missing(): void
     {
         $this->get(route('race.index'))
@@ -93,6 +118,22 @@ class RaceControllerTest extends TestCase
 
         RefreshCharacterPortrait::assertPushed(1);
         RefreshCharacterPortrait::assertPushed(fn (RefreshCharacterPortrait $action, array $parameters): bool => $parameters[0]->is($withoutPortrait));
+    }
+
+    #[Test]
+    public function it_does_not_requeue_a_racer_whose_portrait_is_known_missing(): void
+    {
+        Queue::fake();
+        Storage::fake('s3');
+        $forever = GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::FOREVER]);
+        $known = Character::factory()->forGameVersion($forever)->create();
+        $known->rememberPortraitMissing();
+        $unknown = Character::factory()->forGameVersion($forever)->create();
+
+        $this->get(route('race.index'))->assertOk();
+
+        RefreshCharacterPortrait::assertPushed(1);
+        RefreshCharacterPortrait::assertPushed(fn (RefreshCharacterPortrait $action, array $parameters): bool => $parameters[0]->is($unknown));
     }
 
     #[Test]

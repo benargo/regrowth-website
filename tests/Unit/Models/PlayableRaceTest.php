@@ -186,6 +186,22 @@ class PlayableRaceTest extends ModelTestCase
         $this->assertTrue($loadedRace->hasAllShadowAvatars());
     }
 
+    #[Group('media')]
+    #[Test]
+    public function it_remembers_a_missing_shadow_avatar_for_seven_days_per_gender(): void
+    {
+        $playableRace = $this->create(['id' => 6]);
+
+        $playableRace->rememberShadowAvatarMissing(Gender::FEMALE);
+
+        $this->assertTrue($playableRace->isShadowAvatarKnownMissing(Gender::FEMALE));
+        $this->assertFalse($playableRace->isShadowAvatarKnownMissing(Gender::MALE));
+
+        $this->travel(604801)->seconds();
+
+        $this->assertFalse($playableRace->isShadowAvatarKnownMissing(Gender::FEMALE));
+    }
+
     private function addShadowAvatar(PlayableRace $playableRace, Gender $gender): void
     {
         $playableRace->addMediaFromString(strtoupper($gender->value))

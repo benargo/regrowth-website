@@ -662,4 +662,20 @@ class CharacterTest extends ModelTestCase
 
         $this->assertCount(0, $character->warcraftLogsReports);
     }
+
+    #[Test]
+    public function it_remembers_a_missing_portrait_for_three_days(): void
+    {
+        $character = Character::factory()->create();
+
+        $this->assertFalse($character->isPortraitKnownMissing());
+
+        $character->rememberPortraitMissing();
+
+        $this->assertTrue($character->isPortraitKnownMissing());
+
+        $this->travel(259201)->seconds();
+
+        $this->assertFalse($character->isPortraitKnownMissing());
+    }
 }

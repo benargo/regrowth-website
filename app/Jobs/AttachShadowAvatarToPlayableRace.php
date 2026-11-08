@@ -7,6 +7,7 @@ use App\Enums\Gender;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchShadowAvatarRequest;
 use App\Models\PlayableRace;
+use finfo;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -21,9 +22,10 @@ use UnexpectedValueException;
 /**
  * Mirrors the Blizzard shadow avatar for a playable race and gender into the
  * race's `shadow_avatars` collection. Does nothing when that gender is already
- * stored. Logs a warning and finishes without storing or retrying when the
- * render CDN responds with an HTTP error status, and fails without retrying
- * when the response is empty or not an image. Unique per race and gender while queued.
+ * stored. Logs a warning and finishes without storing or retrying when the render
+ * CDN responds with an HTTP error status, remembering the miss for seven days only
+ * for a 403 or 404, and fails without retrying when the response body is empty or
+ * is not an image. Unique per race and gender while queued.
  */
 #[Tries(3)]
 #[Backoff(300, 300)]
@@ -74,20 +76,23 @@ class AttachShadowAvatarToPlayableRace implements HasShadowAvatars, ShouldBeUniq
         try {
             $response = $renderConnector->send($request);
         } catch (RequestException $exception) {
-            $this->logUnavailable($exception->getResponse()->status());
+            $status = $exception->getResponse()->status();
+            $this->logUnavailable($status);
+            $this->rememberMissWhenAbsent($playableRace, $status);
 
             return;
         }
 
         if ($response->failed()) {
             $this->logUnavailable($response->status());
+            $this->rememberMissWhenAbsent($playableRace, $response->status());
 
             return;
         }
 
         $body = $response->body();
 
-        if ($body === '' || ! str_starts_with(strtolower((string) $response->header('Content-Type')), 'image/')) {
+        if ($body === '' || ! str_starts_with((new finfo(FILEINFO_MIME_TYPE))->buffer($body) ?: '', 'image/')) {
             $this->fail(new UnexpectedValueException(
                 "Blizzard returned an empty or non-image shadow avatar for playable race {$this->playableRaceId}.",
             ));
@@ -99,6 +104,13 @@ class AttachShadowAvatarToPlayableRace implements HasShadowAvatars, ShouldBeUniq
             ->usingFileName($request->fileName())
             ->withCustomProperties(['gender' => $this->gender->id()])
             ->toMediaCollection(self::MEDIA_COLLECTION);
+    }
+
+    private function rememberMissWhenAbsent(PlayableRace $playableRace, int $status): void
+    {
+        if (in_array($status, [403, 404], true)) {
+            $playableRace->rememberShadowAvatarMissing($this->gender);
+        }
     }
 
     private function logUnavailable(int $status): void

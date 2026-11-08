@@ -134,6 +134,19 @@ class FindOrImportPlayableRaceTest extends TestCase
 
     #[Group('media')]
     #[Test]
+    public function it_skips_a_shadow_avatar_the_cdn_is_known_to_be_missing(): void
+    {
+        Storage::fake('s3');
+        $playableRace = $this->raceWithShadowAvatars(7, []);
+        $playableRace->rememberShadowAvatarMissing(Gender::FEMALE);
+
+        FindOrImportPlayableRace::run(7, BlizzardNamespace::FOREVER);
+
+        $this->assertQueuedShadowAvatarGenders(7, [Gender::MALE]);
+    }
+
+    #[Group('media')]
+    #[Test]
     public function it_queues_no_shadow_avatars_when_both_are_stored(): void
     {
         Storage::fake('s3');

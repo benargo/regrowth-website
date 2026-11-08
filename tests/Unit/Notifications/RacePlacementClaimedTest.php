@@ -8,6 +8,7 @@ use App\Models\Character;
 use App\Models\PlayableClass;
 use App\Models\RacePlacement;
 use App\Notifications\RacePlacementClaimed;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -35,6 +36,8 @@ class RacePlacementClaimedTest extends TestCase
             'bronze' => [3, 0xD08A4F],
         ];
     }
+
+    // ==================== embed presentation ====================
 
     #[Test]
     #[DataProvider('medalColors')]
@@ -91,6 +94,8 @@ class RacePlacementClaimedTest extends TestCase
         ];
     }
 
+    // ==================== single holder copy ====================
+
     #[Test]
     #[DataProvider('medalTitles')]
     public function it_names_the_character_medal_and_ordinal_in_the_title(int $position, string $medal, string $ordinal): void
@@ -135,6 +140,69 @@ class RacePlacementClaimedTest extends TestCase
         $this->embedFor($placement);
     }
 
+    // ==================== tied holders copy ====================
+
+    #[Test]
+    public function it_names_every_tied_character_in_one_title(): void
+    {
+        $embed = $this->embedForMany($this->tiedPlacements());
+
+        $this->assertSame('Gold: Aelin and Borin share first to level 60!', $embed->title);
+    }
+
+    #[Test]
+    public function it_names_each_tied_class_in_the_description(): void
+    {
+        $embed = $this->embedForMany($this->tiedPlacements());
+
+        $this->assertSame('Congratulations to Aelin, the Mage, and Borin, the Rogue, for reaching level 60 together in World of Warcraft: Forever.', $embed->description);
+    }
+
+    #[Test]
+    public function it_lists_a_tied_character_without_a_class_by_name_only(): void
+    {
+        $placements = [
+            RacePlacement::factory()->create(['character_id' => Character::factory()->create(['name' => 'Aelin'])->id, 'position' => 1]),
+            RacePlacement::factory()->create(['character_id' => Character::factory()->create(['name' => 'Borin'])->id, 'position' => 1]),
+        ];
+
+        $embed = $this->embedForMany($placements);
+
+        $this->assertSame('Congratulations to Aelin and Borin for reaching level 60 together in World of Warcraft: Forever.', $embed->description);
+    }
+
+    #[Test]
+    public function it_drops_the_serial_comma_when_the_last_tied_character_has_no_class(): void
+    {
+        $mage = PlayableClass::factory()->create(['name' => 'Mage']);
+        $placements = [
+            RacePlacement::factory()->create(['character_id' => Character::factory()->withPlayableClass($mage)->create(['name' => 'Aelin'])->id, 'position' => 1]),
+            RacePlacement::factory()->create(['character_id' => Character::factory()->create(['name' => 'Borin'])->id, 'position' => 1]),
+        ];
+
+        $embed = $this->embedForMany($placements);
+
+        $this->assertSame('Congratulations to Aelin, the Mage, and Borin for reaching level 60 together in World of Warcraft: Forever.', $embed->description);
+    }
+
+    #[Test]
+    public function it_omits_the_image_for_a_tie(): void
+    {
+        Storage::fake(config('media-library.disk_name'));
+        $placements = $this->tiedPlacements();
+        foreach ($placements as $placement) {
+            $placement->character
+                ->addMedia(UploadedFile::fake()->image('render.png'))
+                ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION_RENDER);
+        }
+
+        $embed = $this->embedForMany($placements);
+
+        $this->assertInstanceOf(Optional::class, $embed->image);
+    }
+
+    // ==================== timestamp ====================
+
     #[Test]
     public function it_stamps_the_embed_with_the_reach_time(): void
     {
@@ -143,6 +211,26 @@ class RacePlacementClaimedTest extends TestCase
         $embed = $this->embedFor($placement);
 
         $this->assertSame($placement->reached_at->toIso8601String(), $embed->timestamp);
+    }
+
+    /**
+     * @return array<int, RacePlacement>
+     */
+    private function tiedPlacements(): array
+    {
+        $mage = PlayableClass::factory()->create(['name' => 'Mage']);
+        $rogue = PlayableClass::factory()->create(['name' => 'Rogue']);
+
+        return [
+            RacePlacement::factory()->create([
+                'character_id' => Character::factory()->withPlayableClass($rogue)->create(['name' => 'Borin'])->id,
+                'position' => 1,
+            ]),
+            RacePlacement::factory()->create([
+                'character_id' => Character::factory()->withPlayableClass($mage)->create(['name' => 'Aelin'])->id,
+                'position' => 1,
+            ]),
+        ];
     }
 
     private function placement(int $position = 1): RacePlacement
@@ -155,8 +243,18 @@ class RacePlacementClaimedTest extends TestCase
         ]);
     }
 
+    /**
+     * @param  array<int, RacePlacement>  $placements
+     */
+    private function embedForMany(array $placements): EmbedData
+    {
+        $notification = unserialize(serialize(new RacePlacementClaimed(new Collection($placements))));
+
+        return $notification->toMessage()->embeds[0];
+    }
+
     private function embedFor(RacePlacement $placement): EmbedData
     {
-        return (new RacePlacementClaimed($placement))->toMessage()->embeds[0];
+        return $this->embedForMany([$placement]);
     }
 }

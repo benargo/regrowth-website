@@ -16,7 +16,8 @@ use Saloon\Exceptions\Request\FatalRequestException;
 /**
  * Returns the playable race with the given ID, importing it and its faction
  * from Blizzard when it does not exist locally, and queues a fetch of each of
- * its shadow avatars not yet stored. Returns null without importing when the
+ * its shadow avatars not yet stored, skipping any the render CDN
+ * was recently found not to have. Returns null without importing when the
  * race's faction is not one of the app's factions.
  */
 class FindOrImportPlayableRace
@@ -71,7 +72,7 @@ class FindOrImportPlayableRace
         }
 
         foreach (Gender::cases() as $gender) {
-            if (! $playableRace->hasShadowAvatar($gender)) {
+            if (! $playableRace->hasShadowAvatar($gender) && ! $playableRace->isShadowAvatarKnownMissing($gender)) {
                 AttachShadowAvatarToPlayableRace::dispatch($playableRace->id, $gender);
             }
         }

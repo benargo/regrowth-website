@@ -33,4 +33,9 @@ interface HasCharacterMedia
      * The path prefix on the shared disk where character portraits are stored.
      */
     public const STORAGE_PATH_PREFIX = 'blizzard-cdn/characters';
+
+    /**
+     * How long, in seconds, a character Blizzard has no portrait for is remembered: three days.
+     */
+    public const PORTRAIT_MISSING_FOR_SECONDS = 259200;
 }

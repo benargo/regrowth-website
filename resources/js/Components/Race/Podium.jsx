@@ -12,10 +12,11 @@ const STEP_HEIGHT_CLASSES = {
 };
 
 /**
- * The placement holding the given medal, if it has been claimed.
+ * Every placement holding the given medal, in the order given. Tied
+ * characters share a medal, so there may be several or none.
  */
-function placementFor(placements, medal) {
-    return placements.find((placement) => placement.medal === medal) ?? null;
+function placementsFor(placements, medal) {
+    return placements.filter((placement) => placement.medal === medal);
 }
 
 /**
@@ -23,17 +24,17 @@ function placementFor(placements, medal) {
  *
  * `variant` "plinths" is the mid-race row of three places: an unclaimed place
  * has a dashed outline and reads "Gold is unclaimed"; a claimed place takes
- * the medal's colour and shows the character and when they reached
- * `targetLevel`. `variant` "steps" is the finished three-step podium, silver
- * on the left, gold raised in the centre and bronze on the right.
+ * the medal's colour and lists every character holding it, with when they
+ * reached `targetLevel` shown once. `variant` "steps" is the finished
+ * three-step podium, silver on the left, gold raised in the centre and bronze
+ * on the right, each step listing every character tied on it.
  */
 export default function Podium({ placements, variant = "plinths", targetLevel = 60 }) {
     if (variant === "steps") {
         return (
             <ol className="grid grid-cols-[1fr_1.15fr_1fr] items-end gap-2 md:gap-3">
                 {MEDAL_ORDER.map((medal) => {
-                    const placement = placementFor(placements, medal);
-                    const character = placement?.character;
+                    const holders = placementsFor(placements, medal);
 
                     return (
                         <li
@@ -42,12 +43,25 @@ export default function Podium({ placements, variant = "plinths", targetLevel = 
                             style={{ "--medal": MEDALS[medal].color, order: STEP_VISUAL_ORDER[medal] }}
                         >
                             <div className="mb-3 flex flex-col items-center gap-1.5 px-1">
-                                <ClassToken playableClass={character?.playable_class} size="lg" />
-                                <span className="text-camel-300 font-serif text-base leading-tight text-balance break-words md:text-xl">
-                                    {character?.name ?? `${MEDALS[medal].label} is unclaimed`}
-                                </span>
+                                {holders.length > 0 ? (
+                                    holders.map((holder) => (
+                                        <div key={holder.id} className="flex flex-col items-center gap-1.5">
+                                            <ClassToken playableClass={holder.character?.playable_class} size="lg" />
+                                            <span className="text-camel-300 font-serif text-base leading-tight text-balance break-words md:text-xl">
+                                                {holder.character?.name}
+                                            </span>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <>
+                                        <ClassToken playableClass={null} size="lg" />
+                                        <span className="text-camel-300 font-serif text-base leading-tight text-balance break-words md:text-xl">
+                                            {MEDALS[medal].label} is unclaimed
+                                        </span>
+                                    </>
+                                )}
                                 <small className="text-camel-500 text-sm tabular-nums">
-                                    {placement ? formatDateTime(placement.reached_at) : " "}
+                                    {holders.length > 0 ? formatDateTime(holders[0].reached_at) : " "}
                                 </small>
                             </div>
                             <div
@@ -70,21 +84,26 @@ export default function Podium({ placements, variant = "plinths", targetLevel = 
     return (
         <ol className="grid gap-2.5 sm:grid-cols-3">
             {MEDAL_ORDER.map((medal) => {
-                const placement = placementFor(placements, medal);
-                const character = placement?.character;
+                const holders = placementsFor(placements, medal);
 
-                return placement ? (
+                return holders.length > 0 ? (
                     <li
                         key={`${medal}-claimed`}
-                        className="border-(--medal) text-camel-300 flex items-center gap-2.5 rounded border bg-[color-mix(in_srgb,var(--medal)_12%,var(--color-forever-900))] px-3 py-2.5 text-sm"
+                        className="border-(--medal) text-camel-300 flex items-start gap-2.5 rounded border bg-[color-mix(in_srgb,var(--medal)_12%,var(--color-forever-900))] px-3 py-2.5 text-sm"
                         style={{ "--medal": MEDALS[medal].color }}
                     >
                         <Medal medal={medal} />
-                        <ClassToken playableClass={character?.playable_class} />
                         <div className="min-w-0">
-                            <span className="block truncate font-serif text-lg">{character?.name}</span>
-                            <small className="text-camel-400 block text-sm">
-                                Reached {targetLevel} on {formatDateTime(placement.reached_at)}
+                            <ul className="flex flex-col gap-1">
+                                {holders.map((holder) => (
+                                    <li key={holder.id} className="flex min-w-0 items-center gap-2.5">
+                                        <ClassToken playableClass={holder.character?.playable_class} />
+                                        <span className="block truncate font-serif text-lg">{holder.character?.name}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                            <small className="text-camel-400 mt-1 block text-sm">
+                                Reached {targetLevel} on {formatDateTime(holders[0].reached_at)}
                             </small>
                         </div>
                     </li>

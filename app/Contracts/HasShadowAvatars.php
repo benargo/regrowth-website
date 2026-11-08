@@ -22,4 +22,9 @@ interface HasShadowAvatars
      * The path on the shared disk where shadow avatars are stored.
      */
     public const STORAGE_PATH_PREFIX = 'blizzard-cdn/shadow/avatar';
+
+    /**
+     * How long, in seconds, a shadow avatar the render CDN does not have is remembered: seven days.
+     */
+    public const SHADOW_AVATAR_MISSING_FOR_SECONDS = 604800;
 }

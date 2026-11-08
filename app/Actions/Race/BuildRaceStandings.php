@@ -9,6 +9,7 @@ use App\Http\Resources\RacePlacementResource;
 use App\Http\Resources\ScopedResourceCollection;
 use App\Models\Character;
 use App\Models\GameVersion;
+use App\Models\RacePlacement;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Cache;
 use Lorisleiva\Actions\Concerns\AsAction;
@@ -26,13 +27,28 @@ class BuildRaceStandings implements RaceToSixty
      */
     public function handle(GameVersion $gameVersion, bool $withRacers = true): array
     {
-        $characters = $gameVersion->characters()
-            ->with(['media', 'playableClass.media', 'playableRace.media', 'racePlacement'])
-            ->orderByDesc('level')
-            ->orderBy('name')
-            ->get();
+        if ($withRacers) {
+            $characters = $gameVersion->characters()
+                ->with(['media', 'playableClass.media', 'playableRace.media', 'racePlacement'])
+                ->orderByDesc('level')
+                ->orderBy('name')
+                ->get();
 
-        $unplaced = $characters->filter(fn (Character $character): bool => $character->racePlacement === null)->values();
+            $unplaced = $characters->filter(fn (Character $character): bool => $character->racePlacement === null)->values();
+        } else {
+            $topLevel = $gameVersion->characters()->whereDoesntHave('racePlacement')->max('level');
+
+            $unplaced = $topLevel === null
+                ? collect()
+                : $gameVersion->characters()
+                    ->whereDoesntHave('racePlacement')
+                    ->where('level', '>=', $topLevel - self::PACK_WINDOW)
+                    ->with(['media', 'playableClass.media', 'playableRace.media'])
+                    ->orderByDesc('level')
+                    ->orderBy('name')
+                    ->get();
+        }
+
         $leader = $unplaced->first();
 
         $pack = $leader === null
@@ -42,7 +58,9 @@ class BuildRaceStandings implements RaceToSixty
         $placements = $gameVersion->racePlacements()
             ->with('character.playableClass.media')
             ->orderBy('position')
-            ->get();
+            ->get()
+            ->sortBy([['position', 'asc'], [fn (RacePlacement $a, RacePlacement $b): int => strcmp($a->character->name, $b->character->name)]])
+            ->values();
 
         $bronzeReachedAt = $placements->firstWhere('position', 3)?->reached_at;
 

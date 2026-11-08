@@ -10,6 +10,7 @@ use App\Jobs\AttachShadowAvatarToPlayableRace;
 use App\Models\PlayableRace;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Queue\Attributes\Backoff;
 use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
@@ -34,6 +35,11 @@ class AttachShadowAvatarToPlayableRaceTest extends TestCase
     {
         parent::setUp();
         Storage::fake('s3');
+    }
+
+    private function jpegBytes(): string
+    {
+        return UploadedFile::fake()->image('avatar.jpg', 2, 2)->getContent();
     }
 
     // ==================== job contract ====================
@@ -101,7 +107,7 @@ class AttachShadowAvatarToPlayableRaceTest extends TestCase
     public function it_attaches_the_shadow_avatar_to_the_race_at_the_mirrored_path(): void
     {
         $playableRace = PlayableRace::factory()->create(['id' => 6]);
-        Saloon::fake([FetchShadowAvatarRequest::class => MockResponse::make(body: 'BINARY', status: 200, headers: ['Content-Type' => 'image/jpeg'])]);
+        Saloon::fake([FetchShadowAvatarRequest::class => MockResponse::make(body: $this->jpegBytes(), status: 200, headers: ['Content-Type' => 'image/jpeg'])]);
 
         (new AttachShadowAvatarToPlayableRace(6, Gender::MALE))->handle(app(RenderConnector::class));
 
@@ -117,7 +123,7 @@ class AttachShadowAvatarToPlayableRaceTest extends TestCase
     public function it_keeps_one_shadow_avatar_per_gender(): void
     {
         $playableRace = PlayableRace::factory()->create(['id' => 6]);
-        Saloon::fake([FetchShadowAvatarRequest::class => MockResponse::make(body: 'BINARY', status: 200, headers: ['Content-Type' => 'image/jpeg'])]);
+        Saloon::fake([FetchShadowAvatarRequest::class => MockResponse::make(body: $this->jpegBytes(), status: 200, headers: ['Content-Type' => 'image/jpeg'])]);
 
         (new AttachShadowAvatarToPlayableRace(6, Gender::MALE))->handle(app(RenderConnector::class));
         (new AttachShadowAvatarToPlayableRace(6, Gender::FEMALE))->handle(app(RenderConnector::class));
@@ -133,7 +139,7 @@ class AttachShadowAvatarToPlayableRaceTest extends TestCase
     public function it_skips_the_request_when_the_gender_is_already_stored(): void
     {
         PlayableRace::factory()->create(['id' => 6]);
-        Saloon::fake([FetchShadowAvatarRequest::class => MockResponse::make(body: 'BINARY', status: 200, headers: ['Content-Type' => 'image/jpeg'])]);
+        Saloon::fake([FetchShadowAvatarRequest::class => MockResponse::make(body: $this->jpegBytes(), status: 200, headers: ['Content-Type' => 'image/jpeg'])]);
         $job = new AttachShadowAvatarToPlayableRace(6, Gender::MALE);
 
         $job->handle(app(RenderConnector::class));
@@ -170,6 +176,8 @@ class AttachShadowAvatarToPlayableRaceTest extends TestCase
         $job->assertNotFailed();
         $job->assertNotReleased();
         $this->assertFalse($playableRace->fresh()->hasMedia(HasShadowAvatars::MEDIA_COLLECTION));
+        $this->assertSame(in_array($status, [403, 404], true), $playableRace->isShadowAvatarKnownMissing(Gender::MALE));
+        $this->assertFalse($playableRace->isShadowAvatarKnownMissing(Gender::FEMALE));
         Log::shouldHaveReceived('warning')
             ->with('Blizzard shadow avatar unavailable.', ['playable_race_id' => 999, 'gender' => 0, 'status' => $status])
             ->once();
@@ -187,6 +195,7 @@ class AttachShadowAvatarToPlayableRaceTest extends TestCase
 
         $job->assertFailed();
         $this->assertFalse($playableRace->fresh()->hasMedia(HasShadowAvatars::MEDIA_COLLECTION));
+        $this->assertFalse($playableRace->isShadowAvatarKnownMissing(Gender::MALE));
     }
 
     #[Group('error-handling')]
@@ -195,6 +204,35 @@ class AttachShadowAvatarToPlayableRaceTest extends TestCase
     {
         $playableRace = PlayableRace::factory()->create(['id' => 6]);
         Saloon::fake([FetchShadowAvatarRequest::class => MockResponse::make(body: '<html></html>', status: 200, headers: ['Content-Type' => 'text/html'])]);
+        $job = (new AttachShadowAvatarToPlayableRace(6, Gender::MALE))->withFakeQueueInteractions();
+
+        $job->handle(app(RenderConnector::class));
+
+        $job->assertFailed();
+        $this->assertFalse($playableRace->fresh()->hasMedia(HasShadowAvatars::MEDIA_COLLECTION));
+        $this->assertFalse($playableRace->isShadowAvatarKnownMissing(Gender::MALE));
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_attaches_a_mirrored_shadow_avatar_served_without_a_content_type(): void
+    {
+        $playableRace = PlayableRace::factory()->create(['id' => 6]);
+        Saloon::fake([FetchShadowAvatarRequest::class => MockResponse::make(body: $this->jpegBytes(), status: 200, headers: ['X-Mirror' => 'hit'])]);
+        $job = (new AttachShadowAvatarToPlayableRace(6, Gender::MALE))->withFakeQueueInteractions();
+
+        $job->handle(app(RenderConnector::class));
+
+        $job->assertNotFailed();
+        $this->assertCount(1, $playableRace->fresh()->getMedia(HasShadowAvatars::MEDIA_COLLECTION));
+    }
+
+    #[Group('error-handling')]
+    #[Test]
+    public function it_fails_when_a_mirrored_body_is_not_an_image(): void
+    {
+        $playableRace = PlayableRace::factory()->create(['id' => 6]);
+        Saloon::fake([FetchShadowAvatarRequest::class => MockResponse::make(body: '<html></html>', status: 200, headers: ['X-Mirror' => 'hit'])]);
         $job = (new AttachShadowAvatarToPlayableRace(6, Gender::MALE))->withFakeQueueInteractions();
 
         $job->handle(app(RenderConnector::class));

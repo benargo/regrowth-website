@@ -11,7 +11,7 @@ const LINK_CLASSES =
  *
  * While the race is running or closing it shows the leader and an experience
  * bar of the pack, with placed characters at the target level, and links to
- * the race page. Once finished it names the three medallists and links to the
+ * the race page. Once finished it names every medallist and links to the
  * results. Renders nothing when `race` is null. Reloads `race` when a
  * broadcast reports changed standings.
  */
@@ -93,7 +93,8 @@ function RunningStrip({ race, placements }) {
 }
 
 /**
- * The strip once the race is finished.
+ * The strip once the race is finished, listing every medallist; tied
+ * characters each get their own entry, keyed by placement id.
  */
 function FinishedStrip({ placements }) {
     const medallists = placements.filter((placement) => placement.medal !== null);
@@ -108,7 +109,7 @@ function FinishedStrip({ placements }) {
             </div>
             <ol className="flex flex-wrap items-center gap-x-5 gap-y-2">
                 {medallists.map((placement) => (
-                    <li key={placement.medal} className="text-camel-300 flex items-center gap-2 text-sm">
+                    <li key={placement.id} className="text-camel-300 flex items-center gap-2 text-sm">
                         <Medal medal={placement.medal} size="sm" />
                         {placement.character.name}
                     </li>

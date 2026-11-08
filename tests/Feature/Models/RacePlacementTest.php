@@ -55,16 +55,16 @@ class RacePlacementTest extends TestCase
     }
 
     #[Test]
-    public function it_rejects_a_duplicate_position_in_the_same_version(): void
+    public function it_lets_characters_share_a_position_in_the_same_version(): void
     {
         $placement = RacePlacement::factory()->create(['position' => 1]);
-
-        $this->expectException(UniqueConstraintViolationException::class);
 
         RacePlacement::factory()->create([
             'game_version_id' => $placement->game_version_id,
             'position' => 1,
         ]);
+
+        $this->assertDatabaseCount('race_placements', 2);
     }
 
     #[Test]
