@@ -7,7 +7,6 @@ use App\Enums\RaceState;
 use App\Http\Resources\CharacterResource;
 use App\Http\Resources\RacePlacementResource;
 use App\Http\Resources\ScopedResourceCollection;
-use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\RacePlacement;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -27,33 +26,13 @@ class BuildRaceStandings implements RaceToSixty
      */
     public function handle(GameVersion $gameVersion, bool $withRacers = true): array
     {
-        if ($withRacers) {
-            $characters = $gameVersion->characters()
-                ->with(['media', 'playableClass.media', 'playableRace.media', 'racePlacement'])
-                ->orderByDesc('level')
-                ->orderBy('name')
-                ->get();
+        $pack = $gameVersion->racePack(self::PACK_WINDOW)
+            ->with(['media', 'playableClass.media', 'playableRace.media'])
+            ->orderByDesc('level')
+            ->orderBy('name')
+            ->get();
 
-            $unplaced = $characters->filter(fn (Character $character): bool => $character->racePlacement === null)->values();
-        } else {
-            $topLevel = $gameVersion->characters()->whereDoesntHave('racePlacement')->max('level');
-
-            $unplaced = $topLevel === null
-                ? collect()
-                : $gameVersion->characters()
-                    ->whereDoesntHave('racePlacement')
-                    ->where('level', '>=', $topLevel - self::PACK_WINDOW)
-                    ->with(['media', 'playableClass.media', 'playableRace.media'])
-                    ->orderByDesc('level')
-                    ->orderBy('name')
-                    ->get();
-        }
-
-        $leader = $unplaced->first();
-
-        $pack = $leader === null
-            ? collect()
-            : $unplaced->filter(fn (Character $character): bool => $character->level >= $leader->level - self::PACK_WINDOW)->values();
+        $leader = $pack->first();
 
         $placements = $gameVersion->racePlacements()
             ->with('character.playableClass.media')
@@ -71,13 +50,18 @@ class BuildRaceStandings implements RaceToSixty
             'closes_at' => $bronzeReachedAt?->copy()->addHours(self::HONOURABLE_MENTION_HOURS)->toIso8601String(),
             'leader' => $leader?->toResource()->scope('race'),
             'pack' => CharacterResource::collection($pack)->scope('race'),
+            'placements' => RacePlacementResource::collection($placements),
         ];
 
         if ($withRacers) {
-            $standings['racers'] = CharacterResource::collection($characters)->scope('race');
+            $standings['racers'] = CharacterResource::collection(
+                $gameVersion->characters()
+                    ->with(['media', 'playableClass.media', 'playableRace.media'])
+                    ->orderByDesc('level')
+                    ->orderBy('name')
+                    ->get(),
+            )->scope('race');
         }
-
-        $standings['placements'] = RacePlacementResource::collection($placements);
 
         return $standings;
     }

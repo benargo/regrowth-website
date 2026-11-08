@@ -283,6 +283,23 @@ class GameVersion extends Model implements DatasetModel, DispatchesChangesForMed
         return "{$this->blizzard_namespace?->value}|{$this->realm_slug}|{$this->guild_slug}";
     }
 
+    // ============ Race to Level 60 ===========
+
+    /**
+     * Get the characters without a race placement whose level is within the
+     * given number of levels of the highest such character.
+     *
+     * @return HasMany<Character, $this>
+     */
+    public function racePack(int $window): HasMany
+    {
+        $topLevel = (int) $this->characters()->whereDoesntHave('racePlacement')->max('level');
+
+        return $this->characters()
+            ->whereDoesntHave('racePlacement')
+            ->where('level', '>=', $topLevel - $window);
+    }
+
     // ============ Relationships ===========
 
     /**

@@ -82,16 +82,7 @@ class TrackRaceToSixty implements RaceToSixty, ShouldQueue
             return;
         }
 
-        $unplaced = $gameVersion->characters()->whereDoesntHave('racePlacement');
-        $topLevel = (clone $unplaced)->max('level');
-
-        if ($topLevel === null) {
-            $this->broadcast(hasChanges: false);
-
-            return;
-        }
-
-        $candidates = $unplaced->where('level', '>=', (int) $topLevel - self::PACK_WINDOW)->get();
+        $candidates = $gameVersion->racePack(self::PACK_WINDOW)->get();
 
         $hasChanges = $this->pollCandidates($blizzard, $gameVersion, $candidates);
 

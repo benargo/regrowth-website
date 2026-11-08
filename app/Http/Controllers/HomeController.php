@@ -17,8 +17,10 @@ class HomeController extends Controller
 
     public function __invoke(Request $request): Response
     {
+        $forever = GameVersion::forever();
+
         return Inertia::render('Home', [
-            'race' => ($forever = GameVersion::forever()) ? BuildRaceStandings::run($forever, withRacers: false) : null,
+            'race' => $forever ? BuildRaceStandings::run($forever, withRacers: false) : null,
             'officers' => config('guild.officers'),
             'canViewPlans' => $request->user() !== null,
             'upcomingEvents' => Inertia::defer(function () use ($request) {

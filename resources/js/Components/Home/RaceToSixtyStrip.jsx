@@ -34,9 +34,9 @@ export default function RaceToSixtyStrip({ race }) {
             className="border-camel-600 from-forever-800 to-forever-900 border-b-8 bg-linear-to-b"
         >
             {race.state === "finished" ? (
-                <FinishedStrip key="finished" placements={placements} />
+                <FinishedStrip placements={placements} />
             ) : (
-                <RunningStrip key="running" race={race} placements={placements} />
+                <RunningStrip race={race} placements={placements} />
             )}
         </section>
     );

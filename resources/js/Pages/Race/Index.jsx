@@ -60,12 +60,12 @@ export default function RaceIndex({ race, character_portraits: characterPortrait
             />
             <div className="text-camel-400 flex-1 bg-[linear-gradient(var(--color-forever-800),var(--color-forever-900)_22rem)]">
                 {!race ? (
-                    <NoRace key="none" />
+                    <NoRace />
                 ) : race.state === "finished" ? (
-                    <Results key="finished" race={race} />
+                    <Results race={race} />
                 ) : (
                     <Standings
-                        key="standings"
+                       
                         race={race}
                         characterPortraits={characterPortraits}
                         checkedAt={latestOf(broadcastCheckedAt, race.checked_at)}
@@ -156,7 +156,7 @@ function Standings({ race, characterPortraits, checkedAt }) {
                 <Podium placements={placements} targetLevel={race.target_level} />
 
                 {race.state === "closing" ? (
-                    <div key="closing" className="mt-3 text-base">
+                    <div className="mt-3 text-base">
                         <p className="text-camel-400">
                             Everyone else has until {formatDateTime(race.closes_at)} to reach {race.target_level} for an
                             honourable mention.
@@ -167,19 +167,13 @@ function Standings({ race, characterPortraits, checkedAt }) {
                                 aria-label="Honourable mentions so far"
                             >
                                 {mentions.map((placement) => (
-                                    <li key={placement.id} className="text-camel-400 flex items-center gap-1.5">
-                                        <ClassToken playableClass={placement.character.playable_class} />
-                                        {placement.character.name}
-                                        <span className="text-camel-500 text-sm tabular-nums">
-                                            {formatDateTime(placement.reached_at)}
-                                        </span>
-                                    </li>
+                                    <Mention key={placement.id} placement={placement} className="gap-1.5" />
                                 ))}
                             </ul>
                         )}
                     </div>
                 ) : (
-                    <p key="running" className="text-camel-400 mt-3 text-base">
+                    <p className="text-camel-400 mt-3 text-base">
                         Once bronze is claimed, everyone else has 48 hours to reach {race.target_level} for an
                         honourable mention.
                     </p>
@@ -206,6 +200,21 @@ function Standings({ race, characterPortraits, checkedAt }) {
                 <Ladder racers={racers} leaderLevel={leader?.level ?? null} targetLevel={race.target_level} />
             </Band>
         </>
+    );
+}
+
+/**
+ * One honourable mention: class token, character name and the time they reached the target level.
+ */
+function Mention({ placement, className = "", timeClassName = "" }) {
+    return (
+        <li className={`text-camel-400 flex items-center ${className}`}>
+            <ClassToken playableClass={placement.character.playable_class} />
+            {placement.character.name}
+            <span className={`text-camel-500 text-sm tabular-nums ${timeClassName}`}>
+                {formatDateTime(placement.reached_at)}
+            </span>
+        </li>
     );
 }
 
@@ -240,22 +249,18 @@ function Results({ race }) {
                     Honourable Mentions
                 </h2>
                 {mentions.length > 0 ? (
-                    <ul key="mentions" className="grid gap-x-7 sm:grid-cols-2">
+                    <ul className="grid gap-x-7 sm:grid-cols-2">
                         {mentions.map((placement) => (
-                            <li
+                            <Mention
                                 key={placement.id}
-                                className="border-camel-900 text-camel-400 flex items-center gap-2 border-b py-2 text-base"
-                            >
-                                <ClassToken playableClass={placement.character.playable_class} />
-                                {placement.character.name}
-                                <span className="text-camel-500 ml-auto text-sm tabular-nums">
-                                    {formatDateTime(placement.reached_at)}
-                                </span>
-                            </li>
+                                placement={placement}
+                                className="border-camel-900 gap-2 border-b py-2 text-base"
+                                timeClassName="ml-auto"
+                            />
                         ))}
                     </ul>
                 ) : (
-                    <p key="no-mentions" className="text-camel-400 text-base">
+                    <p className="text-camel-400 text-base">
                         Nobody else reached {race.target_level} in time.
                     </p>
                 )}
