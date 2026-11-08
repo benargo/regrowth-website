@@ -2,11 +2,14 @@
 
 namespace Tests\Unit\Models;
 
+use App\Contracts\HasShadowAvatars;
 use App\Enums\Faction;
+use App\Enums\Gender;
 use App\Models\GameVersion;
 use App\Models\PlayableRace;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
@@ -110,6 +113,85 @@ class PlayableRaceTest extends ModelTestCase
         $playableRace = $this->create();
 
         $this->assertCount(0, $playableRace->characters);
+    }
+
+    // ==================== shadow avatars ====================
+
+    #[Group('media')]
+    #[Test]
+    public function shadow_avatar_url_returns_the_avatar_for_the_given_gender(): void
+    {
+        Storage::fake('s3');
+        $playableRace = $this->create(['id' => 6]);
+        $playableRace->addMediaFromString('MALE')->usingFileName('6-0.jpg')
+            ->withCustomProperties(['gender' => Gender::MALE->id()])
+            ->toMediaCollection(HasShadowAvatars::MEDIA_COLLECTION);
+        $playableRace->addMediaFromString('FEMALE')->usingFileName('6-1.jpg')
+            ->withCustomProperties(['gender' => Gender::FEMALE->id()])
+            ->toMediaCollection(HasShadowAvatars::MEDIA_COLLECTION);
+
+        $this->assertStringEndsWith('blizzard-cdn/shadow/avatar/6-1.jpg', $playableRace->shadowAvatarUrl(Gender::FEMALE));
+        $this->assertTrue($playableRace->hasShadowAvatar(Gender::MALE));
+    }
+
+    #[Group('media')]
+    #[Test]
+    public function shadow_avatar_url_returns_null_when_the_gender_is_not_stored(): void
+    {
+        Storage::fake('s3');
+        $playableRace = $this->create(['id' => 6]);
+        $playableRace->addMediaFromString('MALE')->usingFileName('6-0.jpg')
+            ->withCustomProperties(['gender' => Gender::MALE->id()])
+            ->toMediaCollection(HasShadowAvatars::MEDIA_COLLECTION);
+
+        $this->assertNull($playableRace->shadowAvatarUrl(Gender::FEMALE));
+        $this->assertFalse($playableRace->hasShadowAvatar(Gender::FEMALE));
+    }
+
+    #[Group('media')]
+    #[Test]
+    public function has_all_shadow_avatars_returns_true_when_every_gender_is_stored(): void
+    {
+        Storage::fake('s3');
+        $playableRace = $this->create(['id' => 6]);
+        $this->addShadowAvatar($playableRace, Gender::MALE);
+        $this->addShadowAvatar($playableRace, Gender::FEMALE);
+
+        $this->assertTrue($playableRace->fresh()->hasAllShadowAvatars());
+    }
+
+    #[Group('media')]
+    #[Test]
+    public function has_all_shadow_avatars_returns_false_when_a_gender_is_missing(): void
+    {
+        Storage::fake('s3');
+        $playableRace = $this->create(['id' => 6]);
+        $this->addShadowAvatar($playableRace, Gender::MALE);
+
+        $this->assertFalse($playableRace->fresh()->hasAllShadowAvatars());
+    }
+
+    #[Group('media')]
+    #[Test]
+    public function has_all_shadow_avatars_counts_loaded_media_without_querying(): void
+    {
+        Storage::fake('s3');
+        $playableRace = $this->create(['id' => 6]);
+        $this->addShadowAvatar($playableRace, Gender::MALE);
+        $this->addShadowAvatar($playableRace, Gender::FEMALE);
+        $loadedRace = $playableRace->fresh()->load('media');
+
+        $this->expectsDatabaseQueryCount(0);
+
+        $this->assertTrue($loadedRace->hasAllShadowAvatars());
+    }
+
+    private function addShadowAvatar(PlayableRace $playableRace, Gender $gender): void
+    {
+        $playableRace->addMediaFromString(strtoupper($gender->value))
+            ->usingFileName("{$playableRace->id}-{$gender->id()}.jpg")
+            ->withCustomProperties(['gender' => $gender->id()])
+            ->toMediaCollection(HasShadowAvatars::MEDIA_COLLECTION);
     }
 
     // ==================== gameVersions ====================

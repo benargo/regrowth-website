@@ -4,6 +4,7 @@ namespace App\Support\MediaLibrary;
 
 use App\Contracts\HasBlizzardIcons;
 use App\Contracts\HasCharacterMedia;
+use App\Contracts\HasShadowAvatars;
 use Illuminate\Contracts\Filesystem\Factory;
 use Illuminate\Support\Collection;
 use Spatie\MediaLibrary\MediaCollections\Filesystem;
@@ -60,14 +61,15 @@ final class SharedPathFileRemover implements FileRemover
     }
 
     /**
-     * Whether the media is stored in one of the shared Blizzard icon or portrait directories.
+     * Whether the media is stored in one of the shared Blizzard icon, portrait or shadow avatar directories.
      */
     private function usesSharedDirectory(Media $media): bool
     {
         $pathGenerator = PathGeneratorFactory::create($media);
 
         return ($pathGenerator instanceof BlizzardIconPathGenerator && $media->collection_name === HasBlizzardIcons::MEDIA_COLLECTION)
-            || ($pathGenerator instanceof CharacterMediaPathGenerator && $media->collection_name === HasCharacterMedia::MEDIA_COLLECTION);
+            || ($pathGenerator instanceof CharacterMediaPathGenerator && $media->collection_name === HasCharacterMedia::MEDIA_COLLECTION)
+            || ($pathGenerator instanceof ShadowAvatarPathGenerator && $media->collection_name === HasShadowAvatars::MEDIA_COLLECTION);
     }
 
     /**
