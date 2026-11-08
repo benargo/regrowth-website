@@ -24,6 +24,7 @@ class GetCharacterProfileRequest extends Request implements Cacheable
         protected ?string $realm,
         protected string $character,
         protected ?BlizzardNamespace $namespace = null,
+        protected int $cacheExpiryInSeconds = 21600,
     ) {
         $this->realm = self::normalizeRealm($realm);
         $this->character = NameSlug::from($character);
@@ -48,7 +49,7 @@ class GetCharacterProfileRequest extends Request implements Cacheable
 
     public function cacheExpiryInSeconds(): int
     {
-        return 21600;
+        return $this->cacheExpiryInSeconds;
     }
 
     public function createDtoFromResponse(Response $response): CharacterProfileData

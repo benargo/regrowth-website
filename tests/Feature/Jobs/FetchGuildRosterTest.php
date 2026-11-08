@@ -515,6 +515,27 @@ class FetchGuildRosterTest extends TestCase
 
     #[Group('happy-path')]
     #[Test]
+    public function it_never_lowers_a_stored_level(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 1]);
+        PlayableRace::factory()->create(['id' => 1]);
+        Character::factory()->create(['id' => 1, 'level' => 34, 'game_version_id' => $gameVersion->id]);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(1, 'Alpha', 31, 0),
+        ]]);
+        $this->mockGetCharacterProfile();
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        $this->assertSame(34, Character::find(1)->level);
+    }
+
+    #[Group('happy-path')]
+    #[Test]
     public function it_links_the_class_and_race_of_a_member_below_the_minimum_level(): void
     {
         $gameVersion = $this->createGameVersion();

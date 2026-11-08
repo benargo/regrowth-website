@@ -78,6 +78,38 @@ trait MocksBlizzardServices
         ]);
     }
 
+    /**
+     * Queue a character profile response per character, matched on the last
+     * segment of the request URL. An array value is merged into the default
+     * profile; an int value is an error status with the "not found" body.
+     *
+     * @param  array<string, array<string, mixed>|int>  $profiles  keyed by lowercased character name
+     */
+    protected function mockGetCharacterProfilesByName(array $profiles): void
+    {
+        $this->pendingBlizzardMocks = array_merge($this->pendingBlizzardMocks, [
+            self::TOKEN_MOCK_KEY => MockResponse::make(body: self::TOKEN_MOCK_RESPONSE, status: 200),
+            GetCharacterProfileRequest::class => function (PendingRequest $pendingRequest) use ($profiles): MockResponse {
+                $path = parse_url($pendingRequest->getUrl(), PHP_URL_PATH) ?: '';
+                $segments = explode('/', trim($path, '/'));
+                $name = rawurldecode($segments[array_key_last($segments)] ?? '');
+                $profile = $profiles[$name] ?? 404;
+
+                if (is_int($profile)) {
+                    return MockResponse::make(
+                        body: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'],
+                        status: $profile,
+                    );
+                }
+
+                return MockResponse::make(
+                    body: array_merge($this->makeCharacterProfileResponse(), $profile),
+                    status: 200,
+                );
+            },
+        ]);
+    }
+
     protected function mockGetPlayableClass(int $id = 5, string $name = 'Priest', int $status = 200): void
     {
         $this->pendingBlizzardMocks = array_merge($this->pendingBlizzardMocks, [

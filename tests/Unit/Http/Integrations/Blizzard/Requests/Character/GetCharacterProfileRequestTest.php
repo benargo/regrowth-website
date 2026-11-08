@@ -13,6 +13,7 @@ use Saloon\Laravel\Facades\Saloon;
 use Spatie\LaravelData\Optional;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
+#[Group('characters')]
 #[Group('blizzard-integration')]
 class GetCharacterProfileRequestTest extends BlizzardTestCase
 {
@@ -152,6 +153,22 @@ class GetCharacterProfileRequestTest extends BlizzardTestCase
         Saloon::assertSent(function ($request, $response) {
             return $response->getPendingRequest()->headers()->get('Battlenet-Namespace') === 'profile-classic1x-eu';
         });
+    }
+
+    // ==================== cache ====================
+
+    #[Test]
+    public function it_caches_for_six_hours_by_default(): void
+    {
+        $this->assertSame(21600, (new GetCharacterProfileRequest('thunderstrike', 'Alpha'))->cacheExpiryInSeconds());
+    }
+
+    #[Test]
+    public function it_caches_for_the_given_number_of_seconds(): void
+    {
+        $request = new GetCharacterProfileRequest(null, 'Alpha', BlizzardNamespace::FOREVER, cacheExpiryInSeconds: 50);
+
+        $this->assertSame(50, $request->cacheExpiryInSeconds());
     }
 
     // ==================== realm ====================
