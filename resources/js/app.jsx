@@ -8,14 +8,15 @@ import { createRoot } from "react-dom/client";
 const appName = import.meta.env.VITE_APP_NAME || "Laravel";
 
 const THEME_COLORS = { forever: "#003c4e", classic: "#4a3d32" };
+const FOREVER_THEMED_PAGES = ["Home", "Race/Index"];
 
 router.on("navigate", (event) => {
-    const isHomepage = event.detail.page.component === "Home";
+    const isForeverThemed = FOREVER_THEMED_PAGES.includes(event.detail.page.component);
 
     document
         .querySelector('meta[name="theme-color"]')
-        ?.setAttribute("content", isHomepage ? THEME_COLORS.forever : THEME_COLORS.classic);
-    document.body.classList.toggle("bg-forever-800", isHomepage);
+        ?.setAttribute("content", isForeverThemed ? THEME_COLORS.forever : THEME_COLORS.classic);
+    document.body.classList.toggle("bg-forever-800", isForeverThemed);
 });
 
 createInertiaApp({

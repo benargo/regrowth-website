@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * Transform a character, optionally limited to the `attendance` scope.
+ * Transform a character, optionally limited to the `attendance` or `race` scope.
  * `portrait_url` is only included when `media` is loaded.
  * `shadow_avatar_url` is only included when `playableRace` and its `media` are loaded.
  * `user` is only included when `user` is loaded; load `user.discordRoles` with it.
@@ -67,7 +67,10 @@ class CharacterResource extends JsonResource implements ScopedResource
      */
     protected function scopeDefinitions(): array
     {
-        return ['attendance' => ['id', 'name', 'playable_class', 'rank']];
+        return [
+            'attendance' => ['id', 'name', 'playable_class', 'rank'],
+            'race' => ['id', 'level', 'name', 'playable_class', 'portrait_url', 'shadow_avatar_url', 'slug'],
+        ];
     }
 
     /**
@@ -75,6 +78,9 @@ class CharacterResource extends JsonResource implements ScopedResource
      */
     protected function scopeMappings(): array
     {
-        return ['attendance' => [GuildRankResource::class => 'attendance', PlayableClassResource::class => 'attendance']];
+        return [
+            'attendance' => [GuildRankResource::class => 'attendance', PlayableClassResource::class => 'attendance'],
+            'race' => [PlayableClassResource::class => 'attendance'],
+        ];
     }
 }

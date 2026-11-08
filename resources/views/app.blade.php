@@ -1,9 +1,10 @@
+@php($isForeverThemed = in_array($page['component'] ?? null, ['Home', 'Race/Index'], true))
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" style="color-scheme: dark">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="{{ ($page['component'] ?? null) === 'Home' ? '#003c4e' : '#4a3d32' }}">
+        <meta name="theme-color" content="{{ $isForeverThemed ? '#003c4e' : '#4a3d32' }}">
 
         <title data-inertia>{{ config('app.name', 'Laravel') }}</title>
 
@@ -26,7 +27,7 @@
 
         <link rel="icon" type="image/webp" href="{{ asset('images/guild_emblem.webp') }}" />
     </head>
-    <body @class(['font-sans antialiased overflow-x-clip', 'bg-forever-800' => ($page['component'] ?? null) === 'Home'])>
+    <body @class(['font-sans antialiased overflow-x-clip', 'bg-forever-800' => $isForeverThemed])>
         @inertia
 
         <!-- Wowhead Tooltips -->

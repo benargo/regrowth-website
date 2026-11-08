@@ -437,6 +437,41 @@ class CharacterResourceTest extends TestCase
         $this->assertNull($array['user']);
     }
 
+    // ==================== race scope ====================
+
+    #[Test]
+    public function the_race_scope_exposes_id_level_name_class_portraits_and_slug(): void
+    {
+        $character = Character::factory()->withPlayableClass()->withPlayableRace()->create();
+
+        $array = (new CharacterResource($character->load('media', 'playableClass.media', 'playableRace.media')))->scope('race')->resolve(new Request);
+
+        $keys = array_keys($array);
+        sort($keys);
+        $this->assertSame(['id', 'level', 'name', 'playable_class', 'portrait_url', 'shadow_avatar_url', 'slug'], $keys);
+        $this->assertSame(['icon_url', 'id', 'name'], collect(array_keys($array['playable_class']))->sort()->values()->all());
+    }
+
+    #[Test]
+    public function the_race_scope_omits_the_portrait_when_media_is_not_loaded(): void
+    {
+        $character = Character::factory()->withPlayableClass()->create();
+
+        $array = (new CharacterResource($character->load('playableClass.media')))->scope('race')->resolve(new Request);
+
+        $this->assertArrayNotHasKey('portrait_url', $array);
+    }
+
+    #[Test]
+    public function it_returns_a_null_class_when_the_character_has_none(): void
+    {
+        $character = Character::factory()->create(['playable_class_id' => null]);
+
+        $array = (new CharacterResource($character->load('playableClass')))->scope('race')->resolve(new Request);
+
+        $this->assertNull($array['playable_class']);
+    }
+
     // ==================== attendance scope ====================
 
     #[Test]
