@@ -9,7 +9,7 @@ import EmptyState from "@/Components/EmptyState";
 import Icon from "@/Components/FontAwesome/Icon";
 import PlannedAbsenceTableRow from "@/Components/PlannedAbsences/TableRow";
 import { Can } from "@/Components/Authorizable";
-import useCharacterPortraitChannel from "@/Hooks/useCharacterPortraitChannel";
+import CharacterPortraitListener from "@/Components/Listeners/CharacterPortraitListener";
 import ToggleFilter from "@/Components/ToggleFilter";
 import { Table, TableHead, TableBody, TableHeader } from "@/Components/Table";
 import { linkButtonClassName } from "@/Components/FormControls";
@@ -18,13 +18,10 @@ const SECTION_HEADING = "text-amber-300 font-semibold";
 const NO_PERMISSIONS = { update: false, delete: false, restore: false };
 
 /**
- * Reloads the portrait map once the server's queued portrait refresh for this
- * character broadcasts. A component so each character joins its own channel.
+ * Reload the portrait map.
  */
-function PortraitListener({ characterId }) {
-    useCharacterPortraitChannel(characterId, () => router.reload({ only: ["character_portraits"] }));
-
-    return null;
+function reloadCharacterPortraits() {
+    router.reload({ only: ["character_portraits"] });
 }
 
 function PlannedAbsencesSkeleton() {
@@ -143,7 +140,11 @@ export default function Index() {
             <SectionNav section="raiding" />
 
             {refreshingCharacterIds.map((characterId) => (
-                <PortraitListener key={characterId} characterId={characterId} />
+                <CharacterPortraitListener
+                    key={characterId}
+                    characterId={characterId}
+                    onAttached={reloadCharacterPortraits}
+                />
             ))}
 
             <PageContainer>
