@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { router, usePage } from "@inertiajs/react";
+import { useMemo, useState } from "react";
+import { usePage } from "@inertiajs/react";
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from "@headlessui/react";
 import Icon from "@/Components/FontAwesome/Icon";
 import IconButton from "@/Components/IconButton";
@@ -8,34 +8,7 @@ import CharacterPortrait from "@/Components/Characters/CharacterPortrait";
 import ClassPill from "@/Components/Characters/ClassPill";
 import { controlClassName } from "@/Components/FormControls";
 import normaliseCharacterName from "@/Helpers/NormaliseCharacterName";
-import useCharacterPortraitChannel from "@/Hooks/useCharacterPortraitChannel";
-
-/**
- * Reload the page's optional `character_portrait` prop, which queues a fresh
- * portrait for the character if theirs is missing or stale.
- */
-function reloadCharacterPortrait(characterId) {
-    router.reload({
-        only: ["character_portrait"],
-        data: { character_portrait: characterId },
-        preserveUrl: true,
-    });
-}
-
-/**
- * Refreshes the picked character's portrait, then reloads it again once the
- * portrait job broadcasts. A separate component so the channel is only joined
- * while a character is picked.
- */
-function PortraitRefresher({ characterId }) {
-    useEffect(() => {
-        reloadCharacterPortrait(characterId);
-    }, [characterId]);
-
-    useCharacterPortraitChannel(characterId, () => reloadCharacterPortrait(characterId));
-
-    return null;
-}
+import CharacterPortraitRefresher from "@/Components/Listeners/CharacterPortraitRefresher";
 
 /**
  * A searchable drop-down for picking one character by ID. The search ignores
@@ -105,7 +78,7 @@ export default function CharacterSearch({
             invalid={invalid}
             immediate
         >
-            {refreshPortrait && selectedCharacter && <PortraitRefresher characterId={selectedCharacter.id} />}
+            {refreshPortrait && selectedCharacter && <CharacterPortraitRefresher characterId={selectedCharacter.id} />}
 
             <div className="relative">
                 <span className="pointer-events-none absolute inset-y-0 left-2 flex items-center">
