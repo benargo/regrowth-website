@@ -44,7 +44,7 @@ class PlannedAbsenceController extends Controller
                 $absences = PlannedAbsence::query()
                     ->withTrashed()
                     ->notEnded()
-                    ->with(['character.media', 'character.playableClass', 'createdBy.media'])
+                    ->with(['character.media', 'character.playableClass', 'character.playableRace.media', 'createdBy.media'])
                     ->orderBy('start_date')
                     ->get();
 
@@ -75,7 +75,7 @@ class PlannedAbsenceController extends Controller
                 PlannedAbsence::query()
                     ->withTrashed()
                     ->ended()
-                    ->with(['character.media', 'character.playableClass', 'createdBy.media'])
+                    ->with(['character.media', 'character.playableClass', 'character.playableRace.media', 'createdBy.media'])
                     ->orderBy('start_date')
                     ->get()
             )->resolve($request)
@@ -163,7 +163,7 @@ class PlannedAbsenceController extends Controller
     public function edit(Request $request, PlannedAbsence $plannedAbsence): Response
     {
         $loadedAbsence = function () use (&$loaded, $plannedAbsence): PlannedAbsence {
-            return $loaded ??= $plannedAbsence->load(['character.playableRace', 'character.gameVersion', 'user', 'createdBy']);
+            return $loaded ??= $plannedAbsence->load(['character.playableRace.media', 'character.gameVersion', 'user', 'createdBy']);
         };
         $gameVersion = function () use (&$resolvedVersion, $loadedAbsence): ?GameVersion {
             return $resolvedVersion ??= $loadedAbsence()->character?->gameVersion
@@ -254,7 +254,7 @@ class PlannedAbsenceController extends Controller
         return CharacterResource::collection(
             Character::where('game_version_id', $gameVersion->id)
                 ->where('is_main', true)
-                ->with(['media', 'playableRace', 'playableClass'])
+                ->with(['media', 'playableRace.media', 'playableClass'])
                 ->orderBy('name')
                 ->get()
         );

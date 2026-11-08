@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Http\Resources;
 
+use App\Contracts\HasShadowAvatars;
 use App\Enums\Gender;
 use App\Http\Resources\CharacterResource;
 use App\Http\Resources\PlannedAbsenceResource;
@@ -44,6 +45,7 @@ class CharacterResourceTest extends TestCase
             'is_main',
             'is_loot_councillor',
             'portrait_url',
+            'shadow_avatar_url',
             'planned_absences',
             'playable_class',
             'playable_race',
@@ -308,6 +310,74 @@ class CharacterResourceTest extends TestCase
         $this->assertStringNotContainsString('/icons/', $array['portrait_url']);
     }
 
+    // ==================== shadow avatar url ====================
+
+    #[Test]
+    public function it_omits_shadow_avatar_url_when_playable_race_is_not_loaded(): void
+    {
+        $character = Character::factory()->create(['gender' => Gender::MALE]);
+
+        $array = (new CharacterResource($character))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('shadow_avatar_url', $array);
+    }
+
+    #[Test]
+    public function it_omits_shadow_avatar_url_when_the_playable_race_media_is_not_loaded(): void
+    {
+        $character = Character::factory()
+            ->withPlayableRace(PlayableRace::factory()->create())
+            ->create(['gender' => Gender::MALE]);
+
+        $array = (new CharacterResource($character->load('playableRace')))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('shadow_avatar_url', $array);
+    }
+
+    #[Test]
+    public function it_returns_the_shadow_avatar_url_for_the_characters_race_and_gender(): void
+    {
+        Storage::fake('s3');
+        $character = $this->characterWithShadowAvatars(Gender::FEMALE);
+
+        $array = (new CharacterResource($character->load('playableRace.media')))->toArray(new Request);
+
+        $this->assertStringEndsWith('blizzard-cdn/shadow/avatar/6-1.jpg', $array['shadow_avatar_url']);
+    }
+
+    #[Test]
+    public function it_returns_null_shadow_avatar_url_when_gender_is_unset(): void
+    {
+        Storage::fake('s3');
+        $character = $this->characterWithShadowAvatars(null);
+
+        $array = (new CharacterResource($character->load('playableRace.media')))->toArray(new Request);
+
+        $this->assertNull($array['shadow_avatar_url']);
+    }
+
+    #[Test]
+    public function it_returns_null_shadow_avatar_url_when_the_race_has_no_shadow_avatar(): void
+    {
+        $character = Character::factory()
+            ->withPlayableRace(PlayableRace::factory()->create())
+            ->create(['gender' => Gender::MALE]);
+
+        $array = (new CharacterResource($character->load('playableRace.media')))->toArray(new Request);
+
+        $this->assertNull($array['shadow_avatar_url']);
+    }
+
+    #[Test]
+    public function it_returns_null_shadow_avatar_url_when_the_character_has_no_race(): void
+    {
+        $character = Character::factory()->create(['gender' => Gender::MALE, 'playable_race_id' => null]);
+
+        $array = (new CharacterResource($character->load('playableRace.media')))->toArray(new Request);
+
+        $this->assertNull($array['shadow_avatar_url']);
+    }
+
     // ==================== linked characters relation ====================
 
     #[Test]
@@ -415,5 +485,22 @@ class CharacterResourceTest extends TestCase
             ->withPlayableClass($playableClass)
             ->create()
             ->load(['rank', 'playableClass', 'media']);
+    }
+
+    /**
+     * Create a character of the given gender whose race (ID 6) has both shadow avatars stored.
+     */
+    private function characterWithShadowAvatars(?Gender $gender): Character
+    {
+        $playableRace = PlayableRace::factory()->create(['id' => 6]);
+
+        foreach (Gender::cases() as $avatarGender) {
+            $playableRace->addMediaFromString('AVATAR')
+                ->usingFileName("6-{$avatarGender->id()}.jpg")
+                ->withCustomProperties(['gender' => $avatarGender->id()])
+                ->toMediaCollection(HasShadowAvatars::MEDIA_COLLECTION);
+        }
+
+        return Character::factory()->withPlayableRace($playableRace)->create(['gender' => $gender]);
     }
 }

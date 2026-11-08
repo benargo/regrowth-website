@@ -90,7 +90,7 @@ class PlannedAbsenceController extends Controller
     public function edit(PlannedAbsence $plannedAbsence): Response
     {
         return Inertia::render('Account/Absences/Form', [
-            'planned_absence' => fn () => new PlannedAbsenceResource($plannedAbsence->load(['character.media', 'character.playableRace', 'createdBy'])),
+            'planned_absence' => fn () => new PlannedAbsenceResource($plannedAbsence->load(['character.media', 'character.playableRace.media', 'createdBy'])),
             'action' => route('account.absences.update', $plannedAbsence),
             'reasons' => fn () => PlannedAbsenceReasonData::options(),
         ]);
@@ -143,7 +143,7 @@ class PlannedAbsenceController extends Controller
 
         AttachCharactersToUser::dispatchIf($hasUnlinkedCharacters, $user->id, $accountCharacters);
 
-        $characters = ResolveSelectableAccountCharacters::run($accountCharacters)->load('media');
+        $characters = ResolveSelectableAccountCharacters::run($accountCharacters)->load(['media', 'playableRace.media']);
 
         $characters->each(fn (Character $character) => RefreshCharacterPortrait::queueIfStale($character));
 
