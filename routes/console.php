@@ -10,6 +10,7 @@ use App\Jobs\FetchGuildRosters;
 use App\Jobs\GuildRosterManager\PurgeArchivedUploads as PurgeArchivedGrmUploads;
 use App\Jobs\Handbook\PurgeTrashedChapters;
 use App\Jobs\RaidHelper\FetchEvents as FetchRaidHelperEvents;
+use App\Jobs\TrackRaceToSixty;
 use App\Models\RecruitmentMacro;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Schedule;
