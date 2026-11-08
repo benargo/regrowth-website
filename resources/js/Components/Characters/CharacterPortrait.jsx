@@ -1,15 +1,18 @@
 import Icon from "@/Components/FontAwesome/Icon";
 
 /**
- * A character's Blizzard portrait. Without one, it falls back to a dimmed
- * class icon, then to a generic silhouette. Decorative by default, because
- * the character's name is almost always shown beside it.
+ * A character's Blizzard portrait. Without one, it falls back to the Blizzard
+ * shadow avatar for the character's race and gender, then to a dimmed class
+ * icon, then to a generic user icon. Decorative by default, because the
+ * character's name is almost always shown beside it.
  */
 export default function CharacterPortrait({ character, className = "size-8", alt = "" }) {
-    if (character.portrait_url) {
+    const portraitUrl = character.portrait_url ?? character.shadow_avatar_url;
+
+    if (portraitUrl) {
         return (
             <img
-                src={character.portrait_url}
+                src={portraitUrl}
                 alt={alt}
                 className={`border-amber-600/30 shrink-0 rounded-[20%] border shadow-lg shadow-black/50 ${className}`}
             />

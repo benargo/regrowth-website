@@ -10,8 +10,9 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * Transform a character, optionally limited to the `attendance` scope.
+ * Transform a character, optionally limited to the `attendance` or `race` scope.
  * `portrait_url` is only included when `media` is loaded.
+ * `shadow_avatar_url` is only included when `playableRace` and its `media` are loaded.
  * `user` is only included when `user` is loaded; load `user.discordRoles` with it.
  */
 class CharacterResource extends JsonResource implements ScopedResource
@@ -40,6 +41,10 @@ class CharacterResource extends JsonResource implements ScopedResource
             'is_main' => $this->is_main,
             'is_loot_councillor' => $this->is_loot_councillor,
             'portrait_url' => $this->whenLoaded('media', fn () => $this->getFirstMediaUrl(HasCharacterMedia::MEDIA_COLLECTION) ?: null),
+            'shadow_avatar_url' => $this->when(
+                $this->relationLoaded('playableRace') && ($this->playableRace === null || $this->playableRace->relationLoaded('media')),
+                fn (): ?string => $this->gender ? $this->playableRace?->shadowAvatarUrl($this->gender) : null,
+            ),
             'planned_absences' => $this->whenLoaded('plannedAbsences', fn () => PlannedAbsenceResource::collection($this->plannedAbsences)),
             'playable_class' => $this->whenLoaded('playableClass', fn (): array => $this->scopeNested($this->playableClass->toResource())->resolve($request)),
             'playable_race' => $this->whenLoaded('playableRace', fn () => (new PlayableRaceResource($this->playableRace))->resolve($request)),
@@ -62,7 +67,10 @@ class CharacterResource extends JsonResource implements ScopedResource
      */
     protected function scopeDefinitions(): array
     {
-        return ['attendance' => ['id', 'name', 'playable_class', 'rank']];
+        return [
+            'attendance' => ['id', 'name', 'playable_class', 'rank'],
+            'race' => ['id', 'level', 'name', 'playable_class', 'portrait_url', 'shadow_avatar_url', 'slug'],
+        ];
     }
 
     /**
@@ -70,6 +78,9 @@ class CharacterResource extends JsonResource implements ScopedResource
      */
     protected function scopeMappings(): array
     {
-        return ['attendance' => [GuildRankResource::class => 'attendance', PlayableClassResource::class => 'attendance']];
+        return [
+            'attendance' => [GuildRankResource::class => 'attendance', PlayableClassResource::class => 'attendance'],
+            'race' => [PlayableClassResource::class => 'attendance'],
+        ];
     }
 }

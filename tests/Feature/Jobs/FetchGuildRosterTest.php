@@ -10,6 +10,7 @@ use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassRequest;
 use App\Jobs\Addon\BuildExportFile;
 use App\Jobs\AttachBlizzardIconToModel;
+use App\Jobs\AttachShadowAvatarToPlayableRace;
 use App\Jobs\FetchGuildRoster;
 use App\Models\Character;
 use App\Models\GameVersion;
@@ -37,6 +38,13 @@ class FetchGuildRosterTest extends TestCase
 {
     use MocksBlizzardServices;
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Queue::fake([AttachShadowAvatarToPlayableRace::class]);
+    }
 
     // ==================== job contract ====================
 
@@ -503,6 +511,27 @@ class FetchGuildRosterTest extends TestCase
         $character = Character::find(1);
         $this->assertSame(3, $character->playable_class_id);
         $this->assertSame(70, $character->level);
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_never_lowers_a_stored_level(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 1]);
+        PlayableRace::factory()->create(['id' => 1]);
+        Character::factory()->create(['id' => 1, 'level' => 34, 'game_version_id' => $gameVersion->id]);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(1, 'Alpha', 31, 0),
+        ]]);
+        $this->mockGetCharacterProfile();
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        $this->assertSame(34, Character::find(1)->level);
     }
 
     #[Group('happy-path')]

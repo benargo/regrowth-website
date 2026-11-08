@@ -3,12 +3,17 @@
 namespace Tests\Feature\Actions\GameVersion;
 
 use App\Actions\GameVersion\FindOrImportPlayableRace;
+use App\Contracts\HasShadowAvatars;
 use App\Enums\Faction;
+use App\Enums\Gender;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceRequest;
+use App\Jobs\AttachShadowAvatarToPlayableRace;
 use App\Models\PlayableRace;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -22,6 +27,13 @@ class FindOrImportPlayableRaceTest extends TestCase
 {
     use MocksBlizzardServices;
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Queue::fake([AttachShadowAvatarToPlayableRace::class]);
+    }
 
     #[Group('happy-path')]
     #[Test]
@@ -83,6 +95,79 @@ class FindOrImportPlayableRaceTest extends TestCase
         $this->assertDatabaseCount('playable_races', 0);
     }
 
+    // ==================== shadow avatars ====================
+
+    #[Group('media')]
+    #[Test]
+    public function it_queues_both_shadow_avatars_for_an_existing_race_without_them(): void
+    {
+        PlayableRace::factory()->create(['id' => 7]);
+
+        FindOrImportPlayableRace::run(7, BlizzardNamespace::FOREVER);
+
+        $this->assertQueuedShadowAvatarGenders(7, [Gender::MALE, Gender::FEMALE]);
+    }
+
+    #[Group('media')]
+    #[Test]
+    public function it_queues_both_shadow_avatars_for_an_imported_race(): void
+    {
+        $this->mockGetPlayableRace();
+        $this->applyBlizzardMocks();
+
+        FindOrImportPlayableRace::run(7, BlizzardNamespace::FOREVER);
+
+        $this->assertQueuedShadowAvatarGenders(7, [Gender::MALE, Gender::FEMALE]);
+    }
+
+    #[Group('media')]
+    #[Test]
+    public function it_queues_only_the_missing_shadow_avatar(): void
+    {
+        Storage::fake('s3');
+        $this->raceWithShadowAvatars(7, [Gender::MALE]);
+
+        FindOrImportPlayableRace::run(7, BlizzardNamespace::FOREVER);
+
+        $this->assertQueuedShadowAvatarGenders(7, [Gender::FEMALE]);
+    }
+
+    #[Group('media')]
+    #[Test]
+    public function it_queues_no_shadow_avatars_when_both_are_stored(): void
+    {
+        Storage::fake('s3');
+        $this->raceWithShadowAvatars(7, [Gender::MALE, Gender::FEMALE]);
+
+        FindOrImportPlayableRace::run(7, BlizzardNamespace::FOREVER);
+
+        Queue::assertNotPushed(AttachShadowAvatarToPlayableRace::class);
+    }
+
+    #[Group('media')]
+    #[Test]
+    public function it_does_not_load_the_media_relation_when_both_shadow_avatars_are_stored(): void
+    {
+        Storage::fake('s3');
+        $this->raceWithShadowAvatars(7, [Gender::MALE, Gender::FEMALE]);
+
+        $playableRace = FindOrImportPlayableRace::run(7, BlizzardNamespace::FOREVER);
+
+        $this->assertFalse($playableRace->relationLoaded('media'));
+    }
+
+    #[Group('media')]
+    #[Test]
+    public function it_queues_no_shadow_avatars_for_a_race_it_does_not_import(): void
+    {
+        $this->mockGetPlayableRace(responseData: ['faction' => ['type' => 'NEUTRAL', 'name' => 'Neutral']]);
+        $this->applyBlizzardMocks();
+
+        FindOrImportPlayableRace::run(7, BlizzardNamespace::FOREVER);
+
+        Queue::assertNotPushed(AttachShadowAvatarToPlayableRace::class);
+    }
+
     #[Group('edge-case')]
     #[Test]
     public function it_throws_when_blizzard_cannot_return_the_race(): void
@@ -95,6 +180,42 @@ class FindOrImportPlayableRaceTest extends TestCase
             $this->fail('Expected a BlizzardRequestException.');
         } catch (BlizzardRequestException) {
             $this->assertDatabaseMissing('playable_races', ['id' => 7]);
+        }
+    }
+
+    /**
+     * Create a race with a stored shadow avatar for each of the given genders.
+     *
+     * @param  list<Gender>  $genders
+     */
+    private function raceWithShadowAvatars(int $id, array $genders): PlayableRace
+    {
+        $playableRace = PlayableRace::factory()->create(['id' => $id]);
+
+        foreach ($genders as $gender) {
+            $playableRace->addMediaFromString('AVATAR')
+                ->usingFileName("{$id}-{$gender->id()}.jpg")
+                ->withCustomProperties(['gender' => $gender->id()])
+                ->toMediaCollection(HasShadowAvatars::MEDIA_COLLECTION);
+        }
+
+        return $playableRace;
+    }
+
+    /**
+     * Assert exactly one shadow avatar job was queued for the race per given gender, and no others.
+     *
+     * @param  list<Gender>  $genders
+     */
+    private function assertQueuedShadowAvatarGenders(int $playableRaceId, array $genders): void
+    {
+        Queue::assertPushed(AttachShadowAvatarToPlayableRace::class, count($genders));
+
+        foreach ($genders as $gender) {
+            Queue::assertPushed(
+                AttachShadowAvatarToPlayableRace::class,
+                fn (AttachShadowAvatarToPlayableRace $job): bool => $job->playableRaceId === $playableRaceId && $job->gender === $gender,
+            );
         }
     }
 

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Contracts\HasBlizzardIcons;
 use App\Contracts\HasCharacterMedia;
+use App\Contracts\HasShadowAvatars;
 use App\Facades\Blizzard as BlizzardFacade;
 use App\Facades\BlizzardRenderPath;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
@@ -15,6 +16,7 @@ use App\Http\Integrations\Blizzard\Support\MirrorPaths;
 use App\Http\Integrations\ServedFromCache;
 use App\Support\MediaLibrary\BlizzardIconPathGenerator;
 use App\Support\MediaLibrary\CharacterMediaPathGenerator;
+use App\Support\MediaLibrary\ShadowAvatarPathGenerator;
 use App\Support\MediaLibrary\UnknownBlizzardIcon;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Filesystem\FilesystemManager;
@@ -92,6 +94,12 @@ class BlizzardServiceProvider extends ServiceProvider
         PathGeneratorFactory::setCustomPathGenerators(
             HasCharacterMedia::class,
             CharacterMediaPathGenerator::class,
+        );
+
+        // Register the shadow avatar path generator against the marker interface.
+        PathGeneratorFactory::setCustomPathGenerators(
+            HasShadowAvatars::class,
+            ShadowAvatarPathGenerator::class,
         );
     }
 

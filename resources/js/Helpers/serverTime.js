@@ -13,6 +13,12 @@ const DATE_TIME_LOCAL_FORMAT = new Intl.DateTimeFormat("sv-SE", {
 
 const READABLE_FORMATS = new Map();
 
+const DAY_MONTH_FORMAT = new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "long",
+    timeZone: SERVER_TIME_ZONE,
+});
+
 /**
  * The ISO timestamp as a datetime-local input value in server time, such as
  * "2026-10-23T19:00", or "" when there is none.
@@ -47,4 +53,12 @@ export function formatDateTime(isoString, timeZone = SERVER_TIME_ZONE) {
     }
 
     return READABLE_FORMATS.get(timeZone).format(new Date(isoString));
+}
+
+/**
+ * The ISO timestamp's date in server time, as day and month, such as
+ * "25 November".
+ */
+export function formatDayMonth(isoString) {
+    return DAY_MONTH_FORMAT.format(new Date(isoString));
 }

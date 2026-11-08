@@ -132,7 +132,7 @@ class FetchGuildRoster implements RequiresMinimumCharacterLevel, ShouldQueue
         $character = Character::firstOrNew(['id' => $member->character->id]);
         $character->fill([
             'name' => $characterName,
-            'level' => $member->character->level,
+            'level' => max($character->level ?? 0, $member->character->level),
             'gender' => Gender::tryFrom(data_get($characterDto, 'gender.name')),
             'game_version_id' => $gameVersion->id,
         ]);

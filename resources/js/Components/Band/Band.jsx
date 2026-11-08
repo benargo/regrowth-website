@@ -5,9 +5,18 @@ import WavyEdge from "./WavyEdge";
 /**
  * A full-width Classic band with a centred container. A `light` band has no
  * fill; a `shaded` band has a see-through dark brown fill whose `edge` sides
- * are cut into a wave, with extra padding on those sides.
+ * are cut into a wave, with extra padding on those sides. `fillClassName`
+ * replaces the shaded band's fill colour.
  */
-export default function Band({ tone = "light", edge = "none", className = "", maxWidth = "", children, ...props }) {
+export default function Band({
+    tone = "light",
+    edge = "none",
+    className = "",
+    maxWidth = "",
+    fillClassName = "bg-brown-950/60",
+    children,
+    ...props
+}) {
     const isShaded = tone === "shaded";
     const hasTopEdge = isShaded && (edge === "top" || edge === "both");
     const hasBottomEdge = isShaded && (edge === "bottom" || edge === "both");
@@ -15,7 +24,7 @@ export default function Band({ tone = "light", edge = "none", className = "", ma
 
     return (
         <section className={cn("relative", className)} {...props}>
-            {isShaded && <WavyEdge edge={edge} className="bg-brown-950/60" />}
+            {isShaded && <WavyEdge edge={edge} className={fillClassName} />}
             <div className={`relative z-10 container mx-auto px-4 ${padding} ${maxWidth}`}>{children}</div>
         </section>
     );

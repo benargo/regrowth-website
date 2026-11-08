@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Events\BuildEventsForViewer;
+use App\Actions\Race\BuildRaceStandings;
 use App\Models\Event;
+use App\Models\GameVersion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
@@ -16,7 +18,7 @@ class HomeController extends Controller
     public function __invoke(Request $request): Response
     {
         return Inertia::render('Home', [
-            'foreverLaunchAt' => config('guild.forever_launch_at'),
+            'race' => ($forever = GameVersion::forever()) ? BuildRaceStandings::run($forever, withRacers: false) : null,
             'officers' => config('guild.officers'),
             'canViewPlans' => $request->user() !== null,
             'upcomingEvents' => Inertia::defer(function () use ($request) {

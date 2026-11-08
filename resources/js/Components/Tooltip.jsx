@@ -14,71 +14,49 @@ const ARROW_CLASSES = {
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
 /**
- * Computes the tooltip's fixed-position coordinates for a given side.
- *
- * The tooltip is centered on the trigger along the cross-axis (horizontally
- * for top/bottom, vertically for left/right), then clamped so it never
- * overflows the viewport on that axis. The primary axis (distance from the
- * trigger, offset by GAP) is intentionally left unclamped — if a tooltip
- * placed "top" doesn't fit above the trigger, it will render off-screen
- * upward rather than flip sides. Callers who need edge-of-viewport triggers
- * to always be visible should choose `position` accordingly.
+ * Returns the tooltip's fixed-position `{ top, left }` for the given side of
+ * the trigger: offset from the trigger by GAP, and centered on it along the
+ * other axis, clamped to the viewport. The tooltip does not flip sides.
  */
 function computePosition(triggerRect, tooltipRect, position) {
     if (position === "top" || position === "bottom") {
-        // Cross-axis: center horizontally on the trigger, clamped to viewport width.
         const left = clamp(
             triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2,
             VIEWPORT_MARGIN,
             window.innerWidth - tooltipRect.width - VIEWPORT_MARGIN,
         );
-        // Primary axis: place above/below the trigger, unclamped.
         const top = position === "top" ? triggerRect.top - tooltipRect.height - GAP : triggerRect.bottom + GAP;
 
         return { top, left };
     }
 
-    // Cross-axis: center vertically on the trigger, clamped to viewport height.
     const top = clamp(
         triggerRect.top + triggerRect.height / 2 - tooltipRect.height / 2,
         VIEWPORT_MARGIN,
         window.innerHeight - tooltipRect.height - VIEWPORT_MARGIN,
     );
-    // Primary axis: place left/right of the trigger, unclamped.
     const left = position === "left" ? triggerRect.left - tooltipRect.width - GAP : triggerRect.right + GAP;
 
     return { top, left };
 }
 
 /**
- * Hover and focus tooltip rendered into a portal, positioned relative to its trigger
- * and clamped to stay within the viewport.
+ * Tooltip rendered into a portal with `position: fixed`, placed beside its
+ * trigger and kept within the viewport. It is first rendered hidden off-screen,
+ * then measured and positioned before paint.
  *
- * Positioning happens in two passes:
- *  1. Initial render: the tooltip is rendered off-screen (top/left of
- *     -9999) and hidden via `visibility` so it has real dimensions to
- *     measure without ever flashing at the wrong spot.
- *  2. `useLayoutEffect` measures the trigger and tooltip with
- *     `getBoundingClientRect()`, runs `computePosition()`, and stores the
- *     result in `coords` — synchronously, before paint, so there's no
- *     visible jump.
+ * Shows on hover and focus; hides on mouse leave, blur and Escape. While
+ * visible it renders with `role="tooltip"` and is referenced by
+ * `aria-describedby` on `children` when that is a single non-Fragment element,
+ * otherwise on the wrapper.
  *
- * `position` ("top" | "bottom" | "left" | "right") picks which side of the
- * trigger the tooltip is anchored to. The tooltip uses `position: fixed`
- * (viewport-relative, not document-relative), so `coords` don't need
- * adjusting for page scroll.
- *
- * The tooltip shows on hover and on focus within the trigger, and hides on
- * mouse leave, blur and Escape. It renders with `role="tooltip"` and is only
- * mounted while visible, when the trigger's `aria-describedby` points at it.
- * When `children` is a single non-Fragment element it receives
- * `aria-describedby`; otherwise the wrapper does.
- *
- * `as` sets the trigger wrapper's element; pass "span" when the tooltip sits
- * inside inline content such as a paragraph.
- *
- * `describe={false}` leaves `aria-describedby` off, for a trigger whose
- * accessible name already carries the tooltip's text.
+ * Props:
+ *  - `body`: the tooltip content.
+ *  - `position`: "top" | "bottom" | "left" | "right" side of the trigger.
+ *  - `as`: the wrapper element, e.g. "span" for inline content.
+ *  - `describe={false}`: omits `aria-describedby`.
+ *  - `openOnTap`: touch and pen taps toggle the tooltip, a tap outside hides
+ *    it, and hover handlers are skipped for that input.
  */
 export default function Tooltip({
     children,
@@ -87,6 +65,10 @@ export default function Tooltip({
     className = "",
     as: Element = "div",
     describe = true,
+    openOnTap = false,
+    onClick,
+    onPointerDown,
+    onPointerEnter,
     onMouseEnter,
     onMouseLeave,
     onFocus,
@@ -96,6 +78,7 @@ export default function Tooltip({
     const triggerRef = useRef(null);
     const tooltipRef = useRef(null);
     const tooltipId = useId();
+    const lastPointerTypeRef = useRef(null);
     const [isVisible, setIsVisible] = useState(false);
     const [coords, setCoords] = useState(null);
 
@@ -131,6 +114,24 @@ export default function Tooltip({
         return () => document.removeEventListener("keydown", handleKeyDown);
     }, [isVisible]);
 
+    useEffect(() => {
+        if (!openOnTap || !isVisible) {
+            return;
+        }
+
+        const handlePointerDown = (event) => {
+            if (!triggerRef.current?.contains(event.target)) {
+                setIsVisible(false);
+            }
+        };
+
+        document.addEventListener("pointerdown", handlePointerDown);
+
+        return () => document.removeEventListener("pointerdown", handlePointerDown);
+    }, [openOnTap, isVisible]);
+
+    const isTapInput = () => openOnTap && lastPointerTypeRef.current !== null && lastPointerTypeRef.current !== "mouse";
+
     const describedBy = describe && isVisible ? tooltipId : undefined;
     const isSingleElement = isValidElement(children) && children.type !== Fragment;
     const trigger = isSingleElement
@@ -145,12 +146,30 @@ export default function Tooltip({
             ref={triggerRef}
             className={`relative inline-block ${className}`}
             aria-describedby={isSingleElement ? undefined : describedBy}
+            onPointerEnter={(event) => {
+                lastPointerTypeRef.current = event.pointerType;
+                onPointerEnter?.(event);
+            }}
+            onPointerDown={(event) => {
+                lastPointerTypeRef.current = event.pointerType;
+                onPointerDown?.(event);
+            }}
+            onClick={(event) => {
+                if (isTapInput()) {
+                    setIsVisible((visible) => !visible);
+                }
+                onClick?.(event);
+            }}
             onMouseEnter={(event) => {
-                setIsVisible(true);
+                if (!isTapInput()) {
+                    setIsVisible(true);
+                }
                 onMouseEnter?.(event);
             }}
             onMouseLeave={(event) => {
-                setIsVisible(false);
+                if (!isTapInput()) {
+                    setIsVisible(false);
+                }
                 onMouseLeave?.(event);
             }}
             onFocus={(event) => {

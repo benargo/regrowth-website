@@ -1,7 +1,7 @@
 import { Deferred, usePage } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import RaggedEdge from "@/Components/Home/RaggedEdge";
-import LaunchCountdown from "@/Components/Home/LaunchCountdown";
+import RaceToSixtyStrip from "@/Components/Home/RaceToSixtyStrip";
 import OfficerTeam from "@/Components/Home/OfficerTeam";
 import UpcomingEvents from "@/Components/Home/UpcomingEvents";
 import HistoryTimeline from "@/Components/Home/HistoryTimeline";
@@ -9,7 +9,7 @@ import Section from "@/Components/Home/Section";
 import DisplayHeading from "@/Components/Home/DisplayHeading";
 import JoinDiscordButton from "@/Components/Discord/JoinDiscordButton";
 
-export default function Home({ foreverLaunchAt, officers, canViewPlans }) {
+export default function Home({ race, officers, canViewPlans }) {
     const { upcomingEvents } = usePage().props;
     return (
         <Master title="Home" isHomepage>
@@ -40,7 +40,7 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans }) {
                         <RaggedEdge position="bottom" tone="mid" />
                     </section>
 
-                    <LaunchCountdown targetIso={foreverLaunchAt} />
+                    <RaceToSixtyStrip race={race} />
                 </div>
 
                 <OfficerTeam officers={officers} />

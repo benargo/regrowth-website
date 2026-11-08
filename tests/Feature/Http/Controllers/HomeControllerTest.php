@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Http\Controllers;
 
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Models\Event;
 use App\Models\GameVersion;
 use App\Models\User;
@@ -41,6 +42,13 @@ class HomeControllerTest extends TestCase
     }
 
     #[Test]
+    public function the_race_page_declares_the_forever_theme_color(): void
+    {
+        $this->get(route('race.index'))
+            ->assertSee('<meta name="theme-color" content="#003c4e">', false);
+    }
+
+    #[Test]
     public function other_pages_use_the_classic_theme_color(): void
     {
         $this->get(route('privacypolicy'))
@@ -48,14 +56,27 @@ class HomeControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_passes_the_launch_date_without_its_own_invite_url(): void
+    public function it_passes_the_race_without_racers_or_an_invite_url(): void
     {
+        GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::FOREVER]);
+
         $this->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page
-                ->where('foreverLaunchAt', config('guild.forever_launch_at'))
+                ->where('race.state', 'running')
+                ->missing('race.racers')
+                ->missing('foreverLaunchAt')
                 ->missing('discordInviteUrl')
                 ->etc()
             );
+    }
+
+    #[Test]
+    public function it_passes_no_race_without_a_forever_game_version(): void
+    {
+        GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::ERA]);
+
+        $this->get(route('home'))
+            ->assertInertia(fn (Assert $page) => $page->where('race', null)->etc());
     }
 
     #[Test]
@@ -327,6 +348,14 @@ class HomeControllerTest extends TestCase
     public function it_paints_the_forever_ground_on_the_body_of_a_full_homepage_load(): void
     {
         $content = $this->get(route('home'))->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('/<body[^>]*\bbg-forever-800\b/', $content);
+    }
+
+    #[Test]
+    public function it_paints_the_forever_ground_on_the_body_of_a_full_race_page_load(): void
+    {
+        $content = $this->get(route('race.index'))->assertOk()->getContent();
 
         $this->assertMatchesRegularExpression('/<body[^>]*\bbg-forever-800\b/', $content);
     }

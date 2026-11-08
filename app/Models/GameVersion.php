@@ -246,6 +246,14 @@ class GameVersion extends Model implements DatasetModel, DispatchesChangesForMed
     }
 
     /**
+     * Get the Forever game version.
+     */
+    public static function forever(): ?static
+    {
+        return static::query()->where('blizzard_namespace', BlizzardNamespace::FOREVER)->first();
+    }
+
+    /**
      * Determine whether this version owns a current guild roster.
      */
     public function ownsCurrentRoster(): bool
@@ -293,6 +301,14 @@ class GameVersion extends Model implements DatasetModel, DispatchesChangesForMed
     public function phases(): HasMany
     {
         return $this->hasMany(Phase::class);
+    }
+
+    /**
+     * @return HasMany<RacePlacement, $this>
+     */
+    public function racePlacements(): HasMany
+    {
+        return $this->hasMany(RacePlacement::class);
     }
 
     /**

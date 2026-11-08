@@ -58,3 +58,6 @@ $find = function (string $id) use (&$parent): string {
     return $root;
 };
 ```
+
+## Prefer Laravel attributes over properties and methods
+Wherever Laravel provides a PHP attribute for a configuration value, use the attribute instead of the equivalent property or method. For example, on queued jobs use `#[Tries(3)]`, `#[Backoff(300, 300)]`, `#[UniqueFor(3600)]`, `#[Timeout(...)]` and `#[MaxExceptions(...)]` from `Illuminate\Queue\Attributes`, not `public int $tries` or `backoff()`. Before adding a property or method, check whether the framework namespace has an attribute for it (e.g. `ls vendor/laravel/framework/src/Illuminate/*/Attributes`). Tests should assert the attribute via reflection, not the removed property.

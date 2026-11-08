@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -125,6 +126,16 @@ class Character extends Model implements HasCharacterMedia, HasMedia
     }
 
     /**
+     * Get the character's race placement.
+     *
+     * @return HasOne<RacePlacement, $this>
+     */
+    public function racePlacement(): HasOne
+    {
+        return $this->hasOne(RacePlacement::class);
+    }
+
+    /**
      * Get the guild rank associated with the character.
      */
     public function rank(): BelongsTo
@@ -169,6 +180,7 @@ class Character extends Model implements HasCharacterMedia, HasMedia
      */
     public function prunable(): Builder
     {
-        return static::where('updated_at', '<=', now()->subDays(14));
+        return static::where('updated_at', '<=', now()->subDays(14))
+            ->whereDoesntHave('racePlacement');
     }
 }

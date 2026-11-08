@@ -4,21 +4,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | World of Warcraft: Forever launch
-    |--------------------------------------------------------------------------
-    |
-    | The homepage countdown target. Taken from Blizzard's own countdown_to
-    | field on https://worldofwarcraft.blizzard.com/en-gb/forever. Stored as
-    | an ISO 8601 string and sent to the client verbatim, so all countdown
-    | arithmetic happens in the browser and a cached page can never render a
-    | stale value.
-    |
-    */
-
-    'forever_launch_at' => '2026-11-04T23:00:00Z',
-
-    /*
-    |--------------------------------------------------------------------------
     | Regrowth Loot Tool
     |--------------------------------------------------------------------------
     |

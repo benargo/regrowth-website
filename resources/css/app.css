@@ -303,6 +303,12 @@ svg.recharts-surface {
     background-size: cover;
 }
 
+.bg-the-barrens {
+    background-image: url("../images/bg_thebarrens.webp");
+    background-position: center;
+    background-size: cover;
+}
+
 .bg-undercity-bank {
     background-image: url("../images/bg_undercity_bank.webp");
     background-position: center;

@@ -30,6 +30,7 @@ use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LootBiasToolController;
 use App\Http\Controllers\PhaseController;
 use App\Http\Controllers\PlannedAbsenceController;
+use App\Http\Controllers\RaceController;
 use App\Http\Controllers\RaidController;
 use App\Http\Controllers\RaidingController;
 use App\Http\Controllers\RecruitmentMacroController;
@@ -45,6 +46,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', HomeController::class)->name('home');
+Route::get('/race-to-60', RaceController::class)->name('race.index');
 
 Route::get('/search', SearchController::class)->name('search');
 

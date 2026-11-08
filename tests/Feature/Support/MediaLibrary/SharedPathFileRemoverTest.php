@@ -4,8 +4,10 @@ namespace Tests\Feature\Support\MediaLibrary;
 
 use App\Contracts\HasBlizzardIcons;
 use App\Contracts\HasCharacterMedia;
+use App\Contracts\HasShadowAvatars;
 use App\Models\Character;
 use App\Models\Item;
+use App\Models\PlayableRace;
 use App\Models\Raid;
 use App\Support\MediaLibrary\UnknownBlizzardIcon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -82,6 +84,23 @@ class SharedPathFileRemoverTest extends TestCase
 
         $this->assertSame(app(UnknownBlizzardIcon::class)->path(), $path);
         Storage::disk('s3')->assertExists($path);
+    }
+
+    #[Test]
+    public function it_removes_only_its_own_file_when_a_shadow_avatar_is_deleted(): void
+    {
+        $playableRace = PlayableRace::factory()->create(['id' => 6]);
+        $male = $playableRace->addMediaFromString('MALE')
+            ->usingFileName('6-0.jpg')
+            ->toMediaCollection(HasShadowAvatars::MEDIA_COLLECTION);
+        $playableRace->addMediaFromString('FEMALE')
+            ->usingFileName('6-1.jpg')
+            ->toMediaCollection(HasShadowAvatars::MEDIA_COLLECTION);
+
+        $male->delete();
+
+        Storage::disk('s3')->assertMissing('blizzard-cdn/shadow/avatar/6-0.jpg');
+        Storage::disk('s3')->assertExists('blizzard-cdn/shadow/avatar/6-1.jpg');
     }
 
     #[Test]

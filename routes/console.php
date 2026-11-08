@@ -10,6 +10,7 @@ use App\Jobs\FetchGuildRosters;
 use App\Jobs\GuildRosterManager\PurgeArchivedUploads as PurgeArchivedGrmUploads;
 use App\Jobs\Handbook\PurgeTrashedChapters;
 use App\Jobs\RaidHelper\FetchEvents as FetchRaidHelperEvents;
+use App\Jobs\TrackRaceToSixty;
 use App\Models\RecruitmentMacro;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Schedule;
@@ -37,7 +38,12 @@ Schedule::job(new FetchRaidHelperEvents)->everySixHours()->name('fetch-raid-help
 /**
  * Fetch the guild roster for each game version every 6 hours to ensure we have the latest member information.
  */
-Schedule::job(new FetchGuildRosters)->everySixHours()->name('fetch-guild-rosters')->withoutOverlapping();
+Schedule::job(new FetchGuildRosters)->hourly()->name('fetch-guild-rosters')->withoutOverlapping();
+
+/**
+ * Track the Forever race to level 60 every minute.
+ */
+Schedule::job(new TrackRaceToSixty)->everyMinute()->name('track-race-to-sixty')->withoutOverlapping();
 
 /**
  * Build the addon export file for each current game version roster daily at 03:15.
