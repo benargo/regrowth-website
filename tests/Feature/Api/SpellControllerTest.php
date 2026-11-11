@@ -70,6 +70,35 @@ class SpellControllerTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
+    #[Test]
+    public function it_returns_401_on_store_for_guests(): void
+    {
+        $response = $this->postJson(route('api.spells.store'), [
+            'name' => 'Avenging Wrath',
+            'type' => 'Magic',
+        ]);
+
+        $response->assertUnauthorized();
+        $this->assertDatabaseMissing('spells', ['name' => 'Avenging Wrath']);
+    }
+
+    #[Group('authorization')]
+    #[Test]
+    public function it_returns_401_on_store_with_only_a_web_session(): void
+    {
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($this->editorRole->id);
+
+        $response = $this->actingAs($user)->postJson(route('api.spells.store'), [
+            'name' => 'Avenging Wrath',
+            'type' => 'Magic',
+        ]);
+
+        $response->assertUnauthorized();
+        $this->assertDatabaseMissing('spells', ['name' => 'Avenging Wrath']);
+    }
+
     #[Group('validation')]
     #[Test]
     public function it_returns_422_when_name_is_missing_on_store(): void

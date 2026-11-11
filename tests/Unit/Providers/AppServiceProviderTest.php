@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
@@ -92,5 +93,14 @@ class AppServiceProviderTest extends TestCase
             $limiter(new FetchGuildRoster(1))->key,
             $limiter(new FetchGuildRoster(2))->key,
         );
+    }
+
+    // ==================== passport ====================
+
+    #[Test]
+    public function it_does_not_register_the_passport_oauth_routes(): void
+    {
+        $this->assertFalse(Route::has('passport.token'));
+        $this->assertFalse(Route::has('passport.authorizations.authorize'));
     }
 }
