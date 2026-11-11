@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Api\BlizzardMediaController;
 use App\Http\Controllers\Api\Discord\ResolveDiscordMemberController;
 use App\Http\Controllers\Api\Event\PublishAssignmentsController;
 use App\Http\Controllers\Api\EventAssignmentController;
@@ -11,8 +10,6 @@ use App\Http\Controllers\Api\RaidHelper\UpdateCompositionController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\SpellController;
 use Illuminate\Support\Facades\Route;
-
-Route::get('/blizzard/media', BlizzardMediaController::class)->name('api.blizzard.media');
 
 Route::get('/search', SearchController::class)->name('api.search');
 
