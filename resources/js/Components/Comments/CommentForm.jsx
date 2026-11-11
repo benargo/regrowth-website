@@ -10,7 +10,7 @@ const VALIDATION_RULES = ["noUnderline", "noRegularLinks"];
  * Presentational comment composer.
  *
  * This component does not know any routes. The owning CommentsSection passes
- * `onSubmit(body, { onSuccess, onError })` and decides which API endpoint the
+ * `onSubmit(body, { onSuccess, onError })` and decides which endpoint the
  * body goes to. `isEdit` only changes the button labels.
  */
 function SubmitLabel({ isEdit, isReply, processing }) {

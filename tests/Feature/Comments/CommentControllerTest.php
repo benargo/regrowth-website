@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Api;
+namespace Tests\Feature\Comments;
 
 use App\Events\Broadcasts\CommentChanged;
 use App\Events\Broadcasts\CommentPosted;
@@ -33,6 +33,8 @@ class CommentControllerTest extends TestCase
     use MocksDiscordService;
     use RefreshDatabase;
 
+    private const string PREVIOUS_URL = '/loot/items/1/previous-page';
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -64,9 +66,9 @@ class CommentControllerTest extends TestCase
     {
         $item = $this->createItem();
 
-        $response = $this->postJson(route('api.comments.store'), $this->storePayload($item));
+        $response = $this->from(self::PREVIOUS_URL)->post(route('loot.comments.store'), $this->storePayload($item));
 
-        $response->assertUnauthorized();
+        $response->assertRedirect(route('login'));
         $this->assertDatabaseCount('comments', 0);
     }
 
@@ -78,7 +80,7 @@ class CommentControllerTest extends TestCase
         $user = User::factory()->guest()->create();
 
         $response = $this->actingAs($user)
-            ->postJson(route('api.comments.store'), $this->storePayload($item, 'Test comment'));
+            ->from(self::PREVIOUS_URL)->post(route('loot.comments.store'), $this->storePayload($item, 'Test comment'));
 
         $response->assertForbidden();
         $this->assertDatabaseMissing('comments', ['body' => 'Test comment']);
@@ -92,7 +94,7 @@ class CommentControllerTest extends TestCase
         $user = User::factory()->member()->create();
 
         $response = $this->actingAs($user)
-            ->postJson(route('api.comments.store'), $this->storePayload($item, 'Test comment'));
+            ->from(self::PREVIOUS_URL)->post(route('loot.comments.store'), $this->storePayload($item, 'Test comment'));
 
         $response->assertForbidden();
         $this->assertDatabaseMissing('comments', ['body' => 'Test comment']);
@@ -105,9 +107,9 @@ class CommentControllerTest extends TestCase
         $user = User::factory()->raider()->create();
 
         $response = $this->actingAs($user)
-            ->postJson(route('api.comments.store'), $this->storePayload($item, 'Test comment from raider'));
+            ->from(self::PREVIOUS_URL)->post(route('loot.comments.store'), $this->storePayload($item, 'Test comment from raider'));
 
-        $response->assertCreated();
+        $response->assertRedirect(self::PREVIOUS_URL);
         $this->assertDatabaseHas('comments', [
             'body' => 'Test comment from raider',
             'user_id' => $user->id,
@@ -123,9 +125,9 @@ class CommentControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)
-            ->postJson(route('api.comments.store'), $this->storePayload($item, 'Test comment from officer'));
+            ->from(self::PREVIOUS_URL)->post(route('loot.comments.store'), $this->storePayload($item, 'Test comment from officer'));
 
-        $response->assertCreated();
+        $response->assertRedirect(self::PREVIOUS_URL);
         $this->assertDatabaseHas('comments', [
             'body' => 'Test comment from officer',
             'user_id' => $user->id,
@@ -144,9 +146,9 @@ class CommentControllerTest extends TestCase
         $user = User::factory()->raider()->create();
 
         $response = $this->actingAs($user)
-            ->postJson(route('api.comments.store'), $this->storePayload($item, ''));
+            ->from(self::PREVIOUS_URL)->post(route('loot.comments.store'), $this->storePayload($item, ''));
 
-        $response->assertJsonValidationErrors('body');
+        $response->assertSessionHasErrors('body');
         $this->assertDatabaseCount('comments', 0);
     }
 
@@ -158,9 +160,9 @@ class CommentControllerTest extends TestCase
         $user = User::factory()->raider()->create();
 
         $response = $this->actingAs($user)
-            ->postJson(route('api.comments.store'), $this->storePayload($item, 'ab'));
+            ->from(self::PREVIOUS_URL)->post(route('loot.comments.store'), $this->storePayload($item, 'ab'));
 
-        $response->assertJsonValidationErrors('body');
+        $response->assertSessionHasErrors('body');
         $this->assertDatabaseCount('comments', 0);
     }
 
@@ -172,9 +174,9 @@ class CommentControllerTest extends TestCase
         $user = User::factory()->raider()->create();
 
         $response = $this->actingAs($user)
-            ->postJson(route('api.comments.store'), $this->storePayload($item, str_repeat('a', 5001)));
+            ->from(self::PREVIOUS_URL)->post(route('loot.comments.store'), $this->storePayload($item, str_repeat('a', 5001)));
 
-        $response->assertJsonValidationErrors('body');
+        $response->assertSessionHasErrors('body');
         $this->assertDatabaseCount('comments', 0);
     }
 
@@ -185,12 +187,12 @@ class CommentControllerTest extends TestCase
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
 
-        $response = $this->actingAs($user)->postJson(route('api.comments.store'), [
+        $response = $this->actingAs($user)->from(self::PREVIOUS_URL)->post(route('loot.comments.store'), [
             'commentable_id' => (string) $item->id,
             'body' => 'A perfectly reasonable comment',
         ]);
 
-        $response->assertJsonValidationErrors('commentable_type');
+        $response->assertSessionHasErrors('commentable_type');
         $this->assertDatabaseCount('comments', 0);
     }
 
@@ -201,13 +203,13 @@ class CommentControllerTest extends TestCase
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
 
-        $response = $this->actingAs($user)->postJson(route('api.comments.store'), [
+        $response = $this->actingAs($user)->from(self::PREVIOUS_URL)->post(route('loot.comments.store'), [
             'commentable_type' => 'App\\Models\\NotAThing',
             'commentable_id' => (string) $item->id,
             'body' => 'A perfectly reasonable comment',
         ]);
 
-        $response->assertJsonValidationErrors('commentable_type');
+        $response->assertSessionHasErrors('commentable_type');
         $this->assertDatabaseCount('comments', 0);
     }
 
@@ -218,13 +220,13 @@ class CommentControllerTest extends TestCase
         $this->createItem();
         $user = User::factory()->raider()->create();
 
-        $response = $this->actingAs($user)->postJson(route('api.comments.store'), [
+        $response = $this->actingAs($user)->from(self::PREVIOUS_URL)->post(route('loot.comments.store'), [
             'commentable_type' => User::class,
             'commentable_id' => $user->id,
             'body' => 'A perfectly reasonable comment',
         ]);
 
-        $response->assertJsonValidationErrors('commentable_type');
+        $response->assertSessionHasErrors('commentable_type');
         $this->assertDatabaseCount('comments', 0);
     }
 
@@ -234,36 +236,17 @@ class CommentControllerTest extends TestCase
     {
         $user = User::factory()->raider()->create();
 
-        $response = $this->actingAs($user)->postJson(route('api.comments.store'), [
+        $response = $this->actingAs($user)->from(self::PREVIOUS_URL)->post(route('loot.comments.store'), [
             'commentable_type' => Item::class,
             'commentable_id' => '999999',
             'body' => 'A perfectly reasonable comment',
         ]);
 
-        $response->assertJsonValidationErrors('commentable_id');
+        $response->assertSessionHasErrors('commentable_id');
         $this->assertDatabaseCount('comments', 0);
     }
 
     // ==================== store — behaviour ====================
-
-    #[Test]
-    public function store_returns_the_created_comment_as_a_resource(): void
-    {
-        $item = $this->createItem();
-        $user = User::factory()->raider()->create();
-
-        $response = $this->actingAs($user)
-            ->postJson(route('api.comments.store'), $this->storePayload($item, 'Freshly posted'));
-
-        $response->assertCreated();
-        $response->assertJsonStructure([
-            'data' => ['id', 'body', 'commentable', 'user', 'reactions', 'is_resolved', 'created_at', 'updated_at', 'permissions'],
-        ]);
-        $response->assertJsonPath('data.body', 'Freshly posted');
-        $response->assertJsonPath('data.is_resolved', false);
-        $response->assertJsonPath('data.user.id', $user->id);
-        $response->assertJsonPath('data.reactions', []);
-    }
 
     #[Test]
     public function new_comments_default_to_unresolved(): void
@@ -272,8 +255,8 @@ class CommentControllerTest extends TestCase
         $user = User::factory()->raider()->create();
 
         $this->actingAs($user)
-            ->postJson(route('api.comments.store'), $this->storePayload($item, 'Test comment'))
-            ->assertCreated();
+            ->from(self::PREVIOUS_URL)->post(route('loot.comments.store'), $this->storePayload($item, 'Test comment'))
+            ->assertRedirect(self::PREVIOUS_URL);
 
         $this->assertDatabaseHas('comments', [
             'body' => 'Test comment',
@@ -288,8 +271,8 @@ class CommentControllerTest extends TestCase
         $user = User::factory()->raider()->create();
 
         $this->actingAs($user)
-            ->postJson(route('api.comments.store'), $this->storePayload($item, 'Notify the council'))
-            ->assertCreated();
+            ->from(self::PREVIOUS_URL)->post(route('loot.comments.store'), $this->storePayload($item, 'Notify the council'))
+            ->assertRedirect(self::PREVIOUS_URL);
 
         Bus::assertDispatched(NotifyDiscordChannel::class, fn (NotifyDiscordChannel $job): bool => $job->channelId === '123456789'
             && $job->notification instanceof CommentPostedToItem);
@@ -303,7 +286,7 @@ class CommentControllerTest extends TestCase
         $user = User::factory()->create();
         $root = Comment::factory()->create();
 
-        $response = $this->actingAs($user)->postJson(route('api.comments.store'), [
+        $response = $this->actingAs($user)->from(self::PREVIOUS_URL)->post(route('loot.comments.store'), [
             'commentable_id' => (string) $root->commentable_id,
             'commentable_type' => Item::class,
             'body' => 'Unauthorized reply',
@@ -322,9 +305,9 @@ class CommentControllerTest extends TestCase
     {
         $comment = Comment::factory()->create(['body' => 'Original body']);
 
-        $response = $this->patchJson(route('api.comments.update', $comment), ['body' => 'Rewritten body']);
+        $response = $this->from(self::PREVIOUS_URL)->patch(route('loot.comments.update', $comment), ['body' => 'Rewritten body']);
 
-        $response->assertUnauthorized();
+        $response->assertRedirect(route('login'));
         $this->assertDatabaseHas('comments', ['id' => $comment->id, 'body' => 'Original body']);
     }
 
@@ -341,10 +324,9 @@ class CommentControllerTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)
-            ->patchJson(route('api.comments.update', $comment), ['body' => 'Updated comment']);
+            ->from(self::PREVIOUS_URL)->patch(route('loot.comments.update', $comment), ['body' => 'Updated comment']);
 
-        $response->assertOk();
-        $response->assertJsonPath('data.body', 'Updated comment');
+        $response->assertRedirect(self::PREVIOUS_URL);
         $this->assertDatabaseHas('comments', ['id' => $comment->id, 'body' => 'Updated comment']);
     }
 
@@ -363,7 +345,7 @@ class CommentControllerTest extends TestCase
         ]);
 
         $response = $this->actingAs($raider)
-            ->patchJson(route('api.comments.update', $comment), ['body' => 'Updated comment']);
+            ->from(self::PREVIOUS_URL)->patch(route('loot.comments.update', $comment), ['body' => 'Updated comment']);
 
         $response->assertForbidden();
         $this->assertDatabaseHas('comments', ['id' => $comment->id, 'body' => 'Original comment']);
@@ -383,7 +365,7 @@ class CommentControllerTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)
-            ->patchJson(route('api.comments.update', $comment), ['body' => 'Updated comment']);
+            ->from(self::PREVIOUS_URL)->patch(route('loot.comments.update', $comment), ['body' => 'Updated comment']);
 
         $response->assertForbidden();
         $this->assertDatabaseHas('comments', [
@@ -406,9 +388,9 @@ class CommentControllerTest extends TestCase
         ]);
 
         $response = $this->actingAs($officer)
-            ->patchJson(route('api.comments.update', $comment), ['body' => 'Updated by officer']);
+            ->from(self::PREVIOUS_URL)->patch(route('loot.comments.update', $comment), ['body' => 'Updated by officer']);
 
-        $response->assertOk();
+        $response->assertRedirect(self::PREVIOUS_URL);
         $this->assertDatabaseHas('comments', ['id' => $comment->id, 'body' => 'Updated by officer']);
     }
 
@@ -427,10 +409,9 @@ class CommentControllerTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)
-            ->patchJson(route('api.comments.update', $comment), ['body' => 'Updated comment']);
+            ->from(self::PREVIOUS_URL)->patch(route('loot.comments.update', $comment), ['body' => 'Updated comment']);
 
-        $response->assertOk();
-        $response->assertJsonPath('data.id', $comment->id);
+        $response->assertRedirect(self::PREVIOUS_URL);
 
         $this->assertDatabaseCount('comments', 1);
         $this->assertNotSoftDeleted('comments', ['id' => $comment->id]);
@@ -451,8 +432,8 @@ class CommentControllerTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->patchJson(route('api.comments.update', $comment), ['body' => 'Updated comment'])
-            ->assertOk();
+            ->from(self::PREVIOUS_URL)->patch(route('loot.comments.update', $comment), ['body' => 'Updated comment'])
+            ->assertRedirect(self::PREVIOUS_URL);
 
         $this->assertSame(
             $originalTime->format('Y-m-d H:i:s'),
@@ -473,8 +454,8 @@ class CommentControllerTest extends TestCase
         ]);
 
         $this->actingAs($officer)
-            ->patchJson(route('api.comments.update', $comment), ['body' => 'Updated comment'])
-            ->assertOk();
+            ->from(self::PREVIOUS_URL)->patch(route('loot.comments.update', $comment), ['body' => 'Updated comment'])
+            ->assertRedirect(self::PREVIOUS_URL);
 
         $this->assertTrue($comment->fresh()->is_resolved);
     }
@@ -493,8 +474,8 @@ class CommentControllerTest extends TestCase
         ]);
 
         $this->actingAs($officer)
-            ->patchJson(route('api.comments.update', $comment), ['isResolved' => true])
-            ->assertOk();
+            ->from(self::PREVIOUS_URL)->patch(route('loot.comments.update', $comment), ['isResolved' => true])
+            ->assertRedirect(self::PREVIOUS_URL);
 
         $this->assertSame('Untouched body', $comment->fresh()->body);
     }
@@ -515,10 +496,9 @@ class CommentControllerTest extends TestCase
         ]);
 
         $response = $this->actingAs($officer)
-            ->patchJson(route('api.comments.update', $comment), ['isResolved' => true]);
+            ->from(self::PREVIOUS_URL)->patch(route('loot.comments.update', $comment), ['isResolved' => true]);
 
-        $response->assertOk();
-        $response->assertJsonPath('data.is_resolved', true);
+        $response->assertRedirect(self::PREVIOUS_URL);
         $this->assertTrue($comment->fresh()->is_resolved);
     }
 
@@ -535,10 +515,9 @@ class CommentControllerTest extends TestCase
         ]);
 
         $response = $this->actingAs($officer)
-            ->patchJson(route('api.comments.update', $comment), ['isResolved' => false]);
+            ->from(self::PREVIOUS_URL)->patch(route('loot.comments.update', $comment), ['isResolved' => false]);
 
-        $response->assertOk();
-        $response->assertJsonPath('data.is_resolved', false);
+        $response->assertRedirect(self::PREVIOUS_URL);
         $this->assertFalse($comment->fresh()->is_resolved);
     }
 
@@ -555,7 +534,7 @@ class CommentControllerTest extends TestCase
             'is_resolved' => false,
         ]);
 
-        $response = $this->actingAs($user)->patchJson(route('api.comments.update', $comment), [
+        $response = $this->actingAs($user)->from(self::PREVIOUS_URL)->patch(route('loot.comments.update', $comment), [
             'body' => $comment->body,
             'isResolved' => true,
         ]);
@@ -572,8 +551,8 @@ class CommentControllerTest extends TestCase
         $root = Comment::factory()->create();
         $reply = Comment::factory()->replyTo($root)->create();
 
-        $response = $this->actingAs($officer)->patchJson(
-            route('api.comments.update', $reply),
+        $response = $this->actingAs($officer)->from(self::PREVIOUS_URL)->patch(
+            route('loot.comments.update', $reply),
             ['isResolved' => true],
         );
 
@@ -596,8 +575,8 @@ class CommentControllerTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->patchJson(route('api.comments.update', $comment), ['body' => 'The body after the edit'])
-            ->assertOk();
+            ->from(self::PREVIOUS_URL)->patch(route('loot.comments.update', $comment), ['body' => 'The body after the edit'])
+            ->assertRedirect(self::PREVIOUS_URL);
 
         $this->assertDatabaseCount('comment_revisions', 1);
         $this->assertDatabaseHas('comment_revisions', [
@@ -621,8 +600,8 @@ class CommentControllerTest extends TestCase
         ]);
 
         $this->actingAs($officer)
-            ->patchJson(route('api.comments.update', $comment), ['body' => 'Moderated by an officer'])
-            ->assertOk();
+            ->from(self::PREVIOUS_URL)->patch(route('loot.comments.update', $comment), ['body' => 'Moderated by an officer'])
+            ->assertRedirect(self::PREVIOUS_URL);
 
         $this->assertDatabaseHas('comment_revisions', [
             'comment_id' => $comment->id,
@@ -646,8 +625,8 @@ class CommentControllerTest extends TestCase
         ]);
 
         $this->actingAs($officer)
-            ->patchJson(route('api.comments.update', $comment), ['isResolved' => true])
-            ->assertOk();
+            ->from(self::PREVIOUS_URL)->patch(route('loot.comments.update', $comment), ['isResolved' => true])
+            ->assertRedirect(self::PREVIOUS_URL);
 
         $this->assertDatabaseCount('comment_revisions', 0);
     }
@@ -665,8 +644,8 @@ class CommentControllerTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->patchJson(route('api.comments.update', $comment), ['body' => 'Exactly the same body'])
-            ->assertOk();
+            ->from(self::PREVIOUS_URL)->patch(route('loot.comments.update', $comment), ['body' => 'Exactly the same body'])
+            ->assertRedirect(self::PREVIOUS_URL);
 
         $this->assertDatabaseCount('comment_revisions', 0);
     }
@@ -695,9 +674,9 @@ class CommentControllerTest extends TestCase
         $this->assertDatabaseCount('pivot_comments_reactions', 2);
 
         $response = $this->actingAs($officer)
-            ->patchJson(route('api.comments.update', $comment), ['isResolved' => true]);
+            ->from(self::PREVIOUS_URL)->patch(route('loot.comments.update', $comment), ['isResolved' => true]);
 
-        $response->assertOk();
+        $response->assertRedirect(self::PREVIOUS_URL);
 
         // The bug this refactor exists to fix: copy-on-write changed the comment's
         // primary key, orphaning every pivot_comments_reactions row keyed on it.
@@ -730,40 +709,14 @@ class CommentControllerTest extends TestCase
         CommentReaction::factory()->forComment($comment)->byUser($reactor)->create();
 
         $this->actingAs($author)
-            ->patchJson(route('api.comments.update', $comment), ['body' => 'Edited body'])
-            ->assertOk();
+            ->from(self::PREVIOUS_URL)->patch(route('loot.comments.update', $comment), ['body' => 'Edited body'])
+            ->assertRedirect(self::PREVIOUS_URL);
 
         $this->assertDatabaseHas('pivot_comments_reactions', [
             'comment_id' => $comment->id,
             'user_id' => $reactor->id,
         ]);
         $this->assertCount(1, $comment->fresh()->reactions);
-    }
-
-    #[Test]
-    public function the_resolved_comments_reactions_appear_in_the_response(): void
-    {
-        $item = $this->createItem();
-        $author = User::factory()->raider()->create();
-        $officer = User::factory()->officer()->create();
-        $reactor = User::factory()->raider()->create();
-
-        $comment = Comment::factory()->create([
-            'commentable_id' => (string) $item->id,
-            'commentable_type' => Item::class,
-            'user_id' => $author->id,
-            'is_resolved' => false,
-        ]);
-
-        CommentReaction::factory()->forComment($comment)->byUser($reactor)->create();
-
-        $response = $this->actingAs($officer)
-            ->patchJson(route('api.comments.update', $comment), ['isResolved' => true]);
-
-        $response->assertOk();
-        $response->assertJsonCount(1, 'data.reactions');
-        $response->assertJsonPath('data.reactions.0.comment_id', $comment->id);
-        $response->assertJsonPath('data.reactions.0.user.id', $reactor->id);
     }
 
     // ==================== destroy ====================
@@ -774,9 +727,9 @@ class CommentControllerTest extends TestCase
     {
         $comment = Comment::factory()->create();
 
-        $response = $this->deleteJson(route('api.comments.destroy', $comment));
+        $response = $this->from(self::PREVIOUS_URL)->delete(route('loot.comments.destroy', $comment));
 
-        $response->assertUnauthorized();
+        $response->assertRedirect(route('login'));
         $this->assertNotSoftDeleted('comments', ['id' => $comment->id]);
     }
 
@@ -791,9 +744,9 @@ class CommentControllerTest extends TestCase
             'user_id' => $user->id,
         ]);
 
-        $response = $this->actingAs($user)->deleteJson(route('api.comments.destroy', $comment));
+        $response = $this->actingAs($user)->from(self::PREVIOUS_URL)->delete(route('loot.comments.destroy', $comment));
 
-        $response->assertNoContent();
+        $response->assertRedirect(self::PREVIOUS_URL);
         $this->assertSoftDeleted('comments', ['id' => $comment->id]);
     }
 
@@ -810,7 +763,7 @@ class CommentControllerTest extends TestCase
             'user_id' => $otherUser->id,
         ]);
 
-        $response = $this->actingAs($raider)->deleteJson(route('api.comments.destroy', $comment));
+        $response = $this->actingAs($raider)->from(self::PREVIOUS_URL)->delete(route('loot.comments.destroy', $comment));
 
         $response->assertForbidden();
         $this->assertNotSoftDeleted('comments', ['id' => $comment->id]);
@@ -828,9 +781,9 @@ class CommentControllerTest extends TestCase
             'user_id' => $otherUser->id,
         ]);
 
-        $response = $this->actingAs($officer)->deleteJson(route('api.comments.destroy', $comment));
+        $response = $this->actingAs($officer)->from(self::PREVIOUS_URL)->delete(route('loot.comments.destroy', $comment));
 
-        $response->assertNoContent();
+        $response->assertRedirect(self::PREVIOUS_URL);
         $this->assertSoftDeleted('comments', ['id' => $comment->id]);
     }
 
@@ -847,8 +800,8 @@ class CommentControllerTest extends TestCase
         ]);
 
         $this->actingAs($officer)
-            ->deleteJson(route('api.comments.destroy', $comment))
-            ->assertNoContent();
+            ->from(self::PREVIOUS_URL)->delete(route('loot.comments.destroy', $comment))
+            ->assertRedirect(self::PREVIOUS_URL);
 
         $this->assertDatabaseHas('comments', [
             'id' => $comment->id,
@@ -869,12 +822,12 @@ class CommentControllerTest extends TestCase
 
         $this->actingAs($user)
             ->withHeader('X-Socket-ID', 'test-socket-id')
-            ->postJson(route('api.comments.store'), [
+            ->from(self::PREVIOUS_URL)->post(route('loot.comments.store'), [
                 'commentable_type' => Item::class,
                 'commentable_id' => (string) $item->id,
                 'body' => 'A brand new comment.',
             ])
-            ->assertCreated();
+            ->assertRedirect(self::PREVIOUS_URL);
 
         Event::assertDispatched(
             CommentPosted::class,
@@ -899,8 +852,8 @@ class CommentControllerTest extends TestCase
 
         $this->actingAs($user)
             ->withHeader('X-Socket-ID', 'test-socket-id')
-            ->patchJson(route('api.comments.update', $comment), ['body' => 'An edited body.'])
-            ->assertOk();
+            ->from(self::PREVIOUS_URL)->patch(route('loot.comments.update', $comment), ['body' => 'An edited body.'])
+            ->assertRedirect(self::PREVIOUS_URL);
 
         Event::assertDispatched(
             CommentChanged::class,
@@ -925,8 +878,8 @@ class CommentControllerTest extends TestCase
 
         $this->actingAs($user)
             ->withHeader('X-Socket-ID', 'test-socket-id')
-            ->deleteJson(route('api.comments.destroy', $comment))
-            ->assertNoContent();
+            ->from(self::PREVIOUS_URL)->delete(route('loot.comments.destroy', $comment))
+            ->assertRedirect(self::PREVIOUS_URL);
 
         Event::assertDispatched(
             CommentRemoved::class,

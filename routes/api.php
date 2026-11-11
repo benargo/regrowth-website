@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Api\BlizzardMediaController;
-use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\CommentReactionController;
 use App\Http\Controllers\Api\Discord\ResolveDiscordMemberController;
 use App\Http\Controllers\Api\Event\PublishAssignmentsController;
@@ -28,22 +27,11 @@ Route::prefix('/raidhelper')->group(function () {
 });
 
 Route::middleware(['auth:sanctum'])->prefix('/comments')->group(function () {
-    // Reactions are declared first and both keys are numerically constrained, so
-    // the literal `reactions` segment never binds as a {comment}.
     Route::post('/reactions', [CommentReactionController::class, 'store'])
         ->name('api.comments.reactions.store');
     Route::delete('/reactions/{reaction}', [CommentReactionController::class, 'destroy'])
         ->whereNumber('reaction')
         ->name('api.comments.reactions.destroy');
-
-    Route::post('/', [CommentController::class, 'store'])
-        ->name('api.comments.store');
-    Route::patch('/{comment}', [CommentController::class, 'update'])
-        ->whereNumber('comment')
-        ->name('api.comments.update');
-    Route::delete('/{comment}', [CommentController::class, 'destroy'])
-        ->whereNumber('comment')
-        ->name('api.comments.destroy');
 });
 
 Route::middleware(['auth:sanctum'])->prefix('/discord')->group(function () {

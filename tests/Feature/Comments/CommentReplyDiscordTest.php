@@ -56,12 +56,12 @@ class CommentReplyDiscordTest extends TestCase
         $item = Item::factory()->create();
 
         $this->actingAs(User::factory()->raider()->create())
-            ->postJson(route('api.comments.store'), [
+            ->post(route('loot.comments.store'), [
                 'commentable_type' => Item::class,
                 'commentable_id' => (string) $item->id,
                 'body' => 'A root comment.',
             ])
-            ->assertCreated();
+            ->assertRedirect();
 
         Notification::assertSentTo($this->channel, CommentPostedToItem::class);
     }
@@ -73,8 +73,8 @@ class CommentReplyDiscordTest extends TestCase
         $root = $this->rootOnItem();
 
         $this->actingAs(User::factory()->raider()->create())
-            ->postJson(route('api.comments.store'), $this->replyPayload($root))
-            ->assertCreated();
+            ->post(route('loot.comments.store'), $this->replyPayload($root))
+            ->assertRedirect();
 
         Bus::assertDispatched(NotifyDiscordChannel::class, fn (NotifyDiscordChannel $job): bool => $job->channelId === config('services.discord.channels.lootcouncil')
             && $job->notification instanceof CommentPostedToItem);
@@ -90,8 +90,8 @@ class CommentReplyDiscordTest extends TestCase
         Notification::fake();
 
         $this->actingAs(User::factory()->raider()->create())
-            ->postJson(route('api.comments.store'), $this->replyPayload($root))
-            ->assertCreated();
+            ->post(route('loot.comments.store'), $this->replyPayload($root))
+            ->assertRedirect();
 
         Notification::assertSentTo(
             $this->channel,
@@ -107,8 +107,8 @@ class CommentReplyDiscordTest extends TestCase
         Notification::fake();
 
         $this->actingAs(User::factory()->raider()->create())
-            ->postJson(route('api.comments.store'), $this->replyPayload($root))
-            ->assertCreated();
+            ->post(route('loot.comments.store'), $this->replyPayload($root))
+            ->assertRedirect();
 
         Notification::assertNothingSent();
     }
@@ -125,8 +125,8 @@ class CommentReplyDiscordTest extends TestCase
         ]);
 
         $this->actingAs(User::factory()->raider()->create())
-            ->postJson(route('api.comments.store'), $this->replyPayload($root))
-            ->assertCreated();
+            ->post(route('loot.comments.store'), $this->replyPayload($root))
+            ->assertRedirect();
 
         $this->assertSoftDeleted($stale);
         Saloon::assertNotSent(CreateMessageRequest::class);
@@ -146,7 +146,7 @@ class CommentReplyDiscordTest extends TestCase
         Notification::fake();
 
         $this->actingAs(User::factory()->raider()->create())
-            ->postJson(route('api.comments.store'), [
+            ->post(route('loot.comments.store'), [
                 'commentable_type' => Item::class,
                 'commentable_id' => (string) $item->id,
                 'body' => 'A reply under a trashed root.',
@@ -169,8 +169,8 @@ class CommentReplyDiscordTest extends TestCase
         Notification::fake();
 
         $this->actingAs($author)
-            ->deleteJson(route('api.comments.destroy', ['comment' => $reply->id]))
-            ->assertNoContent();
+            ->delete(route('loot.comments.destroy', ['comment' => $reply->id]))
+            ->assertRedirect();
 
         Notification::assertSentTo(
             $this->channel,
@@ -187,8 +187,8 @@ class CommentReplyDiscordTest extends TestCase
         $reply = Comment::factory()->replyTo($root)->create(['user_id' => $author->id]);
 
         $this->actingAs($author)
-            ->deleteJson(route('api.comments.destroy', ['comment' => $reply->id]))
-            ->assertNoContent();
+            ->delete(route('loot.comments.destroy', ['comment' => $reply->id]))
+            ->assertRedirect();
 
         Bus::assertDispatched(NotifyDiscordChannel::class, fn (NotifyDiscordChannel $job): bool => $job->channelId === config('services.discord.channels.lootcouncil')
             && $job->notification instanceof CommentPostedToItem);
@@ -207,8 +207,8 @@ class CommentReplyDiscordTest extends TestCase
         Notification::fake();
 
         $this->actingAs($author)
-            ->deleteJson(route('api.comments.destroy', ['comment' => $reply->id]))
-            ->assertNoContent();
+            ->delete(route('loot.comments.destroy', ['comment' => $reply->id]))
+            ->assertRedirect();
 
         Notification::assertSentTo($this->channel, CommentPostedToItem::class);
     }
@@ -223,8 +223,8 @@ class CommentReplyDiscordTest extends TestCase
         Bus::fake([NotifyDiscordChannel::class]);
 
         $this->actingAs($author)
-            ->deleteJson(route('api.comments.destroy', ['comment' => $root->id]))
-            ->assertNoContent();
+            ->delete(route('loot.comments.destroy', ['comment' => $root->id]))
+            ->assertRedirect();
 
         Bus::assertNotDispatched(NotifyDiscordChannel::class);
     }

@@ -89,12 +89,12 @@ class CommentBroadcastTest extends TestCase
         $root = Comment::factory()->create();
         $reply = Comment::factory()->replyTo($root)->create();
 
-        $this->actingAs($user)->postJson(route('api.comments.store'), [
+        $this->actingAs($user)->post(route('loot.comments.store'), [
             'commentable_id' => (string) $root->commentable_id,
             'commentable_type' => Item::class,
             'body' => 'Nested reply',
             'parent_id' => $reply->id,
-        ])->assertCreated();
+        ])->assertRedirect();
 
         Event::assertDispatched(
             CommentPosted::class,

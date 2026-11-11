@@ -15,9 +15,7 @@ import useExpandedThreads from "@/Hooks/useExpandedThreads";
  * `CommentResource` computes `permissions.edit` / `permissions.delete` /
  * `permissions.react` / `permissions.resolve` for whoever made the request.
  * On a broadcast that is the *acting* user, not the recipient — trusting it
- * would show every viewer the author's Edit and Delete buttons. On a
- * `useHttp` response it is the current user and would be safe, but this
- * merge is applied uniformly so there is only one rule to remember.
+ * would show every viewer the author's Edit and Delete buttons.
  */
 function mergePreservingPermissions(existing, incoming) {
     return { ...existing, ...incoming, permissions: existing.permissions };
@@ -38,12 +36,9 @@ export default function CommentsSection({ comments, replies, itemId, registerBro
     const http = useHttp({});
 
     /**
-     * Every mutation below broadcasts with `->toOthers()`. Laravel excludes
-     * the triggering socket from that broadcast by reading `X-Socket-ID` off
-     * the request, but `useHttp` (unlike a global Axios instance) does not
-     * attach it automatically — without this the poster receives their own
-     * broadcast back and, e.g., `createComment`'s optimistic prepend races
-     * the broadcast-driven prepend, showing the comment twice until reload.
+     * `X-Socket-ID` header for every mutation below. Each one broadcasts with
+     * `->toOthers()`, which excludes the socket named by this header; neither
+     * Inertia router visits nor `useHttp` attach it automatically.
      */
     const socketId = useSocketId();
     const socketHeaders = useMemo(() => (socketId ? { "X-Socket-ID": socketId } : {}), [socketId]);
@@ -105,29 +100,33 @@ export default function CommentsSection({ comments, replies, itemId, registerBro
         setLoadingRoots([]);
     }, [replies]);
 
+    /**
+     * Options shared by every comment write: the redirect back reloads only the
+     * `comments` prop, keeping scroll position, and carries `X-Socket-ID`.
+     */
+    const commentVisitOptions = useMemo(
+        () => ({ only: ["comments"], preserveScroll: true, headers: socketHeaders }),
+        [socketHeaders],
+    );
+
     const createComment = useCallback(
         (body, { onSuccess, onError }) => {
             setError(null);
-            http.setData({
-                commentable_type: "App\\Models\\Item",
-                commentable_id: String(itemId),
-                body,
-            });
-            http.post(route("api.comments.store"), {
-                headers: socketHeaders,
-                onSuccess: (response) => {
-                    setItems((current) => {
-                        if (current.some((comment) => comment.id === response.data.id)) {
-                            return current;
-                        }
-                        return [response.data, ...current];
-                    });
-                    onSuccess?.();
+            router.post(
+                route("loot.comments.store"),
+                {
+                    commentable_type: "App\\Models\\Item",
+                    commentable_id: String(itemId),
+                    body,
                 },
-                onError: (errors) => onError?.(errors),
-            });
+                {
+                    ...commentVisitOptions,
+                    onSuccess: () => onSuccess?.(),
+                    onError: (errors) => onError?.(errors),
+                },
+            );
         },
-        [http, itemId, socketHeaders],
+        [itemId, commentVisitOptions],
     );
 
     /**
@@ -162,54 +161,31 @@ export default function CommentsSection({ comments, replies, itemId, registerBro
     const createReply = useCallback(
         (rootId, body, { onSuccess, onError } = {}) => {
             setError(null);
-            http.setData({
-                commentable_type: "App\\Models\\Item",
-                commentable_id: String(itemId),
-                body,
-                parent_id: rootId,
-            });
-            http.post(route("api.comments.store"), {
-                headers: socketHeaders,
-                onSuccess: (response) => {
-                    const reply = response.data;
-
-                    setThreadCache((current) => {
-                        const existing = current[reply.parent_id] ?? { replies: [], loadedCount: 0 };
-
-                        if (existing.replies.some((cached) => cached.id === reply.id)) {
-                            return current;
-                        }
-
-                        return {
-                            ...current,
-                            [reply.parent_id]: {
-                                replies: [...existing.replies, reply],
-                                loadedCount: existing.loadedCount + 1,
-                            },
-                        };
-                    });
-
-                    setItems((current) =>
-                        current.map((comment) =>
-                            comment.id === reply.parent_id
-                                ? { ...comment, replies_count: (comment.replies_count ?? 0) + 1 }
-                                : comment,
-                        ),
-                    );
-
-                    // Posting a reply expands that thread for the poster, and
-                    // persists it — only for them.
-                    expand(reply.parent_id);
-
-                    onSuccess?.();
+            router.post(
+                route("loot.comments.store"),
+                {
+                    commentable_type: "App\\Models\\Item",
+                    commentable_id: String(itemId),
+                    body,
+                    parent_id: rootId,
                 },
-                onError: (errors) => {
-                    setError(errors?.body ?? "Your reply could not be posted.");
-                    onError?.(errors);
+                {
+                    ...commentVisitOptions,
+                    onSuccess: () => {
+                        // Posting a reply expands that thread for the poster, and
+                        // persists it — only for them.
+                        expand(rootId);
+
+                        onSuccess?.();
+                    },
+                    onError: (errors) => {
+                        setError(errors?.body ?? "Your reply could not be posted.");
+                        onError?.(errors);
+                    },
                 },
-            });
+            );
         },
-        [http, itemId, socketHeaders, expand],
+        [itemId, commentVisitOptions, expand],
     );
 
     /**
@@ -246,80 +222,27 @@ export default function CommentsSection({ comments, replies, itemId, registerBro
     const updateComment = useCallback(
         (commentId, payload, { onSuccess, onError } = {}) => {
             setError(null);
-            http.setData(payload);
-            http.patch(route("api.comments.update", { comment: commentId }), {
-                headers: socketHeaders,
-                onSuccess: (response) => {
-                    updateCommentEverywhere(response.data.id, (comment) =>
-                        mergePreservingPermissions(comment, response.data),
-                    );
-                    onSuccess?.();
-                },
+            router.patch(route("loot.comments.update", { comment: commentId }), payload, {
+                ...commentVisitOptions,
+                onSuccess: () => onSuccess?.(),
                 onError: (errors) => {
                     setError(errors?.body ?? "That comment could not be updated.");
                     onError?.(errors);
                 },
             });
         },
-        [http, socketHeaders, updateCommentEverywhere],
-    );
-
-    /**
-     * Remove a comment from local state — a root becomes a tombstone in place
-     * (its replies survive it), a reply is dropped from its thread's cache.
-     */
-    const removeCommentLocally = useCallback(
-        (commentId) => {
-            setItems((current) =>
-                current.map((comment) =>
-                    comment.id === commentId
-                        ? { ...comment, is_deleted: true, body: null, permissions: denyAllPermissions }
-                        : comment,
-                ),
-            );
-
-            setThreadCache((current) => {
-                const next = {};
-
-                Object.entries(current).forEach(([rootId, thread]) => {
-                    const remaining = thread.replies.filter((reply) => reply.id !== commentId);
-
-                    next[rootId] = {
-                        replies: remaining,
-                        loadedCount: Math.max(0, thread.loadedCount - (thread.replies.length - remaining.length)),
-                    };
-                });
-
-                return next;
-            });
-
-            setItems((current) =>
-                current.map((comment) => {
-                    const thread = threadCache[comment.id];
-                    const wasReply = thread?.replies.some((reply) => reply.id === commentId);
-
-                    return wasReply
-                        ? { ...comment, replies_count: Math.max(0, (comment.replies_count ?? 0) - 1) }
-                        : comment;
-                }),
-            );
-        },
-        [threadCache],
+        [commentVisitOptions],
     );
 
     const deleteComment = useCallback(
         (commentId) => {
             setError(null);
-            http.setData({});
-            http.delete(route("api.comments.destroy", { comment: commentId }), {
-                headers: socketHeaders,
-                onSuccess: () => {
-                    removeCommentLocally(commentId);
-                },
+            router.delete(route("loot.comments.destroy", { comment: commentId }), {
+                ...commentVisitOptions,
                 onHttpException: (httpResponse) => {
-                    // 404 means it is already gone server-side — converge on that.
+                    // 404 means it is already gone server-side — reload to converge on that.
                     if (httpResponse.status === 404) {
-                        removeCommentLocally(commentId);
+                        router.reload({ only: ["comments"], preserveScroll: true });
                         return false;
                     }
                     setError("That comment could not be deleted.");
@@ -327,7 +250,7 @@ export default function CommentsSection({ comments, replies, itemId, registerBro
                 },
             });
         },
-        [http, socketHeaders, removeCommentLocally],
+        [commentVisitOptions],
     );
 
     const addReaction = useCallback(
@@ -370,7 +293,6 @@ export default function CommentsSection({ comments, replies, itemId, registerBro
         router.reload({
             only: ["comments"],
             data: { page },
-            preserveUrl: true,
             preserveScroll: true,
         });
     }, []);

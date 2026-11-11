@@ -106,6 +106,9 @@ Route::group(['prefix' => 'loot', 'as' => 'loot.'], function () use ($raidAndBos
     Route::get('/', [LootBiasToolController::class, 'index'])->name('index');
     $raidAndBossRoutes(SiteSection::Loot);
     Route::get('/comments', [CommentController::class, 'index'])->name('comments');
+    Route::post('/comments', [CommentController::class, 'store'])->name('comments.store');
+    Route::patch('/comments/{comment}', [CommentController::class, 'update'])->whereNumber('comment')->name('comments.update');
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->whereNumber('comment')->name('comments.destroy');
     Route::patch('/items/{item}', [ItemController::class, 'update'])->name('items.update');
     Route::get('/items/{item}/{slug?}', [ItemController::class, 'show'])->name('items.show');
     Route::get('/items/{item}/{slug}/edit', [ItemController::class, 'edit'])->name('items.edit');

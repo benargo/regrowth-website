@@ -58,18 +58,17 @@ class ThreadedCommentsTest extends TestCase
         ]);
 
         $response = $this->actingAs(User::factory()->raider()->create())
-            ->postJson(route('api.comments.store'), [
+            ->post(route('loot.comments.store'), [
                 'commentable_type' => Item::class,
                 'commentable_id' => (string) $item->id,
                 'body' => 'This is my reply.',
                 'parent_id' => $root->id,
             ]);
 
-        $response->assertCreated();
-        $response->assertJsonPath('data.parent_id', $root->id);
+        $response->assertRedirect();
 
         $this->assertDatabaseHas('comments', [
-            'id' => $response->json('data.id'),
+            'body' => 'This is my reply.',
             'parent_id' => $root->id,
         ]);
     }
@@ -86,15 +85,19 @@ class ThreadedCommentsTest extends TestCase
         $reply = Comment::factory()->replyTo($root)->create();
 
         $response = $this->actingAs(User::factory()->raider()->create())
-            ->postJson(route('api.comments.store'), [
+            ->post(route('loot.comments.store'), [
                 'commentable_type' => Item::class,
                 'commentable_id' => (string) $item->id,
                 'body' => 'A reply to a reply.',
                 'parent_id' => $reply->id,
             ]);
 
-        $response->assertCreated();
-        $response->assertJsonPath('data.parent_id', $root->id);
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('comments', [
+            'body' => 'A reply to a reply.',
+            'parent_id' => $root->id,
+        ]);
     }
 
     #[Test]
@@ -109,7 +112,7 @@ class ThreadedCommentsTest extends TestCase
         ]);
 
         $this->actingAs(User::factory()->raider()->create())
-            ->postJson(route('api.comments.store'), [
+            ->post(route('loot.comments.store'), [
                 'commentable_type' => Item::class,
                 'commentable_id' => (string) $item->id,
                 'body' => 'A smuggled reply.',
@@ -130,7 +133,7 @@ class ThreadedCommentsTest extends TestCase
         $root->delete();
 
         $this->actingAs(User::factory()->raider()->create())
-            ->postJson(route('api.comments.store'), [
+            ->post(route('loot.comments.store'), [
                 'commentable_type' => Item::class,
                 'commentable_id' => (string) $item->id,
                 'body' => 'A reply to a ghost.',
@@ -150,8 +153,8 @@ class ThreadedCommentsTest extends TestCase
         $reply = Comment::factory()->replyTo($root)->create();
 
         $this->actingAs(User::factory()->officer()->create())
-            ->deleteJson(route('api.comments.destroy', ['comment' => $root->id]))
-            ->assertNoContent();
+            ->delete(route('loot.comments.destroy', ['comment' => $root->id]))
+            ->assertRedirect();
 
         $this->assertSoftDeleted('comments', ['id' => $root->id]);
         $this->assertDatabaseHas('comments', ['id' => $reply->id, 'deleted_at' => null]);
@@ -165,7 +168,7 @@ class ThreadedCommentsTest extends TestCase
         $reply = Comment::factory()->replyTo($root)->create();
         $root->delete();
 
-        $response = $this->actingAs($user)->postJson(route('api.comments.store'), [
+        $response = $this->actingAs($user)->post(route('loot.comments.store'), [
             'commentable_id' => (string) $root->commentable_id,
             'commentable_type' => Item::class,
             'body' => 'Reply under a tombstone',
@@ -184,11 +187,11 @@ class ThreadedCommentsTest extends TestCase
         $reply = Comment::factory()->replyTo($root)->create(['user_id' => $author->id]);
         $root->delete();
 
-        $response = $this->actingAs($author)->deleteJson(
-            route('api.comments.destroy', $reply)
+        $response = $this->actingAs($author)->delete(
+            route('loot.comments.destroy', $reply)
         );
 
-        $response->assertNoContent();
+        $response->assertRedirect();
         Bus::assertDispatched(
             NotifyDiscordChannel::class,
             fn (NotifyDiscordChannel $job): bool => $job->notification instanceof CommentPostedToItem,
@@ -208,8 +211,8 @@ class ThreadedCommentsTest extends TestCase
         $doomed = Comment::factory()->replyTo($root)->create(['user_id' => $author->id]);
 
         $this->actingAs($author)
-            ->deleteJson(route('api.comments.destroy', $doomed))
-            ->assertNoContent();
+            ->delete(route('loot.comments.destroy', $doomed))
+            ->assertRedirect();
 
         $response = $this->actingAs($author)->get(route('loot.items.show', [
             'item' => $item->id,
