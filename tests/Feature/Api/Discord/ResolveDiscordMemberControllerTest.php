@@ -9,6 +9,7 @@ use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
+use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Laravel\Facades\Saloon;
@@ -42,8 +43,9 @@ class ResolveDiscordMemberControllerTest extends TestCase
     {
         User::factory()->create(['id' => '999999999999999999']);
 
-        $this->actingAs(User::factory()->officer()->create())
-            ->postJson(route('api.discord.members.resolve', '999999999999999999'))
+        Passport::actingAs(User::factory()->officer()->create());
+
+        $this->postJson(route('api.discord.members.resolve', '999999999999999999'))
             ->assertOk()
             ->assertExactJson(['status' => 'ready']);
 
@@ -55,8 +57,9 @@ class ResolveDiscordMemberControllerTest extends TestCase
     {
         $officer = User::factory()->officer()->create();
 
-        $this->actingAs($officer)
-            ->postJson(route('api.discord.members.resolve', '999999999999999999'))
+        Passport::actingAs($officer);
+
+        $this->postJson(route('api.discord.members.resolve', '999999999999999999'))
             ->assertStatus(202)
             ->assertExactJson(['status' => 'pending']);
 
@@ -69,8 +72,9 @@ class ResolveDiscordMemberControllerTest extends TestCase
     #[Group('authorization')]
     public function it_returns_403_for_users_who_cannot_create_planned_absences(): void
     {
-        $this->actingAs(User::factory()->raider()->create())
-            ->postJson(route('api.discord.members.resolve', '999999999999999999'))
+        Passport::actingAs(User::factory()->raider()->create());
+
+        $this->postJson(route('api.discord.members.resolve', '999999999999999999'))
             ->assertForbidden();
 
         Queue::assertNotPushed(ResolveGuildMember::class);
@@ -90,8 +94,9 @@ class ResolveDiscordMemberControllerTest extends TestCase
     #[Group('validation')]
     public function it_returns_404_for_a_non_numeric_member_id(): void
     {
-        $this->actingAs(User::factory()->officer()->create())
-            ->postJson('/api/discord/members/abc/resolve')
+        Passport::actingAs(User::factory()->officer()->create());
+
+        $this->postJson('/api/discord/members/abc/resolve')
             ->assertNotFound();
 
         Queue::assertNotPushed(ResolveGuildMember::class);

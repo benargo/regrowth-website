@@ -10,6 +10,7 @@ use App\Models\EventAssignmentGroup;
 use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
@@ -53,8 +54,9 @@ class EventGroupControllerTest extends TestCase
     #[Test]
     public function it_creates_a_group_and_returns_201(): void
     {
-        $response = $this->actingAs($this->editor)
-            ->postJson(route('api.events.groups.store', $this->event), ['name' => 'Healers']);
+        Passport::actingAs($this->editor);
+
+        $response = $this->postJson(route('api.events.groups.store', $this->event), ['name' => 'Healers']);
 
         $response->assertCreated();
         $response->assertJsonStructure(['id', 'name', 'sort_order']);
@@ -69,8 +71,9 @@ class EventGroupControllerTest extends TestCase
     #[Test]
     public function it_defaults_name_to_new_group_when_none_provided(): void
     {
-        $response = $this->actingAs($this->editor)
-            ->postJson(route('api.events.groups.store', $this->event), []);
+        Passport::actingAs($this->editor);
+
+        $response = $this->postJson(route('api.events.groups.store', $this->event), []);
 
         $response->assertCreated();
         $response->assertJsonPath('name', 'New group');
@@ -86,8 +89,9 @@ class EventGroupControllerTest extends TestCase
     {
         EventAssignmentGroup::factory()->count(3)->for($this->event)->create();
 
-        $response = $this->actingAs($this->editor)
-            ->postJson(route('api.events.groups.store', $this->event), ['name' => 'Second Group']);
+        Passport::actingAs($this->editor);
+
+        $response = $this->postJson(route('api.events.groups.store', $this->event), ['name' => 'Second Group']);
 
         $response->assertCreated();
         $response->assertJsonPath('sort_order', 4);
@@ -97,8 +101,9 @@ class EventGroupControllerTest extends TestCase
     #[Test]
     public function it_returns_403_on_store_when_user_cannot_update_event(): void
     {
-        $response = $this->actingAs($this->viewer)
-            ->postJson(route('api.events.groups.store', $this->event), ['name' => 'Tanks']);
+        Passport::actingAs($this->viewer);
+
+        $response = $this->postJson(route('api.events.groups.store', $this->event), ['name' => 'Tanks']);
 
         $response->assertForbidden();
     }
@@ -115,11 +120,12 @@ class EventGroupControllerTest extends TestCase
     {
         $boss = Boss::factory()->create();
 
-        $response = $this->actingAs($this->editor)
-            ->postJson(route('api.events.groups.store', $this->event), [
-                'name' => 'Healers',
-                'boss_id' => $boss->id,
-            ]);
+        Passport::actingAs($this->editor);
+
+        $response = $this->postJson(route('api.events.groups.store', $this->event), [
+            'name' => 'Healers',
+            'boss_id' => $boss->id,
+        ]);
 
         $response->assertCreated();
         $response->assertJsonPath('boss_id', $boss->id);
@@ -135,12 +141,12 @@ class EventGroupControllerTest extends TestCase
     #[Test]
     public function it_returns_422_when_boss_id_does_not_exist_on_store(): void
     {
-        $this->actingAs($this->editor)
-            ->postJson(route('api.events.groups.store', $this->event), [
-                'name' => 'Healers',
-                'boss_id' => 999999,
-            ])
-            ->assertUnprocessable();
+        Passport::actingAs($this->editor);
+
+        $this->postJson(route('api.events.groups.store', $this->event), [
+            'name' => 'Healers',
+            'boss_id' => 999999,
+        ])->assertUnprocessable();
     }
 
     #[Test]
@@ -149,8 +155,9 @@ class EventGroupControllerTest extends TestCase
         $boss = Boss::factory()->create();
         $group = EventAssignmentGroup::factory()->for($this->event)->create(['boss_id' => null]);
 
-        $this->actingAs($this->editor)
-            ->patchJson(route('api.events.groups.update', [$this->event, $group]), ['boss_id' => $boss->id])
+        Passport::actingAs($this->editor);
+
+        $this->patchJson(route('api.events.groups.update', [$this->event, $group]), ['boss_id' => $boss->id])
             ->assertNoContent();
 
         $this->assertDatabaseHas('event_assignment_groups', [
@@ -166,8 +173,9 @@ class EventGroupControllerTest extends TestCase
     {
         $group = EventAssignmentGroup::factory()->for($this->event)->create(['name' => 'Old Name']);
 
-        $response = $this->actingAs($this->editor)
-            ->patchJson(route('api.events.groups.update', [$this->event, $group]), ['name' => 'New Name']);
+        Passport::actingAs($this->editor);
+
+        $response = $this->patchJson(route('api.events.groups.update', [$this->event, $group]), ['name' => 'New Name']);
 
         $response->assertNoContent();
         $this->assertDatabaseHas('event_assignment_groups', ['id' => $group->id, 'name' => 'New Name']);
@@ -178,8 +186,9 @@ class EventGroupControllerTest extends TestCase
     {
         $group = EventAssignmentGroup::factory()->for($this->event)->create(['sort_order' => 0]);
 
-        $this->actingAs($this->editor)
-            ->patchJson(route('api.events.groups.update', [$this->event, $group]), ['sort_order' => 5])
+        Passport::actingAs($this->editor);
+
+        $this->patchJson(route('api.events.groups.update', [$this->event, $group]), ['sort_order' => 5])
             ->assertNoContent();
 
         $this->assertDatabaseHas('event_assignment_groups', ['id' => $group->id, 'sort_order' => 5]);
@@ -191,8 +200,9 @@ class EventGroupControllerTest extends TestCase
         $otherEvent = Event::factory()->create();
         $group = EventAssignmentGroup::factory()->for($otherEvent)->create();
 
-        $this->actingAs($this->editor)
-            ->patchJson(route('api.events.groups.update', [$this->event, $group]), ['name' => 'Hack'])
+        Passport::actingAs($this->editor);
+
+        $this->patchJson(route('api.events.groups.update', [$this->event, $group]), ['name' => 'Hack'])
             ->assertNotFound();
     }
 
@@ -202,8 +212,9 @@ class EventGroupControllerTest extends TestCase
     {
         $group = EventAssignmentGroup::factory()->for($this->event)->create();
 
-        $this->actingAs($this->viewer)
-            ->patchJson(route('api.events.groups.update', [$this->event, $group]), ['name' => 'X'])
+        Passport::actingAs($this->viewer);
+
+        $this->patchJson(route('api.events.groups.update', [$this->event, $group]), ['name' => 'X'])
             ->assertForbidden();
     }
 
@@ -214,8 +225,9 @@ class EventGroupControllerTest extends TestCase
     {
         [$a, $b, $c] = EventAssignmentGroup::factory()->count(3)->for($this->event)->create()->all();
 
-        $this->actingAs($this->editor)
-            ->patchJson(route('api.events.groups.reorder', $this->event), ['order' => [$c->id, $a->id, $b->id]])
+        Passport::actingAs($this->editor);
+
+        $this->patchJson(route('api.events.groups.reorder', $this->event), ['order' => [$c->id, $a->id, $b->id]])
             ->assertNoContent();
 
         $this->assertDatabaseHas('event_assignment_groups', ['id' => $c->id, 'sort_order' => 0]);
@@ -231,8 +243,9 @@ class EventGroupControllerTest extends TestCase
         $foreign = EventAssignmentGroup::factory()->for($otherEvent)->create();
         $own = EventAssignmentGroup::factory()->for($this->event)->create();
 
-        $this->actingAs($this->editor)
-            ->patchJson(route('api.events.groups.reorder', $this->event), ['order' => [$own->id, $foreign->id]])
+        Passport::actingAs($this->editor);
+
+        $this->patchJson(route('api.events.groups.reorder', $this->event), ['order' => [$own->id, $foreign->id]])
             ->assertUnprocessable();
     }
 
@@ -242,8 +255,9 @@ class EventGroupControllerTest extends TestCase
     {
         $group = EventAssignmentGroup::factory()->for($this->event)->create();
 
-        $this->actingAs($this->viewer)
-            ->patchJson(route('api.events.groups.reorder', $this->event), ['order' => [$group->id]])
+        Passport::actingAs($this->viewer);
+
+        $this->patchJson(route('api.events.groups.reorder', $this->event), ['order' => [$group->id]])
             ->assertForbidden();
     }
 
@@ -256,8 +270,9 @@ class EventGroupControllerTest extends TestCase
 
         [$a, $b] = EventAssignmentGroup::factory()->count(2)->for($this->event)->create()->all();
 
-        $this->actingAs($this->editor)
-            ->patchJson(route('api.events.groups.reorder', $this->event), ['order' => [$b->id, $a->id]])
+        Passport::actingAs($this->editor);
+
+        $this->patchJson(route('api.events.groups.reorder', $this->event), ['order' => [$b->id, $a->id]])
             ->assertNoContent();
 
         $this->assertDatabaseHas('event_assignment_groups', ['id' => $foreign->id, 'sort_order' => 0]);
@@ -270,8 +285,9 @@ class EventGroupControllerTest extends TestCase
     {
         $group = EventAssignmentGroup::factory()->for($this->event)->create();
 
-        $this->actingAs($this->editor)
-            ->deleteJson(route('api.events.groups.destroy', [$this->event, $group]))
+        Passport::actingAs($this->editor);
+
+        $this->deleteJson(route('api.events.groups.destroy', [$this->event, $group]))
             ->assertNoContent();
 
         $this->assertDatabaseMissing('event_assignment_groups', ['id' => $group->id]);
@@ -283,8 +299,9 @@ class EventGroupControllerTest extends TestCase
         $group = EventAssignmentGroup::factory()->for($this->event)->create();
         $assignment = EventAssignment::factory()->for($this->event)->for($group, 'group')->create();
 
-        $this->actingAs($this->editor)
-            ->deleteJson(route('api.events.groups.destroy', [$this->event, $group]))
+        Passport::actingAs($this->editor);
+
+        $this->deleteJson(route('api.events.groups.destroy', [$this->event, $group]))
             ->assertNoContent();
 
         $this->assertDatabaseMissing('event_assignment_groups', ['id' => $group->id]);
@@ -297,8 +314,9 @@ class EventGroupControllerTest extends TestCase
         $otherEvent = Event::factory()->create();
         $group = EventAssignmentGroup::factory()->for($otherEvent)->create();
 
-        $this->actingAs($this->editor)
-            ->deleteJson(route('api.events.groups.destroy', [$this->event, $group]))
+        Passport::actingAs($this->editor);
+
+        $this->deleteJson(route('api.events.groups.destroy', [$this->event, $group]))
             ->assertNotFound();
     }
 
@@ -308,8 +326,9 @@ class EventGroupControllerTest extends TestCase
     {
         $group = EventAssignmentGroup::factory()->for($this->event)->create();
 
-        $this->actingAs($this->viewer)
-            ->deleteJson(route('api.events.groups.destroy', [$this->event, $group]))
+        Passport::actingAs($this->viewer);
+
+        $this->deleteJson(route('api.events.groups.destroy', [$this->event, $group]))
             ->assertForbidden();
     }
 
@@ -318,8 +337,9 @@ class EventGroupControllerTest extends TestCase
     {
         $group = EventAssignmentGroup::factory()->for($this->event)->create();
 
-        $this->actingAs($this->editor)
-            ->deleteJson(route('api.events.groups.destroy', [$this->event, $group]))
+        Passport::actingAs($this->editor);
+
+        $this->deleteJson(route('api.events.groups.destroy', [$this->event, $group]))
             ->assertNoContent();
 
         $this->assertDatabaseMissing('event_assignment_groups', ['id' => $group->id]);
@@ -333,8 +353,9 @@ class EventGroupControllerTest extends TestCase
         $assignmentInA = EventAssignment::factory()->for($this->event)->for($groupA, 'group')->create();
         $assignmentInB = EventAssignment::factory()->for($this->event)->for($groupB, 'group')->create();
 
-        $this->actingAs($this->editor)
-            ->deleteJson(route('api.events.groups.destroy', [$this->event, $groupA]))
+        Passport::actingAs($this->editor);
+
+        $this->deleteJson(route('api.events.groups.destroy', [$this->event, $groupA]))
             ->assertNoContent();
 
         $this->assertDatabaseMissing('event_assignment_groups', ['id' => $groupA->id]);

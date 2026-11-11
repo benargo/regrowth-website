@@ -8,6 +8,7 @@ use App\Models\PrunedModel;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event as EventFacade;
+use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\Discord\MocksDiscordService;
@@ -99,7 +100,9 @@ class PrunedEventTest extends TestCase
 
         PrunedModel::create(['id' => $eventId, 'type' => Event::class]);
 
-        $this->actingAs($user)->patchJson("/api/events/{$eventId}/groups/reorder", [])
+        Passport::actingAs($user);
+
+        $this->patchJson("/api/events/{$eventId}/groups/reorder", [])
             ->assertStatus(410)
             ->assertJson(['message' => 'The requested resource has been pruned and is no longer available.']);
     }
@@ -113,7 +116,9 @@ class PrunedEventTest extends TestCase
 
         PrunedModel::create(['id' => $eventId, 'type' => Event::class]);
 
-        $this->actingAs($user)->patch("/api/events/{$eventId}/groups/reorder")
+        Passport::actingAs($user);
+
+        $this->patch("/api/events/{$eventId}/groups/reorder")
             ->assertStatus(410)
             ->assertJson(['message' => 'The requested resource has been pruned and is no longer available.']);
     }

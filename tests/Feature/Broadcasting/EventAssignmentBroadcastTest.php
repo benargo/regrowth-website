@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\BroadcastableModelEventOccurred;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
+use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -86,7 +87,9 @@ class EventAssignmentBroadcastTest extends TestCase
 
         Queue::fake();
 
-        $this->actingAs($user)->postJson(route('api.events.assignments.store', $event), [
+        Passport::actingAs($user);
+
+        $this->postJson(route('api.events.assignments.store', $event), [
             'group_id' => $group->id,
             'boss_id' => null,
         ])->assertCreated();
@@ -108,7 +111,9 @@ class EventAssignmentBroadcastTest extends TestCase
 
         Queue::fake();
 
-        $this->actingAs($user)->patchJson(
+        Passport::actingAs($user);
+
+        $this->patchJson(
             route('api.events.assignments.update', [$event, $assignment]),
             ['left_value' => 'Tank'],
         )->assertNoContent();
@@ -132,7 +137,9 @@ class EventAssignmentBroadcastTest extends TestCase
 
         \Illuminate\Support\Facades\Event::fake([BroadcastableModelEventOccurred::class]);
 
-        $this->actingAs($user)->deleteJson(
+        Passport::actingAs($user);
+
+        $this->deleteJson(
             route('api.events.assignments.destroy', [$event, $assignment]),
         )->assertNoContent();
 
@@ -201,7 +208,9 @@ class EventAssignmentBroadcastTest extends TestCase
 
         Queue::fake();
 
-        $this->actingAs($user)->postJson(route('api.events.groups.store', $event), [
+        Passport::actingAs($user);
+
+        $this->postJson(route('api.events.groups.store', $event), [
             'name' => 'New group',
         ])->assertCreated();
 
@@ -225,7 +234,9 @@ class EventAssignmentBroadcastTest extends TestCase
 
         Queue::fake();
 
-        $this->actingAs($user)->patchJson(
+        Passport::actingAs($user);
+
+        $this->patchJson(
             route('api.events.assignments.reorder', $event),
             ['order' => [$b->id, $a->id]],
         )->assertNoContent();
@@ -248,7 +259,9 @@ class EventAssignmentBroadcastTest extends TestCase
 
         Queue::fake();
 
-        $this->actingAs($user)->patchJson(
+        Passport::actingAs($user);
+
+        $this->patchJson(
             route('api.events.groups.reorder', $event),
             ['order' => [$g2->id, $g1->id]],
         )->assertNoContent();

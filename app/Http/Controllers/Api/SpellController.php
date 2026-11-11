@@ -15,7 +15,7 @@ class SpellController extends Controller
     /**
      * Store a newly created spell.
      */
-    #[Middleware('auth:sanctum')]
+    #[Middleware('auth:api')]
     #[Authorize('create', Spell::class)]
     public function store(CreateSpellRequest $request): JsonResponse
     {

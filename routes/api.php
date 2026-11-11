@@ -22,13 +22,13 @@ Route::prefix('/raidhelper')->group(function () {
     Route::post('/comp-update', UpdateCompositionController::class);
 });
 
-Route::middleware(['auth:sanctum'])->prefix('/discord')->group(function () {
+Route::middleware(['auth:api'])->prefix('/discord')->group(function () {
     Route::post('/members/{member}/resolve', ResolveDiscordMemberController::class)
         ->whereNumber('member')
         ->name('api.discord.members.resolve');
 });
 
-Route::middleware(['auth:sanctum'])->prefix('/events/{event}')->group(function () {
+Route::middleware(['auth:api'])->prefix('/events/{event}')->group(function () {
     // reorder must be registered before {group}/{assignment} to avoid treating "reorder" as a model ID
     Route::patch('/groups/reorder', [EventGroupController::class, 'reorder'])->name('api.events.groups.reorder');
     Route::post('/groups', [EventGroupController::class, 'store'])->name('api.events.groups.store');

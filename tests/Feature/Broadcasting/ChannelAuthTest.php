@@ -9,6 +9,8 @@ use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Contracts\Broadcasting\Broadcaster;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
+use Laravel\Passport\ApiTokenCookieFactory;
+use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -46,6 +48,23 @@ class ChannelAuthTest extends TestCase
         $event = Event::factory()->create();
 
         $this->authChannel($user, "private-event.{$event->id}")->assertOk();
+    }
+
+    #[Test]
+    public function user_can_join_private_event_channel_with_the_laravel_token_cookie(): void
+    {
+        $user = User::factory()->create();
+        $event = Event::factory()->create();
+        $apiToken = app(ApiTokenCookieFactory::class)->make($user->getKey(), 'csrf-token')->getValue();
+
+        $this->withCookie(Passport::cookie(), $apiToken)
+            ->withCredentials()
+            ->withHeader('X-CSRF-TOKEN', 'csrf-token')
+            ->postJson('/api/broadcasting/auth', [
+                'socket_id' => '123.456',
+                'channel_name' => "private-event.{$event->id}",
+            ])
+            ->assertOk();
     }
 
     #[Group('authorization')]
@@ -141,7 +160,9 @@ class ChannelAuthTest extends TestCase
 
     private function authChannel(User $user, string $channel): TestResponse
     {
-        return $this->actingAs($user)->postJson('/api/broadcasting/auth', [
+        Passport::actingAs($user);
+
+        return $this->postJson('/api/broadcasting/auth', [
             'socket_id' => '123.456',
             'channel_name' => $channel,
         ]);

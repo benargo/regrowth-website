@@ -6,6 +6,7 @@ use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
@@ -41,7 +42,9 @@ class SpellControllerTest extends TestCase
         $user = User::factory()->create();
         $user->discordRoles()->attach($this->editorRole->id);
 
-        $response = $this->actingAs($user)->postJson(route('api.spells.store'), [
+        Passport::actingAs($user);
+
+        $response = $this->postJson(route('api.spells.store'), [
             'name' => 'Avenging Wrath',
             'type' => 'Magic',
         ]);
@@ -57,7 +60,9 @@ class SpellControllerTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->postJson(route('api.spells.store'), [
+        Passport::actingAs($user);
+
+        $response = $this->postJson(route('api.spells.store'), [
             'name' => 'Avenging Wrath',
             'type' => 'Magic',
         ]);
@@ -72,7 +77,9 @@ class SpellControllerTest extends TestCase
         $user = User::factory()->create();
         $user->discordRoles()->attach($this->editorRole->id);
 
-        $response = $this->actingAs($user)->postJson(route('api.spells.store'), [
+        Passport::actingAs($user);
+
+        $response = $this->postJson(route('api.spells.store'), [
             'type' => 'Magic',
         ]);
 
@@ -87,7 +94,9 @@ class SpellControllerTest extends TestCase
         $user = User::factory()->create();
         $user->discordRoles()->attach($this->editorRole->id);
 
-        $response = $this->actingAs($user)->postJson(route('api.spells.store'), [
+        Passport::actingAs($user);
+
+        $response = $this->postJson(route('api.spells.store'), [
             'name' => 'Avenging Wrath',
             'type' => 'InvalidType',
         ]);
