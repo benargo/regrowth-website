@@ -6,6 +6,9 @@
 .graphifyignore
 .phpactor.json
 .phpunit.result.cache
+.playwright
+.playwright-cli
+.playwright-mcp
 /.archives
 /.claude/worktrees
 /.engram
@@ -13,9 +16,6 @@
 /.idea
 /.nova
 /.phpunit.cache
-/.playwright
-/.playwright-cli
-/.playwright-mcp
 /.superpowers
 /.vscode
 /.zed
