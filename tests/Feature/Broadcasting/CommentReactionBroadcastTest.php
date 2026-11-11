@@ -71,7 +71,7 @@ class CommentReactionBroadcastTest extends TestCase
 
     #[Test]
     #[Group('contract')]
-    public function comment_reaction_changed_deleted_payload_omits_the_reaction(): void
+    public function comment_reaction_changed_deleted_payload_carries_only_the_reaction_id(): void
     {
         $comment = $this->commentOn(Item::factory()->create());
         $reaction = CommentReaction::factory()->forComment($comment)->create();
@@ -79,7 +79,7 @@ class CommentReactionBroadcastTest extends TestCase
         $payload = (new CommentReactionChanged($reaction, 'deleted'))->broadcastWith();
 
         $this->assertEquals(
-            ['comment_id' => $comment->id, 'action' => 'deleted'],
+            ['comment_id' => $comment->id, 'action' => 'deleted', 'reaction_id' => $reaction->id],
             $payload,
         );
         $this->assertArrayNotHasKey('reaction', $payload);

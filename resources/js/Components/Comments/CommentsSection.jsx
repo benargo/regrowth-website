@@ -257,7 +257,7 @@ export default function CommentsSection({ comments, replies, itemId, registerBro
         (commentId) => {
             setError(null);
             http.setData({ comment_id: commentId });
-            http.post(route("api.comments.reactions.store"), {
+            http.post(route("loot.comments.reactions.store"), {
                 headers: socketHeaders,
                 onSuccess: (response) => {
                     updateCommentEverywhere(commentId, (comment) => ({
@@ -275,7 +275,7 @@ export default function CommentsSection({ comments, replies, itemId, registerBro
         (commentId, reactionId) => {
             setError(null);
             http.setData({});
-            http.delete(route("api.comments.reactions.destroy", { reaction: reactionId }), {
+            http.delete(route("loot.comments.reactions.destroy", { reaction: reactionId }), {
                 headers: socketHeaders,
                 onSuccess: () => {
                     updateCommentEverywhere(commentId, (comment) => ({
@@ -410,7 +410,7 @@ export default function CommentsSection({ comments, replies, itemId, registerBro
 
                 return {
                     ...comment,
-                    reactions: comment.reactions.filter((reaction) => reaction.id !== payload.reaction?.id),
+                    reactions: comment.reactions.filter((reaction) => reaction.id !== payload.reaction_id),
                 };
             });
         },

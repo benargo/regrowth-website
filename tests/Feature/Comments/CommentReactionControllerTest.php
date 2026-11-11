@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Api;
+namespace Tests\Feature\Comments;
 
 use App\Events\Broadcasts\CommentReactionChanged;
 use App\Models\Boss;
@@ -51,7 +51,7 @@ class CommentReactionControllerTest extends TestCase
     {
         $comment = $this->createComment(User::factory()->raider()->create());
 
-        $response = $this->postJson(route('api.comments.reactions.store'), ['comment_id' => $comment->id]);
+        $response = $this->postJson(route('loot.comments.reactions.store'), ['comment_id' => $comment->id]);
 
         $response->assertUnauthorized();
         $this->assertDatabaseCount('pivot_comments_reactions', 0);
@@ -64,7 +64,7 @@ class CommentReactionControllerTest extends TestCase
         $reactingUser = User::factory()->raider()->create();
 
         $response = $this->actingAs($reactingUser)
-            ->postJson(route('api.comments.reactions.store'), ['comment_id' => $comment->id]);
+            ->postJson(route('loot.comments.reactions.store'), ['comment_id' => $comment->id]);
 
         $response->assertCreated();
         $this->assertDatabaseHas('pivot_comments_reactions', [
@@ -80,7 +80,7 @@ class CommentReactionControllerTest extends TestCase
         $memberUser = User::factory()->member()->create();
 
         $response = $this->actingAs($memberUser)
-            ->postJson(route('api.comments.reactions.store'), ['comment_id' => $comment->id]);
+            ->postJson(route('loot.comments.reactions.store'), ['comment_id' => $comment->id]);
 
         $response->assertCreated();
         $this->assertDatabaseHas('pivot_comments_reactions', [
@@ -96,7 +96,7 @@ class CommentReactionControllerTest extends TestCase
         $officerUser = User::factory()->officer()->create();
 
         $response = $this->actingAs($officerUser)
-            ->postJson(route('api.comments.reactions.store'), ['comment_id' => $comment->id]);
+            ->postJson(route('loot.comments.reactions.store'), ['comment_id' => $comment->id]);
 
         $response->assertCreated();
         $this->assertDatabaseHas('pivot_comments_reactions', [
@@ -113,7 +113,7 @@ class CommentReactionControllerTest extends TestCase
         $comment = $this->createComment($user);
 
         $response = $this->actingAs($user)
-            ->postJson(route('api.comments.reactions.store'), ['comment_id' => $comment->id]);
+            ->postJson(route('loot.comments.reactions.store'), ['comment_id' => $comment->id]);
 
         $response->assertForbidden();
         $this->assertDatabaseMissing('pivot_comments_reactions', [
@@ -130,7 +130,7 @@ class CommentReactionControllerTest extends TestCase
         $guestUser = User::factory()->guest()->create();
 
         $response = $this->actingAs($guestUser)
-            ->postJson(route('api.comments.reactions.store'), ['comment_id' => $comment->id]);
+            ->postJson(route('loot.comments.reactions.store'), ['comment_id' => $comment->id]);
 
         $response->assertForbidden();
         $this->assertDatabaseMissing('pivot_comments_reactions', [
@@ -147,7 +147,7 @@ class CommentReactionControllerTest extends TestCase
     {
         $user = User::factory()->raider()->create();
 
-        $response = $this->actingAs($user)->postJson(route('api.comments.reactions.store'), []);
+        $response = $this->actingAs($user)->postJson(route('loot.comments.reactions.store'), []);
 
         $response->assertForbidden();
         $this->assertDatabaseCount('pivot_comments_reactions', 0);
@@ -160,7 +160,7 @@ class CommentReactionControllerTest extends TestCase
         $user = User::factory()->raider()->create();
 
         $response = $this->actingAs($user)
-            ->postJson(route('api.comments.reactions.store'), ['comment_id' => 999999]);
+            ->postJson(route('loot.comments.reactions.store'), ['comment_id' => 999999]);
 
         $response->assertForbidden();
         $this->assertDatabaseCount('pivot_comments_reactions', 0);
@@ -175,7 +175,7 @@ class CommentReactionControllerTest extends TestCase
         $reactingUser = User::factory()->raider()->create();
 
         $response = $this->actingAs($reactingUser)
-            ->postJson(route('api.comments.reactions.store'), ['comment_id' => $comment->id]);
+            ->postJson(route('loot.comments.reactions.store'), ['comment_id' => $comment->id]);
 
         $response->assertCreated();
         $response->assertJsonStructure(['data' => ['id', 'comment_id', 'user', 'created_at']]);
@@ -195,7 +195,7 @@ class CommentReactionControllerTest extends TestCase
             ->byUser(User::factory()->raider()->create())
             ->create();
 
-        $response = $this->deleteJson(route('api.comments.reactions.destroy', $reaction));
+        $response = $this->deleteJson(route('loot.comments.reactions.destroy', $reaction));
 
         $response->assertUnauthorized();
         $this->assertDatabaseHas('pivot_comments_reactions', ['id' => $reaction->id]);
@@ -209,7 +209,7 @@ class CommentReactionControllerTest extends TestCase
         $reaction = CommentReaction::factory()->forComment($comment)->byUser($reactor)->create();
 
         $response = $this->actingAs($reactor)
-            ->deleteJson(route('api.comments.reactions.destroy', $reaction));
+            ->deleteJson(route('loot.comments.reactions.destroy', $reaction));
 
         $response->assertNoContent();
         $this->assertDatabaseMissing('pivot_comments_reactions', ['id' => $reaction->id]);
@@ -225,7 +225,7 @@ class CommentReactionControllerTest extends TestCase
         $reaction = CommentReaction::factory()->forComment($comment)->byUser($reactor)->create();
 
         $response = $this->actingAs($interloper)
-            ->deleteJson(route('api.comments.reactions.destroy', $reaction));
+            ->deleteJson(route('loot.comments.reactions.destroy', $reaction));
 
         $response->assertForbidden();
         $this->assertDatabaseHas('pivot_comments_reactions', [
@@ -244,7 +244,7 @@ class CommentReactionControllerTest extends TestCase
         $reaction = CommentReaction::factory()->forComment($comment)->byUser($reactor)->create();
 
         $response = $this->actingAs($officer)
-            ->deleteJson(route('api.comments.reactions.destroy', $reaction));
+            ->deleteJson(route('loot.comments.reactions.destroy', $reaction));
 
         $response->assertForbidden();
         $this->assertDatabaseHas('pivot_comments_reactions', ['id' => $reaction->id]);
@@ -269,7 +269,7 @@ class CommentReactionControllerTest extends TestCase
 
         $this->actingAs($reactor)
             ->withHeader('X-Socket-ID', 'test-socket-id')
-            ->postJson(route('api.comments.reactions.store'), ['comment_id' => $comment->id])
+            ->postJson(route('loot.comments.reactions.store'), ['comment_id' => $comment->id])
             ->assertCreated();
 
         Event::assertDispatched(
@@ -298,7 +298,7 @@ class CommentReactionControllerTest extends TestCase
 
         $this->actingAs($reactor)
             ->withHeader('X-Socket-ID', 'test-socket-id')
-            ->deleteJson(route('api.comments.reactions.destroy', $reaction))
+            ->deleteJson(route('loot.comments.reactions.destroy', $reaction))
             ->assertNoContent();
 
         Event::assertDispatched(
@@ -319,7 +319,7 @@ class CommentReactionControllerTest extends TestCase
         $reaction = CommentReaction::factory()->forComment($comment)->byUser($reactor)->create();
 
         $this->actingAs($reactor)
-            ->deleteJson(route('api.comments.reactions.destroy', $reaction))
+            ->deleteJson(route('loot.comments.reactions.destroy', $reaction))
             ->assertNoContent();
 
         $this->assertDatabaseMissing('pivot_comments_reactions', ['id' => $reaction->id]);

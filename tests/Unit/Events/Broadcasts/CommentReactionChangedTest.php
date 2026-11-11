@@ -75,16 +75,17 @@ class CommentReactionChangedTest extends TestCase
 
     #[Test]
     #[Group('contract')]
-    public function it_omits_the_reaction_from_a_deleted_payload(): void
+    public function it_sends_only_the_reaction_id_in_a_deleted_payload(): void
     {
         $comment = $this->commentOn($this->itemWithId(1));
         $comment->id = 9;
         $reaction = $this->reactionOn($comment);
+        $reaction->id = 42;
 
         $payload = (new CommentReactionChanged($reaction, 'deleted'))->broadcastWith();
 
         $this->assertSame(
-            ['comment_id' => 9, 'action' => 'deleted'],
+            ['comment_id' => 9, 'action' => 'deleted', 'reaction_id' => 42],
             $payload,
         );
     }

@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Api\BlizzardMediaController;
-use App\Http\Controllers\Api\CommentReactionController;
 use App\Http\Controllers\Api\Discord\ResolveDiscordMemberController;
 use App\Http\Controllers\Api\Event\PublishAssignmentsController;
 use App\Http\Controllers\Api\EventAssignmentController;
@@ -24,14 +23,6 @@ Route::prefix('/raidhelper')->group(function () {
     Route::post('/event-update', SyncEventController::class);
     Route::post('/event-delete', DeleteEventController::class);
     Route::post('/comp-update', UpdateCompositionController::class);
-});
-
-Route::middleware(['auth:sanctum'])->prefix('/comments')->group(function () {
-    Route::post('/reactions', [CommentReactionController::class, 'store'])
-        ->name('api.comments.reactions.store');
-    Route::delete('/reactions/{reaction}', [CommentReactionController::class, 'destroy'])
-        ->whereNumber('reaction')
-        ->name('api.comments.reactions.destroy');
 });
 
 Route::middleware(['auth:sanctum'])->prefix('/discord')->group(function () {

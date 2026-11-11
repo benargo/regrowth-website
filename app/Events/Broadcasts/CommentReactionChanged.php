@@ -48,7 +48,10 @@ class CommentReactionChanged implements ShouldBroadcastNow
     }
 
     /**
-     * @return array<string, mixed>
+     * Build the payload: the full reaction resource when created, or only its
+     * `reaction_id` when deleted.
+     *
+     * @return array{comment_id: int, action: string, reaction?: array<string, mixed>, reaction_id?: int}
      */
     public function broadcastWith(): array
     {
@@ -59,6 +62,8 @@ class CommentReactionChanged implements ShouldBroadcastNow
 
         if ($this->action === 'created') {
             $payload['reaction'] = (new CommentReactionResource($this->reaction))->resolve();
+        } else {
+            $payload['reaction_id'] = $this->reaction->id;
         }
 
         return $payload;

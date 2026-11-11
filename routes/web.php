@@ -13,6 +13,7 @@ use App\Http\Controllers\AttendanceMatrixController;
 use App\Http\Controllers\BossController;
 use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\CommentReactionController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\DiscordRoleController;
 use App\Http\Controllers\Dashboard\PermissionAccessController;
@@ -109,6 +110,8 @@ Route::group(['prefix' => 'loot', 'as' => 'loot.'], function () use ($raidAndBos
     Route::post('/comments', [CommentController::class, 'store'])->name('comments.store');
     Route::patch('/comments/{comment}', [CommentController::class, 'update'])->whereNumber('comment')->name('comments.update');
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->whereNumber('comment')->name('comments.destroy');
+    Route::post('/comments/reactions', [CommentReactionController::class, 'store'])->name('comments.reactions.store');
+    Route::delete('/comments/reactions/{reaction}', [CommentReactionController::class, 'destroy'])->whereNumber('reaction')->name('comments.reactions.destroy');
     Route::patch('/items/{item}', [ItemController::class, 'update'])->name('items.update');
     Route::get('/items/{item}/{slug?}', [ItemController::class, 'show'])->name('items.show');
     Route::get('/items/{item}/{slug}/edit', [ItemController::class, 'edit'])->name('items.edit');
