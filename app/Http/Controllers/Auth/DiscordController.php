@@ -14,9 +14,11 @@ use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Laravel\Passport\Passport;
 use Laravel\Socialite\Facades\Socialite;
 use Saloon\Exceptions\Request\FatalRequestException;
 use Symfony\Component\HttpFoundation\Response;
@@ -87,11 +89,13 @@ class DiscordController extends Controller implements HoldsPendingGuildJoin
     }
 
     /**
-     * Log the user out.
+     * Log the user out and clear the Passport API token cookie.
      */
     public function destroy(): RedirectResponse
     {
         Auth::logout();
+
+        Cookie::queue(Cookie::forget(Passport::cookie()));
 
         session()->invalidate();
         session()->regenerateToken();

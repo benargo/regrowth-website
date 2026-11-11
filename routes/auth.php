@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\ApiTokenController;
 use App\Http\Controllers\Auth\BattleNetController;
 use App\Http\Controllers\Auth\DiscordController;
 use App\Http\Controllers\Auth\LocalLoginController;
@@ -24,6 +25,14 @@ Route::middleware('auth')->group(function () {
     Route::post('logout', [DiscordController::class, 'destroy'])
         ->name('logout');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Passport API Token Refresh
+|--------------------------------------------------------------------------
+*/
+Route::get('auth/api-token', ApiTokenController::class)
+    ->name('auth.api-token');
 
 /*
 |--------------------------------------------------------------------------
