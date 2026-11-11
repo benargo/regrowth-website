@@ -19,7 +19,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
-use Laravel\Sanctum\HasApiTokens;
+use Laravel\Passport\Contracts\OAuthenticatable;
+use Laravel\Passport\HasApiTokens;
 use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -28,7 +29,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 #[ObservedBy([UserObserver::class])]
 #[Hidden(['username', 'discriminator', 'remember_token', 'is_admin', 'created_at', 'updated_at'])]
 #[Table(keyType: 'string', incrementing: false)]
-class User extends Authenticatable implements HasDiscordAvatars, HasMedia
+class User extends Authenticatable implements HasDiscordAvatars, HasMedia, OAuthenticatable
 {
     use HasApiTokens;
 

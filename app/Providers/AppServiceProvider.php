@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Passport\Passport;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,6 +30,11 @@ class AppServiceProvider extends ServiceProvider
          * Event boss resolution
          */
         $this->app->singleton(EventBossResolver::class);
+
+        /**
+         * Passport OAuth server routes
+         */
+        Passport::ignoreRoutes();
     }
 
     /**
