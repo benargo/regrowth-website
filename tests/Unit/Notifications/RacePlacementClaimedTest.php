@@ -108,6 +108,17 @@ class RacePlacementClaimedTest extends TestCase
     }
 
     #[Test]
+    public function it_names_the_holder_by_full_name(): void
+    {
+        $character = Character::factory()->withSurname('Stormrage')->create(['name' => 'Thrall']);
+        $placement = RacePlacement::factory()->create(['character_id' => $character->id, 'position' => 1]);
+
+        $embed = $this->embedFor($placement);
+
+        $this->assertStringContainsString('Thrall Stormrage', $embed->title);
+    }
+
+    #[Test]
     public function it_names_the_class_in_the_description(): void
     {
         $character = Character::factory()
@@ -148,6 +159,20 @@ class RacePlacementClaimedTest extends TestCase
         $embed = $this->embedForMany($this->tiedPlacements());
 
         $this->assertSame('Gold: Aelin and Borin share first to level 60!', $embed->title);
+    }
+
+    #[Test]
+    public function it_orders_tied_characters_sharing_a_first_name_by_surname(): void
+    {
+        $huntington = Character::factory()->withSurname('Huntington')->create(['id' => 9001, 'name' => 'Awak']);
+        $blastington = Character::factory()->withSurname('Blastington')->create(['id' => 9002, 'name' => 'Awak']);
+
+        $embed = $this->embedForMany([
+            RacePlacement::factory()->create(['character_id' => $huntington->id, 'position' => 1]),
+            RacePlacement::factory()->create(['character_id' => $blastington->id, 'position' => 1]),
+        ]);
+
+        $this->assertSame('Gold: Awak Blastington and Awak Huntington share first to level 60!', $embed->title);
     }
 
     #[Test]

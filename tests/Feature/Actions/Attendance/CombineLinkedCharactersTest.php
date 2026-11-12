@@ -168,6 +168,27 @@ class CombineLinkedCharactersTest extends TestCase
     }
 
     #[Test]
+    public function it_lists_full_names_of_attending_characters(): void
+    {
+        $main = $this->createCharacter($this->gameVersion, $this->rank, ['name' => 'Thrall', 'surname' => 'Stormrage', 'is_main' => true]);
+
+        $rows = $this->combine([$this->row($main, [Presence::Present])], raidCount: 1);
+
+        $this->assertSame([['Thrall Stormrage']], $rows[0]->attendanceNames);
+    }
+
+    #[Test]
+    public function it_sorts_rows_sharing_a_first_name_by_surname(): void
+    {
+        $huntington = $this->createCharacter($this->gameVersion, $this->rank, ['id' => 9001, 'name' => 'Awak', 'surname' => 'Huntington', 'is_main' => true]);
+        $blastington = $this->createCharacter($this->gameVersion, $this->rank, ['id' => 9002, 'name' => 'Awak', 'surname' => 'Blastington', 'is_main' => true]);
+
+        $rows = $this->combine([$this->row($huntington, [Presence::Present]), $this->row($blastington, [Presence::Present])], raidCount: 1);
+
+        $this->assertSame(['Awak Blastington', 'Awak Huntington'], $rows->map(fn ($row) => $row->character->full_name)->all());
+    }
+
+    #[Test]
     public function it_does_not_carry_alts_into_later_calls_on_the_same_instance(): void
     {
         [$main, $alt] = $this->mainWithAlt();

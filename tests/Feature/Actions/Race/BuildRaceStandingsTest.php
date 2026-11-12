@@ -189,6 +189,34 @@ class BuildRaceStandingsTest extends TestCase
     }
 
     #[Test]
+    public function it_breaks_placement_ties_by_surname(): void
+    {
+        $huntington = Character::factory()->forGameVersion($this->version)->create(['id' => 9001, 'level' => 60, 'name' => 'Awak', 'surname' => 'Huntington']);
+        $blastington = Character::factory()->forGameVersion($this->version)->create(['id' => 9002, 'level' => 60, 'name' => 'Awak', 'surname' => 'Blastington']);
+        $this->place($huntington, 1);
+        $this->place($blastington, 1);
+
+        $placements = $this->standings()['placements']->resolve();
+
+        $this->assertSame(
+            [$blastington->id, $huntington->id],
+            array_map(fn (array $placement): int => $placement['character']->resolve()['id'], $placements),
+        );
+    }
+
+    #[Test]
+    public function it_breaks_pack_and_racer_level_ties_by_surname(): void
+    {
+        $huntington = Character::factory()->forGameVersion($this->version)->create(['id' => 9001, 'level' => 30, 'name' => 'Awak', 'surname' => 'Huntington']);
+        $blastington = Character::factory()->forGameVersion($this->version)->create(['id' => 9002, 'level' => 30, 'name' => 'Awak', 'surname' => 'Blastington']);
+
+        $standings = $this->standings();
+
+        $this->assertSame([$blastington->id, $huntington->id], array_column($standings['pack']->resolve(), 'id'));
+        $this->assertSame([$blastington->id, $huntington->id], array_column($standings['racers']->resolve(), 'id'));
+    }
+
+    #[Test]
     public function it_serialises_the_reach_time_as_an_iso_8601_string(): void
     {
         $this->freezeSecond();

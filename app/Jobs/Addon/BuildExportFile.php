@@ -196,7 +196,7 @@ class BuildExportFile implements ShouldBeUniqueUntilProcessing, ShouldQueue
 
         return BuildAttendanceMatrix::run($gameVersion)->rows->map(fn (CharacterAttendanceData $row): array => [
             'id' => $row->character->id,
-            'name' => $row->character->name,
+            'name' => $row->character->full_name,
             'attendance' => [
                 'first_attendance' => $row->firstAttendance->unix(),
                 'attended' => $row->reportsAttended,
@@ -213,11 +213,11 @@ class BuildExportFile implements ShouldBeUniqueUntilProcessing, ShouldQueue
     {
         return $gameVersion->characters()->where('is_loot_councillor', true)
             ->with('rank')
-            ->orderBy('name')
+            ->orderBy('name')->orderBy('surname')
             ->get()
             ->map(fn (Character $character): array => [
                 'id' => $character->id,
-                'name' => $character->name,
+                'name' => $character->full_name,
                 'rank' => $character->rank?->name,
             ]);
     }

@@ -115,7 +115,7 @@ class BuildAttendanceMatrix
                 $clusters->search(fn (ReportClusterData $cluster): bool => $cluster->players->has($character->id)),
                 $absencesByCharacterId->get($character->id, collect()),
             ))
-            ->sortBy(fn (CharacterAttendanceData $row): string => $row->character->name, SORT_STRING)
+            ->sortBy(fn (CharacterAttendanceData $row): string => $row->character->full_name, SORT_STRING)
             ->values();
     }
 
