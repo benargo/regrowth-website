@@ -49,9 +49,10 @@ class RacePlacementClaimed extends DiscordNotification
 
         $names = $placements->map(fn (RacePlacement $placement) => $placement->character->full_name)->all();
         $phrases = $placements->map(function (RacePlacement $placement): string {
+            $fullName = $placement->character->full_name;
             $className = $placement->character->playableClass?->name;
 
-            return $className !== null ? "{$placement->character->full_name}, the {$className}" : $placement->character->full_name;
+            return $className !== null ? "{$fullName}, the {$className}" : $fullName;
         });
 
         if ($placements->count() === 1) {
