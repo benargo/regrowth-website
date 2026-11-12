@@ -51,7 +51,7 @@ class GuildRosterMemberCollection extends ResourceCollection
             ->sortBy([
                 fn (GuildRosterMemberData $a, GuildRosterMemberData $b) => $a->rank <=> $b->rank,
                 fn (GuildRosterMemberData $a, GuildRosterMemberData $b) => $b->character->level <=> $a->character->level,
-                fn (GuildRosterMemberData $a, GuildRosterMemberData $b) => $a->character->fullName() <=> $b->character->fullName(),
+                fn (GuildRosterMemberData $a, GuildRosterMemberData $b) => $a->character->nameForVersion($this->usesSurnames) <=> $b->character->nameForVersion($this->usesSurnames),
             ])
             ->map(function (GuildRosterMemberData $member) use ($request) {
                 $character = $this->knownCharacters->get($member->character->id);

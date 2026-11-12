@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -95,7 +96,7 @@ class SplitCharacterSurnames extends Command
 
     /**
      * Write each change to the characters table inside one transaction, showing a
-     * progress bar.
+     * progress bar, then flush the character and attendance caches.
      *
      * @param  list<array<int, mixed>>  $changes
      */
@@ -110,6 +111,8 @@ class SplitCharacterSurnames extends Command
                 DB::table('characters')->where('id', $change[0])->update($values);
             });
         });
+
+        Cache::tags(['characters', 'attendance'])->flush();
 
         $this->newLine();
     }
