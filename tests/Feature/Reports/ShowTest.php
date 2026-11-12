@@ -409,13 +409,14 @@ class ShowTest extends TestCase
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->create();
         $playableClass = PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
-        Character::factory()->lootCouncillor()->withPlayableClass($playableClass)->create(['name' => 'Alice']);
+        Character::factory()->lootCouncillor()->withPlayableClass($playableClass)->create(['name' => 'Thrall', 'surname' => 'Stormrage']);
 
         $this->actingAs($user)
             ->get(route('raiding.reports.show', $report))
             ->assertInertia(fn (Assert $page) => $page
                 ->reloadOnly('lootCouncillorCandidates', fn (Assert $reload) => $reload
                     ->has('lootCouncillorCandidates', 1)
+                    ->where('lootCouncillorCandidates.0.full_name', 'Thrall Stormrage')
                     ->has('lootCouncillorCandidates.0.playable_class')
                     ->where('lootCouncillorCandidates.0.playable_class.id', 1)
                     ->where('lootCouncillorCandidates.0.playable_class.name', 'Warrior')

@@ -83,7 +83,9 @@ class GuildRosterMemberCollectionTest extends TestCase
 
         $result = (new GuildRosterMemberCollection([$this->makeMember(name: 'Zar', surname: 'Darkguard')], $this->gameVersion))->toArray(new Request);
 
-        $this->assertSame('Zar Darkguard', $result[0]['character']['name']);
+        $this->assertSame('Zar', $result[0]['character']['name']);
+        $this->assertSame('Darkguard', $result[0]['character']['surname']);
+        $this->assertSame('Zar Darkguard', $result[0]['character']['full_name']);
         $this->assertSame('zar-darkguard', $result[0]['character']['slug']);
     }
 
@@ -94,6 +96,8 @@ class GuildRosterMemberCollectionTest extends TestCase
         $result = (new GuildRosterMemberCollection([$this->makeMember(name: 'Zar', surname: 'Darkguard')], $this->gameVersion))->toArray(new Request);
 
         $this->assertSame('Zar', $result[0]['character']['name']);
+        $this->assertNull($result[0]['character']['surname']);
+        $this->assertSame('Zar', $result[0]['character']['full_name']);
         $this->assertSame('zar', $result[0]['character']['slug']);
     }
 
@@ -248,6 +252,19 @@ class GuildRosterMemberCollectionTest extends TestCase
     }
 
     // ==================== sort order ====================
+
+    #[Test]
+    public function it_sorts_characters_sharing_a_first_name_by_surname(): void
+    {
+        $this->gameVersion->update(['uses_surnames' => true]);
+
+        $result = (new GuildRosterMemberCollection([
+            $this->makeMember(id: 1, name: 'Awak', surname: 'Huntington'),
+            $this->makeMember(id: 2, name: 'Awak', surname: 'Blastington'),
+        ], $this->gameVersion))->toArray(new Request);
+
+        $this->assertSame(['Blastington', 'Huntington'], array_column(array_column($result, 'character'), 'surname'));
+    }
 
     #[Group('contract')]
     #[Test]

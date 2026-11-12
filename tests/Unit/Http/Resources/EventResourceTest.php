@@ -289,6 +289,8 @@ class EventResourceTest extends TestCase
         $char = $group['characters'][0];
         $this->assertSame($character->id, $char['id']);
         $this->assertSame($character->name, $char['name']);
+        $this->assertSame($character->full_name, $char['full_name']);
+        $this->assertSame($character->surname, $char['surname']);
         $this->assertArrayHasKey('playable_class', $char);
         $this->assertArrayHasKey('rank', $char);
         $this->assertArrayHasKey('name', $char['rank']);
@@ -409,6 +411,36 @@ class EventResourceTest extends TestCase
 
         $this->assertCount(1, $array['composition']['bench']);
         $this->assertSame($benchedChar->name, $array['composition']['bench'][0]['name']);
+    }
+
+    #[Test]
+    public function it_returns_the_surname_and_full_name_for_group_and_bench_characters(): void
+    {
+        $raid = Raid::factory()->create(['max_players' => 10]);
+        $event = Event::factory()->hasAttached($raid, [], 'raids')->create();
+        $grouped = Character::factory()->withRank()->withSurname('Stormrage')->create(['name' => 'Thrall']);
+        $benched = Character::factory()->withRank()->withSurname('Stormrage')->create(['name' => 'Jaina']);
+        $event->characters()->attach($grouped->id, [
+            'slot_number' => 1,
+            'group_number' => 1,
+            'signup_status' => SignupStatus::Confirmed->value,
+            'is_leader' => false,
+            'is_loot_councillor' => false,
+            'is_loot_master' => false,
+        ]);
+        $event->characters()->attach($benched->id, [
+            'slot_number' => null,
+            'group_number' => null,
+            'signup_status' => SignupStatus::Unconfirmed->value,
+            'is_benched' => true,
+        ]);
+
+        $array = $this->makeResource($event);
+
+        $this->assertSame('Thrall Stormrage', $array['composition']['groups'][0]['characters'][0]['full_name']);
+        $this->assertSame('Stormrage', $array['composition']['groups'][0]['characters'][0]['surname']);
+        $this->assertSame('Jaina Stormrage', $array['composition']['bench'][0]['full_name']);
+        $this->assertSame('Stormrage', $array['composition']['bench'][0]['surname']);
     }
 
     #[Test]

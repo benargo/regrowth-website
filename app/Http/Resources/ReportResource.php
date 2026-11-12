@@ -31,12 +31,14 @@ class ReportResource extends JsonResource
                 'name' => $this->guildTag->name,
             ]),
             'characters' => $this->whenLoaded('characters', fn ($characters) => $characters
-                ->sortBy('name')
+                ->sortBy('full_name')
                 ->values()
                 ->map(function ($character) use ($request) {
                     $data = [
                         'id' => $character->id,
                         'name' => $character->name,
+                        'surname' => $character->surname,
+                        'full_name' => $character->full_name,
                         'is_main' => $character->is_main,
                         'playable_class' => null,
                         'playable_race' => null,

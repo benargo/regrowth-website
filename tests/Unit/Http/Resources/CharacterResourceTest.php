@@ -39,7 +39,9 @@ class CharacterResourceTest extends TestCase
 
         $this->assertSame([
             'id',
+            'full_name',
             'name',
+            'surname',
             'slug',
             'level',
             'is_main',
@@ -437,6 +439,17 @@ class CharacterResourceTest extends TestCase
         $this->assertNull($array['user']);
     }
 
+    #[Test]
+    public function it_includes_the_surname_and_full_name(): void
+    {
+        $character = Character::factory()->withSurname('Stormrage')->create(['name' => 'Thrall']);
+
+        $array = (new CharacterResource($character))->toArray(new Request);
+
+        $this->assertSame('Thrall Stormrage', $array['full_name']);
+        $this->assertSame('Stormrage', $array['surname']);
+    }
+
     // ==================== race scope ====================
 
     #[Test]
@@ -448,8 +461,18 @@ class CharacterResourceTest extends TestCase
 
         $keys = array_keys($array);
         sort($keys);
-        $this->assertSame(['id', 'level', 'name', 'playable_class', 'portrait_url', 'shadow_avatar_url', 'slug'], $keys);
+        $this->assertSame(['full_name', 'id', 'level', 'name', 'playable_class', 'portrait_url', 'shadow_avatar_url', 'slug', 'surname'], $keys);
         $this->assertSame(['icon_url', 'id', 'name'], collect(array_keys($array['playable_class']))->sort()->values()->all());
+    }
+
+    #[Test]
+    public function the_race_scope_includes_the_full_name(): void
+    {
+        $character = Character::factory()->withSurname('Stormrage')->create(['name' => 'Thrall']);
+
+        $array = (new CharacterResource($character))->scope('race')->resolve(new Request);
+
+        $this->assertSame('Thrall Stormrage', $array['full_name']);
     }
 
     #[Test]
@@ -482,7 +505,17 @@ class CharacterResourceTest extends TestCase
 
         $array = (new CharacterResource($character))->scope('attendance')->resolve(new Request);
 
-        $this->assertSame(['id', 'name', 'playable_class', 'rank'], array_keys($array));
+        $this->assertSame(['id', 'full_name', 'name', 'surname', 'playable_class', 'rank'], array_keys($array));
+    }
+
+    #[Test]
+    public function the_attendance_scope_includes_the_full_name(): void
+    {
+        $character = Character::factory()->withSurname('Stormrage')->create(['name' => 'Thrall']);
+
+        $array = (new CharacterResource($character))->scope('attendance')->resolve(new Request);
+
+        $this->assertSame('Thrall Stormrage', $array['full_name']);
     }
 
     #[Test]
@@ -504,7 +537,7 @@ class CharacterResourceTest extends TestCase
 
         $array = (new CharacterResource($character))->scope('attendance')->resolve(new Request);
 
-        $this->assertSame(['id', 'name'], array_keys($array));
+        $this->assertSame(['id', 'full_name', 'name', 'surname'], array_keys($array));
     }
 
     /**

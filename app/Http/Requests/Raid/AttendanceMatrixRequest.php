@@ -148,12 +148,12 @@ class AttendanceMatrixRequest extends FormRequest
     /**
      * The filters as the Matrix page reads them. Id lists are null when their default applies.
      *
-     * @return array{character: array{id: int, name: string}|null, rank_ids: array<int, int>|null, zone_ids: array<int, int>|null, guild_tag_ids: array<int, int>|null, since_date: string|null, before_date: string|null, combine_linked_characters: bool}
+     * @return array{character: array{id: int, name: string, surname: string|null, full_name: string}|null, rank_ids: array<int, int>|null, zone_ids: array<int, int>|null, guild_tag_ids: array<int, int>|null, since_date: string|null, before_date: string|null, combine_linked_characters: bool}
      */
     public function filters(): array
     {
         return [
-            'character' => $this->displayedCharacter()?->only(['id', 'name']),
+            'character' => $this->displayedCharacter()?->only(['id', 'name', 'surname', 'full_name']),
             'rank_ids' => $this->rankIds(),
             'zone_ids' => $this->zoneIds(),
             'guild_tag_ids' => $this->guildTagIds(),
