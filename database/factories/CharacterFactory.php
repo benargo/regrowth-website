@@ -68,6 +68,16 @@ class CharacterFactory extends Factory
     }
 
     /**
+     * Indicate that the character has a surname, using the given value or a random last name.
+     */
+    public function withSurname(?string $surname = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'surname' => $surname ?? fake()->lastName(),
+        ]);
+    }
+
+    /**
      * Indicate that the character belongs to the given game version.
      */
     public function forGameVersion(GameVersion $gameVersion): static

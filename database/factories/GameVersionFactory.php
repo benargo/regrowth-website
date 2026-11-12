@@ -50,7 +50,7 @@ class GameVersionFactory extends Factory
 
     /**
      * Indicate that every character in this version has a surname, stored
-     * inside its name as "{name} {surname}".
+     * in its own `surname` column.
      */
     public function withSurnames(): static
     {

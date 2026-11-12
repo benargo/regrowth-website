@@ -40,6 +40,7 @@ class CharacterTest extends ModelTestCase
             'id',
             'game_version_id',
             'name',
+            'surname',
             'level',
             'rank_id',
             'playable_class_id',
@@ -152,6 +153,24 @@ class CharacterTest extends ModelTestCase
         $this->assertTrue($character->is_main);
     }
 
+    // ==================== full_name ====================
+
+    #[Test]
+    public function full_name_joins_the_name_and_surname(): void
+    {
+        $character = $this->factory()->make(['name' => 'Thrall', 'surname' => 'Stormrage']);
+
+        $this->assertSame('Thrall Stormrage', $character->full_name);
+    }
+
+    #[Test]
+    public function full_name_is_the_name_alone_without_a_surname(): void
+    {
+        $character = $this->factory()->make(['name' => 'Thrall', 'surname' => null]);
+
+        $this->assertSame('Thrall', $character->full_name);
+    }
+
     // ==================== slug ====================
 
     #[Test]
@@ -168,6 +187,24 @@ class CharacterTest extends ModelTestCase
         $character = $this->factory()->make(['name' => "Kael'thas"]);
 
         $this->assertSame('kaelthas', $character->slug);
+    }
+
+    #[Test]
+    public function slug_includes_the_surname(): void
+    {
+        $character = $this->factory()->make(['name' => 'Thrall', 'surname' => 'Stormrage']);
+
+        $this->assertSame('thrall-stormrage', $character->slug);
+    }
+
+    // ==================== surname ====================
+
+    #[Test]
+    public function it_creates_a_character_with_a_surname_from_the_factory(): void
+    {
+        $character = $this->factory()->withSurname('Stormrage')->create();
+
+        $this->assertSame('Stormrage', $character->surname);
     }
 
     // ==================== linked_characters ====================

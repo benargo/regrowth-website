@@ -23,7 +23,7 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 #[ObservedBy([CharacterObserver::class])]
-#[Fillable(['id', 'game_version_id', 'name', 'level', 'rank_id', 'playable_class_id', 'playable_race_id', 'gender', 'user_id', 'is_main', 'is_loot_councillor'])]
+#[Fillable(['id', 'game_version_id', 'name', 'surname', 'level', 'rank_id', 'playable_class_id', 'playable_race_id', 'gender', 'user_id', 'is_main', 'is_loot_councillor'])]
 #[Hidden(['created_at', 'updated_at'])]
 class Character extends Model implements HasCharacterMedia, HasMedia
 {
@@ -63,12 +63,22 @@ class Character extends Model implements HasCharacterMedia, HasMedia
     // ============ Custom attributes ============
 
     /**
-     * URL-safe slug derived from the character name; used in route bindings.
+     * The name followed by the surname, or the name alone when there is no surname.
+     */
+    protected function fullName(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->surname === null ? $this->name : "{$this->name} {$this->surname}",
+        );
+    }
+
+    /**
+     * URL-safe slug derived from the full name; used in route bindings.
      */
     protected function slug(): Attribute
     {
         return Attribute::make(
-            get: fn () => Str::slug($this->name),
+            get: fn () => Str::slug($this->full_name),
         );
     }
 
