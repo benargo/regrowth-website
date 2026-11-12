@@ -36,4 +36,16 @@ class GuildRosterCharacterData extends Data
     {
         return $usesSurnames ? $this->fullName() : $this->name;
     }
+
+    /**
+     * The surname when the game version uses surnames and the character has one, otherwise null.
+     */
+    public function surnameForVersion(bool $usesSurnames): ?string
+    {
+        if (! $usesSurnames || $this->surname instanceof Optional) {
+            return null;
+        }
+
+        return $this->surname;
+    }
 }

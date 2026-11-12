@@ -306,7 +306,7 @@ class ProcessUpload implements RequiresMinimumCharacterLevel, ShouldQueue
         $character = Character::query()->updateOrCreate(
             ['id' => $characterId],
             [
-                'name' => $name,
+                ...$this->splitName($name, $gameVersion),
                 'is_main' => strtolower($mainAlt) === 'main',
                 'game_version_id' => $gameVersion->id,
             ]
@@ -362,7 +362,7 @@ class ProcessUpload implements RequiresMinimumCharacterLevel, ShouldQueue
                 // Find or create the alt character
                 $altCharacter = Character::firstOrNew(['id' => $altProfile->id]);
                 $altCharacter->fill([
-                    'name' => $altName,
+                    ...$this->splitName($altName, $gameVersion),
                     'gender' => Gender::tryFrom(data_get($altProfile, 'gender.name')),
                     'game_version_id' => $gameVersion->id,
                 ]);
@@ -381,7 +381,7 @@ class ProcessUpload implements RequiresMinimumCharacterLevel, ShouldQueue
                 }
             } catch (CharacterTooLowLevelException $e) {
                 Log::debug('GRM Upload: Alt character too low level', [
-                    'main' => $mainCharacter->name,
+                    'main' => $mainCharacter->full_name,
                     'alt' => $altName,
                     'error' => $e->getMessage(),
                 ]);
@@ -389,7 +389,7 @@ class ProcessUpload implements RequiresMinimumCharacterLevel, ShouldQueue
                 continue;
             } catch (CharacterNotFoundException|BlizzardRequestException $e) {
                 Log::debug('GRM Upload: Could not process alt character', [
-                    'main' => $mainCharacter->name,
+                    'main' => $mainCharacter->full_name,
                     'alt' => $altName,
                     'error' => $e->getMessage(),
                 ]);
@@ -437,5 +437,21 @@ class ProcessUpload implements RequiresMinimumCharacterLevel, ShouldQueue
     public function tags(): array
     {
         return ['grm-upload'];
+    }
+
+    /**
+     * Split a roster name into its first name and surname when the game version uses surnames.
+     *
+     * @return array{name: string, surname: ?string}
+     */
+    private function splitName(string $name, GameVersion $gameVersion): array
+    {
+        if (! $gameVersion->uses_surnames) {
+            return ['name' => $name, 'surname' => null];
+        }
+
+        $parts = preg_split('/\s+/u', trim($name), 2);
+
+        return ['name' => $parts[0], 'surname' => $parts[1] ?? null];
     }
 }

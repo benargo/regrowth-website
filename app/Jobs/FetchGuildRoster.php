@@ -121,17 +121,16 @@ class FetchGuildRoster implements RequiresMinimumCharacterLevel, ShouldQueue
         $guildRank = $guildRanks->get($member->rank)
             ?? throw (new ModelNotFoundException)->setModel(GuildRank::class, [$member->rank]);
 
-        $characterName = $member->character->nameForVersion($gameVersion->uses_surnames);
-
         $characterDto = $blizzard->send(new GetCharacterProfileRequest(
             $gameVersion->realm_slug,
-            $characterName,
+            $member->character->nameForVersion($gameVersion->uses_surnames),
             $gameVersion->blizzard_namespace,
         ))->dto();
 
         $character = Character::firstOrNew(['id' => $member->character->id]);
         $character->fill([
-            'name' => $characterName,
+            'name' => $member->character->name,
+            'surname' => $member->character->surnameForVersion($gameVersion->uses_surnames),
             'level' => max($character->level ?? 0, $member->character->level),
             'gender' => Gender::tryFrom(data_get($characterDto, 'gender.name')),
             'game_version_id' => $gameVersion->id,
