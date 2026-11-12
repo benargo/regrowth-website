@@ -90,8 +90,8 @@ export default function Show({ character: { data: character }, roster_url, recen
     });
 
     return (
-        <Master title={character.name}>
-            <SharedHeader backgroundClass="bg-stormwind" title={character.name} />
+        <Master title={character.full_name}>
+            <SharedHeader backgroundClass="bg-stormwind" title={character.full_name} />
 
             <ToolNav>
                 <div className="flex-initial space-x-4">
@@ -107,9 +107,9 @@ export default function Show({ character: { data: character }, roster_url, recen
             <PageContainer>
                 {/* Identity strip */}
                 <div className="mb-8 flex flex-wrap items-center gap-4">
-                    <CharacterPortrait character={character} className="size-20 text-2xl" alt={character.name} />
+                    <CharacterPortrait character={character} className="size-20 text-2xl" alt={character.full_name} />
                     <div>
-                        <h2 className="text-2xl font-bold text-white">{character.name}</h2>
+                        <h2 className="text-2xl font-bold text-white">{character.full_name}</h2>
                         <div className="mt-1 flex flex-wrap items-center gap-2">
                             {character.is_main && (
                                 <Pill bgColor="bg-amber-700" textColor="text-amber-100">Main</Pill>
@@ -201,7 +201,7 @@ export default function Show({ character: { data: character }, roster_url, recen
                                                     className="h-6 w-6 rounded"
                                                 />
                                             )}
-                                            <span className="flex-1 font-medium text-white">{alt.name}</span>
+                                            <span className="flex-1 font-medium text-white">{alt.full_name}</span>
                                             <span className="text-xs text-gray-400">{alt.rank?.name ?? "—"}</span>
                                         </Link>
                                     ))}

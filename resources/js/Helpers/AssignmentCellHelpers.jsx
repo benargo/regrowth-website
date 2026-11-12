@@ -33,7 +33,7 @@ export function labelFromSide(side) {
     switch (side.type) {
         case MODEL_TYPES.CHARACTER:
             return {
-                label: side.data?.name ?? "",
+                label: side.data?.full_name ?? "",
                 iconUrl: side.data?.playable_class?.icon_url ?? null,
                 slug: null,
             };

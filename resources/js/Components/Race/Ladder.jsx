@@ -47,7 +47,7 @@ export default function Ladder({ racers, leaderLevel, targetLevel = 60 }) {
                                         className="text-camel-300 hover:text-camel-200 focus-visible:outline-camel-400 flex items-center gap-2 rounded-sm whitespace-nowrap underline-offset-2 transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
                                     >
                                         <CharacterPortrait character={racer} className="size-7" />
-                                        {racer.name}
+                                        {racer.full_name}
                                     </Link>
                                 </li>
                             ))}

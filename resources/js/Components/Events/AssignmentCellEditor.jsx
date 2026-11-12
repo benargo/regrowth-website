@@ -41,11 +41,11 @@ function buildOptions({ characters, playableClasses, targetMarkers, spells, grou
 
     const characterOptions = [];
     (characters ?? []).forEach((c) => {
-        if (!q || c.name.toLowerCase().includes(q)) {
+        if (!q || c.full_name.toLowerCase().includes(q)) {
             const sublabel = c.rank ? <span className={`text-guild-rank-${c.rank?.slug}`}>{c.rank?.name}</span> : "";
             characterOptions.push({
                 type: "character",
-                label: c.name,
+                label: c.full_name,
                 sublabel,
                 iconUrl: c.playable_class?.icon_url ?? defaultIconUrl,
                 value: { left_type: MODEL_TYPES.CHARACTER, left_value: String(c.id) },

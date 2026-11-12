@@ -97,7 +97,7 @@ function SettingsForm({ gameVersion, councillors, ranks, tags, characters }) {
 
         form.setData(
             "councillors",
-            [...form.data.councillors, character].sort((first, second) => first.name.localeCompare(second.name)),
+            [...form.data.councillors, character].sort((first, second) => first.full_name.localeCompare(second.full_name)),
         );
         setCharacterSearch("");
     }
@@ -210,8 +210,8 @@ function SettingsForm({ gameVersion, councillors, ranks, tags, characters }) {
                                     options={availableCharacters}
                                     placeholder="Search mains by name…"
                                     getOptionValue={(character) => String(character.id)}
-                                    getSearchableText={(character) => character.name}
-                                    renderOption={(character) => character.name}
+                                    getSearchableText={(character) => character.full_name}
+                                    renderOption={(character) => character.full_name}
                                 />
                             </Deferred>
                         </div>
@@ -305,14 +305,14 @@ function CouncillorRow({ councillor, onRemove }) {
                 )}
             />
             <div className="min-w-0 flex-1">
-                <p className="truncate text-white">{councillor.name}</p>
+                <p className="truncate text-white">{councillor.full_name}</p>
                 <p className={cn("text-xs", councillor.rank ? `text-guild-rank-${councillor.rank.slug}` : "hidden")}>
                     {councillor.rank?.name}
                 </p>
             </div>
             <IconButton
                 icon="times"
-                label={`Remove ${councillor.name}`}
+                label={`Remove ${councillor.full_name}`}
                 onClick={onRemove}
                 className="flex size-9 flex-none items-center justify-center rounded-md text-gray-300 hover:bg-red-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
             />

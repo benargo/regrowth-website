@@ -54,7 +54,7 @@ function CharactersTable({ characters, gameVersion }) {
                 {characters.map((character) => (
                     <TableRow key={character.id}>
                         <TableCell>
-                            <span className="text-sm font-medium text-white">{character.name}</span>
+                            <span className="text-sm font-medium text-white">{character.full_name}</span>
                             {character.is_main && (
                                 <span className="ml-2 rounded bg-amber-600/20 px-1.5 py-0.5 text-xs text-amber-400">
                                     Main

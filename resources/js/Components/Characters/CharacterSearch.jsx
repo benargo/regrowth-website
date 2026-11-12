@@ -46,7 +46,7 @@ export default function CharacterSearch({
 
         const needle = normaliseCharacterName(query);
 
-        return characters.filter((character) => normaliseCharacterName(character.name).includes(needle));
+        return characters.filter((character) => normaliseCharacterName(character.full_name).includes(needle));
     }, [characters, query]);
 
     function handleChange(character) {
@@ -94,7 +94,7 @@ export default function CharacterSearch({
 
                 <ComboboxInput
                     id={id}
-                    displayValue={(character) => character?.name ?? ""}
+                    displayValue={(character) => character?.full_name ?? ""}
                     onChange={handleQueryChange}
                     placeholder="Search by character name"
                     autoComplete="off"
@@ -108,7 +108,7 @@ export default function CharacterSearch({
                         aria-hidden="true"
                         className="pointer-events-none absolute inset-y-0 right-10 left-[calc(2.75rem+1px)] flex items-center gap-2 overflow-hidden"
                     >
-                        <span className="invisible whitespace-pre">{selectedCharacter.name}</span>
+                        <span className="invisible whitespace-pre">{selectedCharacter.full_name}</span>
                         <ClassPill playableClass={selectedCharacter.playable_class} />
                     </span>
                 )}
@@ -138,7 +138,7 @@ export default function CharacterSearch({
                     <div className="text-gray-300 px-4 py-2 text-sm">{emptyMessage}</div>
                 ) : (
                     filtered.map((character) => {
-                        const mainName = character.is_main ? null : character.linked_characters?.[0]?.name;
+                        const mainName = character.is_main ? null : character.linked_characters?.[0]?.full_name;
 
                         return (
                             <ComboboxOption
@@ -147,7 +147,7 @@ export default function CharacterSearch({
                                 className="data-focus:bg-brown-700 flex cursor-pointer items-center gap-3 px-3 py-1.5 text-sm text-white"
                             >
                                 <CharacterPortrait character={character} />
-                                <span className="truncate">{character.name}</span>
+                                <span className="truncate">{character.full_name}</span>
                                 <ClassPill playableClass={character.playable_class} />
                                 {mainName && (
                                     <Pill bgColor="bg-brown-700" textColor="text-gray-300">

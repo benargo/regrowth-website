@@ -147,7 +147,7 @@ function Standings({ race, characterPortraits, checkedAt }) {
                 <div className="border-camel-900 mb-5 flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-end sm:justify-between">
                     <p className="text-camel-400 text-base" aria-live="polite">
                         {racers.length} {racers.length === 1 ? "racer" : "racers"}
-                        {leader && ` · ${leader.name} leads at ${leader.level}`}
+                        {leader && ` · ${leader.full_name} leads at ${leader.level}`}
                     </p>
                     <CheckedAgo at={checkedAt} />
                 </div>
@@ -210,7 +210,7 @@ function Mention({ placement, className = "", timeClassName = "" }) {
     return (
         <li className={`text-camel-400 flex items-center ${className}`}>
             <ClassToken playableClass={placement.character.playable_class} />
-            {placement.character.name}
+            {placement.character.full_name}
             <span className={`text-camel-500 text-sm tabular-nums ${timeClassName}`}>
                 {formatDateTime(placement.reached_at)}
             </span>

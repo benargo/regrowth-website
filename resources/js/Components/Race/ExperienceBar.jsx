@@ -86,7 +86,7 @@ export default function ExperienceBar({
                                         describe={false}
                                         openOnTap
                                         className="leading-[0]"
-                                        body={`${racer.name} · ${racer.playable_class?.name ?? "Unknown class"} · Level ${racer.level}`}
+                                        body={`${racer.full_name} · ${racer.playable_class?.name ?? "Unknown class"} · Level ${racer.level}`}
                                     >
                                         <ClassToken
                                             playableClass={racer.playable_class}

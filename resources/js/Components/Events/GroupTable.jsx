@@ -19,7 +19,7 @@ function BenchedPill({ character }) {
                     className="h-4 w-4 shrink-0"
                 />
             )}
-            {character.name}
+            {character.full_name}
         </span>
     );
 }
@@ -69,7 +69,7 @@ export function GroupTable({ group }) {
                             >
                                 <TableCell>
                                     <span className="inline-flex items-center gap-1">
-                                        <span className="text-sm font-medium text-white">{character.name}</span>
+                                        <span className="text-sm font-medium text-white">{character.full_name}</span>
                                         {character.is_loot_councillor && <LootCouncillorBadge />}
                                         {character.is_loot_master && <RoleBadge role="loot_master" />}
                                         {character.is_leader && <RoleBadge role="leader" />}

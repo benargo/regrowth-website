@@ -64,7 +64,7 @@ function RunningStrip({ race, placements }) {
                 <p className="text-camel-500 text-sm">
                     {leader && (
                         <>
-                            <b className="text-camel-300 font-semibold">{leader.name}</b> leads at level {leader.level}
+                            <b className="text-camel-300 font-semibold">{leader.full_name}</b> leads at level {leader.level}
                             <span aria-hidden="true"> · </span>
                         </>
                     )}
@@ -85,7 +85,7 @@ function RunningStrip({ race, placements }) {
 
             <p className="sr-only" aria-live="polite">
                 {leader
-                    ? `${leader.name} leads the race to level ${race.target_level} at level ${leader.level}.`
+                    ? `${leader.full_name} leads the race to level ${race.target_level} at level ${leader.level}.`
                     : `The race to level ${race.target_level} has no leader yet.`}
             </p>
         </div>
@@ -111,7 +111,7 @@ function FinishedStrip({ placements }) {
                 {medallists.map((placement) => (
                     <li key={placement.id} className="text-camel-300 flex items-center gap-2 text-sm">
                         <Medal medal={placement.medal} size="sm" />
-                        {placement.character.name}
+                        {placement.character.full_name}
                     </li>
                 ))}
             </ol>

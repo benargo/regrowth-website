@@ -152,7 +152,7 @@ function MatrixTable({ raids, rows }) {
                                                     className="mr-2 hidden inline-block h-4 w-4 rounded-xs md:inline-flex"
                                                 />
                                             )}
-                                            {character.name}
+                                            {character.full_name}
                                         </p>
                                     </div>
                                 </td>
@@ -203,7 +203,7 @@ export default function Matrix({ hasAttendance, ...props }) {
 
 function MatrixContent({ matrix, ranks: { data: ranks }, zones: { data: zones }, guildTags: { data: guildTags }, filters, earliestDate }) {
     // ── Client-side filter state (no server reload) ──────────────────────────
-    const [characterName, setCharacterName] = useState(filters.character?.name ?? "");
+    const [characterName, setCharacterName] = useState(filters.character?.full_name ?? "");
     const [characterId, setCharacterId] = useState(filters.character?.id ?? null);
 
     // Updates the name search and drops the server-side character filter.
@@ -308,7 +308,7 @@ function MatrixContent({ matrix, ranks: { data: ranks }, zones: { data: zones },
 
         return (matrix?.rows ?? []).filter(
             (row) =>
-                (!searchTerm || normaliseCharacterName(row.character.name).includes(searchTerm)) &&
+                (!searchTerm || normaliseCharacterName(row.character.full_name).includes(searchTerm)) &&
                 (selectedClassIds === null || selectedClassIds.includes(row.character.playable_class?.id ?? null)),
         );
     }, [matrix, characterName, selectedClassIds]);
