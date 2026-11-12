@@ -17,7 +17,6 @@ use App\Models\Character;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
-use Illuminate\Support\Str;
 use Illuminate\Support\Uri;
 
 class AttachPortraitToCharacter implements HasCharacterMedia, ShouldQueue
@@ -104,7 +103,7 @@ class AttachPortraitToCharacter implements HasCharacterMedia, ShouldQueue
         try {
             $profile = $blizzardConnector->send(new GetCharacterProfileRequest(
                 $character->gameVersion->realm_slug,
-                Str::lower($character->name),
+                $character->full_name,
                 $character->gameVersion->blizzard_namespace,
             ))->dto();
 

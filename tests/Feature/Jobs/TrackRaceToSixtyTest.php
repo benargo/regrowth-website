@@ -168,6 +168,18 @@ class TrackRaceToSixtyTest extends TestCase
     }
 
     #[Test]
+    public function it_requests_a_character_with_a_surname_by_its_full_name(): void
+    {
+        Character::factory()->forGameVersion($this->gameVersion)->create(['name' => 'Thrall', 'surname' => 'Stormrage', 'level' => 33]);
+        $this->mockGetCharacterProfilesByName(['thrall-stormrage' => ['level' => 33]]);
+
+        $this->runJob();
+
+        Saloon::assertSent(fn (Request $request): bool => $request instanceof GetCharacterProfileRequest
+            && str_ends_with($request->resolveEndpoint(), '/thrall-stormrage'));
+    }
+
+    #[Test]
     public function it_raises_a_stored_level(): void
     {
         $character = $this->createCharacter('Alpha', 33);

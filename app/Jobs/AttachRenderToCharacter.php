@@ -81,7 +81,7 @@ class AttachRenderToCharacter implements HasCharacterMedia, ShouldQueue
         try {
             $assets = $blizzardConnector->send(new GetCharacterMediaRequest(
                 $gameVersion->realm_slug,
-                $character->name,
+                $character->full_name,
                 $gameVersion->blizzard_namespace,
             ))->dto()->assets;
 

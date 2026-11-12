@@ -45,7 +45,7 @@ class RefreshCharacterPortrait implements ShouldBeUnique
         try {
             $dto = $this->blizzard->send(new GetCharacterMediaRequest(
                 $gameVersion->realm_slug,
-                $character->name,
+                $character->full_name,
                 $gameVersion->blizzard_namespace,
             ))->dto();
 
