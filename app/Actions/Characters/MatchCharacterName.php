@@ -4,6 +4,7 @@ namespace App\Actions\Characters;
 
 use App\Exceptions\MultipleCharactersFoundException;
 use App\Models\Character;
+use Closure;
 use Illuminate\Support\Collection;
 use Lorisleiva\Actions\Concerns\AsAction;
 use Normalizer;
@@ -14,16 +15,18 @@ use Normalizer;
  * The candidates must all belong to one game version, and the caller says
  * whether that version uses surnames.
  *
- * Names on both sides are trimmed before any comparison. Surnames are
- * all-or-nothing per game version: without them the input's surname is
- * dropped first, so "Thrall Stormrage" is matched as "Thrall"; with them the
- * input must be the whole stored name.
+ * Names on both sides are trimmed before any comparison. Without surnames
+ * the input's surname is dropped first, so "Thrall Stormrage" is matched as
+ * "Thrall", against each character's full name. With surnames the input is
+ * matched against each character's full name ("Thrall Stormrage"); when that
+ * finds nothing and the input is a single word, it is matched against the
+ * first names alone.
  *
- * Then an exact match wins (names are unique within a version, so there is at
- * most one). Failing that, the names are compared with case and accents
- * ignored. Several matches there are ambiguous and throw, because guessing
- * would credit the wrong character; what to do about it is the caller's
- * decision, so this never logs.
+ * Each comparison has two tiers. An exact match wins; several exact matches
+ * are ambiguous and throw. Failing that, the names are compared with case and
+ * accents ignored, and several matches there throw too. Guessing would credit
+ * the wrong character; what to do about it is the caller's decision, so this
+ * never logs.
  *
  * Matching runs on the given collection rather than in SQL because the accent
  * fold can't be done against the binary collation of characters.name.
@@ -40,18 +43,48 @@ class MatchCharacterName
     public function handle(string $name, Collection $candidates, bool $usesSurnames = true): ?Character
     {
         $name = trim($name);
-        $input = $usesSurnames ? $name : $this->withoutSurname($name);
+        $fullName = fn (Character $character): string => trim($character->full_name);
 
-        $exactMatch = $candidates->first(fn (Character $character): bool => trim($character->name) === $input);
+        if (! $usesSurnames) {
+            return $this->matchTiers($this->withoutSurname($name), $candidates, $fullName);
+        }
 
-        if ($exactMatch !== null) {
-            return $exactMatch;
+        $match = $this->matchTiers($name, $candidates, $fullName);
+
+        if ($match !== null || preg_match('/\s/u', $name) === 1) {
+            return $match;
+        }
+
+        return $this->matchTiers($name, $candidates, fn (Character $character): string => trim($character->name));
+    }
+
+    /**
+     * Match the input against the names the closure reads, exact first and
+     * then with case and accents ignored.
+     *
+     * @param  Collection<int, Character>  $candidates
+     * @param  Closure(Character): string  $nameOf
+     *
+     * @throws MultipleCharactersFoundException
+     */
+    private function matchTiers(string $input, Collection $candidates, Closure $nameOf): ?Character
+    {
+        $exactMatches = $candidates
+            ->filter(fn (Character $character): bool => $nameOf($character) === $input)
+            ->values();
+
+        if ($exactMatches->count() > 1) {
+            throw new MultipleCharactersFoundException($exactMatches);
+        }
+
+        if ($exactMatches->count() === 1) {
+            return $exactMatches->first();
         }
 
         $foldedInput = $this->fold($input);
 
         $foldedMatches = $candidates
-            ->filter(fn (Character $character): bool => $this->fold(trim($character->name)) === $foldedInput)
+            ->filter(fn (Character $character): bool => $this->fold($nameOf($character)) === $foldedInput)
             ->values();
 
         if ($foldedMatches->count() > 1) {

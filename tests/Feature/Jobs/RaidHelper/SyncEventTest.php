@@ -700,6 +700,23 @@ class SyncEventTest extends TestCase
         $this->assertSame([$deo->id], $event->characters()->pluck('characters.id')->all());
     }
 
+    #[Test]
+    public function it_matches_a_signup_to_a_character_with_a_surname(): void
+    {
+        $surnamedVersion = GameVersion::factory()->withSurnames()->create();
+        $thrall = Character::factory()->forGameVersion($surnamedVersion)->withSurname('Stormrage')->create(['name' => 'Thrall']);
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'description' => $this->descriptionInVersion($surnamedVersion),
+            'signUps' => [
+                $this->minimalSignUpPayload(['name' => 'Thrall Stormrage']),
+            ],
+        ])));
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+        $this->assertSame([$thrall->id], $event->characters()->pluck('characters.id')->all());
+    }
+
     #[Group('error-handling')]
     #[Test]
     public function it_skips_and_logs_a_sign_up_name_that_matches_several_characters(): void

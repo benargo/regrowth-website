@@ -29,7 +29,7 @@ class MultipleCharactersFoundException extends Exception
     {
         return response()->json([
             'message' => 'Multiple characters matched that name. Please specify one.',
-            'characters' => $this->characters->map(fn (Character $c) => ['id' => $c->id, 'name' => $c->name]),
+            'characters' => $this->characters->map(fn (Character $c) => ['id' => $c->id, 'full_name' => $c->full_name]),
         ], 300);
     }
 }
