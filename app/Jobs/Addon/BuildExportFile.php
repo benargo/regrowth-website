@@ -213,8 +213,7 @@ class BuildExportFile implements ShouldBeUniqueUntilProcessing, ShouldQueue
     {
         return $gameVersion->characters()->where('is_loot_councillor', true)
             ->with('rank')
-            ->orderBy('name')
-            ->orderBy('surname')
+            ->orderByFullName()
             ->get()
             ->map(fn (Character $character): array => [
                 'id' => $character->id,

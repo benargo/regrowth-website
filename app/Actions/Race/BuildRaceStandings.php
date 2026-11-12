@@ -29,8 +29,7 @@ class BuildRaceStandings implements RaceToSixty
         $pack = $gameVersion->racePack(self::PACK_WINDOW)
             ->with(['media', 'playableClass.media', 'playableRace.media'])
             ->orderByDesc('level')
-            ->orderBy('name')
-            ->orderBy('surname')
+            ->orderByFullName()
             ->get();
 
         $leader = $pack->first();
@@ -59,8 +58,7 @@ class BuildRaceStandings implements RaceToSixty
                 $gameVersion->characters()
                     ->with(['media', 'playableClass.media', 'playableRace.media'])
                     ->orderByDesc('level')
-                    ->orderBy('name')
-                    ->orderBy('surname')
+                    ->orderByFullName()
                     ->get(),
             )->scope('race');
         }

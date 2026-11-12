@@ -247,7 +247,7 @@ class BuildRaceStandingsTest extends TestCase
         Storage::fake('s3');
 
         foreach ([30, 31, 32] as $level) {
-            Character::factory()->forGameVersion($this->version)->withPlayableClass(PlayableClass::factory()->create())->withPlayableRace()->create(['level' => $level]);
+            Character::factory()->forGameVersion($this->version)->withUniqueName()->withPlayableClass(PlayableClass::factory()->create())->withPlayableRace()->create(['level' => $level]);
         }
         $leaderClass = PlayableClass::factory()->create();
         $leaderClass->addMediaFromString('BINARY')
@@ -259,7 +259,7 @@ class BuildRaceStandingsTest extends TestCase
             ->usingFileName('6-1.jpg')
             ->withCustomProperties(['gender' => Gender::FEMALE->id()])
             ->toMediaCollection(HasShadowAvatars::MEDIA_COLLECTION);
-        Character::factory()->forGameVersion($this->version)->withPlayableClass($leaderClass)->withPlayableRace($leaderRace)->create(['level' => 33, 'gender' => Gender::FEMALE]);
+        Character::factory()->forGameVersion($this->version)->withUniqueName()->withPlayableClass($leaderClass)->withPlayableRace($leaderRace)->create(['level' => 33, 'gender' => Gender::FEMALE]);
         $this->place($this->racer(60, 'Placed'), 1);
 
         Model::preventLazyLoading();

@@ -92,7 +92,7 @@ class EventTemplateController extends Controller
             'characters' => Inertia::optional(function () use ($request) {
                 return Character::with('rank', 'playableClass')
                     ->whereRaw('level = (SELECT MAX(level) FROM characters)')
-                    ->orderBy('name')
+                    ->orderByFullName()
                     ->get()
                     ->toResourceCollection(CharacterSummaryResource::class)
                     ->resolve($request);

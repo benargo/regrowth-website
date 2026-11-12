@@ -3,6 +3,7 @@
 namespace App\Http\Integrations\Blizzard\Data\Guild;
 
 use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
+use Illuminate\Support\Str;
 use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\SnakeCaseMapper;
@@ -26,7 +27,9 @@ class GuildRosterCharacterData extends Data
      */
     public function fullName(): string
     {
-        return $this->surname instanceof Optional ? $this->name : "{$this->name} {$this->surname}";
+        $surname = $this->presentSurname();
+
+        return $surname === null ? $this->name : "{$this->name} {$surname}";
     }
 
     /**
@@ -42,10 +45,24 @@ class GuildRosterCharacterData extends Data
      */
     public function surnameForVersion(bool $usesSurnames): ?string
     {
-        if (! $usesSurnames || $this->surname instanceof Optional) {
+        if (! $usesSurnames) {
             return null;
         }
 
-        return $this->surname;
+        return $this->presentSurname();
+    }
+
+    /**
+     * The trimmed surname, or null when it is missing or blank.
+     */
+    private function presentSurname(): ?string
+    {
+        if ($this->surname instanceof Optional) {
+            return null;
+        }
+
+        $surname = Str::trim($this->surname);
+
+        return $surname === '' ? null : $surname;
     }
 }

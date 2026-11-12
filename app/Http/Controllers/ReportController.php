@@ -113,7 +113,7 @@ class ReportController extends Controller
                     ->with('playableClass')
                     ->where('is_loot_councillor', true)
                     ->whereNotIn('id', $excludedIds)
-                    ->orderBy('name')
+                    ->orderByFullName()
                     ->get()
                     ->append('full_name');
             }),
@@ -158,12 +158,12 @@ class ReportController extends Controller
             'expansions' => $expansions,
             'defaultExpansionId' => config('services.warcraftlogs.expansion_id'),
             'guildTags' => GuildTag::orderBy('name')->get(),
-            'characters' => Character::select('id', 'name', 'surname', 'playable_class_id', 'is_main')->with('playableClass')->orderBy('name')->get()->append('full_name'),
+            'characters' => Character::select('id', 'name', 'surname', 'playable_class_id', 'is_main')->with('playableClass')->orderByFullName()->get()->append('full_name'),
             'lootCouncillorCandidates' => Inertia::optional(function () {
                 return Character::select('id', 'name', 'surname', 'playable_class_id', 'is_main')
                     ->with('playableClass')
                     ->where('is_loot_councillor', true)
-                    ->orderBy('name')
+                    ->orderByFullName()
                     ->get()
                     ->append('full_name');
             }),

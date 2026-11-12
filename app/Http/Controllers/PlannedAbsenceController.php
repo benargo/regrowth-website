@@ -239,7 +239,7 @@ class PlannedAbsenceController extends Controller
             Character::where('game_version_id', $gameVersion->id)
                 ->where('is_main', true)
                 ->with(['media', 'playableRace.media', 'playableClass'])
-                ->orderBy('name')
+                ->orderByFullName()
                 ->get()
         );
     }

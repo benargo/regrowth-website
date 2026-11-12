@@ -449,7 +449,7 @@ class FetchGuildRosterTest extends TestCase
 
     #[Group('edge-cases')]
     #[Test]
-    public function it_stores_two_members_sharing_a_first_name_without_surnames(): void
+    public function it_skips_a_second_member_with_the_same_name_on_a_version_without_surnames(): void
     {
         $gameVersion = $this->createGameVersion();
         GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
@@ -467,7 +467,7 @@ class FetchGuildRosterTest extends TestCase
         (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
 
         $this->assertDatabaseHas('characters', ['id' => 1, 'name' => 'Thrall', 'surname' => null]);
-        $this->assertDatabaseHas('characters', ['id' => 2, 'name' => 'Thrall', 'surname' => null]);
+        $this->assertDatabaseMissing('characters', ['id' => 2]);
     }
 
     #[Group('error-handling')]

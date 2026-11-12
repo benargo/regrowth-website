@@ -105,6 +105,31 @@ class GuildRosterCharacterDataTest extends TestCase
         $this->assertNull($dto->surnameForVersion(true));
     }
 
+    #[Test]
+    public function full_name_is_the_name_alone_with_a_blank_surname(): void
+    {
+        $dto = GuildRosterCharacterData::from([...$this->foreverPayload(), 'surname' => '  ']);
+
+        $this->assertSame('Thrall', $dto->fullName());
+    }
+
+    #[Test]
+    public function surname_for_version_is_null_with_a_blank_surname(): void
+    {
+        $dto = GuildRosterCharacterData::from([...$this->foreverPayload(), 'surname' => '']);
+
+        $this->assertNull($dto->surnameForVersion(true));
+    }
+
+    #[Test]
+    public function surname_for_version_trims_the_surname(): void
+    {
+        $dto = GuildRosterCharacterData::from([...$this->foreverPayload(), 'surname' => ' Stormrage ']);
+
+        $this->assertSame('Stormrage', $dto->surnameForVersion(true));
+        $this->assertSame('Thrall Stormrage', $dto->fullName());
+    }
+
     /**
      * @return array<string, mixed>
      */

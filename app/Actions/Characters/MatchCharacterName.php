@@ -4,7 +4,6 @@ namespace App\Actions\Characters;
 
 use App\Exceptions\MultipleCharactersFoundException;
 use App\Models\Character;
-use Closure;
 use Illuminate\Support\Collection;
 use Lorisleiva\Actions\Concerns\AsAction;
 use Normalizer;
@@ -43,34 +42,54 @@ class MatchCharacterName
     public function handle(string $name, Collection $candidates, bool $usesSurnames = true): ?Character
     {
         $name = trim($name);
-        $fullName = fn (Character $character): string => trim($character->full_name);
+        $entries = $candidates->map(fn (Character $character): array => $this->entry($character))->values();
 
         if (! $usesSurnames) {
-            return $this->matchTiers($this->withoutSurname($name), $candidates, $fullName);
+            return $this->matchTiers(Character::splitName($name, true)['name'], $entries, 'fullName', 'foldedFullName');
         }
 
-        $match = $this->matchTiers($name, $candidates, $fullName);
+        $match = $this->matchTiers($name, $entries, 'fullName', 'foldedFullName');
 
         if ($match !== null || preg_match('/\s/u', $name) === 1) {
             return $match;
         }
 
-        return $this->matchTiers($name, $candidates, fn (Character $character): string => trim($character->name));
+        return $this->matchTiers($name, $entries, 'firstName', 'foldedFirstName');
     }
 
     /**
-     * Match the input against the names the closure reads, exact first and
-     * then with case and accents ignored.
+     * The candidate with its trimmed full name and first name, and the folded
+     * form of each.
      *
-     * @param  Collection<int, Character>  $candidates
-     * @param  Closure(Character): string  $nameOf
+     * @return array{character: Character, fullName: string, foldedFullName: string, firstName: string, foldedFirstName: string}
+     */
+    private function entry(Character $character): array
+    {
+        $fullName = trim($character->full_name);
+        $firstName = trim($character->name);
+
+        return [
+            'character' => $character,
+            'fullName' => $fullName,
+            'foldedFullName' => $this->fold($fullName),
+            'firstName' => $firstName,
+            'foldedFirstName' => $this->fold($firstName),
+        ];
+    }
+
+    /**
+     * Match the input against each entry's name under the exact key, then its
+     * folded form under the folded key with case and accents ignored.
+     *
+     * @param  Collection<int, array{character: Character, fullName: string, foldedFullName: string, firstName: string, foldedFirstName: string}>  $entries
      *
      * @throws MultipleCharactersFoundException
      */
-    private function matchTiers(string $input, Collection $candidates, Closure $nameOf): ?Character
+    private function matchTiers(string $input, Collection $entries, string $exactKey, string $foldedKey): ?Character
     {
-        $exactMatches = $candidates
-            ->filter(fn (Character $character): bool => $nameOf($character) === $input)
+        $exactMatches = $entries
+            ->filter(fn (array $entry): bool => $entry[$exactKey] === $input)
+            ->pluck('character')
             ->values();
 
         if ($exactMatches->count() > 1) {
@@ -83,8 +102,9 @@ class MatchCharacterName
 
         $foldedInput = $this->fold($input);
 
-        $foldedMatches = $candidates
-            ->filter(fn (Character $character): bool => $this->fold($nameOf($character)) === $foldedInput)
+        $foldedMatches = $entries
+            ->filter(fn (array $entry): bool => $entry[$foldedKey] === $foldedInput)
+            ->pluck('character')
             ->values();
 
         if ($foldedMatches->count() > 1) {
@@ -92,15 +112,6 @@ class MatchCharacterName
         }
 
         return $foldedMatches->first();
-    }
-
-    /**
-     * The first word of the name. Invalid UTF-8 is returned whole rather than
-     * split, since the pattern can't run on it.
-     */
-    private function withoutSurname(string $name): string
-    {
-        return str($name)->split('/\s+/u', 2)->first(default: $name);
     }
 
     /**

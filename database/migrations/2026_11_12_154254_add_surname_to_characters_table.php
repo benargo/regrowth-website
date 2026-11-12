@@ -12,9 +12,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 return new class extends Migration
 {
     /**
-     * Add the nullable surname column, split existing surname-version names into
-     * name and surname, and replace the (game_version_id, name) unique index with
-     * (game_version_id, name, surname).
+     * Add the nullable surname column and the stored surname_key column
+     * (COALESCE(surname, '')), split existing surname-version names into name and
+     * surname, and replace the (game_version_id, name) unique index with
+     * (game_version_id, name, surname_key).
      */
     public function up(): void
     {
@@ -27,6 +28,14 @@ return new class extends Migration
         }
 
         Schema::table('characters', function (Blueprint $table) {
+            $surnameKey = $table->string('surname_key')->storedAs("COALESCE(surname, '')")->after('surname');
+
+            if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+                $surnameKey->collation('utf8mb4_bin');
+            }
+        });
+
+        Schema::table('characters', function (Blueprint $table) {
             $table->index('game_version_id');
         });
 
@@ -37,7 +46,7 @@ return new class extends Migration
         Artisan::call('app:split-character-surnames', [], $this->output());
 
         Schema::table('characters', function (Blueprint $table) {
-            $table->unique(['game_version_id', 'name', 'surname']);
+            $table->unique(['game_version_id', 'name', 'surname_key']);
         });
 
         Schema::table('characters', function (Blueprint $table) {
@@ -47,7 +56,7 @@ return new class extends Migration
 
     /**
      * Join each surname back into the name, restore the (game_version_id, name)
-     * unique index and drop the surname column.
+     * unique index and drop the surname_key and surname columns.
      */
     public function down(): void
     {
@@ -56,7 +65,7 @@ return new class extends Migration
         });
 
         Schema::table('characters', function (Blueprint $table) {
-            $table->dropUnique(['game_version_id', 'name', 'surname']);
+            $table->dropUnique(['game_version_id', 'name', 'surname_key']);
         });
 
         Artisan::call('app:split-character-surnames', ['--revert' => true], $this->output());
@@ -67,6 +76,10 @@ return new class extends Migration
 
         Schema::table('characters', function (Blueprint $table) {
             $table->dropIndex(['game_version_id']);
+        });
+
+        Schema::table('characters', function (Blueprint $table) {
+            $table->dropColumn('surname_key');
         });
 
         Schema::table('characters', function (Blueprint $table) {

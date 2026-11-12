@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Character;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -46,26 +47,31 @@ class SplitCharacterSurnames extends Command
     }
 
     /**
-     * Build the changes for every name on a surname game version that contains
-     * whitespace: id, game version title, original name, new name and surname.
+     * Build the changes for every character on a surname game version with no
+     * surname whose name splits into a name and surname: id, game version title,
+     * original name, new name and surname.
      *
-     * @return list<array{0: int, 1: string|null, 2: string, 3: string, 4: string|null}>
+     * @return list<array{0: int, 1: string|null, 2: string, 3: string, 4: string}>
      */
     private function splitChanges(): array
     {
         $rows = DB::table('characters')
             ->join('game_versions', 'game_versions.id', '=', 'characters.game_version_id')
             ->where('game_versions.uses_surnames', true)
-            ->where('characters.name', 'like', '% %')
+            ->whereNull('characters.surname')
             ->select('characters.id', 'characters.name', 'game_versions.title')
             ->lazyById(500, 'characters.id', 'id');
 
         $changes = [];
 
         foreach ($rows as $row) {
-            $parts = preg_split('/\s+/u', trim($row->name), 2);
+            ['name' => $name, 'surname' => $surname] = Character::splitName($row->name, true);
 
-            $changes[] = [$row->id, $row->title, $row->name, $parts[0], $parts[1] ?? null];
+            if ($surname === null) {
+                continue;
+            }
+
+            $changes[] = [$row->id, $row->title, $row->name, $name, $surname];
         }
 
         return $changes;

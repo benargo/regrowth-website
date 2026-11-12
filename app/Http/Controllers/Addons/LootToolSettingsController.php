@@ -33,12 +33,12 @@ class LootToolSettingsController extends Controller
         return Inertia::render('Addons/LootTool/Settings', [
             'gameVersion' => new GameVersionResource($gameVersion),
             'councillors' => new LootCouncillorCollection(
-                $gameVersion->characters()->where('is_loot_councillor', true)->with(['rank', 'media'])->orderBy('name')->get()
+                $gameVersion->characters()->where('is_loot_councillor', true)->with(['rank', 'media'])->orderByFullName()->get()
             ),
             'ranks' => GuildRankResource::collection($gameVersion->guildRanks()->ordered()->get()),
             'tags' => GuildTagResource::collection($gameVersion->warcraftLogsGuild?->guildTags()->orderBy('name')->get() ?? collect()),
             'characters' => Inertia::defer(fn () => CharacterSummaryResource::collection(
-                $gameVersion->characters()->where('is_main', true)->with('rank')->orderBy('name')->get()
+                $gameVersion->characters()->where('is_main', true)->with('rank')->orderByFullName()->get()
             )),
         ]);
     }

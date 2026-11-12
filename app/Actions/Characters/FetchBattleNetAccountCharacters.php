@@ -54,7 +54,7 @@ class FetchBattleNetAccountCharacters
         return Character::whereIn('id', $characterIds)
             ->where('game_version_id', $gameVersion->id)
             ->with(['playableRace', 'playableClass', 'linkedCharacters' => fn (BelongsToMany $query) => $query->where('is_main', true)])
-            ->orderBy('name')
+            ->orderByFullName()
             ->get();
     }
 }

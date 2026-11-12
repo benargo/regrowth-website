@@ -73,6 +73,16 @@ class SplitCharacterSurnamesTest extends TestCase
     }
 
     #[Test]
+    public function it_splits_a_name_separated_by_a_non_breaking_space(): void
+    {
+        $character = $this->characterOnSurnameVersion("Thrall\u{00A0}Stormrage");
+
+        $this->artisan('app:split-character-surnames')->assertExitCode(0);
+
+        $this->assertCharacter($character, 'Thrall', 'Stormrage');
+    }
+
+    #[Test]
     public function it_leaves_characters_on_other_versions_unchanged(): void
     {
         $plainVersion = GameVersion::factory()->create();
@@ -121,13 +131,13 @@ class SplitCharacterSurnamesTest extends TestCase
     public function it_lists_each_split_in_a_table(): void
     {
         $version = GameVersion::factory()->withSurnames()->create(['title' => 'Anniversary']);
-        $trimmed = Character::factory()->create(['game_version_id' => $version->id, 'name' => ' Thrall ']);
-        $split = Character::factory()->create(['game_version_id' => $version->id, 'name' => 'Jaina Proudmoore']);
+        $thrall = Character::factory()->create(['game_version_id' => $version->id, 'name' => 'Thrall Stormrage']);
+        $jaina = Character::factory()->create(['game_version_id' => $version->id, 'name' => 'Jaina Proudmoore']);
 
         $this->artisan('app:split-character-surnames')
             ->expectsTable(['ID', 'Game version', 'Before', 'Name', 'Surname'], [
-                [$trimmed->id, 'Anniversary', ' Thrall ', 'Thrall', ''],
-                [$split->id, 'Anniversary', 'Jaina Proudmoore', 'Jaina', 'Proudmoore'],
+                [$thrall->id, 'Anniversary', 'Thrall Stormrage', 'Thrall', 'Stormrage'],
+                [$jaina->id, 'Anniversary', 'Jaina Proudmoore', 'Jaina', 'Proudmoore'],
             ])
             ->expectsOutputToContain('Split 2 character names.')
             ->assertExitCode(0);
