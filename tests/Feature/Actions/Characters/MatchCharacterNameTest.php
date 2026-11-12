@@ -36,18 +36,18 @@ class MatchCharacterNameTest extends TestCase
     #[Test]
     public function it_matches_the_whole_name_with_surnames(): void
     {
-        $thrall = $this->character('Thrall Stormrage');
+        $thrall = $this->character('Thrall', 'Stormrage');
 
         $this->assertSame($thrall, MatchCharacterName::run('Thrall Stormrage', collect([$thrall]), usesSurnames: true));
         $this->assertSame($thrall, MatchCharacterName::run('thrall stormrage', collect([$thrall]), usesSurnames: true));
     }
 
-    #[TestWith(['Thrall'], 'bare first name')]
+    #[TestWith(['Stormrage'], 'surname alone')]
     #[TestWith(['Thrall Bloodhoof'], 'another surname')]
     #[Test]
     public function it_does_not_match_part_of_a_name_with_surnames(string $input): void
     {
-        $thrall = $this->character('Thrall Stormrage');
+        $thrall = $this->character('Thrall', 'Stormrage');
 
         $this->assertNull(MatchCharacterName::run($input, collect([$thrall]), usesSurnames: true));
     }
@@ -55,9 +55,9 @@ class MatchCharacterNameTest extends TestCase
     #[Test]
     public function it_matches_the_whole_name_by_default(): void
     {
-        $thrall = $this->character('Thrall Stormrage');
+        $thrall = $this->character('Thrall', 'Stormrage');
 
-        $this->assertNull(MatchCharacterName::run('Thrall', collect([$thrall])));
+        $this->assertSame($thrall, MatchCharacterName::run('Thrall', collect([$thrall])));
         $this->assertSame($thrall, MatchCharacterName::run('Thrall Stormrage', collect([$thrall])));
     }
 
@@ -75,8 +75,8 @@ class MatchCharacterNameTest extends TestCase
     #[Test]
     public function it_trims_the_input_before_matching_exactly_with_surnames(): void
     {
-        $tears = $this->character('Tears Moon');
-        $accentedTears = $this->character('Teärs Moon');
+        $tears = $this->character('Tears', 'Moon');
+        $accentedTears = $this->character('Teärs', 'Moon');
 
         $this->assertSame($tears, MatchCharacterName::run(" Tears Moon\t", collect([$accentedTears, $tears]), usesSurnames: true));
     }
@@ -121,6 +121,77 @@ class MatchCharacterNameTest extends TestCase
         $this->assertNull(MatchCharacterName::run($input, collect([$this->character('Thrall')]), usesSurnames: false));
     }
 
+    #[Test]
+    public function it_throws_when_two_candidates_share_the_exact_name(): void
+    {
+        $first = $this->character('Thrall');
+        $second = $this->character('Thrall');
+
+        try {
+            MatchCharacterName::run('Thrall', collect([$first, $second]), usesSurnames: false);
+            $this->fail('Expected a MultipleCharactersFoundException.');
+        } catch (MultipleCharactersFoundException $exception) {
+            $this->assertSame([$first, $second], $exception->characters->all());
+        }
+    }
+
+    // ==================== first-name fallback ====================
+
+    #[Test]
+    public function it_falls_back_to_the_first_name_for_a_single_word_with_surnames(): void
+    {
+        $thrall = $this->character('Thrall', 'Stormrage');
+
+        $this->assertSame($thrall, MatchCharacterName::run('Thrall', collect([$thrall]), usesSurnames: true));
+    }
+
+    #[Test]
+    public function it_trims_a_single_word_before_the_first_name_fallback(): void
+    {
+        $thrall = $this->character('Thrall', 'Stormrage');
+
+        $this->assertSame($thrall, MatchCharacterName::run('  Thrall ', collect([$thrall]), usesSurnames: true));
+    }
+
+    #[Test]
+    public function it_ignores_case_and_accents_in_the_first_name_fallback(): void
+    {
+        $izepo = $this->character('Ízepo', 'Vanguard');
+
+        $this->assertSame($izepo, MatchCharacterName::run('izepo', collect([$izepo]), usesSurnames: true));
+    }
+
+    #[Test]
+    public function it_throws_when_a_single_word_matches_several_first_names(): void
+    {
+        $blastington = $this->character('Awak', 'Blastington');
+        $huntington = $this->character('Awak', 'Huntington');
+
+        try {
+            MatchCharacterName::run('Awak', collect([$blastington, $huntington]), usesSurnames: true);
+            $this->fail('Expected a MultipleCharactersFoundException.');
+        } catch (MultipleCharactersFoundException $exception) {
+            $this->assertSame([$blastington, $huntington], $exception->characters->all());
+        }
+    }
+
+    #[Test]
+    public function it_prefers_a_full_name_match_over_the_first_name_fallback(): void
+    {
+        $plain = $this->character('Thrall');
+        $withSurname = $this->character('Thrall', 'Stormrage');
+
+        $this->assertSame($plain, MatchCharacterName::run('Thrall', collect([$withSurname, $plain]), usesSurnames: true));
+    }
+
+    #[Test]
+    public function it_does_not_fall_back_for_a_multi_word_input(): void
+    {
+        $thrall = $this->character('Thrall', 'Stormrage');
+
+        $this->assertNull(MatchCharacterName::run('Thrall Bloodhoof', collect([$thrall]), usesSurnames: true));
+    }
+
     // ==================== scope ====================
 
     #[Test]
@@ -147,8 +218,8 @@ class MatchCharacterNameTest extends TestCase
 
     // ==================== helpers ====================
 
-    private function character(string $name): Character
+    private function character(string $name, ?string $surname = null): Character
     {
-        return Character::factory()->make(['name' => $name]);
+        return Character::factory()->make(['name' => $name, 'surname' => $surname]);
     }
 }

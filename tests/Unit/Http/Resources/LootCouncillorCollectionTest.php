@@ -55,6 +55,17 @@ class LootCouncillorCollectionTest extends TestCase
     }
 
     #[Test]
+    public function it_sorts_mains_sharing_a_first_name_by_surname(): void
+    {
+        $huntington = Character::factory()->main()->lootCouncillor()->withSurname('Huntington')->create(['id' => 900001, 'name' => 'Awak']);
+        $blastington = Character::factory()->main()->lootCouncillor()->withSurname('Blastington')->create(['id' => 900002, 'name' => 'Awak']);
+
+        $array = (new LootCouncillorCollection(Character::all()))->resolve(new Request);
+
+        $this->assertSame([$blastington->id, $huntington->id], array_column($array['data'], 'id'));
+    }
+
+    #[Test]
     public function it_counts_total_as_mains_plus_alts(): void
     {
         Character::factory()->count(2)->main()->lootCouncillor()->withUniqueName()->create();

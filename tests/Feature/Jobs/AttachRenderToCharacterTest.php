@@ -257,6 +257,21 @@ class AttachRenderToCharacterTest extends TestCase
             && $request->resolveEndpoint() === '/profile/wow/character/thrall-stormrage/character-media');
     }
 
+    #[Test]
+    public function it_requests_a_character_with_a_surname_by_its_full_name(): void
+    {
+        $gameVersion = GameVersion::factory()->withSurnames()->create(['realm' => null, 'blizzard_namespace' => BlizzardNamespace::FOREVER]);
+        $character = Character::factory()->create(['game_version_id' => $gameVersion->id, 'name' => 'Thrall', 'surname' => 'Stormrage']);
+        $this->mockGetCharacterMedia();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        (new AttachRenderToCharacter($character->id))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
+
+        Saloon::assertSent(fn ($request) => $request instanceof GetCharacterMediaRequest
+            && str_contains($request->resolveEndpoint(), '/thrall-stormrage/'));
+    }
+
     #[Group('edge-case')]
     #[Test]
     public function it_sends_no_media_request_when_the_namespace_needs_a_realm_but_the_game_version_has_none(): void

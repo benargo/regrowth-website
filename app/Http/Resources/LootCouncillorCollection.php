@@ -16,7 +16,7 @@ class LootCouncillorCollection extends ResourceCollection
      */
     public function toArray(Request $request): array
     {
-        $mains = $this->collection->where('is_main', true)->sortBy('name')->values();
+        $mains = $this->collection->where('is_main', true)->sortBy('full_name')->values();
         $alts = $this->collection->where('is_main', false);
 
         return [

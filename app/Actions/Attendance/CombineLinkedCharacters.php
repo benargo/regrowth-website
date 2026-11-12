@@ -37,7 +37,7 @@ class CombineLinkedCharacters
             ->concat($missingMains->map(fn (Character $main): CharacterAttendanceData => $this->emptyRow($main, $altRowsByMainId->get($main->id, collect())->all(), $raidCount)))
             ->filter(fn (CharacterAttendanceData $row): bool => in_array($row->character->rank_id, $rankIds, true))
             ->map(fn (CharacterAttendanceData $row): CharacterAttendanceData => $this->merge($row, $altRowsByMainId->get($row->character->id, collect())->all(), $raidCount))
-            ->sortBy(fn (CharacterAttendanceData $row): string => $row->character->name, SORT_STRING)
+            ->sortBy(fn (CharacterAttendanceData $row): string => $row->character->full_name, SORT_STRING)
             ->values();
     }
 
@@ -96,7 +96,7 @@ class CombineLinkedCharacters
                 }
 
                 if ($presence->isAttended()) {
-                    $names[] = $row->character->name;
+                    $names[] = $row->character->full_name;
                 }
             }
 

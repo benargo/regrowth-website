@@ -72,8 +72,8 @@ class RacePlacementTest extends TestCase
     {
         $version = GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::FOREVER]);
         $stale = now()->subDays(15);
-        $placed = Character::factory()->create(['game_version_id' => $version->id, 'updated_at' => $stale]);
-        $unplaced = Character::factory()->create(['game_version_id' => $version->id, 'updated_at' => $stale]);
+        $placed = Character::factory()->withUniqueName()->create(['game_version_id' => $version->id, 'updated_at' => $stale]);
+        $unplaced = Character::factory()->withUniqueName()->create(['game_version_id' => $version->id, 'updated_at' => $stale]);
         Character::query()->whereKey([$placed->id, $unplaced->id])->update(['updated_at' => $stale]);
         RacePlacement::factory()->create(['game_version_id' => $version->id, 'character_id' => $placed->id]);
 

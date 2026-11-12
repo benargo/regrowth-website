@@ -280,7 +280,7 @@ export default function Create() {
                                 options={availableCharacters}
                                 placeholder="Search characters…"
                                 getOptionValue={(c) => String(c.id)}
-                                getSearchableText={(c) => c.name}
+                                getSearchableText={(c) => c.full_name}
                                 renderOption={(c) => (
                                     <span className="flex items-center gap-2">
                                         {c.playable_class?.icon_url && (
@@ -290,7 +290,7 @@ export default function Create() {
                                                 className="h-4 w-4 rounded-xs"
                                             />
                                         )}
-                                        {c.name}
+                                        {c.full_name}
                                         {c.is_main && (
                                             <span className="rounded bg-amber-600/20 px-1.5 py-0.5 text-xs text-amber-400">
                                                 Main
@@ -311,7 +311,7 @@ export default function Create() {
                                                         className="h-4 w-4 rounded-xs"
                                                     />
                                                 )}
-                                                {character.name}
+                                                {character.full_name}
                                                 {character.is_main && (
                                                     <span className="rounded bg-amber-600/20 px-1.5 py-0.5 text-xs text-amber-400">
                                                         Main

@@ -320,6 +320,21 @@ class BuildAttendanceMatrixTest extends TestCase
     }
 
     #[Test]
+    public function it_sorts_rows_sharing_a_first_name_by_surname(): void
+    {
+        $report = $this->createReport($this->gameVersion, '2025-01-01 20:00');
+        $huntington = $this->createCharacter($this->gameVersion, $this->rank, ['id' => 900001, 'name' => 'Awak', 'surname' => 'Huntington']);
+        $blastington = $this->createCharacter($this->gameVersion, $this->rank, ['id' => 900002, 'name' => 'Awak', 'surname' => 'Blastington']);
+        $this->attend($report, $huntington);
+        $this->attend($report, $blastington);
+
+        $this->assertSame(
+            [$blastington->id, $huntington->id],
+            $this->build()->rows->map(fn ($row) => $row->character->id)->all(),
+        );
+    }
+
+    #[Test]
     public function it_keeps_same_named_characters_apart(): void
     {
         $report = $this->createReport($this->gameVersion, '2025-01-01 20:00');

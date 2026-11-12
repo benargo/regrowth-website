@@ -48,7 +48,7 @@ export default function Podium({ placements, variant = "plinths", targetLevel = 
                                         <div key={holder.id} className="flex flex-col items-center gap-1.5">
                                             <ClassToken playableClass={holder.character?.playable_class} size="lg" />
                                             <span className="text-camel-300 font-serif text-base leading-tight text-balance break-words md:text-xl">
-                                                {holder.character?.name}
+                                                {holder.character?.full_name}
                                             </span>
                                         </div>
                                     ))
@@ -98,7 +98,7 @@ export default function Podium({ placements, variant = "plinths", targetLevel = 
                                 {holders.map((holder) => (
                                     <li key={holder.id} className="flex min-w-0 items-center gap-2.5">
                                         <ClassToken playableClass={holder.character?.playable_class} />
-                                        <span className="block truncate font-serif text-lg">{holder.character?.name}</span>
+                                        <span className="block truncate font-serif text-lg">{holder.character?.full_name}</span>
                                     </li>
                                 ))}
                             </ul>

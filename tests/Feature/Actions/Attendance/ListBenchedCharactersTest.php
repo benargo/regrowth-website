@@ -61,6 +61,23 @@ class ListBenchedCharactersTest extends TestCase
     }
 
     #[Test]
+    public function it_sorts_characters_sharing_a_first_name_by_surname(): void
+    {
+        $gameVersion = $this->createAttendanceVersion();
+        $tag = $this->createTag($gameVersion, attributes: ['name' => 'Raid']);
+        $huntington = $this->createCharacter($gameVersion, attributes: ['id' => 900001, 'name' => 'Awak', 'surname' => 'Huntington']);
+        $blastington = $this->createCharacter($gameVersion, attributes: ['id' => 900002, 'name' => 'Awak', 'surname' => 'Blastington']);
+        $report = $this->createReport($gameVersion, now()->subDays(1), $tag);
+        $this->attend($report, $huntington, Presence::Benched);
+        $this->attend($report, $blastington, Presence::Benched);
+
+        $this->assertSame(
+            [$blastington->id, $huntington->id],
+            ListBenchedCharacters::run($gameVersion, now()->subDays(7))->get('Raid')->map(fn (BenchedCharacterData $benched): int => $benched->character->id)->all(),
+        );
+    }
+
+    #[Test]
     public function it_lists_a_character_once_across_tags_sharing_a_name(): void
     {
         $gameVersion = $this->createAttendanceVersion();

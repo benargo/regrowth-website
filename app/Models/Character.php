@@ -8,6 +8,7 @@ use App\Observers\CharacterObserver;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -23,8 +24,8 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 #[ObservedBy([CharacterObserver::class])]
-#[Fillable(['id', 'game_version_id', 'name', 'level', 'rank_id', 'playable_class_id', 'playable_race_id', 'gender', 'user_id', 'is_main', 'is_loot_councillor'])]
-#[Hidden(['created_at', 'updated_at'])]
+#[Fillable(['id', 'game_version_id', 'name', 'surname', 'level', 'rank_id', 'playable_class_id', 'playable_race_id', 'gender', 'user_id', 'is_main', 'is_loot_councillor'])]
+#[Hidden(['created_at', 'updated_at', 'surname_key'])]
 class Character extends Model implements HasCharacterMedia, HasMedia
 {
     use HasFactory, InteractsWithMedia, Prunable;
@@ -63,12 +64,50 @@ class Character extends Model implements HasCharacterMedia, HasMedia
     // ============ Custom attributes ============
 
     /**
-     * URL-safe slug derived from the character name; used in route bindings.
+     * Stores the name with surrounding whitespace trimmed.
+     */
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            set: fn (string $value): string => Str::trim($value),
+        );
+    }
+
+    /**
+     * Stores the surname with surrounding whitespace trimmed, or null when it is blank.
+     */
+    protected function surname(): Attribute
+    {
+        return Attribute::make(
+            set: function (?string $value): ?string {
+                if ($value === null) {
+                    return null;
+                }
+
+                $trimmed = Str::trim($value);
+
+                return $trimmed === '' ? null : $trimmed;
+            },
+        );
+    }
+
+    /**
+     * The name followed by the surname, or the name alone when there is no surname.
+     */
+    protected function fullName(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->surname === null ? $this->name : "{$this->name} {$this->surname}",
+        );
+    }
+
+    /**
+     * URL-safe slug derived from the full name; used in route bindings.
      */
     protected function slug(): Attribute
     {
         return Attribute::make(
-            get: fn () => Str::slug($this->name),
+            get: fn () => Str::slug($this->full_name),
         );
     }
 
@@ -80,6 +119,43 @@ class Character extends Model implements HasCharacterMedia, HasMedia
         return Attribute::make(
             get: fn () => $this->linkedCharacters()->where('is_main', true)->first(),
         );
+    }
+
+    // ============ Scopes ============
+
+    /**
+     * Order the query by name, then surname, with a null surname first.
+     */
+    #[Scope]
+    protected function orderByFullName(Builder $query): void
+    {
+        $query->orderBy($query->qualifyColumn('name'))->orderBy($query->qualifyColumn('surname'));
+    }
+
+    // ============ Name splitting ============
+
+    /**
+     * Split a name into its first word and the rest as the surname when the game
+     * version uses surnames, otherwise return the whole trimmed name. A name that
+     * is not valid UTF-8 is returned whole with a null surname.
+     *
+     * @return array{name: string, surname: ?string}
+     */
+    public static function splitName(string $name, bool $usesSurnames): array
+    {
+        $trimmed = Str::trim($name);
+
+        if (! $usesSurnames) {
+            return ['name' => $trimmed, 'surname' => null];
+        }
+
+        $parts = preg_split('/\s+/u', $trimmed, 2);
+
+        if ($parts === false) {
+            return ['name' => $name, 'surname' => null];
+        }
+
+        return ['name' => $parts[0], 'surname' => $parts[1] ?? null];
     }
 
     // ========== Relationships ============

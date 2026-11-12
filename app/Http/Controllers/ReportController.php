@@ -109,12 +109,13 @@ class ReportController extends Controller
                     ->whereIn('pivot_characters_raid_reports.raid_report_id', $linkedReportIds->push($report->id))
                     ->pluck('characters.id');
 
-                return Character::select('id', 'name', 'playable_class_id', 'is_main')
+                return Character::select('id', 'name', 'surname', 'playable_class_id', 'is_main')
                     ->with('playableClass')
                     ->where('is_loot_councillor', true)
                     ->whereNotIn('id', $excludedIds)
-                    ->orderBy('name')
-                    ->get();
+                    ->orderByFullName()
+                    ->get()
+                    ->append('full_name');
             }),
             'impactedReports' => Inertia::optional(function () use ($report) {
                 $linkedReports = $report->linkedReports()->wherePivotNotNull('created_by')->get();
@@ -157,13 +158,14 @@ class ReportController extends Controller
             'expansions' => $expansions,
             'defaultExpansionId' => config('services.warcraftlogs.expansion_id'),
             'guildTags' => GuildTag::orderBy('name')->get(),
-            'characters' => Character::select('id', 'name', 'playable_class_id', 'is_main')->with('playableClass')->orderBy('name')->get(),
+            'characters' => Character::select('id', 'name', 'surname', 'playable_class_id', 'is_main')->with('playableClass')->orderByFullName()->get()->append('full_name'),
             'lootCouncillorCandidates' => Inertia::optional(function () {
-                return Character::select('id', 'name', 'playable_class_id', 'is_main')
+                return Character::select('id', 'name', 'surname', 'playable_class_id', 'is_main')
                     ->with('playableClass')
                     ->where('is_loot_councillor', true)
-                    ->orderBy('name')
-                    ->get();
+                    ->orderByFullName()
+                    ->get()
+                    ->append('full_name');
             }),
             'nearbyReports' => Inertia::optional(
                 fn () => ReportClusterResource::collection($this->buildNearbyReportClusters($request))

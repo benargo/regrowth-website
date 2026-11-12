@@ -25,7 +25,7 @@ function CharacterRowCells({ character, spec }) {
                 <span
                     className={`inline-flex items-center gap-2 font-medium ${character.is_known ? "text-white" : "text-gray-400"}`}
                 >
-                    {character.name}
+                    {character.full_name}
                     {character.is_main && (
                         <Pill bgColor="bg-amber-700" textColor="text-amber-100">
                             Main
@@ -87,7 +87,7 @@ function CharacterCard({ character }) {
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1.5">
                         <h3 className={`font-bold ${character.is_known ? "text-white" : "text-gray-400"}`}>
-                            {character.name}
+                            {character.full_name}
                         </h3>
                         {character.is_main && (
                             <Pill bgColor="bg-red-900/40" textColor="text-red-300">
@@ -224,7 +224,7 @@ function RosterContent({ gameVersion, characters, classes, ranks, races }) {
                 rank,
             }))
             .filter((c) => {
-                if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+                if (searchQuery && !c.full_name.toLowerCase().includes(searchQuery.toLowerCase())) {
                     return false;
                 }
                 if (storedClasses !== null && !storedClasses.includes(c.playable_class?.id)) {
@@ -254,8 +254,8 @@ function RosterContent({ gameVersion, characters, classes, ranks, races }) {
                 let aVal, bVal;
                 switch (sortColumn) {
                     case "name":
-                        aVal = a.name.toLowerCase();
-                        bVal = b.name.toLowerCase();
+                        aVal = a.full_name.toLowerCase();
+                        bVal = b.full_name.toLowerCase();
                         break;
                     case "level":
                         aVal = a.level ?? 0;

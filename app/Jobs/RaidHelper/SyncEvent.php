@@ -262,7 +262,7 @@ class SyncEvent implements ShouldQueue
         $characterIdsByName = $this->resolveCharacterIds(
             $gameVersion,
             $signUps->pluck('name'),
-            Character::whereBelongsTo($gameVersion)->get(['id', 'name']),
+            Character::whereBelongsTo($gameVersion)->get(['id', 'name', 'surname']),
             'raidhelper.signups',
         );
 

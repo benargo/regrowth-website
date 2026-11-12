@@ -35,7 +35,9 @@ class CharacterResource extends JsonResource implements ScopedResource
     {
         return $this->scoped([
             'id' => $this->id,
+            'full_name' => $this->full_name,
             'name' => $this->name,
+            'surname' => $this->surname,
             'slug' => $this->slug,
             'level' => $this->level,
             'is_main' => $this->is_main,
@@ -68,8 +70,8 @@ class CharacterResource extends JsonResource implements ScopedResource
     protected function scopeDefinitions(): array
     {
         return [
-            'attendance' => ['id', 'name', 'playable_class', 'rank'],
-            'race' => ['id', 'level', 'name', 'playable_class', 'portrait_url', 'shadow_avatar_url', 'slug'],
+            'attendance' => ['full_name', 'id', 'name', 'playable_class', 'rank', 'surname'],
+            'race' => ['full_name', 'id', 'level', 'name', 'playable_class', 'portrait_url', 'shadow_avatar_url', 'slug', 'surname'],
         ];
     }
 

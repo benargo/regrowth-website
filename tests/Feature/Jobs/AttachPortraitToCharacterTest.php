@@ -344,6 +344,21 @@ class AttachPortraitToCharacterTest extends TestCase
             && $response->getPendingRequest()->headers()->get('Battlenet-Namespace') === BlizzardNamespace::ERA->forProfileRequests(Region::from(config('services.blizzard.region'))));
     }
 
+    #[Test]
+    public function it_requests_a_character_with_a_surname_by_its_full_name(): void
+    {
+        $gameVersion = GameVersion::factory()->withSurnames()->create(['realm' => null, 'blizzard_namespace' => BlizzardNamespace::FOREVER]);
+        $character = Character::factory()->create(['gender' => null, 'game_version_id' => $gameVersion->id, 'name' => 'Thrall', 'surname' => 'Stormrage']);
+        $this->mockGetCharacterProfile();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
+
+        (new AttachPortraitToCharacter($character->id, self::PORTRAIT_URL))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
+
+        Saloon::assertSent(fn ($request) => $request instanceof GetCharacterProfileRequest
+            && str_ends_with($request->resolveEndpoint(), '/thrall-stormrage'));
+    }
+
     #[Group('edge-case')]
     #[Test]
     public function it_skips_gender_sync_when_the_character_has_no_game_version(): void

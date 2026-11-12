@@ -52,7 +52,7 @@ class MultipleCharactersFoundExceptionTest extends TestCase
 
     #[Test]
     #[Group('contract')]
-    public function it_renders_a_300_json_response_listing_each_character(): void
+    public function it_renders_each_characters_full_name(): void
     {
         $response = (new MultipleCharactersFoundException($this->makeCharacters()))->render();
 
@@ -60,8 +60,8 @@ class MultipleCharactersFoundExceptionTest extends TestCase
         $this->assertSame([
             'message' => 'Multiple characters matched that name. Please specify one.',
             'characters' => [
-                ['id' => 1, 'name' => 'Thrall'],
-                ['id' => 2, 'name' => 'Jaina'],
+                ['id' => 1, 'full_name' => 'Thrall Stormrage'],
+                ['id' => 2, 'full_name' => 'Jaina'],
             ],
         ], $response->getData(true));
     }
@@ -72,7 +72,7 @@ class MultipleCharactersFoundExceptionTest extends TestCase
     private function makeCharacters(): Collection
     {
         return collect([
-            Character::factory()->make(['id' => 1, 'name' => 'Thrall']),
+            Character::factory()->make(['id' => 1, 'name' => 'Thrall', 'surname' => 'Stormrage']),
             Character::factory()->make(['id' => 2, 'name' => 'Jaina']),
         ]);
     }

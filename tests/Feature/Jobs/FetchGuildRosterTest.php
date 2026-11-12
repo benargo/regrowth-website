@@ -372,14 +372,14 @@ class FetchGuildRosterTest extends TestCase
 
         (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
 
-        $this->assertDatabaseHas('characters', ['id' => 1, 'name' => 'Thrall']);
+        $this->assertDatabaseHas('characters', ['id' => 1, 'name' => 'Thrall', 'surname' => null]);
         Saloon::assertSent(fn ($request) => $request instanceof GetCharacterProfileRequest
             && str_ends_with($request->resolveEndpoint(), '/thrall'));
     }
 
     #[Group('happy-path')]
     #[Test]
-    public function it_stores_the_full_name_when_the_version_uses_surnames(): void
+    public function it_stores_the_name_and_surname_separately_when_the_version_uses_surnames(): void
     {
         $gameVersion = $this->createGameVersion();
         $gameVersion->update(['uses_surnames' => true]);
@@ -396,12 +396,60 @@ class FetchGuildRosterTest extends TestCase
 
         (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
 
-        $this->assertDatabaseHas('characters', ['id' => 1, 'name' => 'Thrall Stormrage']);
+        $this->assertDatabaseHas('characters', ['id' => 1, 'name' => 'Thrall', 'surname' => 'Stormrage']);
+        Saloon::assertSent(fn ($request) => $request instanceof GetCharacterProfileRequest
+            && str_ends_with($request->resolveEndpoint(), '/thrall-stormrage'));
     }
 
-    #[Group('error-handling')]
+    #[Group('edge-cases')]
     #[Test]
-    public function it_logs_and_continues_when_two_members_share_a_first_name_without_surnames(): void
+    public function it_stores_a_null_surname_when_a_surname_version_member_has_none(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        $gameVersion->update(['uses_surnames' => true]);
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 1]);
+        PlayableRace::factory()->create(['id' => 1]);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(1, 'Thrall', 70, 0),
+        ]]);
+        $this->mockGetCharacterProfile();
+        $this->mockGetPlayableClassMedia();
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        $this->assertDatabaseHas('characters', ['id' => 1, 'name' => 'Thrall', 'surname' => null]);
+    }
+
+    #[Group('edge-cases')]
+    #[Test]
+    public function it_stores_two_members_sharing_a_first_name_on_a_surname_version(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        $gameVersion->update(['uses_surnames' => true]);
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 1]);
+        PlayableRace::factory()->create(['id' => 1]);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(1, 'Awak', 70, 0, 'Blastington'),
+            $this->memberPayload(2, 'Awak', 70, 0, 'Huntington'),
+        ]]);
+        $this->mockGetCharacterProfile();
+        $this->mockGetPlayableClassMedia();
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        $this->assertDatabaseHas('characters', ['id' => 1, 'name' => 'Awak', 'surname' => 'Blastington']);
+        $this->assertDatabaseHas('characters', ['id' => 2, 'name' => 'Awak', 'surname' => 'Huntington']);
+    }
+
+    #[Group('edge-cases')]
+    #[Test]
+    public function it_skips_a_second_member_with_the_same_name_on_a_version_without_surnames(): void
     {
         $gameVersion = $this->createGameVersion();
         GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
@@ -411,6 +459,29 @@ class FetchGuildRosterTest extends TestCase
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(1, 'Thrall', 70, 0, 'Stormrage'),
             $this->memberPayload(2, 'Thrall', 70, 0, 'Doomhammer'),
+        ]]);
+        $this->mockGetCharacterProfile();
+        $this->mockGetPlayableClassMedia();
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        $this->assertDatabaseHas('characters', ['id' => 1, 'name' => 'Thrall', 'surname' => null]);
+        $this->assertDatabaseMissing('characters', ['id' => 2]);
+    }
+
+    #[Group('error-handling')]
+    #[Test]
+    public function it_logs_the_full_name_and_continues_when_a_member_fails_to_sync(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        $gameVersion->update(['uses_surnames' => true]);
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 1]);
+        PlayableRace::factory()->create(['id' => 1]);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(1, 'Thrall', 70, 99, 'Stormrage'),
             $this->memberPayload(3, 'Jaina', 70, 0),
         ]]);
         $this->mockGetCharacterProfile();
@@ -419,14 +490,13 @@ class FetchGuildRosterTest extends TestCase
 
         Log::shouldReceive('warning')->once()->withArgs(
             fn ($message, $context) => $message === 'Failed to sync character from guild roster.'
-                && $context['character_id'] === 2
-                && $context['character_name'] === 'Thrall Doomhammer',
+                && $context['character_id'] === 1
+                && $context['character_name'] === 'Thrall Stormrage',
         );
 
         (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
 
-        $this->assertDatabaseHas('characters', ['id' => 1, 'name' => 'Thrall']);
-        $this->assertDatabaseMissing('characters', ['id' => 2]);
+        $this->assertDatabaseMissing('characters', ['id' => 1]);
         $this->assertDatabaseHas('characters', ['id' => 3, 'name' => 'Jaina']);
     }
 
@@ -887,7 +957,7 @@ class FetchGuildRosterTest extends TestCase
             && $request->resolveEndpoint() === "/data/wow/guild/{$gameVersion->guild_slug}/roster");
         Saloon::assertSent(fn ($request) => $request instanceof GetCharacterProfileRequest
             && $request->resolveEndpoint() === '/profile/wow/character/thrall-stormrage');
-        $this->assertDatabaseHas('characters', ['id' => 1, 'name' => 'Thrall Stormrage', 'game_version_id' => $gameVersion->id]);
+        $this->assertDatabaseHas('characters', ['id' => 1, 'name' => 'Thrall', 'surname' => 'Stormrage', 'game_version_id' => $gameVersion->id]);
     }
 
     // ==================== helpers ====================

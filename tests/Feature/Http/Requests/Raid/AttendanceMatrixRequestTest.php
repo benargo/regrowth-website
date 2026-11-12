@@ -333,11 +333,25 @@ class AttendanceMatrixRequestTest extends TestCase
     }
 
     #[Test]
-    public function filters_include_the_character_id_and_name(): void
+    public function filters_include_the_character_id_name_surname_and_full_name(): void
+    {
+        $character = $this->createCharacter($this->gameVersion, attributes: ['name' => 'Thrall', 'surname' => 'Stormrage']);
+
+        $this->assertSame(
+            ['id' => $character->id, 'name' => 'Thrall', 'surname' => 'Stormrage', 'full_name' => 'Thrall Stormrage'],
+            $this->request(['character' => $character->id])->filters()['character'],
+        );
+    }
+
+    #[Test]
+    public function filters_character_full_name_is_the_name_when_there_is_no_surname(): void
     {
         $character = $this->createCharacter($this->gameVersion, attributes: ['name' => 'Thrall']);
 
-        $this->assertSame(['id' => $character->id, 'name' => 'Thrall'], $this->request(['character' => $character->id])->filters()['character']);
+        $this->assertSame(
+            ['id' => $character->id, 'name' => 'Thrall', 'surname' => null, 'full_name' => 'Thrall'],
+            $this->request(['character' => $character->id])->filters()['character'],
+        );
     }
 
     #[Test]

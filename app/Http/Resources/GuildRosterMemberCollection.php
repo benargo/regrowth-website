@@ -51,17 +51,19 @@ class GuildRosterMemberCollection extends ResourceCollection
             ->sortBy([
                 fn (GuildRosterMemberData $a, GuildRosterMemberData $b) => $a->rank <=> $b->rank,
                 fn (GuildRosterMemberData $a, GuildRosterMemberData $b) => $b->character->level <=> $a->character->level,
-                fn (GuildRosterMemberData $a, GuildRosterMemberData $b) => $a->character->name <=> $b->character->name,
+                fn (GuildRosterMemberData $a, GuildRosterMemberData $b) => $a->character->nameForVersion($this->usesSurnames) <=> $b->character->nameForVersion($this->usesSurnames),
             ])
             ->map(function (GuildRosterMemberData $member) use ($request) {
                 $character = $this->knownCharacters->get($member->character->id);
-                $characterName = $member->character->nameForVersion($this->usesSurnames);
+                $fullName = $member->character->nameForVersion($this->usesSurnames);
 
                 return [
                     'character' => [
                         'id' => $member->character->id,
-                        'name' => $characterName,
-                        'slug' => Str::slug($characterName),
+                        'name' => $member->character->name,
+                        'surname' => $member->character->surnameForVersion($this->usesSurnames),
+                        'full_name' => $fullName,
+                        'slug' => Str::slug($fullName),
                         'level' => $member->character->level,
                         'playable_class_id' => $member->character->playableClass->id,
                         'playable_race_id' => $member->character->playableRace->id,

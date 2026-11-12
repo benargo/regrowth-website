@@ -20,8 +20,8 @@ export default function LootCouncillors({ reportId, characters, onChange }) {
     const candidatesLoadDone = useRef(false);
 
     const currentCouncillors = isCreateMode
-        ? [...localCouncillors].sort((a, b) => a.name.localeCompare(b.name))
-        : (characters ?? []).filter((c) => c.pivot?.is_loot_councillor).sort((a, b) => a.name.localeCompare(b.name));
+        ? [...localCouncillors].sort((a, b) => a.full_name.localeCompare(b.full_name))
+        : (characters ?? []).filter((c) => c.pivot?.is_loot_councillor).sort((a, b) => a.full_name.localeCompare(b.full_name));
     const councillorIds = new Set(currentCouncillors.map((c) => c.id));
 
     if (currentCouncillors.length === 0 && !canManage) {
@@ -149,7 +149,7 @@ export default function LootCouncillors({ reportId, characters, onChange }) {
                                     />
                                 )}
                                 <div className="flex flex-row items-center gap-2">
-                                    <span className="text-sm font-medium text-white">{character.name}</span>
+                                    <span className="text-sm font-medium text-white">{character.full_name}</span>
                                     {character.rank && (
                                         <div className="mt-0.5">
                                             <RankLabel rank={character.rank} className="text-xs" />
@@ -158,7 +158,7 @@ export default function LootCouncillors({ reportId, characters, onChange }) {
                                 </div>
                             </div>
                             {canManage && (
-                                <Tooltip body={"Remove " + character.name + " as councillor"} position="left">
+                                <Tooltip body={"Remove " + character.full_name + " as councillor"} position="left">
                                     <button
                                         type="button"
                                         disabled={processingIds.has(character.id)}
@@ -196,7 +196,7 @@ export default function LootCouncillors({ reportId, characters, onChange }) {
                             options={availableCandidates}
                             placeholder="Search councillors…"
                             getOptionValue={(c) => String(c.id)}
-                            getSearchableText={(c) => c.name}
+                            getSearchableText={(c) => c.full_name}
                             renderOption={(c) => (
                                 <span className="flex items-center gap-2">
                                     {c.playable_class?.icon_url && (
@@ -206,7 +206,7 @@ export default function LootCouncillors({ reportId, characters, onChange }) {
                                             className="h-4 w-4 rounded-xs"
                                         />
                                     )}
-                                    {c.name}
+                                    {c.full_name}
                                 </span>
                             )}
                         />

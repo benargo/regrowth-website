@@ -93,6 +93,8 @@ class EventCompositionResourceTest extends TestCase
         $char = $group['characters'][0];
         $this->assertSame($character->id, $char['id']);
         $this->assertSame($character->name, $char['name']);
+        $this->assertSame($character->full_name, $char['full_name']);
+        $this->assertArrayHasKey('surname', $char);
         $this->assertArrayHasKey('playable_class', $char);
         $this->assertArrayHasKey('rank', $char);
         $this->assertArrayHasKey('name', $char['rank']);

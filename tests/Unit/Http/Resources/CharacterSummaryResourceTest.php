@@ -33,6 +33,17 @@ class CharacterSummaryResourceTest extends TestCase
     }
 
     #[Test]
+    public function it_includes_the_surname_and_full_name(): void
+    {
+        $character = Character::factory()->withSurname('Stormrage')->create(['name' => 'Thrall']);
+
+        $array = (new CharacterSummaryResource($character))->toArray(new Request);
+
+        $this->assertSame('Thrall Stormrage', $array['full_name']);
+        $this->assertSame('Stormrage', $array['surname']);
+    }
+
+    #[Test]
     public function it_returns_correct_scalar_values(): void
     {
         $character = Character::factory()->withPlayableClass()->create();

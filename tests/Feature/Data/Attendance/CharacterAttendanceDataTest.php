@@ -126,7 +126,7 @@ class CharacterAttendanceDataTest extends TestCase
 
         $array = $this->row($character)->toArray()['character'];
 
-        $this->assertSame(['id', 'name', 'playable_class', 'rank'], array_keys($array));
+        $this->assertSame(['id', 'full_name', 'name', 'surname', 'playable_class', 'rank'], array_keys($array));
         $this->assertSame($character->id, $array['id']);
         $this->assertSame('Thrall', $array['name']);
         $this->assertSame(['name' => 'Raider', 'slug' => 'raider'], $array['rank']);

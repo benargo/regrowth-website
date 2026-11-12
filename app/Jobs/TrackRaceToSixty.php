@@ -112,7 +112,7 @@ class TrackRaceToSixty implements RaceToSixty, ShouldQueue
         foreach ($candidates as $character) {
             try {
                 $profile = $blizzard->send(
-                    (new GetCharacterProfileRequest($gameVersion->realm_slug, $character->name, $gameVersion->blizzard_namespace, cacheExpiryInSeconds: 50))
+                    (new GetCharacterProfileRequest($gameVersion->realm_slug, $character->full_name, $gameVersion->blizzard_namespace, cacheExpiryInSeconds: 50))
                         ->invalidateCache(),
                 )->dto();
             } catch (BlizzardRequestException|FatalRequestException|CannotCreateData|TypeError) {

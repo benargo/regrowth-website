@@ -20,7 +20,9 @@ class CharacterSummaryResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'full_name' => $this->full_name,
             'name' => $this->name,
+            'surname' => $this->surname,
             'level' => $this->level,
             'portrait_url' => $this->whenLoaded('media', fn () => $this->getFirstMediaUrl(HasCharacterMedia::MEDIA_COLLECTION) ?: null),
             'rank' => $this->whenLoaded('rank', fn () => new GuildRankResource($this->rank)->toArray($request)),

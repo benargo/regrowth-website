@@ -33,7 +33,7 @@ export default function PlannedAbsenceTableRow({
     const [confirmingDelete, setConfirmingDelete] = useState(false);
 
     const character = absence.character;
-    const characterName = character?.name ?? "Unknown Character";
+    const characterName = character?.full_name ?? "Unknown Character";
     const isDeleted = Boolean(absence.deleted_at);
     // The edit route doesn't resolve deleted absences.
     const canEdit = canUpdate && !isDeleted;

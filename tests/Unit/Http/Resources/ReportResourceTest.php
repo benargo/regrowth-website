@@ -202,6 +202,36 @@ class ReportResourceTest extends TestCase
     }
 
     #[Test]
+    public function it_includes_full_name_and_surname_for_characters(): void
+    {
+        $report = Report::factory()->withoutGuildTag()->create();
+        $character = Character::factory()->withSurname('Stormrage')->create(['name' => 'Thrall']);
+        $report->characters()->attach($character, ['presence' => 1]);
+        $report->load('characters');
+
+        $array = (new ReportResource($report))->toArray(new Request);
+
+        $this->assertSame('Thrall', $array['characters'][0]['name']);
+        $this->assertSame('Thrall Stormrage', $array['characters'][0]['full_name']);
+        $this->assertSame('Stormrage', $array['characters'][0]['surname']);
+    }
+
+    #[Test]
+    public function it_sorts_characters_sharing_a_first_name_by_surname(): void
+    {
+        $report = Report::factory()->withoutGuildTag()->create();
+        $huntington = Character::factory()->withSurname('Huntington')->create(['id' => 9001, 'name' => 'Awak']);
+        $blastington = Character::factory()->withSurname('Blastington')->create(['id' => 9002, 'name' => 'Awak']);
+        $report->characters()->attach([$huntington->id => ['presence' => 1], $blastington->id => ['presence' => 1]]);
+        $report->load('characters');
+
+        $array = (new ReportResource($report))->toArray(new Request);
+
+        $ids = array_column($array['characters'], 'id');
+        $this->assertSame([$blastington->id, $huntington->id], $ids);
+    }
+
+    #[Test]
     public function it_returns_character_pivot_data(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();

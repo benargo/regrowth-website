@@ -29,7 +29,7 @@ class BuildRaceStandings implements RaceToSixty
         $pack = $gameVersion->racePack(self::PACK_WINDOW)
             ->with(['media', 'playableClass.media', 'playableRace.media'])
             ->orderByDesc('level')
-            ->orderBy('name')
+            ->orderByFullName()
             ->get();
 
         $leader = $pack->first();
@@ -38,7 +38,7 @@ class BuildRaceStandings implements RaceToSixty
             ->with('character.playableClass.media')
             ->orderBy('position')
             ->get()
-            ->sortBy([['position', 'asc'], [fn (RacePlacement $a, RacePlacement $b): int => strcmp($a->character->name, $b->character->name)]])
+            ->sortBy([['position', 'asc'], [fn (RacePlacement $a, RacePlacement $b): int => strcmp($a->character->full_name, $b->character->full_name)]])
             ->values();
 
         $bronzeReachedAt = $placements->firstWhere('position', 3)?->reached_at;
@@ -58,7 +58,7 @@ class BuildRaceStandings implements RaceToSixty
                 $gameVersion->characters()
                     ->with(['media', 'playableClass.media', 'playableRace.media'])
                     ->orderByDesc('level')
-                    ->orderBy('name')
+                    ->orderByFullName()
                     ->get(),
             )->scope('race');
         }

@@ -25,7 +25,7 @@ class CharacterNotMainException extends Exception
     {
         return response()->json([
             'message' => 'The specified character is not a main character.',
-            'suggestion' => $this->character->mainCharacter?->name,
+            'suggestion' => $this->character->mainCharacter?->full_name,
         ], 400);
     }
 }

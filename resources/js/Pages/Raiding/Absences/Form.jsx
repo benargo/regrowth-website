@@ -17,12 +17,18 @@ import normaliseCharacterName from "@/Helpers/NormaliseCharacterName";
 import useDiscordMemberResolution from "@/Hooks/useDiscordMemberResolution";
 
 /**
- * Find the one main whose name matches the Discord nickname, either its first
- * word or the whole of it. Returns null when none or several match.
+ * Find the one main matching the Discord nickname: the first word of the
+ * nickname equals the character's first name, or the whole nickname equals
+ * its full name. Returns null when none or several match.
  */
 function matchNickname(characters, nickname) {
-    const candidates = new Set([nickname.trim().split(/\s+/)[0], nickname.trim()].map(normaliseCharacterName));
-    const matches = characters.filter((character) => candidates.has(normaliseCharacterName(character.name)));
+    const trimmed = nickname.trim();
+    const firstWord = normaliseCharacterName(trimmed.split(/\s+/)[0]);
+    const wholeNickname = normaliseCharacterName(trimmed);
+    const matches = characters.filter(
+        (character) =>
+            normaliseCharacterName(character.name) === firstWord || normaliseCharacterName(character.full_name) === wholeNickname,
+    );
 
     return matches.length === 1 ? matches[0] : null;
 }

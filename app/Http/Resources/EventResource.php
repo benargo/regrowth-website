@@ -90,7 +90,9 @@ class EventResource extends JsonResource implements ScopedResource
      *     is_team: bool,
      *     characters: array<int, array{
      *         id: int,
+     *         full_name: string,
      *         name: string,
+     *         surname: ?string,
      *         playable_class: array<string, mixed>|null,
      *         rank: array{name: ?string, sort_order: ?int},
      *         slot_number: int,
@@ -121,7 +123,9 @@ class EventResource extends JsonResource implements ScopedResource
                 'is_team' => $isTeam,
                 'characters' => $groupCharacters->map(fn (Character $character) => [
                     'id' => $character->id,
+                    'full_name' => $character->full_name,
                     'name' => $character->name,
+                    'surname' => $character->surname,
                     'playable_class' => $character->playableClass()->first()?->toResource()->resolve($request),
                     'rank' => [
                         'name' => $character->rank?->name,
@@ -141,7 +145,9 @@ class EventResource extends JsonResource implements ScopedResource
     /**
      * @return array<int, array{
      *     id: int,
+     *     full_name: string,
      *     name: string,
+     *     surname: ?string,
      *     playable_class: array<string, mixed>|null,
      *     rank: array{name: ?string, sort_order: ?int}
      * }>
@@ -152,7 +158,9 @@ class EventResource extends JsonResource implements ScopedResource
             ->filter(fn (Character $c) => $c->pivot->is_benched)
             ->map(fn (Character $character) => [
                 'id' => $character->id,
+                'full_name' => $character->full_name,
                 'name' => $character->name,
+                'surname' => $character->surname,
                 'playable_class' => $character->playableClass()->first()?->toResource()->resolve($request),
                 'rank' => [
                     'name' => $character->rank?->name,

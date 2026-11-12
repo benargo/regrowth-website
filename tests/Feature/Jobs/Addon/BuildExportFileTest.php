@@ -822,6 +822,41 @@ class BuildExportFileTest extends TestCase
     }
 
     #[Test]
+    public function it_orders_councillors_sharing_a_first_name_by_surname(): void
+    {
+        $version = $this->exportableVersion();
+        Character::factory()->for($version)->lootCouncillor()->withSurname('Huntington')->create(['id' => 9001, 'name' => 'Awak']);
+        Character::factory()->for($version)->lootCouncillor()->withSurname('Blastington')->create(['id' => 9002, 'name' => 'Awak']);
+
+        $names = collect($this->buildExport($version)['councillors'])->pluck('name')->toArray();
+
+        $this->assertSame(['Awak Blastington', 'Awak Huntington'], $names);
+    }
+
+    #[Test]
+    public function it_exports_the_full_name_of_a_councillor(): void
+    {
+        $version = $this->exportableVersion();
+        Character::factory()->for($version)->lootCouncillor()->withSurname('Stormrage')->create(['name' => 'Thrall']);
+
+        $names = collect($this->buildExport($version)['councillors'])->pluck('name')->toArray();
+
+        $this->assertSame(['Thrall Stormrage'], $names);
+    }
+
+    #[Test]
+    public function it_exports_the_full_name_of_an_attendee(): void
+    {
+        $gameVersion = $this->createAttendanceVersion();
+        $character = $this->createCharacter($gameVersion, $this->createRank($gameVersion), ['name' => 'Thrall', 'surname' => 'Stormrage']);
+        $this->attend($this->createReport($gameVersion, Carbon::parse('2025-01-15 20:00:00')), $character);
+
+        $names = collect($this->buildExport($gameVersion)['players'])->pluck('name')->toArray();
+
+        $this->assertSame(['Thrall Stormrage'], $names);
+    }
+
+    #[Test]
     public function it_excludes_non_councillor_characters(): void
     {
         $version = $this->exportableVersion();

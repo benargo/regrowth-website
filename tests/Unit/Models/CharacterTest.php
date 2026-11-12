@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\MediaLibrary\HasMedia;
@@ -40,6 +41,7 @@ class CharacterTest extends ModelTestCase
             'id',
             'game_version_id',
             'name',
+            'surname',
             'level',
             'rank_id',
             'playable_class_id',
@@ -152,6 +154,123 @@ class CharacterTest extends ModelTestCase
         $this->assertTrue($character->is_main);
     }
 
+    // ==================== full_name ====================
+
+    #[Test]
+    public function full_name_joins_the_name_and_surname(): void
+    {
+        $character = $this->factory()->make(['name' => 'Thrall', 'surname' => 'Stormrage']);
+
+        $this->assertSame('Thrall Stormrage', $character->full_name);
+    }
+
+    #[Test]
+    public function full_name_is_the_name_alone_without_a_surname(): void
+    {
+        $character = $this->factory()->make(['name' => 'Thrall', 'surname' => null]);
+
+        $this->assertSame('Thrall', $character->full_name);
+    }
+
+    #[Test]
+    public function it_rejects_a_second_character_with_the_same_name_and_no_surname_on_a_game_version(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        Character::factory()->for($gameVersion)->create(['name' => 'Thrall', 'surname' => null]);
+
+        $this->assertUniqueConstraint(
+            fn () => Character::factory()->for($gameVersion)->create(['name' => 'Thrall', 'surname' => null]),
+        );
+    }
+
+    #[Test]
+    public function it_allows_the_same_name_with_different_surnames_on_a_game_version(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        Character::factory()->for($gameVersion)->create(['name' => 'Thrall', 'surname' => null]);
+
+        Character::factory()->for($gameVersion)->create(['name' => 'Thrall', 'surname' => 'Stormrage']);
+
+        $this->assertSame(2, Character::whereBelongsTo($gameVersion)->where('name', 'Thrall')->count());
+    }
+
+    #[Test]
+    public function surname_key_is_hidden(): void
+    {
+        $this->assertHidden(new Character, ['created_at', 'updated_at', 'surname_key']);
+    }
+
+    // ==================== name and surname mutators ====================
+
+    #[Test]
+    public function name_is_trimmed_when_set(): void
+    {
+        $this->assertSame('Thrall', $this->create(['name' => "  Thrall\u{00A0}"])->refresh()->name);
+    }
+
+    #[Test]
+    public function surname_is_trimmed_when_set(): void
+    {
+        $this->assertSame('Stormrage', $this->create(['surname' => ' Stormrage  '])->refresh()->surname);
+    }
+
+    #[Test]
+    public function a_blank_surname_is_stored_as_null(): void
+    {
+        $character = $this->create(['surname' => 'Stormrage']);
+
+        $character->update(['surname' => '   ']);
+
+        $this->assertNull($character->refresh()->surname);
+    }
+
+    #[Test]
+    public function an_empty_surname_is_stored_as_null(): void
+    {
+        $this->assertNull($this->create(['surname' => ''])->refresh()->surname);
+    }
+
+    // ==================== orderByFullName ====================
+
+    #[Test]
+    public function order_by_full_name_sorts_by_name_then_surname(): void
+    {
+        $this->create(['name' => 'Thrall', 'surname' => 'Windfury']);
+        $this->create(['name' => 'Thrall', 'surname' => null]);
+        $this->create(['name' => 'Aggra', 'surname' => null]);
+        $this->create(['name' => 'Thrall', 'surname' => 'Stormrage']);
+
+        $this->assertSame(
+            ['Aggra', 'Thrall', 'Thrall Stormrage', 'Thrall Windfury'],
+            Character::orderByFullName()->get()->pluck('full_name')->all(),
+        );
+    }
+
+    // ==================== splitName ====================
+
+    /**
+     * @return array<string, array{string, bool, array{name: string, surname: ?string}}>
+     */
+    public static function splitNameCases(): array
+    {
+        return [
+            'first word and surname' => ['Thrall Stormrage', true, ['name' => 'Thrall', 'surname' => 'Stormrage']],
+            'splits on the first whitespace only' => ['Ana Van Blackwell', true, ['name' => 'Ana', 'surname' => 'Van Blackwell']],
+            'trims and collapses separating whitespace' => ['  Thrall   Stormrage ', true, ['name' => 'Thrall', 'surname' => 'Stormrage']],
+            'non-breaking space separator' => ["Thrall\u{00A0}Stormrage", true, ['name' => 'Thrall', 'surname' => 'Stormrage']],
+            'single word has a null surname' => [' Thrall ', true, ['name' => 'Thrall', 'surname' => null]],
+            'version without surnames keeps the whole trimmed name' => [' Thrall Stormrage ', false, ['name' => 'Thrall Stormrage', 'surname' => null]],
+            'invalid UTF-8 is returned whole' => ["Thr\xC3all Storm", true, ['name' => "Thr\xC3all Storm", 'surname' => null]],
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('splitNameCases')]
+    public function split_name_returns_the_first_name_and_surname(string $name, bool $usesSurnames, array $expected): void
+    {
+        $this->assertSame($expected, Character::splitName($name, $usesSurnames));
+    }
+
     // ==================== slug ====================
 
     #[Test]
@@ -168,6 +287,24 @@ class CharacterTest extends ModelTestCase
         $character = $this->factory()->make(['name' => "Kael'thas"]);
 
         $this->assertSame('kaelthas', $character->slug);
+    }
+
+    #[Test]
+    public function slug_includes_the_surname(): void
+    {
+        $character = $this->factory()->make(['name' => 'Thrall', 'surname' => 'Stormrage']);
+
+        $this->assertSame('thrall-stormrage', $character->slug);
+    }
+
+    // ==================== surname ====================
+
+    #[Test]
+    public function it_creates_a_character_with_a_surname_from_the_factory(): void
+    {
+        $character = $this->factory()->withSurname('Stormrage')->create();
+
+        $this->assertSame('Stormrage', $character->surname);
     }
 
     // ==================== linked_characters ====================

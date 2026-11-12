@@ -123,7 +123,7 @@ function AccountAbsenceForm({ gameVersion, plannedAbsence, action, canBackdate, 
                         {character ? (
                             <>
                                 <CharacterPortrait character={character} className="size-10" />
-                                <span className="text-white">{character.name}</span>
+                                <span className="text-white">{character.full_name}</span>
                                 <ClassPill playableClass={character.playable_class} />
                             </>
                         ) : (

@@ -111,8 +111,8 @@ class RaceControllerTest extends TestCase
         Queue::fake();
         Storage::fake('s3');
         $forever = GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::FOREVER]);
-        $withoutPortrait = Character::factory()->forGameVersion($forever)->create();
-        $this->withPortrait(Character::factory()->forGameVersion($forever)->create());
+        $withoutPortrait = Character::factory()->forGameVersion($forever)->withUniqueName()->create();
+        $this->withPortrait(Character::factory()->forGameVersion($forever)->withUniqueName()->create());
 
         $this->get(route('race.index'))->assertOk();
 
@@ -126,9 +126,9 @@ class RaceControllerTest extends TestCase
         Queue::fake();
         Storage::fake('s3');
         $forever = GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::FOREVER]);
-        $known = Character::factory()->forGameVersion($forever)->create();
+        $known = Character::factory()->forGameVersion($forever)->withUniqueName()->create();
         $known->rememberPortraitMissing();
-        $unknown = Character::factory()->forGameVersion($forever)->create();
+        $unknown = Character::factory()->forGameVersion($forever)->withUniqueName()->create();
 
         $this->get(route('race.index'))->assertOk();
 

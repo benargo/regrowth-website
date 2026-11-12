@@ -927,6 +927,85 @@ class ProcessUploadTest extends TestCase
         $this->assertDatabaseHas('characters', ['id' => 12345]);
     }
 
+    // ==================== surnames ====================
+
+    #[Test]
+    public function it_stores_the_surname_of_a_main_on_a_surname_version(): void
+    {
+        $version = GameVersion::factory()->withSurnames()->create();
+        $this->fakeCharacters(['thrall-stormrage' => 12345]);
+
+        $job = new ProcessUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'Thrall Stormrage', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+            ],
+        ], $this->user->id, $version->id);
+
+        $job->handle(app(BlizzardConnector::class));
+
+        $this->assertDatabaseHas('characters', [
+            'id' => 12345,
+            'name' => 'Thrall',
+            'surname' => 'Stormrage',
+        ]);
+        Saloon::assertSent(fn ($request) => $request instanceof GetCharacterStatusRequest
+            && str_ends_with($request->resolveEndpoint(), '/thrall-stormrage/status'));
+    }
+
+    #[Test]
+    public function it_stores_the_surname_of_an_alt_on_a_surname_version(): void
+    {
+        $version = GameVersion::factory()->withSurnames()->create();
+        $version->playableClasses()->attach(PlayableClass::find(1));
+        $version->playableRaces()->attach(PlayableRace::find(1));
+        $this->fakeCharacters([
+            'thrall-stormrage' => 12345,
+            'tholomew-van-blackwell' => 22222,
+        ]);
+
+        $job = new ProcessUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'Thrall Stormrage', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => 'Tholomew Van Blackwell'],
+            ],
+        ], $this->user->id, $version->id);
+
+        $job->handle(app(BlizzardConnector::class));
+
+        $this->assertDatabaseHas('characters', [
+            'id' => 22222,
+            'name' => 'Tholomew',
+            'surname' => 'Van Blackwell',
+        ]);
+        Saloon::assertSent(fn ($request) => $request instanceof GetCharacterProfileRequest
+            && str_ends_with($request->resolveEndpoint(), '/tholomew-van-blackwell'));
+    }
+
+    #[Test]
+    public function it_stores_a_null_surname_on_a_version_without_surnames(): void
+    {
+        $this->fakeCharacters(['Thrall' => 12345]);
+
+        $job = new ProcessUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'Thrall', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+            ],
+        ], $this->user->id, $this->gameVersion->id);
+
+        $job->handle(app(BlizzardConnector::class));
+
+        $this->assertDatabaseHas('characters', [
+            'id' => 12345,
+            'name' => 'Thrall',
+            'surname' => null,
+        ]);
+    }
+
     // ==================== realm requirement ====================
 
     #[Test]

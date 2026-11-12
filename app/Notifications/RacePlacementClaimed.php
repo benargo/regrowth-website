@@ -43,15 +43,16 @@ class RacePlacementClaimed extends DiscordNotification
             throw (new ModelNotFoundException)->setModel(RacePlacement::class, $ids);
         }
 
-        $placements = $placements->sortBy(fn (RacePlacement $placement) => $placement->character->name)->values();
+        $placements = $placements->sortBy(fn (RacePlacement $placement) => $placement->character->full_name)->values();
         $first = $placements->first();
         $medal = $first->medal ?? throw new LogicException("Race placement {$first->id} at position {$first->position} has no medal to announce.");
 
-        $names = $placements->map(fn (RacePlacement $placement) => $placement->character->name)->all();
+        $names = $placements->map(fn (RacePlacement $placement) => $placement->character->full_name)->all();
         $phrases = $placements->map(function (RacePlacement $placement): string {
+            $fullName = $placement->character->full_name;
             $className = $placement->character->playableClass?->name;
 
-            return $className !== null ? "{$placement->character->name}, the {$className}" : $placement->character->name;
+            return $className !== null ? "{$fullName}, the {$className}" : $fullName;
         });
 
         if ($placements->count() === 1) {

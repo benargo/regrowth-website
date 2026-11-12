@@ -36,7 +36,7 @@ class ListBenchedCharacters
             ->groupBy('tag')
             ->map(fn (Collection $group): Collection => $group
                 ->unique(fn (BenchedCharacterData $benched): int => $benched->character->id)
-                ->sortBy(fn (BenchedCharacterData $benched): string => $benched->character->name)
+                ->sortBy(fn (BenchedCharacterData $benched): string => $benched->character->full_name)
                 ->values())
             ->sortKeys();
     }

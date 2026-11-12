@@ -48,7 +48,7 @@ function PlayerChip({ player }) {
                     className="inline-block h-3 w-3 rounded-xs"
                 />
             )}
-            {player.name}
+            {player.full_name}
         </span>
     );
 }
@@ -61,7 +61,7 @@ function PlayerListBox({ icon, label, players }) {
             {players.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1">
                     {players.map((player) => (
-                        <PlayerChip key={player.name} player={player} />
+                        <PlayerChip key={player.id} player={player} />
                     ))}
                 </div>
             )}
@@ -138,7 +138,7 @@ function UpcomingAbsencesBox({ icon, absences }) {
                                         className="inline-block h-4 w-4 rounded-xs"
                                     />
                                 )}
-                                {absence.character?.name ?? "Unknown"}
+                                {absence.character?.full_name ?? "Unknown"}
                                 {absence.reason && (
                                     <Tooltip body={absence.reason.label} position="bottom">
                                         <Icon icon={absence.reason.icon} style="solid" className="text-sky-400" aria-label={absence.reason.label} />

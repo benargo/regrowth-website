@@ -63,8 +63,8 @@ export default function Edit({ character: { data: character }, specializations: 
         .filter(Boolean);
 
     return (
-        <Master title={`Edit · ${character.name}`}>
-            <SharedHeader backgroundClass="bg-stormwind" title={`Edit: ${character.name}`} />
+        <Master title={`Edit · ${character.full_name}`}>
+            <SharedHeader backgroundClass="bg-stormwind" title={`Edit: ${character.full_name}`} />
 
             {/* Tool navigation */}
             <ToolNav>
@@ -76,7 +76,7 @@ export default function Edit({ character: { data: character }, specializations: 
                         })}
                     >
                         <Icon icon="arrow-left" style="solid" className="mr-2" />
-                        <span>Finish editing {character.name}</span>
+                        <span>Finish editing {character.full_name}</span>
                     </ToolNavLink>
                 </div>
             </ToolNav>
@@ -93,7 +93,7 @@ export default function Edit({ character: { data: character }, specializations: 
                             />
                         )}
                         <div>
-                            <h2 className="text-xl font-bold text-white">{character.name}</h2>
+                            <h2 className="text-xl font-bold text-white">{character.full_name}</h2>
                             <p className="text-sm text-gray-400">
                                 {character.playable_class?.name ?? "Unknown class"}
                                 {character.rank?.name ? ` · ${character.rank.name}` : ""}

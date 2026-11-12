@@ -306,7 +306,7 @@ class ProcessUpload implements RequiresMinimumCharacterLevel, ShouldQueue
         $character = Character::query()->updateOrCreate(
             ['id' => $characterId],
             [
-                'name' => $name,
+                ...Character::splitName($name, $gameVersion->uses_surnames),
                 'is_main' => strtolower($mainAlt) === 'main',
                 'game_version_id' => $gameVersion->id,
             ]
@@ -362,7 +362,7 @@ class ProcessUpload implements RequiresMinimumCharacterLevel, ShouldQueue
                 // Find or create the alt character
                 $altCharacter = Character::firstOrNew(['id' => $altProfile->id]);
                 $altCharacter->fill([
-                    'name' => $altName,
+                    ...Character::splitName($altName, $gameVersion->uses_surnames),
                     'gender' => Gender::tryFrom(data_get($altProfile, 'gender.name')),
                     'game_version_id' => $gameVersion->id,
                 ]);
@@ -381,7 +381,7 @@ class ProcessUpload implements RequiresMinimumCharacterLevel, ShouldQueue
                 }
             } catch (CharacterTooLowLevelException $e) {
                 Log::debug('GRM Upload: Alt character too low level', [
-                    'main' => $mainCharacter->name,
+                    'main' => $mainCharacter->full_name,
                     'alt' => $altName,
                     'error' => $e->getMessage(),
                 ]);
@@ -389,7 +389,7 @@ class ProcessUpload implements RequiresMinimumCharacterLevel, ShouldQueue
                 continue;
             } catch (CharacterNotFoundException|BlizzardRequestException $e) {
                 Log::debug('GRM Upload: Could not process alt character', [
-                    'main' => $mainCharacter->name,
+                    'main' => $mainCharacter->full_name,
                     'alt' => $altName,
                     'error' => $e->getMessage(),
                 ]);

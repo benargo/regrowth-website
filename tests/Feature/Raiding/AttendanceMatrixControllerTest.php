@@ -309,7 +309,7 @@ class AttendanceMatrixControllerTest extends TestCase
     public function invoke_character_filter_returns_character_name(): void
     {
         $this->createReport($this->gameVersion, '2025-01-01 20:00');
-        $character = $this->createCharacter($this->gameVersion, null, ['name' => 'Thrall', 'is_main' => true]);
+        $character = $this->createCharacter($this->gameVersion, null, ['name' => 'Thrall', 'surname' => 'Stormrage', 'is_main' => true]);
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['character' => $character->id]));
@@ -317,6 +317,8 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->where('filters.character.id', $character->id)
             ->where('filters.character.name', 'Thrall')
+            ->where('filters.character.surname', 'Stormrage')
+            ->where('filters.character.full_name', 'Thrall Stormrage')
         );
     }
 
@@ -331,7 +333,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $this->actingAs(User::factory()->officer()->create())
             ->get(route('raiding.attendance.matrix', ['character' => $alt->id]))
             ->assertInertia(fn (Assert $page) => $page
-                ->where('filters.character', ['id' => $main->id, 'name' => 'Thrall'])
+                ->where('filters.character', ['id' => $main->id, 'name' => 'Thrall', 'surname' => null, 'full_name' => 'Thrall'])
                 ->loadDeferredProps(fn (Assert $reload) => $reload
                     ->has('matrix.rows', 1)
                     ->where('matrix.rows.0.character.id', $main->id)));
