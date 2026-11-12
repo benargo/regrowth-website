@@ -19,7 +19,6 @@ use App\Models\GameVersion;
 use App\Models\Item;
 use App\Models\Raid;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 use Saloon\Exceptions\Request\FatalRequestException;
 use Saloon\Exceptions\Request\RequestException;
 use Saloon\Exceptions\Request\Statuses\ForbiddenException;
@@ -802,7 +801,7 @@ class ItemSeeder extends Seeder
 
                 if ($asset !== null) {
                     try {
-                        $fileName = (string) Str::of($asset->value)->afterLast('/')->before('?');
+                        $fileName = (string) str($asset->value)->afterLast('/')->before('?');
                         $body = $this->renderConnector->send(new FetchIconRequest($asset->value))->body();
 
                         $model->addMediaFromString($body)

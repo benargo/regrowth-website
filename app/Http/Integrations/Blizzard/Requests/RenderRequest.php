@@ -40,7 +40,7 @@ abstract class RenderRequest extends Request
             return;
         }
 
-        Str::of($input)->whenContains('://', fn (Stringable $string) => $this->handleUri($string->toUri()));
+        str($input)->whenContains('://', fn (Stringable $string) => $this->handleUri($string->toUri()));
     }
 
     /**

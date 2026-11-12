@@ -2,8 +2,6 @@
 
 namespace App\Enums;
 
-use Illuminate\Support\Str;
-
 enum ItemQuality: string
 {
     case POOR = 'Poor';
@@ -37,8 +35,8 @@ enum ItemQuality: string
      */
     public function cssClass(string $prefix = ''): string
     {
-        $prefix = Str::of($prefix)->rtrim('-');
+        $prefix = str($prefix)->rtrim('-');
 
-        return (string) Str::of($this->name)->slug()->prepend($prefix, '-quality-');
+        return (string) str($this->name)->slug()->prepend($prefix, '-quality-');
     }
 }

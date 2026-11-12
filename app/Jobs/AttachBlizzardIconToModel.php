@@ -95,6 +95,6 @@ class AttachBlizzardIconToModel implements ShouldQueue
      */
     private function getIconName(Uri $url): string
     {
-        return (string) Str::of((string) $url->path())->afterLast('/');
+        return (string) str((string) $url->path())->afterLast('/');
     }
 }

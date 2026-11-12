@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Str;
 
 class SearchRequest extends FormRequest
 {
@@ -37,7 +36,7 @@ class SearchRequest extends FormRequest
             $sanitised = preg_replace('/[+\-*"()<>~@]/', ' ', (string) $this->input('q'));
 
             $this->merge([
-                'q' => Str::of($sanitised)->lower()->squish()->toString(),
+                'q' => str($sanitised)->lower()->squish()->toString(),
             ]);
         }
     }

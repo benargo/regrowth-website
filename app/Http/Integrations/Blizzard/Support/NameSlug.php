@@ -15,6 +15,6 @@ final class NameSlug
 {
     public static function from(string $name): string
     {
-        return Str::of($name)->trim()->lower()->replaceMatches('/\s+/u', '-')->toString();
+        return str($name)->trim()->lower()->replaceMatches('/\s+/u', '-')->toString();
     }
 }

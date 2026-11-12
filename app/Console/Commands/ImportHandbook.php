@@ -13,7 +13,6 @@ use Illuminate\Container\Attributes\Storage;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 
 #[Signature('handbook:import {directory : A local folder holding chapters.json and one <slug>.md per listed slug}')]
 #[Description('Import raid handbook chapters from a local folder')]
@@ -70,7 +69,7 @@ class ImportHandbook extends Command implements StoresHandbook
                 continue;
             }
 
-            $content = Str::of(File::get($path))->replace(["\r\n", "\r"], "\n")->trim()->value();
+            $content = str(File::get($path))->replace(["\r\n", "\r"], "\n")->trim()->value();
 
             $validator = validator(
                 ['content' => $content],

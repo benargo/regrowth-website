@@ -5,7 +5,6 @@ namespace App\Http\Integrations\Blizzard\Requests\Render;
 use App\Contracts\HasCharacterMedia;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\RenderRequest;
-use Illuminate\Support\Str;
 use Illuminate\Support\Stringable;
 use Illuminate\Support\Uri;
 use InvalidArgumentException;
@@ -34,7 +33,7 @@ class FetchCharacterMediaRequest extends RenderRequest implements HasCharacterMe
         parent::__construct($input, $size);
 
         if (is_string($input)) {
-            Str::of($input)->tap(function (Stringable $string) {
+            str($input)->tap(function (Stringable $string) {
                 if ($string->doesntContain('://')) {
                     if ($string->doesntContain('/')) {
                         throw new InvalidArgumentException(
@@ -65,7 +64,7 @@ class FetchCharacterMediaRequest extends RenderRequest implements HasCharacterMe
             return;
         }
 
-        $mediaPath = Str::of($this->mediaPath);
+        $mediaPath = str($this->mediaPath);
 
         $mediaPath = $mediaPath->when($mediaPath->doesntContain('.'), function (Stringable $str) {
             return $str->append('.', self::DEFAULT_MEDIA_FILE_EXTENSION);

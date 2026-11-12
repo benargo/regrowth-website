@@ -5,7 +5,6 @@ namespace App\Http\Integrations\Blizzard\Requests\Render;
 use App\Contracts\HasBlizzardIcons;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\RenderRequest;
-use Illuminate\Support\Str;
 use Illuminate\Support\Stringable;
 use Illuminate\Support\Uri;
 use Saloon\Http\PendingRequest;
@@ -31,7 +30,7 @@ class FetchIconRequest extends RenderRequest implements HasBlizzardIcons
         parent::__construct($input, $size);
 
         if (is_string($input)) {
-            Str::of($input)->tap(function (Stringable $string) {
+            str($input)->tap(function (Stringable $string) {
                 if ($string->doesntContain('://')) {
                     $this->iconName = $string->value();
                 }
@@ -54,7 +53,7 @@ class FetchIconRequest extends RenderRequest implements HasBlizzardIcons
             return;
         }
 
-        $iconName = Str::of($this->iconName);
+        $iconName = str($this->iconName);
 
         $iconName = $iconName->when($iconName->doesntContain('.'), function (Stringable $str) {
             return $str->append('.', self::DEFAULT_MEDIA_FILE_EXTENSION);

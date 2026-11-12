@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Concerns;
 
-use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 
 /**
@@ -33,7 +32,7 @@ trait ValidatesImageUploads
     protected function imageMessages(HasMedia $model, string $collection): array
     {
         $types = collect($model->acceptedMimeTypes($collection))
-            ->map(fn (string $mimeType): string => Str::of($mimeType)->after('/')->before('+')->upper()->toString())
+            ->map(fn (string $mimeType): string => str($mimeType)->after('/')->before('+')->upper()->toString())
             ->join(', ', ' or ');
 
         $typeMessage = "The {$collection} must be a {$types} image.";
