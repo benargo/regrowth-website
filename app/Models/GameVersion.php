@@ -125,6 +125,19 @@ class GameVersion extends Model implements DatasetModel, DefinesGameVersionMedia
     }
 
     /**
+     * Remove a trailing "-{realm without spaces}" suffix from a name, returning the name unchanged
+     * when the version has no realm or the name lacks that exact suffix.
+     */
+    public function withoutRealmSuffix(string $name): string
+    {
+        if (blank($this->realm)) {
+            return $name;
+        }
+
+        return str($name)->chopEnd('-'.str($this->realm)->remove(' '))->toString();
+    }
+
+    /**
      * The key GRM stores this guild under: the guild name on Forever, otherwise the guild name and realm without spaces.
      *
      * @return Attribute<string, never>
