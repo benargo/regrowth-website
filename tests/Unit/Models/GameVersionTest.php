@@ -75,6 +75,7 @@ class GameVersionTest extends ModelTestCase
             'title',
             'slug',
             'realm',
+            'wow_client_folder',
             'guild_name',
             'uses_surnames',
             'faction',
@@ -217,6 +218,42 @@ class GameVersionTest extends ModelTestCase
     }
 
     // ==================== accessors ====================
+
+    #[Test]
+    public function grm_guild_key_is_the_guild_name_on_forever(): void
+    {
+        $gameVersion = $this->make([
+            'guild_name' => 'Regrowth',
+            'realm' => 'Living Flame',
+            'blizzard_namespace' => BlizzardNamespace::FOREVER,
+        ]);
+
+        $this->assertSame('Regrowth', $gameVersion->grm_guild_key);
+    }
+
+    #[Test]
+    public function grm_guild_key_is_the_guild_name_when_the_realm_is_blank(): void
+    {
+        $gameVersion = $this->make([
+            'guild_name' => 'Regrowth',
+            'realm' => null,
+            'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
+        ]);
+
+        $this->assertSame('Regrowth', $gameVersion->grm_guild_key);
+    }
+
+    #[Test]
+    public function grm_guild_key_appends_the_realm_without_spaces(): void
+    {
+        $gameVersion = $this->make([
+            'guild_name' => 'Regrowth',
+            'realm' => 'Living Flame',
+            'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
+        ]);
+
+        $this->assertSame('Regrowth-LivingFlame', $gameVersion->grm_guild_key);
+    }
 
     #[Test]
     public function it_computes_guild_slug_from_guild_name(): void

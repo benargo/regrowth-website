@@ -6,6 +6,7 @@ const FIELD_LABELS = {
     slug: "Slug",
     release_date: "Release date",
     realm: "Realm",
+    wow_client_folder: "WoW client folder",
     guild_name: "Guild name",
     uses_surnames: "Characters have surnames",
     faction: "Faction",
@@ -21,6 +22,7 @@ export function gameVersionFormData(gameVersion = null) {
         title: gameVersion?.title ?? "",
         ...(gameVersion === null && { slug: "" }),
         realm: gameVersion?.realm ?? "",
+        wow_client_folder: gameVersion?.wow_client_folder ?? "",
         guild_name: gameVersion?.guild_name ?? "",
         uses_surnames: gameVersion?.uses_surnames ?? false,
         faction: gameVersion?.faction ?? "",
@@ -107,6 +109,14 @@ export default function GameVersionForm({ form, options, gameVersion = null, ...
                     </FormSection>
 
                     <FormSection legend="Integrations">
+                        <FormRow
+                            htmlFor="wow_client_folder"
+                            label={FIELD_LABELS.wow_client_folder}
+                            hint="Folder under World of Warcraft that holds this version's WTF folder, for example _forever_. Leave blank to stop desktop GRM syncing."
+                            error={errors.wow_client_folder}
+                        >
+                            {text("wow_client_folder", { maxLength: 32, autoComplete: "off", placeholder: "_forever_" })}
+                        </FormRow>
                         <FormRow
                             htmlFor="blizzard_namespace"
                             label={FIELD_LABELS.blizzard_namespace}

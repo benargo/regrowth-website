@@ -36,6 +36,7 @@ class StoreGameVersionRequest extends FormRequest
             'title' => ['required', 'string', 'max:255', $this->uniqueTitleRule()],
             'slug' => ['required', 'string', 'max:255', Rule::notIn($this->reservedSlugs()), Rule::unique('game_versions', 'slug')],
             'realm' => ['nullable', 'string', 'max:255'],
+            'wow_client_folder' => ['nullable', 'string', 'max:32', 'regex:/^_[a-z_]+_$/'],
             'guild_name' => ['required', 'string', 'max:24'],
             'uses_surnames' => ['required', 'boolean'],
             'faction' => ['nullable', Rule::enum(Faction::class)],
@@ -75,6 +76,7 @@ class StoreGameVersionRequest extends FormRequest
     {
         return [
             'guild_name' => 'guild name',
+            'wow_client_folder' => 'WoW client folder',
             'uses_surnames' => 'surnames',
             'release_date' => 'release date',
             'blizzard_namespace' => 'Blizzard API namespace',

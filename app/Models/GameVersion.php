@@ -15,6 +15,7 @@ use App\Http\Integrations\Blizzard\Support\NameSlug;
 use App\Models\Concerns\HasEditLock;
 use App\Models\Concerns\InteractsWithChaperonedMedia;
 use App\Models\Concerns\TracksUsage;
+use App\Models\GuildRosterManager\RosterRevision;
 use App\Models\WarcraftLogs\Guild;
 use App\Observers\GameVersionObserver;
 use App\Policies\DatasetPolicy;
@@ -33,6 +34,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 
@@ -41,6 +43,7 @@ use Spatie\MediaLibrary\HasMedia;
     'title',
     'slug',
     'realm',
+    'wow_client_folder',
     'guild_name',
     'uses_surnames',
     'faction',
@@ -143,6 +146,20 @@ class GameVersion extends Model implements DatasetModel, DispatchesChangesForMed
     {
         return Attribute::make(
             get: fn (): string => NameSlug::from($this->guild_name),
+        );
+    }
+
+    /**
+     * The key GRM stores this guild under: the guild name on Forever, otherwise the guild name and realm without spaces.
+     *
+     * @return Attribute<string, never>
+     */
+    protected function grmGuildKey(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): string => $this->blizzard_namespace === BlizzardNamespace::FOREVER || blank($this->realm)
+                ? $this->guild_name
+                : str($this->realm)->remove(' ')->prepend($this->guild_name, '-')->toString(),
         );
     }
 
@@ -340,6 +357,14 @@ class GameVersion extends Model implements DatasetModel, DispatchesChangesForMed
     public function reports(): HasMany
     {
         return $this->hasMany(Report::class);
+    }
+
+    /**
+     * @return HasOne<RosterRevision, $this>
+     */
+    public function currentRosterRevision(): HasOne
+    {
+        return $this->hasOne(RosterRevision::class)->latestOfMany('revision');
     }
 
     /**

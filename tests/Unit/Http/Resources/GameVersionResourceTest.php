@@ -98,7 +98,7 @@ class GameVersionResourceTest extends TestCase
         $array = (new GameVersionResource($gameVersion))->resolve(new Request);
 
         $this->assertSame(
-            ['id', 'title', 'slug', 'color', 'banner_url', 'icon_url', 'logo_url', 'realm', 'guild_name', 'uses_surnames', 'faction', 'release_date', 'blizzard'],
+            ['id', 'title', 'slug', 'color', 'banner_url', 'icon_url', 'logo_url', 'realm', 'wow_client_folder', 'guild_name', 'grm_guild_key', 'uses_surnames', 'faction', 'release_date', 'blizzard'],
             array_keys($array),
         );
     }
@@ -178,7 +178,9 @@ class GameVersionResourceTest extends TestCase
             'icon_url' => null,
             'logo_url' => null,
             'realm' => 'Thunderstrike',
+            'wow_client_folder' => null,
             'guild_name' => 'Regrowth',
+            'grm_guild_key' => 'Regrowth-Thunderstrike',
             'uses_surnames' => false,
             'faction' => Faction::ALLIANCE,
             'release_date' => '2026-02-06',

@@ -949,6 +949,7 @@ class EventResourceTest extends TestCase
             'title' => 'World of Warcraft: Forever',
             'slug' => 'forever',
             'color' => '226e73',
+            'guild_name' => 'Regrowth',
         ])->setRelation('media', new EloquentCollection);
 
         return (new Event)
