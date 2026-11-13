@@ -3,9 +3,12 @@
 namespace Tests\Feature\Actions\GuildRosterManager;
 
 use App\Actions\GuildRosterManager\StoreUpload;
+use App\Enums\GuildRosterManager\UploadOutcome;
+use App\Enums\GuildRosterManager\UploadSource;
 use App\Jobs\Discord\AttachAvatarToUser;
 use App\Jobs\GuildRosterManager\ProcessUpload;
 use App\Models\GameVersion;
+use App\Models\GuildRosterManager\Upload;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -85,5 +88,26 @@ class StoreUploadTest extends TestCase
         Queue::assertPushed(ProcessUpload::class, fn (ProcessUpload $job): bool => $job->grmData === self::PARSED
             && $job->userId === $uploader->id
             && $job->gameVersionId === $gameVersion->id);
+    }
+
+    #[Test]
+    public function it_records_a_manual_upload(): void
+    {
+        Queue::fake([ProcessUpload::class, AttachAvatarToUser::class]);
+        $gameVersion = GameVersion::factory()->create(['slug' => 'tbc']);
+        $uploader = User::factory()->officer()->create();
+        $this->travelTo('2026-10-02 18:04:11');
+
+        StoreUpload::run($gameVersion, self::CSV, self::PARSED, $uploader);
+
+        $upload = Upload::query()->sole();
+        $this->assertSame($gameVersion->id, $upload->game_version_id);
+        $this->assertSame($uploader->id, $upload->user_id);
+        $this->assertSame(UploadSource::Manual, $upload->source);
+        $this->assertSame(UploadOutcome::Processed, $upload->outcome);
+        $this->assertSame('2026-10-02 18:04:11', $upload->captured_at->format('Y-m-d H:i:s'));
+        $this->assertSame(1, $upload->member_count);
+        $this->assertSame('grm/archives/tbc/2026-10-02_18-04-11.csv', $upload->storage_path);
+        $this->assertNull($upload->idempotency_key);
     }
 }

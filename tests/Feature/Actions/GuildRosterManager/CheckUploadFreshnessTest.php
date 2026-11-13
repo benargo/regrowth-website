@@ -4,10 +4,15 @@ namespace Tests\Feature\Actions\GuildRosterManager;
 
 use App\Actions\GuildRosterManager\CheckUploadFreshness;
 use App\Contracts\Actions\GuildRosterManager\AssessesUploadFreshness;
+use App\Data\GuildRosterManager\MemberData;
+use App\Enums\GuildRosterManager\UploadSource;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
+use App\Models\GuildRosterManager\RosterEntry;
+use App\Models\GuildRosterManager\RosterRevision;
+use App\Models\GuildRosterManager\Upload;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -68,6 +73,74 @@ class CheckUploadFreshnessTest extends TestCase
             Carbon::createFromTimestamp(Storage::disk('local')->lastModified('grm/uploads/tbc/latest.csv')),
             $result['lastModified'],
         );
+    }
+
+    #[Test]
+    public function it_reads_last_modified_from_a_desktop_only_upload(): void
+    {
+        $this->fakeRosters([self::ROSTER_ENDPOINT => []]);
+        $upload = Upload::factory()->desktop()->for($this->gameVersion)->create(['captured_at' => now()->subHour()]);
+
+        $result = CheckUploadFreshness::run($this->gameVersion);
+
+        $this->assertTrue($result['lastModified']->equalTo($upload->captured_at));
+        $this->assertFalse($result['dataIsOutdated']);
+    }
+
+    #[Test]
+    public function it_counts_raiders_from_the_csv_when_the_latest_upload_is_not_a_desktop_upload(): void
+    {
+        $raider = $this->rank(0, 'Raider');
+        $this->putUpload('tbc', ['Player1,Raider,80,1,Main,', 'Player2,Raider,80,2,Main,']);
+        $this->fakeRosters([self::ROSTER_ENDPOINT => [$this->memberPayload(1, $raider->sort_order)]]);
+        $upload = Upload::factory()->for($this->gameVersion)->create(['captured_at' => now()->subHour()]);
+
+        $result = CheckUploadFreshness::run($this->gameVersion);
+
+        $this->assertNotSame(UploadSource::Desktop, $upload->source);
+        $this->assertTrue($result['lastModified']->equalTo($upload->captured_at));
+        $this->assertSame(2, $result['grmRaiderCount']);
+    }
+
+    #[Test]
+    public function it_counts_raiders_from_the_roster_state(): void
+    {
+        $this->fakeRosters([self::ROSTER_ENDPOINT => []]);
+        Upload::factory()->committed(1)->for($this->gameVersion)->create();
+        RosterRevision::factory()->for($this->gameVersion)->create([
+            'revision' => 1,
+            'ranks' => ['Guild Master', 'Officer', 'Veteran', 'Raider', 'Member', 'Initiate'],
+        ]);
+
+        foreach ([3, 4, 3] as $rankIndex) {
+            RosterEntry::factory()->for($this->gameVersion)->create([
+                'payload' => MemberData::from([
+                    'guid' => fake()->unique()->uuid(),
+                    'name' => fake()->firstName(),
+                    'rankIndex' => $rankIndex,
+                    'level' => 60,
+                    'class' => 'WARRIOR',
+                    'race' => 'Human',
+                    'altGroup' => null,
+                    'history' => [],
+                ]),
+            ]);
+        }
+
+        $result = CheckUploadFreshness::run($this->gameVersion);
+
+        $this->assertSame(2, $result['grmRaiderCount']);
+    }
+
+    #[Test]
+    public function it_counts_no_raiders_without_a_revision(): void
+    {
+        $this->fakeRosters([self::ROSTER_ENDPOINT => []]);
+        Upload::factory()->committed(1)->for($this->gameVersion)->create();
+
+        $result = CheckUploadFreshness::run($this->gameVersion);
+
+        $this->assertSame(0, $result['grmRaiderCount']);
     }
 
     // ==================== upload age ====================

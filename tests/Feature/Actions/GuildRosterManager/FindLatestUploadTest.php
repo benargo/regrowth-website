@@ -3,7 +3,9 @@
 namespace Tests\Feature\Actions\GuildRosterManager;
 
 use App\Actions\GuildRosterManager\FindLatestUpload;
+use App\Enums\GuildRosterManager\UploadOutcome;
 use App\Models\GameVersion;
+use App\Models\GuildRosterManager\Upload;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
@@ -34,7 +36,7 @@ class FindLatestUploadTest extends TestCase
 
     #[Group('happy-path')]
     #[Test]
-    public function it_returns_the_uploads_last_modified_time_and_member_count(): void
+    public function it_falls_back_to_the_csv_file_when_no_upload_is_recorded(): void
     {
         $gameVersion = GameVersion::factory()->create(['slug' => 'tbc']);
         $this->putUpload('tbc', self::HEADER."\nAlpha,Raider,70,1,Main,\nBravo,Member,70,2,Alt,Alpha");
@@ -46,6 +48,33 @@ class FindLatestUploadTest extends TestCase
         // Carbon 3 defaults createFromTimestamp() to UTC; officers read times in the app timezone (Europe/Paris).
         $this->assertSame('2026-09-21 16:13:20', $upload->lastModified->toDateTimeString());
         $this->assertSame(2, $upload->memberCount);
+    }
+
+    #[Test]
+    public function it_uses_the_newest_accepted_upload(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['slug' => 'tbc']);
+        Upload::factory()->for($gameVersion)->create(['captured_at' => '2026-10-01 10:00:00', 'member_count' => 10]);
+        Upload::factory()->for($gameVersion)->create(['captured_at' => '2026-10-02 10:00:00', 'member_count' => 20]);
+        Upload::factory()->for($gameVersion)->withOutcome(UploadOutcome::Superseded)->create(['captured_at' => '2026-10-03 10:00:00', 'member_count' => 30]);
+
+        $upload = FindLatestUpload::run($gameVersion);
+
+        $this->assertSame('2026-10-02 10:00:00', $upload->lastModified->toDateTimeString());
+        $this->assertSame(config('app.timezone'), $upload->lastModified->getTimezone()->getName());
+        $this->assertSame(20, $upload->memberCount);
+    }
+
+    #[Test]
+    public function it_ignores_a_newer_staging_sync(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['slug' => 'tbc']);
+        Upload::factory()->for($gameVersion)->create(['captured_at' => '2026-10-01 10:00:00', 'member_count' => 10]);
+        Upload::factory()->for($gameVersion)->staging()->create(['captured_at' => '2026-10-05 10:00:00']);
+
+        $upload = FindLatestUpload::run($gameVersion);
+
+        $this->assertSame('2026-10-01 10:00:00', $upload->lastModified->toDateTimeString());
     }
 
     #[Test]

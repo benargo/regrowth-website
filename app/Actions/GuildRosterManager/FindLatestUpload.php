@@ -4,35 +4,51 @@ namespace App\Actions\GuildRosterManager;
 
 use App\Data\GuildRosterManager\LatestUploadData;
 use App\Models\GameVersion;
-use App\Traits\GuildRosterManager\ResolvesUploadPath;
+use App\Models\GuildRosterManager\Upload;
+use App\Traits\GuildRosterManager\ResolvesStoragePaths;
 use Carbon\Carbon;
-use Illuminate\Filesystem\FilesystemManager;
+use Illuminate\Container\Attributes\Config;
+use Illuminate\Container\Attributes\Storage;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 /**
- * Reads a game version's latest GRM upload from the local disk.
+ * Reads a game version's latest GRM upload from the recorded uploads, falling
+ * back to the CSV file on the local disk.
  */
 class FindLatestUpload
 {
     use AsAction;
-    use ResolvesUploadPath;
+    use ResolvesStoragePaths;
 
     public function __construct(
-        protected FilesystemManager $storage,
+        #[Storage('local')] protected Filesystem $disk,
+        #[Config('app.timezone')] protected string $timezone,
     ) {}
 
     public function handle(GameVersion $gameVersion): ?LatestUploadData
     {
-        $disk = $this->storage->disk('local');
+        $upload = Upload::where('game_version_id', $gameVersion->id)
+            ->accepted()
+            ->latest('captured_at')
+            ->first();
+
+        if ($upload !== null) {
+            return new LatestUploadData(
+                lastModified: $upload->captured_at->copy()->setTimezone($this->timezone),
+                memberCount: $upload->member_count,
+            );
+        }
+
         $path = $this->grmUploadPath($gameVersion);
 
-        if (! $disk->exists($path)) {
+        if (! $this->disk->exists($path)) {
             return null;
         }
 
         return new LatestUploadData(
-            lastModified: Carbon::createFromTimestamp($disk->lastModified($path), config('app.timezone')),
-            memberCount: $this->countMembers($disk->get($path)),
+            lastModified: Carbon::createFromTimestamp($this->disk->lastModified($path), $this->timezone),
+            memberCount: $this->countMembers($this->disk->get($path)),
         );
     }
 
