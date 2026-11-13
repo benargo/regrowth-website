@@ -13,7 +13,7 @@ use App\Models\Raid;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Passport\Passport;
+use Laravel\Passport\TransientToken;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
@@ -57,7 +57,7 @@ class EventAssignmentControllerTest extends TestCase
     #[Test]
     public function it_creates_an_assignment_and_returns_201(): void
     {
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $response = $this->postJson(route('api.events.assignments.store', $this->event));
 
@@ -77,7 +77,7 @@ class EventAssignmentControllerTest extends TestCase
         $raid = Raid::factory()->create();
         $boss = Boss::factory()->for($raid)->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $response = $this->postJson(route('api.events.assignments.store', $this->event), [
             'boss_id' => $boss->id,
@@ -92,7 +92,7 @@ class EventAssignmentControllerTest extends TestCase
     {
         $group = EventAssignmentGroup::factory()->for($this->event)->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $response = $this->postJson(route('api.events.assignments.store', $this->event), [
             'group_id' => $group->id,
@@ -109,7 +109,7 @@ class EventAssignmentControllerTest extends TestCase
         $otherEvent = Event::factory()->create();
         $group = EventAssignmentGroup::factory()->for($otherEvent)->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->postJson(route('api.events.assignments.store', $this->event), [
             'group_id' => $group->id,
@@ -120,7 +120,7 @@ class EventAssignmentControllerTest extends TestCase
     #[Test]
     public function it_returns_422_when_boss_id_does_not_exist_on_store(): void
     {
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->postJson(route('api.events.assignments.store', $this->event), ['boss_id' => 99999])
             ->assertUnprocessable();
@@ -130,7 +130,7 @@ class EventAssignmentControllerTest extends TestCase
     #[Test]
     public function it_returns_403_on_store_when_user_cannot_update_event(): void
     {
-        Passport::actingAs($this->viewer);
+        $this->actingAs($this->viewer->withAccessToken(new TransientToken), 'api');
 
         $this->postJson(route('api.events.assignments.store', $this->event))
             ->assertForbidden();
@@ -151,7 +151,7 @@ class EventAssignmentControllerTest extends TestCase
         $otherBoss = Boss::factory()->create();
         $group = EventAssignmentGroup::factory()->for($this->event)->create(['boss_id' => $groupBoss->id]);
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->postJson(route('api.events.assignments.store', $this->event), [
             'group_id' => $group->id,
@@ -165,7 +165,7 @@ class EventAssignmentControllerTest extends TestCase
         $boss = Boss::factory()->create();
         $group = EventAssignmentGroup::factory()->for($this->event)->create(['boss_id' => $boss->id]);
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->postJson(route('api.events.assignments.store', $this->event), [
             'group_id' => $group->id,
@@ -184,7 +184,7 @@ class EventAssignmentControllerTest extends TestCase
     {
         $group = EventAssignmentGroup::factory()->for($this->event)->create(['boss_id' => null]);
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->postJson(route('api.events.assignments.store', $this->event), [
             'group_id' => $group->id,
@@ -202,7 +202,7 @@ class EventAssignmentControllerTest extends TestCase
     {
         $boss = Boss::factory()->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $first = $this->postJson(route('api.events.assignments.store', $this->event), ['boss_id' => $boss->id])
             ->assertCreated();
@@ -224,7 +224,7 @@ class EventAssignmentControllerTest extends TestCase
             'right_value' => 'old right',
         ]);
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.assignments.update', [$this->event, $assignment]), [
             'left_value' => 'new left',
@@ -245,7 +245,7 @@ class EventAssignmentControllerTest extends TestCase
         $groupB = EventAssignmentGroup::factory()->for($this->event)->create();
         $assignment = EventAssignment::factory()->for($this->event)->for($groupA, 'group')->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.assignments.update', [$this->event, $assignment]), ['group_id' => $groupB->id])
             ->assertNoContent();
@@ -261,7 +261,7 @@ class EventAssignmentControllerTest extends TestCase
         $bossB = Boss::factory()->for($raid)->create();
         $assignment = EventAssignment::factory()->for($this->event)->create(['boss_id' => $bossA->id]);
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.assignments.update', [$this->event, $assignment]), ['boss_id' => $bossB->id])
             ->assertNoContent();
@@ -276,7 +276,7 @@ class EventAssignmentControllerTest extends TestCase
         $boss = Boss::factory()->for($raid)->create();
         $assignment = EventAssignment::factory()->for($this->event)->create(['boss_id' => $boss->id]);
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.assignments.update', [$this->event, $assignment]), ['boss_id' => null])
             ->assertNoContent();
@@ -292,7 +292,7 @@ class EventAssignmentControllerTest extends TestCase
         $foreignGroup = EventAssignmentGroup::factory()->for($otherEvent)->create();
         $assignment = EventAssignment::factory()->for($this->event)->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.assignments.update', [$this->event, $assignment]), ['group_id' => $foreignGroup->id])
             ->assertUnprocessable();
@@ -304,7 +304,7 @@ class EventAssignmentControllerTest extends TestCase
         $otherEvent = Event::factory()->create();
         $assignment = EventAssignment::factory()->for($otherEvent)->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.assignments.update', [$this->event, $assignment]), ['left_value' => 'X'])
             ->assertNotFound();
@@ -316,7 +316,7 @@ class EventAssignmentControllerTest extends TestCase
     {
         $assignment = EventAssignment::factory()->for($this->event)->create();
 
-        Passport::actingAs($this->viewer);
+        $this->actingAs($this->viewer->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.assignments.update', [$this->event, $assignment]), ['left_value' => 'X'])
             ->assertForbidden();
@@ -354,7 +354,7 @@ class EventAssignmentControllerTest extends TestCase
         $group = EventAssignmentGroup::factory()->for($this->event)->create(['boss_id' => $groupBoss->id]);
         $assignment = EventAssignment::factory()->for($this->event)->create(['boss_id' => $otherBoss->id]);
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.assignments.update', [$this->event, $assignment]), [
             'group_id' => $group->id,
@@ -369,7 +369,7 @@ class EventAssignmentControllerTest extends TestCase
     {
         [$a, $b, $c] = EventAssignment::factory()->count(3)->for($this->event)->create()->all();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.assignments.reorder', $this->event), ['order' => [$c->id, $a->id, $b->id]])
             ->assertNoContent();
@@ -387,7 +387,7 @@ class EventAssignmentControllerTest extends TestCase
         $foreign = EventAssignment::factory()->for($otherEvent)->create();
         $own = EventAssignment::factory()->for($this->event)->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.assignments.reorder', $this->event), ['order' => [$own->id, $foreign->id]])
             ->assertUnprocessable();
@@ -399,7 +399,7 @@ class EventAssignmentControllerTest extends TestCase
     {
         $assignment = EventAssignment::factory()->for($this->event)->create();
 
-        Passport::actingAs($this->viewer);
+        $this->actingAs($this->viewer->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.assignments.reorder', $this->event), ['order' => [$assignment->id]])
             ->assertForbidden();
@@ -414,7 +414,7 @@ class EventAssignmentControllerTest extends TestCase
 
         [$a, $b] = EventAssignment::factory()->count(2)->for($this->event)->create()->all();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.assignments.reorder', $this->event), ['order' => [$b->id, $a->id]])
             ->assertNoContent();
@@ -427,7 +427,7 @@ class EventAssignmentControllerTest extends TestCase
     {
         $assignment = EventAssignment::factory()->for($this->event)->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.assignments.update', [$this->event, $assignment]), [
             'left_type' => 'character',
@@ -446,7 +446,7 @@ class EventAssignmentControllerTest extends TestCase
     {
         $assignment = EventAssignment::factory()->for($this->event)->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.assignments.update', [$this->event, $assignment]), [
             'left_type' => 'unknown_thing',
@@ -461,7 +461,7 @@ class EventAssignmentControllerTest extends TestCase
     {
         $assignment = EventAssignment::factory()->for($this->event)->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->deleteJson(route('api.events.assignments.destroy', [$this->event, $assignment]))
             ->assertNoContent();
@@ -475,7 +475,7 @@ class EventAssignmentControllerTest extends TestCase
         $otherEvent = Event::factory()->create();
         $assignment = EventAssignment::factory()->for($otherEvent)->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->deleteJson(route('api.events.assignments.destroy', [$this->event, $assignment]))
             ->assertNotFound();
@@ -487,7 +487,7 @@ class EventAssignmentControllerTest extends TestCase
     {
         $assignment = EventAssignment::factory()->for($this->event)->create();
 
-        Passport::actingAs($this->viewer);
+        $this->actingAs($this->viewer->withAccessToken(new TransientToken), 'api');
 
         $this->deleteJson(route('api.events.assignments.destroy', [$this->event, $assignment]))
             ->assertForbidden();
@@ -505,7 +505,7 @@ class EventAssignmentControllerTest extends TestCase
             'right_value' => 'cross',
         ]);
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.assignments.update', [$this->event, $assignment]), [
             'left_type' => 'character',
@@ -527,7 +527,7 @@ class EventAssignmentControllerTest extends TestCase
             'right_value' => null,
         ]);
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.assignments.update', [$this->event, $assignment]), [
             'right_type' => 'target_marker',

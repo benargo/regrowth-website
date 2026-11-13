@@ -15,7 +15,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\SendQueuedNotifications;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
-use Laravel\Passport\Passport;
+use Laravel\Passport\TransientToken;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
@@ -70,7 +70,7 @@ class PublishAssignmentsControllerTest extends TestCase
 
         $this->fakeDiscord([]);
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $response = $this->postJson(route('api.events.publish-assignments', $this->event));
 
@@ -100,7 +100,7 @@ class PublishAssignmentsControllerTest extends TestCase
             CreateMessageRequest::class => MockResponse::make($this->makeDiscordMessageResponse('565656565656565656', $this->event->channel_id)),
         ]);
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->postJson(route('api.events.publish-assignments', $this->event))
             ->assertNoContent();
@@ -117,7 +117,7 @@ class PublishAssignmentsControllerTest extends TestCase
         $event = Event::factory()->for($channel, 'channel')->create();
         $this->fakeDiscordMessageCreated('787878787878787878', $channel->id);
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->postJson(route('api.events.publish-assignments', $event))
             ->assertNoContent();
@@ -138,7 +138,7 @@ class PublishAssignmentsControllerTest extends TestCase
     #[Test]
     public function it_returns_403_when_user_cannot_update_event(): void
     {
-        Passport::actingAs($this->viewer);
+        $this->actingAs($this->viewer->withAccessToken(new TransientToken), 'api');
 
         $response = $this->postJson(route('api.events.publish-assignments', $this->event));
 
@@ -161,7 +161,7 @@ class PublishAssignmentsControllerTest extends TestCase
         $event = Event::factory()->for($channel, 'channel')->create();
         $this->fakeDiscordMessageCreated('787878787878787878', $channel->id);
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->postJson(route('api.events.publish-assignments', $event))
             ->assertNoContent();

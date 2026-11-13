@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\EnsureTransientToken;
 use App\Http\Requests\CreateSpellRequest;
 use App\Http\Resources\SpellResource;
 use App\Models\Spell;
@@ -16,6 +17,7 @@ class SpellController extends Controller
      * Store a newly created spell.
      */
     #[Middleware('auth:api')]
+    #[Middleware(EnsureTransientToken::class)]
     #[Authorize('create', Spell::class)]
     public function store(CreateSpellRequest $request): JsonResponse
     {

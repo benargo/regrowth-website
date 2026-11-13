@@ -85,7 +85,7 @@ class ApiAuthenticationTest extends TestCase
     }
 
     #[Test]
-    public function it_authenticates_an_api_request_with_a_personal_access_bearer_token(): void
+    public function it_rejects_a_personal_access_bearer_token_on_site_api_routes(): void
     {
         app(ClientRepository::class)->createPersonalAccessGrantClient('Test personal access client', 'users');
         User::factory()->create(['id' => '999999999999999999']);
@@ -93,8 +93,7 @@ class ApiAuthenticationTest extends TestCase
 
         $this->withToken($officer->createToken('test')->accessToken)
             ->postJson(route('api.discord.members.resolve', '999999999999999999'))
-            ->assertOk()
-            ->assertExactJson(['status' => 'ready']);
+            ->assertForbidden();
     }
 
     #[Test]

@@ -7,6 +7,7 @@ use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Passport\Passport;
+use Laravel\Passport\TransientToken;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
@@ -42,7 +43,7 @@ class SpellControllerTest extends TestCase
         $user = User::factory()->create();
         $user->discordRoles()->attach($this->editorRole->id);
 
-        Passport::actingAs($user);
+        $this->actingAs($user->withAccessToken(new TransientToken), 'api');
 
         $response = $this->postJson(route('api.spells.store'), [
             'name' => 'Avenging Wrath',
@@ -56,11 +57,26 @@ class SpellControllerTest extends TestCase
 
     #[Group('authorization')]
     #[Test]
+    public function it_returns_403_on_store_for_a_non_transient_bearer_token(): void
+    {
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($this->editorRole->id);
+
+        Passport::actingAs($user, ['grm:upload']);
+
+        $this->postJson(route('api.spells.store'), ['name' => 'Avenging Wrath', 'type' => 'Magic'])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('spells', ['name' => 'Avenging Wrath']);
+    }
+
+    #[Group('authorization')]
+    #[Test]
     public function it_returns_403_on_store_without_edit_datasets_permission(): void
     {
         $user = User::factory()->create();
 
-        Passport::actingAs($user);
+        $this->actingAs($user->withAccessToken(new TransientToken), 'api');
 
         $response = $this->postJson(route('api.spells.store'), [
             'name' => 'Avenging Wrath',
@@ -106,7 +122,7 @@ class SpellControllerTest extends TestCase
         $user = User::factory()->create();
         $user->discordRoles()->attach($this->editorRole->id);
 
-        Passport::actingAs($user);
+        $this->actingAs($user->withAccessToken(new TransientToken), 'api');
 
         $response = $this->postJson(route('api.spells.store'), [
             'type' => 'Magic',
@@ -123,7 +139,7 @@ class SpellControllerTest extends TestCase
         $user = User::factory()->create();
         $user->discordRoles()->attach($this->editorRole->id);
 
-        Passport::actingAs($user);
+        $this->actingAs($user->withAccessToken(new TransientToken), 'api');
 
         $response = $this->postJson(route('api.spells.store'), [
             'name' => 'Avenging Wrath',

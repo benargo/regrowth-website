@@ -10,7 +10,7 @@ use App\Models\EventAssignmentGroup;
 use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Passport\Passport;
+use Laravel\Passport\TransientToken;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
@@ -54,7 +54,7 @@ class EventGroupControllerTest extends TestCase
     #[Test]
     public function it_creates_a_group_and_returns_201(): void
     {
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $response = $this->postJson(route('api.events.groups.store', $this->event), ['name' => 'Healers']);
 
@@ -71,7 +71,7 @@ class EventGroupControllerTest extends TestCase
     #[Test]
     public function it_defaults_name_to_new_group_when_none_provided(): void
     {
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $response = $this->postJson(route('api.events.groups.store', $this->event), []);
 
@@ -89,7 +89,7 @@ class EventGroupControllerTest extends TestCase
     {
         EventAssignmentGroup::factory()->count(3)->for($this->event)->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $response = $this->postJson(route('api.events.groups.store', $this->event), ['name' => 'Second Group']);
 
@@ -101,7 +101,7 @@ class EventGroupControllerTest extends TestCase
     #[Test]
     public function it_returns_403_on_store_when_user_cannot_update_event(): void
     {
-        Passport::actingAs($this->viewer);
+        $this->actingAs($this->viewer->withAccessToken(new TransientToken), 'api');
 
         $response = $this->postJson(route('api.events.groups.store', $this->event), ['name' => 'Tanks']);
 
@@ -120,7 +120,7 @@ class EventGroupControllerTest extends TestCase
     {
         $boss = Boss::factory()->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $response = $this->postJson(route('api.events.groups.store', $this->event), [
             'name' => 'Healers',
@@ -141,7 +141,7 @@ class EventGroupControllerTest extends TestCase
     #[Test]
     public function it_returns_422_when_boss_id_does_not_exist_on_store(): void
     {
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->postJson(route('api.events.groups.store', $this->event), [
             'name' => 'Healers',
@@ -155,7 +155,7 @@ class EventGroupControllerTest extends TestCase
         $boss = Boss::factory()->create();
         $group = EventAssignmentGroup::factory()->for($this->event)->create(['boss_id' => null]);
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.groups.update', [$this->event, $group]), ['boss_id' => $boss->id])
             ->assertNoContent();
@@ -173,7 +173,7 @@ class EventGroupControllerTest extends TestCase
     {
         $group = EventAssignmentGroup::factory()->for($this->event)->create(['name' => 'Old Name']);
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $response = $this->patchJson(route('api.events.groups.update', [$this->event, $group]), ['name' => 'New Name']);
 
@@ -186,7 +186,7 @@ class EventGroupControllerTest extends TestCase
     {
         $group = EventAssignmentGroup::factory()->for($this->event)->create(['sort_order' => 0]);
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.groups.update', [$this->event, $group]), ['sort_order' => 5])
             ->assertNoContent();
@@ -200,7 +200,7 @@ class EventGroupControllerTest extends TestCase
         $otherEvent = Event::factory()->create();
         $group = EventAssignmentGroup::factory()->for($otherEvent)->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.groups.update', [$this->event, $group]), ['name' => 'Hack'])
             ->assertNotFound();
@@ -212,7 +212,7 @@ class EventGroupControllerTest extends TestCase
     {
         $group = EventAssignmentGroup::factory()->for($this->event)->create();
 
-        Passport::actingAs($this->viewer);
+        $this->actingAs($this->viewer->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.groups.update', [$this->event, $group]), ['name' => 'X'])
             ->assertForbidden();
@@ -225,7 +225,7 @@ class EventGroupControllerTest extends TestCase
     {
         [$a, $b, $c] = EventAssignmentGroup::factory()->count(3)->for($this->event)->create()->all();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.groups.reorder', $this->event), ['order' => [$c->id, $a->id, $b->id]])
             ->assertNoContent();
@@ -243,7 +243,7 @@ class EventGroupControllerTest extends TestCase
         $foreign = EventAssignmentGroup::factory()->for($otherEvent)->create();
         $own = EventAssignmentGroup::factory()->for($this->event)->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.groups.reorder', $this->event), ['order' => [$own->id, $foreign->id]])
             ->assertUnprocessable();
@@ -255,7 +255,7 @@ class EventGroupControllerTest extends TestCase
     {
         $group = EventAssignmentGroup::factory()->for($this->event)->create();
 
-        Passport::actingAs($this->viewer);
+        $this->actingAs($this->viewer->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.groups.reorder', $this->event), ['order' => [$group->id]])
             ->assertForbidden();
@@ -270,7 +270,7 @@ class EventGroupControllerTest extends TestCase
 
         [$a, $b] = EventAssignmentGroup::factory()->count(2)->for($this->event)->create()->all();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(route('api.events.groups.reorder', $this->event), ['order' => [$b->id, $a->id]])
             ->assertNoContent();
@@ -285,7 +285,7 @@ class EventGroupControllerTest extends TestCase
     {
         $group = EventAssignmentGroup::factory()->for($this->event)->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->deleteJson(route('api.events.groups.destroy', [$this->event, $group]))
             ->assertNoContent();
@@ -299,7 +299,7 @@ class EventGroupControllerTest extends TestCase
         $group = EventAssignmentGroup::factory()->for($this->event)->create();
         $assignment = EventAssignment::factory()->for($this->event)->for($group, 'group')->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->deleteJson(route('api.events.groups.destroy', [$this->event, $group]))
             ->assertNoContent();
@@ -314,7 +314,7 @@ class EventGroupControllerTest extends TestCase
         $otherEvent = Event::factory()->create();
         $group = EventAssignmentGroup::factory()->for($otherEvent)->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->deleteJson(route('api.events.groups.destroy', [$this->event, $group]))
             ->assertNotFound();
@@ -326,7 +326,7 @@ class EventGroupControllerTest extends TestCase
     {
         $group = EventAssignmentGroup::factory()->for($this->event)->create();
 
-        Passport::actingAs($this->viewer);
+        $this->actingAs($this->viewer->withAccessToken(new TransientToken), 'api');
 
         $this->deleteJson(route('api.events.groups.destroy', [$this->event, $group]))
             ->assertForbidden();
@@ -337,7 +337,7 @@ class EventGroupControllerTest extends TestCase
     {
         $group = EventAssignmentGroup::factory()->for($this->event)->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->deleteJson(route('api.events.groups.destroy', [$this->event, $group]))
             ->assertNoContent();
@@ -353,7 +353,7 @@ class EventGroupControllerTest extends TestCase
         $assignmentInA = EventAssignment::factory()->for($this->event)->for($groupA, 'group')->create();
         $assignmentInB = EventAssignment::factory()->for($this->event)->for($groupB, 'group')->create();
 
-        Passport::actingAs($this->editor);
+        $this->actingAs($this->editor->withAccessToken(new TransientToken), 'api');
 
         $this->deleteJson(route('api.events.groups.destroy', [$this->event, $groupA]))
             ->assertNoContent();
