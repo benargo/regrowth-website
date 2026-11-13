@@ -9,6 +9,11 @@ export function usePermissionCheck() {
     return (permission) => permissions.includes(permission);
 }
 
+/**
+ * Whether the viewer holds the permission, or any one of a list of permissions.
+ */
 export function usePermission(permission) {
-    return usePermissionCheck()(permission);
+    const check = usePermissionCheck();
+
+    return Array.isArray(permission) ? permission.some(check) : check(permission);
 }
