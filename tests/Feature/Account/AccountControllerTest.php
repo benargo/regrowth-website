@@ -4,6 +4,7 @@ namespace Tests\Feature\Account;
 
 use App\Enums\PlannedAbsenceReason;
 use App\Models\Character;
+use App\Models\DesktopClient;
 use App\Models\DiscordRole;
 use App\Models\PlannedAbsence;
 use App\Models\User;
@@ -11,6 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 #[Group('account')]
@@ -178,5 +180,48 @@ class AccountControllerTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->where('planned_absences.permissions.edit', fn ($flags) => collect($flags)->count() === 3 && collect($flags)->filter()->keys()->all() === [$upcoming->id])
             );
+    }
+
+    // ==================== index: Desktop Clients ====================
+
+    private function userWithDesktopClientPermission(): User
+    {
+        $role = DiscordRole::factory()->grantsPermissions()->create();
+        Permission::firstOrCreate(['name' => 'use-desktop-client', 'guard_name' => 'web']);
+        $role->givePermissionTo('use-desktop-client');
+
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($role->id);
+        $user->load('discordRoles.permissions');
+
+        return $user;
+    }
+
+    #[Test]
+    public function index_lists_only_the_users_linked_desktop_clients(): void
+    {
+        $user = $this->userWithDesktopClientPermission();
+        $linked = DesktopClient::factory()->linked()->create(['user_id' => $user->id]);
+        $revoked = DesktopClient::factory()->linked()->create(['user_id' => $user->id]);
+        $revoked->accessToken->revoke();
+        DesktopClient::factory()->linked()->create();
+
+        $response = $this->actingAs($user)->get(route('account.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('desktop_clients.data', 1)
+            ->where('desktop_clients.data.0.id', $linked->id)
+        );
+    }
+
+    #[Test]
+    public function index_omits_desktop_clients_without_use_desktop_client(): void
+    {
+        $user = User::factory()->create();
+        DesktopClient::factory()->linked()->create(['user_id' => $user->id]);
+
+        $response = $this->actingAs($user)->get(route('account.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page->where('desktop_clients', null));
     }
 }

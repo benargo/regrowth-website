@@ -133,7 +133,7 @@ export default function Dashboard({ discordRoles }) {
                             <DashboardCard href={route("management.raids.index")} icon="dungeon">
                                 <h3 className="text-md">Manage raids</h3>
                                 <p className="mb-1 text-sm">
-                                    Set up each game version's raids, their banners and the order of their bosses.
+                                    Set up each game version’s raids, their banners and the order of their bosses.
                                 </p>
                             </DashboardCard>
                         </Can>
@@ -141,7 +141,7 @@ export default function Dashboard({ discordRoles }) {
                             <DashboardCard href={route("management.bosses.index")} icon="skull">
                                 <h3 className="text-md">Manage bosses</h3>
                                 <p className="mb-1 text-sm">
-                                    Add each raid's bosses in encounter order and write their strategies.
+                                    Add each raid’s bosses in encounter order and write their strategies.
                                 </p>
                             </DashboardCard>
                         </Can>
@@ -197,6 +197,12 @@ export default function Dashboard({ discordRoles }) {
                                         </p>
                                     </DashboardCard>
                                 )}
+                                <DashboardCard href={route("management.desktop-clients.index")} icon="desktop">
+                                    <h4 className="text-md">Desktop clients</h4>
+                                    <p className="mb-1 text-sm">
+                                        See who is signed in to Regrowth Desktop and revoke devices.
+                                    </p>
+                                </DashboardCard>
                                 {user?.admin && (
                                     <DashboardCard href={route("horizon.index")} icon="tachometer-alt" external>
                                         <h4 className="text-md">Scheduled jobs</h4>

@@ -19,6 +19,7 @@ use App\Http\Controllers\Dashboard\DiscordRoleController;
 use App\Http\Controllers\Dashboard\PermissionAccessController;
 use App\Http\Controllers\Dashboard\PermissionController;
 use App\Http\Controllers\Dashboard\PermissionGroupController;
+use App\Http\Controllers\DesktopClientController;
 use App\Http\Controllers\DiscordJoinController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTemplateController;
@@ -69,6 +70,10 @@ Route::group(['prefix' => 'account', 'as' => 'account.', 'middleware' => ['auth'
     Route::get('/absences/{plannedAbsence}/edit', [AccountPlannedAbsenceController::class, 'edit'])->name('absences.edit');
     Route::patch('/absences/{plannedAbsence}', [AccountPlannedAbsenceController::class, 'update'])->name('absences.update');
     Route::delete('/absences/{plannedAbsence}', [AccountPlannedAbsenceController::class, 'destroy'])->name('absences.destroy');
+
+    // Self-service desktop app sign-out
+    Route::delete('/desktop-clients', [DesktopClientController::class, 'destroyAllForUser'])->name('desktop-clients.destroy-all');
+    Route::delete('/desktop-clients/{desktopClient}', [DesktopClientController::class, 'destroy'])->name('desktop-clients.destroy');
 });
 
 /**
@@ -233,6 +238,12 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
      */
     Route::get('/discord-roles', [DiscordRoleController::class, 'index'])->name('discord-roles.index');
     Route::patch('/discord-roles/{discordRole}', [DiscordRoleController::class, 'update'])->name('discord-roles.update');
+
+    /**
+     * Desktop clients management
+     */
+    Route::get('/desktop-clients', [DesktopClientController::class, 'index'])->name('desktop-clients.index');
+    Route::delete('/desktop-clients/{desktopClient}', [DesktopClientController::class, 'destroy'])->name('desktop-clients.destroy');
 
     /**
      * Permissions management
