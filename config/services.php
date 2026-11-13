@@ -31,8 +31,11 @@ return [
         'filesystem' => env('BLIZZARD_FILESYSTEM', 'public'),
     ],
 
-    'guild_roster_manager' => [
+    'grm' => [
         'upload_path' => 'grm/uploads/{game_version}/latest.csv',
+        'archive_path' => 'grm/archives/{game_version}',
+        'clock_tolerance_seconds' => (int) env('GRM_CLOCK_TOLERANCE_SECONDS', 60),
+        'desktop_oauth_client_id' => env('GRM_DESKTOP_OAUTH_CLIENT_ID'),
     ],
 
     'discord' => [

@@ -30,6 +30,16 @@ class PurgeArchivedUploadsTest extends TestCase
     }
 
     #[Test]
+    public function it_ignores_json_files_in_the_archive(): void
+    {
+        $this->putWithAge('grm/archives/forever/2025-01-01_12-00-00_1.json', now()->subYear());
+
+        (new PurgeArchivedUploads)->handle(Storage::disk('local'));
+
+        Storage::disk('local')->assertExists('grm/archives/forever/2025-01-01_12-00-00_1.json');
+    }
+
+    #[Test]
     public function it_deletes_old_archives_stored_outside_a_game_version_directory(): void
     {
         $this->putWithAge('grm/archives/2026-01-01_12-00-00.csv', now()->subMonths(3)->subDay());
@@ -58,6 +68,8 @@ class PurgeArchivedUploadsTest extends TestCase
 
         Storage::disk('local')->assertExists('grm/uploads/anniversary/latest.csv');
     }
+
+    // ==================== helpers ====================
 
     private function putWithAge(string $path, \DateTimeInterface $modifiedAt): void
     {
