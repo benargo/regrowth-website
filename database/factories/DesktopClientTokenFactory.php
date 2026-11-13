@@ -26,7 +26,7 @@ class DesktopClientTokenFactory extends Factory
             'access_token_id' => fn (array $attributes): string => Token::forceCreate([
                 'id' => Str::random(80),
                 'user_id' => DesktopClient::findOrFail($attributes['desktop_client_id'])->user_id,
-                'client_id' => config('grm.desktop_oauth_client_id') ?? Client::factory()->create()->getKey(),
+                'client_id' => config('services.grm.desktop_oauth_client_id') ?? Client::factory()->create()->getKey(),
                 'name' => null,
                 'scopes' => ['grm:upload', 'grm:targets'],
                 'revoked' => false,

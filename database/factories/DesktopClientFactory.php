@@ -40,7 +40,7 @@ class DesktopClientFactory extends Factory
             $token = Token::forceCreate([
                 'id' => Str::random(80),
                 'user_id' => $desktopClient->user_id,
-                'client_id' => config('grm.desktop_oauth_client_id') ?? Client::factory()->create()->getKey(),
+                'client_id' => config('services.grm.desktop_oauth_client_id') ?? Client::factory()->create()->getKey(),
                 'name' => $desktopClient->name,
                 'scopes' => [],
                 'revoked' => false,
