@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Account;
 
 use App\Http\Controllers\Controller;
+use App\Models\DesktopClient;
 use App\Models\PlannedAbsence;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -30,6 +31,14 @@ class AccountController extends Controller
                     'edit' => $this->abilityByAbsence($user, 'update'),
                     'delete' => $this->abilityByAbsence($user, 'delete'),
                 ]]),
+            'desktop_clients' => fn () => $user->can('viewAny', DesktopClient::class)
+                ? DesktopClient::linked()
+                    ->whereBelongsTo($user)
+                    ->with(['user', 'accessToken.refreshToken'])
+                    ->latest('last_seen_at')
+                    ->get()
+                    ->toResourceCollection()
+                : null,
         ]);
     }
 
