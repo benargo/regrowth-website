@@ -5,7 +5,11 @@ use App\Http\Controllers\Auth\BattleNetController;
 use App\Http\Controllers\Auth\DiscordController;
 use App\Http\Controllers\Auth\LocalLoginController;
 use App\Http\Controllers\Auth\ViewAsRoleController;
+use App\Models\DesktopClient;
 use Illuminate\Support\Facades\Route;
+use Laravel\Passport\Http\Controllers\ApproveAuthorizationController;
+use Laravel\Passport\Http\Controllers\AuthorizationController;
+use Laravel\Passport\Http\Controllers\DenyAuthorizationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -73,4 +77,15 @@ if (app()->environment(['local', 'testing'])) {
 Route::group(['prefix' => 'view-as', 'middleware' => ['auth']], function () {
     Route::get('/self', [ViewAsRoleController::class, 'stopViewingAs'])->name('auth.return-to-self');
     Route::get('/{role}', [ViewAsRoleController::class, 'viewAsRole'])->can('impersonate-roles')->name('auth.view-as');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Passport Authorization Code Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'can:create,'.DesktopClient::class])->prefix('oauth')->name('passport.authorizations.')->group(function () {
+    Route::get('authorize', [AuthorizationController::class, 'authorize'])->name('authorize');
+    Route::post('authorize', [ApproveAuthorizationController::class, 'approve'])->name('approve');
+    Route::delete('authorize', [DenyAuthorizationController::class, 'deny'])->name('deny');
 });
