@@ -9,7 +9,7 @@ use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
-use Laravel\Passport\Passport;
+use Laravel\Passport\TransientToken;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Laravel\Facades\Saloon;
@@ -43,7 +43,7 @@ class ResolveDiscordMemberControllerTest extends TestCase
     {
         User::factory()->create(['id' => '999999999999999999']);
 
-        Passport::actingAs(User::factory()->officer()->create());
+        $this->actingAs(User::factory()->officer()->create()->withAccessToken(new TransientToken), 'api');
 
         $this->postJson(route('api.discord.members.resolve', '999999999999999999'))
             ->assertOk()
@@ -57,7 +57,7 @@ class ResolveDiscordMemberControllerTest extends TestCase
     {
         $officer = User::factory()->officer()->create();
 
-        Passport::actingAs($officer);
+        $this->actingAs($officer->withAccessToken(new TransientToken), 'api');
 
         $this->postJson(route('api.discord.members.resolve', '999999999999999999'))
             ->assertStatus(202)
@@ -72,7 +72,7 @@ class ResolveDiscordMemberControllerTest extends TestCase
     #[Group('authorization')]
     public function it_returns_403_for_users_who_cannot_create_planned_absences(): void
     {
-        Passport::actingAs(User::factory()->raider()->create());
+        $this->actingAs(User::factory()->raider()->create()->withAccessToken(new TransientToken), 'api');
 
         $this->postJson(route('api.discord.members.resolve', '999999999999999999'))
             ->assertForbidden();
@@ -94,7 +94,7 @@ class ResolveDiscordMemberControllerTest extends TestCase
     #[Group('validation')]
     public function it_returns_404_for_a_non_numeric_member_id(): void
     {
-        Passport::actingAs(User::factory()->officer()->create());
+        $this->actingAs(User::factory()->officer()->create()->withAccessToken(new TransientToken), 'api');
 
         $this->postJson('/api/discord/members/abc/resolve')
             ->assertNotFound();

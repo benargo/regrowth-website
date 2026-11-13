@@ -8,7 +8,7 @@ use App\Models\PrunedModel;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event as EventFacade;
-use Laravel\Passport\Passport;
+use Laravel\Passport\TransientToken;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\Discord\MocksDiscordService;
@@ -100,7 +100,7 @@ class PrunedEventTest extends TestCase
 
         PrunedModel::create(['id' => $eventId, 'type' => Event::class]);
 
-        Passport::actingAs($user);
+        $this->actingAs($user->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson("/api/events/{$eventId}/groups/reorder", [])
             ->assertStatus(410)
@@ -116,7 +116,7 @@ class PrunedEventTest extends TestCase
 
         PrunedModel::create(['id' => $eventId, 'type' => Event::class]);
 
-        Passport::actingAs($user);
+        $this->actingAs($user->withAccessToken(new TransientToken), 'api');
 
         $this->patch("/api/events/{$eventId}/groups/reorder")
             ->assertStatus(410)

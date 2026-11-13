@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\BroadcastableModelEventOccurred;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
-use Laravel\Passport\Passport;
+use Laravel\Passport\TransientToken;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -87,7 +87,7 @@ class EventAssignmentBroadcastTest extends TestCase
 
         Queue::fake();
 
-        Passport::actingAs($user);
+        $this->actingAs($user->withAccessToken(new TransientToken), 'api');
 
         $this->postJson(route('api.events.assignments.store', $event), [
             'group_id' => $group->id,
@@ -111,7 +111,7 @@ class EventAssignmentBroadcastTest extends TestCase
 
         Queue::fake();
 
-        Passport::actingAs($user);
+        $this->actingAs($user->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(
             route('api.events.assignments.update', [$event, $assignment]),
@@ -137,7 +137,7 @@ class EventAssignmentBroadcastTest extends TestCase
 
         \Illuminate\Support\Facades\Event::fake([BroadcastableModelEventOccurred::class]);
 
-        Passport::actingAs($user);
+        $this->actingAs($user->withAccessToken(new TransientToken), 'api');
 
         $this->deleteJson(
             route('api.events.assignments.destroy', [$event, $assignment]),
@@ -208,7 +208,7 @@ class EventAssignmentBroadcastTest extends TestCase
 
         Queue::fake();
 
-        Passport::actingAs($user);
+        $this->actingAs($user->withAccessToken(new TransientToken), 'api');
 
         $this->postJson(route('api.events.groups.store', $event), [
             'name' => 'New group',
@@ -234,7 +234,7 @@ class EventAssignmentBroadcastTest extends TestCase
 
         Queue::fake();
 
-        Passport::actingAs($user);
+        $this->actingAs($user->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(
             route('api.events.assignments.reorder', $event),
@@ -259,7 +259,7 @@ class EventAssignmentBroadcastTest extends TestCase
 
         Queue::fake();
 
-        Passport::actingAs($user);
+        $this->actingAs($user->withAccessToken(new TransientToken), 'api');
 
         $this->patchJson(
             route('api.events.groups.reorder', $event),
