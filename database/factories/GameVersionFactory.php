@@ -60,6 +60,16 @@ class GameVersionFactory extends Factory
     }
 
     /**
+     * Indicate that the version's WTF folder lives under the given WoW client folder.
+     */
+    public function withWowClientFolder(string $folder = '_forever_'): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'wow_client_folder' => $folder,
+        ]);
+    }
+
+    /**
      * Indicate that Blizzard can return this version's guild roster.
      */
     public function fetchableRoster(): static

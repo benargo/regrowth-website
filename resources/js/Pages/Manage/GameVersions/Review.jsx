@@ -88,6 +88,7 @@ function gameVersionDetails(gameVersion) {
         ["Slug", gameVersion.slug],
         ["Release date", gameVersion.release_date ? formatDate(gameVersion.release_date).long : null],
         ["Realm", gameVersion.realm],
+        ["WoW client folder", gameVersion.wow_client_folder],
         ["Guild name", gameVersion.guild_name],
         ["Characters have surnames", gameVersion.uses_surnames ? "Yes" : "No"],
         ["Faction", capitalise(gameVersion.faction)],

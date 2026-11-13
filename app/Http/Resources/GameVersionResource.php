@@ -52,7 +52,9 @@ class GameVersionResource extends JsonResource implements ScopedResource
             'icon_url' => $this->whenLoaded('media', fn (): ?string => $this->getFirstMediaUrl(GameVersion::MEDIA_ICON) ?: null),
             'logo_url' => $this->whenLoaded('media', fn (): ?string => $this->getFirstMediaUrl(GameVersion::MEDIA_LOGO) ?: null),
             'realm' => $this->realm,
+            'wow_client_folder' => $this->wow_client_folder,
             'guild_name' => $this->guild_name,
+            'grm_guild_key' => $this->grm_guild_key,
             'uses_surnames' => $this->uses_surnames,
             'faction' => $this->faction,
             'release_date' => $this->release_date?->toDateString(),
@@ -80,7 +82,7 @@ class GameVersionResource extends JsonResource implements ScopedResource
         return [
             'management' => [
                 'id', 'title', 'slug', 'color', 'banner_url', 'icon_url', 'logo_url',
-                'realm', 'guild_name', 'uses_surnames', 'faction', 'release_date', 'blizzard', 'warcraftlogs',
+                'realm', 'wow_client_folder', 'guild_name', 'grm_guild_key', 'uses_surnames', 'faction', 'release_date', 'blizzard', 'warcraftlogs',
                 'phases_count', 'items_count', 'characters_count', 'guild_ranks_count', 'links',
             ],
             'switcher' => ['id', 'title', 'slug', 'color', 'icon_url', 'release_date'],

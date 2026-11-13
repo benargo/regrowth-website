@@ -36,6 +36,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             'title' => ['sometimes', 'required', 'string', 'max:255', $this->uniqueTitleRule()],
             'slug' => ['missing'],
             'realm' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'wow_client_folder' => ['sometimes', 'nullable', 'string', 'max:32', 'regex:/^_[a-z_]+_$/'],
             'guild_name' => ['sometimes', 'required', 'string', 'max:24'],
             'uses_surnames' => ['sometimes', 'required', 'boolean'],
             'faction' => ['sometimes', 'nullable', Rule::enum(Faction::class)],

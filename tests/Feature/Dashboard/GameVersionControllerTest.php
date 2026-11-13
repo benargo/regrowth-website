@@ -857,6 +857,34 @@ class GameVersionControllerTest extends DashboardTestCase
         $response->assertSessionHas('success', 'Saved changes to Era.');
     }
 
+    #[Group('happy-path')]
+    #[Test]
+    public function it_updates_the_wow_client_folder(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['title' => 'Era']);
+        $this->expectUpdate($gameVersion, ['wow_client_folder' => '_forever_']);
+
+        $response = $this->actingAs($this->officer)
+            ->from($this->editUrl($gameVersion))
+            ->patch(route('management.game-versions.update', $gameVersion), ['wow_client_folder' => '_forever_']);
+
+        $response->assertRedirect($this->editUrl($gameVersion));
+        $response->assertValid();
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function it_rejects_an_invalid_wow_client_folder(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        $response = $this->actingAs($this->officer)
+            ->patchJson(route('management.game-versions.update', $gameVersion), ['wow_client_folder' => 'forever']);
+
+        $response->assertUnprocessable();
+        $response->assertJsonValidationErrors('wow_client_folder');
+    }
+
     #[Test]
     public function it_saves_an_autosave_without_flashing_a_message(): void
     {
