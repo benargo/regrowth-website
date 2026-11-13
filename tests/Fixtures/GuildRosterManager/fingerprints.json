@@ -1,0 +1,119 @@
+{
+    "vectors": [
+        {
+            "kind": "member",
+            "row": {
+                "guid": "Player-5826-0A1B2C3D",
+                "name": "Mira Ashvale",
+                "rankIndex": 3,
+                "level": 60,
+                "class": "WARLOCK",
+                "race": "Scourge",
+                "altGroup": "12",
+                "history": [{ "type": "joined", "date": "2026-08-02" }],
+                "epoch": 1785657600
+            },
+            "canonical": "{\"altGroup\":\"12\",\"class\":\"WARLOCK\",\"guid\":\"Player-5826-0A1B2C3D\",\"history\":[{\"date\":\"2026-08-02\",\"type\":\"joined\"}],\"level\":60,\"name\":\"Mira Ashvale\",\"race\":\"Scourge\",\"rankIndex\":3}",
+            "fingerprint": "2f77750e0dfe03bc1dd7b7fbbd03703c2e395b8db7bf9a8a36f5996a39fed112"
+        },
+        {
+            "kind": "member",
+            "row": {
+                "guid": "Player-5826-0A1B2C3F",
+                "name": "Liané Moonfall",
+                "rankIndex": 4,
+                "level": 60,
+                "class": "DRUID",
+                "race": "Night Elf",
+                "altGroup": null,
+                "history": [],
+                "epoch": 0
+            },
+            "canonical": "{\"altGroup\":null,\"class\":\"DRUID\",\"guid\":\"Player-5826-0A1B2C3F\",\"history\":[],\"level\":60,\"name\":\"Liané Moonfall\",\"race\":\"Night Elf\",\"rankIndex\":4}",
+            "fingerprint": "ba51a127f405f610f6fab0d18cae1a702da1df1d4a9f3b6cb0d0f90016cd4f62"
+        },
+        {
+            "kind": "leaver",
+            "row": {
+                "guid": "Player-5826-0A1B2C40",
+                "name": "Gone Fishing",
+                "rankIndex": 5,
+                "level": 41,
+                "class": "MAGE",
+                "race": "Tauren",
+                "history": [
+                    { "type": "left", "date": "2026-10-01" },
+                    { "type": "joined", "date": "2026-08-10" }
+                ],
+                "epoch": 1790856000
+            },
+            "canonical": "{\"class\":\"MAGE\",\"guid\":\"Player-5826-0A1B2C40\",\"history\":[{\"date\":\"2026-10-01\",\"type\":\"left\"},{\"date\":\"2026-08-10\",\"type\":\"joined\"}],\"level\":41,\"name\":\"Gone Fishing\",\"race\":\"Tauren\",\"rankIndex\":5}",
+            "fingerprint": "d9a1d7420e675896e48880c210f03f438f6f7cc9e90a01007a7ffb3dad0c6a20"
+        },
+        {
+            "kind": "alt_group",
+            "row": {
+                "id": "12",
+                "main": "Mira Ashvale",
+                "members": ["Player-5826-0A1B2C3D", "Player-5826-0A1B2C3E"],
+                "epoch": 1785744000
+            },
+            "canonical": "{\"id\":\"12\",\"main\":\"Mira Ashvale\",\"members\":[\"Player-5826-0A1B2C3D\",\"Player-5826-0A1B2C3E\"]}",
+            "fingerprint": "a0dad2735d1221e1af0c4a018e2c99de40d4791f37f4918e72c849d7c1f7915e"
+        },
+        {
+            "kind": "alt_group",
+            "row": { "id": "7", "main": null, "members": ["Player-5826-0A1B2C41"], "epoch": 1786000000 },
+            "canonical": "{\"id\":\"7\",\"main\":null,\"members\":[\"Player-5826-0A1B2C41\"]}",
+            "fingerprint": "b784b17489852a8ffadf930539f4951db49add067e941ba83f15c56fa12b6f31"
+        },
+        {
+            "kind": "ban",
+            "row": {
+                "guid": "Player-5826-0A1B2C42",
+                "name": "Bad Apple",
+                "unbanned": false,
+                "bannedAt": "2026-10-03T19:00:00Z",
+                "bannedBy": "Mira Ashvale",
+                "reason": "Ninja-looted Onyxia's bag (1/2) \"see logs\"",
+                "epoch": 1791054000
+            },
+            "canonical": "{\"bannedAt\":\"2026-10-03T19:00:00Z\",\"bannedBy\":\"Mira Ashvale\",\"guid\":\"Player-5826-0A1B2C42\",\"name\":\"Bad Apple\",\"reason\":\"Ninja-looted Onyxia's bag (1/2) \\\"see logs\\\"\",\"unbanned\":false}",
+            "fingerprint": "3473c03c369305fa5ccf0d850574e3e78c8522ed162de2a1570c923b6d0377e9"
+        },
+        {
+            "kind": "ban",
+            "row": {
+                "guid": "Player-5826-0A1B2C43",
+                "name": "No Reason",
+                "unbanned": false,
+                "bannedAt": null,
+                "bannedBy": null,
+                "reason": null,
+                "epoch": 0
+            },
+            "canonical": "{\"bannedAt\":null,\"bannedBy\":null,\"guid\":\"Player-5826-0A1B2C43\",\"name\":\"No Reason\",\"reason\":null,\"unbanned\":false}",
+            "fingerprint": "055dc4698254aaa3a1cad49e374eb83dc4837b42c57c6ce82eeab258afa2d1ab"
+        },
+        {
+            "kind": "ban",
+            "row": {
+                "guid": "Player-5826-0A1B2C44",
+                "name": "Second Chance",
+                "unbanned": true,
+                "bannedAt": "2026-11-01T18:30:00Z",
+                "bannedBy": "Mira Ashvale",
+                "reason": null,
+                "epoch": 1793644200
+            },
+            "canonical": "{\"bannedAt\":\"2026-11-01T18:30:00Z\",\"bannedBy\":\"Mira Ashvale\",\"guid\":\"Player-5826-0A1B2C44\",\"name\":\"Second Chance\",\"reason\":null,\"unbanned\":true}",
+            "fingerprint": "0935f346713adb1a14006b53847c7154dd5ee97c104c3dbef1ba1366302fab31"
+        },
+        {
+            "kind": "ranks",
+            "row": ["Guild Master", "Officer", "Veteran", "Raider", "Member", "Initiate"],
+            "canonical": "[\"Guild Master\",\"Officer\",\"Veteran\",\"Raider\",\"Member\",\"Initiate\"]",
+            "fingerprint": "e45d167b7b1871aa52d491c3d348ce83e29992fcdb8932fa828a4d7b5980e33e"
+        }
+    ]
+}

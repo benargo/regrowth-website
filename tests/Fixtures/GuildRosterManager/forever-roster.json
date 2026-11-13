@@ -1,0 +1,56 @@
+{
+    "schema": 2,
+    "gameVersion": "forever",
+    "guildKey": "Regrowth",
+    "addonVersion": "R1.99521",
+    "ranks": ["Guild Master", "Officer", "Veteran", "Raider", "Member", "Initiate"],
+    "members": [
+        {
+            "guid": "Player-5826-0A1B2C3D",
+            "name": "Mira Ashvale",
+            "rankIndex": 3,
+            "level": 60,
+            "class": "WARLOCK",
+            "race": "Scourge",
+            "altGroup": "12",
+            "history": [{ "type": "joined", "date": "2026-08-02" }],
+            "epoch": 1785657600
+        },
+        {
+            "guid": "Player-5826-0A1B2C3E",
+            "name": "Pan Bakewell",
+            "rankIndex": 4,
+            "level": 58,
+            "class": "PRIEST",
+            "race": "Human",
+            "altGroup": "12",
+            "history": [{ "type": "joined", "date": "2026-08-05" }],
+            "epoch": 1785916800
+        },
+        {
+            "guid": "Player-5826-0A1B2C3F",
+            "name": "Liané Moonfall",
+            "rankIndex": 4,
+            "level": 60,
+            "class": "DRUID",
+            "race": "Night Elf",
+            "altGroup": null,
+            "history": [],
+            "epoch": 1785657600
+        }
+    ],
+    "leavers": [
+        {
+            "guid": "Player-5826-0A1B2C40",
+            "name": "Gone Fishing",
+            "rankIndex": 5,
+            "level": 41,
+            "class": "MAGE",
+            "race": "Tauren",
+            "history": [{ "type": "left", "date": "2026-10-01" }],
+            "epoch": 1790865600
+        }
+    ],
+    "altGroups": [{ "id": "12", "main": "Mira Ashvale", "members": ["Player-5826-0A1B2C3D", "Player-5826-0A1B2C3E"], "epoch": 1785744000 }],
+    "bans": [{ "guid": "Player-5826-0A1B2C42", "name": "Bad Apple", "unbanned": false, "bannedAt": "2026-10-03T19:00:00Z", "bannedBy": "Mira Ashvale", "reason": "Ninja-looted Onyxia's bag (1/2) \"see logs\"", "epoch": 1791054000 }]
+}
