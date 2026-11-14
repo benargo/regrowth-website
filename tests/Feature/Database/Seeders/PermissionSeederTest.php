@@ -60,6 +60,50 @@ class PermissionSeederTest extends TestCase
     }
 
     #[Test]
+    public function it_defines_the_desktop_client_permissions(): void
+    {
+        $names = collect($this->permissions)->pluck('name')->filter(fn (string $name): bool => str_contains($name, 'desktop-client') || str_contains($name, 'grm-rosters'))->sort()->values()->all();
+
+        $this->assertSame(['revoke-any-desktop-client', 'upload-grm-rosters', 'use-desktop-client'], $names);
+    }
+
+    #[Test]
+    public function seeder_puts_the_desktop_client_permissions_in_the_desktop_app_group(): void
+    {
+        $this->seed(PermissionSeeder::class);
+
+        foreach (['use-desktop-client', 'upload-grm-rosters', 'revoke-any-desktop-client'] as $name) {
+            $this->assertSame('Desktop App', Permission::findByName($name)->permissionGroup->name);
+        }
+    }
+
+    #[Test]
+    public function it_defines_the_grm_ban_permissions(): void
+    {
+        $bans = collect($this->permissions)->filter(fn (array $permission): bool => str_contains($permission['name'], 'grm-ban'));
+
+        $this->assertSame(
+            ['create-grm-bans', 'update-grm-bans', 'view-grm-ban-reasons', 'view-grm-bans'],
+            $bans->pluck('name')->sort()->values()->all()
+        );
+
+        foreach ($bans as $permission) {
+            $this->assertNotEmpty($permission['label']);
+            $this->assertNotEmpty($permission['description']);
+        }
+    }
+
+    #[Test]
+    public function seeder_puts_the_grm_ban_permissions_in_the_grm_bans_group(): void
+    {
+        $this->seed(PermissionSeeder::class);
+
+        foreach (['view-grm-bans', 'view-grm-ban-reasons', 'create-grm-bans', 'update-grm-bans'] as $name) {
+            $this->assertSame('GRM Bans', Permission::findByName($name)->permissionGroup->name);
+        }
+    }
+
+    #[Test]
     public function it_no_longer_defines_the_manage_boss_strategies_permission(): void
     {
         $this->assertNotContains('manage-boss-strategies', array_column($this->permissions, 'name'));
@@ -206,7 +250,7 @@ class PermissionSeederTest extends TestCase
         $this->seed(PermissionSeeder::class);
 
         $this->assertSame(
-            ['Loot Bias Tool', 'Raid Management', 'Planned Absences', 'Character Management', 'Warcraft Logs', 'Recruitment'],
+            ['Loot Bias Tool', 'Raid Management', 'Planned Absences', 'Character Management', 'Warcraft Logs', 'Recruitment', 'Desktop App', 'GRM Bans'],
             PermissionGroup::ordered()->pluck('name')->all()
         );
         $this->assertSame('Raid Management', Permission::findByName('manage-raid-plans')->permissionGroup->name);
@@ -222,7 +266,7 @@ class PermissionSeederTest extends TestCase
         $this->seed(PermissionSeeder::class);
 
         $this->assertNull(Permission::findByName('manage-raid-plans')->permission_group_id);
-        $this->assertDatabaseCount('permission_groups', 6);
+        $this->assertDatabaseCount('permission_groups', 8);
     }
 
     #[Test]
@@ -235,7 +279,7 @@ class PermissionSeederTest extends TestCase
         $this->seed(PermissionSeeder::class);
 
         $this->assertSame($group->id, Permission::findByName('view-attendance')->permission_group_id);
-        $this->assertDatabaseCount('permission_groups', 6);
+        $this->assertDatabaseCount('permission_groups', 8);
     }
 
     #[Test]
