@@ -2,12 +2,14 @@
 
 namespace Database\Factories;
 
+use App\Enums\RankSource;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class CharacterFactory extends Factory
@@ -134,6 +136,37 @@ class CharacterFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'playable_race_id' => $playableRace ?? PlayableRace::factory(),
+        ]);
+    }
+
+    /**
+     * Indicate that the character has the given GRM GUID, or a random one.
+     */
+    public function withGrmGuid(?string $guid = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'grm_guid' => $guid ?? 'Player-'.fake()->unique()->numberBetween(1000, 9999999).'-'.strtoupper(fake()->unique()->bothify('????????')),
+        ]);
+    }
+
+    /**
+     * Indicate that the character has left the guild, at the given time or now.
+     */
+    public function leftGuild(?CarbonInterface $at = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'left_guild_at' => $at ?? now(),
+        ]);
+    }
+
+    /**
+     * Indicate that the character's rank was observed at the given time from the given source.
+     */
+    public function rankObserved(CarbonInterface $at, RankSource $source = RankSource::Blizzard): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'rank_observed_at' => $at,
+            'rank_source' => $source,
         ]);
     }
 }

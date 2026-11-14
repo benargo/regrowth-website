@@ -40,15 +40,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'member_count',
     'storage_path',
     'processed_at',
+    'processed_count',
+    'skipped_count',
+    'warning_count',
+    'error_count',
 ])]
 #[Table('grm_uploads')]
 #[UsePolicy(DesktopSyncPolicy::class)]
 class Upload extends Model
 {
     /** @use HasFactory<UploadFactory> */
-    use HasFactory;
-
-    use HasUuids;
+    use HasFactory, HasUuids;
 
     /**
      * Get the attributes that should be cast.
@@ -64,6 +66,10 @@ class Upload extends Model
             'revision' => 'integer',
             'captured_at' => 'datetime',
             'processed_at' => 'datetime',
+            'processed_count' => 'integer',
+            'skipped_count' => 'integer',
+            'warning_count' => 'integer',
+            'error_count' => 'integer',
             'expires_at' => 'datetime',
             'ticket_expires_at' => 'datetime',
         ];
@@ -87,6 +93,16 @@ class Upload extends Model
     public function gameVersion(): BelongsTo
     {
         return $this->belongsTo(GameVersion::class);
+    }
+
+    /**
+     * Get the per-row outcomes recorded for the upload.
+     *
+     * @return HasMany<UploadRow, $this>
+     */
+    public function rows(): HasMany
+    {
+        return $this->hasMany(UploadRow::class);
     }
 
     /**
@@ -165,12 +181,17 @@ class Upload extends Model
     }
 
     /**
-     * Set the upload's outcome, along with any other attributes, and save it.
+     * Set the upload's outcome, along with any other attributes, and save it. `Processed` and `NoChanges`
+     * also set `processed_at` to now, unless the attributes set it.
      *
      * @param  array<string, mixed>  $attributes
      */
     public function markOutcome(UploadOutcome $outcome, array $attributes = []): void
     {
+        if (in_array($outcome, [UploadOutcome::Processed, UploadOutcome::NoChanges], true) && ! array_key_exists('processed_at', $attributes)) {
+            $attributes['processed_at'] = now();
+        }
+
         $this->forceFill(['outcome' => $outcome, ...$attributes])->save();
     }
 }
