@@ -5,6 +5,7 @@ namespace Tests\Feature\Dashboard;
 use App\Actions\GameVersion\BuildGameVersionRelationships;
 use App\Actions\GameVersion\UpdateGameVersion;
 use App\Contracts\Actions\GameVersion\CachesSelectableGameVersions;
+use App\Contracts\Models\DefinesGameVersionMediaCollections;
 use App\Enums\Faction;
 use App\Enums\GameVersionSetupStep;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
@@ -457,9 +458,9 @@ class GameVersionControllerTest extends DashboardTestCase
             ->where('gameVersion.data.release_date', '2019-08-27')
             ->where('gameVersion.data.faction', 'Horde')
             ->where('gameVersion.media', [
-                GameVersion::MEDIA_BANNER => ['accepts' => ['image/jpeg', 'image/png', 'image/webp']],
-                GameVersion::MEDIA_ICON => ['accepts' => ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']],
-                GameVersion::MEDIA_LOGO => ['accepts' => ['image/jpeg', 'image/png', 'image/webp']],
+                DefinesGameVersionMediaCollections::MEDIA_BANNER => ['accepts' => ['image/jpeg', 'image/png', 'image/webp']],
+                DefinesGameVersionMediaCollections::MEDIA_ICON => ['accepts' => ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']],
+                DefinesGameVersionMediaCollections::MEDIA_LOGO => ['accepts' => ['image/jpeg', 'image/png', 'image/webp']],
             ])
         );
     }
@@ -1554,9 +1555,9 @@ class GameVersionControllerTest extends DashboardTestCase
     #[Group('happy-path')]
     #[Group('laravel-media-library')]
     #[Test]
-    #[TestWith([GameVersion::MEDIA_BANNER])]
-    #[TestWith([GameVersion::MEDIA_ICON])]
-    #[TestWith([GameVersion::MEDIA_LOGO])]
+    #[TestWith([DefinesGameVersionMediaCollections::MEDIA_BANNER])]
+    #[TestWith([DefinesGameVersionMediaCollections::MEDIA_ICON])]
+    #[TestWith([DefinesGameVersionMediaCollections::MEDIA_LOGO])]
     public function it_stores_an_image_uploaded_as_a_spoofed_patch(string $collection): void
     {
         Storage::fake('s3');
@@ -1586,21 +1587,21 @@ class GameVersionControllerTest extends DashboardTestCase
             ->from($this->editUrl($gameVersion))
             ->post(route('management.game-versions.update', $gameVersion), [
                 '_method' => 'PATCH',
-                GameVersion::MEDIA_ICON => $this->fakeSvg('icon.svg'),
+                DefinesGameVersionMediaCollections::MEDIA_ICON => $this->fakeSvg('icon.svg'),
             ]);
 
         $response->assertValid();
-        $this->assertSame('icon.svg', $gameVersion->fresh()->getFirstMedia(GameVersion::MEDIA_ICON)?->file_name);
+        $this->assertSame('icon.svg', $gameVersion->fresh()->getFirstMedia(DefinesGameVersionMediaCollections::MEDIA_ICON)?->file_name);
     }
 
     #[Test]
     public function it_passes_an_image_removed_as_null_to_the_update(): void
     {
         $gameVersion = GameVersion::factory()->create();
-        $this->expectUpdate($gameVersion, [GameVersion::MEDIA_BANNER => null]);
+        $this->expectUpdate($gameVersion, [DefinesGameVersionMediaCollections::MEDIA_BANNER => null]);
 
         $response = $this->actingAs($this->officer)
-            ->patch(route('management.game-versions.update', $gameVersion), [GameVersion::MEDIA_BANNER => null]);
+            ->patch(route('management.game-versions.update', $gameVersion), [DefinesGameVersionMediaCollections::MEDIA_BANNER => null]);
 
         $response->assertValid();
     }
@@ -1614,16 +1615,16 @@ class GameVersionControllerTest extends DashboardTestCase
 
         $response = $this->actingAs($this->officer)
             ->patch(route('management.game-versions.update', $gameVersion), [
-                GameVersion::MEDIA_LOGO => UploadedFile::fake()->create('logo.pdf', 10, 'application/pdf'),
+                DefinesGameVersionMediaCollections::MEDIA_LOGO => UploadedFile::fake()->create('logo.pdf', 10, 'application/pdf'),
             ]);
 
-        $response->assertInvalid([GameVersion::MEDIA_LOGO => 'The logo must be a JPEG, PNG or WEBP image.']);
+        $response->assertInvalid([DefinesGameVersionMediaCollections::MEDIA_LOGO => 'The logo must be a JPEG, PNG or WEBP image.']);
     }
 
     #[Group('validation')]
     #[Test]
-    #[TestWith([GameVersion::MEDIA_BANNER])]
-    #[TestWith([GameVersion::MEDIA_LOGO])]
+    #[TestWith([DefinesGameVersionMediaCollections::MEDIA_BANNER])]
+    #[TestWith([DefinesGameVersionMediaCollections::MEDIA_LOGO])]
     public function it_rejects_an_svg_for_a_collection_that_does_not_accept_one(string $collection): void
     {
         $gameVersion = GameVersion::factory()->create();
@@ -1646,10 +1647,10 @@ class GameVersionControllerTest extends DashboardTestCase
 
         $response = $this->actingAs($this->officer)
             ->patch(route('management.game-versions.update', $gameVersion), [
-                GameVersion::MEDIA_ICON => UploadedFile::fake()->create('icon.pdf', 10, 'application/pdf'),
+                DefinesGameVersionMediaCollections::MEDIA_ICON => UploadedFile::fake()->create('icon.pdf', 10, 'application/pdf'),
             ]);
 
-        $response->assertInvalid([GameVersion::MEDIA_ICON => 'The icon must be a JPEG, PNG, WEBP or SVG image.']);
+        $response->assertInvalid([DefinesGameVersionMediaCollections::MEDIA_ICON => 'The icon must be a JPEG, PNG, WEBP or SVG image.']);
     }
 
     #[Group('validation')]
@@ -1661,10 +1662,10 @@ class GameVersionControllerTest extends DashboardTestCase
 
         $response = $this->actingAs($this->officer)
             ->patch(route('management.game-versions.update', $gameVersion), [
-                GameVersion::MEDIA_BANNER => UploadedFile::fake()->image('banner.png')->size(2049),
+                DefinesGameVersionMediaCollections::MEDIA_BANNER => UploadedFile::fake()->image('banner.png')->size(2049),
             ]);
 
-        $response->assertInvalid([GameVersion::MEDIA_BANNER => 'The banner must be 2 MB or smaller.']);
+        $response->assertInvalid([DefinesGameVersionMediaCollections::MEDIA_BANNER => 'The banner must be 2 MB or smaller.']);
     }
 
     #[Group('laravel-media-library')]
@@ -1687,8 +1688,8 @@ class GameVersionControllerTest extends DashboardTestCase
             ->patch(route('management.game-versions.update', $gameVersion), [
                 'title' => 'Renamed',
                 'phase_ids' => $phases->modelKeys(),
-                GameVersion::MEDIA_BANNER => UploadedFile::fake()->image('banner.png'),
-                GameVersion::MEDIA_LOGO => UploadedFile::fake()->image('logo.png'),
+                DefinesGameVersionMediaCollections::MEDIA_BANNER => UploadedFile::fake()->image('banner.png'),
+                DefinesGameVersionMediaCollections::MEDIA_LOGO => UploadedFile::fake()->image('logo.png'),
             ])
             ->assertSessionHasNoErrors();
 

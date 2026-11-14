@@ -2,12 +2,12 @@
 
 namespace App\Http\Requests;
 
+use App\Contracts\Models\DefinesGameVersionMediaCollections;
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Requests\Concerns\ChecksEditLock;
 use App\Http\Requests\Concerns\ValidatesImageUploads;
 use App\Http\Requests\Concerns\ValidatesUnscheduledPhaseOrder;
-use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\Phase;
 use App\Models\PlayableClass;
@@ -19,7 +19,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 use Illuminate\Validation\Validator;
 
-class UpdateGameVersionRequest extends StoreGameVersionRequest
+class UpdateGameVersionRequest extends StoreGameVersionRequest implements DefinesGameVersionMediaCollections
 {
     use ChecksEditLock;
     use ValidatesImageUploads;
@@ -62,7 +62,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             ],
             'guild_ranks.*.name' => ['required', 'string', 'max:255'],
             'guild_ranks.*.count_attendance' => ['required', 'boolean'],
-            ...collect(GameVersion::MEDIA_COLLECTIONS)
+            ...collect(self::MEDIA_COLLECTIONS)
                 ->mapWithKeys(fn (string $collection): array => [$collection => $this->imageRules($this->route('gameVersion'), $collection)]),
         ];
     }
@@ -84,7 +84,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest
             'guild_ranks.max' => 'A guild can have up to 10 ranks.',
             'guild_ranks.*.id.exists' => 'One of these ranks no longer exists. Reload the page and try again.',
             'guild_ranks.*.name.required' => 'Enter a name for every rank.',
-            ...collect(GameVersion::MEDIA_COLLECTIONS)->flatMap(fn (string $collection): array => $this->imageMessages($this->route('gameVersion'), $collection)),
+            ...collect(self::MEDIA_COLLECTIONS)->flatMap(fn (string $collection): array => $this->imageMessages($this->route('gameVersion'), $collection)),
         ];
     }
 

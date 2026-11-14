@@ -3,6 +3,7 @@
 namespace App\Actions\GameVersion;
 
 use App\Actions\Phase\ReorderPhases;
+use App\Contracts\Models\DefinesGameVersionMediaCollections;
 use App\Models\GameVersion;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
@@ -26,7 +27,7 @@ use Lorisleiva\Actions\Concerns\AsAction;
  * that collection and null removes it. They are stored once the database
  * changes have committed, so file I/O never holds the transaction open.
  */
-class UpdateGameVersion
+class UpdateGameVersion implements DefinesGameVersionMediaCollections
 {
     use AsAction;
 
@@ -49,7 +50,7 @@ class UpdateGameVersion
     public function handle(GameVersion $gameVersion, array $data): void
     {
         DB::transaction(function () use ($gameVersion, $data): void {
-            $gameVersion->update(Arr::except($data, [...self::RELATIONSHIP_KEYS, ...GameVersion::MEDIA_COLLECTIONS]));
+            $gameVersion->update(Arr::except($data, [...self::RELATIONSHIP_KEYS, ...self::MEDIA_COLLECTIONS]));
 
             if (Arr::exists($data, 'playable_race_ids')) {
                 $gameVersion->playableRaces()->sync($data['playable_race_ids']);
@@ -72,7 +73,7 @@ class UpdateGameVersion
             }
         });
 
-        foreach (Arr::only($data, GameVersion::MEDIA_COLLECTIONS) as $collection => $file) {
+        foreach (Arr::only($data, self::MEDIA_COLLECTIONS) as $collection => $file) {
             $this->replaceImage($gameVersion, $collection, $file);
         }
     }

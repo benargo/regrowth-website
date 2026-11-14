@@ -5,6 +5,7 @@ namespace Tests\Unit\Models;
 use App\Casts\AsBinaryColor;
 use App\Casts\AsSlug;
 use App\Contracts\Models\DatasetModel;
+use App\Contracts\Models\DefinesGameVersionMediaCollections;
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Models\Character;
@@ -644,9 +645,9 @@ class GameVersionTest extends ModelTestCase
 
     #[Group('laravel-media-library')]
     #[Test]
-    #[TestWith([GameVersion::MEDIA_BANNER])]
-    #[TestWith([GameVersion::MEDIA_ICON])]
-    #[TestWith([GameVersion::MEDIA_LOGO])]
+    #[TestWith([DefinesGameVersionMediaCollections::MEDIA_BANNER])]
+    #[TestWith([DefinesGameVersionMediaCollections::MEDIA_ICON])]
+    #[TestWith([DefinesGameVersionMediaCollections::MEDIA_LOGO])]
     public function it_registers_a_single_file_image_collection(string $name): void
     {
         $collection = (new GameVersion)->getRegisteredMediaCollections()->firstWhere('name', $name);
@@ -662,10 +663,10 @@ class GameVersionTest extends ModelTestCase
         Storage::fake('s3');
         $gameVersion = $this->create();
 
-        $gameVersion->addMedia(UploadedFile::fake()->image('old.png'))->toMediaCollection(GameVersion::MEDIA_BANNER);
-        $gameVersion->addMedia(UploadedFile::fake()->image('new.png'))->toMediaCollection(GameVersion::MEDIA_BANNER);
+        $gameVersion->addMedia(UploadedFile::fake()->image('old.png'))->toMediaCollection(DefinesGameVersionMediaCollections::MEDIA_BANNER);
+        $gameVersion->addMedia(UploadedFile::fake()->image('new.png'))->toMediaCollection(DefinesGameVersionMediaCollections::MEDIA_BANNER);
 
-        $media = $gameVersion->fresh()->getMedia(GameVersion::MEDIA_BANNER);
+        $media = $gameVersion->fresh()->getMedia(DefinesGameVersionMediaCollections::MEDIA_BANNER);
         $this->assertCount(1, $media);
         $this->assertSame('new.png', $media->first()->file_name);
     }
@@ -681,7 +682,7 @@ class GameVersionTest extends ModelTestCase
 
         $gameVersion->addMediaFromString('not an image')
             ->usingFileName('notes.txt')
-            ->toMediaCollection(GameVersion::MEDIA_LOGO);
+            ->toMediaCollection(DefinesGameVersionMediaCollections::MEDIA_LOGO);
     }
 
     // ==================== helpers ====================

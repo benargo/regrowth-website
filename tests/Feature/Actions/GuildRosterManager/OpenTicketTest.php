@@ -4,6 +4,7 @@ namespace Tests\Feature\Actions\GuildRosterManager;
 
 use App\Actions\GuildRosterManager\IssueOpenTicket;
 use App\Actions\GuildRosterManager\VerifyOpenTicket;
+use App\Contracts\Actions\GuildRosterManager\SharesOpenTicketLifetime;
 use App\Models\GameVersion;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -41,7 +42,7 @@ class OpenTicketTest extends TestCase
         $expiresAt = VerifyOpenTicket::run($ticket, $this->user, $this->gameVersion, 4);
 
         $this->assertNotNull($expiresAt);
-        $this->assertSame(now()->addSeconds(IssueOpenTicket::LIFETIME_SECONDS)->getTimestamp(), $expiresAt->getTimestamp());
+        $this->assertSame(now()->addSeconds(SharesOpenTicketLifetime::LIFETIME_SECONDS)->getTimestamp(), $expiresAt->getTimestamp());
         $this->assertSame(config('app.timezone'), $expiresAt->getTimezone()->getName());
     }
 

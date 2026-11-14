@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Http\Resources;
 
+use App\Contracts\Models\DefinesGameVersionMediaCollections;
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\WarcraftLogs\WarcraftLogsNamespace;
@@ -107,9 +108,9 @@ class GameVersionResourceTest extends TestCase
 
     #[Group('laravel-media-library')]
     #[Test]
-    #[TestWith([GameVersion::MEDIA_BANNER, 'banner_url'])]
-    #[TestWith([GameVersion::MEDIA_ICON, 'icon_url'])]
-    #[TestWith([GameVersion::MEDIA_LOGO, 'logo_url'])]
+    #[TestWith([DefinesGameVersionMediaCollections::MEDIA_BANNER, 'banner_url'])]
+    #[TestWith([DefinesGameVersionMediaCollections::MEDIA_ICON, 'icon_url'])]
+    #[TestWith([DefinesGameVersionMediaCollections::MEDIA_LOGO, 'logo_url'])]
     public function it_returns_the_url_of_an_uploaded_image(string $collection, string $key): void
     {
         Storage::fake('s3');
@@ -298,9 +299,9 @@ class GameVersionResourceTest extends TestCase
 
         $this->assertSame([
             'media' => [
-                GameVersion::MEDIA_BANNER => ['accepts' => ['image/jpeg', 'image/png', 'image/webp']],
-                GameVersion::MEDIA_ICON => ['accepts' => ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']],
-                GameVersion::MEDIA_LOGO => ['accepts' => ['image/jpeg', 'image/png', 'image/webp']],
+                DefinesGameVersionMediaCollections::MEDIA_BANNER => ['accepts' => ['image/jpeg', 'image/png', 'image/webp']],
+                DefinesGameVersionMediaCollections::MEDIA_ICON => ['accepts' => ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']],
+                DefinesGameVersionMediaCollections::MEDIA_LOGO => ['accepts' => ['image/jpeg', 'image/png', 'image/webp']],
             ],
         ], $metadata);
     }
