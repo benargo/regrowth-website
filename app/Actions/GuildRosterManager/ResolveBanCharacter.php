@@ -28,12 +28,8 @@ class ResolveBanCharacter
     {
         $name = trim($name);
 
-        if ($gameVersion->blizzard_namespace !== BlizzardNamespace::FOREVER && filled($gameVersion->realm)) {
-            $suffix = '-'.str($gameVersion->realm)->remove(' ')->toString();
-
-            if (str_ends_with($name, $suffix)) {
-                $name = trim(substr($name, 0, -strlen($suffix)));
-            }
+        if ($gameVersion->blizzard_namespace !== BlizzardNamespace::FOREVER) {
+            $name = trim($gameVersion->withoutRealmSuffix($name));
         }
 
         if ($gameVersion->uses_surnames && preg_match('/\s/u', $name) !== 1) {
