@@ -4,14 +4,18 @@ namespace Tests\Unit\Providers;
 
 use App\Http\Integrations\ServedFromCache;
 use App\Jobs\FetchGuildRoster;
+use App\Models\DesktopClient;
 use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\Report;
 use App\Models\User;
+use Carbon\CarbonInterval;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
+use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
@@ -95,12 +99,91 @@ class AppServiceProviderTest extends TestCase
         );
     }
 
+    #[Test]
+    public function it_registers_the_grm_sync_rate_limiters(): void
+    {
+        $this->assertNotNull(RateLimiter::limiter('grm-syncs'));
+        $this->assertNotNull(RateLimiter::limiter('grm-sync-requests'));
+        $this->assertNull(RateLimiter::limiter('grm-uploads'));
+    }
+
+    #[Test]
+    #[Group('deprecated')]
+    public function it_no_longer_registers_the_grm_upload_route(): void
+    {
+        $this->assertFalse(Route::has('api.grm.uploads.store'));
+    }
+
     // ==================== passport ====================
 
     #[Test]
-    public function it_does_not_register_the_passport_oauth_routes(): void
+    public function it_registers_only_the_authorization_code_oauth_routes(): void
     {
-        $this->assertFalse(Route::has('passport.token'));
-        $this->assertFalse(Route::has('passport.authorizations.authorize'));
+        foreach ([
+            'passport.token',
+            'passport.authorizations.authorize',
+            'passport.authorizations.approve',
+            'passport.authorizations.deny',
+        ] as $name) {
+            $this->assertTrue(Route::has($name), $name);
+        }
+
+        foreach ([
+            'passport.device',
+            'passport.device.code',
+            'passport.device.authorizations.authorize',
+            'passport.device.authorizations.approve',
+            'passport.device.authorizations.deny',
+            'passport.token.refresh',
+            'passport.tokens.index',
+            'link',
+        ] as $name) {
+            $this->assertFalse(Route::has($name), $name);
+        }
+    }
+
+    #[Test]
+    public function it_registers_the_token_routes_without_csrf(): void
+    {
+        $middleware = Route::getRoutes()->getByName('passport.token')->gatherMiddleware();
+
+        $this->assertNotContains('web', $middleware);
+        $this->assertNotContains(ValidateCsrfToken::class, $middleware);
+    }
+
+    #[Test]
+    public function it_puts_the_consent_routes_behind_auth_and_the_desktop_client_policy(): void
+    {
+        foreach ([
+            'passport.authorizations.authorize',
+            'passport.authorizations.approve',
+            'passport.authorizations.deny',
+        ] as $name) {
+            $middleware = Route::getRoutes()->getByName($name)?->gatherMiddleware() ?? [];
+
+            $this->assertContains('web', $middleware, $name);
+            $this->assertContains('auth', $middleware, $name);
+            $this->assertContains('can:create,'.DesktopClient::class, $middleware, $name);
+        }
+    }
+
+    #[Test]
+    public function it_registers_the_grm_scopes(): void
+    {
+        $this->assertTrue(Passport::hasScope('grm:upload'));
+        $this->assertTrue(Passport::hasScope('grm:targets'));
+    }
+
+    #[Test]
+    public function it_sets_token_lifetimes(): void
+    {
+        $this->assertSame(
+            3600.0,
+            round(CarbonInterval::instance(Passport::tokensExpireIn())->totalSeconds),
+        );
+        $this->assertSame(
+            7776000.0,
+            round(CarbonInterval::instance(Passport::refreshTokensExpireIn())->totalSeconds),
+        );
     }
 }
