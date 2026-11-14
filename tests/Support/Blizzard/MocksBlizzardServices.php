@@ -194,8 +194,9 @@ trait MocksBlizzardServices
 
     /**
      * @param  array<string, mixed>  $responseData
+     * @param  array<string, string>  $headers
      */
-    protected function mockGetGuildRoster(array $responseData = []): void
+    protected function mockGetGuildRoster(array $responseData = [], array $headers = []): void
     {
         $this->pendingBlizzardMocks = array_merge($this->pendingBlizzardMocks, [
             self::TOKEN_MOCK_KEY => MockResponse::make(body: self::TOKEN_MOCK_RESPONSE, status: 200),
@@ -207,7 +208,7 @@ trait MocksBlizzardServices
                     'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike'],
                 ],
                 'members' => [],
-            ], $responseData), status: 200),
+            ], $responseData), status: 200, headers: $headers),
         ]);
     }
 
