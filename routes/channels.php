@@ -2,6 +2,7 @@
 
 use App\Http\Resources\PresenceUserResource;
 use App\Models\Boss;
+use App\Models\DesktopClient;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Support\Facades\Broadcast;
@@ -37,3 +38,13 @@ Broadcast::channel('event.{event}.editors', function (User $user, Event $event):
 Broadcast::channel('boss.{boss}', function (User $user, Boss $boss): bool {
     return true;
 });
+
+// Desktop client channel: the desktop app subscribes here through /api/grm/broadcasting/auth.
+// Requires the device token's user to own the client, and the client to be the one bound to the request.
+Broadcast::channel('desktop-clients.{desktopClient}', function (User $user, DesktopClient $desktopClient): bool {
+    $boundDesktopClient = request()->attributes->get('desktopClient');
+
+    return $desktopClient->user_id === $user->id
+        && $boundDesktopClient instanceof DesktopClient
+        && $boundDesktopClient->is($desktopClient);
+}, ['guards' => ['api']]);

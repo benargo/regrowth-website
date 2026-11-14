@@ -3,6 +3,7 @@
 namespace Tests\Feature\Broadcasting;
 
 use App\Models\Boss;
+use App\Models\DesktopClient;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Broadcasting\BroadcastManager;
@@ -10,7 +11,9 @@ use Illuminate\Contracts\Broadcasting\Broadcaster;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\ApiTokenCookieFactory;
+use Laravel\Passport\ClientRepository;
 use Laravel\Passport\Passport;
+use Laravel\Passport\TransientToken;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -158,9 +161,33 @@ class ChannelAuthTest extends TestCase
         ])->assertUnauthorized();
     }
 
+    // ─── Desktop client channel ────────────────────────────────────────────────
+
+    #[Group('authorization')]
+    #[Test]
+    public function it_still_refuses_a_bearer_token_on_the_site_broadcasting_auth(): void
+    {
+        $user = User::factory()->create();
+        $desktopClient = DesktopClient::factory()->create(['user_id' => $user->id]);
+        app(ClientRepository::class)->createPersonalAccessGrantClient('test');
+        $token = $user->createToken('test', ['grm:upload']);
+
+        $this->withToken($token->accessToken)
+            ->postJson('/api/broadcasting/auth', [
+                'socket_id' => '123.456',
+                'channel_name' => "private-desktop-clients.{$desktopClient->id}",
+            ], [
+                'X-Desktop-Client-Id' => $desktopClient->id,
+                'X-Desktop-Client-Name' => 'Test PC',
+            ])
+            ->assertForbidden();
+    }
+
+    // ==================== helpers ====================
+
     private function authChannel(User $user, string $channel): TestResponse
     {
-        Passport::actingAs($user);
+        $this->actingAs($user->withAccessToken(new TransientToken), 'api');
 
         return $this->postJson('/api/broadcasting/auth', [
             'socket_id' => '123.456',
