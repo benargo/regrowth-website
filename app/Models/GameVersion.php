@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Casts\AsBinaryColor;
 use App\Casts\AsSlug;
 use App\Contracts\Models\DatasetModel;
+use App\Contracts\Models\DefinesGameVersionMediaCollections;
 use App\Contracts\Models\DispatchesChangesForMedia;
 use App\Contracts\Models\EditLockable;
 use App\Contracts\Models\HasUsage;
@@ -53,7 +54,7 @@ use Spatie\MediaLibrary\HasMedia;
     'warcraft_logs_guild_id',
 ])]
 #[UsePolicy(DatasetPolicy::class)]
-class GameVersion extends Model implements DatasetModel, DispatchesChangesForMedia, EditLockable, HasMedia, HasUsage
+class GameVersion extends Model implements DatasetModel, DefinesGameVersionMediaCollections, DispatchesChangesForMedia, EditLockable, HasMedia, HasUsage
 {
     use HasEditLock;
 
@@ -62,32 +63,6 @@ class GameVersion extends Model implements DatasetModel, DispatchesChangesForMed
 
     use InteractsWithChaperonedMedia;
     use TracksUsage;
-
-    /**
-     * The wide header image shown above the game version's pages.
-     */
-    public const string MEDIA_BANNER = 'banner';
-
-    /**
-     * A single-colour mark for compact places such as navigation.
-     */
-    public const string MEDIA_ICON = 'icon';
-
-    /**
-     * The full-colour game logo.
-     */
-    public const string MEDIA_LOGO = 'logo';
-
-    /**
-     * Every image collection. Each holds a single file.
-     *
-     * @var list<string>
-     */
-    public const array MEDIA_COLLECTIONS = [
-        self::MEDIA_BANNER,
-        self::MEDIA_ICON,
-        self::MEDIA_LOGO,
-    ];
 
     /**
      * The event map for the model.

@@ -7,6 +7,7 @@ use App\Jobs\Discord\SyncEmojis as SyncDiscordEmojis;
 use App\Jobs\Discord\SyncRoles as SyncDiscordRoles;
 use App\Jobs\Discord\SyncUsers as SyncDiscordUsers;
 use App\Jobs\FetchGuildRosters;
+use App\Jobs\GuildRosterManager\PruneExpiredSyncs as PruneExpiredGrmSyncs;
 use App\Jobs\GuildRosterManager\PurgeArchivedUploads as PurgeArchivedGrmUploads;
 use App\Jobs\Handbook\PurgeTrashedChapters;
 use App\Jobs\RaidHelper\FetchEvents as FetchRaidHelperEvents;
@@ -73,6 +74,16 @@ Schedule::command('model:prune', ['--model' => [RecruitmentMacro::class]])->dail
  * Permanently delete archived GRM uploads older than three months, daily.
  */
 Schedule::job(new PurgeArchivedGrmUploads)->daily()->name('purge-archived-grm-uploads')->withoutOverlapping();
+
+/**
+ * Expire stale GRM desktop syncs and delete the staged rows of finished ones, every ten minutes.
+ */
+Schedule::job(new PruneExpiredGrmSyncs)->everyTenMinutes()->name('prune-expired-grm-syncs')->withoutOverlapping();
+
+/**
+ * Delete revoked and expired Passport tokens and codes, daily.
+ */
+Schedule::command('passport:purge')->daily()->name('passport-purge')->withoutOverlapping();
 
 /**
  * This should be the last job to run each day.

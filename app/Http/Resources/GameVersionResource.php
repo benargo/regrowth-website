@@ -3,9 +3,9 @@
 namespace App\Http\Resources;
 
 use App\Contracts\Http\Resources\ScopedResource;
+use App\Contracts\Models\DefinesGameVersionMediaCollections;
 use App\Http\Resources\Concerns\DescribesMediaCollections;
 use App\Http\Resources\Concerns\HasScopes;
-use App\Models\GameVersion;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,7 +14,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * The media URLs, warcraftlogs (with the guild page URL) and the usage counts
  * are omitted unless loaded.
  */
-class GameVersionResource extends JsonResource implements ScopedResource
+class GameVersionResource extends JsonResource implements DefinesGameVersionMediaCollections, ScopedResource
 {
     use DescribesMediaCollections;
     use HasScopes;
@@ -48,9 +48,9 @@ class GameVersionResource extends JsonResource implements ScopedResource
             'title' => $this->title,
             'slug' => $this->slug,
             'color' => $this->color,
-            'banner_url' => $this->whenLoaded('media', fn (): ?string => $this->getFirstMediaUrl(GameVersion::MEDIA_BANNER) ?: null),
-            'icon_url' => $this->whenLoaded('media', fn (): ?string => $this->getFirstMediaUrl(GameVersion::MEDIA_ICON) ?: null),
-            'logo_url' => $this->whenLoaded('media', fn (): ?string => $this->getFirstMediaUrl(GameVersion::MEDIA_LOGO) ?: null),
+            'banner_url' => $this->whenLoaded('media', fn (): ?string => $this->getFirstMediaUrl(self::MEDIA_BANNER) ?: null),
+            'icon_url' => $this->whenLoaded('media', fn (): ?string => $this->getFirstMediaUrl(self::MEDIA_ICON) ?: null),
+            'logo_url' => $this->whenLoaded('media', fn (): ?string => $this->getFirstMediaUrl(self::MEDIA_LOGO) ?: null),
             'realm' => $this->realm,
             'wow_client_folder' => $this->wow_client_folder,
             'guild_name' => $this->guild_name,
