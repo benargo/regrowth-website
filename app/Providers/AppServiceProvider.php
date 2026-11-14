@@ -85,8 +85,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('view-officer-dashboard', fn (User $user) => $user->isAuthorizedTo('view-officer-dashboard'));
         Gate::define('view-priorities-page', fn (User $user) => $user->isAuthorizedTo('view-priorities-page'));
 
-        Route::bind('sync', fn (string $value) => Upload::query()
-            ->whereKey($value)
+        Route::bind('sync', fn (string $value) => Upload::whereKey($value)
             ->where('source', UploadSource::Desktop)
             ->where('user_id', request()->user()?->getAuthIdentifier())
             ->first() ?? abort(404));
