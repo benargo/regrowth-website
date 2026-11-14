@@ -76,7 +76,7 @@ class CommitSync
             $previousAltGroups = $this->writeEntries($gameVersion, $applied, $nextRevision);
             $removals = $this->applyRemovals($gameVersion, $removed, $classified, $banAccess);
             $banIds = $this->recordBans($gameVersion, $applied);
-            ['removed' => $removedCount, 'departed' => $departed] = $removals;
+            ['removed' => $removedCount, 'departed' => $departed, 'skipped' => $skippedRemovals] = $removals;
 
             $ranksFingerprint = $ranks === null ? $previous->ranks_fingerprint : ComputeFingerprint::run(new RanksData($ranks));
             $hasChanges = $applied !== [] || $removedCount > 0 || $ranksFingerprint !== $previous?->ranks_fingerprint;
@@ -100,7 +100,7 @@ class CommitSync
             ]);
             $sync->device()->update(['last_upload_at' => now()]);
             $sync->syncRows()->delete();
-            $this->logSkipped($sync, $classified, $removals['skipped']);
+            $this->logSkipped($sync, $classified, $skippedRemovals);
 
             if ($hasChanges) {
                 SyncCommitting::dispatch($sync, new SyncChangesData(
