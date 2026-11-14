@@ -69,6 +69,21 @@ class PermissionSeeder extends Seeder
         ['name' => 'delete-any-recruitment-macro', 'guard_name' => 'web', 'label' => 'Delete any recruitment macro', 'description' => 'Delete and restore recruitment macros written by anyone.'],
 
         /**
+         * Desktop app permissions
+         */
+        ['name' => 'use-desktop-client', 'guard_name' => 'web', 'label' => 'Use the desktop app', 'description' => 'Link the Regrowth Desktop app and sign out your own linked devices.'],
+        ['name' => 'upload-grm-rosters', 'guard_name' => 'web', 'label' => 'Upload GRM rosters', 'description' => 'Send Guild Roster Manager data to the site from the desktop app.'],
+        ['name' => 'revoke-any-desktop-client', 'guard_name' => 'web', 'label' => 'Sign out any desktop app', 'description' => 'Sign out desktop apps linked by other people.'],
+
+        /**
+         * GRM ban permissions
+         */
+        ['name' => 'view-grm-bans', 'guard_name' => 'web', 'label' => 'View GRM bans', 'description' => 'See the GRM ban log: who was banned, when and by whom.'],
+        ['name' => 'view-grm-ban-reasons', 'guard_name' => 'web', 'label' => 'View GRM ban reasons', 'description' => 'See the reason recorded with each GRM ban.'],
+        ['name' => 'create-grm-bans', 'guard_name' => 'web', 'label' => 'Sync new GRM bans', 'description' => 'Send new bans from Guild Roster Manager through the desktop app.'],
+        ['name' => 'update-grm-bans', 'guard_name' => 'web', 'label' => 'Sync GRM ban changes', 'description' => 'Send changes to GRM bans, including unbans, through the desktop app.'],
+
+        /**
          * Other permissions
          */
         ['name' => 'edit-datasets', 'guard_name' => 'web', 'label' => 'Edit datasets', 'description' => 'Edit game data such as phases, bosses and raids.'],
@@ -165,6 +180,17 @@ class PermissionSeeder extends Seeder
                 'view-recruitment-macros',
                 'manage-recruitment-macros',
                 'delete-any-recruitment-macro',
+            ],
+            'Desktop App' => [
+                'use-desktop-client',
+                'upload-grm-rosters',
+                'revoke-any-desktop-client',
+            ],
+            'GRM Bans' => [
+                'view-grm-bans',
+                'view-grm-ban-reasons',
+                'create-grm-bans',
+                'update-grm-bans',
             ],
         ];
     }
