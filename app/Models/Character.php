@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Contracts\HasCharacterMedia;
 use App\Enums\Gender;
+use App\Enums\RankSource;
 use App\Observers\CharacterObserver;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -24,7 +25,7 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 #[ObservedBy([CharacterObserver::class])]
-#[Fillable(['id', 'game_version_id', 'name', 'surname', 'level', 'rank_id', 'playable_class_id', 'playable_race_id', 'gender', 'user_id', 'is_main', 'is_loot_councillor'])]
+#[Fillable(['id', 'grm_guid', 'game_version_id', 'name', 'surname', 'level', 'rank_id', 'playable_class_id', 'playable_race_id', 'gender', 'user_id', 'is_main', 'is_loot_councillor', 'left_guild_at', 'rank_observed_at', 'rank_source', 'level_observed_at'])]
 #[Hidden(['created_at', 'updated_at', 'surname_key'])]
 class Character extends Model implements HasCharacterMedia, HasMedia
 {
@@ -50,6 +51,10 @@ class Character extends Model implements HasCharacterMedia, HasMedia
             'gender' => Gender::class,
             'is_main' => 'boolean',
             'is_loot_councillor' => 'boolean',
+            'left_guild_at' => 'datetime',
+            'rank_observed_at' => 'datetime',
+            'level_observed_at' => 'datetime',
+            'rank_source' => RankSource::class,
         ];
     }
 
@@ -121,7 +126,30 @@ class Character extends Model implements HasCharacterMedia, HasMedia
         );
     }
 
+    /**
+     * Whether the character is currently in the guild.
+     *
+     * @return Attribute<bool, never>
+     */
+    protected function isInGuild(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): bool => $this->left_guild_at === null,
+        );
+    }
+
     // ============ Scopes ============
+
+    /**
+     * Limit the query to characters who have not left the guild.
+     *
+     * @param  Builder<Character>  $query
+     */
+    #[Scope]
+    protected function inGuild(Builder $query): void
+    {
+        $query->whereNull($query->qualifyColumn('left_guild_at'));
+    }
 
     /**
      * Order the query by name, then surname, with a null surname first.
@@ -166,6 +194,16 @@ class Character extends Model implements HasCharacterMedia, HasMedia
     public function gameVersion(): BelongsTo
     {
         return $this->belongsTo(GameVersion::class);
+    }
+
+    /**
+     * Get the guild membership periods of the character.
+     *
+     * @return HasMany<CharacterGuildMembership, $this>
+     */
+    public function guildMemberships(): HasMany
+    {
+        return $this->hasMany(CharacterGuildMembership::class);
     }
 
     /**

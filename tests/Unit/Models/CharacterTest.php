@@ -4,6 +4,7 @@ namespace Tests\Unit\Models;
 
 use App\Contracts\HasCharacterMedia;
 use App\Enums\Gender;
+use App\Enums\RankSource;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
@@ -13,10 +14,13 @@ use App\Models\PlayableRace;
 use App\Models\PlayableSpecialization;
 use App\Models\Report;
 use App\Models\User;
+use Carbon\CarbonInterface;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
@@ -50,6 +54,11 @@ class CharacterTest extends ModelTestCase
             'user_id',
             'is_main',
             'is_loot_councillor',
+            'grm_guid',
+            'left_guild_at',
+            'rank_observed_at',
+            'rank_source',
+            'level_observed_at',
         ]);
     }
 
@@ -62,7 +71,75 @@ class CharacterTest extends ModelTestCase
             'gender' => Gender::class,
             'is_main' => 'boolean',
             'is_loot_councillor' => 'boolean',
+            'left_guild_at' => 'datetime',
+            'rank_observed_at' => 'datetime',
+            'level_observed_at' => 'datetime',
+            'rank_source' => RankSource::class,
         ]);
+    }
+
+    #[Test]
+    public function in_guild_excludes_characters_who_left(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $present = Character::factory()->forGameVersion($gameVersion)->withUniqueName()->create();
+        $departed = Character::factory()->forGameVersion($gameVersion)->withUniqueName()->leftGuild()->create();
+
+        $ids = Character::inGuild()->pluck('id')->all();
+
+        $this->assertContains($present->id, $ids);
+        $this->assertNotContains($departed->id, $ids);
+        $this->assertTrue($present->is_in_guild);
+        $this->assertFalse($departed->is_in_guild);
+    }
+
+    #[Test]
+    public function it_casts_the_evidence_columns(): void
+    {
+        $character = Character::factory()
+            ->forGameVersion(GameVersion::factory()->create())
+            ->rankObserved(now())
+            ->create(['level_observed_at' => now()]);
+
+        $character = $character->fresh();
+
+        $this->assertInstanceOf(CarbonInterface::class, $character->rank_observed_at);
+        $this->assertInstanceOf(CarbonInterface::class, $character->level_observed_at);
+        $this->assertSame(RankSource::Blizzard, $character->rank_source);
+    }
+
+    #[Test]
+    #[Group('platform')]
+    public function it_is_never_scheduled_for_pruning(): void
+    {
+        $covering = collect(app(Schedule::class)->events())->filter(function ($event): bool {
+            $command = (string) $event->command;
+
+            if (! str_contains($command, 'model:prune')) {
+                return false;
+            }
+
+            return ! str_contains($command, '--model') || str_contains($command, 'Character');
+        });
+
+        $this->assertCount(0, $covering);
+    }
+
+    #[Test]
+    public function grm_guid_is_unique_per_game_version_only(): void
+    {
+        $first = GameVersion::factory()->create();
+        $second = GameVersion::factory()->create();
+        $guid = 'Player-4001-0A1B2C3D';
+
+        Character::factory()->forGameVersion($first)->withUniqueName()->withGrmGuid($guid)->create();
+        Character::factory()->forGameVersion($second)->withUniqueName()->withGrmGuid($guid)->create();
+
+        $this->assertSame(2, Character::where('grm_guid', $guid)->count());
+
+        $this->expectException(UniqueConstraintViolationException::class);
+
+        Character::factory()->forGameVersion($first)->withUniqueName()->withGrmGuid($guid)->create();
     }
 
     #[Test]
