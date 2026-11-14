@@ -41,7 +41,7 @@ class ConvertUuidColumnsToNativeUuidMigrationTest extends TestCase
     /**
      * @var array<int, string>
      */
-    protected array $tablesToTruncate = ['pivot_events_characters', 'events', 'characters'];
+    protected array $tablesToTruncate = ['pivot_events_characters', 'events', 'characters', 'discord_channels'];
 
     #[Test]
     public function up_converts_legacy_char_uuid_columns_to_native_uuid(): void
