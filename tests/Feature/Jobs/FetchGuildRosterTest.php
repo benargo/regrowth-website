@@ -3,6 +3,7 @@
 namespace Tests\Feature\Jobs;
 
 use App\Enums\Gender;
+use App\Enums\RankSource;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
@@ -17,12 +18,14 @@ use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
+use Carbon\Carbon;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Middleware\RateLimitedWithRedis;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -212,7 +215,7 @@ class FetchGuildRosterTest extends TestCase
 
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(999, 'Thrall', 80, 0),
-        ]]);
+        ]], $this->lastModifiedHeader());
         $this->mockGetCharacterProfile(responseData: [
             'character_class' => ['key' => ['href' => 'https://example.test/class/2'], 'name' => 'Shaman', 'id' => 2],
             'race' => ['key' => ['href' => 'https://example.test/race/3'], 'name' => 'Orc', 'id' => 3],
@@ -483,7 +486,7 @@ class FetchGuildRosterTest extends TestCase
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(1, 'Thrall', 70, 99, 'Stormrage'),
             $this->memberPayload(3, 'Jaina', 70, 0),
-        ]]);
+        ]], $this->lastModifiedHeader());
         $this->mockGetCharacterProfile();
         $this->mockGetPlayableClassMedia();
         $this->applyBlizzardMocks();
@@ -571,7 +574,7 @@ class FetchGuildRosterTest extends TestCase
 
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(1, 'Alpha', 70, 0),
-        ]]);
+        ]], $this->lastModifiedHeader());
         $this->mockGetCharacterProfile(responseData: $this->makeCharacterProfileResponse(classId: 5));
         $this->mockGetPlayableClass(status: 500);
         $this->applyBlizzardMocks();
@@ -591,7 +594,7 @@ class FetchGuildRosterTest extends TestCase
         GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
         PlayableClass::factory()->create(['id' => 1]);
         PlayableRace::factory()->create(['id' => 1]);
-        Character::factory()->create(['id' => 1, 'level' => 34, 'game_version_id' => $gameVersion->id]);
+        Character::factory()->create(['id' => 1, 'name' => 'Alpha', 'level' => 34, 'game_version_id' => $gameVersion->id]);
 
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(1, 'Alpha', 31, 0),
@@ -861,7 +864,7 @@ class FetchGuildRosterTest extends TestCase
             $this->memberPayload(1, 'FailChar', 70, 99),
             // Second member has a valid rank and should still sync.
             $this->memberPayload(2, 'GoodChar', 70, 0),
-        ]]);
+        ]], $this->lastModifiedHeader());
         $this->mockGetCharacterProfile();
         $this->mockGetPlayableClassMedia();
         $this->applyBlizzardMocks();
@@ -888,7 +891,7 @@ class FetchGuildRosterTest extends TestCase
 
         $this->mockGetGuildRoster(['members' => [
             $this->memberPayload(1, 'NoRankChar', 70, 99),
-        ]]);
+        ]], $this->lastModifiedHeader());
         $this->mockGetCharacterProfile();
         $this->mockGetPlayableClassMedia();
         $this->applyBlizzardMocks();
@@ -960,7 +963,245 @@ class FetchGuildRosterTest extends TestCase
         $this->assertDatabaseHas('characters', ['id' => 1, 'name' => 'Thrall', 'surname' => 'Stormrage', 'game_version_id' => $gameVersion->id]);
     }
 
+    // ==================== last-modified evidence ====================
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_writes_rank_and_evidence_when_last_modified_is_newer(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        $oldRank = GuildRank::factory()->for($gameVersion)->create(['sort_order' => 1]);
+        $newRank = GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        Character::factory()->rankObserved($this->localTime('2026-11-10 12:00:00'))->create([
+            'id' => 1, 'name' => 'Alpha', 'rank_id' => $oldRank->id, 'game_version_id' => $gameVersion->id,
+        ]);
+
+        $this->runRoster($gameVersion, 0, 70, $this->lastModifiedHeader());
+
+        $character = Character::find(1);
+        $this->assertSame($newRank->id, $character->rank_id);
+        $this->assertSame(RankSource::Blizzard, $character->rank_source);
+        $this->assertTrue($character->rank_observed_at->equalTo(Carbon::parse(self::LAST_MODIFIED, 'UTC')));
+        $this->assertTrue($character->level_observed_at->equalTo(Carbon::parse(self::LAST_MODIFIED, 'UTC')));
+        $this->assertSame(
+            Carbon::parse(self::LAST_MODIFIED, 'UTC')->setTimezone(config('app.timezone'))->format('Y-m-d H:i:s'),
+            DB::table('characters')->where('id', 1)->value('rank_observed_at'),
+        );
+    }
+
+    #[Group('edge-cases')]
+    #[Test]
+    public function it_keeps_a_newer_grm_rank_over_an_older_roster_response(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        $grmRank = GuildRank::factory()->for($gameVersion)->create(['sort_order' => 1]);
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        $grmAt = $this->localTime('2026-11-12 20:00:00');
+        Character::factory()->rankObserved($grmAt, RankSource::Grm)->create([
+            'id' => 1, 'name' => 'Alpha', 'rank_id' => $grmRank->id, 'game_version_id' => $gameVersion->id,
+        ]);
+
+        $this->runRoster($gameVersion, 0, 70, $this->lastModifiedHeader());
+
+        $character = Character::find(1);
+        $this->assertSame($grmRank->id, $character->rank_id);
+        $this->assertSame(RankSource::Grm, $character->rank_source);
+        $this->assertTrue($character->rank_observed_at->equalTo($grmAt));
+    }
+
+    #[Group('edge-cases')]
+    #[Test]
+    public function it_corrects_a_grm_rank_with_a_newer_roster_response(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        $grmRank = GuildRank::factory()->for($gameVersion)->create(['sort_order' => 1]);
+        $blizzardRank = GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        Character::factory()->rankObserved($this->localTime('2026-11-12 18:00:00'), RankSource::Grm)->create([
+            'id' => 1, 'name' => 'Alpha', 'rank_id' => $grmRank->id, 'game_version_id' => $gameVersion->id,
+        ]);
+
+        $this->runRoster($gameVersion, 0, 70, $this->lastModifiedHeader());
+
+        $character = Character::find(1);
+        $this->assertSame($blizzardRank->id, $character->rank_id);
+        $this->assertSame(RankSource::Blizzard, $character->rank_source);
+        $this->assertTrue($character->rank_observed_at->equalTo(Carbon::parse(self::LAST_MODIFIED, 'UTC')));
+    }
+
+    #[Group('edge-cases')]
+    #[Test]
+    public function it_raises_level_only_with_newer_evidence_and_never_lowers_it(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        PlayableClass::factory()->create(['id' => 1]);
+        PlayableRace::factory()->create(['id' => 1]);
+        $newer = $this->localTime('2026-11-12 20:00:00');
+        Character::factory()->create(['id' => 1, 'name' => 'Alpha', 'level' => 60, 'level_observed_at' => $this->localTime('2026-11-10 00:00:00'), 'game_version_id' => $gameVersion->id]);
+        Character::factory()->create(['id' => 2, 'name' => 'Bravo', 'level' => 60, 'level_observed_at' => $newer, 'game_version_id' => $gameVersion->id]);
+        Character::factory()->create(['id' => 3, 'name' => 'Charlie', 'level' => 70, 'level_observed_at' => $this->localTime('2026-11-10 00:00:00'), 'game_version_id' => $gameVersion->id]);
+
+        $this->mockGetGuildRoster(['members' => [
+            $this->memberPayload(1, 'Alpha', 65, 0),
+            $this->memberPayload(2, 'Bravo', 65, 0),
+            $this->memberPayload(3, 'Charlie', 65, 0),
+        ]], $this->lastModifiedHeader());
+        $this->mockGetCharacterProfile();
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+
+        $this->assertSame(65, Character::find(1)->level);
+        $this->assertTrue(Character::find(1)->level_observed_at->equalTo(Carbon::parse(self::LAST_MODIFIED, 'UTC')));
+        $this->assertSame(60, Character::find(2)->level);
+        $this->assertTrue(Character::find(2)->level_observed_at->equalTo($newer));
+        $this->assertSame(70, Character::find(3)->level);
+    }
+
+    #[Group('edge-cases')]
+    #[Test]
+    public function it_writes_no_evidence_fields_without_last_modified(): void
+    {
+        Log::spy();
+        $gameVersion = $this->createGameVersion();
+        $oldRank = GuildRank::factory()->for($gameVersion)->create(['sort_order' => 1]);
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        Character::factory()->create([
+            'id' => 1, 'level' => 60, 'rank_id' => $oldRank->id, 'game_version_id' => $gameVersion->id,
+            'rank_observed_at' => null, 'rank_source' => null, 'level_observed_at' => null,
+        ]);
+
+        $this->runRoster($gameVersion, 0, 70, []);
+
+        $character = Character::find(1);
+        $this->assertSame($oldRank->id, $character->rank_id);
+        $this->assertSame(60, $character->level);
+        $this->assertNull($character->rank_observed_at);
+        $this->assertNull($character->rank_source);
+        $this->assertNull($character->level_observed_at);
+        Log::shouldHaveReceived('warning')->with(
+            'Skipped rank, level and membership from the guild roster: the response has no usable Last-Modified header.',
+            ['game_version_id' => $gameVersion->id, 'cached' => false],
+        )->once();
+    }
+
+    #[Group('edge-cases')]
+    #[Test]
+    public function it_ignores_an_unparsable_last_modified(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        $oldRank = GuildRank::factory()->for($gameVersion)->create(['sort_order' => 1]);
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        Character::factory()->create(['id' => 1, 'name' => 'Alpha', 'level' => 60, 'rank_id' => $oldRank->id, 'game_version_id' => $gameVersion->id]);
+
+        $this->runRoster($gameVersion, 0, 70, ['Last-Modified' => 'yesterday']);
+
+        $character = Character::find(1);
+        $this->assertSame($oldRank->id, $character->rank_id);
+        $this->assertSame(60, $character->level);
+        $this->assertNull($character->rank_observed_at);
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_creates_a_new_character_with_null_evidence_without_last_modified(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        $rank = GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+
+        $this->runRoster($gameVersion, 0, 70, [], create: true);
+
+        $character = Character::find(1);
+        $this->assertSame($rank->id, $character->rank_id);
+        $this->assertSame(70, $character->level);
+        $this->assertNull($character->rank_observed_at);
+        $this->assertNull($character->rank_source);
+        $this->assertNull($character->level_observed_at);
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_records_evidence_on_a_new_character_with_last_modified(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        $rank = GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+
+        $this->runRoster($gameVersion, 0, 70, $this->lastModifiedHeader(), create: true);
+
+        $character = Character::find(1);
+        $this->assertSame($rank->id, $character->rank_id);
+        $this->assertSame(RankSource::Blizzard, $character->rank_source);
+        $this->assertTrue($character->rank_observed_at->equalTo(Carbon::parse(self::LAST_MODIFIED, 'UTC')));
+        $this->assertTrue($character->level_observed_at->equalTo(Carbon::parse(self::LAST_MODIFIED, 'UTC')));
+    }
+
+    #[Group('happy-path')]
+    #[Test]
+    public function it_marks_characters_missing_from_the_roster_as_left(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        $missing = Character::factory()->for($gameVersion)->create(['id' => 2]);
+
+        $this->runRoster($gameVersion, 0, 70, $this->lastModifiedHeader());
+
+        $this->assertNull(Character::find(1)->left_guild_at);
+        $this->assertTrue($missing->fresh()->left_guild_at->equalTo(Carbon::parse(self::LAST_MODIFIED, 'UTC')));
+    }
+
+    #[Group('edge-cases')]
+    #[Test]
+    public function it_marks_no_membership_without_last_modified(): void
+    {
+        $gameVersion = $this->createGameVersion();
+        GuildRank::factory()->for($gameVersion)->create(['sort_order' => 0]);
+        $missing = Character::factory()->for($gameVersion)->create(['id' => 2]);
+
+        $this->runRoster($gameVersion, 0, 70, []);
+
+        $this->assertNull($missing->fresh()->left_guild_at);
+    }
+
     // ==================== helpers ====================
+
+    /**
+     * A time expressed in the application timezone, as written to evidence columns.
+     */
+    private function localTime(string $time): Carbon
+    {
+        return Carbon::parse($time, config('app.timezone'));
+    }
+
+    private const LAST_MODIFIED = 'Thu, 12 Nov 2026 18:04:11 GMT';
+
+    /**
+     * @return array<string, string>
+     */
+    private function lastModifiedHeader(): array
+    {
+        return ['Last-Modified' => self::LAST_MODIFIED];
+    }
+
+    /**
+     * Run the job for a one-member roster (character 1, 'Alpha') with the given response headers.
+     *
+     * @param  array<string, string>  $headers
+     */
+    private function runRoster(GameVersion $gameVersion, int $rank, int $level, array $headers, bool $create = false): void
+    {
+        PlayableClass::factory()->create(['id' => 1]);
+        PlayableRace::factory()->create(['id' => 1]);
+
+        if (! $create && ! Character::whereKey(1)->exists()) {
+            Character::factory()->create(['id' => 1, 'name' => 'Alpha', 'game_version_id' => $gameVersion->id]);
+        }
+
+        $this->mockGetGuildRoster(['members' => [$this->memberPayload(1, 'Alpha', $level, $rank)]], $headers);
+        $this->mockGetCharacterProfile();
+        $this->applyBlizzardMocks();
+
+        (new FetchGuildRoster($gameVersion->id))->handle(app(BlizzardConnector::class));
+    }
 
     private function createGameVersion(): GameVersion
     {
