@@ -12,7 +12,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
-#[Group('characters')]
+#[Group('platform')]
 class TouchDesktopClientTest extends TestCase
 {
     #[Test]

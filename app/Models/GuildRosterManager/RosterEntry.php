@@ -41,6 +41,7 @@ class RosterEntry extends Model
             'kind' => RosterEntryKind::class,
             'payload' => AsRosterEntryData::class,
             'epoch' => 'integer',
+            'revision' => 'integer',
         ];
     }
 

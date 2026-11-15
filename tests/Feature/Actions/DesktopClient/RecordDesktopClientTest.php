@@ -34,6 +34,7 @@ class RecordDesktopClientTest extends TestCase
     #[Group('happy-path')]
     public function it_updates_the_name_token_and_last_seen_for_a_known_id(): void
     {
+        $this->freezeSecond();
         $user = User::factory()->create();
         $existing = DesktopClient::factory()->create([
             'user_id' => $user->id,
@@ -47,7 +48,7 @@ class RecordDesktopClientTest extends TestCase
         $this->assertSame(1, DesktopClient::count());
         $this->assertSame('New name', $client->name);
         $this->assertSame('token-1', $client->oauth_access_token_id);
-        $this->assertTrue($client->last_seen_at->isToday());
+        $this->assertTrue($client->last_seen_at->equalTo(now()));
     }
 
     #[Test]

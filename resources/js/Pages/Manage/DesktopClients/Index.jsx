@@ -70,11 +70,8 @@ export default function ManageDesktopClients({ devices }) {
             <SharedHeader title="Desktop Clients" backgroundClass="bg-officer-meeting" />
             <ToolNav>
                 <div className="flex-initial space-x-4">
-                    <ToolNavLink
-                        href={route("management.dashboard")}
-                        className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
-                    >
-                        <Icon icon="arrow-left" style="solid" className="mr-1 text-xs" />
+                    <ToolNavLink href={route("management.dashboard")}>
+                        <Icon icon="arrow-left" style="solid" className="mr-1 text-xs" aria-hidden="true" />
                         Back to officers’ dashboard
                     </ToolNavLink>
                 </div>

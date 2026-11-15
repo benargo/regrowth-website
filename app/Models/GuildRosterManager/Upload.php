@@ -70,6 +70,7 @@ class Upload extends Model
             'skipped_count' => 'integer',
             'warning_count' => 'integer',
             'error_count' => 'integer',
+            'member_count' => 'integer',
             'expires_at' => 'datetime',
             'ticket_expires_at' => 'datetime',
         ];

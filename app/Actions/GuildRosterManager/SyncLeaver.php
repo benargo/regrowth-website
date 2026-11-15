@@ -38,7 +38,7 @@ class SyncLeaver
         }
 
         $departedAt = $this->departureTime($leaver, $syncStartedAt, $evidenceAt);
-        $isLeft = ! $isRetry || $character->rank_observed_at === null || $departedAt->greaterThan($character->rank_observed_at);
+        $isLeft = ! $isRetry || IsNewerEvidence::run($departedAt, $character->rank_observed_at);
 
         $character->grm_guid = $leaver->guid;
 

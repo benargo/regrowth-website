@@ -141,8 +141,7 @@ class SyncRoster implements ShouldQueue
         });
 
         if (collect($results)->contains(fn (RowResultData $result): bool => $result->status === RowStatus::Processed)) {
-            Cache::tags(['attendance'])->flush();
-            Cache::tags(['characters'])->flush();
+            $this->flushCharacterCaches();
         }
 
         SyncCommitted::dispatch($sync);
@@ -173,10 +172,18 @@ class SyncRoster implements ShouldQueue
             $sync->markOutcome(UploadOutcome::Failed, $this->counts($results));
         });
 
-        Cache::tags(['attendance'])->flush();
-        Cache::tags(['characters'])->flush();
+        $this->flushCharacterCaches();
 
         SyncCommitted::dispatch($sync);
+    }
+
+    /**
+     * Flush the `attendance` and `characters` caches.
+     */
+    private function flushCharacterCaches(): void
+    {
+        Cache::tags(['attendance'])->flush();
+        Cache::tags(['characters'])->flush();
     }
 
     /**

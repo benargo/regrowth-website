@@ -47,7 +47,7 @@ class CommitSyncRequest extends FormRequest implements ValidatesGrmGuids
             'removed.members.*' => [...self::GUID_RULES, 'distinct'],
             'removed.leavers' => ['sometimes', 'array', 'max:5000'],
             'removed.leavers.*' => [...self::GUID_RULES, 'distinct'],
-            'removed.bans' => ['sometimes', 'array'],
+            'removed.bans' => ['sometimes', 'array', 'max:5000'],
             'removed.bans.*' => [...self::GUID_RULES, 'distinct'],
             'removed.altGroups' => ['sometimes', 'array', 'max:1000'],
             'removed.altGroups.*' => ['string', 'max:32', 'distinct'],

@@ -60,6 +60,7 @@ class EventPolicyTest extends TestCase
     #[Test]
     public function it_allows_view_for_recent_event_at_two_week_boundary(): void
     {
+        $this->freezeSecond();
         $user = $this->userWithoutPermission();
         $event = Event::factory()->create(['end_time' => now()->subWeeks(2)->addSecond()]);
 

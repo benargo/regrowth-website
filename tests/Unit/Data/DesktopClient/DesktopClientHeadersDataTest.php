@@ -29,7 +29,11 @@ class DesktopClientHeadersDataTest extends TestCase
     #[Group('happy-path')]
     public function it_accepts_a_name_of_exactly_one_hundred_characters(): void
     {
-        $this->assertNotNull(DesktopClientHeadersData::tryFromRequest($this->request(self::CLIENT_ID, str_repeat('é', 100))));
+        $name = str_repeat('é', 100);
+
+        $headers = DesktopClientHeadersData::tryFromRequest($this->request(self::CLIENT_ID, $name));
+
+        $this->assertSame($name, $headers?->name);
     }
 
     #[Test]

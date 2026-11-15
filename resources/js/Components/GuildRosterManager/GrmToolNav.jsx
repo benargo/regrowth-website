@@ -16,7 +16,7 @@ export default function GrmToolNav({ current }) {
         <ToolNav aria-label="GRM tools">
             <ToolNavLink href={route("management.dashboard")}>
                 <Icon icon="arrow-left" style="solid" className="mr-1 text-xs" aria-hidden="true" />
-                Back to officers' dashboard
+                Back to officers’ dashboard
             </ToolNavLink>
             <div className="flex flex-row flex-wrap gap-1" role="group" aria-label="GRM pages">
                 {PAGES.map((page) => (

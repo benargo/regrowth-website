@@ -35,7 +35,7 @@ class SyncMember implements RequiresMinimumCharacterLevel
     /**
      * Matches the temporary name Blizzard gives a character after a forced rename.
      */
-    public const string PLACEHOLDER_NAME = '/^Player[A-Z]{6}$/';
+    private const string PLACEHOLDER_NAME = '/^Player[A-Z]{6}$/';
 
     public function __construct(private readonly BlizzardConnector $blizzard) {}
 

@@ -96,11 +96,8 @@ class InflateGzipRequestTest extends TestCase
     #[Test]
     public function it_rejects_a_content_length_over_1_mb_before_reading_the_body(): void
     {
-        $request = $this->unreadableRequest([
-            'HTTP_CONTENT_ENCODING' => 'gzip',
-            'CONTENT_TYPE' => 'application/json',
-            'CONTENT_LENGTH' => '1048577',
-        ]);
+        $request = $this->gzippedRequest(gzencode('{"ok":true}'));
+        $request->headers->set('Content-Length', '1048577');
 
         $this->assertAbortsWith(413, $request);
     }
@@ -110,7 +107,7 @@ class InflateGzipRequestTest extends TestCase
     #[Test]
     public function it_rejects_an_uncompressed_body_with_400_in_required_mode(): void
     {
-        $request = $this->unreadableRequest(['CONTENT_TYPE' => 'application/json']);
+        $request = Request::create('/', 'POST', server: ['CONTENT_TYPE' => 'application/json'], content: '{"ok":true}');
 
         $response = (new InflateGzipRequest)->handle($request, fn () => $this->fail('The request should not be passed on.'), 'required');
 

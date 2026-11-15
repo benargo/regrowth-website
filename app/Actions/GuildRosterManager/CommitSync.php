@@ -494,7 +494,8 @@ class CommitSync
                 }
             }
 
-            $ban = Ban::updateOrCreate(['game_version_id' => $gameVersion->id, 'grm_guid' => $row->guid], $attributes);
+            $ban = $existing->get($row->guid) ?? new Ban(['game_version_id' => $gameVersion->id, 'grm_guid' => $row->guid]);
+            $ban->fill($attributes)->save();
 
             if ($ban->wasRecentlyCreated || $ban->wasChanged()) {
                 $banIds[] = $ban->id;

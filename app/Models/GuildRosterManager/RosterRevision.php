@@ -35,6 +35,7 @@ class RosterRevision extends Model
     protected function casts(): array
     {
         return [
+            'revision' => 'integer',
             'ranks' => 'array',
             'committed_at' => 'datetime',
         ];

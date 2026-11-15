@@ -56,12 +56,13 @@ class StageSyncRows
             return;
         }
 
-        $existing = SyncRow::where('upload_id', $sync->id)
+        $batchKeys = array_values(array_unique($keys));
+        $otherStagedCount = SyncRow::where('upload_id', $sync->id)
             ->where('kind', $kind)
-            ->pluck('key')
-            ->all();
+            ->whereNotIn('key', $batchKeys)
+            ->count();
 
-        if (count(array_unique([...$existing, ...$keys])) > $limit) {
+        if ($otherStagedCount + count($batchKeys) > $limit) {
             throw ValidationException::withMessages([
                 'rows' => "The sync already holds the maximum number of {$kind->value} rows.",
             ]);

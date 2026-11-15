@@ -147,7 +147,7 @@ export default function Index() {
                                     className="bg-brown-800/50 flex flex-col gap-2 rounded border border-amber-800/50 px-4 py-3 sm:flex-row sm:items-center sm:gap-4"
                                 >
                                     <div className="flex min-w-0 flex-1 items-center gap-2 font-medium text-amber-300">
-                                        <Icon icon="desktop" style="regular" className="h-4 shrink-0" />
+                                        <Icon icon="desktop" style="regular" className="h-4 shrink-0" aria-hidden="true" />
                                         <span className="min-w-0 break-words">{client.name}</span>
                                     </div>
                                     <p className="text-sm text-gray-400">

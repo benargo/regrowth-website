@@ -26,12 +26,6 @@ use Throwable;
  * Binds each access token issued by `POST /oauth/token` to the desktop client named by the
  * `X-Desktop-Client-Id` and `X-Desktop-Client-Name` headers.
  *
- * A refresh token's access token ID is read with
- * `json_decode($this->decrypt($refreshToken), true)['access_token_id']`, using league/oauth2-server's
- * `CryptTrait::decrypt()` with the key from `Passport::tokenEncryptionKey($encrypter)`: the same call and key
- * that `RefreshTokenGrant::validateOldRefreshToken()` uses, as set on the authorization server by
- * `PassportServiceProvider::makeAuthorizationServer()`.
- *
  * - Missing or invalid device headers answer `400 invalid_request` before Passport runs.
  * - A refresh token whose access token is not bound to the device answers `401 invalid_grant` before Passport runs.
  * - After a `200`, the new access token is bound with `BindDesktopClientToken`. A refused binding revokes the

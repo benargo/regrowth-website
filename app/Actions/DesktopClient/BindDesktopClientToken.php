@@ -30,6 +30,8 @@ class BindDesktopClientToken
     public function handle(User $user, string $deviceId, string $deviceName, string $accessTokenId, ?string $previousAccessTokenId): DesktopClient
     {
         return DB::transaction(function () use ($user, $deviceId, $deviceName, $accessTokenId, $previousAccessTokenId): DesktopClient {
+            User::whereKey($user->id)->lockForUpdate()->first();
+
             $desktopClient = $previousAccessTokenId === null
                 ? $this->clientForSignIn($user, $deviceId)
                 : $this->clientForRefresh($user, $deviceId, $previousAccessTokenId);

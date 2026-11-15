@@ -22,6 +22,6 @@ class IssueOpenTicket implements SharesOpenTicketLifetime
             'g' => $gameVersion->id,
             'r' => $revision,
             'e' => now()->addSeconds(self::LIFETIME_SECONDS)->getTimestamp(),
-        ]));
+        ], JSON_THROW_ON_ERROR));
     }
 }

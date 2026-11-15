@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Character;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -14,7 +15,7 @@ return new class extends Migration
         Schema::create('grm_upload_rows', function (Blueprint $table) {
             $table->id();
             $table->foreignUuid('upload_id')->constrained('grm_uploads')->cascadeOnDelete();
-            $table->unsignedBigInteger('character_id')->nullable();
+            $table->foreignIdFor(Character::class)->nullable()->constrained()->nullOnDelete();
             $table->string('guid', 40);
             $table->string('name', 64);
             $table->string('status', 16);
@@ -23,7 +24,6 @@ return new class extends Migration
             $table->boolean('is_latest')->default(false);
             $table->timestamps();
 
-            $table->foreign('character_id')->references('id')->on('characters')->nullOnDelete();
             $table->index(['upload_id', 'reason']);
             $table->index(['guid', 'id']);
             $table->index(['is_latest', 'status']);

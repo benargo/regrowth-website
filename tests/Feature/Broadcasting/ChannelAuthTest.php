@@ -161,7 +161,7 @@ class ChannelAuthTest extends TestCase
         ])->assertUnauthorized();
     }
 
-    // ─── Desktop client channel ────────────────────────────────────────────────
+    // ==================== desktop client channel ====================
 
     #[Group('authorization')]
     #[Test]
