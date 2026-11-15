@@ -276,6 +276,18 @@ class GameVersionResourceTest extends TestCase
         $this->assertSame($links, $collection->resolve(new Request)[0]['links']);
     }
 
+    // ==================== icon scope ====================
+
+    #[Test]
+    public function the_icon_scope_exposes_only_the_icon_fields(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        $array = $gameVersion->load(['media', 'warcraftLogsGuild'])->toResource()->scope('icon')->resolve(new Request);
+
+        $this->assertSame(['title', 'slug', 'color', 'icon_url'], array_keys($array));
+    }
+
     // ==================== switcher scope ====================
 
     #[Test]
