@@ -25,6 +25,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTemplateController;
 use App\Http\Controllers\GameVersionController;
 use App\Http\Controllers\GuildRosterManager\ImportController;
+use App\Http\Controllers\GuildRosterManager\SyncDashboardController;
 use App\Http\Controllers\HandbookChapterController;
 use App\Http\Controllers\HandbookController;
 use App\Http\Controllers\HomeController;
@@ -221,6 +222,7 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
      */
     Route::get('/grm', [ImportController::class, 'create'])->name('grm.create');
     Route::post('/grm', [ImportController::class, 'store'])->name('grm.store');
+    Route::get('/grm/sync', [SyncDashboardController::class, 'index'])->name('grm.sync');
 
     /**
      * Phases management

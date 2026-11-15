@@ -1,6 +1,6 @@
 import Tooltip from "@/Components/Tooltip";
 
-const UPLOAD_STATUS_LABELS = {
+export const UPLOAD_STATUS_LABELS = {
     current: "Up to date",
     outdated: "Over a week old",
     stale: "Member count has changed",
@@ -18,11 +18,21 @@ const DOT_CLASSES = {
 
 /**
  * A small status light for a game version's latest GRM upload. Pulses while the
- * deferred `uploadStatuses` prop is still loading (status undefined).
+ * deferred `uploadStatuses` prop is still loading (status undefined). With `isDecorative`, the
+ * dot is hidden from assistive technology and has no tooltip, for use beside a visible label.
  */
-export default function UploadStatusDot({ status }) {
+export default function UploadStatusDot({ status, isDecorative = false }) {
     if (status === undefined) {
-        return <span aria-hidden="true" className="bg-brown-700 inline-block size-2.5 animate-pulse rounded-full" />;
+        return (
+            <span
+                aria-hidden="true"
+                className="bg-brown-700 inline-block size-2.5 rounded-full motion-safe:animate-pulse"
+            />
+        );
+    }
+
+    if (isDecorative) {
+        return <span aria-hidden="true" className={`inline-block size-2.5 rounded-full ${DOT_CLASSES[status]}`} />;
     }
 
     return (
