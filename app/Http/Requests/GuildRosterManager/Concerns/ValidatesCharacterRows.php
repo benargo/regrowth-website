@@ -28,7 +28,7 @@ trait ValidatesCharacterRows
             'history.*' => ['array'],
             'history.*.type' => ['required', 'in:joined,left'],
             'history.*.date' => ['required', 'date_format:Y-m-d'],
-            'epoch' => ['required', 'integer', 'min:0'],
+            'epoch' => ['required', 'integer', 'min:0', 'max:4294967295'],
         ];
     }
 

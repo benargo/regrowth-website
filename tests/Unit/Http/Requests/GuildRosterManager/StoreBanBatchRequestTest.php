@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Http\Requests\GuildRosterManager;
 
-use App\Actions\GuildRosterManager\ListExistingRosterKeys;
+use App\Actions\GuildRosterManager\ListExistingBanGuids;
 use App\Data\GuildRosterManager\BanData;
 use App\Enums\GuildRosterManager\RosterEntryKind;
 use App\Http\Requests\GuildRosterManager\StoreBanBatchRequest;
@@ -39,7 +39,7 @@ class StoreBanBatchRequestTest extends TestCase
     #[Group('authorization')]
     public function authorize_denies_a_user_who_may_not_write_to_the_sync(): void
     {
-        ListExistingRosterKeys::shouldNotRun();
+        ListExistingBanGuids::shouldNotRun();
 
         $request = $this->makeRequest([['guid' => 'Player-1-0A']], mayWriteSync: false, mayCreate: true, mayUpdate: true);
 
@@ -50,7 +50,7 @@ class StoreBanBatchRequestTest extends TestCase
     #[Group('authorization')]
     public function authorize_denies_a_user_who_may_neither_create_nor_update_bans(): void
     {
-        ListExistingRosterKeys::shouldNotRun();
+        ListExistingBanGuids::shouldNotRun();
 
         $request = $this->makeRequest([['guid' => 'Player-1-0A']], mayWriteSync: true, mayCreate: false, mayUpdate: false);
 
@@ -245,7 +245,7 @@ class StoreBanBatchRequestTest extends TestCase
      */
     private function validatedRequest(array $rows): StoreBanBatchRequest
     {
-        ListExistingRosterKeys::shouldRun()->andReturn(collect());
+        ListExistingBanGuids::shouldRun()->andReturn(collect());
 
         $request = $this->makeRequest($rows, mayWriteSync: true, mayCreate: true, mayUpdate: true);
         $request->setContainer($this->app)->setRedirector($this->app->make(Redirector::class));
@@ -256,16 +256,16 @@ class StoreBanBatchRequestTest extends TestCase
     }
 
     /**
-     * Fake the roster key lookup for the sync's game version and bans, expecting the given guids and returning the existing ones.
+     * Fake the existing ban lookup for the sync's game version, expecting the given guids and returning the existing ones.
      *
      * @param  array<int, string>  $guids
      * @param  array<int, string>  $existingKeys
      */
     private function fakeExistingKeys(array $guids, array $existingKeys): void
     {
-        ListExistingRosterKeys::shouldRun()
+        ListExistingBanGuids::shouldRun()
             ->once()
-            ->with(self::GAME_VERSION_ID, RosterEntryKind::Ban, Mockery::on(fn (Collection $keys): bool => $keys->all() === $guids))
+            ->with(self::GAME_VERSION_ID, Mockery::on(fn (Collection $keys): bool => $keys->all() === $guids))
             ->andReturn(collect($existingKeys));
     }
 

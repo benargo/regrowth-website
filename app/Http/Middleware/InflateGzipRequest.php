@@ -8,7 +8,7 @@ use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Inflates gzip-encoded JSON request bodies.
+ * Inflates gzip-encoded JSON request bodies and marks the request as JSON.
  *
  * Without a mode, an uncompressed body passes through untouched. In `required` mode, a request without
  * `Content-Encoding: gzip` is answered with `400 gzip_required` without being passed on.
@@ -58,6 +58,7 @@ class InflateGzipRequest
 
         $request->setJson(new InputBag($decoded));
         $request->headers->remove('Content-Encoding');
+        $request->headers->set('Content-Type', 'application/json');
 
         return $next($request);
     }

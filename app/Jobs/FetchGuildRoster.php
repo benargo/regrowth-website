@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Actions\Characters\AssignPlayableClassAndRace;
 use App\Actions\Characters\MarkGuildMembership;
 use App\Actions\GameVersion\LinkRosterClassesAndRaces;
+use App\Actions\GuildRosterManager\IsNewerEvidence;
 use App\Contracts\Http\Integrations\Blizzard\RequiresMinimumCharacterLevel;
 use App\Enums\Gender;
 use App\Enums\RankSource;
@@ -153,19 +154,6 @@ class FetchGuildRoster implements RequiresMinimumCharacterLevel, ShouldQueue
     }
 
     /**
-     * Whether the evidence time is later than the stored one. A null stored time is older than
-     * any evidence, and null evidence is newer than nothing.
-     */
-    private function isNewer(?CarbonInterface $observedAt, ?CarbonInterface $storedAt): bool
-    {
-        if ($observedAt === null) {
-            return false;
-        }
-
-        return $storedAt === null || $observedAt->greaterThan($storedAt);
-    }
-
-    /**
      * Sync a single character from the guild roster data.
      *
      * @param  Collection<int, GuildRank>  $guildRanks  The game version's ranks, keyed by sort order.
@@ -209,14 +197,16 @@ class FetchGuildRoster implements RequiresMinimumCharacterLevel, ShouldQueue
                 ]);
             }
         } else {
-            if ($this->isNewer($observedAt, $character->level_observed_at)) {
+            $isNewer = IsNewerEvidence::make();
+
+            if ($isNewer->handle($observedAt, $character->level_observed_at)) {
                 $character->fill([
                     'level' => max($character->level ?? 0, $member->character->level),
                     'level_observed_at' => $evidenceAt,
                 ]);
             }
 
-            if ($this->isNewer($observedAt, $character->rank_observed_at)) {
+            if ($isNewer->handle($observedAt, $character->rank_observed_at)) {
                 $character->rank()->associate($guildRank);
                 $character->fill([
                     'rank_observed_at' => $evidenceAt,

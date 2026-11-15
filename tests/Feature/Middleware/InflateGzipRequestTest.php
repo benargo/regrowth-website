@@ -29,6 +29,16 @@ class InflateGzipRequestTest extends TestCase
     }
 
     #[Test]
+    public function it_reads_the_inflated_body_as_json_without_a_json_content_type(): void
+    {
+        $request = Request::create('/', 'POST', server: ['HTTP_CONTENT_ENCODING' => 'gzip'], content: gzencode(json_encode(['foo' => 'bar'])));
+
+        $response = (new InflateGzipRequest)->handle($request, fn (Request $request) => response()->json($request->all()));
+
+        $this->assertSame(['foo' => 'bar'], $response->getData(true));
+    }
+
+    #[Test]
     public function it_passes_an_uncompressed_body_without_the_required_mode(): void
     {
         $request = Request::create('/', 'POST', server: ['CONTENT_TYPE' => 'application/json'], content: '{"foo":"bar"}');

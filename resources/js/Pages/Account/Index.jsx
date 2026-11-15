@@ -10,9 +10,9 @@ import { Can } from "@/Components/Authorizable";
 import Band from "@/Components/Band/Band";
 import BandHeading from "@/Components/Band/BandHeading";
 import RevokeButton from "@/Components/DesktopClients/RevokeButton";
+import { formatDateTime } from "@/Helpers/serverTime";
 
 const RELATIVE_TIME = new Intl.RelativeTimeFormat("en-GB", { numeric: "auto" });
-const ABSOLUTE_TIME = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" });
 const RELATIVE_UNITS = [
     ["year", 31536000],
     ["month", 2592000],
@@ -21,8 +21,11 @@ const RELATIVE_UNITS = [
     ["minute", 60],
 ];
 
-/** An ISO timestamp as a relative time such as "3 hours ago", or "Never" when missing. */
-function timeAgoOrNever(value) {
+/**
+ * An ISO timestamp as a relative `<time>` such as "3 hours ago", with the full date and time in the
+ * viewer's time zone as its tooltip, or "Never" when missing.
+ */
+function RelativeTime({ value }) {
     if (!value) {
         return "Never";
     }
@@ -30,18 +33,9 @@ function timeAgoOrNever(value) {
     const seconds = Math.round((new Date(value).getTime() - Date.now()) / 1000);
     const [unit, size] = RELATIVE_UNITS.find(([, size]) => Math.abs(seconds) >= size) ?? ["second", 1];
 
-    return RELATIVE_TIME.format(Math.round(seconds / size), unit);
-}
-
-/** A relative `<time>` with the full date and time as its tooltip, or "Never" when missing. */
-function RelativeTime({ value }) {
-    if (!value) {
-        return "Never";
-    }
-
     return (
-        <time dateTime={value} title={ABSOLUTE_TIME.format(new Date(value))}>
-            {timeAgoOrNever(value)}
+        <time dateTime={value} title={formatDateTime(value, null)}>
+            {RELATIVE_TIME.format(Math.round(seconds / size), unit)}
         </time>
     );
 }

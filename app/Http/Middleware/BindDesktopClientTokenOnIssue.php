@@ -59,9 +59,8 @@ class BindDesktopClientTokenOnIssue
         if ($request->input('grant_type') === 'refresh_token') {
             $previousAccessTokenId = $this->refreshTokenAccessTokenId((string) $request->input('refresh_token'));
 
-            $isBoundToDevice = $previousAccessTokenId !== null && DesktopClientToken::whereKey($previousAccessTokenId)
-                ->where('desktop_client_id', $headers->id)
-                ->exists();
+            $isBoundToDevice = $previousAccessTokenId !== null
+                && DesktopClientToken::boundTo($previousAccessTokenId, $headers->id)->exists();
 
             if (! $isBoundToDevice) {
                 return $this->invalidGrant();

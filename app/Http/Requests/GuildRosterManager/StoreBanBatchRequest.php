@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\GuildRosterManager;
 
-use App\Actions\GuildRosterManager\ListExistingRosterKeys;
+use App\Actions\GuildRosterManager\ListExistingBanGuids;
 use App\Enums\GuildRosterManager\RosterEntryKind;
 use App\Models\GuildRosterManager\Ban;
 use App\Models\GuildRosterManager\Upload;
@@ -27,7 +27,7 @@ class StoreBanBatchRequest extends StoreSyncBatchRequest
             'bannedAt' => ['nullable', 'date_format:Y-m-d\TH:i:s\Z'],
             'bannedBy' => ['nullable', 'string', 'max:64'],
             'reason' => ['nullable', 'string', 'max:75'],
-            'epoch' => ['required', 'integer', 'min:0'],
+            'epoch' => ['required', 'integer', 'min:0', 'max:4294967295'],
         ];
     }
 
@@ -57,7 +57,7 @@ class StoreBanBatchRequest extends StoreSyncBatchRequest
         /** @var Upload $sync */
         $sync = $this->route('sync');
 
-        $existing = ListExistingRosterKeys::run($sync->game_version_id, RosterEntryKind::Ban, $guids)->flip();
+        $existing = ListExistingBanGuids::run($sync->game_version_id, $guids)->flip();
 
         return $guids->every(fn (string $guid): bool => $existing->has($guid) ? $mayUpdate : $mayCreate);
     }

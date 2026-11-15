@@ -33,10 +33,14 @@ export function toServerDateTimeLocal(isoString) {
 
 /**
  * The ISO timestamp for reading, such as "23 Oct 2026, 19:00 CEST", in server
- * time, or in the viewer's own time zone when `timeZone` is null. Each time
- * zone's formatter is built once.
+ * time, or in the viewer's own time zone when `timeZone` is null, or null when
+ * there is no timestamp. Each time zone's formatter is built once.
  */
 export function formatDateTime(isoString, timeZone = SERVER_TIME_ZONE) {
+    if (!isoString) {
+        return null;
+    }
+
     if (!READABLE_FORMATS.has(timeZone)) {
         READABLE_FORMATS.set(
             timeZone,

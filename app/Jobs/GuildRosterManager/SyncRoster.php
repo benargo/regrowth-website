@@ -55,20 +55,17 @@ class SyncRoster implements ShouldQueue
 {
     use Queueable;
 
-    /**
-     * The game version the sync belongs to.
-     */
-    public readonly int $gameVersionId;
+    private const int INSERT_CHUNK_SIZE = 500;
 
     /**
      * @param  string  $uploadId  The committed sync's `grm_uploads` UUID.
+     * @param  int  $gameVersionId  The game version the sync belongs to.
      */
     public function __construct(
         public readonly string $uploadId,
+        public readonly int $gameVersionId,
         public readonly SyncChangesData $changes,
-    ) {
-        $this->gameVersionId = Upload::findOrFail($uploadId)->game_version_id;
-    }
+    ) {}
 
     /**
      * Get the time after which the job is no longer attempted.
@@ -250,7 +247,7 @@ class SyncRoster implements ShouldQueue
         $rows = ['members' => [], 'leavers' => []];
 
         foreach ($changed as $entry) {
-            $rows[$this->rowGroup($entry)][] = $this->row($entry, $sync->captured_at, false);
+            $rows[$entry->kind->fingerprintGroup()][] = $this->row($entry, $sync->captured_at, false);
         }
 
         $retries = $this->retryEntries($this->retryGuids()->diff($changedGuids)->values()->all());
@@ -259,7 +256,7 @@ class SyncRoster implements ShouldQueue
             ->pluck('committed_at', 'revision');
 
         foreach ($retries as $entry) {
-            $rows[$this->rowGroup($entry)][] = $this->row($entry, $committedAt->get($entry->revision) ?? $sync->captured_at, true);
+            $rows[$entry->kind->fingerprintGroup()][] = $this->row($entry, $committedAt->get($entry->revision) ?? $sync->captured_at, true);
         }
 
         return $rows;
@@ -315,15 +312,16 @@ class SyncRoster implements ShouldQueue
      */
     private function newlyMatchedAltGroupIds(array $rows, array $results): array
     {
-        $retryGuids = collect($rows)->filter(fn (array $row): bool => $row['isRetry'])->map(fn (array $row): string => $row['data']->guid);
+        $retryGuids = collect($rows)->filter(fn (array $row): bool => $row['isRetry'])->map(fn (array $row): string => $row['data']->guid)->flip();
 
         $matchedGuids = collect($results)
             ->filter(fn (RowResultData $result): bool => $result->status === RowStatus::Processed
-                && ($result->reason === RowReason::Created || $retryGuids->contains($result->guid)))
-            ->pluck('guid');
+                && ($result->reason === RowReason::Created || $retryGuids->has($result->guid)))
+            ->pluck('guid')
+            ->flip();
 
         return collect($rows)
-            ->filter(fn (array $row): bool => $row['data']->alt_group !== null && $matchedGuids->contains($row['data']->guid))
+            ->filter(fn (array $row): bool => $row['data']->alt_group !== null && $matchedGuids->has($row['data']->guid))
             ->map(fn (array $row): string => $row['data']->alt_group)
             ->unique()
             ->values()
@@ -386,14 +384,6 @@ class SyncRoster implements ShouldQueue
     }
 
     /**
-     * Get the key of the `rows()` group the entry belongs to.
-     */
-    private function rowGroup(RosterEntry $entry): string
-    {
-        return $entry->kind === RosterEntryKind::Member ? 'members' : 'leavers';
-    }
-
-    /**
      * Sync each member, then once more each member whose rename clashed, keeping only the second result.
      *
      * @param  list<array{data: MemberData, startedAt: CarbonInterface, evidenceAt: ?CarbonInterface, isRetry: bool}>  $rows
@@ -435,16 +425,17 @@ class SyncRoster implements ShouldQueue
     private function syncLeavers(Upload $sync, array $rows): array
     {
         $syncLeaver = SyncLeaver::make();
+        $gameVersion = $sync->gameVersion;
         $results = [];
 
         foreach ($rows as $row) {
-            $results = [...$results, ...$this->failedRowOnException(
+            $results[] = $this->failedRowOnException(
                 $row['data'],
-                fn (): array => [$syncLeaver->handle($sync->gameVersion, $row['data'], $row['startedAt'], $row['evidenceAt'], $row['isRetry'])],
-            )];
+                fn (): array => [$syncLeaver->handle($gameVersion, $row['data'], $row['startedAt'], $row['evidenceAt'], $row['isRetry'])],
+            );
         }
 
-        return $results;
+        return array_merge(...$results);
     }
 
     /**
@@ -489,15 +480,26 @@ class SyncRoster implements ShouldQueue
                 ->update(['is_latest' => false]);
         }
 
-        $sync->rows()->createMany(array_map(fn (RowResultData $result): array => [
-            'character_id' => $result->characterId,
-            'guid' => $result->guid,
-            'name' => $result->name,
-            'status' => $result->status,
-            'reason' => $result->reason,
-            'message' => $result->message,
-            'is_latest' => $result->guid !== '',
-        ], $results));
+        $now = now();
+
+        $rows = collect($results)
+            ->map(fn (RowResultData $result): array => [
+                'upload_id' => $sync->id,
+                'character_id' => $result->characterId,
+                'guid' => $result->guid,
+                'name' => $result->name,
+                'status' => $result->status->value,
+                'reason' => $result->reason->value,
+                'message' => $result->message,
+                'is_latest' => $result->guid !== '',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])
+            ->chunk(self::INSERT_CHUNK_SIZE);
+
+        foreach ($rows as $chunk) {
+            UploadRow::insert($chunk->values()->all());
+        }
     }
 
     /**

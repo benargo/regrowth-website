@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * Transform a game version, optionally limited to the `management` or `switcher` scope.
+ * Transform a game version, optionally limited to the `icon`, `management` or `switcher` scope.
  * The media URLs, warcraftlogs (with the guild page URL) and the usage counts
  * are omitted unless loaded.
  */
@@ -80,6 +80,7 @@ class GameVersionResource extends JsonResource implements DefinesGameVersionMedi
     protected function scopeDefinitions(): array
     {
         return [
+            'icon' => ['title', 'slug', 'color', 'icon_url'],
             'management' => [
                 'id', 'title', 'slug', 'color', 'banner_url', 'icon_url', 'logo_url',
                 'realm', 'wow_client_folder', 'guild_name', 'grm_guild_key', 'uses_surnames', 'faction', 'release_date', 'blizzard', 'warcraftlogs',

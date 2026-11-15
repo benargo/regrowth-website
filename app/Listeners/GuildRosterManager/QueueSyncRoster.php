@@ -12,6 +12,6 @@ class QueueSyncRoster
      */
     public function handle(SyncCommitting $event): void
     {
-        SyncRoster::dispatch($event->sync->id, $event->changes);
+        SyncRoster::dispatch($event->sync->id, $event->sync->game_version_id, $event->changes);
     }
 }

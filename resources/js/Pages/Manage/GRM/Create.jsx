@@ -1,12 +1,11 @@
 import { useRef } from "react";
 import { router } from "@inertiajs/react";
-import Icon from "@/Components/FontAwesome/Icon";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
 import GameVersionIcon from "@/Components/GameVersions/GameVersionIcon";
 import { FormRow, OptionSelect } from "@/Components/FormControls";
-import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
+import GrmToolNav from "@/Components/GuildRosterManager/GrmToolNav";
 import UploadForm from "@/Components/GuildRosterManager/UploadForm";
 import UploadProgressModal from "@/Components/GuildRosterManager/UploadProgressModal";
 import UploadStatusDot from "@/Components/GuildRosterManager/UploadStatusDot";
@@ -67,12 +66,7 @@ export default function Create({
                 color={gameVersion?.color}
                 image={gameVersion?.banner_url}
             />
-            <ToolNav>
-                <ToolNavLink href={route("management.dashboard")}>
-                    <Icon icon="arrow-left" style="solid" className="mr-1 text-xs" />
-                    Back to officers' dashboard
-                </ToolNavLink>
-            </ToolNav>
+            <GrmToolNav current="management.grm.create" />
             <PageContainer>
                 {gameVersion === null ? (
                     <p className="text-gray-400 text-lg">

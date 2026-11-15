@@ -31,11 +31,7 @@ class EnsureDesktopClient
             ], 400);
         }
 
-        $isBoundToDevice = DesktopClientToken::whereKey($token->oauth_access_token_id)
-            ->where('desktop_client_id', $headers->id)
-            ->exists();
-
-        if (! $isBoundToDevice) {
+        if (! DesktopClientToken::boundTo($token->oauth_access_token_id, $headers->id)->exists()) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 

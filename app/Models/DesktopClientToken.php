@@ -4,7 +4,9 @@ namespace App\Models;
 
 use Database\Factories\DesktopClientTokenFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -38,5 +40,16 @@ class DesktopClientToken extends Model
     public function desktopClient(): BelongsTo
     {
         return $this->belongsTo(DesktopClient::class);
+    }
+
+    /**
+     * Scope the query to the binding of the access token to the desktop client.
+     *
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function boundTo(Builder $query, string $accessTokenId, string $desktopClientId): void
+    {
+        $query->whereKey($accessTokenId)->where('desktop_client_id', $desktopClientId);
     }
 }

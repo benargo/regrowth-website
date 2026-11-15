@@ -14,7 +14,6 @@ use App\Models\GuildRosterManager\SyncRow;
 use App\Models\GuildRosterManager\Upload;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\AccessToken;
@@ -367,14 +366,26 @@ class SyncBatchControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_stages_a_ban_with_only_a_logged_row_for_a_create_only_user(): void
+    public function it_stages_a_ban_with_only_a_logged_row_for_an_update_only_user(): void
     {
         Ban::factory()->create(['game_version_id' => $this->forever->id, 'grm_guid' => 'Player-9-BAAD']);
-        $this->actAs($this->userWithPermissions(['use-desktop-client', 'upload-grm-rosters', 'create-grm-bans']), $this->sync);
+        $this->actAs($this->userWithPermissions(['use-desktop-client', 'upload-grm-rosters', 'update-grm-bans']), $this->sync);
 
         $this->postGzipped($this->uri('bans'), ['rows' => [$this->banRow(['guid' => 'Player-9-BAAD'])]])->assertOk();
 
         $this->assertDatabaseHas('grm_sync_rows', ['upload_id' => $this->sync->id, 'kind' => RosterEntryKind::Ban->value, 'key' => 'Player-9-BAAD']);
+    }
+
+    #[Test]
+    #[Group('authorization')]
+    public function it_forbids_a_ban_with_only_a_logged_row_for_a_create_only_user(): void
+    {
+        Ban::factory()->create(['game_version_id' => $this->forever->id, 'grm_guid' => 'Player-9-BAAD']);
+        $this->actAs($this->userWithPermissions(['use-desktop-client', 'upload-grm-rosters', 'create-grm-bans']), $this->sync);
+
+        $this->postGzipped($this->uri('bans'), ['rows' => [$this->banRow(['guid' => 'Player-9-BAAD'])]])->assertForbidden();
+
+        $this->assertSame(0, SyncRow::count());
     }
 
     #[Test]
@@ -416,19 +427,23 @@ class SyncBatchControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_answers_400_before_authentication(): void
+    #[Group('authorization')]
+    public function it_answers_401_to_an_unauthenticated_uncompressed_batch(): void
     {
         $this->app['auth']->forgetGuards();
-        $queries = [];
-        DB::listen(function ($query) use (&$queries): void {
-            $queries[] = $query->sql;
-        });
 
         $this->withHeaders($this->deviceHeaders())
             ->postJson($this->uri('members'), ['rows' => [$this->memberRow()]])
-            ->assertStatus(400);
+            ->assertUnauthorized();
+    }
 
-        $this->assertSame([], $queries);
+    #[Test]
+    public function it_answers_429_to_a_rate_limited_batch_before_inflating_it(): void
+    {
+        RateLimiter::increment(md5('grm-sync-requests'.$this->uploader->id), amount: 300);
+
+        $this->postJson($this->uri('members'), ['rows' => [$this->memberRow()]], $this->deviceHeaders())
+            ->assertTooManyRequests();
     }
 
     #[Test]

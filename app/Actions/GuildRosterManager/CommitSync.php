@@ -181,7 +181,7 @@ class CommitSync
                 continue;
             }
 
-            $staged = SyncRow::where('upload_id', $sync->id)->where('kind', $kind)->pluck('key')->flip();
+            $staged = SyncRow::where('upload_id', $sync->id)->where('kind', $kind)->whereIn('key', $keys)->pluck('key')->flip();
 
             foreach ($keys as $index => $key) {
                 if ($staged->has($key)) {
@@ -204,16 +204,19 @@ class CommitSync
     private function classify(Upload $sync, array $banAccess): array
     {
         $computeFingerprint = ComputeFingerprint::make();
-        $now = now()->getTimestamp();
+        $latestAllowedEpoch = now()->getTimestamp() + (int) config('services.grm.clock_tolerance_seconds');
         $classified = [];
 
         foreach (RosterEntryKind::cases() as $kind) {
             SyncRow::where('upload_id', $sync->id)
                 ->where('kind', $kind)
-                ->chunkById(self::CHUNK_SIZE, function (Collection $rows) use ($sync, $kind, $banAccess, $computeFingerprint, $now, &$classified): void {
+                ->chunkById(self::CHUNK_SIZE, function (Collection $rows) use ($sync, $kind, $banAccess, $computeFingerprint, $latestAllowedEpoch, &$classified): void {
                     $entries = $this->entries($sync->game_version_id, $this->comparedKinds($kind), $rows->pluck('key')->all())->groupBy('key');
                     $loggedBans = $kind === RosterEntryKind::Ban
                         ? Ban::where('game_version_id', $sync->game_version_id)->whereIn('grm_guid', $rows->pluck('key'))->get()->keyBy('grm_guid')
+                        : collect();
+                    $existingBans = $kind === RosterEntryKind::Ban
+                        ? ListExistingBanGuids::run($sync->game_version_id, $rows->pluck('key'))->flip()
                         : collect();
 
                     foreach ($rows as $row) {
@@ -228,7 +231,7 @@ class CommitSync
                             'data' => $data,
                             'fingerprint' => $fingerprint,
                             'stored' => $sameKind,
-                            'verdict' => $this->verdict($kind, $row, $fingerprint, $stored, $sameKind, $loggedBans->get($row->key), $banAccess, $now),
+                            'verdict' => $this->verdict($kind, $row, $fingerprint, $stored, $sameKind, $loggedBans->get($row->key), $existingBans->has($row->key), $banAccess, $latestAllowedEpoch),
                         ];
                     }
                 });
@@ -240,12 +243,13 @@ class CommitSync
     /**
      * Decide what to do with a staged row: forbidden ban rows, unchanged rows and future-dated rows first,
      * then the newer (or equal) raw epoch wins against the stored entries it is compared with. A ban with
-     * a ban log row but no stored entry exists for permissions, and is compared with the later of the
-     * row's ban and unban times.
+     * a ban log row but no stored entry is compared with the later of the row's ban and unban times.
      *
      * @param  Collection<int, RosterEntry>  $stored  The stored entries the row is compared with.
      * @param  Ban|null  $loggedBan  The ban log row for a ban row's GUID.
+     * @param  bool  $banExists  Whether the ban row's GUID already has a ban, as listed by `ListExistingBanGuids`.
      * @param  array{create: bool, update: bool}  $banAccess
+     * @param  int  $latestAllowedEpoch  The current time plus the GRM clock tolerance; a later row epoch is future-dated.
      */
     private function verdict(
         RosterEntryKind $kind,
@@ -254,12 +258,11 @@ class CommitSync
         Collection $stored,
         ?RosterEntry $sameKind,
         ?Ban $loggedBan,
+        bool $banExists,
         array $banAccess,
-        int $now,
+        int $latestAllowedEpoch,
     ): RowVerdict {
-        $exists = $sameKind !== null || $loggedBan !== null;
-
-        if ($kind === RosterEntryKind::Ban && ! ($exists ? $banAccess['update'] : $banAccess['create'])) {
+        if ($kind === RosterEntryKind::Ban && ! ($banExists ? $banAccess['update'] : $banAccess['create'])) {
             return RowVerdict::Forbidden;
         }
 
@@ -267,7 +270,7 @@ class CommitSync
             return RowVerdict::NoOp;
         }
 
-        if ($row->epoch > $now) {
+        if ($row->epoch > $latestAllowedEpoch) {
             return RowVerdict::Future;
         }
 
@@ -502,6 +505,8 @@ class CommitSync
     }
 
     /**
+     * Mark the active bans of the unban rows as unbanned at each row's epoch, or now when the epoch is 0.
+     *
      * @param  Collection<int, BanData>  $rows
      * @return list<string>
      */
@@ -509,11 +514,19 @@ class CommitSync
     {
         $banIds = [];
 
-        foreach ($rows->pluck('guid')->chunk(self::CHUNK_SIZE) as $guids) {
-            $ids = Ban::where('game_version_id', $gameVersion->id)->whereIn('grm_guid', $guids)->active()->pluck('id')->all();
+        foreach ($rows->chunk(self::CHUNK_SIZE) as $chunk) {
+            $activeIds = Ban::where('game_version_id', $gameVersion->id)
+                ->whereIn('grm_guid', $chunk->pluck('guid'))
+                ->active()
+                ->pluck('id', 'grm_guid');
 
-            if ($ids !== []) {
-                Ban::whereKey($ids)->update(['unbanned_at' => now()]);
+            $idsByUnbannedAt = $chunk
+                ->filter(fn (BanData $row): bool => $activeIds->has($row->guid))
+                ->groupBy(fn (BanData $row): int => $row->epoch === 0 ? now()->getTimestamp() : $row->epoch)
+                ->map(fn (Collection $group): array => $group->map(fn (BanData $row): string => $activeIds->get($row->guid))->all());
+
+            foreach ($idsByUnbannedAt as $timestamp => $ids) {
+                Ban::whereKey($ids)->update(['unbanned_at' => Carbon::createFromTimestamp($timestamp, config('app.timezone'))]);
                 $banIds = [...$banIds, ...$ids];
             }
         }

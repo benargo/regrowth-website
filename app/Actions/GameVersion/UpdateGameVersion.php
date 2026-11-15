@@ -25,7 +25,7 @@ use Lorisleiva\Actions\Concerns\AsAction;
  *
  * Images follow the same contract: an uploaded file replaces the image in
  * that collection and null removes it. They are stored once the database
- * changes have committed, so file I/O never holds the transaction open.
+ * changes have committed.
  */
 class UpdateGameVersion implements DefinesGameVersionMediaCollections
 {

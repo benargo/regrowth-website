@@ -21,7 +21,7 @@ class StoreAltGroupBatchRequest extends StoreSyncBatchRequest
             'main' => ['nullable', 'string', 'max:64'],
             'members' => ['present', 'array', 'max:50'],
             'members.*' => self::GUID_RULES,
-            'epoch' => ['required', 'integer', 'min:0'],
+            'epoch' => ['required', 'integer', 'min:0', 'max:4294967295'],
         ];
     }
 }

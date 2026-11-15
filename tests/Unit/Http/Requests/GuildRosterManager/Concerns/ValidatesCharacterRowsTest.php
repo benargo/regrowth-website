@@ -61,6 +61,7 @@ class ValidatesCharacterRowsTest extends TestCase
             'race over 32 characters' => ['race', str_repeat('a', 33), 'The rows.0.race field must not be greater than 32 characters.'],
             'history not an array' => ['history', 'joined', 'The rows.0.history field must be an array.'],
             'negative epoch' => ['epoch', -1, 'The rows.0.epoch field must be at least 0.'],
+            'epoch past the unsigned integer column' => ['epoch', 4294967296, 'The rows.0.epoch field must not be greater than 4294967295.'],
         ];
     }
 

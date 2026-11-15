@@ -15,7 +15,6 @@ use App\Models\GuildRosterManager\SyncRow;
 use App\Models\GuildRosterManager\Upload;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Testing\TestResponse;
@@ -121,20 +120,14 @@ class SyncControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_answers_400_before_authentication(): void
+    #[Group('authorization')]
+    public function it_answers_401_to_an_unauthenticated_uncompressed_open(): void
     {
         $this->app['auth']->forgetGuards();
-        $queries = [];
-        DB::listen(function ($query) use (&$queries): void {
-            $queries[] = $query->sql;
-        });
 
         $this->withHeaders($this->deviceHeaders())
             ->postJson(route('api.grm.syncs.store'), ['schema' => 2])
-            ->assertStatus(400)
-            ->assertJson(['status' => 'gzip_required']);
-
-        $this->assertSame([], $queries);
+            ->assertUnauthorized();
     }
 
     #[Test]

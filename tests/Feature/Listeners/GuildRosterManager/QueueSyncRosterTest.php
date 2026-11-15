@@ -36,7 +36,7 @@ class QueueSyncRosterTest extends TestCase
         (new QueueSyncRoster)->handle(new SyncCommitting($sync, $changes));
 
         Bus::assertDispatchedTimes(SyncRoster::class, 1);
-        Bus::assertDispatched(SyncRoster::class, fn (SyncRoster $job): bool => $job->uploadId === $sync->id && $job->changes === $changes);
+        Bus::assertDispatched(SyncRoster::class, fn (SyncRoster $job): bool => $job->uploadId === $sync->id && $job->gameVersionId === $sync->game_version_id && $job->changes === $changes);
     }
 
     #[Test]

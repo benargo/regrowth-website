@@ -59,10 +59,11 @@ class SyncMember implements RequiresMinimumCharacterLevel
         $evidenceAt = $evidenceAt?->copy()->setTimezone(config('app.timezone'));
 
         ['name' => $name, 'surname' => $surname] = NormaliseName::run($gameVersion, $member->name);
+        $newFullName = trim("{$name} {$surname}");
         $character = MatchCharacter::run($gameVersion, $member->guid, $name, $surname);
 
         if ($character === null) {
-            $profile = $this->findGuildProfile($gameVersion, trim("{$name} {$surname}"));
+            $profile = $this->findGuildProfile($gameVersion, $newFullName);
 
             if (is_string($profile)) {
                 return [$this->result($member, null, RowStatus::Warning, RowReason::NotConfirmedInGuild, $profile)];
@@ -74,7 +75,6 @@ class SyncMember implements RequiresMinimumCharacterLevel
         $isNew = ! $character->exists;
         $wasLeft = $character->left_guild_at !== null;
         $oldFullName = $character->full_name;
-        $newFullName = trim("{$name} {$surname}");
         $isPlaceholder = ! $isNew && $oldFullName !== $newFullName && $surname === null && preg_match(self::PLACEHOLDER_NAME, $name) === 1;
         $isRenamed = ! $isNew && ! $isPlaceholder && $oldFullName !== $newFullName;
 
@@ -154,37 +154,26 @@ class SyncMember implements RequiresMinimumCharacterLevel
         ?CarbonInterface $evidenceAt,
         bool $isRetry,
     ): void {
-        if (! $isRetry || $this->isNewer($syncStartedAt, $character->level_observed_at)) {
+        $isNewer = IsNewerEvidence::make();
+
+        if (! $isRetry || $isNewer->handle($syncStartedAt, $character->level_observed_at)) {
             $character->fill([
                 'level' => max($character->level ?? 0, $member->level),
                 'level_observed_at' => $syncStartedAt,
             ]);
         }
 
-        if (! $isRetry || $this->isNewer($evidenceAt, $character->left_guild_at)) {
+        if (! $isRetry || $isNewer->handle($evidenceAt, $character->left_guild_at)) {
             $character->left_guild_at = null;
         }
 
-        if ($rank !== null && (! $isRetry || $this->isNewer($evidenceAt, $character->rank_observed_at))) {
+        if ($rank !== null && (! $isRetry || $isNewer->handle($evidenceAt, $character->rank_observed_at))) {
             $character->fill([
                 'rank_id' => $rank->id,
                 'rank_observed_at' => $evidenceAt,
                 'rank_source' => RankSource::Grm,
             ]);
         }
-    }
-
-    /**
-     * Whether the evidence time is later than the stored one. A null stored time is older than
-     * any evidence, and null evidence is newer than nothing.
-     */
-    private function isNewer(?CarbonInterface $evidenceAt, ?CarbonInterface $storedAt): bool
-    {
-        if ($evidenceAt === null) {
-            return false;
-        }
-
-        return $storedAt === null || $evidenceAt->greaterThan($storedAt);
     }
 
     /**

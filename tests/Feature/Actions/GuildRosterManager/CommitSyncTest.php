@@ -46,6 +46,8 @@ class CommitSyncTest extends TestCase
 
     private const UPLOADER_PERMISSIONS = ['use-desktop-client', 'upload-grm-rosters', 'create-grm-bans', 'update-grm-bans'];
 
+    private const CLOCK_TOLERANCE = 60;
+
     private User $uploader;
 
     private GameVersion $forever;
@@ -58,6 +60,7 @@ class CommitSyncTest extends TestCase
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         $this->freezeSecond();
+        config(['services.grm.clock_tolerance_seconds' => self::CLOCK_TOLERANCE]);
         Event::fake([SyncCommitting::class, SyncCommitted::class]);
 
         $this->uploader = $this->userWithPermissions(self::UPLOADER_PERMISSIONS);
@@ -397,11 +400,26 @@ class CommitSyncTest extends TestCase
         $this->commit($sync);
 
         $unbanned = $ban->fresh();
-        $this->assertTrue($unbanned->unbanned_at->equalTo(now()));
+        $this->assertSame(2000, $unbanned->unbanned_at->getTimestamp());
         $this->assertTrue($unbanned->banned_at->equalTo($ban->banned_at));
         $this->assertSame($ban->banned_by, $unbanned->banned_by);
         $this->assertSame($ban->reason, $unbanned->reason);
         $this->assertSame([$ban->id], $this->committingChanges()->ban_ids);
+    }
+
+    #[Test]
+    public function it_unbans_at_the_current_time_when_the_unban_row_has_no_epoch(): void
+    {
+        $this->revision(1);
+        $row = $this->banRow(['epoch' => 0]);
+        $this->storedEntry(RosterEntryKind::Ban, $row);
+        $ban = $this->ban($row);
+        $sync = $this->openSync();
+        $this->stage($sync, RosterEntryKind::Ban, $this->banRow(['unbanned' => true, 'reason' => null, 'epoch' => 0]));
+
+        $this->commit($sync);
+
+        $this->assertTrue($ban->fresh()->unbanned_at->equalTo(now()));
     }
 
     #[Test]
@@ -762,7 +780,7 @@ class CommitSyncTest extends TestCase
         $this->revision(1);
         $stored = $this->storedEntry(RosterEntryKind::Member, $this->memberRow(['level' => 58, 'epoch' => 1000]));
         $sync = $this->openSync();
-        $future = $this->memberRow(['level' => 60, 'epoch' => now()->getTimestamp() + 1]);
+        $future = $this->memberRow(['level' => 60, 'epoch' => now()->getTimestamp() + self::CLOCK_TOLERANCE + 1]);
         $ordinary = $this->fixture('members')[1];
         $this->stage($sync, RosterEntryKind::Member, $future);
         $this->stage($sync, RosterEntryKind::Member, $ordinary);
@@ -788,12 +806,25 @@ class CommitSyncTest extends TestCase
     }
 
     #[Test]
+    public function it_accepts_a_row_dated_within_the_clock_tolerance(): void
+    {
+        $sync = $this->openSync();
+        $epoch = now()->getTimestamp() + self::CLOCK_TOLERANCE;
+        $row = $this->memberRow(['epoch' => $epoch]);
+        $this->stage($sync, RosterEntryKind::Member, $row);
+
+        $this->commit($sync, self::RANKS);
+
+        $this->assertSame($epoch, $this->entry(RosterEntryKind::Member, $row['guid'])->epoch);
+    }
+
+    #[Test]
     public function it_rejects_a_future_dated_row_with_nothing_stored(): void
     {
         Log::spy();
         $this->revision(1);
         $sync = $this->openSync();
-        $future = $this->memberRow(['epoch' => now()->getTimestamp() + 1]);
+        $future = $this->memberRow(['epoch' => now()->getTimestamp() + self::CLOCK_TOLERANCE + 1]);
         $this->stage($sync, RosterEntryKind::Member, $future);
 
         $result = $this->commit($sync);
@@ -810,7 +841,7 @@ class CommitSyncTest extends TestCase
         $this->revision(1);
         $stored = $this->storedEntry(RosterEntryKind::Member, $this->memberRow(['epoch' => 1000]));
         $sync = $this->openSync();
-        $this->stage($sync, RosterEntryKind::Member, $this->memberRow(['epoch' => now()->getTimestamp() + 1]));
+        $this->stage($sync, RosterEntryKind::Member, $this->memberRow(['epoch' => now()->getTimestamp() + self::CLOCK_TOLERANCE + 1]));
 
         $result = $this->commit($sync);
 

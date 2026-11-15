@@ -37,13 +37,13 @@ export function ToolNavSteps({ label = "Progress", steps, currentKey }) {
                             {...linkProps}
                             aria-current={isCurrent ? "step" : undefined}
                             className={
-                                "group focus-visible:outline-amber-400 relative flex h-9 items-center gap-2 pr-6 text-sm whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 " +
+                                "group relative flex h-9 items-center gap-2 pr-6 text-sm whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 " +
                                 (index === 0 ? "pl-4 " : "pl-6 ") +
                                 (isCurrent
                                     ? "font-semibold text-white"
                                     : isPast
-                                      ? "text-amber-200 font-medium"
-                                      : "text-gray-400 font-medium")
+                                      ? "font-medium text-amber-200"
+                                      : "font-medium text-gray-400")
                             }
                         >
                             <span
@@ -72,7 +72,7 @@ export function ToolNavLink({ as: Component = Link, className, children, ...prop
     return (
         <Component
             className={cn(
-                "hover:border-primary hover:bg-brown-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white",
+                "hover:border-primary hover:bg-brown-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400",
                 className,
             )}
             {...props}
@@ -82,9 +82,9 @@ export function ToolNavLink({ as: Component = Link, className, children, ...prop
     );
 }
 
-export default function ToolNav({ children }) {
+export default function ToolNav({ children, ...props }) {
     return (
-        <nav className="bg-brown-900 shadow">
+        <nav {...props} className="bg-brown-900 shadow">
             <div className="container mx-auto px-4">
                 <div className="flex min-h-12 flex-row flex-wrap items-center justify-between gap-x-2">{children}</div>
             </div>

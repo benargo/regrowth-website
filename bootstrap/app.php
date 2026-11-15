@@ -16,6 +16,7 @@ use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
 use Illuminate\Foundation\Http\Middleware\TrimStrings;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Middleware\ThrottleRequestsWithRedis;
 use Illuminate\Support\Facades\Route;
 use Laravel\Passport\Http\Middleware\CreateFreshApiToken;
 
@@ -43,8 +44,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'env' => EnsureEnvironment::class,
         ]);
 
-        $middleware->prependToPriorityList(before: AuthenticatesRequests::class, prepend: InflateGzipRequest::class);
-        $middleware->prependToPriorityList(before: InflateGzipRequest::class, prepend: AddServerTimeHeader::class);
+        $middleware->prependToPriorityList(before: AuthenticatesRequests::class, prepend: AddServerTimeHeader::class);
+        $middleware->appendToPriorityList(after: ThrottleRequestsWithRedis::class, append: InflateGzipRequest::class);
         $middleware->appendToPriorityList(after: Authorize::class, append: TouchDesktopClient::class);
 
         $isGzipEncoded = fn (Request $request): bool => strtolower((string) $request->header('Content-Encoding')) === 'gzip';

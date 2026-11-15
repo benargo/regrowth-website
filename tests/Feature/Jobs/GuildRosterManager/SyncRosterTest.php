@@ -120,6 +120,7 @@ class SyncRosterTest extends TestCase
             [self::ASHDOWN, RowStatus::Skipped, RowReason::NotTracked],
         ]);
         $this->assertSame($mira->id, $sync->rows()->where('guid', self::MIRA)->value('character_id'));
+        $this->assertSame(3, $sync->rows()->where('created_at', now())->where('updated_at', now())->count());
         $this->assertSame(60, $mira->refresh()->level);
         $this->assertNotNull($pan->refresh()->left_guild_at);
         Saloon::assertNothingSent();
@@ -556,7 +557,7 @@ class SyncRosterTest extends TestCase
         $this->leaverEntry(self::PAN, ['name' => 'Pan Bakewell']);
         $this->leaverEntry(self::ASHDOWN, ['name' => 'Pan Ashdown']);
 
-        (new SyncRoster($sync->id, $this->changes(members: [self::MIRA, self::LIANE], leavers: [self::PAN], departed: [self::ASHDOWN])))
+        (new SyncRoster($sync->id, $sync->game_version_id, $this->changes(members: [self::MIRA, self::LIANE], leavers: [self::PAN], departed: [self::ASHDOWN])))
             ->failed(new RuntimeException('Database went away'));
 
         $sync->refresh();
@@ -609,7 +610,7 @@ class SyncRosterTest extends TestCase
     {
         $sync = $this->commitSync(1);
 
-        (new SyncRoster($sync->id, $this->changes(altGroups: ['12', '15'])))
+        (new SyncRoster($sync->id, $sync->game_version_id, $this->changes(altGroups: ['12', '15'])))
             ->failed(new RuntimeException('Database went away'));
 
         $sync->refresh();
@@ -650,7 +651,7 @@ class SyncRosterTest extends TestCase
     {
         $sync = $this->commitSync(1);
 
-        (new SyncRoster($sync->id, $this->changes()))->failed(new RuntimeException('Timed out'));
+        (new SyncRoster($sync->id, $sync->game_version_id, $this->changes()))->failed(new RuntimeException('Timed out'));
 
         Event::assertDispatched(SyncCommitted::class, fn (SyncCommitted $event): bool => $event->sync->is($sync)
             && $event->sync->outcome === UploadOutcome::Failed);
@@ -667,7 +668,7 @@ class SyncRosterTest extends TestCase
         $this->altGroupEntry('12', 'Mira Ashvale', [self::MIRA, self::PAN]);
 
         $this->runJob($sync, $this->changes(members: [self::MIRA, self::LIANE], altGroups: ['12'], previousAltGroups: ['12' => null]));
-        (new SyncRoster($sync->id, $this->changes(members: [self::MIRA])))->failed(new RuntimeException('Timed out'));
+        (new SyncRoster($sync->id, $sync->game_version_id, $this->changes(members: [self::MIRA])))->failed(new RuntimeException('Timed out'));
 
         Bus::assertNotDispatched(FetchGuildRoster::class);
         Notification::assertNothingSent();
@@ -696,7 +697,7 @@ class SyncRosterTest extends TestCase
         Cache::tags(['attendance'])->put('probe', true);
         Cache::tags(['characters'])->put('probe', true);
 
-        (new SyncRoster($sync->id, $this->changes()))->failed(new RuntimeException('Timed out'));
+        (new SyncRoster($sync->id, $sync->game_version_id, $this->changes()))->failed(new RuntimeException('Timed out'));
 
         $this->assertFalse(Cache::tags(['attendance'])->has('probe'));
         $this->assertFalse(Cache::tags(['characters'])->has('probe'));
@@ -724,7 +725,7 @@ class SyncRosterTest extends TestCase
     public function it_declares_its_queue_contract(): void
     {
         $sync = $this->commitSync(1);
-        $job = new SyncRoster($sync->id, $this->changes());
+        $job = new SyncRoster($sync->id, $sync->game_version_id, $this->changes());
         $class = new ReflectionClass(SyncRoster::class);
 
         $this->assertInstanceOf(ShouldQueue::class, $job);
@@ -750,7 +751,7 @@ class SyncRosterTest extends TestCase
      */
     private function runJob(Upload $sync, SyncChangesData $changes): SyncRoster
     {
-        $job = (new SyncRoster($sync->id, $changes))->withFakeQueueInteractions();
+        $job = (new SyncRoster($sync->id, $sync->game_version_id, $changes))->withFakeQueueInteractions();
 
         $job->handle();
 
