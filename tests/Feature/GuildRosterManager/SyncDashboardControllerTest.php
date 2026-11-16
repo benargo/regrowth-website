@@ -13,6 +13,7 @@ use App\Models\GuildRosterManager\RosterRevision;
 use App\Models\GuildRosterManager\Upload;
 use App\Models\GuildRosterManager\UploadRow;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -162,6 +163,9 @@ class SyncDashboardControllerTest extends DashboardTestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('rows.links.next', fn (string $url): bool => str_contains($url, 'upload='.$upload->id))
+            ->where('rows.meta.links', fn (Collection $links): bool => $links->contains(
+                fn (array $link): bool => str_contains((string) $link['url'], 'upload='.$upload->id)
+            ))
         );
     }
 

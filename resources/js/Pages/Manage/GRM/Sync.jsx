@@ -329,7 +329,7 @@ function RowOutcomes({ rows, reasons, selectedUpload, selectedReason, upload }) 
                             ))}
                         </TableBody>
                     </Table>
-                    <Pagination links={rows.links} meta={rows.meta} itemName="rows" />
+                    <Pagination links={rows.meta.links} meta={rows.meta} itemName="rows" />
                 </>
             )}
         </>
