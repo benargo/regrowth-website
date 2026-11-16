@@ -329,6 +329,12 @@ Route::get('/info/terms', function () {
 })->name('termsofuse');
 
 /**
+ * Regrowth Desktop sign-in landing pages, reached by redirect from the app's loopback callback
+ */
+Route::view('/desktop/signed-in', 'desktop.signed-in')->name('desktop.signed-in');
+Route::view('/desktop/sign-in-failed', 'desktop.sign-in-failed')->name('desktop.sign-in-failed');
+
+/**
  * Include additional route files
  */
 require __DIR__.'/auth.php';
