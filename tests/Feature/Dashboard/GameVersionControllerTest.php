@@ -14,6 +14,7 @@ use App\Http\Middleware\SetResourceScope;
 use App\Http\Resources\GameVersionResource;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
+use App\Models\GuildRosterManager\RosterRevision;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
@@ -21,6 +22,7 @@ use App\Models\Raid;
 use App\Models\User;
 use App\Models\WarcraftLogs\Guild;
 use Carbon\Carbon;
+use Closure;
 use Illuminate\Cache\Events\CacheFlushed;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
@@ -32,6 +34,7 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
 use Mockery\Matcher\MatcherInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -1120,6 +1123,82 @@ class GameVersionControllerTest extends DashboardTestCase
     }
 
     #[Test]
+    public function it_saves_the_attendance_of_a_grm_managed_versions_ranks(): void
+    {
+        Queue::fake();
+        $gameVersion = $this->managedVersion();
+        $ranks = $this->rankPayload($gameVersion);
+        $ranks[2]['count_attendance'] = false;
+
+        $response = $this->actingAs($this->officer)
+            ->patch(route('management.game-versions.update', $gameVersion), ['guild_ranks' => $ranks]);
+
+        $response->assertValid();
+        $this->assertSame([true, true, false], $gameVersion->guildRanks()->ordered()->pluck('count_attendance')->all());
+    }
+
+    /**
+     * @param  Closure(list<array{id: int, name: string, count_attendance: bool}>): list<array{id: int|null, name: string, count_attendance: bool}>  $change
+     */
+    #[Test]
+    #[DataProvider('grmManagedRankChanges')]
+    public function it_rejects_rank_name_and_order_changes_for_a_grm_managed_version(Closure $change): void
+    {
+        $gameVersion = $this->managedVersion();
+        $before = $gameVersion->guildRanks()->ordered()->get(['id', 'name'])->toArray();
+
+        $response = $this->actingAs($this->officer)
+            ->patch(route('management.game-versions.update', $gameVersion), ['guild_ranks' => $change($this->rankPayload($gameVersion))]);
+
+        $response->assertSessionHasErrors(['guild_ranks' => "Rank names and their order come from GRM and can't be changed here."]);
+        $this->assertSame($before, $gameVersion->guildRanks()->ordered()->get(['id', 'name'])->toArray());
+    }
+
+    #[Test]
+    public function it_reports_the_grm_error_when_a_managed_payload_holds_a_deleted_rank_id(): void
+    {
+        $gameVersion = $this->managedVersion();
+        $payload = $this->rankPayload($gameVersion);
+        $deleted = $gameVersion->guildRanks()->ordered()->get()->last();
+        $deleted->delete();
+        $before = $gameVersion->guildRanks()->ordered()->get(['id', 'name'])->toArray();
+
+        $response = $this->actingAs($this->officer)
+            ->patch(route('management.game-versions.update', $gameVersion), ['guild_ranks' => $payload]);
+
+        $response->assertSessionHasErrors(['guild_ranks' => "Rank names and their order come from GRM and can't be changed here."]);
+        $response->assertSessionDoesntHaveErrors('guild_ranks.2.id');
+        $this->assertSame($before, $gameVersion->guildRanks()->ordered()->get(['id', 'name'])->toArray());
+    }
+
+    /**
+     * @return array<string, array{Closure}>
+     */
+    public static function grmManagedRankChanges(): array
+    {
+        return [
+            'rename (incl. a stale save after a sync rename)' => [fn (array $ranks): array => [$ranks[0], [...$ranks[1], 'name' => 'Lieutenant'], $ranks[2]]],
+            'reorder' => [fn (array $ranks): array => [$ranks[0], $ranks[2], $ranks[1]]],
+            'add' => [fn (array $ranks): array => [...$ranks, ['id' => null, 'name' => 'Initiate', 'count_attendance' => true]]],
+            'remove' => [fn (array $ranks): array => [$ranks[0], $ranks[1]]],
+        ];
+    }
+
+    #[Test]
+    public function it_accepts_an_attendance_toggle_when_a_grm_rank_name_has_surrounding_whitespace(): void
+    {
+        Queue::fake();
+        $gameVersion = $this->managedVersion();
+        $gameVersion->guildRanks()->where('sort_order', 1)->update(['name' => ' Officer ']);
+        $ranks = $this->rankPayload($gameVersion);
+        $ranks[1]['count_attendance'] = false;
+
+        $this->actingAs($this->officer)
+            ->patch(route('management.game-versions.update', $gameVersion), ['guild_ranks' => $ranks])
+            ->assertValid();
+    }
+
+    #[Test]
     public function it_accepts_optional_fields_sent_as_null(): void
     {
         $gameVersion = GameVersion::factory()->create(['color' => null]);
@@ -1834,5 +1913,33 @@ class GameVersionControllerTest extends DashboardTestCase
             ->andReturn($relationships);
 
         return $relationships;
+    }
+
+    /**
+     * Create a game version with three ranks and a GRM roster revision.
+     */
+    private function managedVersion(): GameVersion
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        foreach (['Guild Master', 'Officer', 'Raider'] as $order => $name) {
+            GuildRank::factory()->for($gameVersion)->create(['name' => $name, 'sort_order' => $order, 'count_attendance' => true]);
+        }
+
+        RosterRevision::factory()->for($gameVersion)->create(['revision' => 1]);
+
+        return $gameVersion;
+    }
+
+    /**
+     * The ordered rank list as the edit form submits it.
+     *
+     * @return list<array{id: int, name: string, count_attendance: bool}>
+     */
+    private function rankPayload(GameVersion $gameVersion): array
+    {
+        return $gameVersion->guildRanks()->ordered()->get()
+            ->map(fn (GuildRank $rank): array => ['id' => $rank->id, 'name' => $rank->name, 'count_attendance' => $rank->count_attendance])
+            ->all();
     }
 }

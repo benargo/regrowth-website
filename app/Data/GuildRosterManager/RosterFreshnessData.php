@@ -3,7 +3,6 @@
 namespace App\Data\GuildRosterManager;
 
 use App\Actions\GuildRosterManager\CheckUploadStatus;
-use App\Actions\GuildRosterManager\CompareRankNames;
 use App\Data\Transformers\ToResourceTransformer;
 use App\Enums\GuildRosterManager\UploadStatus;
 use App\Http\Resources\GameVersionResource;
@@ -17,8 +16,7 @@ use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\CamelCaseMapper;
 
 /**
- * A roster's freshness: its game version (icon scope), upload status, newest accepted upload, and the
- * rank names that differ between the game and the site.
+ * A roster's freshness: its game version (icon scope), upload status, and newest accepted upload.
  */
 final class RosterFreshnessData extends Data
 {
@@ -36,15 +34,6 @@ final class RosterFreshnessData extends Data
     #[WithTransformer(ToResourceTransformer::class, resource: UploadResource::class)]
     public readonly ?Upload $lastUpload;
 
-    /**
-     * The ranks whose names differ between the game and the site.
-     *
-     * @var list<array{sortOrder: int, gameName: ?string, siteName: ?string}>
-     */
-    #[Computed]
-    #[MapOutputName(CamelCaseMapper::class)]
-    public readonly array $rankNameDifferences;
-
     public function __construct(
         #[MapOutputName(CamelCaseMapper::class)]
         #[WithTransformer(ToResourceTransformer::class, resource: GameVersionResource::class, scope: 'icon')]
@@ -56,7 +45,6 @@ final class RosterFreshnessData extends Data
             ->accepted()
             ->latest('captured_at')
             ->first();
-        $this->rankNameDifferences = CompareRankNames::run($gameVersion);
     }
 
     /**

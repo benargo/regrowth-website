@@ -30,7 +30,7 @@ function payload(rows) {
  * Fold the server's ranks, saved from `sent`, into the rows now on screen.
  * The server keeps the order it was sent, so saved[i] is sent[i]: a new row
  * picks up its id from there, and a row left untouched since the save takes
- * the server's spelling of its name (names are title-cased). A row edited
+ * the server's spelling of its name (the request trims names). A row edited
  * while the save was in flight keeps the officer's edit for the next save.
  */
 function reconcileRanks(rows, sent, saved) {
@@ -82,6 +82,7 @@ export default function GuildRanksSection({
     autosave = false,
 }) {
     const url = routes.update;
+    const isManagedByGrm = relationships.guild_ranks.managed_by_grm;
     const [rows, setRows] = useState(() => relationships.guild_ranks.data.map(toRow));
     const [errors, setErrors] = useState({ rows: {} });
     const [processing, setProcessing] = useState(false);
@@ -107,7 +108,20 @@ export default function GuildRanksSection({
                 update(reconcileRanks(latestRows.current, sent, saved));
                 setErrors({ rows: {} });
             },
-            onError: (visitErrors) => setErrors(splitErrors(visitErrors, sent)),
+            onError: (visitErrors) => {
+                setErrors(splitErrors(visitErrors, sent));
+
+                if (isManagedByGrm && visitErrors.guild_ranks) {
+                    router.reload({
+                        only: ["relationships"],
+                        onSuccess: (page) => {
+                            const freshRows = page.props.relationships.guild_ranks.data.map(toRow);
+                            savedPayload.current = JSON.stringify(payload(freshRows));
+                            update(freshRows);
+                        },
+                    });
+                }
+            },
             onFinish: () => setProcessing(false),
         });
     }
@@ -138,7 +152,11 @@ export default function GuildRanksSection({
         <Relationships
             id="guild-ranks"
             title="Guild ranks"
-            description="List the guild's ranks in the same order as the in-game guild control panel, with the guild master at the top. Drag a rank to move it. Deleted or moved ranks are cleared from characters until the guild roster refreshes, about a minute after you finish editing."
+            description={
+                isManagedByGrm
+                    ? "Rank names and their order come from the GRM addon and update with each desktop sync. Choose which ranks count towards attendance."
+                    : "List the guild's ranks in the same order as the in-game guild control panel, with the guild master at the top. Drag a rank to move it. Deleted or moved ranks are cleared from characters until the guild roster refreshes, about a minute after you finish editing."
+            }
         >
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
                 {errors.section && (
@@ -153,6 +171,7 @@ export default function GuildRanksSection({
                     errors={errors.rows}
                     maxRanks={MAX_GUILD_RANKS}
                     newRow={newRow}
+                    isManagedByGrm={isManagedByGrm}
                 />
                 {!autosave && <SaveButton processing={processing} label={submitLabel} />}
             </form>

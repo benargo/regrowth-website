@@ -76,13 +76,15 @@ class SyncRoster implements ShouldQueue
     }
 
     /**
-     * Get the middleware the job passes through: one sync job per game version at a time.
+     * Get the middleware the job passes through: one sync job per game version at a time. The
+     * `grm-sync:{gameVersionId}` lock is shared with `ReindexCharacterRanks`, so a sync and a
+     * re-index for the same game version cannot run at the same time.
      *
      * @return array<int, object>
      */
     public function middleware(): array
     {
-        return [(new WithoutOverlapping("grm-sync:{$this->gameVersionId}"))->releaseAfter(60)->expireAfter(960)];
+        return [(new WithoutOverlapping("grm-sync:{$this->gameVersionId}"))->shared()->releaseAfter(60)->expireAfter(960)];
     }
 
     /**

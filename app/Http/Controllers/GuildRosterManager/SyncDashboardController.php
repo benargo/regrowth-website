@@ -22,8 +22,8 @@ use Inertia\Response;
 class SyncDashboardController extends Controller
 {
     /**
-     * Show each current roster's freshness and rank name differences, the newest uploads, and the selected
-     * upload's row outcomes.
+     * Show each current roster's freshness, the newest uploads, and the
+     * selected upload's row outcomes.
      */
     public function index(SyncDashboardRequest $request): Response
     {
@@ -45,7 +45,7 @@ class SyncDashboardController extends Controller
     }
 
     /**
-     * Describe each current roster's game version, upload status, newest accepted upload and rank name differences.
+     * Describe each current roster's game version, upload status and newest accepted upload.
      *
      * @return Collection<int, RosterFreshnessData>
      */

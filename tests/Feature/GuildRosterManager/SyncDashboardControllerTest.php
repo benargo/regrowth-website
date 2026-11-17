@@ -8,8 +8,6 @@ use App\Enums\GuildRosterManager\UploadOutcome;
 use App\Models\Character;
 use App\Models\DesktopClient;
 use App\Models\GameVersion;
-use App\Models\GuildRank;
-use App\Models\GuildRosterManager\RosterRevision;
 use App\Models\GuildRosterManager\Upload;
 use App\Models\GuildRosterManager\UploadRow;
 use App\Models\User;
@@ -82,7 +80,7 @@ class SyncDashboardControllerTest extends DashboardTestCase
                 ->where('rosters.0.status', 'current')
                 ->where('rosters.0.lastUpload.id', $newest->id)
                 ->where('rosters.0.lastUpload.device.name', 'Raid PC')
-                ->where('rosters.0.rankNameDifferences', [])
+                ->missing('rosters.0.rankNameDifferences')
             )
         );
     }
@@ -96,24 +94,6 @@ class SyncDashboardControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->get(route('management.grm.sync'));
 
         $response->assertInertia(fn (Assert $page) => $page->where('selectedUpload', $newest->id));
-    }
-
-    #[Test]
-    public function it_shows_the_rank_name_differences_for_each_roster(): void
-    {
-        GuildRank::factory()->for($this->gameVersion)->create(['sort_order' => 0, 'name' => 'Guild Master']);
-        GuildRank::factory()->for($this->gameVersion)->create(['sort_order' => 1, 'name' => 'Officer']);
-        RosterRevision::factory()->for($this->gameVersion)->create(['revision' => 1, 'ranks' => ['Guild Master', 'Captain']]);
-
-        $response = $this->actingAs($this->officer)->get(route('management.grm.sync'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps('rosters', fn (Assert $reload) => $reload
-                ->where('rosters.0.rankNameDifferences', [
-                    ['sortOrder' => 1, 'gameName' => 'Captain', 'siteName' => 'Officer'],
-                ])
-            )
-        );
     }
 
     #[Test]

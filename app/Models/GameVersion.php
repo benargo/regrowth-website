@@ -356,6 +356,14 @@ class GameVersion extends Model implements DatasetModel, DefinesGameVersionMedia
     }
 
     /**
+     * Determine whether the version has a GRM roster revision.
+     */
+    public function isManagedByGrm(): bool
+    {
+        return RosterRevision::where('game_version_id', $this->getKey())->exists();
+    }
+
+    /**
      * @return HasMany<Item, $this>
      */
     public function items(): HasMany

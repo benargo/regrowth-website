@@ -8,12 +8,10 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Str;
 use Spatie\EloquentSortable\Sortable;
 use Spatie\EloquentSortable\SortableTrait;
 
@@ -75,17 +73,7 @@ class GuildRank extends Model implements DatasetModel, Sortable
         ];
     }
 
-    // ============ Custom attributes ============
-
-    /**
-     * Set the name attribute to be title-cased.
-     */
-    protected function name(): Attribute
-    {
-        return Attribute::make(
-            set: fn (string $value) => Str::ucwords(Str::lower($value)),
-        );
-    }
+    // ============ Scopes ============
 
     /**
      * Scope a query to ranks whose characters' attendance is counted.

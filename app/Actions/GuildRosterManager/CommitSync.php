@@ -16,6 +16,7 @@ use App\Enums\GuildRosterManager\SyncRowSkipReason;
 use App\Enums\GuildRosterManager\UploadOutcome;
 use App\Events\DesktopClient\SyncCommitted;
 use App\Events\DesktopClient\SyncCommitting;
+use App\Jobs\GuildRosterManager\ReindexCharacterRanks;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\GuildRosterManager\Ban;
@@ -37,7 +38,8 @@ use Lorisleiva\Actions\Concerns\AsAction;
  * and a sync whose base revision is no longer current are refused. Each staged row that differs from
  * the stored entry is applied, removals are applied, the ban log is updated, the staged rows are
  * deleted, and `SyncCommitting` (with changes) or `SyncCommitted` (without) is dispatched once the
- * transaction commits.
+ * transaction commits. The committed ranks (or the previous revision's) are applied to the version's
+ * guild ranks, and a character rank re-index is queued when ranks were created or deleted.
  */
 class CommitSync
 {
@@ -65,6 +67,8 @@ class CommitSync
             }
 
             $this->validate($sync, $ranks, $previous, $removed);
+
+            $reindexRanks = ApplyGuildRankNames::run($gameVersion, $ranks ?? $previous->ranks);
 
             $nextRevision = $currentRevision + 1;
             $banAccess = [
@@ -113,6 +117,10 @@ class CommitSync
                 ));
             } else {
                 SyncCommitted::dispatch($sync);
+            }
+
+            if ($reindexRanks) {
+                ReindexCharacterRanks::dispatch($gameVersion->id)->afterCommit();
             }
 
             return new CommitSyncResultData(CommitSyncStatus::Committed, $sync, $sync->revision);
@@ -173,6 +181,12 @@ class CommitSync
         }
 
         $errors = [];
+
+        foreach ($ranks ?? $previous->ranks as $index => $name) {
+            if (trim($name) === '') {
+                $errors["ranks.{$index}"] = 'The rank name must not be blank.';
+            }
+        }
 
         foreach (RosterEntryKind::cases() as $kind) {
             $keys = $removed->keysFor($kind);

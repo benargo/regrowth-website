@@ -740,6 +740,7 @@ class SyncRosterTest extends TestCase
         $this->assertCount(1, $middleware);
         $this->assertInstanceOf(WithoutOverlapping::class, $middleware[0]);
         $this->assertSame("grm-sync:{$this->version->id}", $middleware[0]->key);
+        $this->assertTrue($middleware[0]->shareKey);
         $this->assertSame(60, $middleware[0]->releaseAfter);
         $this->assertSame(960, $middleware[0]->expiresAfter);
     }

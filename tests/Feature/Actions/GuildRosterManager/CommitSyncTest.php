@@ -15,10 +15,13 @@ use App\Enums\GuildRosterManager\UploadOutcome;
 use App\Events\DesktopClient\SyncCommitted;
 use App\Events\DesktopClient\SyncCommitting;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Jobs\GuildRosterManager\ReindexCharacterRanks;
+use App\Jobs\RefreshGuildRosterAfterEditing;
 use App\Models\Character;
 use App\Models\DesktopClient;
 use App\Models\DiscordRole;
 use App\Models\GameVersion;
+use App\Models\GuildRank;
 use App\Models\GuildRosterManager\Ban;
 use App\Models\GuildRosterManager\RosterEntry;
 use App\Models\GuildRosterManager\RosterRevision;
@@ -27,6 +30,7 @@ use App\Models\GuildRosterManager\Upload;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
@@ -70,6 +74,58 @@ class CommitSyncTest extends TestCase
             'realm' => null,
         ]);
         $this->desktopClient = DesktopClient::factory()->create(['user_id' => $this->uploader->id]);
+
+        Bus::fake([RefreshGuildRosterAfterEditing::class, ReindexCharacterRanks::class]);
+
+        foreach (self::RANKS as $sortOrder => $name) {
+            GuildRank::factory()->for($this->forever)->create(['sort_order' => $sortOrder, 'name' => $name]);
+        }
+    }
+
+    // ==================== ranks ====================
+
+    #[Test]
+    public function it_renames_the_site_ranks_from_the_committed_ranks(): void
+    {
+        $ids = $this->forever->guildRanks()->ordered()->pluck('id')->all();
+        $sync = $this->openSync();
+        $this->stage($sync, RosterEntryKind::Member, $this->fixture('members')[0]);
+        $ranks = ['Guild Master', 'Officer', 'Veteran', 'Core raider', 'Member', 'Initiate'];
+
+        $this->commit($sync, $ranks);
+
+        $this->assertSame($ranks, $this->forever->guildRanks()->ordered()->pluck('name')->all());
+        $this->assertSame($ids, $this->forever->guildRanks()->ordered()->pluck('id')->all());
+        Bus::assertNotDispatched(ReindexCharacterRanks::class);
+    }
+
+    #[Test]
+    public function it_reapplies_the_previous_ranks_over_an_officer_edit(): void
+    {
+        $this->revision(1);
+        $this->forever->guildRanks()->where('sort_order', 1)->update(['name' => 'Lieutenant']);
+        $sync = $this->openSync();
+        $this->stage($sync, RosterEntryKind::Member, $this->fixture('members')[0]);
+
+        $this->commit($sync);
+
+        $this->assertSame(self::RANKS, $this->forever->guildRanks()->ordered()->pluck('name')->all());
+    }
+
+    #[Test]
+    public function it_queues_a_rank_reindex_when_ranks_were_added_or_removed(): void
+    {
+        $this->revision(1);
+        $this->forever->guildRanks()->where('sort_order', 5)->delete();
+        $sync = $this->openSync();
+
+        $result = $this->commit($sync);
+
+        $this->assertSame(1, $result->revision);
+        $this->assertSame(UploadOutcome::NoChanges, $sync->fresh()->outcome);
+        $this->assertSame(self::RANKS, $this->forever->guildRanks()->ordered()->pluck('name')->all());
+        Bus::assertDispatchedTimes(ReindexCharacterRanks::class, 1);
+        Bus::assertDispatched(ReindexCharacterRanks::class, fn (ReindexCharacterRanks $job): bool => $job->gameVersionId === $this->forever->id);
     }
 
     // ==================== apply ====================
@@ -180,6 +236,25 @@ class CommitSyncTest extends TestCase
         $this->assertSame(0, RosterRevision::count());
         $this->assertSame(UploadOutcome::Staging, $sync->fresh()->outcome);
         $this->assertSame(6, SyncRow::where('upload_id', $sync->id)->count());
+    }
+
+    #[Test]
+    #[Group('validation')]
+    public function it_rejects_a_blank_name_in_the_previous_ranks_it_would_reapply(): void
+    {
+        $this->revision(1, ['Guild Master', '  ']);
+        $sync = $this->openSync();
+        $this->stageFixture($sync);
+
+        try {
+            $this->commit($sync);
+            $this->fail('Expected a validation exception.');
+        } catch (ValidationException $exception) {
+            $this->assertSame(['ranks.1' => ['The rank name must not be blank.']], $exception->errors());
+        }
+
+        $this->assertSame(1, RosterRevision::count());
+        $this->assertSame(UploadOutcome::Staging, $sync->fresh()->outcome);
     }
 
     #[Test]

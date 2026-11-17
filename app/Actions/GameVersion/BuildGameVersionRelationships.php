@@ -11,7 +11,8 @@ use Lorisleiva\Actions\Concerns\AsAction;
 
 /**
  * Builds the data the game version Edit and Setup pages use to link playable
- * races, playable classes and phases to a version, and to list its guild ranks.
+ * races, playable classes and phases to a version, and to list its guild ranks
+ * with a managed_by_grm flag saying whether GRM owns those ranks.
  */
 class BuildGameVersionRelationships
 {
@@ -55,7 +56,8 @@ class BuildGameVersionRelationships
                 ->withCount('characters')
                 ->ordered()
                 ->get()
-                ->toResourceCollection(),
+                ->toResourceCollection()
+                ->additional(['managed_by_grm' => $gameVersion->isManagedByGrm()]),
         ];
     }
 }

@@ -7,8 +7,6 @@ use App\Enums\GuildRosterManager\UploadOutcome;
 use App\Enums\GuildRosterManager\UploadStatus;
 use App\Models\DesktopClient;
 use App\Models\GameVersion;
-use App\Models\GuildRank;
-use App\Models\GuildRosterManager\RosterRevision;
 use App\Models\GuildRosterManager\Upload;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -37,22 +35,18 @@ class RosterFreshnessDataTest extends TestCase
     // ==================== fromGameVersion ====================
 
     #[Test]
-    public function from_game_version_computes_status_last_upload_and_rank_name_differences(): void
+    public function from_game_version_computes_status_and_last_upload(): void
     {
         $accepted = Upload::factory()->for($this->gameVersion)
             ->withOutcome(UploadOutcome::Processed)
             ->create(['captured_at' => now()->subHour(), 'member_count' => 1]);
         Upload::factory()->for($this->gameVersion)->withOutcome(UploadOutcome::Superseded)->create(['captured_at' => now()]);
-        GuildRank::factory()->for($this->gameVersion)->create(['sort_order' => 0, 'name' => 'Guild Master']);
-        GuildRank::factory()->for($this->gameVersion)->create(['sort_order' => 1, 'name' => 'Officer']);
-        RosterRevision::factory()->for($this->gameVersion)->create(['revision' => 1, 'ranks' => ['Guild Master', 'Captain']]);
 
         $data = RosterFreshnessData::from($this->gameVersion->load(['media', 'currentRosterRevision']));
 
         $this->assertTrue($data->gameVersion->is($this->gameVersion));
         $this->assertSame(UploadStatus::Current, $data->status);
         $this->assertTrue($data->lastUpload?->is($accepted));
-        $this->assertSame([['sortOrder' => 1, 'gameName' => 'Captain', 'siteName' => 'Officer']], $data->rankNameDifferences);
     }
 
     // ==================== toArray ====================
@@ -68,7 +62,7 @@ class RosterFreshnessDataTest extends TestCase
 
         $array = RosterFreshnessData::from($this->gameVersion->load(['media', 'currentRosterRevision']))->toArray();
 
-        $this->assertSame(['gameVersion', 'lastUpload', 'rankNameDifferences', 'status'], collect($array)->keys()->sort()->values()->all());
+        $this->assertSame(['gameVersion', 'lastUpload', 'status'], collect($array)->keys()->sort()->values()->all());
         $this->assertSame(['title', 'slug', 'color', 'icon_url'], array_keys($array['gameVersion']));
         $this->assertSame('anniversary', $array['gameVersion']['slug']);
         $this->assertSame($upload->id, $array['lastUpload']['id']);

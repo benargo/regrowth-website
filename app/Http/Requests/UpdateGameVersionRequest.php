@@ -112,6 +112,7 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest implements Define
             $this->editLockCheck('gameVersion', 'game version'),
             $this->unscheduledPhaseOrderCheck('unscheduled_phase_ids', $this->route('gameVersion')->getKey()),
             $this->phaseNumbersStayUniqueCheck(),
+            $this->grmManagedRanksCheck(),
         ];
     }
 
@@ -146,6 +147,53 @@ class UpdateGameVersionRequest extends StoreGameVersionRequest implements Define
 
             if ($clash !== null) {
                 $validator->errors()->add('phase_ids', "Unticking {$clash->name} would leave two phases without a game version numbered {$clash->number}. Change its number first.");
+            }
+        };
+    }
+
+    /**
+     * An after() hook that rejects a guild rank list whose ranks, order or
+     * names differ from the stored ranks of a game version managed by GRM.
+     * For such a version, stale rank id errors are replaced by the GRM error.
+     *
+     * @return Closure(Validator): void
+     */
+    private function grmManagedRanksCheck(): Closure
+    {
+        $grmError = "Rank names and their order come from GRM and can't be changed here.";
+
+        return function (Validator $validator) use ($grmError): void {
+            if (! $this->has('guild_ranks') || $validator->errors()->has('guild_ranks')) {
+                return;
+            }
+
+            $gameVersion = $this->route('gameVersion');
+
+            if (! $gameVersion->isManagedByGrm()) {
+                return;
+            }
+
+            $rankErrorKeys = collect($validator->errors()->keys())->filter(fn (string $key): bool => str_starts_with($key, 'guild_ranks.'));
+
+            if ($rankErrorKeys->isNotEmpty()) {
+                if ($rankErrorKeys->every(fn (string $key): bool => preg_match('/^guild_ranks\.\d+\.id$/', $key) === 1)) {
+                    $rankErrorKeys->each(fn (string $key) => $validator->errors()->forget($key));
+                    $validator->errors()->add('guild_ranks', $grmError);
+                }
+
+                return;
+            }
+
+            $sent = collect($this->input('guild_ranks', []))
+                ->map(fn (array $rank): array => [isset($rank['id']) ? (int) $rank['id'] : null, $rank['name'] ?? null])
+                ->all();
+
+            $stored = $gameVersion->guildRanks()->ordered()->get()
+                ->map(fn (GuildRank $rank): array => [$rank->id, trim($rank->name)])
+                ->all();
+
+            if ($sent !== $stored) {
+                $validator->errors()->add('guild_ranks', $grmError);
             }
         };
     }

@@ -203,39 +203,16 @@ class GuildRankTest extends ModelTestCase
         $this->assertNotNull($guildRank->updated_at);
     }
 
-    // ==================== name casing ====================
+    // ==================== name ====================
 
     #[Test]
-    public function it_converts_name_to_title_case(): void
+    public function it_stores_the_name_exactly_as_given(): void
     {
-        $guildRank = $this->create([
-            'sort_order' => 0,
-            'name' => 'guild master',
-        ]);
+        $lower = $this->create(['sort_order' => 0, 'name' => 'guild master']);
+        $upper = $this->create(['sort_order' => 1, 'name' => 'OFFICER']);
 
-        $this->assertSame('Guild Master', $guildRank->name);
-    }
-
-    #[Test]
-    public function it_converts_uppercase_name_to_title_case(): void
-    {
-        $guildRank = $this->create([
-            'sort_order' => 1,
-            'name' => 'OFFICER',
-        ]);
-
-        $this->assertSame('Officer', $guildRank->name);
-    }
-
-    #[Test]
-    public function it_converts_mixed_case_name_to_title_case(): void
-    {
-        $guildRank = $this->create([
-            'sort_order' => 2,
-            'name' => 'sEnIoR rAiDeR',
-        ]);
-
-        $this->assertSame('Senior Raider', $guildRank->name);
+        $this->assertSame('guild master', $lower->fresh()->name);
+        $this->assertSame('OFFICER', $upper->fresh()->name);
     }
 
     // ==================== characters relationship ====================

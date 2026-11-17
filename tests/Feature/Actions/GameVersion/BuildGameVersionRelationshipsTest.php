@@ -6,6 +6,7 @@ use App\Actions\GameVersion\BuildGameVersionRelationships;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\GuildRank;
+use App\Models\GuildRosterManager\RosterRevision;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
@@ -123,6 +124,18 @@ class BuildGameVersionRelationshipsTest extends TestCase
         $this->assertSame([false, true], array_column($ranks, 'count_attendance'));
         $this->assertSame([0, 2], array_column($ranks, 'characters_count'));
         $this->assertSame($raider->id, $ranks[1]['id']);
+    }
+
+    #[Test]
+    public function it_marks_the_guild_ranks_as_managed_by_grm_once_the_version_has_a_roster_revision(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        $this->assertFalse($this->build($gameVersion)['guild_ranks']['managed_by_grm']);
+
+        RosterRevision::factory()->for($gameVersion)->create(['revision' => 1]);
+
+        $this->assertTrue($this->build($gameVersion)['guild_ranks']['managed_by_grm']);
     }
 
     #[Test]

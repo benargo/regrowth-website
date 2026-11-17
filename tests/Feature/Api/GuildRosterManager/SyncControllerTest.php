@@ -6,6 +6,7 @@ use App\Actions\GuildRosterManager\IssueOpenTicket;
 use App\Data\GuildRosterManager\MemberData;
 use App\Enums\GuildRosterManager\UploadOutcome;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Jobs\RefreshGuildRosterAfterEditing;
 use App\Models\DesktopClient;
 use App\Models\DesktopClientToken;
 use App\Models\DiscordRole;
@@ -15,6 +16,7 @@ use App\Models\GuildRosterManager\SyncRow;
 use App\Models\GuildRosterManager\Upload;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Testing\TestResponse;
@@ -55,6 +57,7 @@ class SyncControllerTest extends TestCase
         ]);
 
         RateLimiter::clear(md5('grm-syncs'.$this->uploader->id));
+        Bus::fake([RefreshGuildRosterAfterEditing::class]);
     }
 
     // ==================== store ====================
@@ -387,6 +390,20 @@ class SyncControllerTest extends TestCase
             ->assertJsonValidationErrors(['capturedAt', 'removed.ranks.0'])
             ->assertDontSee('captured-at-value')
             ->assertDontSee('rank-value');
+
+        $this->assertSame(UploadOutcome::Staging, $sync->refresh()->outcome);
+    }
+
+    #[Test]
+    #[Group('validation')]
+    public function it_rejects_a_blank_rank_name_with_422(): void
+    {
+        $sync = $this->stagingSync($this->uploader);
+        $this->actingAsUploader();
+
+        $this->postGzipped($this->commitUri($sync), ['ranks' => ['Guild Master', '   ']])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['ranks.1']);
 
         $this->assertSame(UploadOutcome::Staging, $sync->refresh()->outcome);
     }

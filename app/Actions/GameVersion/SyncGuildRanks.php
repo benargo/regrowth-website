@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\DB;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 /**
- * Replaces a game version's guild ranks with the given ordered list.
+ * Replaces a game version's guild ranks with the given ordered list. When ranks are removed or reordered,
+ * a Blizzard guild roster refresh is scheduled unless `$refreshRoster` is false.
  */
 class SyncGuildRanks
 {
@@ -19,15 +20,15 @@ class SyncGuildRanks
     /**
      * @param  list<array{id?: int|null, name: string, count_attendance: bool}>  $ranks  In rank order.
      */
-    public function handle(GameVersion $gameVersion, array $ranks): void
+    public function handle(GameVersion $gameVersion, array $ranks, bool $refreshRoster = true): void
     {
-        DB::transaction(fn () => $this->sync($gameVersion, $ranks));
+        DB::transaction(fn () => $this->sync($gameVersion, $ranks, $refreshRoster));
     }
 
     /**
      * @param  list<array{id?: int|null, name: string, count_attendance: bool}>  $ranks
      */
-    private function sync(GameVersion $gameVersion, array $ranks): void
+    private function sync(GameVersion $gameVersion, array $ranks, bool $refreshRoster): void
     {
         $keptIds = collect($ranks)->pluck('id')->filter()->all();
 
@@ -50,7 +51,7 @@ class SyncGuildRanks
             $changed = $changed || $rank->wasRecentlyCreated || $rank->wasChanged();
         }
 
-        if ($reordered) {
+        if ($reordered && $refreshRoster) {
             RefreshGuildRosterAfterEditing::schedule($gameVersion);
         }
 

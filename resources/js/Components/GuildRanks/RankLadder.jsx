@@ -37,10 +37,22 @@ function RankRowContent({ row, index, dragHandle, children }) {
     );
 }
 
+function AttendanceToggle({ row, onToggle }) {
+    const attendanceId = `guild-rank-${row.key}-attendance`;
+
+    return (
+        <span className="flex items-center gap-2">
+            <Checkbox id={attendanceId} checked={row.count_attendance} onChange={() => onToggle(row.key)} />
+            <label htmlFor={attendanceId} className="text-sm whitespace-nowrap text-gray-300">
+                Attendance tracked
+            </label>
+        </span>
+    );
+}
+
 function RankRow({ row, index, dragHandle, error, onRename, onCommitName, onToggleAttendance, onDelete }) {
     const nameBeforeEdit = useRef(row.name);
     const nameId = `guild-rank-${row.key}-name`;
-    const attendanceId = `guild-rank-${row.key}-attendance`;
 
     function handleBlur() {
         if (row.name.trim() === "") {
@@ -80,16 +92,7 @@ function RankRow({ row, index, dragHandle, error, onRename, onCommitName, onTogg
                     className="min-w-0 flex-1 basis-40 rounded border-b border-transparent bg-transparent px-1 py-1 text-base text-white hover:border-amber-600 focus-visible:outline-2 focus-visible:outline-amber-400"
                 />
                 <span className="w-28 text-sm text-gray-400">{charactersLabel(row.characters_count)}</span>
-                <span className="flex items-center gap-2">
-                    <Checkbox
-                        id={attendanceId}
-                        checked={row.count_attendance}
-                        onChange={() => onToggleAttendance(row.key)}
-                    />
-                    <label htmlFor={attendanceId} className="text-sm whitespace-nowrap text-gray-300">
-                        Attendance tracked
-                    </label>
-                </span>
+                <AttendanceToggle row={row} onToggle={onToggleAttendance} />
                 <IconButton
                     icon="trash-alt"
                     label={`Delete ${row.name}`}
@@ -149,14 +152,28 @@ function AddRankRow({ onAdd }) {
 
 /**
  * A guild's ranks in Blizzard rank order, each row numbered with its 0-based
- * rank index and marked with its in-game colour. Rows can be dragged (or
- * moved with the keyboard from their handle), renamed in place, toggled for
- * attendance and deleted. The parent owns the rows: onChange updates them
- * while typing, and onCommit updates them and saves. Both take an updater
- * that receives the parent's latest rows, which may be newer than `rows` when
- * a save lands between renders. `errors` maps a row's key to its message.
+ * rank index and marked with its in-game colour.
+ *
+ * By default rows can be dragged (or moved with the keyboard from their
+ * handle), renamed in place, toggled for attendance and deleted, and new ranks
+ * can be added. When `isManagedByGrm` is true the ranks are a read-only list:
+ * names and order are shown as text, there is no drag handle, delete button or
+ * add-rank footer, and only the attendance checkbox is editable.
+ *
+ * The parent owns the rows: onChange updates them while typing, and onCommit
+ * updates them and saves. Both take an updater that receives the parent's
+ * latest rows, which may be newer than `rows` when a save lands between
+ * renders. `errors` maps a row's key to its message.
  */
-export default function RankLadder({ rows, onChange, onCommit, errors = {}, maxRanks, newRow }) {
+export default function RankLadder({
+    rows,
+    onChange,
+    onCommit,
+    errors = {},
+    maxRanks,
+    newRow,
+    isManagedByGrm = false,
+}) {
     function rename(key, name) {
         onChange((current) => current.map((row) => (row.key === key ? { ...row, name } : row)));
     }
@@ -169,6 +186,32 @@ export default function RankLadder({ rows, onChange, onCommit, errors = {}, maxR
 
     function remove(key) {
         onCommit((current) => current.filter((row) => row.key !== key));
+    }
+
+    if (isManagedByGrm) {
+        return (
+            <div className="overflow-hidden rounded border border-amber-600/40">
+                {rows.length === 0 ? (
+                    <p className="px-4 py-3 text-sm text-gray-300">
+                        No ranks yet. They appear after the next desktop sync.
+                    </p>
+                ) : (
+                    <ol aria-label="Guild ranks" className="divide-y divide-amber-600/40">
+                        {rows.map((row, index) => (
+                            <li key={row.key} className="bg-brown-900">
+                                <RankRowContent row={row} index={index}>
+                                    <span className="min-w-0 flex-1 basis-40 px-1 text-white">{row.name}</span>
+                                    <span className="w-28 text-sm text-gray-400">
+                                        {charactersLabel(row.characters_count)}
+                                    </span>
+                                    <AttendanceToggle row={row} onToggle={toggleAttendance} />
+                                </RankRowContent>
+                            </li>
+                        ))}
+                    </ol>
+                )}
+            </div>
+        );
     }
 
     return (
